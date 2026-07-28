@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - CTN</title>
+    <style>
+        body { margin:0; font-family: Arial, sans-serif; background:#f3f4f6; color:#111827; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
+        .card { background:white; border-radius: 16px; padding: 20px; box-shadow: 0 12px 30px rgba(0,0,0,.08); margin-bottom: 20px; }
+        .nav a { margin-right: 12px; text-decoration:none; color:#1d4ed8; font-weight:700; }
+        .grid { display:grid; gap:16px; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); }
+        .stat { padding: 16px; border-radius: 14px; background:#eff6ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="nav">
+                <a href="dashboard.html">Inicio</a>
+                <a href="inicio.html">Registrar clase</a>
+                <a href="reportes.html">Reportes</a>
+                <a href="historial.html">Historial</a>
+                <a href="login_3.html">Salir</a>
+            </div>
+            <h1>Panel principal - CTN</h1>
+            <p>Resumen general del sistema de libro de cátedra.</p>
+        </div>
+        <div class="grid">
+            <div class="card stat"><h3>Clases registradas</h3><p>128</p></div>
+            <div class="card stat"><h3>Ausencias detectadas</h3><p>34</p></div>
+            <div class="card stat"><h3>Especialidades activas</h3><p>8</p></div>
+            <div class="card stat"><h3>Docentes conectados</h3><p>12</p></div>
+        </div>
+    </div>
+</body>
+</html>

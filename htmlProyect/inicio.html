@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Libro de Cátedra - CTN</title>
+    <style>
+        body {
+            font-family: Inter, Arial, sans-serif;
+            margin: 0;
+            padding: 24px;
+            background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%);
+            color: #111827;
+        }
+        .page { max-width: 1200px; margin: 0 auto; }
+        header { margin-bottom: 24px; }
+        header h1 { margin: 0; font-size: 2rem; color: #1e3a8a; }
+        header p { margin: 8px 0 0; color: #4b5563; line-height: 1.6; }
+        .card {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fbff 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: 22px;
+            box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+            margin-bottom: 24px;
+            padding: 24px;
+        }
+        .section-title {
+            display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 18px;
+        }
+        .section-title h2 { margin: 0; font-size: 1.25rem; color: #0f172a; }
+        .grid { display: grid; gap: 18px; margin-bottom: 18px; }
+        .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        label { display: block; font-size: 0.95rem; font-weight: 700; margin-bottom: 8px; color: #334155; }
+        input, select, textarea { width: 100%; border: 1px solid #cbd5e1; border-radius: 14px; padding: 12px 14px; font-size: 0.95rem; color: #111827; background: #ffffff; box-sizing: border-box; }
+        textarea { min-height: 90px; resize: vertical; }
+        input[type="file"] { padding: 8px; font-size: 0.85rem; }
+        .button-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px; }
+        button { cursor: pointer; border: none; border-radius: 14px; padding: 12px 18px; font-weight: 700; transition: transform 0.15s ease; }
+        button:hover { transform: translateY(-1px); }
+        .primary { background: #1d4ed8; color: #ffffff; }
+        .secondary { background: #e2e8f0; color: #0f172a; }
+        .tertiary { background: #f8fafc; color: #334155; }
+        .danger { background: #fee2e2; color: #991b1b; }
+        .pill { display: inline-block; padding: 7px 12px; border-radius: 999px; background: #dbeafe; color: #1d4ed8; margin-right: 8px; font-size: 0.9rem; font-weight: 700; }
+        .nav-links { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+        .nav-links a { color: #1d4ed8; text-decoration: none; font-weight: 700; }
+        .nav-links a:hover { text-decoration: underline; }
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 0.95rem; }
+        th, td { border: 1px solid #cbd5e1; padding: 12px; vertical-align: middle; }
+        th { background: #e0e7ff; color: #1e293b; text-align: left; }
+        .center-cell { text-align: center; }
+        .radio-group { display: flex; justify-content: center; gap: 15px; }
+        .radio-group label { margin: 0; cursor: pointer; }
+        .radio-group input { transform: scale(1.2); margin-right: 5px; }
+        .output { min-height: 140px; margin-top: 18px; padding: 18px; background: #1e293b; color: #10b981; border-radius: 16px; font-family: monospace; white-space: pre-wrap; overflow-x: auto; }
+        .report-box {
+            margin-top: 12px;
+            padding: 16px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
+            border: 1px solid #cbd5e1;
+            color: #334155;
+            line-height: 1.6;
+        }
+        .empty-state {
+            padding: 16px;
+            border-radius: 14px;
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            color: #64748b;
+            text-align: center;
+        }
+        .muted { color: #64748b; font-size: 0.9rem; }
+        @media (max-width: 900px) { .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <header>
+            <div class="nav-links">
+                <a href="dashboard.html">Inicio</a>
+                <a href="inicio.html">Registrar clase</a>
+                <a href="reportes.html">Reportes</a>
+                <a href="historial.html">Historial</a>
+                <a href="login_3.html">Cerrar sesión</a>
+            </div>
+            <div style="margin-bottom: 12px;">
+                <span class="pill">CTN</span>
+                <span class="pill">Libro de Cátedra</span>
+                <span class="pill">Control de asistencia</span>
+            </div>
+            <h1>Libro de Cátedra General - CTN</h1>
+            <p>Plataforma institucional para registrar clases, asistencia y seguimiento académico de forma clara y ordenada.</p>
+        </header>
+
+        <div class="card">
+            <div class="section-title">
+                <h2>1. Filtros generales de la institución</h2>
+                <button class="tertiary" id="clearButton">Limpiar formulario</button>
+            </div>
+            <div class="grid grid-3">
+                <div>
+                    <label for="idEspecialidad">Especialidad</label>
+                    <select id="idEspecialidad"><option value="">Cargando especialidades...</option></select>
+                </div>
+                <div>
+                    <label for="idAsignatura">Asignatura</label>
+                    <select id="idAsignatura"><option value="">Seleccione una especialidad primero</option></select>
+                </div>
+                <div>
+                    <label for="idCurso">Curso y Sección</label>
+                    <select id="idCurso"><option value="">Cargando cursos...</option></select>
+                </div>
+            </div>
+            <div class="grid grid-4">
+                <div>
+                    <label for="nombreDocente">Docente responsable</label>
+                    <input type="text" id="nombreDocente" placeholder="Nombre del docente" value="Prof. Ana Gómez">
+                </div>
+                <div>
+                    <label for="anio_lectivo">Año lectivo</label>
+                    <input type="number" id="anio_lectivo" value="2026">
+                </div>
+                <div>
+                    <label for="fecha_clase">Fecha de clase</label>
+                    <input type="date" id="fecha_clase" value="2026-07-28">
+                </div>
+            </div>
+            <div class="grid grid-4">
+                <div>
+                    <label for="horario_clase">Horario (Ej: 07:00 a 09:20)</label>
+                    <input type="text" id="horario_clase" placeholder="Ej: 07:00 a 09:20" value="07:00 a 09:20">
+                </div>
+                <div>
+                    <label for="cantidad_horas">Cant. horas cátedra</label>
+                    <input type="number" id="cantidad_horas" placeholder="Ej: 4" min="1" value="4">
+                </div>
+                <div>
+                    <label for="tipoClase">Tipo de clase</label>
+                    <select id="tipoClase">
+                        <option>Teórica</option>
+                        <option>Práctica</option>
+                        <option>Evaluación</option>
+                        <option>Otro</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="modalidad">Modalidad</label>
+                    <select id="modalidad">
+                        <option>Presencial</option>
+                        <option>Virtual</option>
+                        <option>Híbrido</option>
+                    </select>
+                </div>
+            </div>
+            <label for="contenido_especifico">Contenido específico desarrollado</label>
+            <textarea id="contenido_especifico" placeholder="Describa el tema dictado en la clase..."></textarea>
+            <label for="observaciones_generales" style="margin-top: 15px;">Observaciones generales</label>
+            <textarea id="observaciones_generales" placeholder="Cualquier eventualidad general de la clase..."></textarea>
+        </div>
+
+        <div class="card">
+            <div class="section-title">
+                <h2>2. Asistencia general y justificativos</h2>
+                <button class="secondary" id="addStudent">Añadir alumno a la lista</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th width="8%" class="center-cell">Nº</th>
+                        <th width="28%">Apellido(s) y nombre(s)</th>
+                        <th width="15%" class="center-cell">Estado (P/A)</th>
+                        <th width="17%">Justificativo</th>
+                        <th width="25%">Observación</th>
+                        <th width="15%">Adjunto</th>
+                        <th width="5%" class="center-cell">Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="studentBody"></tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <div class="section-title">
+                <h2>3. Reportes de asistencia</h2>
+            </div>
+            <div class="grid grid-2">
+                <div>
+                    <button class="primary" id="reportButton" style="margin-top: 0;">Generar reporte de asistencia</button>
+                </div>
+                <div>
+                    <div class="report-box" id="reportBox">Aún no hay un resumen general disponible. Al generar el reporte, aparecerá aquí un panorama claro del día.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="section-title">
+                <h2>4. Finalizar carga</h2>
+            </div>
+            <div class="button-row">
+                <button class="primary" id="saveButton">Guardar registro en BD</button>
+                <button class="secondary" id="exportButton">Ver datos JSON generados</button>
+            </div>
+            <div class="output" id="resultOutput" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const dbEspecialidades = [
+            { id: 1, nombre: "Química" },
+            { id: 2, nombre: "Construcciones Civiles" },
+            { id: 3, nombre: "Informática" },
+            { id: 4, nombre: "Electrónica" },
+            { id: 5, nombre: "Electromecánica" },
+            { id: 6, nombre: "Mecánica General" },
+            { id: 7, nombre: "Mecánica Automotriz" },
+            { id: 8, nombre: "Electricidad" }
+        ];
+
+        const dbCursos = [
+            { id: 1, nombre: "1ro - 1ra - Mañana" },
+            { id: 2, nombre: "2do - 1ra - Mañana" },
+            { id: 3, nombre: "3ro - 1ra - Mañana" },
+            { id: 4, nombre: "1ro - 2da - Tarde" },
+            { id: 5, nombre: "3ro - 2da - Tarde" }
+        ];
+
+        const dbAsignaturas = {
+            1: ["Química General", "Laboratorio Químico", "Biología Aplicada", "Física Química"],
+            2: ["Topografía", "Materiales de Construcción", "Cálculo Estructural", "Dibujo Técnico"],
+            3: ["Programación", "Redes de Computadoras", "Diseño Web", "Laboratorio de Hardware"],
+            4: ["Circuitos Eléctricos", "Microcontroladores", "Taller de Electrónica", "Sistemas Digitales"],
+            5: ["Máquinas Eléctricas", "Mecatrónica", "Automatización", "Electrónica de Potencia"],
+            6: ["Mecánica Técnica", "Tecnología de Materiales", "Dibujo Mecánico", "Herramientas Industriales"],
+            7: ["Motor de Combustión", "Sistema de Frenos", "Transmisión Automotriz", "Mecánica del Vehículo"],
+            8: ["Instalaciones Eléctricas", "Circuitos Eléctricos", "Seguridad Eléctrica", "Máquinas Eléctricas"]
+        };
+
+        const dbAlumnos = {
+            1: ["Marcos A. Molina", "Lucía R. Pérez", "Tomás G. Silva", "Camila N. Ortega"],
+            2: ["Sofía M. López", "Bruno D. Rojas", "Nicolás E. Torres", "Agustina C. Vera"],
+            3: ["Leandro F. Acosta", "Martina S. Gómez", "Diego T. Paz", "Valentina H. Quiroga"],
+            4: ["Julián P. Benítez", "Micaela C. Rivero", "Ezequiel V. Dominguez", "Florencia L. Sosa"],
+            5: ["Mateo R. Núñez", "Ariana B. Malbrán", "Sebastián K. Cárdenas", "Elena P. Ibarrola"]
+        };
+
+        const studentBody = document.getElementById('studentBody');
+        let studentCount = 0;
+
+        function getStudentSortKey(nombre = '') {
+            const limpio = (nombre || '').trim().toLowerCase();
+            if (!limpio) return '';
+            const partes = limpio.split(/\s+/).filter(Boolean);
+            return partes[partes.length - 1] || limpio;
+        }
+
+        function ordenarAlumnosPorApellido() {
+            const rows = Array.from(studentBody.querySelectorAll('tr'));
+            rows.sort((a, b) => {
+                const nombreA = a.querySelector('.student-name-input')?.value || '';
+                const nombreB = b.querySelector('.student-name-input')?.value || '';
+                return getStudentSortKey(nombreA).localeCompare(getStudentSortKey(nombreB), 'es', { sensitivity: 'base' });
+            });
+
+            studentBody.innerHTML = '';
+            rows.forEach((row, index) => {
+                row.querySelector('.student-number').textContent = index + 1;
+                studentBody.appendChild(row);
+            });
+        }
+
+        function limitarSoloTexto(element) {
+            element.addEventListener('input', () => {
+                element.value = element.value.replace(/[0-9]/g, '');
+            });
+        }
+
+        function limitarSoloNumeros(element) {
+            element.addEventListener('input', () => {
+                element.value = element.value.replace(/\D/g, '');
+            });
+        }
+
+        function limitarHorario(element) {
+            element.addEventListener('input', () => {
+                element.value = element.value.replace(/[^0-9:\s\-aA]/g, '');
+            });
+        }
+
+        function aplicarValidacionesGlobales() {
+            [document.getElementById('nombreDocente'), document.getElementById('contenido_especifico'), document.getElementById('observaciones_generales')].forEach(limitarSoloTexto);
+            limitarSoloNumeros(document.getElementById('anio_lectivo'));
+            limitarSoloNumeros(document.getElementById('cantidad_horas'));
+            limitarHorario(document.getElementById('horario_clase'));
+        }
+
+        function cargarCombos() {
+            const cbEspecialidad = document.getElementById('idEspecialidad');
+            const cbCurso = document.getElementById('idCurso');
+            cbEspecialidad.innerHTML = '<option value="">-- Seleccionar Especialidad --</option>';
+            dbEspecialidades.forEach(esp => cbEspecialidad.innerHTML += `<option value="${esp.id}">${esp.nombre}</option>`);
+            cbCurso.innerHTML = '<option value="">-- Seleccionar Curso --</option>';
+            dbCursos.forEach(cur => cbCurso.innerHTML += `<option value="${cur.id}">${cur.nombre}</option>`);
+        }
+
+        function cargarAlumnosPorCurso() {
+            const cursoId = document.getElementById('idCurso').value;
+            const alumnos = dbAlumnos[cursoId] || [];
+            studentBody.innerHTML = '';
+            studentCount = 0;
+            alumnos.forEach(nombre => createStudentRow(nombre, 'Presente'));
+            if (!alumnos.length) createStudentRow('', 'Presente');
+        }
+
+        function createStudentRow(name = '', estado = 'Presente') {
+            studentCount++;
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="center-cell student-number">${studentCount}</td>
+                <td><input type="text" class="student-name-input" value="${name}" placeholder="Nombre del alumno"></td>
+                <td class="center-cell">
+                    <div class="radio-group">
+                        <label><input type="radio" name="estado_${studentCount}" value="Presente" ${estado === 'Presente' ? 'checked' : ''}> P</label>
+                        <label><input type="radio" name="estado_${studentCount}" value="Ausente" ${estado === 'Ausente' ? 'checked' : ''}> A</label>
+                    </div>
+                </td>
+                <td>
+                    <select>
+                        <option value="Sin justificativo">Sin justificativo</option>
+                        <option value="Médica">Médica</option>
+                        <option value="Familiar">Familiar</option>
+                        <option value="Otra">Otra</option>
+                    </select>
+                </td>
+                <td><input type="text" placeholder="Observación..."></td>
+                <td><input type="file"></td>
+                <td class="center-cell"><button type="button" class="danger">X</button></td>
+            `;
+            const textInputs = row.querySelectorAll('input[type="text"]');
+            textInputs.forEach(limitarSoloTexto);
+            const nameInput = row.querySelector('.student-name-input');
+            nameInput.addEventListener('input', ordenarAlumnosPorApellido);
+            nameInput.addEventListener('change', ordenarAlumnosPorApellido);
+            row.querySelector('button').addEventListener('click', () => {
+                row.remove();
+                ordenarAlumnosPorApellido();
+            });
+            studentBody.appendChild(row);
+            ordenarAlumnosPorApellido();
+        }
+
+        function validarCampos() {
+            const errores = [];
+            const docente = document.getElementById('nombreDocente').value.trim();
+            const contenido = document.getElementById('contenido_especifico').value.trim();
+            const horario = document.getElementById('horario_clase').value.trim();
+            const obligatorios = ['idEspecialidad', 'idAsignatura', 'idCurso', 'anio_lectivo', 'fecha_clase', 'horario_clase', 'cantidad_horas', 'contenido_especifico'];
+
+            obligatorios.forEach(id => {
+                const valor = document.getElementById(id).value.toString().trim();
+                if (!valor) errores.push('Completar campos obligatorios');
+            });
+
+            if (!/^[A-Za-zÁÉÍÓÚÜáéíóúüÑñ\s.,-]+$/.test(docente)) errores.push('Docente responsable (solo letras)');
+            if (!/^[A-Za-zÁÉÍÓÚÜáéíóúüÑñ\s.,-]+$/.test(contenido)) errores.push('Contenido específico (solo texto)');
+            if (!/^\d{1,2}:\d{2}\s[aA]\s\d{1,2}:\d{2}$/.test(horario)) errores.push('Horario en formato 07:00 a 09:20');
+
+            Array.from(studentBody.querySelectorAll('tr')).forEach(row => {
+                const nombre = row.querySelector('.student-name-input').value.trim();
+                if (nombre && !/^[A-Za-zÁÉÍÓÚÜáéíóúüÑñ\s.,-]+$/.test(nombre)) errores.push('Nombre de alumno (solo letras)');
+            });
+
+            if (!studentBody.querySelectorAll('tr').length) {
+                errores.push('Debe cargar al menos un alumno');
+            }
+
+            if (errores.length) {
+                alert('Corrija los siguientes datos:\n- ' + errores.join('\n- '));
+                return false;
+            }
+            return true;
+        }
+
+        function generarDatos() {
+            return {
+                especialidad: document.getElementById('idEspecialidad').value,
+                asignatura: document.getElementById('idAsignatura').value,
+                curso: document.getElementById('idCurso').value,
+                docente: document.getElementById('nombreDocente').value,
+                anio_lectivo: document.getElementById('anio_lectivo').value,
+                fecha_clase: document.getElementById('fecha_clase').value,
+                horario_clase: document.getElementById('horario_clase').value,
+                cantidad_horas: document.getElementById('cantidad_horas').value,
+                tipoClase: document.getElementById('tipoClase').value,
+                modalidad: document.getElementById('modalidad').value,
+                contenido_especifico: document.getElementById('contenido_especifico').value,
+                observaciones_generales: document.getElementById('observaciones_generales').value,
+                asistencia: Array.from(studentBody.querySelectorAll('tr')).map(row => {
+                    const nombre = row.querySelector('.student-name-input').value.trim();
+                    if (!nombre) return null;
+                    return {
+                        numero_lista: Number(row.querySelector('.student-number').textContent || 0),
+                        nombre_alumno: nombre,
+                        estado: row.querySelector('input[type="radio"]:checked') ? row.querySelector('input[type="radio"]:checked').value : 'Presente',
+                        justificativo: row.querySelector('select').value,
+                        observacion: row.querySelectorAll('input[type="text"]')[1].value,
+                        adjunto: row.querySelector('input[type="file"]').files.length > 0 ? row.querySelector('input[type="file"]').files[0].name : null
+                    };
+                }).filter(Boolean)
+            };
+        }
+
+        document.getElementById('idEspecialidad').addEventListener('change', function() {
+            const idSeleccionado = this.value;
+            const cbAsignatura = document.getElementById('idAsignatura');
+            cbAsignatura.innerHTML = '<option value="">-- Seleccionar Asignatura --</option>';
+            if (idSeleccionado && dbAsignaturas[idSeleccionado]) {
+                dbAsignaturas[idSeleccionado].forEach((asig, index) => cbAsignatura.innerHTML += `<option value="${index + 1}">${asig}</option>`);
+            }
+        });
+
+        document.getElementById('idCurso').addEventListener('change', cargarAlumnosPorCurso);
+        document.getElementById('addStudent').addEventListener('click', () => createStudentRow());
+
+        document.getElementById('saveButton').addEventListener('click', () => {
+            if (!validarCampos()) return;
+            const output = document.getElementById('resultOutput');
+            output.style.display = 'block';
+            output.textContent = JSON.stringify(generarDatos(), null, 2);
+            output.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        document.getElementById('exportButton').addEventListener('click', () => {
+            const output = document.getElementById('resultOutput');
+            output.style.display = 'block';
+            output.textContent = JSON.stringify(generarDatos(), null, 2);
+            output.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        document.getElementById('reportButton').addEventListener('click', () => {
+            const alumnos = Array.from(studentBody.querySelectorAll('tr')).map(row => {
+                const nombre = row.querySelector('.student-name-input').value.trim();
+                if (!nombre) return null;
+                const estado = row.querySelector('input[type="radio"]:checked') ? row.querySelector('input[type="radio"]:checked').value : 'Presente';
+                return { nombre, estado };
+            }).filter(Boolean);
+            const presentes = alumnos.filter(a => a.estado === 'Presente').length;
+            const ausentes = alumnos.filter(a => a.estado === 'Ausente').length;
+            const porcentaje = alumnos.length ? Math.round((ausentes / alumnos.length) * 100) : 0;
+            document.getElementById('reportBox').innerHTML = `<strong>Resumen del día:</strong><br>Alumnos cargados: ${alumnos.length}<br>Presentes: ${presentes}<br>Ausentes: ${ausentes}<br>Porcentaje de inasistencias: ${porcentaje}%`;
+        });
+
+        document.getElementById('clearButton').addEventListener('click', () => {
+            document.querySelectorAll('input[type="text"], input[type="number"], textarea').forEach(el => el.value = '');
+            document.querySelectorAll('select').forEach(el => el.selectedIndex = 0);
+            studentBody.innerHTML = '';
+            document.getElementById('resultOutput').style.display = 'none';
+            document.getElementById('reportBox').innerHTML = 'Aún no hay un resumen general disponible. Al generar el reporte, aparecerá aquí un panorama claro del día.';
+        });
+
+        cargarCombos();
+        aplicarValidacionesGlobales();
+        cargarAlumnosPorCurso();
+    </script>
+</body>
+</html>
