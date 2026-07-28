@@ -1,0 +1,239 @@
+-- Creación del esquema principal
+CREATE DATABASE IF NOT EXISTS mydbproyect;
+USE mydbproyect;
+
+-- Desactivar temporalmente las revisiones de claves foráneas para evitar errores de creación
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ------------------------------------------------------
+-- 1. Estructura y datos de la tabla `Usuario`
+-- ------------------------------------------------------
+DROP TABLE IF EXISTS `Usuario`;
+CREATE TABLE `Usuario` (
+  `idUsuario` int NOT NULL,
+  `Contrasena` varchar(45) NOT NULL,
+  `Nombre` varchar(45) NOT NULL,
+  PRIMARY KEY (`idUsuario`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+INSERT INTO `Usuario` VALUES (7,'123','coordinador'),(8,'locura','Kevin'),(9,'locura','Jhon'),(10,'locura','Marcos'),(11,'locura','Blas'),(12,'locura','Matias');
+
+-- ------------------------------------------------------
+-- 2. Estructura y datos de la tabla `Alumno`
+-- ------------------------------------------------------
+DROP TABLE IF EXISTS `Alumno`;
+CREATE TABLE `Alumno` (
+  `Curso` int NOT NULL,
+  `Especialidad` varchar(45) NOT NULL,
+  `Nombre` varchar(45) NOT NULL,
+  `idAlumno` int NOT NULL,
+  `Seccion` int NOT NULL,
+  PRIMARY KEY (`idAlumno`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+INSERT INTO `Alumno` VALUES (3,'Electromecanica','Sosa Sofia',1,1),(3,'Electromecanica','Cabreara, Tatiana',2,1),(3,'Electromecanica','Villagra, Andres',3,1),(3,'Electromecanica','Benitez, francisco',4,1),(3,'Electromecanica','Martinez, Araceli',5,1),(3,'Electromecanica','Cohene, Cesar',6,1),(2,'Quimica Industrial','Viveros, Brailan',7,1),(2,'Quimica Industrial','Rodas, Nery',8,1),(2,'Quimica Industrial','Mestral, Cecilia',9,1),(1,'Electrónica','Troche, Alejandro',12,3),(1,'Electrónica','Maestral, Cecilia',13,3),(1,'Electrónica','Rodriguez, Alejandro',14,3);
+
+-- ------------------------------------------------------
+-- 3. Estructura y datos de la tabla `Profesor`
+-- ------------------------------------------------------
+DROP TABLE IF EXISTS `Profesor`;
+CREATE TABLE `Profesor` (
+  `idProfesor` int NOT NULL,
+  `Nombre` varchar(45) NOT NULL,
+  `CI` int NOT NULL,
+  `Usuario_idUsuario` int NOT NULL,
+  PRIMARY KEY (`idProfesor`,`Nombre`,`CI`,`Usuario_idUsuario`),
+  KEY `fk_Profesor_Usuario1_idx` (`Usuario_idUsuario`),
+  CONSTRAINT `fk_Profesor_Usuario1` FOREIGN KEY (`Usuario_idUsuario`) REFERENCES `Usuario` (`idUsuario`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+INSERT INTO `Profesor` VALUES (1,'Acevedo Torres, Kevin',5804696,7),(2,'Jhon Anderson',6336600,8),(3,'Marcos Daniel',6291606,9),(4,'Blas Emanuel',7370725,10),(5,'Matias',7221574,11);
+
+-- ------------------------------------------------------
+-- 4. Estructura y datos de la tabla `Hoja_Catedra`
+-- ------------------------------------------------------
+DROP TABLE IF EXISTS `Hoja_Catedra`;
+CREATE TABLE `Hoja_Catedra` (
+  `IdCatedra` int NOT NULL,
+  `Especialidad` varchar(45) NOT NULL,
+  `Curso` int NOT NULL,
+  `Seccion` int NOT NULL,
+  `Materia` varchar(45) DEFAULT NULL,
+  `Fecha` date NOT NULL,
+  `Descripcion` varchar(45) NOT NULL,
+  `Profesor_idProfesor` int NOT NULL,
+  PRIMARY KEY (`IdCatedra`,`Profesor_idProfesor`),
+  KEY `fk_Hoja_Catedra_Profesor1_idx` (`Profesor_idProfesor`),
+  CONSTRAINT `fk_Hoja_Catedra_Profesor1` FOREIGN KEY (`Profesor_idProfesor`) REFERENCES `Profesor` (`idProfesor`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+-- ------------------------------------------------------
+-- 5. Estructura y datos de la tabla `Presencia`
+-- ------------------------------------------------------
+DROP TABLE IF EXISTS `Presencia`;
+CREATE TABLE `Presencia` (
+  `Id_alumno` int NOT NULL,
+  `id_profe` int DEFAULT NULL,
+  `Presencia` varchar(45) DEFAULT NULL,
+  KEY `fk_Presencia_1_idx` (`Id_alumno`),
+  KEY `fk_Presencia_2_idx` (`id_profe`),
+  CONSTRAINT `fk_Presencia_1` FOREIGN KEY (`Id_alumno`) REFERENCES `Alumno` (`idAlumno`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_Presencia_2` FOREIGN KEY (`id_profe`) REFERENCES `Hoja_Catedra` (`IdCatedra`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+-- ------------------------------------------------------
+-- 6. Estructura y datos de la tabla `Planificacion_Diaria`
+-- ------------------------------------------------------
+DROP TABLE IF EXISTS `Planificacion_Diaria`;
+CREATE TABLE `Planificacion_Diaria` (
+  `Curso` int NOT NULL,
+  `Seccion` int NOT NULL,
+  `idPlani` int NOT NULL,
+  `Fecha` date NOT NULL,
+  `Archivo` varchar(200) NOT NULL,
+  `Especialidad` varchar(45) NOT NULL,
+  `Profesor_idProfesor` int NOT NULL,
+  `Materia` varchar(45) DEFAULT NULL,
+  PRIMARY KEY (`idPlani`,`Profesor_idProfesor`),
+  KEY `fk_Planificacion_Diaria_Profesor1_idx` (`Profesor_idProfesor`),
+  CONSTRAINT `fk_Planificacion_Diaria_Profesor1` FOREIGN KEY (`Profesor_idProfesor`) REFERENCES `Profesor` (`idProfesor`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+INSERT INTO `Planificacion_Diaria` VALUES (1,3,1,'2025-09-15','Documentos compartidos/Blas Emanuel/Planificacion_Diaria/1-15-09-2025-907083_CURRICULAR.xlsx','Electrónica',4,' Matematica'),(2,1,2,'2025-09-15','Documentos compartidos/Blas Emanuel/Planificacion_Diaria/1-15-09-2025-347951_CURRICULAR.xlsx','Quimica Industrial',4,' Matematica'),(3,1,3,'2025-09-15','Documentos compartidos/Marcos Daniel/Planificacion_Diaria/1-15-09-2025-651988_CURRICULAR.xlsx','Electromecanica',3,' Literatura'),(2,2,4,'2025-09-15','Documentos compartidos/Jhon Anderson/Planificacion_Diaria/1-15-09-2025-683504_CURRICULAR.xlsx','Quimica Industrial',2,'Ciencias');
+
+-- ------------------------------------------------------
+-- 7. Estructura y datos de la tabla `Temas_Planificacion_Diaria`
+-- ------------------------------------------------------
+DROP TABLE IF EXISTS `Temas_Planificacion_Diaria`;
+CREATE TABLE `Temas_Planificacion_Diaria` (
+  `id` int NOT NULL,
+  `Fecha` date NOT NULL,
+  `MetodoEvaluacion` varchar(45) NOT NULL,
+  `Descripcion` varchar(45) NOT NULL,
+  `Planificacion_Diaria_idPlani` int NOT NULL,
+  KEY `fk_Temas_Palanificacion_Diaria_1_idx` (`Planificacion_Diaria_idPlani`),
+  CONSTRAINT `fk_Temas_Palanificacion_Diaria_1` FOREIGN KEY (`Planificacion_Diaria_idPlani`) REFERENCES `Planificacion_Diaria` (`idPlani`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+-- ------------------------------------------------------
+-- 8. Estructura y datos de la tabla `Plan_estudio`
+-- ------------------------------------------------------
+DROP TABLE IF EXISTS `Plan_estudio`;
+CREATE TABLE `Plan_estudio` (
+  `Especialidad` int NOT NULL,
+  `Temas_Planificacion_Diaria_idPlani` int NOT NULL,
+  PRIMARY KEY (`Temas_Planificacion_Diaria_idPlani`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+-- ------------------------------------------------------
+-- 9. Estructura y datos de la tabla `CronogramaAnual`
+-- ------------------------------------------------------
+DROP TABLE IF EXISTS `CronogramaAnual`;
+CREATE TABLE `CronogramaAnual` (
+  `Curso` int NOT NULL,
+  `Seccion` int NOT NULL,
+  `Especialidad` varchar(45) NOT NULL,
+  `idCronograma` int NOT NULL,
+  `Fecha` date NOT NULL,
+  `Profesor_idProfesor` int NOT NULL,
+  `Archivo` varchar(200) NOT NULL,
+  `Materia` varchar(45) DEFAULT NULL,
+  PRIMARY KEY (`idCronograma`,`Profesor_idProfesor`),
+  KEY `fk_CronogramaAnual_Profesor1_idx` (`Profesor_idProfesor`),
+  CONSTRAINT `fk_CronogramaAnual_Profesor1` FOREIGN KEY (`Profesor_idProfesor`) REFERENCES `Profesor` (`idProfesor`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+INSERT INTO `CronogramaAnual` VALUES (3,1,'Electromecanica',1,'2025-09-15',1,'Documentos compartidos/Acevedo Torres, Kevin/CronogramaAnual/1-15-09-2025-101982_ANUAL.xlsx','Informatica Especifica'),(1,3,'Electrónica',2,'2025-09-15',2,'Documentos compartidos/Jhon Anderson/CronogramaAnual/1-15-09-2025-716725_ANUAL.xlsx','Ciencias');
+
+-- ------------------------------------------------------
+-- 10. Estructura y datos de la tabla `Temas_CronogramaAnual`
+-- ------------------------------------------------------
+DROP TABLE IF EXISTS `Temas_CronogramaAnual`;
+CREATE TABLE `Temas_CronogramaAnual` (
+  `id` int NOT NULL,
+  `Fecha` date NOT NULL,
+  `MetodoEvaluacion` varchar(45) NOT NULL,
+  `Descripcion` varchar(45) NOT NULL,
+  `CronogramaAnual_idCronograma` int NOT NULL,
+  KEY `Foraneo_hecho` (`CronogramaAnual_idCronograma`),
+  CONSTRAINT `Foraneo_hecho` FOREIGN KEY (`CronogramaAnual_idCronograma`) REFERENCES `CronogramaAnual` (`idCronograma`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+-- ------------------------------------------------------
+-- 11. Estructura y datos de la tabla `Memo`
+-- ------------------------------------------------------
+DROP TABLE IF EXISTS `Memo`;
+CREATE TABLE `Memo` (
+  `id` int NOT NULL,
+  `Fecha` date NOT NULL,
+  `Archivo` varchar(200) NOT NULL,
+  `Profesor_idProfesor` int NOT NULL,
+  KEY `fk_Memo_Profesor1_idx` (`Profesor_idProfesor`),
+  CONSTRAINT `fk_Memo_Profesor1` FOREIGN KEY (`Profesor_idProfesor`) REFERENCES `Profesor` (`idProfesor`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+INSERT INTO `Memo` VALUES (1,'2025-09-15','Documentos compartidos/Matias/Memo/1-15-09-2025-288670_MEMO.pdf',5),(2,'2025-09-15','Documentos compartidos/Acevedo Torres, Kevin/Memo/1-15-09-2025-770639_MEMO.pdf',1),(3,'2025-09-15','Documentos compartidos/Marcos Daniel/Memo/1-15-09-2025-599614_MEMO.pdf',3);
+
+-- ------------------------------------------------------
+-- 12. Estructura y datos de la tabla `Informe`
+-- ------------------------------------------------------
+DROP TABLE IF EXISTS `Informe`;
+CREATE TABLE `Informe` (
+  `id` int NOT NULL,
+  `Fecha` date NOT NULL,
+  `Archivo` varchar(200) NOT NULL,
+  `Profesor_idProfesor` int NOT NULL,
+  KEY `fk_Informe_Profesor1_idx` (`Profesor_idProfesor`),
+  CONSTRAINT `fk_Informe_Profesor1` FOREIGN KEY (`Profesor_idProfesor`) REFERENCES `Profesor` (`idProfesor`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+INSERT INTO `Informe` VALUES (1,'2025-09-15','Documentos compartidos/Jhon Anderson/Informe/1-15-09-2025-048518_informe.pdf',2),(2,'2025-09-15','Documentos compartidos/Matias/Informe/1-15-09-2025-663012_informe.pdf',5);
+
+-- ------------------------------------------------------
+-- 13. Estructura y datos de la tabla `Evaluacion`
+-- ------------------------------------------------------
+DROP TABLE IF EXISTS `Evaluacion`;
+CREATE TABLE `Evaluacion` (
+  `idEvaluacion` int NOT NULL,
+  `Fecha` date NOT NULL,
+  `Archivo` varchar(200) NOT NULL,
+  `Profesor_idProfesor` int NOT NULL,
+  PRIMARY KEY (`idEvaluacion`,`Profesor_idProfesor`),
+  KEY `fk_Evaluacion_Profesor1_idx` (`Profesor_idProfesor`),
+  CONSTRAINT `fk_Evaluacion_Profesor1` FOREIGN KEY (`Profesor_idProfesor`) REFERENCES `Profesor` (`idProfesor`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+INSERT INTO `Evaluacion` VALUES (1,'2025-09-15','Documentos compartidos/Matias/Evaluacion/1-15-09-2025-124248_Evaluacion.pdf',5),(2,'2025-09-15','Documentos compartidos/Blas Emanuel/Evaluacion/1-15-09-2025-949800_Evaluacion.pdf',4);
+
+-- ------------------------------------------------------
+-- 14. Estructura y datos de la tabla `Autoevaluacion`
+-- ------------------------------------------------------
+DROP TABLE IF EXISTS `Autoevaluacion`;
+CREATE TABLE `Autoevaluacion` (
+  `idAutoevaluacion` int NOT NULL,
+  `Archivo` varchar(200) NOT NULL,
+  `Fecha` date NOT NULL,
+  `Profesor_idProfesor` int NOT NULL,
+  PRIMARY KEY (`idAutoevaluacion`,`Profesor_idProfesor`),
+  KEY `fk_Autoevaluacion_Profesor1_idx` (`Profesor_idProfesor`),
+  CONSTRAINT `fk_Autoevaluacion_Profesor1` FOREIGN KEY (`Profesor_idProfesor`) REFERENCES `Profesor` (`idProfesor`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+INSERT INTO `Autoevaluacion` VALUES (1,'Documentos compartidos/Matias/Autoevaluacion/1-15-09-2025-675316_Evaluacion.pdf','2025-09-15',5),(2,'Documentos compartidos/Acevedo Torres, Kevin/Autoevaluacion/1-15-09-2025-814797_Evaluacion.pdf','2025-09-15',1);
+
+-- ------------------------------------------------------
+-- 15. Estructura y datos de la tabla `Aspectos`
+-- ------------------------------------------------------
+DROP TABLE IF EXISTS `Aspectos`;
+CREATE TABLE `Aspectos` (
+  `id` int NOT NULL,
+  `Total` int NOT NULL,
+  `Logrado` varchar(45) NOT NULL,
+  `Descripcion` varchar(70) NOT NULL,
+  `Autoevaluacion_idAutoevaluacion` int NOT NULL,
+  PRIMARY KEY (`Autoevaluacion_idAutoevaluacion`),
+  CONSTRAINT `fk_Aspectos_Autoevaluacion1` FOREIGN KEY (`Autoevaluacion_idAutoevaluacion`) REFERENCES `Autoevaluacion` (`idAutoevaluacion`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+-- Reactivamos las llaves foráneas 
+SET FOREIGN_KEY_CHECKS=1;
