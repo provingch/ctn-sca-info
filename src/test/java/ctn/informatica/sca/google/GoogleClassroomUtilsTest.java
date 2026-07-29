@@ -37,6 +37,21 @@ public class GoogleClassroomUtilsTest {
     }
 
     @Test
+    public void testParseCourseKeyRequiresCurrentYearWhenExplicitlySpecified() {
+        int currentYear = AcademicPeriod.current();
+        int futureYear = currentYear + 1;
+
+        assertTrue(GoogleClassroomUtils.parseCourseKey("Matemática Primero A " + currentYear).isPresent());
+        assertFalse(GoogleClassroomUtils.parseCourseKey("Matemática Primero A " + futureYear).isPresent());
+
+        String range = "Matemática Primero A " + (currentYear - 1) + "/" + currentYear;
+        assertTrue(GoogleClassroomUtils.parseCourseKey(range).isPresent());
+
+        String mismatchedRange = "Matemática Primero A " + (currentYear - 2) + "/" + (currentYear - 1);
+        assertFalse(GoogleClassroomUtils.parseCourseKey(mismatchedRange).isPresent());
+    }
+
+    @Test
     public void testParseCourseKeyWithCompactLevelAndSection() {
         var key = GoogleClassroomUtils.parseCourseKey("Matemática 1A");
         assertTrue(key.isPresent());
