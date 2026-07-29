@@ -130,6 +130,39 @@ public class ProfileServlet extends HttpServlet {
         }
     }
 
+    private Especialidad resolveUiEspecialidad(String specialtyId, String specialtyName, String specialtyToken) {
+        List<Especialidad> especialidades = loadEspecialidades();
+        if (specialtyId != null && !specialtyId.trim().isEmpty()) {
+            try {
+                int id = Integer.parseInt(specialtyId.trim());
+                for (Especialidad especialidad : especialidades) {
+                    if (especialidad != null && especialidad.getId() == id) {
+                        return especialidad;
+                    }
+                }
+            } catch (NumberFormatException ignored) {
+                // Some selectors use the specialty name as their value.
+            }
+        }
+
+        String normalizedName = specialtyName == null || specialtyName.isBlank()
+                ? null
+                : ScaUiContext.normalizeSpecialty(specialtyName);
+        String normalizedToken = specialtyToken == null || specialtyToken.isBlank()
+                ? null
+                : ScaUiContext.normalizeSpecialty(specialtyToken);
+        for (Especialidad especialidad : especialidades) {
+            if (especialidad == null || especialidad.getNombre() == null) {
+                continue;
+            }
+            String candidate = ScaUiContext.normalizeSpecialty(especialidad.getNombre());
+            if (candidate.equals(normalizedName) || candidate.equals(normalizedToken)) {
+                return especialidad;
+            }
+        }
+        return null;
+    }
+
     private String resolveProfesorEspecialidadNombre(Profesor profesor) {
         if (profesor == null || profesor.getEspecialidadId() == null) {
             return "Sin especialidad";
@@ -427,7 +460,39 @@ public class ProfileServlet extends HttpServlet {
         User user = session == null ? null : (User) session.getAttribute("user");
 
         String action = req.getParameter("action");
-        
+
+        if ("selectUiSpecialty".equals(action)) {
+            if (user == null || session == null) {
+                writeJsonResponse(resp, false, "La sesión ya no está activa.");
+                return;
+            }
+
+            String specialtyToken = req.getParameter("specialtyToken");
+            if ("general".equals(ScaUiContext.normalizeSpecialty(specialtyToken))) {
+                session.setAttribute("scaSpecialty", "general");
+                session.removeAttribute("scaSpecialtyId");
+                session.removeAttribute("scaSpecialtyName");
+                writeJsonResponse(resp, true, "Especialidad visual restablecida.");
+                return;
+            }
+
+            Especialidad selected = resolveUiEspecialidad(
+                    req.getParameter("specialtyId"),
+                    req.getParameter("specialtyName"),
+                    specialtyToken
+            );
+            if (selected == null) {
+                writeJsonResponse(resp, false, "La especialidad seleccionada no es válida.");
+                return;
+            }
+
+            session.setAttribute("scaSpecialty", ScaUiContext.normalizeSpecialty(selected.getNombre()));
+            session.setAttribute("scaSpecialtyId", selected.getId());
+            session.setAttribute("scaSpecialtyName", selected.getNombre());
+            writeJsonResponse(resp, true, "Especialidad visual actualizada.");
+            return;
+        }
+
         if ("prepareTotp".equals(action)) {
             if (user == null) {
                 resp.sendRedirect(req.getContextPath() + "/index.jsp");
@@ -766,7 +831,7 @@ public class ProfileServlet extends HttpServlet {
             if (session != null) {
                 appendActivityLog(session, "Datos del perfil actualizados");
                 session.setAttribute("flashMessage", "Datos guardados correctamente.");
-                if (profesor != null) {
+                if (profesor != null && session.getAttribute("scaSpecialty") == null) {
                     String specialtyName = resolveProfesorEspecialidadNombre(profesor);
                     session.setAttribute("scaSpecialty", ScaUiContext.normalizeSpecialty(specialtyName));
                 }

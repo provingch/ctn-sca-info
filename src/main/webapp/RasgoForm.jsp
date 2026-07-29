@@ -49,6 +49,6 @@
       </form>
     </c:if>
   </main>
-  <script src="${pageContext.request.contextPath}/scripts/sca-theme.js?v=168"></script>
+  <script src="${pageContext.request.contextPath}/scripts/sca-theme.js?v=169"></script>
 </body>
 </html>

@@ -44,7 +44,7 @@
     const selects = document.querySelectorAll('select[name="especialidad"], #classEspecialidad');
 
     selects.forEach(function (select) {
-      const applySelection = function () {
+      const applySelection = function (persistSelection) {
         const selectedOption = select.options[select.selectedIndex];
         const specialtyName = selectedOption ? selectedOption.textContent : select.value;
         const target = select.closest('.planilla-hero, .hero-shell, .top-section')
@@ -62,11 +62,56 @@
           if (document.body) {
             document.body.setAttribute('data-specialty', activeSpecialty);
           }
+          if (persistSelection) {
+            persistUiSpecialty(select, specialtyName, activeSpecialty, isPlaceholder);
+          }
         }
       };
 
-      select.addEventListener('change', applySelection);
-      applySelection();
+      select.addEventListener('change', function () {
+        applySelection(true);
+      });
+      applySelection(false);
+    });
+  }
+
+  function resolveContextPath() {
+    const scripts = Array.from(document.scripts);
+    const themeScript = scripts.find(function (script) {
+      return script.src && script.src.indexOf('/scripts/sca-theme.js') >= 0;
+    });
+    if (!themeScript) return '';
+
+    try {
+      const scriptUrl = new URL(themeScript.src, window.location.href);
+      const marker = '/scripts/sca-theme.js';
+      const markerIndex = scriptUrl.pathname.indexOf(marker);
+      return markerIndex >= 0 ? scriptUrl.pathname.substring(0, markerIndex) : '';
+    } catch (ignored) {
+      return '';
+    }
+  }
+
+  function persistUiSpecialty(select, specialtyName, specialtyToken, isPlaceholder) {
+    if (!window.fetch || !document.body || !document.body.getAttribute('data-user-level')) return;
+
+    const body = new URLSearchParams();
+    body.set('action', 'selectUiSpecialty');
+    body.set('specialtyToken', isPlaceholder ? 'general' : specialtyToken);
+    body.set('specialtyName', isPlaceholder ? '' : String(specialtyName || '').trim());
+    body.set('specialtyId', isPlaceholder ? '' : String(select.value || '').trim());
+
+    window.fetch(resolveContextPath() + '/ProfileServlet', {
+      method: 'POST',
+      credentials: 'same-origin',
+      keepalive: true,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: body.toString()
+    }).catch(function () {
+      // The visual change remains usable even if the session cannot be updated.
     });
   }
 

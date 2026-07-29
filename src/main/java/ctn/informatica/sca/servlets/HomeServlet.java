@@ -22,6 +22,7 @@ import ctn.informatica.sca.model.Profesor;
 import ctn.informatica.sca.model.RasgoAsistencia;
 import ctn.informatica.sca.model.RasgoPlanilla;
 import ctn.informatica.sca.model.User;
+import ctn.informatica.sca.util.ScaUiContext;
 import com.google.api.services.classroom.model.Course;
 import java.io.IOException;
 import java.util.Collections;
@@ -115,6 +116,10 @@ public class HomeServlet extends HttpServlet {
         }
         if (selectedCurso == null && !cursos.isEmpty()) {
             selectedCurso = cursos.get(0);
+        }
+        if (selectedCurso != null && session != null) {
+            session.setAttribute("scaSpecialty", ScaUiContext.normalizeSpecialty(selectedCurso.getEspecialidad()));
+            session.setAttribute("scaSpecialtyName", selectedCurso.getEspecialidad());
         }
 
         if (etapaStr != null && !etapaStr.trim().isEmpty()) {

@@ -112,7 +112,7 @@
           <div class="table-header">Especialidad</div>
           <div class="cell">
             <select name="especialidad" required>
-              <option value="" selected disabled>Seleccione una especialidad</option>
+              <option value="" disabled ${empty selEspecialidad ? 'selected' : ''}>Seleccione una especialidad</option>
               <c:forEach var="e" items="${especialidades}">
                 <option value="${e.id}"
                     <c:if test="${not empty selEspecialidad and e.id == selEspecialidad.id}">selected</c:if>>
@@ -171,7 +171,7 @@
   </main>
   <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/vendor/jquery.min.js"></script>
   <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/flat-ui.js"></script>
-  <script src="${pageContext.request.contextPath}/scripts/sca-theme.js?v=168"></script>
+  <script src="${pageContext.request.contextPath}/scripts/sca-theme.js?v=169"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
