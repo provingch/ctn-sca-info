@@ -7,16 +7,16 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@page import="java.util.Optional"%>
 <%@page import="jakarta.servlet.http.Cookie"%>
-<%@page import="ctn.informatica.sia.dao.UserDao"%>
-<%@page import="ctn.informatica.sia.dao.ProfesorDao"%>
-<%@page import="ctn.informatica.sia.dao.PadreDao"%>
-<%@page import="ctn.informatica.sia.dao.EspecialidadDao"%>
-<%@page import="ctn.informatica.sia.model.User"%>
-<%@page import="ctn.informatica.sia.model.Profesor"%>
-<%@page import="ctn.informatica.sia.model.Padre"%>
-<%@page import="ctn.informatica.sia.model.Especialidad"%>
-<%@page import="ctn.informatica.sia.util.RememberMeTokenStore"%>
-<%@page import="ctn.informatica.sia.util.SiaUiContext"%>
+<%@page import="ctn.informatica.sca.dao.UserDao"%>
+<%@page import="ctn.informatica.sca.dao.ProfesorDao"%>
+<%@page import="ctn.informatica.sca.dao.PadreDao"%>
+<%@page import="ctn.informatica.sca.dao.EspecialidadDao"%>
+<%@page import="ctn.informatica.sca.model.User"%>
+<%@page import="ctn.informatica.sca.model.Profesor"%>
+<%@page import="ctn.informatica.sca.model.Padre"%>
+<%@page import="ctn.informatica.sca.model.Especialidad"%>
+<%@page import="ctn.informatica.sca.util.RememberMeTokenStore"%>
+<%@page import="ctn.informatica.sca.util.ScaUiContext"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%
@@ -26,7 +26,7 @@
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
-                if ("SIA_REMEMBER".equals(cookie.getName()) && cookie.getValue() != null && !cookie.getValue().isBlank()) {
+                if ("SCA_REMEMBER".equals(cookie.getName()) && cookie.getValue() != null && !cookie.getValue().isBlank()) {
                     String token = cookie.getValue().trim();
                     Integer userId = RememberMeTokenStore.resolveUserId(token).orElse(null);
                     if (userId != null) {
@@ -42,10 +42,10 @@
                                 if (profesor != null && profesor.getEspecialidadId() != null) {
                                     Especialidad especialidad = new EspecialidadDao().findById(profesor.getEspecialidadId());
                                     if (especialidad != null && especialidad.getNombre() != null && !especialidad.getNombre().isBlank()) {
-                                        specialty = SiaUiContext.normalizeSpecialty(especialidad.getNombre());
+                                        specialty = ScaUiContext.normalizeSpecialty(especialidad.getNombre());
                                     }
                                 }
-                                restoredSession.setAttribute("siaSpecialty", specialty);
+                                restoredSession.setAttribute("scaSpecialty", specialty);
                             } catch (Exception ignored) {
                                 // no-op
                             }
@@ -78,7 +78,7 @@
                             return;
                         }
                     }
-                    Cookie expiredCookie = new Cookie("SIA_REMEMBER", "");
+                    Cookie expiredCookie = new Cookie("SCA_REMEMBER", "");
                     expiredCookie.setMaxAge(0);
                     expiredCookie.setPath(request.getContextPath().isBlank() ? "/" : request.getContextPath());
                     expiredCookie.setHttpOnly(true);
@@ -115,14 +115,14 @@
 <html data-theme="light">
 
   <head>
-    <title>CTNPortal</title>
+    <title>SCA</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="manifest" href="${pageContext.request.contextPath}/manifest.jsp">
     <meta name="theme-color" content="#1f2d3d">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="CTN Portal">
+    <meta name="apple-mobile-web-app-title" content="SCA">
     <link rel="apple-touch-icon" href="${pageContext.request.contextPath}/icons/pwa/apple-touch-icon.png">
   <link rel="stylesheet" href="${pageContext.request.contextPath}/vendor/flat-ui/css/flat-ui.css">
   <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=236">
@@ -131,7 +131,7 @@
 
   <!-- as convention the class names must be in english -->
 
-  <body class="login-page" data-specialty="${empty sessionScope.siaSpecialty ? 'informatica' : sessionScope.siaSpecialty}" data-specialty-source="session">
+  <body class="login-page" data-specialty="${empty sessionScope.scaSpecialty ? 'informatica' : sessionScope.scaSpecialty}" data-specialty-source="session">
     <header class="navbar navbar-default navbar-fixed-top ctn-navbar" role="navigation">
     <div class="container-fluid">
       <div class="navbar-header">
@@ -218,7 +218,7 @@
     </div>
   <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/vendor/jquery.min.js"></script>
   <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/flat-ui.js"></script>
-  <script src="${pageContext.request.contextPath}/scripts/sia-theme.js?v=164"></script>
+  <script src="${pageContext.request.contextPath}/scripts/sca-theme.js?v=164"></script>
     <script src="${pageContext.request.contextPath}/scripts/cookie-consent.js?v=164"></script>
   <script>
     (function () {

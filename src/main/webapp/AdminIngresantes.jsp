@@ -4,14 +4,14 @@
 <!DOCTYPE html>
 <html data-theme="light">
 <head>
-  <title>CTNPortal - Ingresantes</title>
+  <title>SCA - Ingresantes</title>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="manifest" href="${pageContext.request.contextPath}/manifest.jsp">
   <meta name="theme-color" content="#1f2d3d">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="CTN Portal">
+  <meta name="apple-mobile-web-app-title" content="SCA">
   <link rel="apple-touch-icon" href="${pageContext.request.contextPath}/icons/pwa/apple-touch-icon.png">
   <link rel="stylesheet" href="${pageContext.request.contextPath}/vendor/flat-ui/css/flat-ui.css" />
   <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=236" />
@@ -149,7 +149,7 @@
     }
   </style>
 </head>
-<body class="admin-page" data-specialty="${empty sessionScope.siaSpecialty ? 'informatica' : sessionScope.siaSpecialty}">
+<body class="admin-page" data-specialty="${empty sessionScope.scaSpecialty ? 'informatica' : sessionScope.scaSpecialty}">
   <c:url var="backUrl" value="/AdminServlet" />
   <c:url var="profileUrl" value="/ProfileServlet" />
   <c:url var="logoutUrl" value="/LogoutServlet" />
@@ -340,7 +340,7 @@
   </main>
   <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/vendor/jquery.min.js"></script>
   <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/flat-ui.js"></script>
-  <script src="${pageContext.request.contextPath}/scripts/sia-theme.js?v=164"></script>
+  <script src="${pageContext.request.contextPath}/scripts/sca-theme.js?v=164"></script>
   <script>
     const studentSearch = document.getElementById('studentSearch');
     const courseFilter = document.getElementById('courseFilter');
