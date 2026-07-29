@@ -2977,22 +2977,22 @@ html[data-theme="dark"] .footer {
   --color-accent-mecanica-general: #1e5a38;
   --color-accent-electromecanica: #1a2ecf;
   --color-accent-electricidad: #268fba;
-  --color-bg: #eef1ff;
+  --color-bg: #f1f3fb;
   --color-bg-elevated: #ffffff;
-  --color-bg-muted: #f6f7ff;
-  --color-bg-input: #fbfcff;
-  --color-text: #18213a;
-  --color-text-muted: #77809a;
-  --color-border: #e4e8f4;
-  --color-border-strong: #cfd5e6;
-  --color-midnight: #18213a;
-  --color-success: #1f9d68;
-  --color-warning: #c87912;
-  --color-danger: #df4d5f;
+  --color-bg-muted: #f7f8fc;
+  --color-bg-input: #fcfdff;
+  --color-text: #202842;
+  --color-text-muted: #69738e;
+  --color-border: #dfe4ef;
+  --color-border-strong: #c5cedf;
+  --color-midnight: #202842;
+  --color-success: #16875d;
+  --color-warning: #b96a0b;
+  --color-danger: #d94357;
   --color-info: #5267f7;
-  --color-success-bg: #e9f8f1;
-  --color-danger-bg: #fff0f2;
-  --color-info-bg: #eef0ff;
+  --color-success-bg: #eaf8f2;
+  --color-danger-bg: #fff1f3;
+  --color-info-bg: #eef1ff;
   --radius-sm: 10px;
   --radius-md: 14px;
   --radius-lg: 20px;
@@ -3008,9 +3008,9 @@ html[data-theme="dark"] .footer {
   --space-8: 40px;
   --font-display: "Lato", "Helvetica Neue", Arial, sans-serif;
   --font-body: "Lato", "Helvetica Neue", Arial, sans-serif;
-  --shadow-sm: 0 4px 14px rgba(42, 52, 101, .06);
-  --shadow-md: 0 14px 38px rgba(42, 52, 101, .10);
-  --shadow-lg: 0 26px 70px rgba(42, 52, 101, .15);
+  --shadow-sm: 0 5px 16px rgba(50, 60, 105, .055);
+  --shadow-md: 0 16px 42px rgba(50, 60, 105, .09);
+  --shadow-lg: 0 28px 72px rgba(50, 60, 105, .14);
   --accent: #5267f7;
   --accent-contrast: #ffffff;
   --accent-soft: color-mix(in srgb, var(--accent) 12%, var(--paper));
@@ -3682,11 +3682,26 @@ table a {
 
 /* Login */
 body.login-page {
+  --accent: #5267f7;
+  --hero-tone: #5267f7;
+  --accent-contrast: #ffffff;
+  --accent-soft: color-mix(in srgb, var(--accent) 12%, var(--paper));
+  --accent-soft-strong: color-mix(in srgb, var(--accent) 22%, var(--paper));
+  --accent-deep: color-mix(in srgb, var(--accent) 82%, #121a38);
+  --focus-ring: 0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent);
+  --color-info: var(--accent);
+  --color-info-bg: var(--accent-soft);
   height: 100vh;
   height: 100dvh;
   min-height: 0;
   padding: 84px 24px 14px;
   overflow: hidden;
+}
+
+html[data-theme="dark"] body.login-page {
+  --accent: #91a0ff;
+  --hero-tone: #5267f7;
+  --accent-contrast: #10152a;
 }
 
 body.login-page .login-main {
