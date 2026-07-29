@@ -28,7 +28,7 @@
   <link rel="icon" type="image/x-icon" href="${pageContext.request.contextPath}/images/ctn-logo.svg">
 </head>
 
-<body data-user-level="${sessionScope.user.level}" data-specialty="${empty sessionScope.scaSpecialty ? 'informatica' : sessionScope.scaSpecialty}" data-specialty-source="session">
+<body data-page="evaluacion" data-user-level="${sessionScope.user.level}" data-specialty="${empty sessionScope.scaSpecialty ? 'informatica' : sessionScope.scaSpecialty}" data-specialty-source="session">
   <c:url var="profileUrl" value="/ProfileServlet" />
   <c:url var="logoutUrl" value="/LogoutServlet" />
   <header class="navbar navbar-default navbar-fixed-top ctn-navbar" role="navigation">
@@ -111,8 +111,8 @@
 
           <div class="table-header">Especialidad</div>
           <div class="cell">
-            <select name="especialidad" required>
-              <option value="" disabled ${empty selEspecialidad ? 'selected' : ''}>Seleccione una especialidad</option>
+            <select name="especialidad" data-tab-specialty-key="scaEvaluacionSpecialty" required>
+              <option value="" ${empty selEspecialidad ? 'selected' : ''}>Seleccione una especialidad</option>
               <c:forEach var="e" items="${especialidades}">
                 <option value="${e.id}"
                     <c:if test="${not empty selEspecialidad and e.id == selEspecialidad.id}">selected</c:if>>
@@ -171,7 +171,7 @@
   </main>
   <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/vendor/jquery.min.js"></script>
   <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/flat-ui.js"></script>
-  <script src="${pageContext.request.contextPath}/scripts/sca-theme.js?v=169"></script>
+  <script src="${pageContext.request.contextPath}/scripts/sca-theme.js?v=170"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
