@@ -17,8 +17,8 @@
   <link rel="icon" type="image/x-icon" href="${pageContext.request.contextPath}/images/ctn-logo.svg">
 </head>
 <body class="admin-page" data-page="admin-home" data-user-level="${sessionScope.user.level}" data-specialty="general" data-specialty-source="system">
-  <c:url var="profileUrl" value="/ProfileServlet" />
-  <c:url var="logoutUrl" value="/LogoutServlet" />
+  <c:url var="profileUrl" value="/perfil" />
+  <c:url var="logoutUrl" value="/logout" />
   <header class="navbar navbar-default navbar-fixed-top ctn-navbar" role="navigation">
     <div class="container-fluid">
       <div class="navbar-header">
@@ -28,7 +28,7 @@
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
         </button>
-        <a class="navbar-brand ctn-navbar-brand" href="${pageContext.request.contextPath}/HomeServlet" aria-label="Ir a inicio">
+        <a class="navbar-brand ctn-navbar-brand" href="${pageContext.request.contextPath}/inicio" aria-label="Ir a inicio">
           <img class="header-logo" src="${pageContext.request.contextPath}/images/ctn-logo.svg" alt="CTN">
           <span>Colegio Técnico Nacional</span>
         </a>
@@ -80,10 +80,10 @@
         <div class="admin-metric"><span>Especialidades</span><strong><c:out value="${especialidadCount}" /></strong></div>
       </div>
       <div class="admin-nav-grid">
-        <a class="admin-nav-card" href="${pageContext.request.contextPath}/AdminMateriasServlet"><strong>Materias</strong><span>Catálogo, categorías y merges</span></a>
-        <a class="admin-nav-card" href="${pageContext.request.contextPath}/AdminUsuariosServlet"><strong>Usuarios</strong><span>Altas, roles y contraseñas</span></a>
-        <a class="admin-nav-card" href="${pageContext.request.contextPath}/AdminAsignacionesServlet"><strong>Asignaciones</strong><span>Profesor, materia y curso</span></a>
-        <a class="admin-nav-card" href="${pageContext.request.contextPath}/AdminIngresantesServlet"><strong>Ingresantes</strong><span>Carga de nuevos alumnos con meta de 28</span></a>
+        <a class="admin-nav-card" href="${pageContext.request.contextPath}/admin/materias"><strong>Materias</strong><span>Catálogo, categorías y merges</span></a>
+        <a class="admin-nav-card" href="${pageContext.request.contextPath}/admin/usuarios"><strong>Usuarios</strong><span>Altas, roles y contraseñas</span></a>
+        <a class="admin-nav-card" href="${pageContext.request.contextPath}/admin/asignaciones"><strong>Asignaciones</strong><span>Profesor, materia y curso</span></a>
+        <a class="admin-nav-card" href="${pageContext.request.contextPath}/admin/ingresantes"><strong>Ingresantes</strong><span>Carga de nuevos alumnos con meta de 28</span></a>
       </div>
     </section>
     <footer class="footer">

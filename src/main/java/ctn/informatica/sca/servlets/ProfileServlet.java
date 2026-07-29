@@ -41,7 +41,7 @@ import jakarta.servlet.http.HttpSession;
  *
  * @author jonat
  */
-@WebServlet(name = "ProfileServlet", urlPatterns = {"/ProfileServlet"})
+@WebServlet(name = "ProfileServlet", urlPatterns = {"/perfil"})
 public class ProfileServlet extends HttpServlet {
 
     private String normalizeManualSubjects(String raw) {
@@ -670,7 +670,7 @@ public class ProfileServlet extends HttpServlet {
                 return;
             }
 
-            resp.sendRedirect(req.getContextPath() + "/ProfileServlet");
+            resp.sendRedirect(req.getContextPath() + "/perfil");
             return;
         }
 

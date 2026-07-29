@@ -150,9 +150,9 @@
   </style>
 </head>
 <body class="admin-page" data-page="admin-ingresantes" data-user-level="${sessionScope.user.level}" data-specialty="general" data-specialty-source="system">
-  <c:url var="backUrl" value="/AdminServlet" />
-  <c:url var="profileUrl" value="/ProfileServlet" />
-  <c:url var="logoutUrl" value="/LogoutServlet" />
+  <c:url var="backUrl" value="/admin" />
+  <c:url var="profileUrl" value="/perfil" />
+  <c:url var="logoutUrl" value="/logout" />
   <header class="navbar navbar-default navbar-fixed-top ctn-navbar" role="navigation">
     <div class="container-fluid">
       <div class="navbar-header">
@@ -241,7 +241,7 @@
         </c:forEach>
       </div>
 
-      <form class="admin-card admin-form" method="post" action="${pageContext.request.contextPath}/AdminIngresantesServlet">
+      <form class="admin-card admin-form" method="post" action="${pageContext.request.contextPath}/admin/ingresantes">
         <input type="hidden" name="action" value="crear" />
         <div class="form-group">
           <label for="nombre">Nombre</label>
@@ -295,7 +295,7 @@
         </div>
         <div class="capacity-grid" id="studentList">
           <c:forEach var="alumno" items="${alumnos}">
-            <form class="capacity-card student-card" data-name="${alumno.apellido} ${alumno.nombre}" data-course="${alumno.cursoId}" method="post" action="${pageContext.request.contextPath}/AdminIngresantesServlet">
+            <form class="capacity-card student-card" data-name="${alumno.apellido} ${alumno.nombre}" data-course="${alumno.cursoId}" method="post" action="${pageContext.request.contextPath}/admin/ingresantes">
               <input type="hidden" name="action" value="editar" />
               <input type="hidden" name="alumnoId" value="${alumno.id}" />
               <div class="capacity-v">${alumno.apellido}, ${alumno.nombre}</div>

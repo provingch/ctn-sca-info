@@ -34,7 +34,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
  * @author jonat
  */
 
-@WebServlet(name = "ExportCoursePlanillasServlet", urlPatterns = {"/ExportCoursePlanillasServlet"})
+@WebServlet(name = "ExportCoursePlanillasServlet", urlPatterns = {"/planilla/export-course"})
 public class ExportCoursePlanillasServlet extends HttpServlet {
 
     // helper: sanitize sheet name to 31 chars and remove invalid chars

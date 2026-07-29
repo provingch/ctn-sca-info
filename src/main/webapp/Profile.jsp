@@ -256,8 +256,8 @@
 </head>
 
 <body data-page="profile" data-user-level="${sessionScope.user.level}" data-specialty="${empty sessionScope.scaSpecialty ? 'informatica' : sessionScope.scaSpecialty}" data-specialty-source="session">
-  <c:url var="profileUrl" value="/ProfileServlet" />
-  <c:url var="logoutUrl" value="/LogoutServlet" />
+  <c:url var="profileUrl" value="/perfil" />
+  <c:url var="logoutUrl" value="/logout" />
   <header class="navbar navbar-default navbar-fixed-top ctn-navbar" role="navigation">
     <div class="container-fluid">
       <div class="navbar-header">
@@ -267,7 +267,7 @@
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
         </button>
-        <a class="navbar-brand ctn-navbar-brand" href="${pageContext.request.contextPath}/HomeServlet" aria-label="Ir a inicio">
+        <a class="navbar-brand ctn-navbar-brand" href="${pageContext.request.contextPath}/inicio" aria-label="Ir a inicio">
           <img class="header-logo" src="${pageContext.request.contextPath}/images/ctn-logo.svg" alt="CTN">
           <span>Colegio Técnico Nacional</span>
         </a>
@@ -329,7 +329,7 @@
       </c:if>
 
       <div class="profile-layout">
-        <c:url var="HomeUrl" value="/HomeServlet" />
+        <c:url var="HomeUrl" value="/inicio" />
         <div class="profile-shell">
           <aside class="profile-sidebar" aria-label="Navegación de perfil">
             <div class="profile-role-banner">
@@ -371,7 +371,7 @@
             <section id="perfil-panel" class="profile-panel active">
               <c:choose>
                 <c:when test="${isStaffProfile}">
-                  <form id="profileForm" action="${pageContext.request.contextPath}/ProfileServlet" method="post" data-status-target="profileSaveStatus">
+                  <form id="profileForm" action="${pageContext.request.contextPath}/perfil" method="post" data-status-target="profileSaveStatus">
                     <input type="hidden" name="action" value="saveProfile" />
                     <div class="profile-grid profile-grid-layout">
                       <div class="form-card card">
@@ -435,8 +435,8 @@
                       <c:if test="${showGoogleClassroomPanel}">
                         <div class="form-card card">
                           <div class="form-card-header">Google Classroom</div>
-                          <c:url var="googleConnectUrl" value="/GoogleLoginServlet" />
-                          <c:url var="googleDisconnectUrl" value="/GoogleDisconnectServlet" />
+                          <c:url var="googleConnectUrl" value="/google/login" />
+                          <c:url var="googleDisconnectUrl" value="/google/disconnect" />
                           <c:choose>
                             <c:when test="${not empty profesor.googleEmail or not empty profesor.gcAccessToken}">
                               <div class="classroom-status classroom-status--connected">Conectado como <strong><c:out value="${profesor.googleEmail}"/></strong></div>
@@ -458,7 +458,7 @@
                   <form id="googleDisconnectForm" action="${pageContext.request.contextPath}${googleDisconnectUrl}" method="post" style="display:none;"></form>
                 </c:when>
                 <c:when test="${isParentProfile}">
-                  <form id="profileForm" action="${pageContext.request.contextPath}/ProfileServlet" method="post" data-status-target="profileSaveStatus">
+                  <form id="profileForm" action="${pageContext.request.contextPath}/perfil" method="post" data-status-target="profileSaveStatus">
                     <input type="hidden" name="action" value="saveProfile" />
                     <div class="profile-grid profile-grid-layout">
                       <div class="form-card card">
@@ -586,7 +586,7 @@
 
             <section id="seguridad-panel" class="profile-panel" hidden>
               <div class="security-panel-grid">
-                <form id="securityForm" class="security-password-form" action="${pageContext.request.contextPath}/ProfileServlet" method="post" data-status-target="securitySaveStatus">
+                <form id="securityForm" class="security-password-form" action="${pageContext.request.contextPath}/perfil" method="post" data-status-target="securitySaveStatus">
                   <input type="hidden" name="action" value="changePassword" />
                   <div class="table-card card">
                     <div class="table-header">Cambiar Contraseña</div>
@@ -687,7 +687,7 @@
                         <div class="totp-secret"><c:out value="${pendingTotpSecret}" /></div>
                       </div>
                     </div>
-                    <form id="confirmTotpForm" action="${pageContext.request.contextPath}/ProfileServlet" method="post" style="margin:0;">
+                    <form id="confirmTotpForm" action="${pageContext.request.contextPath}/perfil" method="post" style="margin:0;">
                       <input type="hidden" name="action" value="confirmTotp" />
                       <div class="form-field">
                         <label for="totpSetupCode">Código de la app</label>
@@ -701,10 +701,10 @@
                 </div>
               </div>
 
-              <form id="prepareTotpForm" action="${pageContext.request.contextPath}/ProfileServlet" method="post" style="margin:0; display:none;">
+              <form id="prepareTotpForm" action="${pageContext.request.contextPath}/perfil" method="post" style="margin:0; display:none;">
                 <input type="hidden" name="action" value="prepareTotp" />
               </form>
-              <form id="disableTotpForm" action="${pageContext.request.contextPath}/ProfileServlet" method="post" style="margin:0; display:none;">
+              <form id="disableTotpForm" action="${pageContext.request.contextPath}/perfil" method="post" style="margin:0; display:none;">
                 <input type="hidden" name="action" value="disableTotp" />
               </form>
             </section>
@@ -1045,7 +1045,7 @@
       });
       const p256dhKey = subscription.getKey('p256dh');
       const authKey = subscription.getKey('auth');
-      const response = await fetch('${pageContext.request.contextPath}/PushSubscriptionServlet', {
+      const response = await fetch('${pageContext.request.contextPath}/push-subscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
         body: new URLSearchParams({
@@ -1075,7 +1075,7 @@
       if (subscription) {
         await subscription.unsubscribe();
       }
-      const response = await fetch('${pageContext.request.contextPath}/PushSubscriptionServlet', {
+      const response = await fetch('${pageContext.request.contextPath}/push-subscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
         body: new URLSearchParams({ action: 'unsubscribe' })
@@ -1095,7 +1095,7 @@
 
   async function sendPushTest() {
     try {
-      const response = await fetch('${pageContext.request.contextPath}/PushSubscriptionServlet', {
+      const response = await fetch('${pageContext.request.contextPath}/push-subscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
         body: new URLSearchParams({ action: 'test' })

@@ -48,7 +48,7 @@ import java.util.regex.Pattern;
  *
  * @author jonat
  */
-@WebServlet(name = "PlanillaServlet", urlPatterns = {"/PlanillaServlet"})
+@WebServlet(name = "PlanillaServlet", urlPatterns = {"/planilla"})
 public class PlanillaServlet extends HttpServlet {
 
     @Override
@@ -74,7 +74,7 @@ public class PlanillaServlet extends HttpServlet {
             }
 
             if (!hasValidPlanillaIdentifier(planillaIdStr, cursoIdStr, materiaIdStr)) {
-                response.sendRedirect(request.getContextPath() + "/HomeServlet");
+                response.sendRedirect(request.getContextPath() + "/inicio");
                 return;
             }
 
@@ -279,7 +279,7 @@ public class PlanillaServlet extends HttpServlet {
             }
 
             if (!hasValidPlanillaIdentifier(planillaIdStr, cursoIdStr, materiaIdStr)) {
-                response.sendRedirect(request.getContextPath() + "/HomeServlet");
+                response.sendRedirect(request.getContextPath() + "/inicio");
                 return;
             }
 
@@ -347,7 +347,7 @@ public class PlanillaServlet extends HttpServlet {
                     session.setAttribute("flashErrors", java.util.Collections.singletonList("Debes conectar Google Classroom antes de sincronizar manualmente."));
                     session.setAttribute("flashMessage", "La sincronización no pudo completarse.");
                 }
-                response.sendRedirect(request.getContextPath() + "/PlanillaServlet?planillaId=" + planilla.getId());
+                response.sendRedirect(request.getContextPath() + "/planilla?planillaId=" + planilla.getId());
                 return;
             }
 
@@ -416,7 +416,7 @@ public class PlanillaServlet extends HttpServlet {
             // If no grade_* parameters were present at all (no inputs), nothing to save
             if (gradesByAlumno.isEmpty()) {
                 session.setAttribute("flashMessage", "No hay calificaciones para guardar.");
-                response.sendRedirect(request.getContextPath() + "/PlanillaServlet?planillaId=" + planilla.getId());
+                response.sendRedirect(request.getContextPath() + "/planilla?planillaId=" + planilla.getId());
                 return;
             }
 
@@ -438,7 +438,7 @@ public class PlanillaServlet extends HttpServlet {
             if (gradesByRegistro.isEmpty()) {
                 session.setAttribute("flashMessage", "No se encontraron registros válidos para guardar (ver advertencias).");
                 session.setAttribute("flashErrors", paramErrors);
-                response.sendRedirect(request.getContextPath() + "/PlanillaServlet?planillaId=" + planilla.getId());
+                response.sendRedirect(request.getContextPath() + "/planilla?planillaId=" + planilla.getId());
                 return;
             }
 
@@ -458,7 +458,7 @@ public class PlanillaServlet extends HttpServlet {
             session.setAttribute("flashMessage", msg);
 
             // PRG redirect back to GET view
-            response.sendRedirect(request.getContextPath() + "/PlanillaServlet?planillaId=" + planilla.getId());
+            response.sendRedirect(request.getContextPath() + "/planilla?planillaId=" + planilla.getId());
         } catch (NumberFormatException nfe) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid numeric parameter");
         } catch (SQLException sqle) {

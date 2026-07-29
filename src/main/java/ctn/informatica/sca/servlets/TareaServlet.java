@@ -29,7 +29,7 @@ import java.util.List;
  *
  * @author jonat
  */
-@WebServlet(name = "TareaServlet", urlPatterns = {"/TareaServlet"})
+@WebServlet(name = "TareaServlet", urlPatterns = {"/tarea"})
 public class TareaServlet extends HttpServlet {
 
     @Override
@@ -262,7 +262,7 @@ public class TareaServlet extends HttpServlet {
                 }
             }
             // redirect back to Planilla view
-            response.sendRedirect(request.getContextPath() + "/PlanillaServlet?planillaId=" + planillaId + "&etapa=" + etapa);
+            response.sendRedirect(request.getContextPath() + "/planilla?planillaId=" + planillaId + "&etapa=" + etapa);
             return;
         }
 
@@ -291,7 +291,7 @@ public class TareaServlet extends HttpServlet {
         }
 
         // After successful insert, redirect back to Planilla view (include etapa/curso/materia if present)
-        String redirect = request.getContextPath() + "/PlanillaServlet?planillaId=" + planillaId;
+        String redirect = request.getContextPath() + "/planilla?planillaId=" + planillaId;
         if (etapaStr != null && !etapaStr.isEmpty()) {
             redirect += "&etapa=" + etapaStr;
         }

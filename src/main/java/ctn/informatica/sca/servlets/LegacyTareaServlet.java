@@ -30,7 +30,7 @@ import java.util.Locale;
  *
  * @author jonat
  */
-@WebServlet(name = "LegacyTareaServlet", urlPatterns = {"/LegacyTareaServlet"})
+@WebServlet(name = "LegacyTareaServlet", urlPatterns = {"/legacy/tarea"})
 public class LegacyTareaServlet extends HttpServlet {
 
     @Override
@@ -237,7 +237,7 @@ public class LegacyTareaServlet extends HttpServlet {
         }
 
         // After successful insert, redirect back to Planilla view (include etapa/curso/materia if present)
-        String redirect = request.getContextPath() + "/PlanillaServlet?planillaId=" + planillaId;
+        String redirect = request.getContextPath() + "/planilla?planillaId=" + planillaId;
         if (etapaStr != null && !etapaStr.isEmpty()) {
             redirect += "&etapa=" + etapaStr;
         }

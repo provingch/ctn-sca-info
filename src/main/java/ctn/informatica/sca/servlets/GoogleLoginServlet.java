@@ -13,7 +13,7 @@ import jakarta.servlet.http.HttpSession;
 import ctn.informatica.sca.config.AppConfig;
 import ctn.informatica.sca.model.User;
 
-@WebServlet("/GoogleLoginServlet")
+@WebServlet(name = "GoogleLoginServlet", urlPatterns = {"/google/login"})
 public class GoogleLoginServlet extends HttpServlet {
 
     private static final String SCOPES = String.join(" ",
@@ -76,6 +76,6 @@ public class GoogleLoginServlet extends HttpServlet {
         }
 
         String contextPath = req.getContextPath();
-        return req.getScheme() + "://" + req.getServerName() + ":" + req.getServerPort() + contextPath + "/GoogleCallbackServlet";
+        return req.getScheme() + "://" + req.getServerName() + ":" + req.getServerPort() + contextPath + "/google/callback";
     }
 }

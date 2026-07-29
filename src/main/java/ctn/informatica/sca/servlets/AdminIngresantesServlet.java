@@ -23,7 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-@WebServlet(name = "AdminIngresantesServlet", urlPatterns = {"/AdminIngresantesServlet"})
+@WebServlet(name = "AdminIngresantesServlet", urlPatterns = {"/admin/ingresantes"})
 public class AdminIngresantesServlet extends HttpServlet {
 
     @Override
@@ -111,7 +111,7 @@ public class AdminIngresantesServlet extends HttpServlet {
 
                 if (nombre.isBlank() || apellido.isBlank() || cursoIdParam == null || cursoIdParam.isBlank()) {
                     session.setAttribute("errors", List.of("Faltan datos obligatorios para crear el alumno."));
-                    resp.sendRedirect(req.getContextPath() + "/AdminIngresantesServlet");
+                    resp.sendRedirect(req.getContextPath() + "/admin/ingresantes");
                     return;
                 }
 
@@ -124,7 +124,7 @@ public class AdminIngresantesServlet extends HttpServlet {
                 CursoDao cursoDao = new CursoDao();
                 if (cursoDao.findById(cursoId) == null) {
                     session.setAttribute("errors", List.of("El curso seleccionado no existe."));
-                    resp.sendRedirect(req.getContextPath() + "/AdminIngresantesServlet");
+                    resp.sendRedirect(req.getContextPath() + "/admin/ingresantes");
                     return;
                 }
 
@@ -152,7 +152,7 @@ public class AdminIngresantesServlet extends HttpServlet {
 
                 if (alumnoIdParam == null || alumnoIdParam.isBlank() || nombre.isBlank() || apellido.isBlank() || cursoIdParam == null || cursoIdParam.isBlank()) {
                     session.setAttribute("errors", List.of("Faltan datos obligatorios para actualizar el alumno."));
-                    resp.sendRedirect(req.getContextPath() + "/AdminIngresantesServlet");
+                    resp.sendRedirect(req.getContextPath() + "/admin/ingresantes");
                     return;
                 }
 
@@ -166,7 +166,7 @@ public class AdminIngresantesServlet extends HttpServlet {
                 CursoDao cursoDao = new CursoDao();
                 if (cursoDao.findById(cursoId) == null) {
                     session.setAttribute("errors", List.of("El curso seleccionado no existe."));
-                    resp.sendRedirect(req.getContextPath() + "/AdminIngresantesServlet");
+                    resp.sendRedirect(req.getContextPath() + "/admin/ingresantes");
                     return;
                 }
 
@@ -186,7 +186,7 @@ public class AdminIngresantesServlet extends HttpServlet {
             session.setAttribute("errors", List.of("Error interno: " + ex.getMessage()));
         }
 
-        resp.sendRedirect(req.getContextPath() + "/AdminIngresantesServlet");
+        resp.sendRedirect(req.getContextPath() + "/admin/ingresantes");
     }
 
     private String trim(String value) {

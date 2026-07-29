@@ -18,7 +18,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 
-@WebServlet(name = "TotpServlet", urlPatterns = {"/TotpServlet"})
+@WebServlet(name = "TotpServlet", urlPatterns = {"/totp"})
 public class TotpServlet extends HttpServlet {
 
     private static final String REMEMBER_COOKIE_NAME = "SCA_REMEMBER";
@@ -128,13 +128,13 @@ public class TotpServlet extends HttpServlet {
     private String getRedirectTarget(int level) {
         switch (level) {
             case 1:
-                return "/HomeServlet";
+                return "/inicio";
             case 2:
-                return "/EvaluacionServlet";
+                return "/evaluacion";
             case 3:
-                return "/AdminServlet";
+                return "/admin";
             case 4:
-                return "/ParentServlet";
+                return "/padre";
             default:
                 return "/index.jsp";
         }

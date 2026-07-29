@@ -26,7 +26,7 @@ import jakarta.servlet.http.HttpSession;
  *
  * @author jonat
  */
-@WebServlet(name = "LoginServlet", urlPatterns = {"/LoginServlet"})
+@WebServlet(name = "LoginServlet", urlPatterns = {"/login"})
 public class LoginServlet extends HttpServlet {
 
     private static final String REMEMBER_COOKIE_NAME = "SCA_REMEMBER";
@@ -68,7 +68,7 @@ public class LoginServlet extends HttpServlet {
                     HttpSession session = request.getSession(true);
                     session.setMaxInactiveInterval(60 * 60 * 24 * 7);
                     session.setAttribute("pendingTotpLogin", new ctn.informatica.sca.model.PendingTotpLogin(user.getId(), user.getUsername(), user.getLevel(), rememberMe));
-                    response.sendRedirect(request.getContextPath() + "/TotpServlet");
+                    response.sendRedirect(request.getContextPath() + "/totp");
                     return;
                 }
 
@@ -103,16 +103,16 @@ public class LoginServlet extends HttpServlet {
                 int level = user.getLevel();
                 switch (level) {
                     case 1:
-                        response.sendRedirect(request.getContextPath() + "/HomeServlet");
+                        response.sendRedirect(request.getContextPath() + "/inicio");
                         break;
                     case 2:
-                        response.sendRedirect(request.getContextPath() + "/EvaluacionServlet");
+                        response.sendRedirect(request.getContextPath() + "/evaluacion");
                         break;
                     case 3:
-                        response.sendRedirect(request.getContextPath() + "/AdminServlet");
+                        response.sendRedirect(request.getContextPath() + "/admin");
                         break;
                     case 4:
-                        response.sendRedirect(request.getContextPath() + "/ParentServlet");
+                        response.sendRedirect(request.getContextPath() + "/padre");
                         break;
                     default:
                         request.setAttribute("loginError", true);
