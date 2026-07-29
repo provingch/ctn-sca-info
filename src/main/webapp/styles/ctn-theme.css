@@ -3016,6 +3016,7 @@ html[data-theme="dark"] .footer {
   --accent-soft: color-mix(in srgb, var(--accent) 12%, var(--paper));
   --accent-soft-strong: color-mix(in srgb, var(--accent) 22%, var(--paper));
   --accent-deep: color-mix(in srgb, var(--accent) 82%, #121a38);
+  --hero-tone: #7a1f2b;
   --hero-contrast: #ffffff;
   --focus-ring: 0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent);
   --paper: var(--color-bg-elevated);
@@ -3059,34 +3060,42 @@ html[data-theme="dark"] {
 /* Canonical specialty palette. These rules work on the page and nested scopes. */
 [data-specialty="informatica"] {
   --accent: #5267f7;
+  --hero-tone: #7a1f2b;
   --accent-contrast: #ffffff;
 }
 [data-specialty="construcciones"] {
   --accent: #b78a35;
+  --hero-tone: #a48743;
   --accent-contrast: #ffffff;
 }
 [data-specialty="quimica"] {
   --accent: #718096;
+  --hero-tone: #7f899a;
   --accent-contrast: #ffffff;
 }
 [data-specialty="electronica"] {
   --accent: #7c63dc;
+  --hero-tone: #6b7280;
   --accent-contrast: #ffffff;
 }
 [data-specialty="mecanica-automotriz"] {
   --accent: #253b7d;
+  --hero-tone: #233c75;
   --accent-contrast: #ffffff;
 }
 [data-specialty="mecanica-general"] {
   --accent: #267253;
+  --hero-tone: #1e5a38;
   --accent-contrast: #ffffff;
 }
 [data-specialty="electromecanica"] {
   --accent: #3452d1;
+  --hero-tone: #1a2ecf;
   --accent-contrast: #ffffff;
 }
 [data-specialty="electricidad"] {
   --accent: #1688b8;
+  --hero-tone: #268fba;
   --accent-contrast: #ffffff;
 }
 
@@ -3302,11 +3311,11 @@ a { transition: color .16s ease, background-color .16s ease, border-color .16s e
     radial-gradient(circle at 92% 14%, rgba(255, 255, 255, .26) 0 64px, transparent 65px),
     linear-gradient(
       135deg,
-      color-mix(in srgb, var(--accent) 88%, #ffffff),
-      color-mix(in srgb, var(--accent) 72%, #ffffff)
+      color-mix(in srgb, var(--hero-tone) 82%, #ffffff),
+      color-mix(in srgb, var(--hero-tone) 68%, #ffffff)
     ) !important;
-  color: var(--accent-contrast);
-  box-shadow: 0 18px 42px color-mix(in srgb, var(--accent) 24%, transparent);
+  color: var(--hero-contrast);
+  box-shadow: 0 18px 42px color-mix(in srgb, var(--hero-tone) 24%, transparent);
 }
 
 .planilla-hero::after,
@@ -3330,8 +3339,8 @@ html[data-theme="dark"] .hero-shell {
     radial-gradient(circle at 92% 14%, rgba(255, 255, 255, .13) 0 64px, transparent 65px),
     linear-gradient(
       135deg,
-      color-mix(in srgb, var(--accent) 55%, #111528),
-      color-mix(in srgb, var(--accent) 70%, #111528)
+      color-mix(in srgb, var(--hero-tone) 62%, #111528),
+      color-mix(in srgb, var(--hero-tone) 76%, #111528)
     ) !important;
 }
 
