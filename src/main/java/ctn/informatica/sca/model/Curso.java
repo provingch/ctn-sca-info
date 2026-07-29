@@ -27,7 +27,7 @@ public class Curso {
     }
 
     public int getCurso() {
-        return period - promocion + 3;
+        return period - promocion + 2;
     }
 
     public int getNivel() {
@@ -35,7 +35,7 @@ public class Curso {
     }
     
     public String getCursoOrdinal() {
-        int cursoInt = period - promocion + 3;
+        int cursoInt = period - promocion + 2;
         return switch (cursoInt) {
             case 1 -> "1º";
             case 2 -> "2º";
