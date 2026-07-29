@@ -3810,6 +3810,41 @@ body.login-page .footer {
   background: var(--paper);
 }
 
+.profile-panel .table-card,
+.profile-panel .form-card {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.profile-panel .table-header:not(.buttons-row),
+.profile-panel .form-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0;
+  box-sizing: border-box;
+  line-height: 1.35;
+  text-align: left;
+}
+
+.profile-panel .table-header:not(.buttons-row)::before,
+.profile-panel .form-card-header::before {
+  flex: 0 0 8px;
+  width: 8px;
+  min-width: 8px;
+  height: 8px;
+  min-height: 8px;
+  margin: 0;
+  border-radius: 50%;
+  aspect-ratio: 1;
+}
+
 .security-status,
 .totp-setup-box,
 .profile-access-card {
