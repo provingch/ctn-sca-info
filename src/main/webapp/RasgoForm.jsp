@@ -8,9 +8,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SCA - Formulario de asistencia</title>
   <link rel="stylesheet" href="${pageContext.request.contextPath}/vendor/flat-ui/css/flat-ui.css">
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=236">
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=237">
 </head>
-<body>
+<body data-user-level="${sessionScope.user.level}" data-specialty="${empty sessionScope.scaSpecialty ? 'informatica' : sessionScope.scaSpecialty}">
   <main class="container" style="padding-top:40px;max-width:760px;">
     <h1>Formulario de asistencia</h1>
     <p>Complete su respuesta de presencia o ausencia para la clase.</p>
@@ -49,5 +49,6 @@
       </form>
     </c:if>
   </main>
+  <script src="${pageContext.request.contextPath}/scripts/sca-theme.js?v=165"></script>
 </body>
 </html>
