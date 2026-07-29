@@ -28,7 +28,7 @@
   <meta name="apple-mobile-web-app-title" content="SCA">
   <link rel="apple-touch-icon" href="${pageContext.request.contextPath}/icons/pwa/apple-touch-icon.png">
   <link rel="stylesheet" href="${pageContext.request.contextPath}/vendor/flat-ui/css/flat-ui.css">
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=252">
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=254">
   <link rel="icon" type="image/x-icon" href="${pageContext.request.contextPath}/images/ctn-logo.svg">
 </head>
 
@@ -102,28 +102,34 @@
             <p class="planilla-subtitle">Gestiona inicio de clase y planillas de puntaje conectadas a tus cursos.</p>
           </div>
         </div>
-        <c:if test="${viewMode eq 'planillas'}">
-          <div class="menu-container">
-            <form id="cursoSelectionForm" action="${pageContext.request.contextPath}/inicio" method="get" class="curso-selection-form">
-              <label for="selEspecialidad" style="font-weight:600;margin-right:0.5rem;">Especialidad</label>
-              <select id="selEspecialidad" name="especialidad"></select>
-              <label for="selCursoNivel" style="font-weight:600;margin-right:0.5rem;">Curso</label>
-              <select id="selCursoNivel" name="promocion" disabled></select>
-              <label for="selSeccion" style="font-weight:600;margin-right:0.5rem;">Sección</label>
-              <select id="selSeccion" name="seccion" disabled></select>
-              <input type="hidden" name="cursoId" id="cursoIdHidden" value="${empty selCurso ? '' : selCurso.id}" />
-              <input type="hidden" name="etapa" value="${selEtapa}" />
-              <input type="hidden" name="view" value="planillas" />
-            </form>
-          </div>
-        </c:if>
+        <div class="menu-container">
+          <form id="cursoSelectionForm" action="${pageContext.request.contextPath}/inicio" method="get" class="curso-selection-form">
+            <label for="selEspecialidad" style="font-weight:600;margin-right:0.5rem;">Especialidad</label>
+            <select id="selEspecialidad" name="especialidad"></select>
+            <label for="selCursoNivel" style="font-weight:600;margin-right:0.5rem;">Curso</label>
+            <select id="selCursoNivel" name="promocion" disabled></select>
+            <label for="selSeccion" style="font-weight:600;margin-right:0.5rem;">Sección</label>
+            <select id="selSeccion" name="seccion" disabled></select>
+            <input type="hidden" name="cursoId" id="cursoIdHidden" value="${empty selCurso ? '' : selCurso.id}" />
+            <input type="hidden" name="etapa" value="${selEtapa}" />
+            <input type="hidden" name="view" value="${viewMode}" />
+          </form>
+        </div>
       </div>
 
       <c:set var="planillaCount" value="${fn:length(planillas)}" />
+      <c:url var="planillasTabAction" value="/inicio" />
+      <c:if test="${planillaCount == 1}">
+        <c:url var="planillasTabAction" value="/planilla" />
+      </c:if>
       <form class="home-view-tabs" action="${pageContext.request.contextPath}/inicio" method="get" role="tablist" aria-label="Vista principal del curso">
         <input type="hidden" name="cursoId" id="tabCursoId" value="${empty selCurso ? '' : selCurso.id}" />
         <input type="hidden" name="etapa" value="${selEtapa}" />
-        <button type="submit" name="view" value="clase" class="home-view-tab" role="tab" aria-selected="false" aria-controls="clase-panel">
+        <c:if test="${planillaCount == 1}">
+          <input type="hidden" name="planillaId" value="${planillas[0].id}" />
+          <input type="hidden" name="materiaId" value="${planillas[0].materiaId}" />
+        </c:if>
+        <button type="submit" name="view" value="clase-inicio" class="home-view-tab${viewMode eq 'clase-inicio' ? ' is-active' : ''}" role="tab" aria-selected="${viewMode eq 'clase-inicio'}" aria-controls="clase-panel">
           <span class="home-view-tab__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" focusable="false"><path d="M7 4.8v14.4L19 12 7 4.8Z"/></svg>
           </span>
@@ -137,7 +143,7 @@
             </small>
           </span>
         </button>
-        <button type="submit" name="view" value="planillas" class="home-view-tab is-active" role="tab" aria-selected="true" aria-controls="planillas-panel">
+        <button type="submit" name="view" value="planillas" formaction="${planillasTabAction}" class="home-view-tab${viewMode eq 'planillas' ? ' is-active' : ''}" role="tab" aria-selected="${viewMode eq 'planillas'}" aria-controls="planillas-panel">
           <span class="home-view-tab__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" focusable="false"><path d="M9 5h2.1a3 3 0 0 1 5.8 0H19a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2.1A3 3 0 0 1 9 5Zm3-1.5A1.5 1.5 0 1 0 12 6a1.5 1.5 0 0 0 0-3ZM7 10v2h2v-2H7Zm4 0v2h6v-2h-6Zm-4 5v2h2v-2H7Zm4 0v2h6v-2h-6Z"/></svg>
           </span>
@@ -154,10 +160,33 @@
         </button>
       </form>
 
-      <c:if test="${viewMode eq 'planillas'}">
       <div id="filterPendingState" class="empty-state empty-state-card home-filter-pending" role="status" hidden>
-        No hay planillas para este filtro.
+        Completá Especialidad, Curso y Sección para continuar.
       </div>
+
+      <c:if test="${viewMode eq 'clase-inicio'}">
+        <section id="clase-panel" class="quick-class-card home-tab-panel" role="tabpanel">
+          <div class="quick-class-card__heading">
+            <h2>
+              Nueva sesión
+              <c:if test="${not empty selCurso}">
+                — ${selCurso.especialidad} ${selCurso.curso}° ${selCurso.seccion}
+              </c:if>
+            </h2>
+            <p><c:out value="${nowFormatted}" /></p>
+          </div>
+          <form class="quick-class-form" action="${pageContext.request.contextPath}/inicio" method="get">
+            <input type="hidden" name="view" value="clase" />
+            <input type="hidden" name="cursoId" id="quickClassCursoId" value="${empty selCurso ? '' : selCurso.id}" />
+            <input type="hidden" name="etapa" value="${selEtapa}" />
+            <label for="quickClassActivity">Actividad realizada</label>
+            <input id="quickClassActivity" name="tema" type="text" maxlength="150" placeholder="Ej.: práctica de subredes" required />
+            <button type="submit" class="btn btn-primary">Iniciar clase ↗</button>
+          </form>
+        </section>
+      </c:if>
+
+      <c:if test="${viewMode eq 'planillas'}">
       <div id="filterResults">
 
       <c:if test="${not googleClassroomConnected and empty planillas}">
@@ -182,9 +211,9 @@
         </c:if>
 
         <c:choose>
-          <c:when test="${planillaCount > 0}">
+          <c:when test="${planillaCount > 1}">
             <div class="section-block home-tab-panel" id="planillas-panel" role="tabpanel">
-              <div class="section-heading">Planillas del curso</div>
+              <div class="section-heading course-planillas-heading">Planillas del curso</div>
               <div class="planilla-grid course-planilla-grid" data-planilla-count="${planillaCount}">
                 <c:forEach var="planilla" items="${planillas}">
                   <a class="planilla-card-link" href="${pageContext.request.contextPath}/planilla?planillaId=${planilla.id}&cursoId=${selCurso.id}&materiaId=${planilla.materiaId}&etapa=${selEtapa}">
@@ -203,11 +232,11 @@
               </div>
             </div>
           </c:when>
-          <c:otherwise>
+          <c:when test="${planillaCount == 0}">
             <div class="empty-state empty-state-card home-tab-panel" id="planillas-panel" role="tabpanel">
               No hay planillas para este filtro.
             </div>
-          </c:otherwise>
+          </c:when>
         </c:choose>
       </div>
 
@@ -351,15 +380,20 @@ const CURSOS = [
 
   function updateFilterPreview(especialidad, nivel, seccion, cursoId) {
     const tabCursoId = document.getElementById('tabCursoId');
+    const quickClassCursoId = document.getElementById('quickClassCursoId');
     const classSubtitle = document.getElementById('classTabSubtitle');
     const planillasSubtitle = document.getElementById('planillasTabSubtitle');
     const filterResults = document.getElementById('filterResults');
+    const quickClassPanel = document.getElementById('clase-panel');
     const pendingState = document.getElementById('filterPendingState');
     const tabButtons = document.querySelectorAll('.home-view-tab');
     const hasCompleteFilter = Boolean(cursoId);
 
     if (tabCursoId) {
       tabCursoId.value = cursoId || '';
+    }
+    if (quickClassCursoId) {
+      quickClassCursoId.value = cursoId || '';
     }
     tabButtons.forEach(button => {
       button.disabled = !hasCompleteFilter;
@@ -371,6 +405,9 @@ const CURSOS = [
       }
       if (filterResults) {
         filterResults.hidden = false;
+      }
+      if (quickClassPanel) {
+        quickClassPanel.hidden = false;
       }
       if (pendingState) {
         pendingState.hidden = true;
@@ -386,6 +423,9 @@ const CURSOS = [
     }
     if (filterResults) {
       filterResults.hidden = true;
+    }
+    if (quickClassPanel) {
+      quickClassPanel.hidden = true;
     }
     if (pendingState) {
       pendingState.hidden = false;

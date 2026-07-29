@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-title" content="SCA">
   <link rel="apple-touch-icon" href="${pageContext.request.contextPath}/icons/pwa/apple-touch-icon.png">
   <link rel="stylesheet" href="${pageContext.request.contextPath}/vendor/flat-ui/css/flat-ui.css">
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=252">
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=254">
   <link rel="icon" type="image/x-icon" href="${pageContext.request.contextPath}/images/ctn-logo.svg">
   <style>
     .inicio-shell {
@@ -190,10 +190,18 @@
       </div>
 
       <c:set var="planillaCount" value="${fn:length(planillas)}" />
+      <c:url var="planillasTabAction" value="/inicio" />
+      <c:if test="${planillaCount == 1}">
+        <c:url var="planillasTabAction" value="/planilla" />
+      </c:if>
       <form class="home-view-tabs" action="${pageContext.request.contextPath}/inicio" method="get" role="tablist" aria-label="Vista principal del curso">
         <input type="hidden" name="cursoId" id="tabCursoId" value="${empty selCurso ? '' : selCurso.id}" />
         <input type="hidden" name="etapa" value="${selEtapa}" />
-        <button type="submit" name="view" value="clase" class="home-view-tab is-active" role="tab" aria-selected="true" aria-controls="clase-panel">
+        <c:if test="${planillaCount == 1}">
+          <input type="hidden" name="planillaId" value="${planillas[0].id}" />
+          <input type="hidden" name="materiaId" value="${planillas[0].materiaId}" />
+        </c:if>
+        <button type="submit" name="view" value="clase-inicio" class="home-view-tab is-active" role="tab" aria-selected="true" aria-controls="clase-panel">
           <span class="home-view-tab__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" focusable="false"><path d="M7 4.8v14.4L19 12 7 4.8Z"/></svg>
           </span>
@@ -207,7 +215,7 @@
             </small>
           </span>
         </button>
-        <button type="submit" name="view" value="planillas" class="home-view-tab" role="tab" aria-selected="false" aria-controls="planillas-panel">
+        <button type="submit" name="view" value="planillas" formaction="${planillasTabAction}" class="home-view-tab" role="tab" aria-selected="false" aria-controls="planillas-panel">
           <span class="home-view-tab__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" focusable="false"><path d="M9 5h2.1a3 3 0 0 1 5.8 0H19a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2.1A3 3 0 0 1 9 5Zm3-1.5A1.5 1.5 0 1 0 12 6a1.5 1.5 0 0 0 0-3ZM7 10v2h2v-2H7Zm4 0v2h6v-2h-6Zm-4 5v2h2v-2H7Zm4 0v2h6v-2h-6Z"/></svg>
           </span>
@@ -312,7 +320,7 @@
             </div>
             <div>
               <label for="temaRasgo" style="font-weight:600;">Contenido específico desarrollado</label>
-              <input id="temaRasgo" name="tema" class="form-control" maxlength="150" placeholder="Ej.: Integrales definidas y aplicaciones" required />
+              <input id="temaRasgo" name="tema" class="form-control" maxlength="150" value="${fn:escapeXml(param.tema)}" placeholder="Ej.: Integrales definidas y aplicaciones" required />
             </div>
             <div style="grid-column: 1 / -1;">
               <label for="observacionesGenerales" style="font-weight:600;">Observaciones generales</label>
