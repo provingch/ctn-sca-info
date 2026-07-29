@@ -19,9 +19,10 @@
   <link rel="icon" type="image/x-icon" href="${pageContext.request.contextPath}/images/ctn-logo.svg">
   <style>
     .inicio-shell {
-      background: linear-gradient(165deg, rgba(17, 77, 160, 0.08) 0%, rgba(255, 255, 255, 1) 36%);
+      background: linear-gradient(165deg, color-mix(in srgb, var(--accent) 14%, transparent) 0%, rgba(255, 255, 255, 1) 38%);
       border-radius: 16px;
-      border: 1px solid var(--color-border);
+      border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--color-border));
+      box-shadow: 0 12px 28px color-mix(in srgb, var(--accent) 16%, transparent);
       padding: 16px;
       margin-bottom: 12px;
     }
@@ -48,9 +49,9 @@
       gap: 6px;
       border-radius: 999px;
       padding: 6px 10px;
-      border: 1px solid var(--color-border);
-      background: var(--color-surface-alt);
-      color: var(--color-text);
+      border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--color-border));
+      background: color-mix(in srgb, var(--accent) 18%, var(--color-surface-alt));
+      color: color-mix(in srgb, var(--color-text) 80%, var(--accent));
       font-weight: 600;
       font-size: 0.85rem;
     }
@@ -60,11 +61,12 @@
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     }
     .class-card {
-      border: 1px solid var(--color-border);
+      border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--color-border));
+      border-top: 4px solid color-mix(in srgb, var(--accent) 76%, var(--color-border));
       border-radius: 14px;
       padding: 14px;
       background: var(--color-surface);
-      box-shadow: 0 8px 24px rgba(18, 38, 63, 0.05);
+      box-shadow: 0 8px 24px color-mix(in srgb, var(--accent) 12%, transparent);
     }
     .class-card-head {
       display: flex;
@@ -81,10 +83,16 @@
       display: inline-flex;
       gap: 8px;
       align-items: center;
-      border: 1px solid var(--color-border);
+      border: 1px solid color-mix(in srgb, var(--accent) 36%, var(--color-border));
+      background: color-mix(in srgb, var(--accent) 12%, var(--color-surface));
       border-radius: 999px;
       padding: 5px 10px;
       margin-right: 8px;
+    }
+
+    #reportBox {
+      border-color: color-mix(in srgb, var(--accent) 34%, var(--color-border));
+      background: color-mix(in srgb, var(--accent) 10%, var(--color-surface));
     }
     .section-tools {
       display: flex;
@@ -399,6 +407,33 @@
   ];
 
   (function () {
+    function normalizeSpecialty(value) {
+      const normalized = String(value || '')
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[_\s]+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+
+      const aliases = {
+        'construcciones-civiles': 'construcciones',
+        'construccion-civil': 'construcciones',
+        'quimica-industrial': 'quimica',
+        'mecanica-automotriz': 'mecanica-automotriz',
+        'mecanica-general': 'mecanica-general'
+      };
+
+      return aliases[normalized] || normalized || 'informatica';
+    }
+
+    function applySpecialtyToPage(specialtyName) {
+      const normalized = normalizeSpecialty(specialtyName);
+      document.body.setAttribute('data-specialty', normalized);
+    }
+
     function uniqueEspecialidades() {
       const seen = new Set();
       const out = [];
@@ -471,6 +506,9 @@
         const esp = selEspecialidad.value;
         const nivel = parseInt(selCursoNivel.value, 10);
         const seccion = selSeccion.value;
+        if (esp) {
+          applySpecialtyToPage(esp);
+        }
         cursoIdHidden.value = '';
         if (!esp || !nivel || !seccion) {
           if (config.onCursoChanged) {
@@ -499,6 +537,7 @@
           return;
         }
         selEspecialidad.value = found.especialidad;
+        applySpecialtyToPage(found.especialidad);
         populateCursoNivel();
         selCursoNivel.value = found.nivel;
         populateSeccion();
@@ -522,6 +561,9 @@
     }
 
     const selectedCursoId = ${empty selCurso ? 0 : selCurso.id};
+    if (!selectedCursoId) {
+      applySpecialtyToPage(document.body.getAttribute('data-specialty'));
+    }
     setupCursoSelector({
       especialidadId: 'classEspecialidad',
       cursoId: 'classCursoNivel',
