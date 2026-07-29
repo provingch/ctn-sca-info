@@ -50,6 +50,7 @@ public class HomeServlet extends HttpServlet {
 
     private static final String VIEW_RASGOS = "rasgos";
     private static final String VIEW_CLASE = "clase";
+    private static final String VIEW_CLASE_START = "clase-inicio";
     private static final String VIEW_RASGOS_FORM = "rasgos-form";
     private static final String VIEW_PLANILLAS = "planillas";
     private static final String ACTION_CREATE_RASGO = "create-rasgo-planilla";
@@ -522,13 +523,16 @@ public class HomeServlet extends HttpServlet {
         if (VIEW_CLASE.equals(requestedView)) {
             return VIEW_CLASE;
         }
+        if (VIEW_CLASE_START.equals(requestedView)) {
+            return VIEW_CLASE_START;
+        }
         if (VIEW_PLANILLAS.equals(requestedView)) {
             return VIEW_PLANILLAS;
         }
         if (VIEW_RASGOS.equals(requestedView)) {
             return VIEW_CLASE;
         }
-        return VIEW_PLANILLAS;
+        return VIEW_CLASE_START;
     }
 
     private int parseIntOrDefault(String rawValue, int defaultValue) {
