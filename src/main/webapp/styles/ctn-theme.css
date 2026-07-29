@@ -3300,7 +3300,11 @@ a { transition: color .16s ease, background-color .16s ease, border-color .16s e
   border-radius: var(--radius-lg);
   background:
     radial-gradient(circle at 92% 14%, rgba(255, 255, 255, .26) 0 64px, transparent 65px),
-    linear-gradient(135deg, var(--accent-deep), var(--accent)) !important;
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent) 88%, #ffffff),
+      color-mix(in srgb, var(--accent) 72%, #ffffff)
+    ) !important;
   color: var(--accent-contrast);
   box-shadow: 0 18px 42px color-mix(in srgb, var(--accent) 24%, transparent);
 }
@@ -3317,6 +3321,18 @@ a { transition: color .16s ease, background-color .16s ease, border-color .16s e
   border-radius: 42% 58% 54% 46%;
   transform: rotate(20deg);
   pointer-events: none;
+}
+
+html[data-theme="dark"] .planilla-hero,
+html[data-theme="dark"] .top-section,
+html[data-theme="dark"] .hero-shell {
+  background:
+    radial-gradient(circle at 92% 14%, rgba(255, 255, 255, .13) 0 64px, transparent 65px),
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent) 55%, #111528),
+      color-mix(in srgb, var(--accent) 70%, #111528)
+    ) !important;
 }
 
 .planilla-hero h1,
@@ -3364,6 +3380,16 @@ a { transition: color .16s ease, background-color .16s ease, border-color .16s e
 
 .badge .dot {
   background: currentColor;
+}
+
+.inicio-shell {
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--accent) 24%, var(--paper)), var(--paper) 72%) !important;
+}
+
+html[data-theme="dark"] .inicio-shell {
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--accent) 18%, var(--paper)), var(--paper) 76%) !important;
 }
 
 .section-heading,
