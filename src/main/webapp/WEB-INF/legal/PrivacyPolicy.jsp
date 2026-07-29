@@ -51,7 +51,7 @@
     <p>Si tenés dudas sobre esta política o sobre tus datos, dirigite al equipo de administración del colegio para obtener más información.</p>
 
     <div class="page-links">
-      <a href="${pageContext.request.contextPath}/TermsOfService.jsp">Ver Condiciones del Servicio</a>
+      <a href="${pageContext.request.contextPath}/terminos">Ver Condiciones del Servicio</a>
     </div>
   </main>
   <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/vendor/jquery.min.js"></script>
