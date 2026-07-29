@@ -7,6 +7,7 @@ package ctn.informatica.sca.servlets;
 import ctn.informatica.sca.dao.EspecialidadDao;
 import ctn.informatica.sca.model.Especialidad;
 import ctn.informatica.sca.model.User;
+import ctn.informatica.sca.util.ScaUiContext;
 import java.io.IOException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -32,16 +33,40 @@ public class EvaluacionServlet extends HttpServlet {
             List<Especialidad> especialidades = new EspecialidadDao().findAll();
             request.setAttribute("especialidades", especialidades);
 
-            // optionally, set selected especialidad if a request param was provided
+            Especialidad selected = null;
             String selId = request.getParameter("especialidad");
-            if (selId != null && !selId.isEmpty()) {
+            if ((selId == null || selId.isBlank()) && session != null) {
+                Object savedId = session.getAttribute("scaSpecialtyId");
+                if (savedId != null) {
+                    selId = String.valueOf(savedId);
+                }
+            }
+            if (selId != null && !selId.isBlank()) {
                 try {
                     int id = Integer.parseInt(selId);
-                    Especialidad sel = new EspecialidadDao().findById(id);
-                    if (sel != null) {
-                        request.setAttribute("selEspecialidad", sel);
-                    }
+                    selected = new EspecialidadDao().findById(id);
                 } catch (NumberFormatException ignored) {
+                }
+            }
+            if (selected == null && session != null) {
+                Object savedToken = session.getAttribute("scaSpecialty");
+                if (savedToken != null && !"general".equals(savedToken)) {
+                    String normalizedSaved = ScaUiContext.normalizeSpecialty(String.valueOf(savedToken));
+                    for (Especialidad especialidad : especialidades) {
+                        if (especialidad != null
+                                && normalizedSaved.equals(ScaUiContext.normalizeSpecialty(especialidad.getNombre()))) {
+                            selected = especialidad;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (selected != null) {
+                request.setAttribute("selEspecialidad", selected);
+                if (session != null) {
+                    session.setAttribute("scaSpecialty", ScaUiContext.normalizeSpecialty(selected.getNombre()));
+                    session.setAttribute("scaSpecialtyId", selected.getId());
+                    session.setAttribute("scaSpecialtyName", selected.getNombre());
                 }
             }
 

@@ -79,7 +79,7 @@
 
   <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/vendor/jquery.min.js"></script>
   <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/flat-ui.js"></script>
-  <script src="${pageContext.request.contextPath}/scripts/sca-theme.js?v=168"></script>
+  <script src="${pageContext.request.contextPath}/scripts/sca-theme.js?v=169"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
