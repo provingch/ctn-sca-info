@@ -11,6 +11,8 @@ public class RasgoAsistencia {
     private String alumnoApellido;
     private String alumnoEmail;
     private String estado;
+    private String faltaCodigo;
+    private String faltaObservacion;
     private Timestamp respondedAt;
     private String tema;
 
@@ -70,6 +72,22 @@ public class RasgoAsistencia {
         this.estado = estado;
     }
 
+    public String getFaltaCodigo() {
+        return faltaCodigo;
+    }
+
+    public void setFaltaCodigo(String faltaCodigo) {
+        this.faltaCodigo = faltaCodigo;
+    }
+
+    public String getFaltaObservacion() {
+        return faltaObservacion;
+    }
+
+    public void setFaltaObservacion(String faltaObservacion) {
+        this.faltaObservacion = faltaObservacion;
+    }
+
     public Timestamp getRespondedAt() {
         return respondedAt;
     }
@@ -96,5 +114,26 @@ public class RasgoAsistencia {
             return apellido;
         }
         return nombre + " " + apellido;
+    }
+
+    public String getCodigoDescripcion() {
+        if (faltaCodigo == null) {
+            return "Sin código asignado";
+        }
+        return switch (faltaCodigo) {
+            case "V" -> "Presencia en clase";
+            case "P" -> "Presencia en clase";
+            case "A" -> "Ausencia en clase";
+            case "N1" -> "Llegada tardía a clase";
+            case "N2" -> "Sale del aula sin autorización";
+            case "N3" -> "No realiza la tarea asignada en clase";
+            case "N4" -> "No dispone de los materiales necesarios";
+            case "N5" -> "No presenta las tareas asignadas para la casa";
+            case "N6" -> "Utiliza vocabulario indebido en clase";
+            case "N7" -> "Charla mucho en clase";
+            case "N8" -> "No utiliza el uniforme establecido";
+            case "N9" -> "Ausente en clase, presente en la Institución";
+            default -> "Sin código asignado";
+        };
     }
 }

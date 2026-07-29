@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS rasgo_asistencia (
 	alumno_apellido VARCHAR(80) NOT NULL,
 	alumno_email VARCHAR(255) NOT NULL,
 	estado ENUM('pendiente', 'presente', 'ausente') NOT NULL DEFAULT 'pendiente',
+	falta_codigo VARCHAR(4) NULL,
+	falta_observacion VARCHAR(500) NULL,
 	responded_at TIMESTAMP NULL,
 	UNIQUE KEY uq_rasgo_asistencia_alumno (planilla_rasgo_id, alumno_id),
 	KEY idx_rasgo_asistencia_alumno (alumno_id),

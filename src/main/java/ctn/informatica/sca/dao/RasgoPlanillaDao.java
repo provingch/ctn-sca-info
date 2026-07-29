@@ -26,7 +26,7 @@ public class RasgoPlanillaDao extends conexion {
         }
 
         String insertPlanillaSql = "INSERT INTO planilla_rasgo (curso_id, profesor_id, tema, fecha_clase) VALUES (?, ?, ?, CURRENT_DATE())";
-        String insertAsistenciaSql = "INSERT INTO rasgo_asistencia (planilla_rasgo_id, alumno_id, alumno_nombre, alumno_apellido, alumno_email, estado) VALUES (?, ?, ?, ?, ?, ?)";
+        String insertAsistenciaSql = "INSERT INTO rasgo_asistencia (planilla_rasgo_id, alumno_id, alumno_nombre, alumno_apellido, alumno_email, estado, falta_codigo, falta_observacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection con = getCon()) {
             boolean originalAutoCommit = con.getAutoCommit();
@@ -56,6 +56,8 @@ public class RasgoPlanillaDao extends conexion {
                         ps.setString(4, alumno.getApellido());
                         ps.setString(5, alumno.getGoogleEmail());
                         ps.setString(6, estado);
+                        ps.setString(7, null);
+                        ps.setString(8, null);
                         ps.addBatch();
                     }
                     ps.executeBatch();
@@ -121,7 +123,7 @@ public class RasgoPlanillaDao extends conexion {
 
     public RasgoAsistencia findAsistenciaById(int asistenciaId) throws SQLException {
         String sql = "SELECT ra.id, ra.planilla_rasgo_id, ra.alumno_id, ra.alumno_nombre, ra.alumno_apellido, ra.alumno_email, "
-                + "ra.estado, ra.responded_at, pr.tema "
+                + "ra.estado, ra.falta_codigo, ra.falta_observacion, ra.responded_at, pr.tema "
                 + "FROM rasgo_asistencia ra "
                 + "INNER JOIN planilla_rasgo pr ON pr.id = ra.planilla_rasgo_id "
                 + "WHERE ra.id = ?";
@@ -136,11 +138,35 @@ public class RasgoPlanillaDao extends conexion {
         return null;
     }
 
+    public RasgoAsistencia findAsistenciaByPlanillaAndAlumno(int planillaRasgoId, int alumnoId) throws SQLException {
+        String sql = "SELECT ra.id, ra.planilla_rasgo_id, ra.alumno_id, ra.alumno_nombre, ra.alumno_apellido, ra.alumno_email, "
+                + "ra.estado, ra.falta_codigo, ra.falta_observacion, ra.responded_at, pr.tema "
+                + "FROM rasgo_asistencia ra "
+                + "INNER JOIN planilla_rasgo pr ON pr.id = ra.planilla_rasgo_id "
+                + "WHERE ra.planilla_rasgo_id = ? AND ra.alumno_id = ?";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, planillaRasgoId);
+            ps.setInt(2, alumnoId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return fromAsistenciaResultSet(rs);
+                }
+            }
+        }
+        return null;
+    }
+
     public boolean registrarRespuesta(int asistenciaId, String estado) throws SQLException {
-        String sql = "UPDATE rasgo_asistencia SET estado = ?, responded_at = CURRENT_TIMESTAMP WHERE id = ?";
+        return registrarRespuesta(asistenciaId, estado, null, null);
+    }
+
+    public boolean registrarRespuesta(int asistenciaId, String estado, String faltaCodigo, String faltaObservacion) throws SQLException {
+        String sql = "UPDATE rasgo_asistencia SET estado = ?, falta_codigo = ?, falta_observacion = ?, responded_at = CURRENT_TIMESTAMP WHERE id = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, estado);
-            ps.setInt(2, asistenciaId);
+            ps.setString(2, faltaCodigo == null || faltaCodigo.isBlank() ? null : faltaCodigo.trim().toUpperCase());
+            ps.setString(3, faltaObservacion == null ? null : faltaObservacion.trim());
+            ps.setInt(4, asistenciaId);
             return ps.executeUpdate() == 1;
         }
     }
@@ -166,6 +192,8 @@ public class RasgoPlanillaDao extends conexion {
         asistencia.setAlumnoApellido(rs.getString("alumno_apellido"));
         asistencia.setAlumnoEmail(rs.getString("alumno_email"));
         asistencia.setEstado(rs.getString("estado"));
+        asistencia.setFaltaCodigo(rs.getString("falta_codigo"));
+        asistencia.setFaltaObservacion(rs.getString("falta_observacion"));
         asistencia.setRespondedAt(rs.getTimestamp("responded_at"));
         asistencia.setTema(rs.getString("tema"));
         return asistencia;

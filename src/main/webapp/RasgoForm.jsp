@@ -13,7 +13,7 @@
 <body data-user-level="${sessionScope.user.level}" data-specialty="${empty sessionScope.scaSpecialty ? 'informatica' : sessionScope.scaSpecialty}" data-specialty-source="session">
   <main class="container" style="padding-top:40px;max-width:760px;">
     <h1>Formulario de asistencia</h1>
-    <p>Complete su respuesta de presencia o ausencia para la clase.</p>
+    <p>La presencia o ausencia se define desde la lista inicial de clase. Aquí solo se agregan los rasgos conductuales (códigos N) y una anotación opcional.</p>
 
     <c:if test="${rasgoSubmitSuccess}">
       <div class="alert alert-success">Tu asistencia fue registrada correctamente.</div>
@@ -31,20 +31,31 @@
 
       <form action="${pageContext.request.contextPath}/inicio" method="post" class="panel panel-default">
         <div class="panel-body">
-          <input type="hidden" name="action" value="submit-rasgo-asistencia" />
+          <input type="hidden" name="action" value="assign-falta-codigo" />
           <input type="hidden" name="asistenciaId" value="${rasgoAsistencia.id}" />
 
           <div class="form-group">
-            <label style="display:block;">Selecciona tu estado</label>
-            <label style="margin-right:16px;">
-              <input type="radio" name="estado" value="presente" checked> Presente
-            </label>
-            <label>
-              <input type="radio" name="estado" value="ausente"> Ausente
-            </label>
+            <label for="faltaCodigo">Código conductual (solo N)</label>
+            <select id="faltaCodigo" name="faltaCodigo" class="form-control">
+              <option value="">Sin código conductual</option>
+              <option value="N1">N1 — Llegada tardía</option>
+              <option value="N2">N2 — Sale del aula sin autorización</option>
+              <option value="N3">N3 — No realiza la tarea asignada en clase</option>
+              <option value="N4">N4 — No dispone de los materiales necesarios</option>
+              <option value="N5">N5 — No presenta las tareas asignadas para la casa</option>
+              <option value="N6">N6 — Utiliza vocabulario indebido en clase</option>
+              <option value="N7">N7 — Charla mucho en clase</option>
+              <option value="N8">N8 — No utiliza el uniforme establecido</option>
+              <option value="N9">N9 — Ausente en clase, presente en la Institución</option>
+            </select>
           </div>
 
-          <button type="submit" class="btn btn-primary">Enviar respuesta</button>
+          <div class="form-group">
+            <label for="faltaObservacion">Anotación breve (opcional)</label>
+            <textarea id="faltaObservacion" name="faltaObservacion" class="form-control" rows="3" placeholder="Detalle breve de la situación..."></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Guardar rasgo conductual</button>
         </div>
       </form>
     </c:if>

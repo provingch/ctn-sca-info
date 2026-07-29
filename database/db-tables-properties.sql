@@ -205,6 +205,44 @@ CREATE TABLE push_subscription (
   UNIQUE KEY uq_push_endpoint (endpoint(255))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+CREATE TABLE planilla_rasgo (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    curso_id INT NOT NULL,
+    profesor_id INT NOT NULL,
+    tema VARCHAR(150) NOT NULL,
+    fecha_clase DATE NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_planilla_rasgo_curso (curso_id),
+    KEY idx_planilla_rasgo_profesor (profesor_id),
+    CONSTRAINT fk_planilla_rasgo_curso FOREIGN KEY (curso_id)
+        REFERENCES curso (id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_planilla_rasgo_profesor FOREIGN KEY (profesor_id)
+        REFERENCES profesor (id)
+        ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE rasgo_asistencia (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    planilla_rasgo_id INT NOT NULL,
+    alumno_id INT NOT NULL,
+    alumno_nombre VARCHAR(80) NOT NULL,
+    alumno_apellido VARCHAR(80) NOT NULL,
+    alumno_email VARCHAR(255) NOT NULL,
+    estado ENUM('pendiente', 'presente', 'ausente') NOT NULL DEFAULT 'pendiente',
+    falta_codigo VARCHAR(4) NULL,
+    falta_observacion VARCHAR(500) NULL,
+    responded_at TIMESTAMP NULL,
+    UNIQUE KEY uq_rasgo_asistencia_alumno (planilla_rasgo_id, alumno_id),
+    KEY idx_rasgo_asistencia_alumno (alumno_id),
+    CONSTRAINT fk_rasgo_asistencia_planilla FOREIGN KEY (planilla_rasgo_id)
+        REFERENCES planilla_rasgo (id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_rasgo_asistencia_alumno FOREIGN KEY (alumno_id)
+        REFERENCES alumno (id)
+        ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 CREATE TABLE alumno_padre (
   `alumno_id` int(11) NOT NULL,
   `padre_id` int(11) NOT NULL,

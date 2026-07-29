@@ -343,7 +343,11 @@
                 <c:forEach var="alumno" items="${rasgoAlumnosValidos}" varStatus="loop">
                   <tr>
                     <td>${loop.index + 1}</td>
-                    <td><c:out value="${alumno.apellido}" />, <c:out value="${alumno.nombre}" /></td>
+                    <td>
+                      <a href="${pageContext.request.contextPath}/inicio?view=rasgos-form&rasgoPlanillaId=${empty rasgoPlanillaSeleccionada ? '' : rasgoPlanillaSeleccionada.id}&alumnoId=${alumno.id}" style="font-weight:600; color:var(--accent);">
+                        <c:out value="${alumno.apellido}" />, <c:out value="${alumno.nombre}" />
+                      </a>
+                    </td>
                     <td>
                       <label style="margin:0;display:flex;align-items:center;gap:6px;font-weight:500;">
                         <input type="checkbox" name="alumnosAusentes" value="${alumno.id}" class="ausente-checkbox" />
@@ -410,6 +414,8 @@
                 <tr>
                   <th>Alumno</th>
                   <th>Estado</th>
+                  <th>Código</th>
+                  <th>Observación</th>
                 </tr>
               </thead>
               <tbody>
@@ -417,6 +423,8 @@
                   <tr>
                     <td><c:out value="${asistencia.alumnoNombreCompleto}" /></td>
                     <td><c:out value="${asistencia.estado}" /></td>
+                    <td><c:out value="${empty asistencia.faltaCodigo ? '—' : asistencia.faltaCodigo}" /></td>
+                    <td><c:out value="${empty asistencia.faltaObservacion ? '—' : asistencia.faltaObservacion}" /></td>
                   </tr>
                 </c:forEach>
               </tbody>

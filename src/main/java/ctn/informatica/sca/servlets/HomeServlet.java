@@ -54,11 +54,16 @@ public class HomeServlet extends HttpServlet {
     private static final String VIEW_PLANILLAS = "planillas";
     private static final String ACTION_CREATE_RASGO = "create-rasgo-planilla";
     private static final String ACTION_SUBMIT_RASGO = "submit-rasgo-asistencia";
+    private static final String ACTION_ASSIGN_FALTA = "assign-falta-codigo";
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         String action = safeTrim(request.getParameter("action"));
+        if (ACTION_ASSIGN_FALTA.equals(action)) {
+            assignFaltaCodigo(request, response);
+            return;
+        }
         if (ACTION_SUBMIT_RASGO.equals(action)) {
             submitRasgoAsistencia(request, response);
             return;
@@ -403,15 +408,51 @@ public class HomeServlet extends HttpServlet {
         }
     }
 
-    private void renderRasgoFormView(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+    private void assignFaltaCodigo(HttpServletRequest request, HttpServletResponse response)
+            throws IOException, ServletException {
         int asistenciaId = parseIntOrDefault(request.getParameter("asistenciaId"), 0);
+        String faltaCodigo = safeTrim(request.getParameter("faltaCodigo"));
+        String faltaObservacion = safeTrim(request.getParameter("faltaObservacion"));
         if (asistenciaId <= 0) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "asistenciaId requerido");
+            response.sendRedirect(request.getContextPath() + "/inicio?view=" + VIEW_RASGOS_FORM + "&error=id");
             return;
         }
         try {
-            RasgoAsistencia asistencia = new RasgoPlanillaDao().findAsistenciaById(asistenciaId);
+            RasgoPlanillaDao dao = new RasgoPlanillaDao();
+            RasgoAsistencia asistencia = dao.findAsistenciaById(asistenciaId);
+            if (asistencia == null) {
+                response.sendError(HttpServletResponse.SC_NOT_FOUND, "Asistencia no encontrada");
+                return;
+            }
+            String estado = asistencia.getEstado();
+            if (estado == null || estado.isBlank()) {
+                estado = "pendiente";
+            }
+            if (faltaCodigo.isBlank()) {
+                dao.registrarRespuesta(asistenciaId, estado);
+            } else {
+                dao.registrarRespuesta(asistenciaId, estado, faltaCodigo, faltaObservacion);
+            }
+            response.sendRedirect(request.getContextPath() + "/inicio?view=" + VIEW_RASGOS_FORM
+                    + "&asistenciaId=" + asistenciaId + "&ok=1");
+        } catch (SQLException ex) {
+            log("Error assigning falt code", ex);
+            throw new ServletException("No se pudo asignar el código de falta", ex);
+        }
+    }
+
+    private void renderRasgoFormView(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        int asistenciaId = parseIntOrDefault(request.getParameter("asistenciaId"), 0);
+        int planillaRasgoId = parseIntOrDefault(request.getParameter("rasgoPlanillaId"), 0);
+        int alumnoId = parseIntOrDefault(request.getParameter("alumnoId"), 0);
+        try {
+            RasgoAsistencia asistencia = null;
+            if (asistenciaId > 0) {
+                asistencia = new RasgoPlanillaDao().findAsistenciaById(asistenciaId);
+            } else if (planillaRasgoId > 0 && alumnoId > 0) {
+                asistencia = new RasgoPlanillaDao().findAsistenciaByPlanillaAndAlumno(planillaRasgoId, alumnoId);
+            }
             if (asistencia == null) {
                 response.sendError(HttpServletResponse.SC_NOT_FOUND, "Formulario no encontrado");
                 return;
