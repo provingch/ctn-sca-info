@@ -4060,10 +4060,6 @@ body.legal-page {
   text-decoration: underline;
 }
 
-.legal-back-link--footer {
-  margin-top: 24px;
-}
-
 @media (max-width: 900px) {
   body {
     padding-inline: 16px;

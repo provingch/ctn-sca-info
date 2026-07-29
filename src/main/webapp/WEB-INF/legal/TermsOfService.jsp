@@ -81,7 +81,6 @@
     <div class="legal-page-links">
       <a href="${pageContext.request.contextPath}/privacidad">Ver Política de Privacidad</a>
     </div>
-    <a class="legal-back-link legal-back-link--footer" href="${homeUrl}">← Volver al inicio</a>
   </main>
   <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/vendor/jquery.min.js"></script>
   <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/flat-ui.js"></script>
