@@ -6,6 +6,7 @@ package ctn.informatica.sca.servlets;
 
 import ctn.informatica.sca.dao.AlumnoDao;
 import ctn.informatica.sca.dao.CursoDao;
+import ctn.informatica.sca.dao.InstrumentoDao;
 import ctn.informatica.sca.dao.MateriaDao;
 import ctn.informatica.sca.dao.PlanillaDao;
 import ctn.informatica.sca.dao.ProfesorDao;
@@ -14,6 +15,7 @@ import ctn.informatica.sca.google.GoogleClassroomService;
 import ctn.informatica.sca.google.GoogleClassroomUtils;
 import ctn.informatica.sca.model.Alumno;
 import ctn.informatica.sca.model.Curso;
+import ctn.informatica.sca.model.Instrumento;
 import ctn.informatica.sca.model.Materia;
 import ctn.informatica.sca.model.Planilla;
 import ctn.informatica.sca.model.Profesor;
@@ -35,7 +37,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Pattern;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -45,11 +48,11 @@ import java.util.regex.Pattern;
 public class HomeServlet extends HttpServlet {
 
     private static final String VIEW_RASGOS = "rasgos";
+    private static final String VIEW_CLASE = "clase";
     private static final String VIEW_RASGOS_FORM = "rasgos-form";
     private static final String VIEW_PLANILLAS = "planillas";
     private static final String ACTION_CREATE_RASGO = "create-rasgo-planilla";
     private static final String ACTION_SUBMIT_RASGO = "submit-rasgo-asistencia";
-    private static final Pattern SIMPLE_EMAIL_PATTERN = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -274,7 +277,7 @@ public class HomeServlet extends HttpServlet {
             request.setAttribute("matchedPlanillaIds", Collections.emptySet());
             request.setAttribute("materiasDetectadas", materiasDetectadas);
 
-            if (VIEW_RASGOS.equals(viewMode)) {
+            if (VIEW_CLASE.equals(viewMode)) {
                 loadRasgosViewData(request, user, selectedCurso);
             }
         } else {
@@ -288,6 +291,7 @@ public class HomeServlet extends HttpServlet {
             request.setAttribute("rasgoAsistencias", Collections.emptyList());
             request.setAttribute("rasgoAlumnosInvalidos", Collections.emptyList());
             request.setAttribute("rasgoAlumnosValidos", Collections.emptyList());
+            request.setAttribute("instrumentos", Collections.emptyList());
         }
 
         request.setAttribute("cursos", cursos);
@@ -332,31 +336,38 @@ public class HomeServlet extends HttpServlet {
         }
 
         int cursoId = parseIntOrDefault(request.getParameter("cursoId"), 0);
+        if (cursoId <= 0) {
+            cursoId = parseIntOrDefault(request.getParameter("formCursoId"), 0);
+        }
         int etapa = parseIntOrDefault(request.getParameter("etapa"), 1);
+        int instrumentoId = parseIntOrDefault(request.getParameter("instrumentoId"), 0);
+        String turno = safeTrim(request.getParameter("turno"));
         String tema = safeTrim(request.getParameter("tema"));
         if (cursoId <= 0 || tema.isEmpty()) {
-            response.sendRedirect(request.getContextPath() + "/HomeServlet?view=" + VIEW_RASGOS
+            response.sendRedirect(request.getContextPath() + "/HomeServlet?view=" + VIEW_CLASE
                     + "&cursoId=" + cursoId + "&etapa=" + etapa + "&rasgoError=tema");
             return;
         }
 
         try {
             List<Alumno> alumnos = new AlumnoDao().findByCursoId(cursoId);
+            Set<Integer> ausentes = parseIntegerSet(request.getParameterValues("alumnosAusentes"));
             List<Alumno> elegibles = new ArrayList<>();
             for (Alumno alumno : alumnos) {
-                if (isCompleteName(alumno) && isValidEmail(alumno.getGoogleEmail())) {
+                if (isCompleteName(alumno)) {
                     elegibles.add(alumno);
                 }
             }
 
             if (elegibles.isEmpty()) {
-                response.sendRedirect(request.getContextPath() + "/HomeServlet?view=" + VIEW_RASGOS
+                response.sendRedirect(request.getContextPath() + "/HomeServlet?view=" + VIEW_CLASE
                         + "&cursoId=" + cursoId + "&etapa=" + etapa + "&rasgoError=sin-alumnos");
                 return;
             }
 
-            int planillaRasgoId = new RasgoPlanillaDao().crearPlanillaRasgo(cursoId, user.getId(), tema, elegibles);
-            response.sendRedirect(request.getContextPath() + "/HomeServlet?view=" + VIEW_RASGOS
+            String temaPersistido = composeTemaConContexto(instrumentoId, turno, tema);
+            int planillaRasgoId = new RasgoPlanillaDao().crearPlanillaRasgo(cursoId, user.getId(), temaPersistido, elegibles, ausentes);
+            response.sendRedirect(request.getContextPath() + "/HomeServlet?view=" + VIEW_CLASE
                     + "&cursoId=" + cursoId + "&etapa=" + etapa + "&rasgoPlanillaId=" + planillaRasgoId + "&rasgoOk=created");
         } catch (SQLException ex) {
             log("Error creating rasgo planilla", ex);
@@ -411,7 +422,7 @@ public class HomeServlet extends HttpServlet {
             List<Alumno> alumnosValidos = new ArrayList<>();
             List<Alumno> alumnosInvalidos = new ArrayList<>();
             for (Alumno alumno : alumnosCurso) {
-                if (isCompleteName(alumno) && isValidEmail(alumno.getGoogleEmail())) {
+                if (isCompleteName(alumno)) {
                     alumnosValidos.add(alumno);
                 } else {
                     alumnosInvalidos.add(alumno);
@@ -444,6 +455,7 @@ public class HomeServlet extends HttpServlet {
             request.setAttribute("rasgoAsistencias", asistencias);
             request.setAttribute("rasgoAlumnosValidos", alumnosValidos);
             request.setAttribute("rasgoAlumnosInvalidos", alumnosInvalidos);
+            request.setAttribute("instrumentos", loadInstrumentos());
         } catch (SQLException ex) {
             log("Error loading rasgos data", ex);
             request.setAttribute("rasgoPlanillas", Collections.emptyList());
@@ -451,19 +463,23 @@ public class HomeServlet extends HttpServlet {
             request.setAttribute("rasgoAsistencias", Collections.emptyList());
             request.setAttribute("rasgoAlumnosValidos", Collections.emptyList());
             request.setAttribute("rasgoAlumnosInvalidos", Collections.emptyList());
+            request.setAttribute("instrumentos", Collections.emptyList());
             request.setAttribute("rasgoErrorMessage", "No se pudo cargar la planilla de rasgos");
         }
     }
 
     private String resolveViewMode(String requestedView, User user) {
+        if (VIEW_CLASE.equals(requestedView)) {
+            return VIEW_CLASE;
+        }
         if (VIEW_PLANILLAS.equals(requestedView)) {
             return VIEW_PLANILLAS;
         }
         if (VIEW_RASGOS.equals(requestedView)) {
-            return VIEW_RASGOS;
+            return VIEW_CLASE;
         }
         if (user != null && user.getLevel() == 1) {
-            return VIEW_RASGOS;
+            return VIEW_CLASE;
         }
         return VIEW_PLANILLAS;
     }
@@ -483,13 +499,6 @@ public class HomeServlet extends HttpServlet {
         return value == null ? "" : value.trim();
     }
 
-    private boolean isValidEmail(String email) {
-        if (email == null) {
-            return false;
-        }
-        return SIMPLE_EMAIL_PATTERN.matcher(email.trim()).matches();
-    }
-
     private boolean isCompleteName(Alumno alumno) {
         if (alumno == null) {
             return false;
@@ -497,6 +506,41 @@ public class HomeServlet extends HttpServlet {
         String nombre = safeTrim(alumno.getNombre());
         String apellido = safeTrim(alumno.getApellido());
         return !nombre.isEmpty() && !apellido.isEmpty() && nombre.length() >= 2 && apellido.length() >= 2;
+    }
+
+    private List<Instrumento> loadInstrumentos() {
+        try {
+            return new InstrumentoDao().findAll();
+        } catch (SQLException ex) {
+            log("Error loading instrumentos", ex);
+            return Collections.emptyList();
+        }
+    }
+
+    private Set<Integer> parseIntegerSet(String[] rawValues) {
+        if (rawValues == null || rawValues.length == 0) {
+            return Collections.emptySet();
+        }
+        return java.util.Arrays.stream(rawValues)
+                .map(v -> parseIntOrDefault(v, 0))
+                .filter(v -> v > 0)
+                .collect(Collectors.toSet());
+    }
+
+    private String composeTemaConContexto(int instrumentoId, String turno, String temaBase) {
+        StringBuilder contexto = new StringBuilder();
+        if (turno != null && !turno.isBlank()) {
+            contexto.append("[Turno: ").append(turno).append("] ");
+        }
+        if (instrumentoId <= 0) {
+            return contexto.append(temaBase).toString();
+        }
+        for (Instrumento instrumento : loadInstrumentos()) {
+            if (instrumento.getId() == instrumentoId) {
+                return contexto.append("[").append(instrumento.getNombre()).append("] ").append(temaBase).toString();
+            }
+        }
+        return contexto.append(temaBase).toString();
     }
 
 }
