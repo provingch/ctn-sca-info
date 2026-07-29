@@ -29,8 +29,8 @@
 </head>
 
 <body data-page="evaluacion" data-user-level="${sessionScope.user.level}" data-specialty="${empty sessionScope.scaSpecialty ? 'informatica' : sessionScope.scaSpecialty}" data-specialty-source="session">
-  <c:url var="profileUrl" value="/ProfileServlet" />
-  <c:url var="logoutUrl" value="/LogoutServlet" />
+  <c:url var="profileUrl" value="/perfil" />
+  <c:url var="logoutUrl" value="/logout" />
   <header class="navbar navbar-default navbar-fixed-top ctn-navbar" role="navigation">
     <div class="container-fluid">
       <div class="navbar-header">
@@ -40,7 +40,7 @@
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
         </button>
-        <a class="navbar-brand ctn-navbar-brand" href="${pageContext.request.contextPath}/HomeServlet" aria-label="Ir a inicio">
+        <a class="navbar-brand ctn-navbar-brand" href="${pageContext.request.contextPath}/inicio" aria-label="Ir a inicio">
           <img class="header-logo" src="${pageContext.request.contextPath}/images/ctn-logo.svg" alt="CTN">
           <span>Colegio Técnico Nacional</span>
         </a>
@@ -96,7 +96,7 @@
         </div>
       </div>
 
-      <c:url var="exportUrl" value="/ExportCoursePlanillasServlet" />
+      <c:url var="exportUrl" value="/planilla/export-course" />
 
       <form id="exportCourseForm" action="${exportUrl}" method="get">
         <div class="table-card card tareas-grid">
@@ -149,7 +149,7 @@
           </div>
 
           <div class="buttons-row table-header">
-            <c:url var="backUrl" value="/PlanillaServlet">
+            <c:url var="backUrl" value="/planilla">
               <c:param name="planillaId" value="${planillaId}" />
             </c:url>
 

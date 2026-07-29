@@ -28,8 +28,8 @@
 </head>
 
 <body data-user-level="${sessionScope.user.level}" data-specialty="${not empty cursoSpecialty ? cursoSpecialty : (empty sessionScope.scaSpecialty ? 'informatica' : sessionScope.scaSpecialty)}" data-specialty-source="session">
-  <c:url var="profileUrl" value="/ProfileServlet" />
-  <c:url var="logoutUrl" value="/LogoutServlet" />
+  <c:url var="profileUrl" value="/perfil" />
+  <c:url var="logoutUrl" value="/logout" />
   <header class="navbar navbar-default navbar-fixed-top ctn-navbar" role="navigation">
     <div class="container-fluid">
       <div class="navbar-header">
@@ -39,7 +39,7 @@
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
         </button>
-        <a class="navbar-brand ctn-navbar-brand" href="${pageContext.request.contextPath}/HomeServlet" aria-label="Ir a inicio">
+        <a class="navbar-brand ctn-navbar-brand" href="${pageContext.request.contextPath}/inicio" aria-label="Ir a inicio">
           <img class="header-logo" src="${pageContext.request.contextPath}/images/ctn-logo.svg" alt="CTN">
           <span>Colegio Técnico Nacional</span>
         </a>
@@ -97,7 +97,7 @@
           </div>
           <div class="planilla-hero__actions">
             <%-- create a URL back to HomeServlet preserving cursoId + etapa --%>
-            <c:url var="backUrl" value="/HomeServlet">
+            <c:url var="backUrl" value="/inicio">
                 <c:param name="cursoId" value="${cursoId}" />
                 <c:param name="etapa" value="${etapa}" />
             </c:url>
@@ -107,7 +107,7 @@
                 <img class="back-icon" src="${pageContext.request.contextPath}/icons/back-arrow.svg" alt="Atrás">
                 Atrás
               </a>
-              <c:url var="downloadUrl" value="/ExportPlanillaServlet">
+              <c:url var="downloadUrl" value="/planilla/export">
                   <c:param name="planillaId" value="${planilla.id}" />
               </c:url>
 
@@ -136,7 +136,7 @@
         </div>
       </div>
 
-      <form method="post" action="${pageContext.request.contextPath}/PlanillaServlet">
+      <form method="post" action="${pageContext.request.contextPath}/planilla">
         <input type="hidden" name="cursoId" value="${cursoId}" />
         <input type="hidden" name="materiaId" value="${materiaId}" />
         <input type="hidden" name="etapa" value="${etapa}" />
@@ -197,7 +197,7 @@
                       </c:when>
                       <c:otherwise>
                         <a class="tarea-edit-link"
-                           href="${pageContext.request.contextPath}/TareaServlet?planillaId=${planilla.id}&amp;tareaId=${t.id}&amp;etapa=${etapa}"
+                           href="${pageContext.request.contextPath}/tarea?planillaId=${planilla.id}&amp;tareaId=${t.id}&amp;etapa=${etapa}"
                            title="${t.tooltipText}">
                           <c:out value="${t.titulo}" />
                         </a>

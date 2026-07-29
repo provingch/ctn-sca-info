@@ -17,7 +17,7 @@
     <link rel="icon" type="image/x-icon" href="${pageContext.request.contextPath}/images/ctn-logo.svg" />
 </head>
 <body class="admin-page" data-page="admin-asignaciones" data-user-level="${sessionScope.user.level}" data-specialty="general" data-specialty-source="system">
-<c:url var="profileUrl" value="/ProfileServlet" />
+<c:url var="profileUrl" value="/perfil" />
 <header class="navbar navbar-default navbar-fixed-top ctn-navbar" role="navigation">
     <div class="container-fluid">
         <div class="navbar-header">
@@ -27,7 +27,7 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand ctn-navbar-brand" href="${pageContext.request.contextPath}/AdminServlet" aria-label="Ir a inicio">
+            <a class="navbar-brand ctn-navbar-brand" href="${pageContext.request.contextPath}/admin" aria-label="Ir a inicio">
                 <img class="header-logo" src="${pageContext.request.contextPath}/images/ctn-logo.svg" alt="CTN">
                 <span>Colegio Técnico Nacional</span>
             </a>
@@ -57,7 +57,7 @@
                     <a href="#" id="sessionButton" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Sesión <span class="caret"></span></a>
                     <ul class="dropdown-menu" id="sessionMenu" role="menu" aria-labelledby="sessionButton">
                         <li><a role="menuitem" href="${profileUrl}">Mi Perfil</a></li>
-                        <li><a role="menuitem" class="session-logout" href="${pageContext.request.contextPath}/LogoutServlet">Cerrar Sesión</a></li>
+                        <li><a role="menuitem" class="session-logout" href="${pageContext.request.contextPath}/logout">Cerrar Sesión</a></li>
                     </ul>
                 </li>
             </ul>
@@ -72,7 +72,7 @@
                 <h1>Asignaciones</h1>
                 <p>Vincula profesores con materias y cursos.</p>
             </div>
-            <a class="btn-secondary" href="${pageContext.request.contextPath}/AdminServlet">Volver al panel</a>
+            <a class="btn-secondary" href="${pageContext.request.contextPath}/admin">Volver al panel</a>
         </div>
 
         <c:if test="${not empty errors}">
@@ -80,7 +80,7 @@
         </c:if>
         <c:if test="${not empty flashMessage}"><div class="flash">${flashMessage}</div></c:if>
 
-        <form class="admin-card admin-form" method="post" action="AdminAsignacionesServlet" id="createForm">
+        <form class="admin-card admin-form" method="post" action="${pageContext.request.contextPath}/admin/asignaciones" id="createForm">
             <div class="admin-card-header"><h2>Crear asignación</h2></div>
             <div class="admin-form-grid">
             <input type="hidden" name="action" value="crear" />
@@ -129,7 +129,7 @@
                         <td>${a.materiaNombre}</td>
                         <td>${a.cursoDescripcion}</td>
                         <td>
-                            <form class="admin-inline-form" method="post" action="AdminAsignacionesServlet">
+                            <form class="admin-inline-form" method="post" action="${pageContext.request.contextPath}/admin/asignaciones">
                                 <input type="hidden" name="action" value="eliminar" />
                                 <input type="hidden" name="id" value="${a.id}" />
                                 <button class="btn-danger btn-compact" type="submit" onclick="return confirm('Eliminar asignación?');">Eliminar</button>

@@ -29,8 +29,8 @@
 </head>
 
 <body data-user-level="${sessionScope.user.level}" data-specialty="${not empty cursoSpecialty ? cursoSpecialty : (empty sessionScope.scaSpecialty ? 'informatica' : sessionScope.scaSpecialty)}" data-specialty-source="session">
-  <c:url var="profileUrl" value="/ProfileServlet" />
-  <c:url var="logoutUrl" value="/LogoutServlet" />
+  <c:url var="profileUrl" value="/perfil" />
+  <c:url var="logoutUrl" value="/logout" />
   <header class="navbar navbar-default navbar-fixed-top ctn-navbar" role="navigation">
     <div class="container-fluid">
       <div class="navbar-header">
@@ -40,7 +40,7 @@
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
         </button>
-        <a class="navbar-brand ctn-navbar-brand" href="${pageContext.request.contextPath}/HomeServlet" aria-label="Ir a inicio">
+        <a class="navbar-brand ctn-navbar-brand" href="${pageContext.request.contextPath}/inicio" aria-label="Ir a inicio">
           <img class="header-logo" src="${pageContext.request.contextPath}/images/ctn-logo.svg" alt="CTN">
           <span>Colegio Técnico Nacional</span>
         </a>
@@ -110,7 +110,7 @@
       </c:if>
 
       
-      <form id="tareaForm" action="${pageContext.request.contextPath}/TareaServlet" method="post">
+      <form id="tareaForm" action="${pageContext.request.contextPath}/tarea" method="post">
         <input type="hidden" name="etapa" value="${etapa}" />
         <c:if test="${not empty editingTarea}">
             <input type="hidden" name="planillaId" value="${planillaId}" />
@@ -187,7 +187,7 @@
 
           <div class="buttons-row table-header">
 
-            <c:url var="backUrl" value="/PlanillaServlet">
+            <c:url var="backUrl" value="/planilla">
                 <c:param name="planillaId" value="${planillaId}" />
                 <c:param name="etapa" value="${etapa}" />
             </c:url>
@@ -232,7 +232,7 @@
 <script>
   (function () {
     // Find the main planilla form. Adjust selector if necessary.
-    const form = document.querySelector('form[action$="/TareaServlet"]') || document.querySelector('form');
+    const form = document.querySelector('form[action$="/tarea"]') || document.querySelector('form');
     let dirty = false;
 
     if (form) {

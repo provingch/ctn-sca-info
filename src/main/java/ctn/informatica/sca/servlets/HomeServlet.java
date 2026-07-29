@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
  *
  * @author jonat
  */
-@WebServlet(name = "HomeServlet", urlPatterns = {"/HomeServlet"})
+@WebServlet(name = "HomeServlet", urlPatterns = {"/inicio"})
 public class HomeServlet extends HttpServlet {
 
     private static final String VIEW_RASGOS = "rasgos";
@@ -67,7 +67,7 @@ public class HomeServlet extends HttpServlet {
             createRasgoPlanilla(request, response);
             return;
         }
-        response.sendRedirect(request.getContextPath() + "/HomeServlet");
+        response.sendRedirect(request.getContextPath() + "/inicio");
     }
 
     @Override
@@ -353,7 +353,7 @@ public class HomeServlet extends HttpServlet {
         String turno = safeTrim(request.getParameter("turno"));
         String tema = safeTrim(request.getParameter("tema"));
         if (cursoId <= 0 || tema.isEmpty()) {
-            response.sendRedirect(request.getContextPath() + "/HomeServlet?view=" + VIEW_CLASE
+            response.sendRedirect(request.getContextPath() + "/inicio?view=" + VIEW_CLASE
                     + "&cursoId=" + cursoId + "&etapa=" + etapa + "&rasgoError=tema");
             return;
         }
@@ -369,14 +369,14 @@ public class HomeServlet extends HttpServlet {
             }
 
             if (elegibles.isEmpty()) {
-                response.sendRedirect(request.getContextPath() + "/HomeServlet?view=" + VIEW_CLASE
+                response.sendRedirect(request.getContextPath() + "/inicio?view=" + VIEW_CLASE
                         + "&cursoId=" + cursoId + "&etapa=" + etapa + "&rasgoError=sin-alumnos");
                 return;
             }
 
             String temaPersistido = composeTemaConContexto(instrumentoId, turno, tema);
             int planillaRasgoId = new RasgoPlanillaDao().crearPlanillaRasgo(cursoId, user.getId(), temaPersistido, elegibles, ausentes);
-            response.sendRedirect(request.getContextPath() + "/HomeServlet?view=" + VIEW_CLASE
+            response.sendRedirect(request.getContextPath() + "/inicio?view=" + VIEW_CLASE
                     + "&cursoId=" + cursoId + "&etapa=" + etapa + "&rasgoPlanillaId=" + planillaRasgoId + "&rasgoOk=created");
         } catch (SQLException ex) {
             log("Error creating rasgo planilla", ex);
@@ -390,12 +390,12 @@ public class HomeServlet extends HttpServlet {
         String estadoRaw = safeTrim(request.getParameter("estado"));
         String estado = "presente".equalsIgnoreCase(estadoRaw) ? "presente" : "ausente";
         if (asistenciaId <= 0) {
-            response.sendRedirect(request.getContextPath() + "/HomeServlet?view=" + VIEW_RASGOS_FORM + "&error=id");
+            response.sendRedirect(request.getContextPath() + "/inicio?view=" + VIEW_RASGOS_FORM + "&error=id");
             return;
         }
         try {
             new RasgoPlanillaDao().registrarRespuesta(asistenciaId, estado);
-            response.sendRedirect(request.getContextPath() + "/HomeServlet?view=" + VIEW_RASGOS_FORM
+            response.sendRedirect(request.getContextPath() + "/inicio?view=" + VIEW_RASGOS_FORM
                     + "&asistenciaId=" + asistenciaId + "&ok=1");
         } catch (SQLException ex) {
             log("Error saving rasgo attendance response", ex);

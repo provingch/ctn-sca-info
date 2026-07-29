@@ -22,7 +22,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
-@WebServlet(name = "AdminAsignacionesServlet", urlPatterns = {"/AdminAsignacionesServlet"})
+@WebServlet(name = "AdminAsignacionesServlet", urlPatterns = {"/admin/asignaciones"})
 public class AdminAsignacionesServlet extends HttpServlet {
 
     @Override
@@ -87,24 +87,24 @@ public class AdminAsignacionesServlet extends HttpServlet {
 
                 if (pDao.findById(profesorId) == null) {
                     session.setAttribute("errors", List.of("Profesor no existe."));
-                    resp.sendRedirect(req.getContextPath() + "/AdminAsignacionesServlet");
+                    resp.sendRedirect(req.getContextPath() + "/admin/asignaciones");
                     return;
                 }
                 if (mDao.findById(materiaId) == null) {
                     session.setAttribute("errors", List.of("Materia no existe."));
-                    resp.sendRedirect(req.getContextPath() + "/AdminAsignacionesServlet");
+                    resp.sendRedirect(req.getContextPath() + "/admin/asignaciones");
                     return;
                 }
                 if (cDao.findById(cursoId) == null) {
                     session.setAttribute("errors", List.of("Curso no existe."));
-                    resp.sendRedirect(req.getContextPath() + "/AdminAsignacionesServlet");
+                    resp.sendRedirect(req.getContextPath() + "/admin/asignaciones");
                     return;
                 }
 
                 AsignacionDao aDao = new AsignacionDao();
                 if (aDao.existe(profesorId, materiaId, cursoId)) {
                     session.setAttribute("errors", List.of("La asignación ya existe."));
-                    resp.sendRedirect(req.getContextPath() + "/AdminAsignacionesServlet");
+                    resp.sendRedirect(req.getContextPath() + "/admin/asignaciones");
                     return;
                 }
                 int created = aDao.crear(profesorId, materiaId, cursoId);
@@ -126,7 +126,7 @@ public class AdminAsignacionesServlet extends HttpServlet {
             session.setAttribute("errors", List.of("Error interno: " + ex.getMessage()));
         }
 
-        resp.sendRedirect(req.getContextPath() + "/AdminAsignacionesServlet");
+        resp.sendRedirect(req.getContextPath() + "/admin/asignaciones");
     }
 
 }

@@ -60,16 +60,16 @@
                             String redirectTarget;
                             switch (restoredUser.getLevel()) {
                                 case 1:
-                                    redirectTarget = "/HomeServlet";
+                                    redirectTarget = "/inicio";
                                     break;
                                 case 2:
-                                    redirectTarget = "/EvaluacionServlet";
+                                    redirectTarget = "/evaluacion";
                                     break;
                                 case 3:
-                                    redirectTarget = "/AdminServlet";
+                                    redirectTarget = "/admin";
                                     break;
                                 case 4:
-                                    redirectTarget = "/ParentServlet";
+                                    redirectTarget = "/padre";
                                     break;
                                 default:
                                     redirectTarget = "/index.jsp";
@@ -92,16 +92,16 @@
         String redirectTarget;
         switch (currentUser.getLevel()) {
             case 1:
-                redirectTarget = "/HomeServlet";
+                redirectTarget = "/inicio";
                 break;
             case 2:
-                redirectTarget = "/EvaluacionServlet";
+                redirectTarget = "/evaluacion";
                 break;
             case 3:
-                redirectTarget = "/AdminServlet";
+                redirectTarget = "/admin";
                 break;
             case 4:
-                redirectTarget = "/ParentServlet";
+                redirectTarget = "/padre";
                 break;
             default:
                 redirectTarget = "/index.jsp";
@@ -115,10 +115,14 @@
 <html data-theme="light">
 
   <head>
-    <title>SCA</title>
+    <title>Sistema de Carpeta Academica</title>
+    <meta name="description" content="Sistema de Carpeta Académica (SCA) — plataforma del Colegio Técnico Nacional para gestionar planillas, cursos y la integración con Google Classroom.">
+    <meta name="author" content="Colegio Técnico Nacional">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="manifest" href="${pageContext.request.contextPath}/manifest.jsp">
+    <!-- Google site verification: reemplaza TOKEN_DE_VERIFICACION por el valor que te dé Google -->
+    <meta name="google-site-verification" content="TOKEN_DE_VERIFICACION" />
     <meta name="theme-color" content="#1f2d3d">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -164,13 +168,19 @@
             <h1>Iniciar sesión</h1>
             <p>Sistema de informes académicos</p>
           </div>
+          <section class="site-hero" style="max-width:880px;margin:12px auto 18px;padding:12px 18px;border-radius:6px;background:transparent;border:1px solid rgba(0,0,0,0.04)">
+            <h2 style="margin:0 0 6px 0;font-size:1.1rem">Sistema de Carpeta Academica</h2>
+            <p style="margin:0;color:var(--muted);">Plataforma del Colegio Técnico Nacional para gestionar planillas, cursos y tareas, y para integrar autorizaciones con Google Classroom de forma segura.</p>
+            <p style="margin-top:8px;color:var(--muted);font-size:0.9rem;">Nombre de la aplicación en la pantalla de consentimiento de Google: <strong>Sistema de Carpeta Academica</strong></p>
+            <p style="margin-top:8px;color:var(--muted);font-size:0.85rem;">Contacto: <a href="mailto:provingchill@gmail.com">provingchill@gmail.com</a></p>
+          </section>
           <c:if test="${loginError}">
               <div class="login-error">Nombre de usuario o contraseña incorrectos.</div>
           </c:if>
           <c:if test="${param.notice == 'login-required'}">
               <div class="login-info">Inicia sesión para ver tus planillas y cursos. Si estás corrigiendo la vinculación de alumnos, entra con tu usuario de integración tras iniciar sesión.</div>
           </c:if>
-          <form class="login-form" action="LoginServlet" method="post">
+          <form class="login-form" action="${pageContext.request.contextPath}/login" method="post">
             <input class="form-username" placeholder="Usuario" type="text" name="username" autocomplete="username">
             <div class="password-field">
               <input class="form-password" id="loginPassword" placeholder="Contraseña" type="password" name="password" autocomplete="current-password">

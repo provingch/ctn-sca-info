@@ -3,7 +3,7 @@
 <%
     String ctx = request.getContextPath();
     String basePath = (ctx == null || ctx.isEmpty()) ? "" : ctx;
-    String startUrl = basePath + "/HomeServlet";
+    String startUrl = basePath + "/inicio";
     String scope = basePath + "/";
     String iconBase = basePath + "/icons/pwa";
 %>

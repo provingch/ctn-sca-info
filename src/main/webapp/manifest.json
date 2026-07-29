@@ -2,7 +2,7 @@
   "name": "SCA",
   "short_name": "SCA",
   "description": "Sistema de informes académicos del Colegio Técnico Nacional",
-  "start_url": "/HomeServlet",
+  "start_url": "/inicio",
   "scope": "/",
   "display": "standalone",
   "background_color": "#1f2d3d",

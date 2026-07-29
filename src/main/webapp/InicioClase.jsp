@@ -122,8 +122,8 @@
 </head>
 
 <body data-user-level="${sessionScope.user.level}" data-specialty="${empty sessionScope.scaSpecialty ? 'informatica' : sessionScope.scaSpecialty}" data-specialty-source="session">
-  <c:url var="profileUrl" value="/ProfileServlet" />
-  <c:url var="logoutUrl" value="/LogoutServlet" />
+  <c:url var="profileUrl" value="/perfil" />
+  <c:url var="logoutUrl" value="/logout" />
   <header class="navbar navbar-default navbar-fixed-top ctn-navbar" role="navigation">
     <div class="container-fluid">
       <div class="navbar-header">
@@ -133,7 +133,7 @@
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
         </button>
-        <a class="navbar-brand ctn-navbar-brand" href="${pageContext.request.contextPath}/HomeServlet" aria-label="Ir a inicio">
+        <a class="navbar-brand ctn-navbar-brand" href="${pageContext.request.contextPath}/inicio" aria-label="Ir a inicio">
           <img class="header-logo" src="${pageContext.request.contextPath}/images/ctn-logo.svg" alt="CTN">
           <span>Colegio Técnico Nacional</span>
         </a>
@@ -178,7 +178,7 @@
       </div>
 
       <div class="section-block" style="margin-bottom:12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-        <a class="planilla-card-link" href="${pageContext.request.contextPath}/HomeServlet?view=planillas&cursoId=${empty selCurso ? '' : selCurso.id}&etapa=${selEtapa}" style="padding:8px 12px;border:1px solid var(--color-border);border-radius:8px;">Volver a planillas de puntaje</a>
+        <a class="planilla-card-link" href="${pageContext.request.contextPath}/inicio?view=planillas&cursoId=${empty selCurso ? '' : selCurso.id}&etapa=${selEtapa}" style="padding:8px 12px;border:1px solid var(--color-border);border-radius:8px;">Volver a planillas de puntaje</a>
         <span class="subject-card__chip">Iniciar clase</span>
       </div>
 
@@ -202,7 +202,7 @@
             <button type="button" class="btn btn-default btn-sm" id="clearButton">Limpiar formulario</button>
           </div>
         </div>
-        <form id="classSelectionForm" action="${pageContext.request.contextPath}/HomeServlet" method="get" class="class-grid">
+        <form id="classSelectionForm" action="${pageContext.request.contextPath}/inicio" method="get" class="class-grid">
           <input type="hidden" name="view" value="clase" />
           <input type="hidden" name="etapa" value="${selEtapa}" />
           <input type="hidden" name="cursoId" id="classCursoIdHidden" value="${empty selCurso ? '' : selCurso.id}" />
@@ -231,7 +231,7 @@
         </form>
       </div>
 
-      <form action="${pageContext.request.contextPath}/HomeServlet" method="post" style="display:grid; gap:12px;">
+      <form action="${pageContext.request.contextPath}/inicio" method="post" style="display:grid; gap:12px;">
         <input type="hidden" name="action" value="create-rasgo-planilla" />
         <input type="hidden" name="cursoId" value="${empty selCurso ? '' : selCurso.id}" id="formCursoId" />
         <input type="hidden" name="turno" value="${param.turno}" id="formTurno" />
@@ -365,7 +365,7 @@
           <h3>Historial de clases registradas</h3>
           <div style="margin-bottom:10px;">
             <label for="rasgoPlanillaSel" style="font-weight:600;">Clase</label>
-            <select id="rasgoPlanillaSel" class="form-control" style="max-width:520px;" onchange="location.href='${pageContext.request.contextPath}/HomeServlet?view=clase&cursoId=${selCurso.id}&etapa=${selEtapa}&turno=${fn:escapeXml(param.turno)}&rasgoPlanillaId=' + this.value;">
+            <select id="rasgoPlanillaSel" class="form-control" style="max-width:520px;" onchange="location.href='${pageContext.request.contextPath}/inicio?view=clase&cursoId=${selCurso.id}&etapa=${selEtapa}&turno=${fn:escapeXml(param.turno)}&rasgoPlanillaId=' + this.value;">
               <c:forEach var="rp" items="${rasgoPlanillas}">
                 <option value="${rp.id}" ${not empty rasgoPlanillaSeleccionada and rasgoPlanillaSeleccionada.id == rp.id ? 'selected' : ''}>${rp.tema} - ${rp.fechaClase}</option>
               </c:forEach>

@@ -31,22 +31,23 @@ import jakarta.servlet.http.HttpSession;
  *
  * @author jonat
  */
-@WebFilter(filterName = "AuthFilter", urlPatterns = {"/HomeServlet", "/PlanillaServlet", "/TareaServlet", "/LegacyTareaServlet", "/ProfileServlet", "/EvaluacionServlet", "/AdminServlet", "/AdminMateriasServlet", "/AdminUsuariosServlet", "/AdminAsignacionesServlet", "/ParentServlet", "/PushSubscriptionServlet", "/index.jsp"})
+@WebFilter(filterName = "AuthFilter", urlPatterns = {"/inicio", "/planilla", "/tarea", "/legacy/tarea", "/perfil", "/evaluacion", "/admin", "/admin/materias", "/admin/usuarios", "/admin/asignaciones", "/admin/ingresantes", "/padre", "/push-subscription", "/index.jsp"})
 public class AuthFilter implements Filter {
 
         private static final Map<String, List<Integer>> AUTHORIZED_LEVELS = Map.ofEntries(
-            Map.entry("/HomeServlet", List.of(1)),
-            Map.entry("/PlanillaServlet", List.of(1)),
-            Map.entry("/TareaServlet", List.of(1)),
-            Map.entry("/LegacyTareaServlet", List.of(1)),
-            Map.entry("/ProfileServlet", List.of(1, 2, 3, 4)),
-            Map.entry("/PushSubscriptionServlet", List.of(1, 2, 3, 4)),
-            Map.entry("/EvaluacionServlet", List.of(2)),
-            Map.entry("/AdminServlet", List.of(3)),
-            Map.entry("/AdminMateriasServlet", List.of(3)),
-            Map.entry("/AdminUsuariosServlet", List.of(3)),
-            Map.entry("/AdminAsignacionesServlet", List.of(3)),
-            Map.entry("/ParentServlet", List.of(4))
+                Map.entry("/inicio", List.of(1)),
+                Map.entry("/planilla", List.of(1)),
+                Map.entry("/tarea", List.of(1)),
+                Map.entry("/legacy/tarea", List.of(1)),
+                Map.entry("/perfil", List.of(1, 2, 3, 4)),
+                Map.entry("/push-subscription", List.of(1, 2, 3, 4)),
+                Map.entry("/evaluacion", List.of(2)),
+                Map.entry("/admin", List.of(3)),
+                Map.entry("/admin/materias", List.of(3)),
+                Map.entry("/admin/usuarios", List.of(3)),
+                Map.entry("/admin/asignaciones", List.of(3)),
+                Map.entry("/admin/ingresantes", List.of(3)),
+                Map.entry("/padre", List.of(4))
         );
 
     private boolean isAuthorized(String servletPath, Object user) {
@@ -67,13 +68,13 @@ public class AuthFilter implements Filter {
         }
         switch (((User) user).getLevel()) {
             case 1:
-                return "/HomeServlet";
+                return "/inicio";
             case 2:
-                return "/EvaluacionServlet";
+                return "/evaluacion";
             case 3:
-                return "/AdminServlet";
+                return "/admin";
             case 4:
-                return "/ParentServlet";
+                return "/padre";
             default:
                 return "/index.jsp";
         }

@@ -20,7 +20,7 @@ import java.util.List;
  *
  * @author jonat
  */
-@WebServlet(name = "EvaluacionServlet", urlPatterns = {"/EvaluacionServlet"})
+@WebServlet(name = "EvaluacionServlet", urlPatterns = {"/evaluacion"})
 public class EvaluacionServlet extends HttpServlet {
 
     @Override

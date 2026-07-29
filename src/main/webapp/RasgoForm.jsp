@@ -29,7 +29,7 @@
         </div>
       </div>
 
-      <form action="${pageContext.request.contextPath}/HomeServlet" method="post" class="panel panel-default">
+      <form action="${pageContext.request.contextPath}/inicio" method="post" class="panel panel-default">
         <div class="panel-body">
           <input type="hidden" name="action" value="submit-rasgo-asistencia" />
           <input type="hidden" name="asistenciaId" value="${rasgoAsistencia.id}" />

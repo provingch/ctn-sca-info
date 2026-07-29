@@ -16,7 +16,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
-@WebServlet(name = "AdminUsuariosServlet", urlPatterns = {"/AdminUsuariosServlet"})
+@WebServlet(name = "AdminUsuariosServlet", urlPatterns = {"/admin/usuarios"})
 public class AdminUsuariosServlet extends HttpServlet {
 
     @Override
@@ -210,7 +210,7 @@ public class AdminUsuariosServlet extends HttpServlet {
             session.setAttribute("flashMessage", flashMessage);
         }
 
-        resp.sendRedirect(req.getContextPath() + "/AdminUsuariosServlet");
+        resp.sendRedirect(req.getContextPath() + "/admin/usuarios");
     }
 
     private Integer parseInteger(String value) {

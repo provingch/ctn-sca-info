@@ -18,7 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-@WebServlet(name = "ParentServlet", urlPatterns = {"/ParentServlet"})
+@WebServlet(name = "ParentServlet", urlPatterns = {"/padre"})
 public class ParentServlet extends HttpServlet {
 
     Integer resolveSelectedAlumnoId(List<Alumno> hijos, Integer selectedAlumnoId) {

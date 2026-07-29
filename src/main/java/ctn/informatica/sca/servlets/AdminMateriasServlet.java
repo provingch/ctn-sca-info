@@ -13,7 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
-@WebServlet(name = "AdminMateriasServlet", urlPatterns = {"/AdminMateriasServlet"})
+@WebServlet(name = "AdminMateriasServlet", urlPatterns = {"/admin/materias"})
 public class AdminMateriasServlet extends HttpServlet {
 
     @Override
@@ -114,7 +114,7 @@ public class AdminMateriasServlet extends HttpServlet {
                 List<String> conflicts = dao.checkMergeConflicts(fromId, toId);
                 if (!conflicts.isEmpty()) {
                     session.setAttribute("errors", java.util.List.of("No se puede ejecutar merge: existen planillas en conflicto."));
-                    resp.sendRedirect(req.getContextPath() + "/AdminMateriasServlet");
+                    resp.sendRedirect(req.getContextPath() + "/admin/materias");
                     return;
                 }
                 dao.mergeMaterias(fromId, toId);
@@ -138,12 +138,12 @@ public class AdminMateriasServlet extends HttpServlet {
                 String[] espVals = req.getParameterValues("especialidades");
                 if (materiaIdParam == null || materiaIdParam.isBlank()) {
                     session.setAttribute("errors", java.util.List.of("Falta el identificador de la materia."));
-                    resp.sendRedirect(req.getContextPath() + "/AdminMateriasServlet");
+                    resp.sendRedirect(req.getContextPath() + "/admin/materias");
                     return;
                 }
                 if (categoria == null || categoria.isBlank()) {
                     session.setAttribute("errors", java.util.List.of("No se aplicaron cambios: faltó la categoría. Elija un valor antes de guardar."));
-                    resp.sendRedirect(req.getContextPath() + "/AdminMateriasServlet");
+                    resp.sendRedirect(req.getContextPath() + "/admin/materias");
                     return;
                 }
                 java.util.List<Integer> espIds = new java.util.ArrayList<>();
@@ -164,7 +164,7 @@ public class AdminMateriasServlet extends HttpServlet {
         } catch (Exception ex) {
             session.setAttribute("errors", java.util.List.of("Error interno: " + ex.getMessage()));
         }
-        resp.sendRedirect(req.getContextPath() + "/AdminMateriasServlet");
+        resp.sendRedirect(req.getContextPath() + "/admin/materias");
     }
 
     @SuppressWarnings("unchecked")

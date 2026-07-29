@@ -31,7 +31,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
  *
  * @author jonat
  */
-@WebServlet(name = "ExportPlanillaServlet", urlPatterns = {"/ExportPlanillaServlet"})
+@WebServlet(name = "ExportPlanillaServlet", urlPatterns = {"/planilla/export"})
 public class ExportPlanillaServlet extends HttpServlet {
 
     @Override

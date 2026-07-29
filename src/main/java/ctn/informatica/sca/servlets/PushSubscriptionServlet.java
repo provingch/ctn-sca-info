@@ -14,7 +14,7 @@ import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-@WebServlet(name = "PushSubscriptionServlet", urlPatterns = {"/PushSubscriptionServlet"})
+@WebServlet(name = "PushSubscriptionServlet", urlPatterns = {"/push-subscription"})
 public class PushSubscriptionServlet extends HttpServlet {
 
     @Override
@@ -63,7 +63,7 @@ public class PushSubscriptionServlet extends HttpServlet {
 
         if ("test".equals(action)) {
             try {
-                boolean delivered = PushNotificationService.sendToUser(user.getId(), resolveUserType(user), "Prueba CTN", "Esta es una notificación de prueba.", req.getContextPath() + "/ProfileServlet");
+                boolean delivered = PushNotificationService.sendToUser(user.getId(), resolveUserType(user), "Prueba CTN", "Esta es una notificación de prueba.", req.getContextPath() + "/perfil");
                 int subscriptionCount = new PushSubscriptionDao().findByUser(user.getId(), resolveUserType(user)).size();
                 boolean hasVapidKeys = !PushNotificationService.resolveVapidPublicKey().isBlank() && !PushNotificationService.resolveVapidPrivateKey().isBlank();
                 writeJson(resp, true, PushNotificationService.buildDeliveryMessage(delivered, subscriptionCount, hasVapidKeys));

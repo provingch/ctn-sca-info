@@ -16,7 +16,7 @@
         <link rel="icon" type="image/x-icon" href="${pageContext.request.contextPath}/images/ctn-logo.svg" />
 </head>
 <body class="admin-page" data-page="admin-materias" data-user-level="${sessionScope.user.level}" data-specialty="general" data-specialty-source="system">
-<c:url var="profileUrl" value="/ProfileServlet" />
+<c:url var="profileUrl" value="/perfil" />
 <header class="navbar navbar-default navbar-fixed-top ctn-navbar" role="navigation">
     <div class="container-fluid">
         <div class="navbar-header">
@@ -26,7 +26,7 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand ctn-navbar-brand" href="${pageContext.request.contextPath}/AdminServlet" aria-label="Ir a inicio">
+            <a class="navbar-brand ctn-navbar-brand" href="${pageContext.request.contextPath}/admin" aria-label="Ir a inicio">
                 <img class="header-logo" src="${pageContext.request.contextPath}/images/ctn-logo.svg" alt="CTN">
                 <span>Colegio Técnico Nacional</span>
             </a>
@@ -56,7 +56,7 @@
                     <a href="#" id="sessionButton" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Sesión <span class="caret"></span></a>
                     <ul class="dropdown-menu" id="sessionMenu" role="menu" aria-labelledby="sessionButton">
                         <li><a role="menuitem" href="${profileUrl}">Mi Perfil</a></li>
-                        <li><a role="menuitem" class="session-logout" href="${pageContext.request.contextPath}/LogoutServlet">Cerrar Sesión</a></li>
+                        <li><a role="menuitem" class="session-logout" href="${pageContext.request.contextPath}/logout">Cerrar Sesión</a></li>
                     </ul>
                 </li>
             </ul>
@@ -71,7 +71,7 @@
                 <h1>Materias</h1>
                 <p>Gestiona catálogo, categorías, especialidades y merges.</p>
             </div>
-            <a class="btn-secondary" href="${pageContext.request.contextPath}/AdminServlet">Volver al panel</a>
+            <a class="btn-secondary" href="${pageContext.request.contextPath}/admin">Volver al panel</a>
         </div>
 
 <c:if test="${not empty errors}">
@@ -88,7 +88,7 @@
     <div class="flash">${flashMessage}</div>
 </c:if>
 
-<form class="admin-card admin-form" method="post" action="AdminMateriasServlet">
+<form class="admin-card admin-form" method="post" action="${pageContext.request.contextPath}/admin/materias">
     <div class="admin-card-header"><h2>Crear nueva materia</h2></div>
     <div class="admin-form-grid">
     <input type="hidden" name="action" value="create" />
@@ -111,7 +111,7 @@
     <button class="btn-primary admin-submit" type="submit">Crear</button>
 </form>
 
-<form class="admin-card admin-form" method="post" action="AdminMateriasServlet">
+<form class="admin-card admin-form" method="post" action="${pageContext.request.contextPath}/admin/materias">
     <div class="admin-card-header"><h2>Comprobar merge</h2></div>
     <div class="admin-form-grid">
     <input type="hidden" name="action" value="check" />
@@ -147,7 +147,7 @@
 </c:if>
 
 <c:if test="${empty conflicts && not empty fromId && not empty toId}">
-    <form class="admin-card admin-form" method="post" action="AdminMateriasServlet">
+    <form class="admin-card admin-form" method="post" action="${pageContext.request.contextPath}/admin/materias">
         <div class="admin-card-header"><h2>Confirmar merge</h2></div>
         <input type="hidden" name="action" value="merge" />
         <input type="hidden" name="fromId" value="${fromId}" />
@@ -158,7 +158,7 @@
 </c:if>
 
 <c:if test="${editMode and not empty editMateria}">
-    <form class="admin-card admin-form" method="post" action="${pageContext.request.contextPath}/AdminMateriasServlet">
+    <form class="admin-card admin-form" method="post" action="${pageContext.request.contextPath}/admin/materias">
         <div class="admin-card-header"><h2>Editar materia</h2></div>
         <div class="admin-form-grid">
         <input type="hidden" name="action" value="edit" />
@@ -211,7 +211,7 @@
             </td>
             <td><c:out value="${profCounts[m.id] != null ? profCounts[m.id] : 0}" /></td>
             <td>
-                <a class="btn-secondary btn-compact" href="${pageContext.request.contextPath}/AdminMateriasServlet?editId=${m.id}">Editar</a>
+                <a class="btn-secondary btn-compact" href="${pageContext.request.contextPath}/admin/materias?editId=${m.id}">Editar</a>
             </td>
         </tr>
     </c:forEach>

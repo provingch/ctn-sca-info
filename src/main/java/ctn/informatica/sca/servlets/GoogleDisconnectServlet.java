@@ -10,7 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
-@WebServlet(name = "GoogleDisconnectServlet", urlPatterns = {"/GoogleDisconnectServlet"})
+@WebServlet(name = "GoogleDisconnectServlet", urlPatterns = {"/google/disconnect"})
 public class GoogleDisconnectServlet extends HttpServlet {
 
     @Override
@@ -37,6 +37,6 @@ public class GoogleDisconnectServlet extends HttpServlet {
         } else {
             session.setAttribute("flashErrors", java.util.Collections.singletonList("No se pudo desconectar Google Classroom. Intente nuevamente."));
         }
-        response.sendRedirect(request.getContextPath() + "/ProfileServlet");
+        response.sendRedirect(request.getContextPath() + "/perfil");
     }
 }

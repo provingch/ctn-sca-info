@@ -33,8 +33,8 @@
 </head>
 
 <body data-user-level="${sessionScope.user.level}" data-specialty="${empty sessionScope.scaSpecialty ? 'informatica' : sessionScope.scaSpecialty}" data-specialty-source="session">
-  <c:url var="profileUrl" value="/ProfileServlet" />
-  <c:url var="logoutUrl" value="/LogoutServlet" />
+  <c:url var="profileUrl" value="/perfil" />
+  <c:url var="logoutUrl" value="/logout" />
   <header class="navbar navbar-default navbar-fixed-top ctn-navbar" role="navigation">
     <div class="container-fluid">
       <div class="navbar-header">
@@ -44,7 +44,7 @@
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
         </button>
-        <a class="navbar-brand ctn-navbar-brand" href="${pageContext.request.contextPath}/HomeServlet" aria-label="Ir a inicio">
+        <a class="navbar-brand ctn-navbar-brand" href="${pageContext.request.contextPath}/inicio" aria-label="Ir a inicio">
           <img class="header-logo" src="${pageContext.request.contextPath}/images/ctn-logo.svg" alt="CTN">
           <span>Colegio Técnico Nacional</span>
         </a>
@@ -104,7 +104,7 @@
         </div>
         <c:if test="${viewMode eq 'planillas'}">
           <div class="menu-container">
-            <form id="cursoSelectionForm" action="HomeServlet" method="get" class="curso-selection-form">
+            <form id="cursoSelectionForm" action="${pageContext.request.contextPath}/inicio" method="get" class="curso-selection-form">
               <label for="selEspecialidad" style="font-weight:600;margin-right:0.5rem;">Especialidad</label>
               <select id="selEspecialidad" name="especialidad"></select>
               <label for="selCursoNivel" style="font-weight:600;margin-right:0.5rem;">Curso</label>
@@ -122,8 +122,8 @@
       <div class="section-block" style="margin-bottom:16px;">
         <div class="section-heading">Vista principal</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <a class="planilla-card-link" href="${pageContext.request.contextPath}/HomeServlet?view=clase&cursoId=${empty selCurso ? '' : selCurso.id}&etapa=${selEtapa}" style="padding:8px 12px;border:1px solid var(--color-border);border-radius:8px;font-weight:700;">Iniciar clase</a>
-          <a class="planilla-card-link" href="${pageContext.request.contextPath}/HomeServlet?view=planillas&cursoId=${empty selCurso ? '' : selCurso.id}&etapa=${selEtapa}" style="padding:8px 12px;border:1px solid var(--color-border);border-radius:8px;${viewMode eq 'planillas' ? 'font-weight:700;' : ''}">Planillas de puntaje</a>
+          <a class="planilla-card-link" href="${pageContext.request.contextPath}/inicio?view=clase&cursoId=${empty selCurso ? '' : selCurso.id}&etapa=${selEtapa}" style="padding:8px 12px;border:1px solid var(--color-border);border-radius:8px;font-weight:700;">Iniciar clase</a>
+          <a class="planilla-card-link" href="${pageContext.request.contextPath}/inicio?view=planillas&cursoId=${empty selCurso ? '' : selCurso.id}&etapa=${selEtapa}" style="padding:8px 12px;border:1px solid var(--color-border);border-radius:8px;${viewMode eq 'planillas' ? 'font-weight:700;' : ''}">Planillas de puntaje</a>
         </div>
       </div>
 
@@ -156,7 +156,7 @@
               <div class="section-heading">Planillas del curso</div>
               <div class="planilla-grid">
                 <c:forEach var="planilla" items="${planillas}">
-                  <a class="planilla-card-link" href="${pageContext.request.contextPath}/PlanillaServlet?planillaId=${planilla.id}&cursoId=${selCurso.id}&materiaId=${planilla.materiaId}&etapa=${selEtapa}">
+                  <a class="planilla-card-link" href="${pageContext.request.contextPath}/planilla?planillaId=${planilla.id}&cursoId=${selCurso.id}&materiaId=${planilla.materiaId}&etapa=${selEtapa}">
                     <div class="subject-card">
                       <div class="subject-card__header">
                         <div class="subject-card__title"><c:out value="${planilla.nombre}" /></div>
@@ -187,7 +187,7 @@
           <div class="section-heading">Materias disponibles para asignar</div>
           <div class="planilla-grid">
             <c:forEach var="materia" items="${materiasDetectadas}">
-              <a class="planilla-card-link" href="${pageContext.request.contextPath}/PlanillaServlet?cursoId=${selCurso.id}&materiaId=${materia.id}&etapa=${selEtapa}">
+              <a class="planilla-card-link" href="${pageContext.request.contextPath}/planilla?cursoId=${selCurso.id}&materiaId=${materia.id}&etapa=${selEtapa}">
                 <div class="subject-card">
                   <div class="subject-card__header">
                     <div class="subject-card__title"><c:out value="${materia.nombre}" /></div>
@@ -214,7 +214,7 @@
               <c:set var="materiaId" value="${classroomPlanillaMateriaMap[courseId]}" />
               <c:choose>
                 <c:when test="${not empty planillaId}">
-                  <c:url var="courseLink" value="/PlanillaServlet">
+                  <c:url var="courseLink" value="/planilla">
                     <c:param name="planillaId" value="${planillaId}" />
                     <c:param name="cursoId" value="${selCurso.id}" />
                     <c:param name="materiaId" value="${materiaId}" />
@@ -222,14 +222,14 @@
                   </c:url>
                 </c:when>
                 <c:when test="${not empty materiaId}">
-                  <c:url var="courseLink" value="/PlanillaServlet">
+                  <c:url var="courseLink" value="/planilla">
                     <c:param name="cursoId" value="${selCurso.id}" />
                     <c:param name="materiaId" value="${materiaId}" />
                     <c:param name="etapa" value="${selEtapa}" />
                   </c:url>
                 </c:when>
                 <c:otherwise>
-                  <c:set var="courseLink" value="${pageContext.request.contextPath}/HomeServlet?cursoId=${selCurso.id}&etapa=${selEtapa}" />
+                  <c:set var="courseLink" value="${pageContext.request.contextPath}/inicio?cursoId=${selCurso.id}&etapa=${selEtapa}" />
                 </c:otherwise>
               </c:choose>
               <c:choose>

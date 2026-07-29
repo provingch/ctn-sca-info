@@ -21,7 +21,7 @@ import jakarta.servlet.http.HttpSession;
 /**
  * Admin dashboard skeleton for real administrator users.
  */
-@WebServlet(name = "AdminServlet", urlPatterns = {"/AdminServlet"})
+@WebServlet(name = "AdminServlet", urlPatterns = {"/admin"})
 public class AdminServlet extends HttpServlet {
 
     @Override

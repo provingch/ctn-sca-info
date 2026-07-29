@@ -25,7 +25,7 @@ import ctn.informatica.sca.dao.ProfesorDao;
 import ctn.informatica.sca.model.Profesor;
 import ctn.informatica.sca.model.User;
 
-@WebServlet("/GoogleCallbackServlet")
+@WebServlet(name = "GoogleCallbackServlet", urlPatterns = {"/google/callback"})
 public class GoogleCallbackServlet extends HttpServlet {
 
     @Override
@@ -114,7 +114,7 @@ public class GoogleCallbackServlet extends HttpServlet {
             session.setAttribute("profesor", profesor);
             session.setAttribute("flashMessage", "Cuenta de Google vinculada: " + googleEmail);
 
-            resp.sendRedirect(req.getContextPath() + "/ProfileServlet");
+            resp.sendRedirect(req.getContextPath() + "/perfil");
 
         } catch (IOException e) {
             e.printStackTrace();

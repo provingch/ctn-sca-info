@@ -53,7 +53,7 @@
           <c:if test="${not empty verifyError}">
             <div class="login-error">${verifyError}</div>
           </c:if>
-          <form class="login-form" action="${pageContext.request.contextPath}/TotpServlet" method="post">
+          <form class="login-form" action="${pageContext.request.contextPath}/totp" method="post">
             <label for="totpCode">Código de autenticación</label>
             <input class="form-password" type="text" id="totpCode" name="totpCode" maxlength="6" placeholder="123456" required autofocus>
             <input class="form-submit" type="submit" value="Verificar código">
