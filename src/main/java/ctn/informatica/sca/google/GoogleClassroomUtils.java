@@ -22,10 +22,14 @@ public final class GoogleClassroomUtils {
     }
 
     public static Optional<CourseKey> parseCourseKey(String courseName) {
-        return parseCourseKey(courseName, null);
+        return parseCourseKey(courseName, null, null);
     }
 
     public static Optional<CourseKey> parseCourseKey(String courseName, String room) {
+        return parseCourseKey(courseName, room, null);
+    }
+
+    public static Optional<CourseKey> parseCourseKey(String courseName, String room, String section) {
         if (courseName == null || courseName.isBlank()) {
             return Optional.empty();
         }
@@ -33,19 +37,22 @@ public final class GoogleClassroomUtils {
         String normalizedName = normalize(courseName);
 
         Integer level = parseLevel(normalizedName);
-        String section = parseSection(normalizedName);
+        String courseSection = parseSection(normalizedName);
 
-        if (level == null || section == null) {
+        if (level == null || courseSection == null) {
             return Optional.empty();
         }
 
         int currentPeriod = AcademicPeriod.current();
-        if (!isAcademicPeriodCompatible(courseName, room, currentPeriod)) {
+        if (!isAcademicPeriodCompatible(courseName, room, section, currentPeriod)) {
             return Optional.empty();
         }
 
+        Integer explicitSectionYear = parseExplicitSectionYear(section);
+        int periodo = explicitSectionYear != null ? explicitSectionYear : currentPeriod;
+
         String sala = stripLevelAndSection(normalizedName);
-        return Optional.of(new CourseKey(level, section, sala, currentPeriod));
+        return Optional.of(new CourseKey(level, courseSection, sala, periodo));
     }
 
     public static String normalizeSubjectName(String subjectName) {
@@ -78,7 +85,58 @@ public final class GoogleClassroomUtils {
         return normalize(room);
     }
 
-    private static boolean isAcademicPeriodCompatible(String courseName, String room, int currentPeriod) {
+    private static Integer parseExplicitSectionYear(String section) {
+        if (section == null || section.isBlank()) {
+            return null;
+        }
+        String trimmed = section.trim();
+        if (trimmed.matches("20\\d{2}")) {
+            return Integer.parseInt(trimmed);
+        }
+        Matcher rangeMatcher = YEAR_RANGE_PATTERN.matcher(trimmed);
+        if (rangeMatcher.find()) {
+            int startYear = Integer.parseInt(rangeMatcher.group(1));
+            int endYear = Integer.parseInt(rangeMatcher.group(2));
+            return endYear;
+        }
+        return null;
+    }
+
+    private static boolean isAcademicPeriodCompatible(String courseName, String room, String section, int currentPeriod) {
+        if (section != null && !section.isBlank()) {
+            String trimmedSection = section.trim();
+            if (trimmedSection.matches("20\\d{2}")) {
+                int year = Integer.parseInt(trimmedSection);
+                return year == currentPeriod;
+            }
+            Matcher rangeMatcher = YEAR_RANGE_PATTERN.matcher(trimmedSection);
+            if (rangeMatcher.find()) {
+                int startYear = Integer.parseInt(rangeMatcher.group(1));
+                int endYear = Integer.parseInt(rangeMatcher.group(2));
+                return currentPeriod >= startYear && currentPeriod <= endYear;
+            }
+        }
+
+        if (courseName != null && !courseName.isBlank()) {
+            Matcher rangeMatcher = YEAR_RANGE_PATTERN.matcher(courseName);
+            if (rangeMatcher.find()) {
+                int startYear = Integer.parseInt(rangeMatcher.group(1));
+                int endYear = Integer.parseInt(rangeMatcher.group(2));
+                return currentPeriod >= startYear && currentPeriod <= endYear;
+            }
+
+            Matcher singleYearMatcher = SINGLE_YEAR_PATTERN.matcher(courseName);
+            if (singleYearMatcher.find()) {
+                int year = Integer.parseInt(singleYearMatcher.group(1));
+                return year == currentPeriod;
+            }
+        }
+
+        if (room != null && !room.isBlank() && room.trim().matches("\\d{4}")) {
+            // Cuando la sala es solo un año, no lo tratamos como filtro del período académico.
+            return true;
+        }
+
         String combined = Stream.of(courseName, room)
                 .filter(Objects::nonNull)
                 .collect(Collectors.joining(" "));
@@ -86,16 +144,16 @@ public final class GoogleClassroomUtils {
             return true;
         }
 
-        Matcher rangeMatcher = YEAR_RANGE_PATTERN.matcher(combined);
-        if (rangeMatcher.find()) {
-            int startYear = Integer.parseInt(rangeMatcher.group(1));
-            int endYear = Integer.parseInt(rangeMatcher.group(2));
+        Matcher combinedRangeMatcher = YEAR_RANGE_PATTERN.matcher(combined);
+        if (combinedRangeMatcher.find()) {
+            int startYear = Integer.parseInt(combinedRangeMatcher.group(1));
+            int endYear = Integer.parseInt(combinedRangeMatcher.group(2));
             return currentPeriod >= startYear && currentPeriod <= endYear;
         }
 
-        Matcher singleYearMatcher = SINGLE_YEAR_PATTERN.matcher(combined);
-        if (singleYearMatcher.find()) {
-            int year = Integer.parseInt(singleYearMatcher.group(1));
+        Matcher combinedSingleYearMatcher = SINGLE_YEAR_PATTERN.matcher(combined);
+        if (combinedSingleYearMatcher.find()) {
+            int year = Integer.parseInt(combinedSingleYearMatcher.group(1));
             return year == currentPeriod;
         }
 

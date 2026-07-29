@@ -60,6 +60,16 @@ class GoogleClassroomServiceTest {
     }
 
     @Test
+    void shouldMatchCourseWhenRoomContainsOnlyYear() {
+        Curso curso = new Curso(1, "Algoritmia", ctn.informatica.sca.util.AcademicPeriod.current() + 1, "A");
+        Course classroomCourse = new Course();
+        classroomCourse.setName("Algoritmia 2do A");
+        classroomCourse.setRoom("2025");
+
+        assertTrue(GoogleClassroomService.courseMatchesTeacherCurso(classroomCourse, List.of(curso)));
+    }
+
+    @Test
     void shouldMatchWhenSpecialtyComesFromCourseName() {
         Curso curso = new Curso(1, "Informática", ctn.informatica.sca.util.AcademicPeriod.current() + 1, "A");
         Course classroomCourse = new Course();

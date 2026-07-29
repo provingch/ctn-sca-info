@@ -66,6 +66,10 @@ public final class GoogleClassroomService {
         return GoogleClassroomUtils.parseCourseKey(courseName, room);
     }
 
+    public static Optional<GoogleClassroomUtils.CourseKey> parseCourseKey(String courseName, String room, String section) {
+        return GoogleClassroomUtils.parseCourseKey(courseName, room, section);
+    }
+
     public static Classroom buildClassroomClient(Profesor profesor) throws IOException {
         HttpRequestInitializer initializer = buildCredential(profesor);
         return new Classroom.Builder(new NetHttpTransport(), GsonFactory.getDefaultInstance(), initializer)
@@ -193,7 +197,8 @@ public final class GoogleClassroomService {
 
         String name = course.getName();
         String room = course.getRoom();
-        Optional<GoogleClassroomUtils.CourseKey> key = parseCourseKey(name, room);
+        String section = course.getSection();
+        Optional<GoogleClassroomUtils.CourseKey> key = parseCourseKey(name, room, section);
 
         String specialtyHint = GoogleClassroomUtils.extractSpecialtyHint(name, room);
         if (specialtyHint.isBlank()) {
@@ -590,12 +595,10 @@ public final class GoogleClassroomService {
                     && (GoogleClassroomUtils.containsNormalizedPhrase(name, normalizedMateria)
                     || GoogleClassroomUtils.containsNormalizedPhrase(room, normalizedMateria));
 
-            Optional<GoogleClassroomUtils.CourseKey> key = parseCourseKey(name, room);
-            if (key.isEmpty() && course.getSection() != null && !course.getSection().isBlank()) {
-                key = parseCourseKey(course.getSection(), room);
-            }
-            if (key.isEmpty() && course.getSection() != null && !course.getSection().isBlank()) {
-                key = parseCourseKey(name + " " + course.getSection(), room);
+            String section = course.getSection();
+            Optional<GoogleClassroomUtils.CourseKey> key = parseCourseKey(name, room, section);
+            if (key.isEmpty() && section != null && !section.isBlank()) {
+                key = parseCourseKey(name + " " + section, room, section);
             }
             if (key.isPresent() && curso.matchesCourseKey(key.get())) {
                 if (subjectMatches) {
