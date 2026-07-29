@@ -1,6 +1,23 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ page pageEncoding="UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<c:choose>
+  <c:when test="${empty sessionScope.user}">
+    <c:url var="homeUrl" value="/index.jsp" />
+  </c:when>
+  <c:when test="${sessionScope.user.level == 2}">
+    <c:url var="homeUrl" value="/evaluacion" />
+  </c:when>
+  <c:when test="${sessionScope.user.level == 3}">
+    <c:url var="homeUrl" value="/admin" />
+  </c:when>
+  <c:when test="${sessionScope.user.level == 4}">
+    <c:url var="homeUrl" value="/padre" />
+  </c:when>
+  <c:otherwise>
+    <c:url var="homeUrl" value="/inicio" />
+  </c:otherwise>
+</c:choose>
 <!DOCTYPE html>
 <html data-theme="light">
 <head>
@@ -14,20 +31,34 @@
   <meta name="apple-mobile-web-app-title" content="SCA">
   <link rel="apple-touch-icon" href="${pageContext.request.contextPath}/icons/pwa/apple-touch-icon.png">
   <link rel="stylesheet" href="${pageContext.request.contextPath}/vendor/flat-ui/css/flat-ui.css">
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=238">
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=251">
   <link rel="icon" type="image/x-icon" href="${pageContext.request.contextPath}/images/ctn-logo.svg">
-  <style>
-    .page-shell { max-width: 860px; margin: 0 auto; padding: 32px 24px; }
-    .page-shell h1 { margin-bottom: 0.5rem; }
-    .page-shell p, .page-shell li { line-height: 1.75; }
-    .page-shell ul { margin: 1rem 0 1.5rem 1.2rem; }
-    .page-shell .page-links { margin-top: 32px; }
-    .page-links a { color: var(--accent); text-decoration: none; }
-    .page-links a:hover { text-decoration: underline; }
-  </style>
 </head>
-<body data-user-level="${empty sessionScope.user ? '1' : sessionScope.user.level}" data-specialty="${empty sessionScope.scaSpecialty ? 'informatica' : sessionScope.scaSpecialty}" data-specialty-source="session">
-  <main class="page-shell">
+<body class="legal-page" data-page="terms-of-service" data-user-level="${empty sessionScope.user ? '1' : sessionScope.user.level}" data-specialty="general" data-specialty-source="system">
+  <header class="navbar navbar-default navbar-fixed-top ctn-navbar" role="navigation">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#ctnNavbarMenu" aria-expanded="false">
+          <span class="sr-only">Abrir navegación</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand ctn-navbar-brand" href="${homeUrl}" aria-label="Ir al inicio">
+          <img class="header-logo" src="${pageContext.request.contextPath}/images/ctn-logo.svg" alt="CTN">
+          <span>Colegio Técnico Nacional</span>
+        </a>
+      </div>
+      <div class="collapse navbar-collapse" id="ctnNavbarMenu">
+        <ul class="nav navbar-nav navbar-right ctn-navbar-actions">
+          <li class="ctn-theme-item"></li>
+        </ul>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-shell legal-shell">
+    <a class="legal-back-link" href="${homeUrl}">← Volver al inicio</a>
     <h1>Condiciones del Servicio</h1>
     <p>El uso del sistema SCA está sujeto a estas condiciones. Al ingresar y usar la plataforma, aceptas estos términos y la política de privacidad asociada.</p>
 
@@ -47,9 +78,10 @@
     <h2>4. Modificaciones</h2>
     <p>El colegio puede actualizar estas condiciones en cualquier momento. Te recomendamos revisar esta página periódicamente.</p>
 
-    <div class="page-links">
+    <div class="legal-page-links">
       <a href="${pageContext.request.contextPath}/privacidad">Ver Política de Privacidad</a>
     </div>
+    <a class="legal-back-link legal-back-link--footer" href="${homeUrl}">← Volver al inicio</a>
   </main>
   <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/vendor/jquery.min.js"></script>
   <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/flat-ui.js"></script>
