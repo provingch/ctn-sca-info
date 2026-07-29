@@ -57,7 +57,7 @@ public class AlumnoDao extends conexion {
     }
 
     public List<Alumno> findByCursoId(int cursoId) throws SQLException {
-        String sql = "SELECT id, nombre, apellido, curso_id FROM alumno WHERE curso_id = ? ORDER BY apellido, nombre";
+        String sql = "SELECT id, nombre, apellido, curso_id, google_email FROM alumno WHERE curso_id = ? ORDER BY apellido, nombre";
         List<Alumno> alumnos = new ArrayList<>();
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, cursoId);
@@ -68,6 +68,7 @@ public class AlumnoDao extends conexion {
                     alumno.setNombre(rs.getString("nombre"));
                     alumno.setApellido(rs.getString("apellido"));
                     alumno.setCursoId(rs.getInt("curso_id"));
+                    alumno.setGoogleEmail(rs.getString("google_email"));
                     alumnos.add(alumno);
                 }
             }

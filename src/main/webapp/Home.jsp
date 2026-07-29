@@ -18,7 +18,7 @@
 <html data-theme="light">
 
 <head>
-  <title>CTNPortal - Profesores</title>
+  <title>SCA - Profesores</title>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="manifest" href="${pageContext.request.contextPath}/manifest.jsp">
@@ -98,8 +98,8 @@
         <div class="planilla-hero__header">
           <div class="planilla-hero__info">
             <span class="badge"><span class="dot"></span>${selCurso.especialidad}</span>
-            <h1>Panel del curso</h1>
-            <p class="planilla-subtitle">Gestiona planillas, revisa cursos y tareas de tu especialidad.</p>
+            <h1>Panel SCA del curso</h1>
+            <p class="planilla-subtitle">Gestiona rasgos academicos, planillas de puntaje y cursos de tu especialidad.</p>
           </div>
         </div>
         <div class="menu-container">
@@ -115,6 +115,111 @@
           </form>
         </div>
       </div>
+
+      <div class="section-block" style="margin-bottom:16px;">
+        <div class="section-heading">Vista principal</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <a class="planilla-card-link" href="${pageContext.request.contextPath}/HomeServlet?view=rasgos&cursoId=${empty selCurso ? '' : selCurso.id}&etapa=${selEtapa}" style="padding:8px 12px;border:1px solid var(--color-border);border-radius:8px;${viewMode eq 'rasgos' ? 'font-weight:700;' : ''}">Planilla de rasgos</a>
+          <a class="planilla-card-link" href="${pageContext.request.contextPath}/HomeServlet?view=planillas&cursoId=${empty selCurso ? '' : selCurso.id}&etapa=${selEtapa}" style="padding:8px 12px;border:1px solid var(--color-border);border-radius:8px;${viewMode eq 'planillas' ? 'font-weight:700;' : ''}">Planillas de puntaje</a>
+        </div>
+      </div>
+
+      <c:if test="${viewMode eq 'rasgos'}">
+        <div class="section-block">
+          <div class="section-heading">Planilla de rasgos academicos</div>
+
+          <c:if test="${param.rasgoError eq 'tema'}">
+            <div class="empty-state empty-state-card">Debes seleccionar curso y escribir el tema a desarrollar.</div>
+          </c:if>
+          <c:if test="${param.rasgoError eq 'sin-alumnos'}">
+            <div class="empty-state empty-state-card">No hay alumnos con nombre completo y correo valido para generar formularios.</div>
+          </c:if>
+          <c:if test="${param.rasgoOk eq 'created'}">
+            <div class="empty-state empty-state-card">Se genero la planilla de rasgos y los formularios de asistencia.</div>
+          </c:if>
+          <c:if test="${not empty rasgoErrorMessage}">
+            <div class="empty-state empty-state-card"><c:out value="${rasgoErrorMessage}" /></div>
+          </c:if>
+
+          <form action="${pageContext.request.contextPath}/HomeServlet" method="post" style="margin-bottom:14px;display:grid;gap:10px;max-width:680px;">
+            <input type="hidden" name="action" value="create-rasgo-planilla" />
+            <input type="hidden" name="cursoId" value="${empty selCurso ? '' : selCurso.id}" />
+            <input type="hidden" name="etapa" value="${selEtapa}" />
+            <label for="temaRasgo" style="font-weight:600;">Tema a desarrollar</label>
+            <input id="temaRasgo" name="tema" class="form-control" maxlength="150" placeholder="Ej.: Integrales definidas y aplicaciones" required />
+            <button type="submit" class="btn btn-primary">Generar formularios de presencia/ausencia</button>
+          </form>
+
+          <div style="margin-bottom:14px;">
+            <span class="subject-card__chip">Alumnos habilitados <strong>${fn:length(rasgoAlumnosValidos)}</strong></span>
+            <span class="subject-card__chip">Alumnos con datos incompletos <strong>${fn:length(rasgoAlumnosInvalidos)}</strong></span>
+          </div>
+
+          <c:if test="${not empty rasgoAlumnosInvalidos}">
+            <div class="empty-state empty-state-card" style="margin-bottom:14px;">
+              Estos alumnos no se incluyen en el formulario hasta completar apellido y correo de Classroom.
+            </div>
+            <div class="table-responsive" style="margin-bottom:14px;">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Alumno</th>
+                    <th>Correo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <c:forEach var="alumno" items="${rasgoAlumnosInvalidos}">
+                    <tr>
+                      <td><c:out value="${alumno.nombre}" /> <c:out value="${alumno.apellido}" /></td>
+                      <td><c:out value="${empty alumno.googleEmail ? 'Sin correo' : alumno.googleEmail}" /></td>
+                    </tr>
+                  </c:forEach>
+                </tbody>
+              </table>
+            </div>
+          </c:if>
+
+          <c:if test="${not empty rasgoPlanillas}">
+            <div style="margin-bottom:14px;">
+              <label for="rasgoPlanillaSel" style="font-weight:600;">Planillas generadas</label>
+              <select id="rasgoPlanillaSel" class="form-control" style="max-width:520px;" onchange="location.href='${pageContext.request.contextPath}/HomeServlet?view=rasgos&cursoId=${selCurso.id}&etapa=${selEtapa}&rasgoPlanillaId=' + this.value;">
+                <c:forEach var="rp" items="${rasgoPlanillas}">
+                  <option value="${rp.id}" ${not empty rasgoPlanillaSeleccionada and rasgoPlanillaSeleccionada.id == rp.id ? 'selected' : ''}>${rp.tema} - ${rp.fechaClase}</option>
+                </c:forEach>
+              </select>
+            </div>
+          </c:if>
+
+          <c:if test="${not empty rasgoAsistencias}">
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Alumno</th>
+                    <th>Correo</th>
+                    <th>Estado</th>
+                    <th>Formulario</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <c:forEach var="asistencia" items="${rasgoAsistencias}">
+                    <tr>
+                      <td><c:out value="${asistencia.alumnoNombreCompleto}" /></td>
+                      <td><c:out value="${asistencia.alumnoEmail}" /></td>
+                      <td><c:out value="${asistencia.estado}" /></td>
+                      <td>
+                        <a href="${pageContext.request.contextPath}/HomeServlet?view=rasgos-form&asistenciaId=${asistencia.id}" target="_blank" rel="noopener noreferrer">Abrir formulario</a>
+                      </td>
+                    </tr>
+                  </c:forEach>
+                </tbody>
+              </table>
+            </div>
+          </c:if>
+        </div>
+      </c:if>
+
+      <c:if test="${viewMode eq 'planillas'}">
 
       <c:if test="${not googleClassroomConnected and empty planillas}">
         <div class="empty-state-wrapper">
@@ -257,6 +362,8 @@
             </c:forEach>
           </div>
         </div>
+      </c:if>
+
       </c:if>
 
     </section>
