@@ -1,6 +1,23 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ page pageEncoding="UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<c:choose>
+  <c:when test="${empty sessionScope.user}">
+    <c:url var="homeUrl" value="/index.jsp" />
+  </c:when>
+  <c:when test="${sessionScope.user.level == 2}">
+    <c:url var="homeUrl" value="/evaluacion" />
+  </c:when>
+  <c:when test="${sessionScope.user.level == 3}">
+    <c:url var="homeUrl" value="/admin" />
+  </c:when>
+  <c:when test="${sessionScope.user.level == 4}">
+    <c:url var="homeUrl" value="/padre" />
+  </c:when>
+  <c:otherwise>
+    <c:url var="homeUrl" value="/inicio" />
+  </c:otherwise>
+</c:choose>
 <!DOCTYPE html>
 <html data-theme="light">
 <head>
@@ -14,20 +31,34 @@
   <meta name="apple-mobile-web-app-title" content="SCA">
   <link rel="apple-touch-icon" href="${pageContext.request.contextPath}/icons/pwa/apple-touch-icon.png">
   <link rel="stylesheet" href="${pageContext.request.contextPath}/vendor/flat-ui/css/flat-ui.css">
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=238">
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=251">
   <link rel="icon" type="image/x-icon" href="${pageContext.request.contextPath}/images/ctn-logo.svg">
-  <style>
-    .page-shell { max-width: 860px; margin: 0 auto; padding: 32px 24px; }
-    .page-shell h1 { margin-bottom: 0.5rem; }
-    .page-shell p, .page-shell li { line-height: 1.75; }
-    .page-shell ul { margin: 1rem 0 1.5rem 1.2rem; }
-    .page-shell .page-links { margin-top: 32px; }
-    .page-links a { color: var(--accent); text-decoration: none; }
-    .page-links a:hover { text-decoration: underline; }
-  </style>
 </head>
-<body data-user-level="${empty sessionScope.user ? '1' : sessionScope.user.level}" data-specialty="${empty sessionScope.scaSpecialty ? 'informatica' : sessionScope.scaSpecialty}" data-specialty-source="session">
-  <main class="page-shell">
+<body class="legal-page" data-page="privacy-policy" data-user-level="${empty sessionScope.user ? '1' : sessionScope.user.level}" data-specialty="general" data-specialty-source="system">
+  <header class="navbar navbar-default navbar-fixed-top ctn-navbar" role="navigation">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#ctnNavbarMenu" aria-expanded="false">
+          <span class="sr-only">Abrir navegación</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand ctn-navbar-brand" href="${homeUrl}" aria-label="Ir al inicio">
+          <img class="header-logo" src="${pageContext.request.contextPath}/images/ctn-logo.svg" alt="CTN">
+          <span>Colegio Técnico Nacional</span>
+        </a>
+      </div>
+      <div class="collapse navbar-collapse" id="ctnNavbarMenu">
+        <ul class="nav navbar-nav navbar-right ctn-navbar-actions">
+          <li class="ctn-theme-item"></li>
+        </ul>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-shell legal-shell">
+    <a class="legal-back-link" href="${homeUrl}">← Volver al inicio</a>
     <h1>Política de Privacidad</h1>
     <p>En Colegio Técnico Nacional valoramos tu privacidad. Esta página describe cómo recopilamos, usamos y protegemos tus datos cuando utilizas el sistema SCA.</p>
 
@@ -50,7 +81,7 @@
     <h2>5. Contacto</h2>
     <p>Si tenés dudas sobre esta política o sobre tus datos, dirigite al equipo de administración del colegio para obtener más información.</p>
 
-    <div class="page-links">
+    <div class="legal-page-links">
       <a href="${pageContext.request.contextPath}/terminos">Ver Condiciones del Servicio</a>
     </div>
   </main>

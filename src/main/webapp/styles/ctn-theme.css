@@ -3980,6 +3980,90 @@ html[data-theme="dark"] #totpQrCanvas img {
   border-color: var(--line);
 }
 
+body.legal-page {
+  min-height: 100vh;
+}
+
+.legal-shell {
+  width: min(100%, 860px);
+  margin: 0 auto;
+  padding: clamp(26px, 4vw, 44px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background: var(--paper);
+  box-shadow: var(--shadow-md);
+}
+
+.legal-shell h1 {
+  margin: 12px 0 18px;
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.08;
+}
+
+.legal-shell h2 {
+  margin: 28px 0 10px;
+  font-size: 1.25rem;
+}
+
+.legal-shell p,
+.legal-shell li {
+  line-height: 1.75;
+}
+
+.legal-shell ul {
+  margin: 12px 0 24px;
+  padding-left: 22px;
+}
+
+.legal-back-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 8px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform .18s ease, background-color .18s ease, box-shadow .18s ease;
+}
+
+.legal-back-link:hover,
+.legal-back-link:focus {
+  background: var(--accent-soft-strong);
+  color: var(--accent-deep);
+  text-decoration: none;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.legal-back-link:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.legal-page-links {
+  margin-top: 32px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.legal-page-links a {
+  color: var(--accent-deep);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.legal-page-links a:hover,
+.legal-page-links a:focus {
+  text-decoration: underline;
+}
+
+.legal-back-link--footer {
+  margin-top: 24px;
+}
+
 @media (max-width: 900px) {
   body {
     padding-inline: 16px;
@@ -3987,6 +4071,10 @@ html[data-theme="dark"] #totpQrCanvas img {
 
   .profile-shell {
     border-radius: 20px;
+  }
+
+  .legal-shell {
+    border-radius: var(--radius-lg);
   }
 }
 
@@ -4034,6 +4122,11 @@ html[data-theme="dark"] #totpQrCanvas img {
     right: 10px;
     left: 10px;
     border-radius: 15px;
+  }
+
+  .legal-shell {
+    padding: 24px 20px;
+    border-radius: 18px;
   }
 
   .ctn-navbar .navbar-collapse {
