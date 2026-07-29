@@ -6,12 +6,16 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import ctn.informatica.sca.util.AcademicPeriod;
 
 public final class GoogleClassroomUtils {
 
     private static final Pattern LEVEL_PATTERN = Pattern.compile("(?<![\\p{L}\\p{N}])(primero|segundo|tercero|1(?:º|°|ro|er)?|2(?:º|°|do)?|3(?:º|°|ro)?|[123])(?=(?:\\s*|[°º\\-])?[abc]|\\b)", Pattern.CASE_INSENSITIVE);
     private static final Pattern SECTION_PATTERN = Pattern.compile("(?:^|[^\\p{L}\\p{N}]|[0-9°º])([abc])(?=\\b|\\s|$)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern SINGLE_YEAR_PATTERN = Pattern.compile("\\b(20\\d{2})\\b");
+    private static final Pattern YEAR_RANGE_PATTERN = Pattern.compile("\\b(20\\d{2})\\s*[/\\-]\\s*(20\\d{2})\\b");
 
     private GoogleClassroomUtils() {
         // util class
@@ -35,8 +39,13 @@ public final class GoogleClassroomUtils {
             return Optional.empty();
         }
 
+        int currentPeriod = AcademicPeriod.current();
+        if (!isAcademicPeriodCompatible(courseName, room, currentPeriod)) {
+            return Optional.empty();
+        }
+
         String sala = stripLevelAndSection(normalizedName);
-        return Optional.of(new CourseKey(level, section, sala, AcademicPeriod.current()));
+        return Optional.of(new CourseKey(level, section, sala, currentPeriod));
     }
 
     public static String normalizeSubjectName(String subjectName) {
@@ -67,6 +76,30 @@ public final class GoogleClassroomUtils {
             return "";
         }
         return normalize(room);
+    }
+
+    private static boolean isAcademicPeriodCompatible(String courseName, String room, int currentPeriod) {
+        String combined = Stream.of(courseName, room)
+                .filter(Objects::nonNull)
+                .collect(Collectors.joining(" "));
+        if (combined == null || combined.isBlank()) {
+            return true;
+        }
+
+        Matcher rangeMatcher = YEAR_RANGE_PATTERN.matcher(combined);
+        if (rangeMatcher.find()) {
+            int startYear = Integer.parseInt(rangeMatcher.group(1));
+            int endYear = Integer.parseInt(rangeMatcher.group(2));
+            return currentPeriod >= startYear && currentPeriod <= endYear;
+        }
+
+        Matcher singleYearMatcher = SINGLE_YEAR_PATTERN.matcher(combined);
+        if (singleYearMatcher.find()) {
+            int year = Integer.parseInt(singleYearMatcher.group(1));
+            return year == currentPeriod;
+        }
+
+        return true;
     }
 
     private static String stripLevelAndSection(String text) {
