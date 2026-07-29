@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-title" content="SCA">
   <link rel="apple-touch-icon" href="${pageContext.request.contextPath}/icons/pwa/apple-touch-icon.png">
   <link rel="stylesheet" href="${pageContext.request.contextPath}/vendor/flat-ui/css/flat-ui.css" />
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=241" />
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=244" />
   <link rel="icon" type="image/x-icon" href="${pageContext.request.contextPath}/images/ctn-logo.svg" />
   <style>
     .capacity-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 16px 0 24px; }
@@ -340,7 +340,7 @@
   </main>
   <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/vendor/jquery.min.js"></script>
   <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/flat-ui.js"></script>
-  <script src="${pageContext.request.contextPath}/scripts/sca-theme.js?v=166"></script>
+  <script src="${pageContext.request.contextPath}/scripts/sca-theme.js?v=168"></script>
   <script>
     const studentSearch = document.getElementById('studentSearch');
     const courseFilter = document.getElementById('courseFilter');

@@ -2969,14 +2969,14 @@ html[data-theme="dark"] .footer {
 
 :root {
   color-scheme: light;
-  --color-accent-informatica: #5267f7;
-  --color-accent-construcciones: #b78a35;
-  --color-accent-quimica: #718096;
-  --color-accent-electronica: #7c63dc;
-  --color-accent-mecanica-automotriz: #253b7d;
-  --color-accent-mecanica-general: #267253;
-  --color-accent-electromecanica: #3452d1;
-  --color-accent-electricidad: #1688b8;
+  --color-accent-informatica: #7a1f2b;
+  --color-accent-construcciones: #a48743;
+  --color-accent-quimica: #7f899a;
+  --color-accent-electronica: #6b7280;
+  --color-accent-mecanica-automotriz: #233c75;
+  --color-accent-mecanica-general: #1e5a38;
+  --color-accent-electromecanica: #1a2ecf;
+  --color-accent-electricidad: #268fba;
   --color-bg: #eef1ff;
   --color-bg-elevated: #ffffff;
   --color-bg-muted: #f6f7ff;
@@ -3028,10 +3028,10 @@ html[data-theme="dark"] .footer {
 
 html[data-theme="dark"] {
   color-scheme: dark;
-  --color-accent-informatica: #8190ff;
+  --color-accent-informatica: #d17d89;
   --color-accent-construcciones: #e3ba67;
   --color-accent-quimica: #c2cada;
-  --color-accent-electronica: #ad96ff;
+  --color-accent-electronica: #b0b7c3;
   --color-accent-mecanica-automotriz: #829af0;
   --color-accent-mecanica-general: #6bd0a4;
   --color-accent-electromecanica: #829aff;
@@ -3058,51 +3058,64 @@ html[data-theme="dark"] {
 }
 
 /* Canonical specialty palette. These rules work on the page and nested scopes. */
-[data-specialty="informatica"] {
+[data-specialty] {
+  --accent-soft: color-mix(in srgb, var(--accent) 12%, var(--paper));
+  --accent-soft-strong: color-mix(in srgb, var(--accent) 22%, var(--paper));
+  --accent-deep: color-mix(in srgb, var(--accent) 82%, #121a38);
+  --focus-ring: 0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent);
+  --color-info: var(--accent);
+  --color-info-bg: var(--accent-soft);
+}
+[data-specialty="general"] {
   --accent: #5267f7;
+  --hero-tone: #5267f7;
+  --accent-contrast: #ffffff;
+}
+[data-specialty="informatica"] {
+  --accent: #7a1f2b;
   --hero-tone: #7a1f2b;
   --accent-contrast: #ffffff;
 }
 [data-specialty="construcciones"] {
-  --accent: #b78a35;
+  --accent: #a48743;
   --hero-tone: #a48743;
   --accent-contrast: #ffffff;
 }
 [data-specialty="quimica"] {
-  --accent: #718096;
+  --accent: #7f899a;
   --hero-tone: #7f899a;
   --accent-contrast: #ffffff;
 }
 [data-specialty="electronica"] {
-  --accent: #7c63dc;
+  --accent: #6b7280;
   --hero-tone: #6b7280;
   --accent-contrast: #ffffff;
 }
 [data-specialty="mecanica-automotriz"] {
-  --accent: #253b7d;
+  --accent: #233c75;
   --hero-tone: #233c75;
   --accent-contrast: #ffffff;
 }
 [data-specialty="mecanica-general"] {
-  --accent: #267253;
+  --accent: #1e5a38;
   --hero-tone: #1e5a38;
   --accent-contrast: #ffffff;
 }
 [data-specialty="electromecanica"] {
-  --accent: #3452d1;
+  --accent: #1a2ecf;
   --hero-tone: #1a2ecf;
   --accent-contrast: #ffffff;
 }
 [data-specialty="electricidad"] {
-  --accent: #1688b8;
+  --accent: #268fba;
   --hero-tone: #268fba;
   --accent-contrast: #ffffff;
 }
 
-html[data-theme="dark"] [data-specialty="informatica"] { --accent: #8190ff; --accent-contrast: #10152a; }
+html[data-theme="dark"] [data-specialty="informatica"] { --accent: #d17d89; --accent-contrast: #271116; }
 html[data-theme="dark"] [data-specialty="construcciones"] { --accent: #e3ba67; --accent-contrast: #211a0c; }
 html[data-theme="dark"] [data-specialty="quimica"] { --accent: #c2cada; --accent-contrast: #151925; }
-html[data-theme="dark"] [data-specialty="electronica"] { --accent: #ad96ff; --accent-contrast: #171126; }
+html[data-theme="dark"] [data-specialty="electronica"] { --accent: #b0b7c3; --accent-contrast: #171b23; }
 html[data-theme="dark"] [data-specialty="mecanica-automotriz"] { --accent: #829af0; --accent-contrast: #10162a; }
 html[data-theme="dark"] [data-specialty="mecanica-general"] { --accent: #6bd0a4; --accent-contrast: #10241c; }
 html[data-theme="dark"] [data-specialty="electromecanica"] { --accent: #829aff; --accent-contrast: #11162a; }

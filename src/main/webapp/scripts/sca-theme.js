@@ -47,14 +47,21 @@
       const applySelection = function () {
         const selectedOption = select.options[select.selectedIndex];
         const specialtyName = selectedOption ? selectedOption.textContent : select.value;
-        if (!select.value || !specialtyName) return;
-
         const target = select.closest('.planilla-hero, .hero-shell, .top-section')
           || (select.id === 'classEspecialidad' ? document.querySelector('.inicio-shell') : null)
           || document.querySelector('.planilla-hero, .hero-shell, .top-section');
 
         if (target) {
-          target.setAttribute('data-specialty', normalizeSpecialty(specialtyName));
+          const normalizedSpecialty = normalizeSpecialty(specialtyName);
+          const isPlaceholder = !select.value
+            || !specialtyName
+            || normalizedSpecialty === 'seleccione-especialidad';
+          const activeSpecialty = isPlaceholder ? 'general' : normalizedSpecialty;
+
+          target.setAttribute('data-specialty', activeSpecialty);
+          if (document.body) {
+            document.body.setAttribute('data-specialty', activeSpecialty);
+          }
         }
       };
 
