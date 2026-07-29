@@ -44,6 +44,11 @@
     const selects = document.querySelectorAll('select[name="especialidad"], #classEspecialidad');
 
     selects.forEach(function (select) {
+      const tabSpecialtyKey = select.getAttribute('data-tab-specialty-key');
+      if (tabSpecialtyKey) {
+        restoreTabScopedSpecialty(select, tabSpecialtyKey);
+      }
+
       const applySelection = function (persistSelection) {
         const selectedOption = select.options[select.selectedIndex];
         const specialtyName = selectedOption ? selectedOption.textContent : select.value;
@@ -69,10 +74,68 @@
       };
 
       select.addEventListener('change', function () {
+        if (tabSpecialtyKey) {
+          rememberTabScopedSpecialty(select, tabSpecialtyKey);
+        }
         applySelection(true);
       });
-      applySelection(false);
+      applySelection(Boolean(tabSpecialtyKey));
     });
+  }
+
+  function restoreTabScopedSpecialty(select, storageKey) {
+    let saved = null;
+    try {
+      saved = window.sessionStorage.getItem(storageKey);
+    } catch (ignored) {
+      saved = null;
+    }
+
+    if (!saved) {
+      select.value = '';
+      return;
+    }
+
+    try {
+      const selection = JSON.parse(saved);
+      const matchingOption = Array.from(select.options).find(function (option) {
+        return (selection.value && option.value === selection.value)
+          || normalizeSpecialty(option.textContent) === selection.token;
+      });
+      select.value = matchingOption ? matchingOption.value : '';
+    } catch (ignored) {
+      select.value = '';
+    }
+  }
+
+  function rememberTabScopedSpecialty(select, storageKey) {
+    const selectedOption = select.options[select.selectedIndex];
+    try {
+      if (!select.value || !selectedOption) {
+        window.sessionStorage.removeItem(storageKey);
+        return;
+      }
+      window.sessionStorage.setItem(storageKey, JSON.stringify({
+        value: select.value,
+        token: normalizeSpecialty(selectedOption.textContent)
+      }));
+    } catch (ignored) {
+      // Session persistence is optional; the selector remains fully usable.
+    }
+  }
+
+  function syncTabScopedProfileSpecialty() {
+    if (!document.body || document.body.getAttribute('data-page') !== 'profile') return;
+    try {
+      const saved = window.sessionStorage.getItem('scaEvaluacionSpecialty');
+      if (!saved) return;
+      const selection = JSON.parse(saved);
+      if (selection && selection.token) {
+        document.body.setAttribute('data-specialty', normalizeSpecialty(selection.token));
+      }
+    } catch (ignored) {
+      // The server-provided specialty remains as the fallback.
+    }
   }
 
   function resolveContextPath() {
@@ -306,6 +369,7 @@
     const body = document.body;
     syncSpecialtyScopes(document);
     syncParentSpecialty(body);
+    syncTabScopedProfileSpecialty();
     syncSelectableSpecialties();
     if (body) {
       const specialty = getBodySpecialty();

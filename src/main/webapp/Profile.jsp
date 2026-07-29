@@ -255,7 +255,7 @@
   </style>
 </head>
 
-<body data-user-level="${sessionScope.user.level}" data-specialty="${empty sessionScope.scaSpecialty ? 'informatica' : sessionScope.scaSpecialty}" data-specialty-source="session">
+<body data-page="profile" data-user-level="${sessionScope.user.level}" data-specialty="${empty sessionScope.scaSpecialty ? 'informatica' : sessionScope.scaSpecialty}" data-specialty-source="session">
   <c:url var="profileUrl" value="/ProfileServlet" />
   <c:url var="logoutUrl" value="/LogoutServlet" />
   <header class="navbar navbar-default navbar-fixed-top ctn-navbar" role="navigation">
@@ -1309,7 +1309,7 @@
   <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/vendor/jquery.min.js"></script>
   <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/flat-ui.js"></script>
   <script src="${pageContext.request.contextPath}/scripts/qrcode.js"></script>
-  <script src="${pageContext.request.contextPath}/scripts/sca-theme.js?v=169"></script>
+  <script src="${pageContext.request.contextPath}/scripts/sca-theme.js?v=170"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {

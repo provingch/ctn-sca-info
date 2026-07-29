@@ -340,7 +340,7 @@
   </main>
   <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/vendor/jquery.min.js"></script>
   <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/flat-ui.js"></script>
-  <script src="${pageContext.request.contextPath}/scripts/sca-theme.js?v=169"></script>
+  <script src="${pageContext.request.contextPath}/scripts/sca-theme.js?v=170"></script>
   <script>
     const studentSearch = document.getElementById('studentSearch');
     const courseFilter = document.getElementById('courseFilter');
