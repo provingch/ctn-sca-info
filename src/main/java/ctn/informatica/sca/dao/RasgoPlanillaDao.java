@@ -12,16 +12,21 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class RasgoPlanillaDao extends conexion {
 
     public int crearPlanillaRasgo(int cursoId, int profesorId, String tema, List<Alumno> alumnos) throws SQLException {
+        return crearPlanillaRasgo(cursoId, profesorId, tema, alumnos, java.util.Collections.emptySet());
+    }
+
+    public int crearPlanillaRasgo(int cursoId, int profesorId, String tema, List<Alumno> alumnos, Set<Integer> alumnosAusentes) throws SQLException {
         if (alumnos == null || alumnos.isEmpty()) {
             throw new SQLException("No hay alumnos elegibles para crear la planilla de rasgos");
         }
 
         String insertPlanillaSql = "INSERT INTO planilla_rasgo (curso_id, profesor_id, tema, fecha_clase) VALUES (?, ?, ?, CURRENT_DATE())";
-        String insertAsistenciaSql = "INSERT INTO rasgo_asistencia (planilla_rasgo_id, alumno_id, alumno_nombre, alumno_apellido, alumno_email) VALUES (?, ?, ?, ?, ?)";
+        String insertAsistenciaSql = "INSERT INTO rasgo_asistencia (planilla_rasgo_id, alumno_id, alumno_nombre, alumno_apellido, alumno_email, estado) VALUES (?, ?, ?, ?, ?, ?)";
 
         try (Connection con = getCon()) {
             boolean originalAutoCommit = con.getAutoCommit();
@@ -43,11 +48,14 @@ public class RasgoPlanillaDao extends conexion {
 
                 try (PreparedStatement ps = con.prepareStatement(insertAsistenciaSql)) {
                     for (Alumno alumno : alumnos) {
+                        String estado = alumnosAusentes != null && alumnosAusentes.contains(alumno.getId())
+                                ? "ausente" : "presente";
                         ps.setInt(1, planillaId);
                         ps.setInt(2, alumno.getId());
                         ps.setString(3, alumno.getNombre());
                         ps.setString(4, alumno.getApellido());
                         ps.setString(5, alumno.getGoogleEmail());
+                        ps.setString(6, estado);
                         ps.addBatch();
                     }
                     ps.executeBatch();

@@ -99,55 +99,131 @@
           <div class="planilla-hero__info">
             <span class="badge"><span class="dot"></span>${selCurso.especialidad}</span>
             <h1>Panel SCA del curso</h1>
-            <p class="planilla-subtitle">Gestiona rasgos academicos, planillas de puntaje y cursos de tu especialidad.</p>
+            <p class="planilla-subtitle">Gestiona inicio de clase y planillas de puntaje conectadas a tus cursos.</p>
           </div>
         </div>
-        <div class="menu-container">
-          <form id="cursoSelectionForm" action="HomeServlet" method="get" class="curso-selection-form">
-            <label for="selEspecialidad" style="font-weight:600;margin-right:0.5rem;">Especialidad</label>
-            <select id="selEspecialidad" name="especialidad"></select>
-            <label for="selCursoNivel" style="font-weight:600;margin-right:0.5rem;">Curso</label>
-            <select id="selCursoNivel" name="promocion" disabled></select>
-            <label for="selSeccion" style="font-weight:600;margin-right:0.5rem;">Sección</label>
-            <select id="selSeccion" name="seccion" disabled></select>
-            <input type="hidden" name="cursoId" id="cursoIdHidden" value="${empty selCurso ? '' : selCurso.id}" />
-            <input type="hidden" name="etapa" value="${selEtapa}" />
-          </form>
-        </div>
+        <c:if test="${viewMode eq 'planillas'}">
+          <div class="menu-container">
+            <form id="cursoSelectionForm" action="HomeServlet" method="get" class="curso-selection-form">
+              <label for="selEspecialidad" style="font-weight:600;margin-right:0.5rem;">Especialidad</label>
+              <select id="selEspecialidad" name="especialidad"></select>
+              <label for="selCursoNivel" style="font-weight:600;margin-right:0.5rem;">Curso</label>
+              <select id="selCursoNivel" name="promocion" disabled></select>
+              <label for="selSeccion" style="font-weight:600;margin-right:0.5rem;">Sección</label>
+              <select id="selSeccion" name="seccion" disabled></select>
+              <input type="hidden" name="cursoId" id="cursoIdHidden" value="${empty selCurso ? '' : selCurso.id}" />
+              <input type="hidden" name="etapa" value="${selEtapa}" />
+              <input type="hidden" name="view" value="planillas" />
+            </form>
+          </div>
+        </c:if>
       </div>
 
       <div class="section-block" style="margin-bottom:16px;">
         <div class="section-heading">Vista principal</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <a class="planilla-card-link" href="${pageContext.request.contextPath}/HomeServlet?view=rasgos&cursoId=${empty selCurso ? '' : selCurso.id}&etapa=${selEtapa}" style="padding:8px 12px;border:1px solid var(--color-border);border-radius:8px;${viewMode eq 'rasgos' ? 'font-weight:700;' : ''}">Planilla de rasgos</a>
+          <a class="planilla-card-link" href="${pageContext.request.contextPath}/HomeServlet?view=clase&cursoId=${empty selCurso ? '' : selCurso.id}&etapa=${selEtapa}" style="padding:8px 12px;border:1px solid var(--color-border);border-radius:8px;${viewMode eq 'clase' ? 'font-weight:700;' : ''}">Iniciar clase</a>
           <a class="planilla-card-link" href="${pageContext.request.contextPath}/HomeServlet?view=planillas&cursoId=${empty selCurso ? '' : selCurso.id}&etapa=${selEtapa}" style="padding:8px 12px;border:1px solid var(--color-border);border-radius:8px;${viewMode eq 'planillas' ? 'font-weight:700;' : ''}">Planillas de puntaje</a>
         </div>
       </div>
 
-      <c:if test="${viewMode eq 'rasgos'}">
+      <c:if test="${viewMode eq 'clase'}">
         <div class="section-block">
-          <div class="section-heading">Planilla de rasgos academicos</div>
+          <div class="section-heading">Formulario de inicio de clase</div>
 
           <c:if test="${param.rasgoError eq 'tema'}">
-            <div class="empty-state empty-state-card">Debes seleccionar curso y escribir el tema a desarrollar.</div>
+            <div class="empty-state empty-state-card">Debes seleccionar curso, instrumento y tema a desarrollar.</div>
           </c:if>
           <c:if test="${param.rasgoError eq 'sin-alumnos'}">
-            <div class="empty-state empty-state-card">No hay alumnos con nombre completo y correo valido para generar formularios.</div>
+            <div class="empty-state empty-state-card">No hay alumnos con nombre y apellido validos para el curso seleccionado.</div>
           </c:if>
           <c:if test="${param.rasgoOk eq 'created'}">
-            <div class="empty-state empty-state-card">Se genero la planilla de rasgos y los formularios de asistencia.</div>
+            <div class="empty-state empty-state-card">Clase registrada correctamente con asistencia inicial.</div>
           </c:if>
           <c:if test="${not empty rasgoErrorMessage}">
             <div class="empty-state empty-state-card"><c:out value="${rasgoErrorMessage}" /></div>
           </c:if>
 
-          <form action="${pageContext.request.contextPath}/HomeServlet" method="post" style="margin-bottom:14px;display:grid;gap:10px;max-width:680px;">
-            <input type="hidden" name="action" value="create-rasgo-planilla" />
-            <input type="hidden" name="cursoId" value="${empty selCurso ? '' : selCurso.id}" />
+          <form id="classSelectionForm" action="${pageContext.request.contextPath}/HomeServlet" method="get" class="curso-selection-form" style="margin-bottom:14px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+            <input type="hidden" name="view" value="clase" />
             <input type="hidden" name="etapa" value="${selEtapa}" />
-            <label for="temaRasgo" style="font-weight:600;">Tema a desarrollar</label>
-            <input id="temaRasgo" name="tema" class="form-control" maxlength="150" placeholder="Ej.: Integrales definidas y aplicaciones" required />
-            <button type="submit" class="btn btn-primary">Generar formularios de presencia/ausencia</button>
+            <div>
+              <label for="classEspecialidad" style="font-weight:600;">Especialidad</label>
+              <select id="classEspecialidad" name="classEspecialidad"></select>
+            </div>
+            <div>
+              <label for="classCursoNivel" style="font-weight:600;">Curso</label>
+              <select id="classCursoNivel" name="classCursoNivel" disabled></select>
+            </div>
+            <div>
+              <label for="classSeccion" style="font-weight:600;">Sección</label>
+              <select id="classSeccion" name="classSeccion" disabled></select>
+            </div>
+            <div>
+              <label for="classTurno" style="font-weight:600;">Turno</label>
+              <select id="classTurno" name="turno" class="form-control">
+                <option value="">-- Seleccione turno --</option>
+                <option value="mañana" ${param.turno eq 'mañana' ? 'selected' : ''}>Mañana</option>
+                <option value="tarde" ${param.turno eq 'tarde' ? 'selected' : ''}>Tarde</option>
+                <option value="noche" ${param.turno eq 'noche' ? 'selected' : ''}>Noche</option>
+              </select>
+            </div>
+            <input type="hidden" name="cursoId" id="classCursoIdHidden" value="${empty selCurso ? '' : selCurso.id}" />
+          </form>
+
+          <form action="${pageContext.request.contextPath}/HomeServlet" method="post" style="margin-bottom:14px;display:grid;gap:10px;max-width:980px;">
+            <input type="hidden" name="action" value="create-rasgo-planilla" />
+            <input type="hidden" name="cursoId" value="${empty selCurso ? '' : selCurso.id}" id="formCursoId" />
+            <input type="hidden" name="turno" value="${param.turno}" id="formTurno" />
+            <input type="hidden" name="etapa" value="${selEtapa}" />
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:10px;">
+              <div>
+                <label for="instrumentoId" style="font-weight:600;">Tipo de clase (Instrumento)</label>
+                <select id="instrumentoId" name="instrumentoId" class="form-control" required>
+                  <option value="">-- Seleccione instrumento --</option>
+                  <c:forEach var="instrumento" items="${instrumentos}">
+                    <option value="${instrumento.id}"><c:out value="${instrumento.nombre}" /></option>
+                  </c:forEach>
+                </select>
+              </div>
+              <div>
+                <label for="temaRasgo" style="font-weight:600;">Tema a desarrollar</label>
+                <input id="temaRasgo" name="tema" class="form-control" maxlength="150" placeholder="Ej.: Integrales definidas y aplicaciones" required />
+              </div>
+            </div>
+
+            <div class="empty-state empty-state-card" style="text-align:left;">
+              Marca ausentes en la lista. Los no marcados se guardan como presentes.
+            </div>
+
+            <div class="table-responsive" style="margin-bottom:8px;">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Alumno</th>
+                    <th>Asistencia</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <c:forEach var="alumno" items="${rasgoAlumnosValidos}" varStatus="loop">
+                    <tr>
+                      <td>${loop.index + 1}</td>
+                      <td><c:out value="${alumno.apellido}" />, <c:out value="${alumno.nombre}" /></td>
+                      <td>
+                        <label style="margin:0;display:flex;align-items:center;gap:6px;font-weight:500;">
+                          <input type="checkbox" name="alumnosAusentes" value="${alumno.id}" />
+                          Ausente
+                        </label>
+                      </td>
+                    </tr>
+                  </c:forEach>
+                </tbody>
+              </table>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Guardar inicio de clase</button>
           </form>
 
           <div style="margin-bottom:14px;">
@@ -157,21 +233,19 @@
 
           <c:if test="${not empty rasgoAlumnosInvalidos}">
             <div class="empty-state empty-state-card" style="margin-bottom:14px;">
-              Estos alumnos no se incluyen en el formulario hasta completar apellido y correo de Classroom.
+              Estos alumnos no se incluyen hasta completar nombre y apellido.
             </div>
             <div class="table-responsive" style="margin-bottom:14px;">
               <table class="table table-striped">
                 <thead>
                   <tr>
                     <th>Alumno</th>
-                    <th>Correo</th>
                   </tr>
                 </thead>
                 <tbody>
                   <c:forEach var="alumno" items="${rasgoAlumnosInvalidos}">
                     <tr>
                       <td><c:out value="${alumno.nombre}" /> <c:out value="${alumno.apellido}" /></td>
-                      <td><c:out value="${empty alumno.googleEmail ? 'Sin correo' : alumno.googleEmail}" /></td>
                     </tr>
                   </c:forEach>
                 </tbody>
@@ -181,8 +255,8 @@
 
           <c:if test="${not empty rasgoPlanillas}">
             <div style="margin-bottom:14px;">
-              <label for="rasgoPlanillaSel" style="font-weight:600;">Planillas generadas</label>
-              <select id="rasgoPlanillaSel" class="form-control" style="max-width:520px;" onchange="location.href='${pageContext.request.contextPath}/HomeServlet?view=rasgos&cursoId=${selCurso.id}&etapa=${selEtapa}&rasgoPlanillaId=' + this.value;">
+              <label for="rasgoPlanillaSel" style="font-weight:600;">Clases registradas</label>
+              <select id="rasgoPlanillaSel" class="form-control" style="max-width:520px;" onchange="location.href='${pageContext.request.contextPath}/HomeServlet?view=clase&cursoId=${selCurso.id}&etapa=${selEtapa}&rasgoPlanillaId=' + this.value;">
                 <c:forEach var="rp" items="${rasgoPlanillas}">
                   <option value="${rp.id}" ${not empty rasgoPlanillaSeleccionada and rasgoPlanillaSeleccionada.id == rp.id ? 'selected' : ''}>${rp.tema} - ${rp.fechaClase}</option>
                 </c:forEach>
@@ -196,20 +270,14 @@
                 <thead>
                   <tr>
                     <th>Alumno</th>
-                    <th>Correo</th>
                     <th>Estado</th>
-                    <th>Formulario</th>
                   </tr>
                 </thead>
                 <tbody>
                   <c:forEach var="asistencia" items="${rasgoAsistencias}">
                     <tr>
                       <td><c:out value="${asistencia.alumnoNombreCompleto}" /></td>
-                      <td><c:out value="${asistencia.alumnoEmail}" /></td>
                       <td><c:out value="${asistencia.estado}" /></td>
-                      <td>
-                        <a href="${pageContext.request.contextPath}/HomeServlet?view=rasgos-form&asistenciaId=${asistencia.id}" target="_blank" rel="noopener noreferrer">Abrir formulario</a>
-                      </td>
                     </tr>
                   </c:forEach>
                 </tbody>
@@ -386,12 +454,6 @@ const CURSOS = [
 ];
 
 (function () {
-  const selEspecialidad = document.getElementById('selEspecialidad');
-  const selCursoNivel = document.getElementById('selCursoNivel');
-  const selSeccion = document.getElementById('selSeccion');
-  const cursoIdHidden = document.getElementById('cursoIdHidden');
-  const selectedCursoId = ${empty selCurso ? 0 : selCurso.id};
-
   function uniqueEspecialidades() {
     const seen = new Set();
     const out = [];
@@ -404,95 +466,154 @@ const CURSOS = [
     return out;
   }
 
-  function populateEspecialidad() {
-    selEspecialidad.innerHTML = '';
-    selEspecialidad.appendChild(new Option('--Seleccione especialidad--',''));
-    uniqueEspecialidades().forEach(e => selEspecialidad.appendChild(new Option(e,e)));
-    selCursoNivel.innerHTML = '<option value="">--Seleccione curso--</option>';
-    selCursoNivel.disabled = true;
-    selSeccion.innerHTML = '<option value="">--Seleccione sección--</option>';
-    selSeccion.disabled = true;
-  }
-
   function formatCursoNivel(n) {
     return n + 'º';
   }
 
-  function populateCursoNivel() {
-    const esp = selEspecialidad.value;
-    selCursoNivel.innerHTML = '';
-    selCursoNivel.appendChild(new Option('--Seleccione curso--',''));
-    if (!esp) {
+  function setupCursoSelector(config) {
+    const selEspecialidad = document.getElementById(config.especialidadId);
+    const selCursoNivel = document.getElementById(config.cursoId);
+    const selSeccion = document.getElementById(config.seccionId);
+    const cursoIdHidden = document.getElementById(config.hiddenId);
+    const form = document.getElementById(config.formId);
+
+    if (!selEspecialidad || !selCursoNivel || !selSeccion || !cursoIdHidden || !form) {
+      return;
+    }
+
+    function populateEspecialidad() {
+      selEspecialidad.innerHTML = '';
+      selEspecialidad.appendChild(new Option('--Seleccione especialidad--', ''));
+      uniqueEspecialidades().forEach(e => selEspecialidad.appendChild(new Option(e, e)));
+      selCursoNivel.innerHTML = '<option value="">--Seleccione curso--</option>';
       selCursoNivel.disabled = true;
       selSeccion.innerHTML = '<option value="">--Seleccione sección--</option>';
       selSeccion.disabled = true;
-      return;
     }
-    const niveles = [...new Set(CURSOS.filter(c => c.especialidad === esp).map(c => c.nivel))].sort((a,b)=>a-b);
-    niveles.forEach(n => selCursoNivel.appendChild(new Option(formatCursoNivel(n), n)));
-    selCursoNivel.disabled = false;
-    selSeccion.innerHTML = '<option value="">--Seleccione sección--</option>';
-    selSeccion.disabled = true;
-  }
 
-  function populateSeccion() {
-    const esp = selEspecialidad.value;
-    const nivel = parseInt(selCursoNivel.value);
-    selSeccion.innerHTML = '';
-    selSeccion.appendChild(new Option('--Seleccione sección--',''));
-    if (!esp || !nivel) {
+    function populateCursoNivel() {
+      const esp = selEspecialidad.value;
+      selCursoNivel.innerHTML = '';
+      selCursoNivel.appendChild(new Option('--Seleccione curso--', ''));
+      if (!esp) {
+        selCursoNivel.disabled = true;
+        selSeccion.innerHTML = '<option value="">--Seleccione sección--</option>';
+        selSeccion.disabled = true;
+        return;
+      }
+      const niveles = [...new Set(CURSOS.filter(c => c.especialidad === esp).map(c => c.nivel))].sort((a, b) => a - b);
+      niveles.forEach(n => selCursoNivel.appendChild(new Option(formatCursoNivel(n), n)));
+      selCursoNivel.disabled = false;
+      selSeccion.innerHTML = '<option value="">--Seleccione sección--</option>';
       selSeccion.disabled = true;
-      return;
     }
-    const secciones = [...new Set(CURSOS.filter(c => c.especialidad === esp && c.nivel === nivel).map(c => c.seccion))];
-    secciones.forEach(s => selSeccion.appendChild(new Option(s,s)));
-    selSeccion.disabled = false;
-  }
 
-  function updateHiddenCursoId(submit) {
-    const esp = selEspecialidad.value;
-    const nivel = parseInt(selCursoNivel.value);
-    const seccion = selSeccion.value;
-    cursoIdHidden.value = '';
-    if (!esp || !nivel || !seccion) {
-      return;
+    function populateSeccion() {
+      const esp = selEspecialidad.value;
+      const nivel = parseInt(selCursoNivel.value);
+      selSeccion.innerHTML = '';
+      selSeccion.appendChild(new Option('--Seleccione sección--', ''));
+      if (!esp || !nivel) {
+        selSeccion.disabled = true;
+        return;
+      }
+      const secciones = [...new Set(CURSOS.filter(c => c.especialidad === esp && c.nivel === nivel).map(c => c.seccion))];
+      secciones.forEach(s => selSeccion.appendChild(new Option(s, s)));
+      selSeccion.disabled = false;
     }
-    const found = CURSOS.find(c => c.especialidad === esp && c.nivel === nivel && c.seccion === seccion);
-    if (found) {
-      cursoIdHidden.value = found.id;
-      if (submit) {
-        document.getElementById('cursoSelectionForm').submit();
+
+    function updateCursoId(submit) {
+      const esp = selEspecialidad.value;
+      const nivel = parseInt(selCursoNivel.value);
+      const seccion = selSeccion.value;
+      cursoIdHidden.value = '';
+      if (!esp || !nivel || !seccion) {
+        if (config.onCursoChanged) {
+          config.onCursoChanged('');
+        }
+        return;
+      }
+      const found = CURSOS.find(c => c.especialidad === esp && c.nivel === nivel && c.seccion === seccion);
+      if (found) {
+        cursoIdHidden.value = found.id;
+        if (config.onCursoChanged) {
+          config.onCursoChanged(String(found.id));
+        }
+        if (submit) {
+          form.submit();
+        }
       }
     }
+
+    function preselectCurso() {
+      if (!config.selectedCursoId) {
+        return;
+      }
+      const found = CURSOS.find(c => c.id === config.selectedCursoId);
+      if (!found) {
+        return;
+      }
+      selEspecialidad.value = found.especialidad;
+      populateCursoNivel();
+      selCursoNivel.value = found.nivel;
+      populateSeccion();
+      selSeccion.value = found.seccion;
+      updateCursoId(false);
+    }
+
+    populateEspecialidad();
+    preselectCurso();
+    selEspecialidad.addEventListener('change', function () {
+      populateCursoNivel();
+      updateCursoId(false);
+    });
+    selCursoNivel.addEventListener('change', function () {
+      populateSeccion();
+      updateCursoId(false);
+    });
+    selSeccion.addEventListener('change', function () {
+      updateCursoId(true);
+    });
   }
 
-  function preselectCurso() {
-    if (!selectedCursoId) return;
-    const found = CURSOS.find(c => c.id === selectedCursoId);
-    if (!found) return;
-    selEspecialidad.value = found.especialidad;
-    populateCursoNivel();
-    selCursoNivel.value = found.nivel;
-    populateSeccion();
-    selSeccion.value = found.seccion;
-    updateHiddenCursoId(false);
+  const selectedCursoId = ${empty selCurso ? 0 : selCurso.id};
+
+  setupCursoSelector({
+    especialidadId: 'selEspecialidad',
+    cursoId: 'selCursoNivel',
+    seccionId: 'selSeccion',
+    hiddenId: 'cursoIdHidden',
+    formId: 'cursoSelectionForm',
+    selectedCursoId: selectedCursoId
+  });
+
+  setupCursoSelector({
+    especialidadId: 'classEspecialidad',
+    cursoId: 'classCursoNivel',
+    seccionId: 'classSeccion',
+    hiddenId: 'classCursoIdHidden',
+    formId: 'classSelectionForm',
+    selectedCursoId: selectedCursoId,
+    onCursoChanged: function (cursoId) {
+      const hiddenPostCursoId = document.getElementById('formCursoId');
+      if (hiddenPostCursoId) {
+        hiddenPostCursoId.value = cursoId;
+      }
+    }
+  });
+
+  const classTurno = document.getElementById('classTurno');
+  const classSelectionForm = document.getElementById('classSelectionForm');
+  const formTurno = document.getElementById('formTurno');
+  if (classTurno && formTurno) {
+    formTurno.value = classTurno.value;
+    classTurno.addEventListener('change', function () {
+      formTurno.value = classTurno.value;
+      if (classSelectionForm) {
+        classSelectionForm.submit();
+      }
+    });
   }
-
-  populateEspecialidad();
-  preselectCurso();
-  selEspecialidad.addEventListener('change', function () {
-    populateCursoNivel();
-    updateHiddenCursoId(false);
-  });
-  selCursoNivel.addEventListener('change', function () {
-    populateSeccion();
-    updateHiddenCursoId(false);
-  });
-  selSeccion.addEventListener('change', function () {
-    updateHiddenCursoId(true);
-  });
-
-
 })();
 </script>
   <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/vendor/jquery.min.js"></script>
