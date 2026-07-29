@@ -8,8 +8,8 @@
     String iconBase = basePath + "/icons/pwa";
 %>
 {
-  "name": "CTN Portal",
-  "short_name": "CTN Portal",
+  "name": "SCA",
+  "short_name": "SCA",
   "description": "Sistema de informes académicos del Colegio Técnico Nacional",
   "start_url": "<%= startUrl %>",
   "scope": "<%= scope %>",

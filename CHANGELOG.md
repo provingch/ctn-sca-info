@@ -53,7 +53,7 @@ y este proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.
 ## [1.6.0] - 2026-07-15
 
 ### Añadido
-- Diseño visual unificado basado en el sistema SIA, con tokens, componentes y tema claro/oscuro compartido.
+- Diseño visual unificado basado en el sistema SCA, con tokens, componentes y tema claro/oscuro compartido.
 - Nueva experiencia visual para las vistas principales: Home, Planilla, Perfil, Admin, Parent y Tarea.
 - Banner de consentimiento de cookies y soporte para cambio de contraseña desde el perfil.
 
@@ -398,33 +398,33 @@ admin.jsp, Home.jsp, index.jsp, Planilla.jsp, Profile.jsp, Tarea.jsp
 ## [v0.0.3] - 2026-07-02
 
 ### Añadido
-- **Utilidades de Parseo de Google Classroom**: Clase `GoogleClassroomUtils` para extraer nivel (Primero/Segundo/Tercero) y sección (A/B/C) del nombre de cursos de Classroom [GoogleClassroomUtils.java](./src/main/java/ctn/informatica/sia/google/GoogleClassroomUtils.java)
-- **Servicio de Sincronización Google Classroom**: Clase `GoogleClassroomService` para conectarse a Google Classroom API, listar cursos del profesor y filtrar solo aquellos que coinciden con los cursos locales [GoogleClassroomService.java](./src/main/java/ctn/informatica/sia/google/GoogleClassroomService.java)
-- **Métodos de Mapeo de Curso**: Métodos `matchesCourseKey()`, `getNivel()` y `getCourseKey()` en modelo `Curso` para validar si un curso de Classroom corresponde a un curso local [Curso.java (Líneas 29-47)](./src/main/java/ctn/informatica/sia/model/Curso.java#L29-L47)
+- **Utilidades de Parseo de Google Classroom**: Clase `GoogleClassroomUtils` para extraer nivel (Primero/Segundo/Tercero) y sección (A/B/C) del nombre de cursos de Classroom [GoogleClassroomUtils.java](./src/main/java/ctn/informatica/sca/google/GoogleClassroomUtils.java)
+- **Servicio de Sincronización Google Classroom**: Clase `GoogleClassroomService` para conectarse a Google Classroom API, listar cursos del profesor y filtrar solo aquellos que coinciden con los cursos locales [GoogleClassroomService.java](./src/main/java/ctn/informatica/sca/google/GoogleClassroomService.java)
+- **Métodos de Mapeo de Curso**: Métodos `matchesCourseKey()`, `getNivel()` y `getCourseKey()` en modelo `Curso` para validar si un curso de Classroom corresponde a un curso local [Curso.java (Líneas 29-47)](./src/main/java/ctn/informatica/sca/model/Curso.java#L29-L47)
 
 ### Modificado
-- **Estructura del Modelo Curso**: Se agregó soporte para validar nivel y sección contra claves de curso de Classroom, permitiendo filtrado bidireccional [Curso.java](./src/main/java/ctn/informatica/sia/model/Curso.java)
+- **Estructura del Modelo Curso**: Se agregó soporte para validar nivel y sección contra claves de curso de Classroom, permitiendo filtrado bidireccional [Curso.java](./src/main/java/ctn/informatica/sca/model/Curso.java)
 
 ## [v0.0.2.1] - 2026-07-01
 
 ### Modificado
-- **Mejor manejo de errores**: Se mejoro conexion.java para que se registre correctamente el error y mejorar la trazabilidad [conexion.java (Lineas 42-52)](./src/main/java/ctn/informatica/sia/clases/conexion.java#L42-52)
-- **Evitar NPE**: Se modifico UserDao.java para capturar la excepcion SQL y envolverlo en un mensaje correcto y claro [UserDao.java (Lineas 36-37)](./src/main/java/ctn/informatica/sia/dao/UserDao.java#L36-37)
+- **Mejor manejo de errores**: Se mejoro conexion.java para que se registre correctamente el error y mejorar la trazabilidad [conexion.java (Lineas 42-52)](./src/main/java/ctn/informatica/sca/clases/conexion.java#L42-52)
+- **Evitar NPE**: Se modifico UserDao.java para capturar la excepcion SQL y envolverlo en un mensaje correcto y claro [UserDao.java (Lineas 36-37)](./src/main/java/ctn/informatica/sca/dao/UserDao.java#L36-37)
 
 ## [v0.0.2] - 2026-07-01
 
 ### Añadido
 - **Interfaz de Conexión Google Classroom**: Sección en perfil de profesor para conectar/reconectar cuenta de Google Classroom [Profile.jsp (Líneas 144-160)](./src/main/webapp/Profile.jsp#L144-L160)
 - **Esquema de Base de Datos para Google OAuth**: Columnas `google_email`, `google_access_token`, `google_refresh_token`, `google_token_expiry` en tabla profesor [db-tables-properties.sql (Líneas 49-52)](./database/db-tables-properties.sql#L49-L52)
-- **Métodos de Gestión de Tokens Google**: Métodos `updateGoogleTokens()` y `findByGoogleEmail()` en ProfesorDao para gestionar credenciales OAuth [ProfesorDao.java (Líneas 61-77, 82-95)](./src/main/java/ctn/informatica/sia/dao/ProfesorDao.java#L61-L95)
-- **Extracción de Columnas Google OAuth**: Mapeo de columnas Google en método `map()` de ProfesorDao [ProfesorDao.java (Líneas 22-27)](./src/main/java/ctn/informatica/sia/dao/ProfesorDao.java#L22-27)
-- **Preservación de Sesión en Flujo OAuth**: GoogleCallbackServlet preserva la sesión de usuario existente durante el flujo OAuth [GoogleCallbackServlet.java (Líneas 90-110)](./src/main/java/ctn/informatica/sia/GoogleCallbackServlet.java#L90-L110)
+- **Métodos de Gestión de Tokens Google**: Métodos `updateGoogleTokens()` y `findByGoogleEmail()` en ProfesorDao para gestionar credenciales OAuth [ProfesorDao.java (Líneas 61-77, 82-95)](./src/main/java/ctn/informatica/sca/dao/ProfesorDao.java#L61-L95)
+- **Extracción de Columnas Google OAuth**: Mapeo de columnas Google en método `map()` de ProfesorDao [ProfesorDao.java (Líneas 22-27)](./src/main/java/ctn/informatica/sca/dao/ProfesorDao.java#L22-27)
+- **Preservación de Sesión en Flujo OAuth**: GoogleCallbackServlet preserva la sesión de usuario existente durante el flujo OAuth [GoogleCallbackServlet.java (Líneas 90-110)](./src/main/java/ctn/informatica/sca/GoogleCallbackServlet.java#L90-L110)
 
 ### Modificado
-- **Resolución Dinámica de Redirect URI**: GoogleLoginServlet ahora resuelve dinámicamente el redirect_uri desde AppConfig o construcción basada en request, eliminando placeholder hardcodeado [GoogleLoginServlet.java (Líneas 52-61)](./src/main/java/ctn/informatica/sia/GoogleLoginServlet.java#L52-L61)
-- **Redirects de Callback OAuth**: GoogleCallbackServlet redirige a rutas válidas de la aplicación (ProfileServlet) en lugar de endpoints no-existentes [GoogleCallbackServlet.java (Línea 41)](./src/main/java/ctn/informatica/sia/GoogleCallbackServlet.java#L41)
-- **API de Autenticación Google**: Implementada autenticación OAuth2 usando GoogleCredential con access token para obtener información de usuario [GoogleCallbackServlet.java (Líneas 71-77)](./src/main/java/ctn/informatica/sia/GoogleCallbackServlet.java#L71-77)
-- **Consultas SELECT en ProfesorDao**: Todas las queries incluyen las columnas Google OAuth en SELECT [ProfesorDao.java (Líneas 42-44)](./src/main/java/ctn/informatica/sia/dao/ProfesorDao.java#L42-44)
+- **Resolución Dinámica de Redirect URI**: GoogleLoginServlet ahora resuelve dinámicamente el redirect_uri desde AppConfig o construcción basada en request, eliminando placeholder hardcodeado [GoogleLoginServlet.java (Líneas 52-61)](./src/main/java/ctn/informatica/sca/GoogleLoginServlet.java#L52-L61)
+- **Redirects de Callback OAuth**: GoogleCallbackServlet redirige a rutas válidas de la aplicación (ProfileServlet) en lugar de endpoints no-existentes [GoogleCallbackServlet.java (Línea 41)](./src/main/java/ctn/informatica/sca/GoogleCallbackServlet.java#L41)
+- **API de Autenticación Google**: Implementada autenticación OAuth2 usando GoogleCredential con access token para obtener información de usuario [GoogleCallbackServlet.java (Líneas 71-77)](./src/main/java/ctn/informatica/sca/GoogleCallbackServlet.java#L71-77)
+- **Consultas SELECT en ProfesorDao**: Todas las queries incluyen las columnas Google OAuth en SELECT [ProfesorDao.java (Líneas 42-44)](./src/main/java/ctn/informatica/sca/dao/ProfesorDao.java#L42-44)
 - **Cambio en CHANGELOG.md**: Reformatado de CHANGELOG.md en español.
 
 ### Eliminado

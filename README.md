@@ -1,4 +1,4 @@
-# CTN Portal — Sistema de Informes Académicos
+# SCA — Sistema de Carpetas Académicas
 
 Sistema de informes académicos del **Colegio Técnico Nacional (CTN)**: gestiona especialidades, cursos, materias, planillas de evaluación y notas, con integración a **Google Classroom**, portal para padres/encargados y soporte de **PWA** (instalable en el celular).
 
@@ -49,7 +49,7 @@ Sistema de informes académicos del **Colegio Técnico Nacional (CTN)**: gestion
 ## Estructura del proyecto
 
 ```
-ctn-sia-info/
+ctn-sca-info/
 ├── database/
 │   ├── db-tables-properties.sql   # Esquema completo (DDL) de la BD ctndb
 │   └── seed.sql                    # Datos de ejemplo (especialidades, cursos, etc.)
@@ -57,7 +57,7 @@ ctn-sia-info/
 │   ├── README.md                   # Manual de integración con Google Classroom
 │   └── classroom_integration_architecture.png
 ├── src/
-│   ├── main/java/ctn/informatica/sia/
+│   ├── main/java/ctn/informatica/sca/
 │   │   ├── config/       # AppConfig, StartupListener
 │   │   ├── clases/       # conexion.java (JDBC)
 │   │   ├── dao/          # DAOs por entidad (Alumno, Curso, Profesor, Planilla, Tarea, ...)
@@ -108,8 +108,8 @@ Se obtienen creando credenciales OAuth 2.0 en Google Cloud Console con la **Goog
 
 1. Clonar el repositorio:
    ```bash
-   git clone https://github.com/provingch/ctn-sia-info.git
-   cd ctn-sia-info
+   git clone https://github.com/provingch/ctn-sca-info.git
+   cd ctn-sca-info
    ```
 
 2. Crear la base de datos y cargar el esquema:

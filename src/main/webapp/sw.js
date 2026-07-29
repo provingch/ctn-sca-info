@@ -3,7 +3,7 @@ const CORE_ASSETS = [
   './',
   './offline.html',
   './styles/ctn-theme.css',
-  './scripts/sia-theme.js',
+  './scripts/sca-theme.js',
   './images/ctn-logo.svg',
   './images/ctn-logo-2.svg',
   './icons/pwa/icon-192.png',
@@ -70,13 +70,13 @@ self.addEventListener('fetch', (event) => {
 
 self.addEventListener('push', (event) => {
   const payload = event.data && event.data.text ? event.data.text() : '{}';
-  let notification = { title: 'CTN Portal', body: 'Tienes un mensaje nuevo.' };
+  let notification = { title: 'SCA', body: 'Tienes un mensaje nuevo.' };
   try {
     notification = JSON.parse(payload);
   } catch (ignored) {
     // ignore malformed payloads
   }
-  const title = notification.title || 'CTN Portal';
+  const title = notification.title || 'SCA';
   const body = notification.body || 'Tienes un mensaje nuevo.';
   const url = notification.url || self.registration.scope;
   const iconUrl = new URL('icons/pwa/icon-192.png', self.registration.scope);

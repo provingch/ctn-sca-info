@@ -1235,7 +1235,7 @@ html[data-theme="dark"] .profile-panel .form-field textarea[readonly] {
   color: var(--accent);
 }
 
-.sia-table, .grade-table {
+.sca-table, .grade-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
@@ -1244,13 +1244,13 @@ html[data-theme="dark"] .profile-panel .form-field textarea[readonly] {
   font-size: 12px;
   overflow: hidden;
 }
-.sia-table th, .sia-table td, .grade-table th, .grade-table td {
+.sca-table th, .sca-table td, .grade-table th, .grade-table td {
   padding: 8px 10px;
   border-bottom: 1px solid var(--line);
   text-align: left;
   vertical-align: top;
 }
-.sia-table th, .grade-table th {
+.sca-table th, .grade-table th {
   background: color-mix(in srgb, var(--accent) 12%, var(--paper));
   border-bottom: 2px solid var(--accent);
   font-size: 10.5px;
@@ -1258,7 +1258,7 @@ html[data-theme="dark"] .profile-panel .form-field textarea[readonly] {
   letter-spacing: .05em;
   color: var(--muted);
 }
-.sia-table tr:hover td,
+.sca-table tr:hover td,
 .grade-table tbody tr:hover td {
   background: color-mix(in srgb, var(--accent) 6%, var(--paper));
 }
@@ -2054,7 +2054,7 @@ input[type="radio"] {
   color: var(--ink);
 }
 
-.sia-table,
+.sca-table,
 .grade-table,
 table {
   width: 100%;
@@ -2066,7 +2066,7 @@ table {
   border-radius: 6px;
 }
 
-.sia-table th,
+.sca-table th,
 .grade-table th,
 table th {
   background: #34495e;
@@ -2075,7 +2075,7 @@ table th {
   letter-spacing: 0;
 }
 
-.sia-table td,
+.sca-table td,
 .grade-table td,
 table td,
 .table .cell {
