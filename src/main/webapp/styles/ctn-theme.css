@@ -3591,6 +3591,20 @@ html[data-theme="dark"] .inicio-shell {
   white-space: nowrap;
 }
 
+.class-view-toolbar {
+  display: flex;
+  width: min(100%, 880px);
+  margin: -8px auto 16px;
+  justify-content: flex-start;
+}
+
+.class-view-toolbar .back-button {
+  display: inline-flex;
+  align-items: center;
+  width: auto;
+  text-decoration: none;
+}
+
 .class-session-summary {
   margin-bottom: 14px;
 }
