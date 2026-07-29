@@ -3885,6 +3885,27 @@ body[data-user-level="3"] .admin-hero {
   box-shadow: var(--shadow-md);
 }
 
+body[data-page="admin-home"] .admin-hero {
+  background:
+    radial-gradient(circle at 92% 14%, rgba(255, 255, 255, .24) 0 58px, transparent 59px),
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--hero-tone) 82%, #ffffff),
+      color-mix(in srgb, var(--hero-tone) 68%, #ffffff)
+    );
+  box-shadow: 0 18px 42px color-mix(in srgb, var(--hero-tone) 22%, transparent);
+}
+
+html[data-theme="dark"] body[data-page="admin-home"] .admin-hero {
+  background:
+    radial-gradient(circle at 92% 14%, rgba(255, 255, 255, .12) 0 58px, transparent 59px),
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--hero-tone) 62%, #111528),
+      color-mix(in srgb, var(--hero-tone) 76%, #111528)
+    );
+}
+
 body[data-user-level="3"] .admin-hero h1,
 body[data-user-level="3"] .admin-hero p,
 body[data-user-level="3"] .admin-eyebrow {
