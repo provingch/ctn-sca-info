@@ -1,11 +1,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.mycompany</groupId>
-    <artifactId>LoginProject</artifactId>
+    <groupId>ctn.informatica</groupId>
+    <artifactId>sca</artifactId>
     <version>0.6.4</version>
     <packaging>war</packaging>
-    <name>LoginProject-0.6.4</name>
+    <name>SCA-0.6.4</name>
     
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
