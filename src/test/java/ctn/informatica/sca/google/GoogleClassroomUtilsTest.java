@@ -52,6 +52,14 @@ public class GoogleClassroomUtilsTest {
     }
 
     @Test
+    public void testParseCourseKeyIgnoresYearOnlyRoomSection() {
+        var key = GoogleClassroomUtils.parseCourseKey("Algoritmica 2do A", "2025");
+        assertTrue(key.isPresent());
+        assertEquals(2, key.get().getNivel());
+        assertEquals("A", key.get().getSeccion());
+    }
+
+    @Test
     public void testParseCourseKeyWithCompactLevelAndSection() {
         var key = GoogleClassroomUtils.parseCourseKey("Matemática 1A");
         assertTrue(key.isPresent());
