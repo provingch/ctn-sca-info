@@ -28,7 +28,7 @@
   <meta name="apple-mobile-web-app-title" content="SCA">
   <link rel="apple-touch-icon" href="${pageContext.request.contextPath}/icons/pwa/apple-touch-icon.png">
   <link rel="stylesheet" href="${pageContext.request.contextPath}/vendor/flat-ui/css/flat-ui.css">
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=250">
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=252">
   <link rel="icon" type="image/x-icon" href="${pageContext.request.contextPath}/images/ctn-logo.svg">
 </head>
 
@@ -119,15 +119,46 @@
         </c:if>
       </div>
 
-      <div class="section-block" style="margin-bottom:16px;">
-        <div class="section-heading">Vista principal</div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <a class="planilla-card-link" href="${pageContext.request.contextPath}/inicio?view=clase&cursoId=${empty selCurso ? '' : selCurso.id}&etapa=${selEtapa}" style="padding:8px 12px;border:1px solid var(--color-border);border-radius:8px;font-weight:700;">Iniciar clase</a>
-          <a class="planilla-card-link" href="${pageContext.request.contextPath}/inicio?view=planillas&cursoId=${empty selCurso ? '' : selCurso.id}&etapa=${selEtapa}" style="padding:8px 12px;border:1px solid var(--color-border);border-radius:8px;${viewMode eq 'planillas' ? 'font-weight:700;' : ''}">Planillas de puntaje</a>
-        </div>
-      </div>
+      <c:set var="planillaCount" value="${fn:length(planillas)}" />
+      <form class="home-view-tabs" action="${pageContext.request.contextPath}/inicio" method="get" role="tablist" aria-label="Vista principal del curso">
+        <input type="hidden" name="cursoId" id="tabCursoId" value="${empty selCurso ? '' : selCurso.id}" />
+        <input type="hidden" name="etapa" value="${selEtapa}" />
+        <button type="submit" name="view" value="clase" class="home-view-tab" role="tab" aria-selected="false" aria-controls="clase-panel">
+          <span class="home-view-tab__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false"><path d="M7 4.8v14.4L19 12 7 4.8Z"/></svg>
+          </span>
+          <span class="home-view-tab__copy">
+            <strong>Iniciar clase</strong>
+            <small id="classTabSubtitle">
+              <c:choose>
+                <c:when test="${not empty selCurso}">${selCurso.especialidad} · ${selCurso.curso}° ${selCurso.seccion} · hoy</c:when>
+                <c:otherwise>Seleccioná un curso y una sección</c:otherwise>
+              </c:choose>
+            </small>
+          </span>
+        </button>
+        <button type="submit" name="view" value="planillas" class="home-view-tab is-active" role="tab" aria-selected="true" aria-controls="planillas-panel">
+          <span class="home-view-tab__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false"><path d="M9 5h2.1a3 3 0 0 1 5.8 0H19a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2.1A3 3 0 0 1 9 5Zm3-1.5A1.5 1.5 0 1 0 12 6a1.5 1.5 0 0 0 0-3ZM7 10v2h2v-2H7Zm4 0v2h6v-2h-6Zm-4 5v2h2v-2H7Zm4 0v2h6v-2h-6Z"/></svg>
+          </span>
+          <span class="home-view-tab__copy">
+            <strong>Planillas de puntaje</strong>
+            <small id="planillasTabSubtitle">
+              <c:choose>
+                <c:when test="${planillaCount == 1}"><c:out value="${planillas[0].nombre}" /></c:when>
+                <c:when test="${planillaCount > 1}">${planillaCount} planillas filtradas</c:when>
+                <c:otherwise>Sin planillas para este filtro</c:otherwise>
+              </c:choose>
+            </small>
+          </span>
+        </button>
+      </form>
 
       <c:if test="${viewMode eq 'planillas'}">
+      <div id="filterPendingState" class="empty-state empty-state-card home-filter-pending" role="status" hidden>
+        No hay planillas para este filtro.
+      </div>
+      <div id="filterResults">
 
       <c:if test="${not googleClassroomConnected and empty planillas}">
         <div class="empty-state-wrapper">
@@ -151,10 +182,10 @@
         </c:if>
 
         <c:choose>
-          <c:when test="${showPlanillaCards}">
-            <div class="section-block">
+          <c:when test="${planillaCount > 0}">
+            <div class="section-block home-tab-panel" id="planillas-panel" role="tabpanel">
               <div class="section-heading">Planillas del curso</div>
-              <div class="planilla-grid">
+              <div class="planilla-grid course-planilla-grid" data-planilla-count="${planillaCount}">
                 <c:forEach var="planilla" items="${planillas}">
                   <a class="planilla-card-link" href="${pageContext.request.contextPath}/planilla?planillaId=${planilla.id}&cursoId=${selCurso.id}&materiaId=${planilla.materiaId}&etapa=${selEtapa}">
                     <div class="subject-card">
@@ -173,11 +204,9 @@
             </div>
           </c:when>
           <c:otherwise>
-            <c:if test="${googleClassroomConnected and empty googleClassroomCourses}">
-              <div class="empty-state empty-state-card">
-                No hay planillas para este curso y etapa. Los bloques de Google Classroom aparecerán cuando haya conexión activa.
-              </div>
-            </c:if>
+            <div class="empty-state empty-state-card home-tab-panel" id="planillas-panel" role="tabpanel">
+              No hay planillas para este filtro.
+            </div>
           </c:otherwise>
         </c:choose>
       </div>
@@ -272,6 +301,7 @@
         </div>
       </c:if>
 
+      </div>
       </c:if>
 
     </section>
@@ -295,6 +325,73 @@ const CURSOS = [
 ];
 
 (function () {
+  function normalizeSpecialty(value) {
+    const normalized = String(value || '')
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[_\s]+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+
+    const aliases = {
+      'construcciones-civiles': 'construcciones',
+      'construccion-civil': 'construcciones',
+      'quimica-industrial': 'quimica'
+    };
+
+    return aliases[normalized] || normalized || 'general';
+  }
+
+  function applySpecialtyToPage(specialtyName) {
+    document.body.setAttribute('data-specialty', normalizeSpecialty(specialtyName));
+  }
+
+  function updateFilterPreview(especialidad, nivel, seccion, cursoId) {
+    const tabCursoId = document.getElementById('tabCursoId');
+    const classSubtitle = document.getElementById('classTabSubtitle');
+    const planillasSubtitle = document.getElementById('planillasTabSubtitle');
+    const filterResults = document.getElementById('filterResults');
+    const pendingState = document.getElementById('filterPendingState');
+    const tabButtons = document.querySelectorAll('.home-view-tab');
+    const hasCompleteFilter = Boolean(cursoId);
+
+    if (tabCursoId) {
+      tabCursoId.value = cursoId || '';
+    }
+    tabButtons.forEach(button => {
+      button.disabled = !hasCompleteFilter;
+    });
+
+    if (hasCompleteFilter) {
+      if (classSubtitle) {
+        classSubtitle.textContent = especialidad + ' · ' + nivel + '° ' + seccion + ' · hoy';
+      }
+      if (filterResults) {
+        filterResults.hidden = false;
+      }
+      if (pendingState) {
+        pendingState.hidden = true;
+      }
+      return;
+    }
+
+    if (classSubtitle) {
+      classSubtitle.textContent = 'Seleccioná un curso y una sección';
+    }
+    if (planillasSubtitle) {
+      planillasSubtitle.textContent = 'Sin planillas para este filtro';
+    }
+    if (filterResults) {
+      filterResults.hidden = true;
+    }
+    if (pendingState) {
+      pendingState.hidden = false;
+    }
+  }
+
   function uniqueEspecialidades() {
     const seen = new Set();
     const out = [];
@@ -367,8 +464,10 @@ const CURSOS = [
       const esp = selEspecialidad.value;
       const nivel = parseInt(selCursoNivel.value);
       const seccion = selSeccion.value;
+      applySpecialtyToPage(esp || 'general');
       cursoIdHidden.value = '';
       if (!esp || !nivel || !seccion) {
+        updateFilterPreview(esp, nivel || '', seccion, '');
         if (config.onCursoChanged) {
           config.onCursoChanged('');
         }
@@ -377,6 +476,7 @@ const CURSOS = [
       const found = CURSOS.find(c => c.especialidad === esp && c.nivel === nivel && c.seccion === seccion);
       if (found) {
         cursoIdHidden.value = found.id;
+        updateFilterPreview(found.especialidad, found.nivel, found.seccion, String(found.id));
         if (config.onCursoChanged) {
           config.onCursoChanged(String(found.id));
         }
@@ -395,6 +495,7 @@ const CURSOS = [
         return;
       }
       selEspecialidad.value = found.especialidad;
+      applySpecialtyToPage(found.especialidad);
       populateCursoNivel();
       selCursoNivel.value = found.nivel;
       populateSeccion();

@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-title" content="SCA">
   <link rel="apple-touch-icon" href="${pageContext.request.contextPath}/icons/pwa/apple-touch-icon.png">
   <link rel="stylesheet" href="${pageContext.request.contextPath}/vendor/flat-ui/css/flat-ui.css">
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=250">
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=252">
   <link rel="icon" type="image/x-icon" href="${pageContext.request.contextPath}/images/ctn-logo.svg">
   <style>
     .inicio-shell {
@@ -166,21 +166,78 @@
         <span><c:out value="${nowFormatted}" /></span>
       </div>
 
-      <div class="inicio-shell">
-        <div class="pill-row">
-          <span class="ctn-pill">CTN</span>
-          <span class="ctn-pill">Libro de cátedra</span>
-          <span class="ctn-pill">Control de asistencia</span>
-          <span class="ctn-pill">SIA/SCA</span>
+      <div class="top-section planilla-hero hero-shell">
+        <div class="planilla-hero__header">
+          <div class="planilla-hero__info">
+            <span class="badge"><span class="dot"></span>${selCurso.especialidad}</span>
+            <h1>Panel SCA del curso</h1>
+            <p class="planilla-subtitle">Gestiona inicio de clase y planillas de puntaje conectadas a tus cursos.</p>
+          </div>
         </div>
-        <h1 class="inicio-hero-title">Libro de Cátedra General</h1>
-        <p class="inicio-hero-subtitle">Registro institucional de clase para docentes. Selecciona curso y turno, marca asistencia automática desde BD y guarda el inicio de clase con la misma experiencia visual del ecosistema SIA.</p>
+        <div class="menu-container">
+          <form id="classSelectionForm" action="${pageContext.request.contextPath}/inicio" method="get" class="curso-selection-form">
+            <label for="classEspecialidad">Especialidad</label>
+            <select id="classEspecialidad" name="especialidad"></select>
+            <label for="classCursoNivel">Curso</label>
+            <select id="classCursoNivel" name="promocion" disabled></select>
+            <label for="classSeccion">Sección</label>
+            <select id="classSeccion" name="seccion" disabled></select>
+            <input type="hidden" name="cursoId" id="classCursoIdHidden" value="${empty selCurso ? '' : selCurso.id}" />
+            <input type="hidden" name="etapa" value="${selEtapa}" />
+            <input type="hidden" name="view" value="clase" />
+          </form>
+        </div>
       </div>
 
-      <div class="section-block" style="margin-bottom:12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-        <a class="planilla-card-link" href="${pageContext.request.contextPath}/inicio?view=planillas&cursoId=${empty selCurso ? '' : selCurso.id}&etapa=${selEtapa}" style="padding:8px 12px;border:1px solid var(--color-border);border-radius:8px;">Volver a planillas de puntaje</a>
-        <span class="subject-card__chip">Iniciar clase</span>
+      <c:set var="planillaCount" value="${fn:length(planillas)}" />
+      <form class="home-view-tabs" action="${pageContext.request.contextPath}/inicio" method="get" role="tablist" aria-label="Vista principal del curso">
+        <input type="hidden" name="cursoId" id="tabCursoId" value="${empty selCurso ? '' : selCurso.id}" />
+        <input type="hidden" name="etapa" value="${selEtapa}" />
+        <button type="submit" name="view" value="clase" class="home-view-tab is-active" role="tab" aria-selected="true" aria-controls="clase-panel">
+          <span class="home-view-tab__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false"><path d="M7 4.8v14.4L19 12 7 4.8Z"/></svg>
+          </span>
+          <span class="home-view-tab__copy">
+            <strong>Iniciar clase</strong>
+            <small id="classTabSubtitle">
+              <c:choose>
+                <c:when test="${not empty selCurso}">${selCurso.especialidad} · ${selCurso.curso}° ${selCurso.seccion} · hoy</c:when>
+                <c:otherwise>Seleccioná un curso y una sección</c:otherwise>
+              </c:choose>
+            </small>
+          </span>
+        </button>
+        <button type="submit" name="view" value="planillas" class="home-view-tab" role="tab" aria-selected="false" aria-controls="planillas-panel">
+          <span class="home-view-tab__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false"><path d="M9 5h2.1a3 3 0 0 1 5.8 0H19a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2.1A3 3 0 0 1 9 5Zm3-1.5A1.5 1.5 0 1 0 12 6a1.5 1.5 0 0 0 0-3ZM7 10v2h2v-2H7Zm4 0v2h6v-2h-6Zm-4 5v2h2v-2H7Zm4 0v2h6v-2h-6Z"/></svg>
+          </span>
+          <span class="home-view-tab__copy">
+            <strong>Planillas de puntaje</strong>
+            <small id="planillasTabSubtitle">
+              <c:choose>
+                <c:when test="${planillaCount == 1}"><c:out value="${planillas[0].nombre}" /></c:when>
+                <c:when test="${planillaCount > 1}">${planillaCount} planillas filtradas</c:when>
+                <c:otherwise>Sin planillas para este filtro</c:otherwise>
+              </c:choose>
+            </small>
+          </span>
+        </button>
+      </form>
+
+      <div id="filterPendingState" class="empty-state empty-state-card home-filter-pending" role="status" hidden>
+        Completá Especialidad, Curso y Sección para iniciar la clase.
       </div>
+      <div id="clase-panel" class="home-tab-panel" role="tabpanel">
+        <div class="inicio-shell class-session-summary">
+          <span class="subject-card__chip">Nueva sesión</span>
+          <h2 class="inicio-hero-title">
+            <c:choose>
+              <c:when test="${not empty selCurso}">${selCurso.especialidad} ${selCurso.curso}° ${selCurso.seccion}</c:when>
+              <c:otherwise>Seleccioná el contexto de la clase</c:otherwise>
+            </c:choose>
+          </h2>
+          <p class="inicio-hero-subtitle"><c:out value="${nowFormatted}" /></p>
+        </div>
 
       <c:if test="${param.rasgoError eq 'tema'}">
         <div class="empty-state empty-state-card">Debes seleccionar curso, instrumento y tema a desarrollar.</div>
@@ -195,42 +252,6 @@
         <div class="empty-state empty-state-card"><c:out value="${rasgoErrorMessage}" /></div>
       </c:if>
 
-      <div class="class-card" style="margin-bottom:12px;">
-        <div class="class-card-head">
-          <h3>1. Filtros generales de la institución</h3>
-          <div class="section-tools">
-            <button type="button" class="btn btn-default btn-sm" id="clearButton">Limpiar formulario</button>
-          </div>
-        </div>
-        <form id="classSelectionForm" action="${pageContext.request.contextPath}/inicio" method="get" class="class-grid">
-          <input type="hidden" name="view" value="clase" />
-          <input type="hidden" name="etapa" value="${selEtapa}" />
-          <input type="hidden" name="cursoId" id="classCursoIdHidden" value="${empty selCurso ? '' : selCurso.id}" />
-
-          <div>
-            <label for="classEspecialidad" style="font-weight:600;">Especialidad</label>
-            <select id="classEspecialidad" name="classEspecialidad"></select>
-          </div>
-          <div>
-            <label for="classCursoNivel" style="font-weight:600;">Curso</label>
-            <select id="classCursoNivel" name="classCursoNivel" disabled></select>
-          </div>
-          <div>
-            <label for="classSeccion" style="font-weight:600;">Sección</label>
-            <select id="classSeccion" name="classSeccion" disabled></select>
-          </div>
-          <div>
-            <label for="classTurno" style="font-weight:600;">Turno</label>
-            <select id="classTurno" name="turno" class="form-control">
-              <option value="">Seleccione turno</option>
-              <option value="mañana" ${param.turno eq 'mañana' ? 'selected' : ''}>Mañana</option>
-              <option value="tarde" ${param.turno eq 'tarde' ? 'selected' : ''}>Tarde</option>
-              <option value="noche" ${param.turno eq 'noche' ? 'selected' : ''}>Noche</option>
-            </select>
-          </div>
-        </form>
-      </div>
-
       <form action="${pageContext.request.contextPath}/inicio" method="post" style="display:grid; gap:12px;">
         <input type="hidden" name="action" value="create-rasgo-planilla" />
         <input type="hidden" name="cursoId" value="${empty selCurso ? '' : selCurso.id}" id="formCursoId" />
@@ -238,8 +259,20 @@
         <input type="hidden" name="etapa" value="${selEtapa}" />
 
         <div class="class-card">
-          <h3>2. Datos de clase</h3>
+          <div class="class-card-head">
+            <h3>Datos de clase</h3>
+            <button type="button" class="btn btn-default btn-sm" id="clearButton">Limpiar formulario</button>
+          </div>
           <div class="class-grid">
+            <div>
+              <label for="classTurno" style="font-weight:600;">Turno</label>
+              <select id="classTurno" class="form-control">
+                <option value="">Seleccione turno</option>
+                <option value="mañana" ${param.turno eq 'mañana' ? 'selected' : ''}>Mañana</option>
+                <option value="tarde" ${param.turno eq 'tarde' ? 'selected' : ''}>Tarde</option>
+                <option value="noche" ${param.turno eq 'noche' ? 'selected' : ''}>Noche</option>
+              </select>
+            </div>
             <div>
               <label for="nombreDocente" style="font-weight:600;">Docente responsable</label>
               <input id="nombreDocente" class="form-control" value="${sessionScope.user.fullName}" />
@@ -391,6 +424,7 @@
           </div>
         </div>
       </c:if>
+      </div>
     </section>
 
     <footer class="footer">
@@ -433,6 +467,53 @@
     function applySpecialtyToPage(specialtyName) {
       const normalized = normalizeSpecialty(specialtyName);
       document.body.setAttribute('data-specialty', normalized);
+    }
+
+    function updateFilterPreview(especialidad, nivel, seccion, cursoId) {
+      const tabCursoId = document.getElementById('tabCursoId');
+      const postCursoId = document.getElementById('formCursoId');
+      const classSubtitle = document.getElementById('classTabSubtitle');
+      const planillasSubtitle = document.getElementById('planillasTabSubtitle');
+      const classPanel = document.getElementById('clase-panel');
+      const pendingState = document.getElementById('filterPendingState');
+      const tabButtons = document.querySelectorAll('.home-view-tab');
+      const hasCompleteFilter = Boolean(cursoId);
+
+      if (tabCursoId) {
+        tabCursoId.value = cursoId || '';
+      }
+      if (postCursoId) {
+        postCursoId.value = cursoId || '';
+      }
+      tabButtons.forEach(button => {
+        button.disabled = !hasCompleteFilter;
+      });
+
+      if (hasCompleteFilter) {
+        if (classSubtitle) {
+          classSubtitle.textContent = especialidad + ' · ' + nivel + '° ' + seccion + ' · hoy';
+        }
+        if (classPanel) {
+          classPanel.hidden = false;
+        }
+        if (pendingState) {
+          pendingState.hidden = true;
+        }
+        return;
+      }
+
+      if (classSubtitle) {
+        classSubtitle.textContent = 'Seleccioná un curso y una sección';
+      }
+      if (planillasSubtitle) {
+        planillasSubtitle.textContent = 'Sin planillas para este filtro';
+      }
+      if (classPanel) {
+        classPanel.hidden = true;
+      }
+      if (pendingState) {
+        pendingState.hidden = false;
+      }
     }
 
     function uniqueEspecialidades() {
@@ -507,11 +588,10 @@
         const esp = selEspecialidad.value;
         const nivel = parseInt(selCursoNivel.value, 10);
         const seccion = selSeccion.value;
-        if (esp) {
-          applySpecialtyToPage(esp);
-        }
+        applySpecialtyToPage(esp || 'general');
         cursoIdHidden.value = '';
         if (!esp || !nivel || !seccion) {
+          updateFilterPreview(esp, nivel || '', seccion, '');
           if (config.onCursoChanged) {
             config.onCursoChanged('');
           }
@@ -520,6 +600,7 @@
         const found = CURSOS.find(c => c.especialidad === esp && c.nivel === nivel && c.seccion === seccion);
         if (found) {
           cursoIdHidden.value = found.id;
+          updateFilterPreview(found.especialidad, found.nivel, found.seccion, String(found.id));
           if (config.onCursoChanged) {
             config.onCursoChanged(String(found.id));
           }
@@ -581,15 +662,11 @@
     });
 
     const classTurno = document.getElementById('classTurno');
-    const classSelectionForm = document.getElementById('classSelectionForm');
     const formTurno = document.getElementById('formTurno');
     if (classTurno && formTurno) {
       formTurno.value = classTurno.value;
       classTurno.addEventListener('change', function () {
         formTurno.value = classTurno.value;
-        if (classSelectionForm) {
-          classSelectionForm.submit();
-        }
       });
     }
 
