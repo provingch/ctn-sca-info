@@ -1,0 +1,4 @@
+google.client.id=YOUR_GOOGLE_CLIENT_ID
+google.client.secret=YOUR_GOOGLE_CLIENT_SECRET
+google.redirect.uri=https://example.com/GoogleCallbackServlet
+academic.period=2025

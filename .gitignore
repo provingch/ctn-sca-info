@@ -1,0 +1,17 @@
+target/
+*.war
+*.class
+
+.idea/
+.vscode/
+*.iml
+
+.DS_Store
+Thumbs.db
+
+*.log
+
+**/WEB-INF/config.properties
+
+# Database seed file (may contain sensitive test data)
+database/seed.sql
