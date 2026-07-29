@@ -15,7 +15,7 @@
   <meta name="apple-mobile-web-app-title" content="SCA">
   <link rel="apple-touch-icon" href="${pageContext.request.contextPath}/icons/pwa/apple-touch-icon.png">
   <link rel="stylesheet" href="${pageContext.request.contextPath}/vendor/flat-ui/css/flat-ui.css">
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=254">
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=255">
   <link rel="icon" type="image/x-icon" href="${pageContext.request.contextPath}/images/ctn-logo.svg">
   <style>
     .inicio-shell {
@@ -201,7 +201,7 @@
           <input type="hidden" name="planillaId" value="${planillas[0].id}" />
           <input type="hidden" name="materiaId" value="${planillas[0].materiaId}" />
         </c:if>
-        <button type="submit" name="view" value="clase-inicio" class="home-view-tab is-active" role="tab" aria-selected="true" aria-controls="clase-panel">
+        <button type="submit" name="view" value="clase" class="home-view-tab is-active" role="tab" aria-selected="true" aria-controls="clase-panel">
           <span class="home-view-tab__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" focusable="false"><path d="M7 4.8v14.4L19 12 7 4.8Z"/></svg>
           </span>
@@ -231,6 +231,10 @@
           </span>
         </button>
       </form>
+
+      <div class="class-view-toolbar">
+        <a class="btn btn-default back-button" href="${pageContext.request.contextPath}/inicio">← Volver al inicio</a>
+      </div>
 
       <div id="filterPendingState" class="empty-state empty-state-card home-filter-pending" role="status" hidden>
         Completá Especialidad, Curso y Sección para iniciar la clase.
