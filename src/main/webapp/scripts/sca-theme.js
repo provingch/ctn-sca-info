@@ -1,10 +1,43 @@
 (function () {
   function normalizeSpecialty(value) {
-    return String(value || '').trim().toLowerCase();
+    const normalized = String(value || '')
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[_\s]+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+
+    const aliases = {
+      'construcciones-civiles': 'construcciones',
+      'construccion-civil': 'construcciones',
+      'quimica-industrial': 'quimica',
+      'mecanica-automotriz': 'mecanica-automotriz',
+      'mecanica-general': 'mecanica-general'
+    };
+
+    return aliases[normalized] || normalized || 'informatica';
   }
 
   function getBodySpecialty() {
     return normalizeSpecialty(document.body ? document.body.getAttribute('data-specialty') : '');
+  }
+
+  function syncSpecialtyScopes(root) {
+    const scope = root || document;
+    scope.querySelectorAll('[data-specialty]').forEach(function (element) {
+      element.setAttribute('data-specialty', normalizeSpecialty(element.getAttribute('data-specialty')));
+    });
+  }
+
+  function syncParentSpecialty(body) {
+    if (!body || body.getAttribute('data-user-level') !== '4') return;
+    const firstChildSpecialty = body.querySelector('.specialty-scope[data-specialty]');
+    if (firstChildSpecialty) {
+      body.setAttribute('data-specialty', firstChildSpecialty.getAttribute('data-specialty'));
+    }
   }
 
   function applyThemeFromAttr() {
@@ -196,6 +229,8 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     const body = document.body;
+    syncSpecialtyScopes(document);
+    syncParentSpecialty(body);
     if (body) {
       const specialty = getBodySpecialty();
       if (specialty) {
