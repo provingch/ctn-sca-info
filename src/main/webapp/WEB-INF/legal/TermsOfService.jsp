@@ -48,7 +48,7 @@
     <p>El colegio puede actualizar estas condiciones en cualquier momento. Te recomendamos revisar esta página periódicamente.</p>
 
     <div class="page-links">
-      <a href="${pageContext.request.contextPath}/PrivacyPolicy.jsp">Ver Política de Privacidad</a>
+      <a href="${pageContext.request.contextPath}/privacidad">Ver Política de Privacidad</a>
     </div>
   </main>
   <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/vendor/jquery.min.js"></script>
