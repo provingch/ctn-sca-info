@@ -40,6 +40,29 @@
     }
   }
 
+  function syncSelectableSpecialties() {
+    const selects = document.querySelectorAll('select[name="especialidad"], #classEspecialidad');
+
+    selects.forEach(function (select) {
+      const applySelection = function () {
+        const selectedOption = select.options[select.selectedIndex];
+        const specialtyName = selectedOption ? selectedOption.textContent : select.value;
+        if (!select.value || !specialtyName) return;
+
+        const target = select.closest('.planilla-hero, .hero-shell, .top-section')
+          || (select.id === 'classEspecialidad' ? document.querySelector('.inicio-shell') : null)
+          || document.querySelector('.planilla-hero, .hero-shell, .top-section');
+
+        if (target) {
+          target.setAttribute('data-specialty', normalizeSpecialty(specialtyName));
+        }
+      };
+
+      select.addEventListener('change', applySelection);
+      applySelection();
+    });
+  }
+
   function applyThemeFromAttr() {
     const html = document.documentElement;
     const body = document.body;
@@ -231,6 +254,7 @@
     const body = document.body;
     syncSpecialtyScopes(document);
     syncParentSpecialty(body);
+    syncSelectableSpecialties();
     if (body) {
       const specialty = getBodySpecialty();
       if (specialty) {
