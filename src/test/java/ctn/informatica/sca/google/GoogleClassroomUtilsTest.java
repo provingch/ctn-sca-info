@@ -66,7 +66,7 @@ public class GoogleClassroomUtilsTest {
 
     @Test
     public void testTeacherCourseMatchUsesCourseIdentity() {
-        Curso curso = new Curso(1, "Algoritmia", 2026, "A");
+        Curso curso = new Curso(1, "Algoritmia", AcademicPeriod.current() + 1, "A");
         Course classroomCourse = new Course();
         classroomCourse.setName("Algoritmia 2do A");
         classroomCourse.setRoom("");
