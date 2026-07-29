@@ -2977,15 +2977,15 @@ html[data-theme="dark"] .footer {
   --color-accent-mecanica-general: #1e5a38;
   --color-accent-electromecanica: #1a2ecf;
   --color-accent-electricidad: #268fba;
-  --color-bg: #f1f3fb;
+  --color-bg: #f3f5fa;
   --color-bg-elevated: #ffffff;
-  --color-bg-muted: #f7f8fc;
-  --color-bg-input: #fcfdff;
-  --color-text: #202842;
-  --color-text-muted: #69738e;
-  --color-border: #dfe4ef;
-  --color-border-strong: #c5cedf;
-  --color-midnight: #202842;
+  --color-bg-muted: #f7f9fc;
+  --color-bg-input: #ffffff;
+  --color-text: #20283c;
+  --color-text-muted: #667085;
+  --color-border: #e1e6ef;
+  --color-border-strong: #c9d2e1;
+  --color-midnight: #20283c;
   --color-success: #16875d;
   --color-warning: #b96a0b;
   --color-danger: #d94357;
@@ -3008,9 +3008,9 @@ html[data-theme="dark"] .footer {
   --space-8: 40px;
   --font-display: "Lato", "Helvetica Neue", Arial, sans-serif;
   --font-body: "Lato", "Helvetica Neue", Arial, sans-serif;
-  --shadow-sm: 0 5px 16px rgba(50, 60, 105, .055);
-  --shadow-md: 0 16px 42px rgba(50, 60, 105, .09);
-  --shadow-lg: 0 28px 72px rgba(50, 60, 105, .14);
+  --shadow-sm: 0 5px 16px rgba(35, 48, 78, .055);
+  --shadow-md: 0 16px 42px rgba(35, 48, 78, .09);
+  --shadow-lg: 0 28px 72px rgba(35, 48, 78, .14);
   --accent: #5267f7;
   --accent-contrast: #ffffff;
   --accent-soft: color-mix(in srgb, var(--accent) 12%, var(--paper));
@@ -3079,7 +3079,7 @@ html[data-theme="dark"] {
 [data-specialty="construcciones"] {
   --accent: #a48743;
   --hero-tone: #a48743;
-  --accent-contrast: #ffffff;
+  --accent-contrast: #14233b;
 }
 [data-specialty="quimica"] {
   --accent: #7f899a;
@@ -3109,9 +3109,10 @@ html[data-theme="dark"] {
 [data-specialty="electricidad"] {
   --accent: #268fba;
   --hero-tone: #268fba;
-  --accent-contrast: #ffffff;
+  --accent-contrast: #0d2028;
 }
 
+html[data-theme="dark"] [data-specialty="general"] { --accent: #8190ff; --accent-contrast: #10152a; }
 html[data-theme="dark"] [data-specialty="informatica"] { --accent: #d17d89; --accent-contrast: #271116; }
 html[data-theme="dark"] [data-specialty="construcciones"] { --accent: #e3ba67; --accent-contrast: #211a0c; }
 html[data-theme="dark"] [data-specialty="quimica"] { --accent: #c2cada; --accent-contrast: #151925; }
@@ -3143,9 +3144,9 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(circle at 4% 3%, color-mix(in srgb, var(--accent) 14%, transparent) 0, transparent 28rem),
-    radial-gradient(circle at 96% 92%, color-mix(in srgb, var(--accent) 9%, transparent) 0, transparent 30rem),
-    radial-gradient(color-mix(in srgb, var(--accent) 18%, transparent) .7px, transparent .7px) 0 0 / 22px 22px,
+    radial-gradient(circle at 4% 3%, color-mix(in srgb, var(--accent) 10%, transparent) 0, transparent 28rem),
+    radial-gradient(circle at 96% 92%, color-mix(in srgb, var(--accent) 7%, transparent) 0, transparent 30rem),
+    radial-gradient(color-mix(in srgb, var(--accent) 13%, transparent) .7px, transparent .7px) 0 0 / 22px 22px,
     var(--bg);
 }
 
@@ -3938,9 +3939,15 @@ body[data-user-level="4"] .grade-table td {
 }
 
 .capacity-specialty .capacity-specialty__title,
-.capacity-specialty h2,
 .capacity-specialty h3 {
   color: var(--accent-deep);
+}
+
+.capacity-specialty .capacity-specialty__header {
+  border-bottom-color: var(--accent) !important;
+  background: var(--accent) !important;
+  color: var(--accent-contrast) !important;
+  text-shadow: none;
 }
 
 /* Dark-mode fixes for vendored and inline legacy colors. */
