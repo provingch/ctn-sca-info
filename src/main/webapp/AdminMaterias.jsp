@@ -117,7 +117,7 @@
     <input type="hidden" name="action" value="check" />
     <label>From (source) materia:</label>
     <select name="fromId" required>
-        <option value="">-- seleccionar --</option>
+        <option value="">Seleccionar</option>
         <c:forEach var="m" items="${materias}">
             <option value="${m.id}" ${m.id == fromId ? 'selected' : ''}>${m.id} - ${m.nombre} (${m.categoria})</option>
         </c:forEach>
@@ -125,7 +125,7 @@
 
     <label>To (target) materia:</label>
     <select name="toId" required>
-        <option value="">-- seleccionar --</option>
+        <option value="">Seleccionar</option>
         <c:forEach var="m" items="${materias}">
             <option value="${m.id}" ${m.id == toId ? 'selected' : ''}>${m.id} - ${m.nombre} (${m.categoria})</option>
         </c:forEach>
@@ -167,7 +167,7 @@
         <input type="text" value="${editMateria.nombre}" disabled />
         <label>Categoría:</label>
         <select name="categoria">
-            <option value="">-- no cambiar --</option>
+            <option value="">No cambiar</option>
             <option value="comun" ${editMateria.categoria eq 'comun' ? 'selected' : ''}>comun</option>
             <option value="especifico" ${editMateria.categoria eq 'especifico' ? 'selected' : ''}>especifico</option>
         </select>

@@ -103,7 +103,7 @@
 <!--          <div class="table-header">Etapa</div>
           <div class="cell">
             <select name="etapa" required>
-              <option value="" selected disabled>--Seleccione una etapa--</option>
+              <option value="" selected disabled>Seleccione una etapa</option>
               <option value="primera">Primera etapa</option>
               <option value="segunda">Segunda etapa</option>
             </select>
@@ -112,7 +112,7 @@
           <div class="table-header">Especialidad</div>
           <div class="cell">
             <select name="especialidad" required>
-              <option value="" selected disabled>--Seleccione una especialidad--</option>
+              <option value="" selected disabled>Seleccione una especialidad</option>
               <c:forEach var="e" items="${especialidades}">
                 <option value="${e.id}"
                     <c:if test="${not empty selEspecialidad and e.id == selEspecialidad.id}">selected</c:if>>
@@ -125,7 +125,7 @@
           <div class="table-header">Curso</div>
           <div class="cell">
             <select name="curso" id="curso-select" required>
-              <option value="" selected disabled>--Seleccione un curso--</option>
+              <option value="" selected disabled>Seleccione un curso</option>
               <option value="1">1º</option>
               <option value="2">2º</option>
               <option value="3">3º</option>
@@ -135,7 +135,7 @@
           <div class="table-header">Sección</div>
           <div class="cell">
             <select name="seccion" id="seccion-select" required>
-              <option value="" selected disabled>--Seleccione una sección--</option>
+              <option value="" selected disabled>Seleccione una sección</option>
               <option value="A">A</option>
               <option value="B">B</option>
               <option value="C">C</option>

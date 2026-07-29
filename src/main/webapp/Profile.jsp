@@ -200,6 +200,39 @@
     background: var(--color-bg-input);
     border-color: color-mix(in srgb, var(--line) 78%, var(--ink) 22%);
   }
+  .security-password-control {
+    position: relative;
+  }
+  .security-password-control input {
+    padding-right: 3.25rem;
+  }
+  .security-password-toggle,
+  .security-password-toggle:hover,
+  .security-password-toggle:active {
+    position: absolute;
+    top: 50%;
+    right: 0.35rem;
+    width: 2.35rem;
+    min-width: 2.35rem;
+    height: 2.35rem;
+    min-height: 2.35rem;
+    padding: 0;
+    border: 0;
+    border-radius: 0.6rem;
+    background: transparent;
+    color: var(--muted);
+    box-shadow: none;
+    filter: none;
+    transform: translateY(-50%);
+  }
+  .security-password-toggle:hover {
+    background: var(--accent-soft);
+    color: var(--accent-deep);
+  }
+  .security-password-toggle:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+  }
   html[data-theme="dark"] .security-password-field label {
     color: color-mix(in srgb, var(--ink) 90%, var(--muted));
   }
@@ -559,15 +592,57 @@
                     <div class="table-header">Cambiar Contraseña</div>
                     <div class="security-password-field">
                       <label for="currentPassword">Contraseña Actual</label>
-                      <input type="password" name="currentPassword" id="currentPassword" />
+                      <div class="security-password-control">
+                        <input type="password" name="currentPassword" id="currentPassword" autocomplete="current-password" />
+                        <button class="password-toggle security-password-toggle" type="button"
+                                data-password-target="currentPassword" aria-controls="currentPassword"
+                                aria-pressed="false" aria-label="Mostrar contraseña" title="Mostrar contraseña">
+                          <svg class="password-toggle__icon password-toggle__icon--show" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M2.25 12s3.5-6 9.75-6 9.75 6 9.75 6-3.5 6-9.75 6-9.75-6-9.75-6Z"></path>
+                            <circle cx="12" cy="12" r="2.75"></circle>
+                          </svg>
+                          <svg class="password-toggle__icon password-toggle__icon--hide" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M3 3l18 18"></path>
+                            <path d="M10.6 6.2A10.7 10.7 0 0 1 12 6c6.25 0 9.75 6 9.75 6a16.7 16.7 0 0 1-2.2 2.8M6.3 7.1C3.7 9 2.25 12 2.25 12s3.5 6 9.75 6a10.8 10.8 0 0 0 4.1-.8M9.8 9.8a3.1 3.1 0 0 0 4.4 4.4"></path>
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                     <div class="security-password-field">
                       <label for="newPassword">Nueva Contraseña</label>
-                      <input type="password" name="newPassword" id="newPassword" />
+                      <div class="security-password-control">
+                        <input type="password" name="newPassword" id="newPassword" autocomplete="new-password" />
+                        <button class="password-toggle security-password-toggle" type="button"
+                                data-password-target="newPassword" aria-controls="newPassword"
+                                aria-pressed="false" aria-label="Mostrar contraseña" title="Mostrar contraseña">
+                          <svg class="password-toggle__icon password-toggle__icon--show" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M2.25 12s3.5-6 9.75-6 9.75 6 9.75 6-3.5 6-9.75 6-9.75-6-9.75-6Z"></path>
+                            <circle cx="12" cy="12" r="2.75"></circle>
+                          </svg>
+                          <svg class="password-toggle__icon password-toggle__icon--hide" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M3 3l18 18"></path>
+                            <path d="M10.6 6.2A10.7 10.7 0 0 1 12 6c6.25 0 9.75 6 9.75 6a16.7 16.7 0 0 1-2.2 2.8M6.3 7.1C3.7 9 2.25 12 2.25 12s3.5 6 9.75 6a10.8 10.8 0 0 0 4.1-.8M9.8 9.8a3.1 3.1 0 0 0 4.4 4.4"></path>
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                     <div class="security-password-field">
                       <label for="confirmPassword">Confirmar Contraseña</label>
-                      <input type="password" name="confirmPassword" id="confirmPassword" />
+                      <div class="security-password-control">
+                        <input type="password" name="confirmPassword" id="confirmPassword" autocomplete="new-password" />
+                        <button class="password-toggle security-password-toggle" type="button"
+                                data-password-target="confirmPassword" aria-controls="confirmPassword"
+                                aria-pressed="false" aria-label="Mostrar contraseña" title="Mostrar contraseña">
+                          <svg class="password-toggle__icon password-toggle__icon--show" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M2.25 12s3.5-6 9.75-6 9.75 6 9.75 6-3.5 6-9.75 6-9.75-6-9.75-6Z"></path>
+                            <circle cx="12" cy="12" r="2.75"></circle>
+                          </svg>
+                          <svg class="password-toggle__icon password-toggle__icon--hide" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M3 3l18 18"></path>
+                            <path d="M10.6 6.2A10.7 10.7 0 0 1 12 6c6.25 0 9.75 6 9.75 6a16.7 16.7 0 0 1-2.2 2.8M6.3 7.1C3.7 9 2.25 12 2.25 12s3.5 6 9.75 6a10.8 10.8 0 0 0 4.1-.8M9.8 9.8a3.1 3.1 0 0 0 4.4 4.4"></path>
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                     <div class="cell selection-hint" style="grid-column: 1 / -1;">
                       Completa solo si quieres cambiar la contraseña. Debe tener al menos 6 caracteres.
@@ -781,9 +856,26 @@
   const installAppButton = document.getElementById('installAppButton');
   const installAppMessage = document.getElementById('installAppMessage');
   const installAppHint = document.getElementById('installAppHint');
+  const securityPasswordToggles = document.querySelectorAll('.security-password-toggle[data-password-target]');
   const vapidPublicKey = '${pushPublicKey}';
   window.ctnProfilePushEnabled = <c:out value="${pushEnabled}" />;
   let deferredPrompt = null;
+
+  function setSecurityPasswordVisibility(button, visible) {
+    const input = document.getElementById(button.dataset.passwordTarget);
+    if (!input) return;
+    input.type = visible ? 'text' : 'password';
+    button.classList.toggle('is-visible', visible);
+    button.setAttribute('aria-pressed', String(visible));
+    button.setAttribute('aria-label', visible ? 'Ocultar contraseña' : 'Mostrar contraseña');
+    button.setAttribute('title', visible ? 'Ocultar contraseña' : 'Mostrar contraseña');
+  }
+
+  securityPasswordToggles.forEach(function (button) {
+    button.addEventListener('click', function () {
+      setSecurityPasswordVisibility(button, button.getAttribute('aria-pressed') !== 'true');
+    });
+  });
 
   function setPushStatus(message, tone) {
     if (!pushStatus) return;
@@ -1063,6 +1155,9 @@
         ['currentPassword', 'newPassword', 'confirmPassword'].forEach(function (id) {
           const input = document.getElementById(id);
           if (input) input.value = '';
+        });
+        securityPasswordToggles.forEach(function (button) {
+          setSecurityPasswordVisibility(button, false);
         });
       }
 

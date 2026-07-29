@@ -323,28 +323,28 @@ const CURSOS = [
 
     function populateEspecialidad() {
       selEspecialidad.innerHTML = '';
-      selEspecialidad.appendChild(new Option('--Seleccione especialidad--', ''));
+      selEspecialidad.appendChild(new Option('Seleccione especialidad', ''));
       uniqueEspecialidades().forEach(e => selEspecialidad.appendChild(new Option(e, e)));
-      selCursoNivel.innerHTML = '<option value="">--Seleccione curso--</option>';
+      selCursoNivel.innerHTML = '<option value="">Seleccione curso</option>';
       selCursoNivel.disabled = true;
-      selSeccion.innerHTML = '<option value="">--Seleccione sección--</option>';
+      selSeccion.innerHTML = '<option value="">Seleccione sección</option>';
       selSeccion.disabled = true;
     }
 
     function populateCursoNivel() {
       const esp = selEspecialidad.value;
       selCursoNivel.innerHTML = '';
-      selCursoNivel.appendChild(new Option('--Seleccione curso--', ''));
+      selCursoNivel.appendChild(new Option('Seleccione curso', ''));
       if (!esp) {
         selCursoNivel.disabled = true;
-        selSeccion.innerHTML = '<option value="">--Seleccione sección--</option>';
+        selSeccion.innerHTML = '<option value="">Seleccione sección</option>';
         selSeccion.disabled = true;
         return;
       }
       const niveles = [...new Set(CURSOS.filter(c => c.especialidad === esp).map(c => c.nivel))].sort((a, b) => a - b);
       niveles.forEach(n => selCursoNivel.appendChild(new Option(formatCursoNivel(n), n)));
       selCursoNivel.disabled = false;
-      selSeccion.innerHTML = '<option value="">--Seleccione sección--</option>';
+      selSeccion.innerHTML = '<option value="">Seleccione sección</option>';
       selSeccion.disabled = true;
     }
 
@@ -352,7 +352,7 @@ const CURSOS = [
       const esp = selEspecialidad.value;
       const nivel = parseInt(selCursoNivel.value);
       selSeccion.innerHTML = '';
-      selSeccion.appendChild(new Option('--Seleccione sección--', ''));
+      selSeccion.appendChild(new Option('Seleccione sección', ''));
       if (!esp || !nivel) {
         selSeccion.disabled = true;
         return;
