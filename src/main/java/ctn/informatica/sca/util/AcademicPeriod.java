@@ -1,20 +1,14 @@
 package ctn.informatica.sca.util;
 
-import ctn.informatica.sca.config.AppConfig;
+import java.time.LocalDate;
 
 public final class AcademicPeriod {
-
-    private static final int DEFAULT_PERIOD = 2025;
 
     private AcademicPeriod() {
         // util class
     }
 
     public static int current() {
-        try {
-            return Integer.parseInt(AppConfig.get("academic.period"));
-        } catch (RuntimeException ex) {
-            return DEFAULT_PERIOD;
-        }
+        return LocalDate.now().getYear();
     }
 }

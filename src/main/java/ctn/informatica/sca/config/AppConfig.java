@@ -47,10 +47,22 @@ public class AppConfig {
         if (props == null) {
             throw new IllegalStateException("AppConfig no fue inicializado. Llamá a AppConfig.init() primero.");
         }
-        String value = props.getProperty(key);
+
+        String envName = toEnvName(key);
+        String value = System.getenv(envName);
+        if (value == null || value.isBlank()) {
+            value = System.getProperty(key);
+        }
+        if (value == null || value.isBlank()) {
+            value = props.getProperty(key);
+        }
         if (value == null) {
-            throw new IllegalArgumentException("No existe la clave '" + key + "' en config.properties");
+            throw new IllegalArgumentException("No existe la clave '" + key + "' en config.properties ni en variables de entorno/sistema");
         }
         return value;
+    }
+
+    private static String toEnvName(String key) {
+        return key.toUpperCase().replaceAll("[^A-Z0-9]+", "_").replaceAll("_+", "_").replaceAll("^_|_$", "");
     }
 }
