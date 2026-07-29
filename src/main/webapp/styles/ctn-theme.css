@@ -3354,10 +3354,12 @@ a { transition: color .16s ease, background-color .16s ease, border-color .16s e
 .top-section .badge {
   position: relative;
   z-index: 1;
-  border-color: rgba(255, 255, 255, .28);
-  background: rgba(255, 255, 255, .17);
-  color: var(--hero-contrast);
-  backdrop-filter: blur(8px);
+  padding: 0;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--hero-contrast) !important;
+  box-shadow: none !important;
+  backdrop-filter: none;
 }
 
 .badge .dot {
@@ -3859,6 +3861,32 @@ html[data-theme="dark"] #totpQrCanvas img {
 
   .profile-shell {
     border-radius: 20px;
+  }
+}
+
+@media (min-width: 768px) {
+  .ctn-navbar .container-fluid {
+    width: 100%;
+    max-width: none;
+  }
+
+  .ctn-navbar .navbar-header {
+    flex: 0 0 auto;
+  }
+
+  .ctn-navbar .navbar-collapse {
+    display: flex !important;
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: flex-end;
+    margin-left: auto;
+  }
+
+  .ctn-navbar .ctn-navbar-actions {
+    width: auto;
+    margin-right: 0 !important;
+    margin-left: auto !important;
+    justify-content: flex-end;
   }
 }
 
