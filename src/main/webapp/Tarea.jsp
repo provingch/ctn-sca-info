@@ -131,7 +131,7 @@
           <div class="cell">
             <select name="planillaId" required
                     <c:if test="${not empty editingTarea}">disabled</c:if>>
-              <option value="" disabled>--Seleccione una Materia--</option>
+              <option value="" disabled>Seleccione una materia</option>
               <c:forEach var="p" items="${planillas}">
                   <option value="${p.id}"
                           <c:if test="${p.id == selPlanilla.id}">selected</c:if>>
@@ -144,7 +144,7 @@
           <div class="table-header">Instrumento</div>
           <div class="cell">
             <select name="instrumentoId" required>
-              <option value="" selected disabled>--Seleccione un Instrumento--</option><!-- TODO -->
+              <option value="" selected disabled>Seleccione un instrumento</option><!-- TODO -->
               <c:forEach var="ins" items="${instrumentos}">
                   <option value="${ins.id}"
                           <c:if test="${ins.id == instrumentoId}">selected</c:if>>

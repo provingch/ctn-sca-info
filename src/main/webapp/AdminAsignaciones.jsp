@@ -86,7 +86,7 @@
             <input type="hidden" name="action" value="crear" />
             <label>Profesor</label>
             <select name="profesorId" required>
-                <option value="">--Seleccione profesor--</option>
+                <option value="">Seleccione profesor</option>
                 <c:forEach var="p" items="${profesores}">
                     <option value="${p.id}">${p.apellido} ${p.nombre}</option>
                 </c:forEach>
@@ -94,7 +94,7 @@
 
             <label>Materia</label>
             <select name="materiaId" required>
-                <option value="">--Seleccione materia--</option>
+                <option value="">Seleccione materia</option>
                 <c:forEach var="m" items="${materias}">
                     <option value="${m.id}">${m.nombre}</option>
                 </c:forEach>
@@ -194,7 +194,7 @@ function uniqueEspecialidades() {
 function populateEspecialidad() {
     const sel = document.getElementById('selEspecialidad');
     sel.innerHTML = '';
-    sel.appendChild(new Option('--Seleccione especialidad--',''));
+    sel.appendChild(new Option('Seleccione especialidad',''));
     uniqueEspecialidades().forEach(e => sel.appendChild(new Option(e,e)));
 }
 
@@ -202,7 +202,7 @@ function populateCursoNivel() {
     const esp = document.getElementById('selEspecialidad').value;
     const sel = document.getElementById('selCursoNivel');
     sel.innerHTML = '';
-    sel.appendChild(new Option('--Seleccione curso--',''));
+    sel.appendChild(new Option('Seleccione curso',''));
     if (!esp) return;
     const niveles = [1, 2, 3];
     niveles.forEach(n => sel.appendChild(new Option(n + 'º', n)));
@@ -213,7 +213,7 @@ function populateSeccion() {
     const nivel = parseInt(document.getElementById('selCursoNivel').value);
     const sel = document.getElementById('selSeccion');
     sel.innerHTML = '';
-    sel.appendChild(new Option('--Seleccione sección--',''));
+    sel.appendChild(new Option('Seleccione sección',''));
     if (!esp || !nivel) return;
     const secciones = normalizeText(esp) && SECCIONES_TRES.has(normalizeText(esp)) ? ['A', 'B', 'C'] : ['A', 'B'];
     secciones.forEach(s => sel.appendChild(new Option(s,s)));

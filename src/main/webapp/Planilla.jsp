@@ -126,7 +126,7 @@
 
             <label for="etapaSelect">Etapa</label>
             <select class="selEtapa" id="etapaSelect" name="etapa" onchange="this.form.submit()">
-              <option value="">--Seleccione una etapa--</option>
+              <option value="">Seleccione una etapa</option>
               <option value="1" ${ etapa == 1? "selected" : ""}>primera etapa</option>
               <option value="2" ${ etapa == 2? "selected" : ""}>segunda etapa</option>
             </select>

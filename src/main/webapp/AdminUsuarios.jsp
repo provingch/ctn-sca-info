@@ -118,7 +118,7 @@
     <input type="email" name="correo" />
     <label>Especialidad</label>
     <select name="especialidadId">
-        <option value="">-- ninguna --</option>
+        <option value="">Ninguna</option>
         <c:forEach var="e" items="${especialidades}">
             <option value="${e.id}">${e.nombre}</option>
         </c:forEach>
@@ -159,7 +159,7 @@
         <input type="email" name="correo" value="${editProfesor.correo}" />
         <label>Especialidad</label>
         <select name="especialidadId">
-            <option value="">-- ninguna --</option>
+            <option value="">Ninguna</option>
             <c:forEach var="e" items="${especialidades}">
                 <option value="${e.id}" ${editProfesor.especialidadId == e.id ? 'selected' : ''}>${e.nombre}</option>
             </c:forEach>
