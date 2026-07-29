@@ -3110,11 +3110,8 @@ body {
   font-family: var(--font-body);
   font-size: 15px;
   line-height: 1.55;
-  background:
-    radial-gradient(circle at 4% 3%, color-mix(in srgb, var(--accent) 14%, transparent) 0, transparent 28rem),
-    radial-gradient(circle at 96% 92%, color-mix(in srgb, var(--accent) 9%, transparent) 0, transparent 30rem),
-    var(--bg);
-  background-attachment: fixed;
+  background: var(--bg);
+  isolation: isolate;
 }
 
 body::before {
@@ -3123,9 +3120,11 @@ body::before {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background-image: radial-gradient(color-mix(in srgb, var(--accent) 18%, transparent) .7px, transparent .7px);
-  background-size: 22px 22px;
-  opacity: .18;
+  background:
+    radial-gradient(circle at 4% 3%, color-mix(in srgb, var(--accent) 14%, transparent) 0, transparent 28rem),
+    radial-gradient(circle at 96% 92%, color-mix(in srgb, var(--accent) 9%, transparent) 0, transparent 30rem),
+    radial-gradient(color-mix(in srgb, var(--accent) 18%, transparent) .7px, transparent .7px) 0 0 / 22px 22px,
+    var(--bg);
 }
 
 .wrap,
@@ -3633,12 +3632,24 @@ table a {
 
 /* Login */
 body.login-page {
-  min-height: 100vh;
-  padding-top: 94px;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  padding: 84px 24px 14px;
+  overflow: hidden;
 }
 
 body.login-page .login-main {
-  min-height: calc(100vh - 122px);
+  min-height: 0;
+}
+
+body.login-page .login-wrapper {
+  min-height: 0;
+}
+
+body.login-page .footer {
+  flex: 0 0 auto;
+  padding-top: 8px;
 }
 
 .login-card {
@@ -3857,6 +3868,13 @@ html[data-theme="dark"] #totpQrCanvas img {
     padding: 82px 12px 18px;
   }
 
+  body.login-page {
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-y: auto;
+  }
+
   .ctn-navbar.navbar {
     top: 10px;
     right: 10px;
@@ -3890,6 +3908,31 @@ html[data-theme="dark"] #totpQrCanvas img {
   .form-card,
   .admin-card {
     border-radius: 16px;
+  }
+}
+
+@media (max-height: 720px) {
+  body.login-page {
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding-top: 76px;
+    overflow-y: auto;
+  }
+
+  body.login-page .login-card {
+    padding-block: 24px;
+  }
+
+  body.login-page .login-logo-container {
+    width: 62px;
+    height: 62px;
+    margin-bottom: 12px;
+  }
+
+  body.login-page .login-logo {
+    width: 46px;
+    height: 46px;
   }
 }
 
