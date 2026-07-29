@@ -395,7 +395,8 @@
 
     <footer class="footer">
       <hr>
-      <p>Colegio Técnico Nacional</p>
+          <p>Colegio Técnico Nacional</p>
+    <p><a href="PrivacyPolicy.jsp">Política de privacidad</a> | <a href="TermsOfService.jsp">Términos de servicio</a></p>
     </footer>
   </main>
 
