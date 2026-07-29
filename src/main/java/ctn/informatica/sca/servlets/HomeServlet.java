@@ -303,6 +303,10 @@ public class HomeServlet extends HttpServlet {
         request.setAttribute("googleClassroomPlaceholder", googleClassroomPlaceholder);
         request.setAttribute("googleClassroomVisibilityNotice", googleClassroomVisibilityNotice);
         request.setAttribute("viewMode", viewMode);
+        if (VIEW_CLASE.equals(viewMode)) {
+            request.getRequestDispatcher("/InicioClase.jsp").forward(request, response);
+            return;
+        }
 
         request.getRequestDispatcher("/Home.jsp").forward(request, response);
 
@@ -476,9 +480,6 @@ public class HomeServlet extends HttpServlet {
             return VIEW_PLANILLAS;
         }
         if (VIEW_RASGOS.equals(requestedView)) {
-            return VIEW_CLASE;
-        }
-        if (user != null && user.getLevel() == 1) {
             return VIEW_CLASE;
         }
         return VIEW_PLANILLAS;
