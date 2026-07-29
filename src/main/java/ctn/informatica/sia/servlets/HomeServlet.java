@@ -4,16 +4,21 @@
  */
 package ctn.informatica.sia.servlets;
 
+import ctn.informatica.sia.dao.AlumnoDao;
 import ctn.informatica.sia.dao.CursoDao;
 import ctn.informatica.sia.dao.MateriaDao;
 import ctn.informatica.sia.dao.PlanillaDao;
 import ctn.informatica.sia.dao.ProfesorDao;
+import ctn.informatica.sia.dao.RasgoPlanillaDao;
 import ctn.informatica.sia.google.GoogleClassroomService;
 import ctn.informatica.sia.google.GoogleClassroomUtils;
+import ctn.informatica.sia.model.Alumno;
 import ctn.informatica.sia.model.Curso;
 import ctn.informatica.sia.model.Materia;
 import ctn.informatica.sia.model.Planilla;
 import ctn.informatica.sia.model.Profesor;
+import ctn.informatica.sia.model.RasgoAsistencia;
+import ctn.informatica.sia.model.RasgoPlanilla;
 import ctn.informatica.sia.model.User;
 import com.google.api.services.classroom.model.Course;
 import java.io.IOException;
@@ -30,6 +35,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -38,9 +44,37 @@ import java.util.Optional;
 @WebServlet(name = "HomeServlet", urlPatterns = {"/HomeServlet"})
 public class HomeServlet extends HttpServlet {
 
+    private static final String VIEW_RASGOS = "rasgos";
+    private static final String VIEW_RASGOS_FORM = "rasgos-form";
+    private static final String VIEW_PLANILLAS = "planillas";
+    private static final String ACTION_CREATE_RASGO = "create-rasgo-planilla";
+    private static final String ACTION_SUBMIT_RASGO = "submit-rasgo-asistencia";
+    private static final Pattern SIMPLE_EMAIL_PATTERN = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        String action = safeTrim(request.getParameter("action"));
+        if (ACTION_SUBMIT_RASGO.equals(action)) {
+            submitRasgoAsistencia(request, response);
+            return;
+        }
+        if (ACTION_CREATE_RASGO.equals(action)) {
+            createRasgoPlanilla(request, response);
+            return;
+        }
+        response.sendRedirect(request.getContextPath() + "/HomeServlet");
+    }
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        String requestedView = safeTrim(request.getParameter("view"));
+        if (VIEW_RASGOS_FORM.equals(requestedView)) {
+            renderRasgoFormView(request, response);
+            return;
+        }
+
         HttpSession session = request.getSession(false);
         User user = session == null ? null : (User) session.getAttribute("user");
 
@@ -48,6 +82,8 @@ public class HomeServlet extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/index.jsp?notice=login-required");
             return;
         }
+
+        String viewMode = resolveViewMode(requestedView, user);
 
         ArrayList<Curso> cursos;
         try {
@@ -237,6 +273,10 @@ public class HomeServlet extends HttpServlet {
             request.setAttribute("classroomPlanillaMateriaMap", classroomPlanillaMateriaMap);
             request.setAttribute("matchedPlanillaIds", Collections.emptySet());
             request.setAttribute("materiasDetectadas", materiasDetectadas);
+
+            if (VIEW_RASGOS.equals(viewMode)) {
+                loadRasgosViewData(request, user, selectedCurso);
+            }
         } else {
             request.setAttribute("planillas", Collections.emptyList());
             request.setAttribute("showPlanillaCards", false);
@@ -244,6 +284,10 @@ public class HomeServlet extends HttpServlet {
             request.setAttribute("classroomPlanillaMateriaMap", Collections.emptyMap());
             request.setAttribute("matchedPlanillaIds", Collections.emptySet());
             request.setAttribute("materiasDetectadas", Collections.emptyList());
+            request.setAttribute("rasgoPlanillas", Collections.emptyList());
+            request.setAttribute("rasgoAsistencias", Collections.emptyList());
+            request.setAttribute("rasgoAlumnosInvalidos", Collections.emptyList());
+            request.setAttribute("rasgoAlumnosValidos", Collections.emptyList());
         }
 
         request.setAttribute("cursos", cursos);
@@ -254,6 +298,7 @@ public class HomeServlet extends HttpServlet {
         request.setAttribute("googleClassroomError", googleClassroomError);
         request.setAttribute("googleClassroomPlaceholder", googleClassroomPlaceholder);
         request.setAttribute("googleClassroomVisibilityNotice", googleClassroomVisibilityNotice);
+        request.setAttribute("viewMode", viewMode);
 
         request.getRequestDispatcher("/Home.jsp").forward(request, response);
 
@@ -275,6 +320,183 @@ public class HomeServlet extends HttpServlet {
             }
         }
         return subjects;
+    }
+
+    private void createRasgoPlanilla(HttpServletRequest request, HttpServletResponse response)
+            throws IOException, ServletException {
+        HttpSession session = request.getSession(false);
+        User user = session == null ? null : (User) session.getAttribute("user");
+        if (user == null) {
+            response.sendRedirect(request.getContextPath() + "/index.jsp?notice=login-required");
+            return;
+        }
+
+        int cursoId = parseIntOrDefault(request.getParameter("cursoId"), 0);
+        int etapa = parseIntOrDefault(request.getParameter("etapa"), 1);
+        String tema = safeTrim(request.getParameter("tema"));
+        if (cursoId <= 0 || tema.isEmpty()) {
+            response.sendRedirect(request.getContextPath() + "/HomeServlet?view=" + VIEW_RASGOS
+                    + "&cursoId=" + cursoId + "&etapa=" + etapa + "&rasgoError=tema");
+            return;
+        }
+
+        try {
+            List<Alumno> alumnos = new AlumnoDao().findByCursoId(cursoId);
+            List<Alumno> elegibles = new ArrayList<>();
+            for (Alumno alumno : alumnos) {
+                if (isCompleteName(alumno) && isValidEmail(alumno.getGoogleEmail())) {
+                    elegibles.add(alumno);
+                }
+            }
+
+            if (elegibles.isEmpty()) {
+                response.sendRedirect(request.getContextPath() + "/HomeServlet?view=" + VIEW_RASGOS
+                        + "&cursoId=" + cursoId + "&etapa=" + etapa + "&rasgoError=sin-alumnos");
+                return;
+            }
+
+            int planillaRasgoId = new RasgoPlanillaDao().crearPlanillaRasgo(cursoId, user.getId(), tema, elegibles);
+            response.sendRedirect(request.getContextPath() + "/HomeServlet?view=" + VIEW_RASGOS
+                    + "&cursoId=" + cursoId + "&etapa=" + etapa + "&rasgoPlanillaId=" + planillaRasgoId + "&rasgoOk=created");
+        } catch (SQLException ex) {
+            log("Error creating rasgo planilla", ex);
+            throw new ServletException("No se pudo crear la planilla de rasgos", ex);
+        }
+    }
+
+    private void submitRasgoAsistencia(HttpServletRequest request, HttpServletResponse response)
+            throws IOException, ServletException {
+        int asistenciaId = parseIntOrDefault(request.getParameter("asistenciaId"), 0);
+        String estadoRaw = safeTrim(request.getParameter("estado"));
+        String estado = "presente".equalsIgnoreCase(estadoRaw) ? "presente" : "ausente";
+        if (asistenciaId <= 0) {
+            response.sendRedirect(request.getContextPath() + "/HomeServlet?view=" + VIEW_RASGOS_FORM + "&error=id");
+            return;
+        }
+        try {
+            new RasgoPlanillaDao().registrarRespuesta(asistenciaId, estado);
+            response.sendRedirect(request.getContextPath() + "/HomeServlet?view=" + VIEW_RASGOS_FORM
+                    + "&asistenciaId=" + asistenciaId + "&ok=1");
+        } catch (SQLException ex) {
+            log("Error saving rasgo attendance response", ex);
+            throw new ServletException("No se pudo registrar la asistencia", ex);
+        }
+    }
+
+    private void renderRasgoFormView(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        int asistenciaId = parseIntOrDefault(request.getParameter("asistenciaId"), 0);
+        if (asistenciaId <= 0) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "asistenciaId requerido");
+            return;
+        }
+        try {
+            RasgoAsistencia asistencia = new RasgoPlanillaDao().findAsistenciaById(asistenciaId);
+            if (asistencia == null) {
+                response.sendError(HttpServletResponse.SC_NOT_FOUND, "Formulario no encontrado");
+                return;
+            }
+            request.setAttribute("rasgoAsistencia", asistencia);
+            request.setAttribute("rasgoSubmitSuccess", "1".equals(request.getParameter("ok")));
+            request.getRequestDispatcher("/RasgoForm.jsp").forward(request, response);
+        } catch (SQLException ex) {
+            log("Error loading rasgo form", ex);
+            throw new ServletException("No se pudo cargar el formulario", ex);
+        }
+    }
+
+    private void loadRasgosViewData(HttpServletRequest request, User user, Curso selectedCurso) {
+        try {
+            List<Alumno> alumnosCurso = new AlumnoDao().findByCursoId(selectedCurso.getId());
+            List<Alumno> alumnosValidos = new ArrayList<>();
+            List<Alumno> alumnosInvalidos = new ArrayList<>();
+            for (Alumno alumno : alumnosCurso) {
+                if (isCompleteName(alumno) && isValidEmail(alumno.getGoogleEmail())) {
+                    alumnosValidos.add(alumno);
+                } else {
+                    alumnosInvalidos.add(alumno);
+                }
+            }
+
+            RasgoPlanillaDao rasgoDao = new RasgoPlanillaDao();
+            List<RasgoPlanilla> planillas = rasgoDao.listarPorProfesorCurso(user.getId(), selectedCurso.getId());
+            int selectedPlanillaId = parseIntOrDefault(request.getParameter("rasgoPlanillaId"), 0);
+            RasgoPlanilla selectedPlanilla = null;
+            if (selectedPlanillaId > 0) {
+                for (RasgoPlanilla planilla : planillas) {
+                    if (planilla.getId() == selectedPlanillaId) {
+                        selectedPlanilla = planilla;
+                        break;
+                    }
+                }
+            }
+            if (selectedPlanilla == null && !planillas.isEmpty()) {
+                selectedPlanilla = planillas.get(0);
+            }
+
+            List<RasgoAsistencia> asistencias = Collections.emptyList();
+            if (selectedPlanilla != null) {
+                asistencias = rasgoDao.listarAsistencias(selectedPlanilla.getId());
+            }
+
+            request.setAttribute("rasgoPlanillas", planillas);
+            request.setAttribute("rasgoPlanillaSeleccionada", selectedPlanilla);
+            request.setAttribute("rasgoAsistencias", asistencias);
+            request.setAttribute("rasgoAlumnosValidos", alumnosValidos);
+            request.setAttribute("rasgoAlumnosInvalidos", alumnosInvalidos);
+        } catch (SQLException ex) {
+            log("Error loading rasgos data", ex);
+            request.setAttribute("rasgoPlanillas", Collections.emptyList());
+            request.setAttribute("rasgoPlanillaSeleccionada", null);
+            request.setAttribute("rasgoAsistencias", Collections.emptyList());
+            request.setAttribute("rasgoAlumnosValidos", Collections.emptyList());
+            request.setAttribute("rasgoAlumnosInvalidos", Collections.emptyList());
+            request.setAttribute("rasgoErrorMessage", "No se pudo cargar la planilla de rasgos");
+        }
+    }
+
+    private String resolveViewMode(String requestedView, User user) {
+        if (VIEW_PLANILLAS.equals(requestedView)) {
+            return VIEW_PLANILLAS;
+        }
+        if (VIEW_RASGOS.equals(requestedView)) {
+            return VIEW_RASGOS;
+        }
+        if (user != null && user.getLevel() == 1) {
+            return VIEW_RASGOS;
+        }
+        return VIEW_PLANILLAS;
+    }
+
+    private int parseIntOrDefault(String rawValue, int defaultValue) {
+        if (rawValue == null || rawValue.trim().isEmpty()) {
+            return defaultValue;
+        }
+        try {
+            return Integer.parseInt(rawValue.trim());
+        } catch (NumberFormatException ex) {
+            return defaultValue;
+        }
+    }
+
+    private String safeTrim(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private boolean isValidEmail(String email) {
+        if (email == null) {
+            return false;
+        }
+        return SIMPLE_EMAIL_PATTERN.matcher(email.trim()).matches();
+    }
+
+    private boolean isCompleteName(Alumno alumno) {
+        if (alumno == null) {
+            return false;
+        }
+        String nombre = safeTrim(alumno.getNombre());
+        String apellido = safeTrim(alumno.getApellido());
+        return !nombre.isEmpty() && !apellido.isEmpty() && nombre.length() >= 2 && apellido.length() >= 2;
     }
 
 }
