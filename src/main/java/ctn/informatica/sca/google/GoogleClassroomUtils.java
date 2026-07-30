@@ -48,8 +48,10 @@ public final class GoogleClassroomUtils {
             return Optional.empty();
         }
 
-        Integer explicitSectionYear = parseExplicitSectionYear(section);
-        int periodo = explicitSectionYear != null ? explicitSectionYear : currentPeriod;
+        // El periodo debe coincidir siempre con el año académico actual, porque
+        // courseMatchesTeacherCurso compara el valor de esta key contra
+        // curso.getPeriod(), que también se recalcula como AcademicPeriod.current().
+        int periodo = currentPeriod;
 
         String sala = stripLevelAndSection(normalizedName);
         return Optional.of(new CourseKey(level, courseSection, sala, periodo));
@@ -83,23 +85,6 @@ public final class GoogleClassroomUtils {
             return "";
         }
         return normalize(room);
-    }
-
-    private static Integer parseExplicitSectionYear(String section) {
-        if (section == null || section.isBlank()) {
-            return null;
-        }
-        String trimmed = section.trim();
-        if (trimmed.matches("20\\d{2}")) {
-            return Integer.parseInt(trimmed);
-        }
-        Matcher rangeMatcher = YEAR_RANGE_PATTERN.matcher(trimmed);
-        if (rangeMatcher.find()) {
-            int startYear = Integer.parseInt(rangeMatcher.group(1));
-            int endYear = Integer.parseInt(rangeMatcher.group(2));
-            return endYear;
-        }
-        return null;
     }
 
     private static boolean isAcademicPeriodCompatible(String courseName, String room, String section, int currentPeriod) {
