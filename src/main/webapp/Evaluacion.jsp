@@ -161,6 +161,30 @@
         </div>
       </form>
 
+      <c:if test="${not empty clasesRegistradas}">
+        <div class="table-card card" style="margin-top:16px;">
+          <div class="table-header">Clases registradas</div>
+          <div class="cell" style="padding:12px 0 0;">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Tema</th>
+                  <th>Fecha</th>
+                </tr>
+              </thead>
+              <tbody>
+                <c:forEach var="clase" items="${clasesRegistradas}">
+                  <tr>
+                    <td><c:out value="${clase.tema}" /></td>
+                    <td><c:out value="${clase.fechaClase}" /></td>
+                  </tr>
+                </c:forEach>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </c:if>
+
     </section>
 
     <footer class="footer">

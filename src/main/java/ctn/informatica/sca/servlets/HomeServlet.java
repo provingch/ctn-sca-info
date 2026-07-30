@@ -515,7 +515,6 @@ public class HomeServlet extends HttpServlet {
             request.setAttribute("rasgoAlumnosValidos", Collections.emptyList());
             request.setAttribute("rasgoAlumnosInvalidos", Collections.emptyList());
             request.setAttribute("instrumentos", Collections.emptyList());
-            request.setAttribute("rasgoErrorMessage", "No se pudo cargar la planilla de rasgos");
         }
     }
 

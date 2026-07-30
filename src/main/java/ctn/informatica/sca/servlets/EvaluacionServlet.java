@@ -4,8 +4,12 @@
  */
 package ctn.informatica.sca.servlets;
 
+import ctn.informatica.sca.dao.CursoDao;
 import ctn.informatica.sca.dao.EspecialidadDao;
+import ctn.informatica.sca.dao.RasgoPlanillaDao;
+import ctn.informatica.sca.model.Curso;
 import ctn.informatica.sca.model.Especialidad;
+import ctn.informatica.sca.model.RasgoPlanilla;
 import ctn.informatica.sca.model.User;
 import ctn.informatica.sca.util.ScaUiContext;
 import java.io.IOException;
@@ -27,13 +31,13 @@ public class EvaluacionServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         HttpSession session = request.getSession(false);
-        User user = session == null ? null : (User) session.getAttribute("user");
 
         try {
             List<Especialidad> especialidades = new EspecialidadDao().findAll();
             request.setAttribute("especialidades", especialidades);
 
             Especialidad selected = null;
+            Curso selectedCurso = null;
             String selId = request.getParameter("especialidad");
             if ((selId == null || selId.isBlank()) && session != null) {
                 Object savedId = session.getAttribute("scaSpecialtyId");
@@ -68,6 +72,33 @@ public class EvaluacionServlet extends HttpServlet {
                     session.setAttribute("scaSpecialtyId", selected.getId());
                     session.setAttribute("scaSpecialtyName", selected.getNombre());
                 }
+            }
+
+            String cursoParam = request.getParameter("curso");
+            String seccionParam = request.getParameter("seccion");
+            if (selected != null && cursoParam != null && !cursoParam.isBlank() && seccionParam != null && !seccionParam.isBlank()) {
+                try {
+                    int cursoNivel = Integer.parseInt(cursoParam.trim());
+                    List<Curso> cursos = new CursoDao().findAll();
+                    for (Curso curso : cursos) {
+                        if (curso != null
+                                && ScaUiContext.normalizeSpecialty(curso.getEspecialidad()).equals(ScaUiContext.normalizeSpecialty(selected.getNombre()))
+                                && curso.getCurso() == cursoNivel
+                                && seccionParam.equalsIgnoreCase(curso.getSeccion())) {
+                            selectedCurso = curso;
+                            break;
+                        }
+                    }
+                } catch (NumberFormatException ignored) {
+                }
+            }
+
+            if (selectedCurso != null) {
+                request.setAttribute("selCurso", selectedCurso);
+                List<RasgoPlanilla> clasesRegistradas = new RasgoPlanillaDao().listarPorCurso(selectedCurso.getId());
+                request.setAttribute("clasesRegistradas", clasesRegistradas);
+            } else {
+                request.setAttribute("clasesRegistradas", java.util.Collections.emptyList());
             }
 
         } catch (Exception ex) {
