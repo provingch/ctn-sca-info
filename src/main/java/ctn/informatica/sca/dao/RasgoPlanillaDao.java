@@ -5,7 +5,6 @@ import ctn.informatica.sca.model.Alumno;
 import ctn.informatica.sca.model.RasgoAsistencia;
 import ctn.informatica.sca.model.RasgoPlanilla;
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -32,6 +31,46 @@ public class RasgoPlanillaDao extends conexion {
             sql.append(", ?");
         }
         sql.append(")");
+        return sql.toString();
+    }
+
+    static String buildPlanillaListSql(boolean includeFechaClase, boolean includeCreatedAt) {
+        return buildPlanillaListSql(includeFechaClase, includeCreatedAt, true);
+    }
+
+    static String buildPlanillaListSql(boolean includeFechaClase, boolean includeCreatedAt, boolean filterByProfesor) {
+        StringBuilder sql = new StringBuilder("SELECT id, curso_id, profesor_id, tema");
+        if (includeFechaClase) {
+            sql.append(", fecha_clase");
+        }
+        if (includeCreatedAt) {
+            sql.append(", created_at");
+        }
+        sql.append(" FROM planilla_rasgo WHERE");
+        if (filterByProfesor) {
+            sql.append(" profesor_id = ? AND");
+        }
+        sql.append(" curso_id = ?");
+        if (includeCreatedAt) {
+            sql.append(" ORDER BY created_at DESC");
+        } else {
+            sql.append(" ORDER BY id DESC");
+        }
+        return sql.toString();
+    }
+
+    static String buildRespuestaUpdateSql(boolean includeFaltaCodigo, boolean includeFaltaObservacion, boolean includeRespondedAt) {
+        StringBuilder sql = new StringBuilder("UPDATE rasgo_asistencia SET estado = ?");
+        if (includeFaltaCodigo) {
+            sql.append(", falta_codigo = ?");
+        }
+        if (includeFaltaObservacion) {
+            sql.append(", falta_observacion = ?");
+        }
+        if (includeRespondedAt) {
+            sql.append(", responded_at = CURRENT_TIMESTAMP");
+        }
+        sql.append(" WHERE id = ?");
         return sql.toString();
     }
 
@@ -115,15 +154,34 @@ public class RasgoPlanillaDao extends conexion {
     }
 
     public List<RasgoPlanilla> listarPorProfesorCurso(int profesorId, int cursoId) throws SQLException {
-        String sql = "SELECT id, curso_id, profesor_id, tema, fecha_clase, created_at "
-                + "FROM planilla_rasgo WHERE profesor_id = ? AND curso_id = ? ORDER BY created_at DESC";
         List<RasgoPlanilla> planillas = new ArrayList<>();
-        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, profesorId);
-            ps.setInt(2, cursoId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    planillas.add(fromPlanillaResultSet(rs));
+        try (Connection con = getCon()) {
+            boolean[] supportsPlanillaColumns = supportsColumns(con, "planilla_rasgo", "fecha_clase", "created_at");
+            String sql = buildPlanillaListSql(supportsPlanillaColumns[0], supportsPlanillaColumns[1]);
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setInt(1, profesorId);
+                ps.setInt(2, cursoId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        planillas.add(fromPlanillaResultSet(rs));
+                    }
+                }
+            }
+        }
+        return planillas;
+    }
+
+    public List<RasgoPlanilla> listarPorCurso(int cursoId) throws SQLException {
+        List<RasgoPlanilla> planillas = new ArrayList<>();
+        try (Connection con = getCon()) {
+            boolean[] supportsPlanillaColumns = supportsColumns(con, "planilla_rasgo", "fecha_clase", "created_at");
+            String sql = buildPlanillaListSql(supportsPlanillaColumns[0], supportsPlanillaColumns[1], false);
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setInt(1, cursoId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        planillas.add(fromPlanillaResultSet(rs));
+                    }
                 }
             }
         }
@@ -201,13 +259,21 @@ public class RasgoPlanillaDao extends conexion {
     }
 
     public boolean registrarRespuesta(int asistenciaId, String estado, String faltaCodigo, String faltaObservacion) throws SQLException {
-        String sql = "UPDATE rasgo_asistencia SET estado = ?, falta_codigo = ?, falta_observacion = ?, responded_at = CURRENT_TIMESTAMP WHERE id = ?";
-        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, estado);
-            ps.setString(2, faltaCodigo == null || faltaCodigo.isBlank() ? null : faltaCodigo.trim().toUpperCase());
-            ps.setString(3, faltaObservacion == null ? null : faltaObservacion.trim());
-            ps.setInt(4, asistenciaId);
-            return ps.executeUpdate() == 1;
+        try (Connection con = getCon()) {
+            boolean[] supportsRespuestaColumns = supportsColumns(con, "rasgo_asistencia", "falta_codigo", "falta_observacion", "responded_at");
+            String sql = buildRespuestaUpdateSql(supportsRespuestaColumns[0], supportsRespuestaColumns[1], supportsRespuestaColumns[2]);
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                int index = 1;
+                ps.setString(index++, estado);
+                if (supportsRespuestaColumns[0]) {
+                    ps.setString(index++, faltaCodigo == null || faltaCodigo.isBlank() ? null : faltaCodigo.trim().toUpperCase());
+                }
+                if (supportsRespuestaColumns[1]) {
+                    ps.setString(index++, faltaObservacion == null ? null : faltaObservacion.trim());
+                }
+                ps.setInt(index, asistenciaId);
+                return ps.executeUpdate() == 1;
+            }
         }
     }
 
@@ -217,9 +283,16 @@ public class RasgoPlanillaDao extends conexion {
         planilla.setCursoId(rs.getInt("curso_id"));
         planilla.setProfesorId(rs.getInt("profesor_id"));
         planilla.setTema(rs.getString("tema"));
-        Date fechaClase = rs.getDate("fecha_clase");
-        planilla.setFechaClase(fechaClase);
-        planilla.setCreatedAt(rs.getTimestamp("created_at"));
+        try {
+            planilla.setFechaClase(rs.getDate("fecha_clase"));
+        } catch (SQLException ignored) {
+            planilla.setFechaClase(null);
+        }
+        try {
+            planilla.setCreatedAt(rs.getTimestamp("created_at"));
+        } catch (SQLException ignored) {
+            planilla.setCreatedAt(null);
+        }
         return planilla;
     }
 
