@@ -277,15 +277,6 @@
           </div>
           <div class="class-grid">
             <div>
-              <label for="classTurno" style="font-weight:600;">Turno</label>
-              <select id="classTurno" class="form-control">
-                <option value="">Seleccione turno</option>
-                <option value="mañana" ${param.turno eq 'mañana' ? 'selected' : ''}>Mañana</option>
-                <option value="tarde" ${param.turno eq 'tarde' ? 'selected' : ''}>Tarde</option>
-                <option value="noche" ${param.turno eq 'noche' ? 'selected' : ''}>Noche</option>
-              </select>
-            </div>
-            <div>
               <label for="horarioClase" style="font-weight:600;">Horario (Ej: 07:00 a 09:20)</label>
               <input id="horarioClase" class="form-control" placeholder="Ej: 07:00 a 09:20" />
             </div>
@@ -298,7 +289,6 @@
               <select id="modalidadClase" class="form-control">
                 <option>Presencial</option>
                 <option>Virtual</option>
-                <option>Híbrido</option>
               </select>
             </div>
             <div>
@@ -671,15 +661,6 @@
       }
     });
 
-    const classTurno = document.getElementById('classTurno');
-    const formTurno = document.getElementById('formTurno');
-    if (classTurno && formTurno) {
-      formTurno.value = classTurno.value;
-      classTurno.addEventListener('change', function () {
-        formTurno.value = classTurno.value;
-      });
-    }
-
     const reportButton = document.getElementById('reportButton');
     const reportBox = document.getElementById('reportBox');
     if (reportButton && reportBox) {
@@ -718,7 +699,6 @@
           .map(c => Number(c.value));
         const payload = {
           cursoId: Number(document.getElementById('formCursoId') ? document.getElementById('formCursoId').value : 0),
-          turno: document.getElementById('classTurno') ? document.getElementById('classTurno').value : '',
           instrumentoId: Number(document.getElementById('instrumentoId') ? document.getElementById('instrumentoId').value : 0),
           tema: document.getElementById('temaRasgo') ? document.getElementById('temaRasgo').value : '',
           horarioClase: document.getElementById('horarioClase') ? document.getElementById('horarioClase').value : '',
