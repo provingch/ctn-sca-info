@@ -3429,7 +3429,7 @@ html[data-theme="dark"] .inicio-shell {
 .home-view-tab {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 12px;
   min-height: 86px;
   padding: 14px 18px;
@@ -3492,7 +3492,7 @@ html[data-theme="dark"] .inicio-shell {
 
 .home-view-tab__copy {
   display: grid;
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   min-width: 0;
   gap: 5px;
   justify-items: start;
