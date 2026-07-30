@@ -16,6 +16,25 @@ import java.util.Set;
 
 public class RasgoPlanillaDao extends conexion {
 
+    static String buildInsertAsistenciaSql(boolean includeFaltaCodigo, boolean includeFaltaObservacion) {
+        StringBuilder sql = new StringBuilder("INSERT INTO rasgo_asistencia (planilla_rasgo_id, alumno_id, alumno_nombre, alumno_apellido, alumno_email, estado");
+        if (includeFaltaCodigo) {
+            sql.append(", falta_codigo");
+        }
+        if (includeFaltaObservacion) {
+            sql.append(", falta_observacion");
+        }
+        sql.append(") VALUES (?, ?, ?, ?, ?, ?");
+        if (includeFaltaCodigo) {
+            sql.append(", ?");
+        }
+        if (includeFaltaObservacion) {
+            sql.append(", ?");
+        }
+        sql.append(")");
+        return sql.toString();
+    }
+
     public int crearPlanillaRasgo(int cursoId, int profesorId, String tema, List<Alumno> alumnos) throws SQLException {
         return crearPlanillaRasgo(cursoId, profesorId, tema, alumnos, java.util.Collections.emptySet());
     }
@@ -26,9 +45,10 @@ public class RasgoPlanillaDao extends conexion {
         }
 
         String insertPlanillaSql = "INSERT INTO planilla_rasgo (curso_id, profesor_id, tema, fecha_clase) VALUES (?, ?, ?, CURRENT_DATE())";
-        String insertAsistenciaSql = "INSERT INTO rasgo_asistencia (planilla_rasgo_id, alumno_id, alumno_nombre, alumno_apellido, alumno_email, estado, falta_codigo, falta_observacion) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection con = getCon()) {
+            boolean[] supportsFaltaColumns = supportsColumns(con, "rasgo_asistencia", "falta_codigo", "falta_observacion");
+            String insertAsistenciaSql = buildInsertAsistenciaSql(supportsFaltaColumns[0], supportsFaltaColumns[1]);
             boolean originalAutoCommit = con.getAutoCommit();
             con.setAutoCommit(false);
             try {
@@ -56,8 +76,12 @@ public class RasgoPlanillaDao extends conexion {
                         ps.setString(4, alumno.getApellido());
                         ps.setString(5, alumno.getGoogleEmail());
                         ps.setString(6, estado);
-                        ps.setString(7, null);
-                        ps.setString(8, null);
+                        if (supportsFaltaColumns[0]) {
+                            ps.setString(7, null);
+                        }
+                        if (supportsFaltaColumns[1]) {
+                            ps.setString(supportsFaltaColumns[0] ? 8 : 7, null);
+                        }
                         ps.addBatch();
                     }
                     ps.executeBatch();
@@ -72,6 +96,21 @@ public class RasgoPlanillaDao extends conexion {
                 con.setAutoCommit(originalAutoCommit);
             }
         }
+    }
+
+    private boolean[] supportsColumns(Connection con, String tableName, String... columnNames) throws SQLException {
+        boolean[] result = new boolean[columnNames.length];
+        String sql = "SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            for (int i = 0; i < columnNames.length; i++) {
+                ps.setString(1, tableName);
+                ps.setString(2, columnNames[i]);
+                try (ResultSet rs = ps.executeQuery()) {
+                    result[i] = rs.next();
+                }
+            }
+        }
+        return result;
     }
 
     public List<RasgoPlanilla> listarPorProfesorCurso(int profesorId, int cursoId) throws SQLException {
