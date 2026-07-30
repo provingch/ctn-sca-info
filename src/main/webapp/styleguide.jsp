@@ -8,7 +8,7 @@
 <!doctype html>
 <html data-theme="light">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <title>Styleguide — Foundation</title>
   <link rel="manifest" href="${pageContext.request.contextPath}/manifest.jsp">
   <meta name="theme-color" content="#1f2d3d">
@@ -74,8 +74,8 @@
 
   <footer class="footer">
     <hr>
-        <p>Colegio Técnico Nacional</p>
-    <p><a href="${pageContext.request.contextPath}/privacidad">Política de privacidad</a> | <a href="${pageContext.request.contextPath}/terminos">Términos de servicio</a></p>
+        <p>Colegio T&eacute;cnico Nacional</p>
+    <p><a href="${pageContext.request.contextPath}/privacidad">Pol&iacute;tica de privacidad</a> | <a href="${pageContext.request.contextPath}/terminos">T&eacute;rminos de servicio</a></p>
   </footer>
 
   <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/vendor/jquery.min.js"></script>

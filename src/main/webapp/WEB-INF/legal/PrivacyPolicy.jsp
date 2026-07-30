@@ -23,7 +23,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Política de Privacidad | SCA</title>
+  <title>Pol&iacute;tica de Privacidad | SCA</title>
   <link rel="manifest" href="${pageContext.request.contextPath}/manifest.jsp">
   <meta name="theme-color" content="#1f2d3d">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -46,7 +46,7 @@
         </button>
         <a class="navbar-brand ctn-navbar-brand" href="${homeUrl}" aria-label="Ir al inicio">
           <img class="header-logo" src="${pageContext.request.contextPath}/images/ctn-logo.svg" alt="CTN">
-          <span>Colegio Técnico Nacional</span>
+          <span>Colegio T&eacute;cnico Nacional</span>
         </a>
       </div>
       <div class="collapse navbar-collapse" id="ctnNavbarMenu">
@@ -59,8 +59,8 @@
 
   <main class="page-shell legal-shell">
     <a class="legal-back-link" href="${homeUrl}">← Volver al inicio</a>
-    <h1>Política de Privacidad</h1>
-    <p>En Colegio Técnico Nacional valoramos tu privacidad. Esta página describe cómo recopilamos, usamos y protegemos tus datos cuando utilizas el sistema SCA.</p>
+    <h1>Pol&iacute;tica de Privacidad</h1>
+    <p>En Colegio T&eacute;cnico Nacional valoramos tu privacidad. Esta página describe cómo recopilamos, usamos y protegemos tus datos cuando utilizas el sistema SCA.</p>
 
     <div class="legal-transparency-section">
       <%@ include file="/WEB-INF/includes/app-transparency.jspf" %>
@@ -77,10 +77,10 @@
     <p>Los datos se usan para brindar servicios académicos, mostrar información de cursos, asociar planillas con usuarios y ejecutar la integración autorizada con Google Classroom.</p>
 
     <h2>3. Integración con Google Classroom</h2>
-    <p>El acceso a Google Classroom se realiza solo cuando el profesor autoriza la conexión. El sistema usa el cliente OAuth configurado en la aplicación para solicitar permiso a Google y almacenar tokens seguros en la base de datos.</p>
+    <p>El acceso a Google Classroom se realiza solo cuando el profesor autoriza la conexión. El sistema usa el cliente OAuth configurado en la aplicaci&oacute;n para solicitar permiso a Google y almacenar tokens seguros en la base de datos.</p>
 
     <h2>4. Seguridad</h2>
-    <p>Se toman medidas razonables para proteger la información contra accesos no autorizados y para mantenerla segura durante su uso dentro de la aplicación.</p>
+    <p>Se toman medidas razonables para proteger la información contra accesos no autorizados y para mantenerla segura durante su uso dentro de la aplicaci&oacute;n.</p>
 
     <h2>5. Contacto</h2>
     <p>Si tenés dudas sobre esta política o sobre tus datos, dirigite al equipo de administración del colegio para obtener más información.</p>

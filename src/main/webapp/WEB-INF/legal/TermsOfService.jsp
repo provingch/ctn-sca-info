@@ -46,7 +46,7 @@
         </button>
         <a class="navbar-brand ctn-navbar-brand" href="${homeUrl}" aria-label="Ir al inicio">
           <img class="header-logo" src="${pageContext.request.contextPath}/images/ctn-logo.svg" alt="CTN">
-          <span>Colegio Técnico Nacional</span>
+          <span>Colegio T&eacute;cnico Nacional</span>
         </a>
       </div>
       <div class="collapse navbar-collapse" id="ctnNavbarMenu">
@@ -63,10 +63,10 @@
     <p>El uso del sistema SCA está sujeto a estas condiciones. Al ingresar y usar la plataforma, aceptas estos términos y la política de privacidad asociada.</p>
 
     <h2>1. Acceso</h2>
-    <p>Solo los usuarios autorizados del Colegio Técnico Nacional pueden ingresar con sus credenciales institucionales. Está prohibido compartir el acceso con terceros no autorizados.</p>
+    <p>Solo los usuarios autorizados del Colegio T&eacute;cnico Nacional pueden ingresar con sus credenciales institucionales. Está prohibido compartir el acceso con terceros no autorizados.</p>
 
     <h2>2. Uso de Google Classroom</h2>
-    <p>Cuando autorizás la conexión con Google Classroom, la aplicación solicitará permisos mediante OAuth. Los datos recibidos se usan exclusivamente para mostrar cursos y tareas integradas dentro del servicio.</p>
+    <p>Cuando autorizás la conexión con Google Classroom, la aplicaci&oacute;n solicitará permisos mediante OAuth. Los datos recibidos se usan exclusivamente para mostrar cursos y tareas integradas dentro del servicio.</p>
 
     <h2>3. Responsabilidades</h2>
     <ul>
@@ -79,7 +79,7 @@
     <p>El colegio puede actualizar estas condiciones en cualquier momento. Te recomendamos revisar esta página periódicamente.</p>
 
     <div class="legal-page-links">
-      <a href="${pageContext.request.contextPath}/privacidad">Ver Política de Privacidad</a>
+      <a href="${pageContext.request.contextPath}/privacidad">Ver Pol&iacute;tica de Privacidad</a>
     </div>
   </main>
   <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/vendor/jquery.min.js"></script>
