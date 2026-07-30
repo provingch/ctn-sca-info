@@ -278,11 +278,11 @@
           <div class="class-grid">
             <div>
               <label for="horarioClase" style="font-weight:600;">Horario</label>
-              <input id="horarioClase" class="form-control" placeholder="Ej: 07:00-09:20" pattern="^([0-1]?\d|2[0-3]):[0-5]\d-([0-1]?\d|2[0-3]):[0-5]\d$" title="Formato HH:MM-HH:MM, entre 07:00 y 18:00" inputmode="numeric" maxlength="11" />
+              <input id="horarioClase" class="form-control" placeholder="Ej: 07:00-09:20" pattern="^([0-1]?\d|2[0-4]):[0-5]\d-([0-1]?\d|2[0-4]):[0-5]\d$" title="Formato HH:MM-HH:MM, entre 07:00 y 18:00" inputmode="numeric" maxlength="11" />
             </div>
             <div>
               <label for="cantidadHoras" style="font-weight:600;">Cant. horas cátedra</label>
-              <input id="cantidadHoras" type="number" min="1" max="12" step="1" inputmode="numeric" class="form-control" value="2" oninput="this.value=this.value.replace(/[^0-9]/g,''); if(this.value!==''){ this.value = String(Math.min(12, Math.max(1, Number(this.value)))); }" />
+              <input id="cantidadHoras" type="number" min="1" max="12" step="1" inputmode="numeric" class="form-control" readonly placeholder="Automático" value="" />
             </div>
             <div>
               <label for="modalidadClase" style="font-weight:600;">Modalidad</label>
@@ -697,17 +697,47 @@
       });
     }
 
-    const validateHorarioField = function () {
-      const horario = document.getElementById('horarioClase');
-      if (!horario) return;
-      const value = horario.value.trim();
-      if (value === '') {
-        horario.setCustomValidity('');
-        return;
+    const clampHorarioSegment = function (segment, max) {
+      if (segment.length !== 2) return segment;
+      const normalized = Number(segment);
+      if (Number.isNaN(normalized)) return segment;
+      return String(Math.min(max, normalized)).padStart(2, '0');
+    };
+
+    const formatHorarioInput = function (value) {
+      const digits = value.replace(/\D/g, '').slice(0, 8);
+      const hour1 = digits.slice(0, 2);
+      const min1 = digits.slice(2, 4);
+      const hour2 = digits.slice(4, 6);
+      const min2 = digits.slice(6, 8);
+
+      const formattedHour1 = clampHorarioSegment(hour1, 24);
+      const formattedMin1 = clampHorarioSegment(min1, 59);
+      const formattedHour2 = clampHorarioSegment(hour2, 24);
+      const formattedMin2 = clampHorarioSegment(min2, 59);
+
+      let result = '';
+      if (formattedHour1) {
+        result += formattedHour1;
       }
+      if (digits.length > 2) {
+        result += ':' + formattedMin1;
+      }
+      if (digits.length > 4) {
+        result += '-' + formattedHour2;
+      }
+      if (digits.length > 6) {
+        result += ':' + formattedMin2;
+      }
+      return result.slice(0, 11);
+    };
+
+    const updateCantidadHorasField = function (value) {
+      const cantidadHoras = document.getElementById('cantidadHoras');
+      if (!cantidadHoras) return;
       const match = value.match(/^(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})$/);
       if (!match) {
-        horario.setCustomValidity('Formato inválido: use HH:MM-HH:MM');
+        cantidadHoras.value = '';
         return;
       }
       const startHour = Number(match[1]);
@@ -716,39 +746,64 @@
       const endMin = Number(match[4]);
       const start = startHour * 60 + startMin;
       const end = endHour * 60 + endMin;
+      if (end <= start) {
+        cantidadHoras.value = '';
+        return;
+      }
+      const durationMins = end - start;
+      cantidadHoras.value = String(Math.min(12, Math.max(1, Math.ceil(durationMins / 35))));
+    };
+
+    const validateHorarioField = function () {
+      const horario = document.getElementById('horarioClase');
+      if (!horario) return;
+      const value = horario.value.trim();
+      if (value === '') {
+        horario.setCustomValidity('');
+        updateCantidadHorasField('');
+        return;
+      }
+      const match = value.match(/^(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})$/);
+      if (!match) {
+        horario.setCustomValidity('Formato inválido: use HH:MM-HH:MM');
+        updateCantidadHorasField('');
+        return;
+      }
+      const startHour = Number(match[1]);
+      const startMin = Number(match[2]);
+      const endHour = Number(match[3]);
+      const endMin = Number(match[4]);
+      if (startHour > 24 || endHour > 24 || startMin > 59 || endMin > 59) {
+        horario.setCustomValidity('Formato inválido: hora hasta 24 y minutos hasta 59');
+        updateCantidadHorasField('');
+        return;
+      }
+      const start = startHour * 60 + startMin;
+      const end = endHour * 60 + endMin;
       const minTime = 7 * 60;
       const maxTime = 18 * 60;
       if (start < minTime || start > maxTime || end < minTime || end > maxTime) {
         horario.setCustomValidity('Las horas deben estar entre 07:00 y 18:00');
+        updateCantidadHorasField('');
         return;
       }
-      if (start >= end) {
+      if (end <= start) {
         horario.setCustomValidity('La hora de inicio debe ser anterior a la hora de fin');
+        updateCantidadHorasField('');
         return;
       }
       horario.setCustomValidity('');
+      updateCantidadHorasField(value);
     };
 
     const horarioField = document.getElementById('horarioClase');
     if (horarioField) {
       horarioField.addEventListener('blur', validateHorarioField);
       horarioField.addEventListener('input', function () {
-        let raw = this.value.replace(/[^0-9:-]/g, '');
-        const parts = raw.split('-');
-        const buildPart = function (part) {
-          const segments = part.split(':');
-          const hours = segments[0].slice(0, 2);
-          if (segments.length === 1) {
-            return hours;
-          }
-          const minutes = segments[1].slice(0, 2);
-          return hours + ':' + minutes;
-        };
-        let result = buildPart(parts[0] || '');
-        if (parts.length > 1) {
-          result += '-' + buildPart(parts[1]);
+        this.value = formatHorarioInput(this.value);
+        if (this.value.length === 11) {
+          validateHorarioField();
         }
-        this.value = result.slice(0, 11);
       });
     }
 
