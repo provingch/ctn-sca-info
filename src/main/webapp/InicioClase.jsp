@@ -278,7 +278,7 @@
           <div class="class-grid">
             <div>
               <label for="horarioClase" style="font-weight:600;">Horario</label>
-              <input id="horarioClase" class="form-control" placeholder="Ej: 07:00-09:20" pattern="^\d{1,2}:[0-5]\d-\d{1,2}:[0-5]\d$" title="Formato HH:MM-HH:MM, entre 07:00 y 18:00" inputmode="numeric" maxlength="11" />
+              <input id="horarioClase" class="form-control" placeholder="Ej: 07:00-09:20" pattern="^([0-1]?\d|2[0-3]):[0-5]\d-([0-1]?\d|2[0-3]):[0-5]\d$" title="Formato HH:MM-HH:MM, entre 07:00 y 18:00" inputmode="numeric" maxlength="11" />
             </div>
             <div>
               <label for="cantidadHoras" style="font-weight:600;">Cant. horas cátedra</label>
@@ -733,7 +733,22 @@
     if (horarioField) {
       horarioField.addEventListener('blur', validateHorarioField);
       horarioField.addEventListener('input', function () {
-        this.value = this.value.replace(/[^0-9:-]/g, '').slice(0, 11);
+        let raw = this.value.replace(/[^0-9:-]/g, '');
+        const parts = raw.split('-');
+        const buildPart = function (part) {
+          const segments = part.split(':');
+          const hours = segments[0].slice(0, 2);
+          if (segments.length === 1) {
+            return hours;
+          }
+          const minutes = segments[1].slice(0, 2);
+          return hours + ':' + minutes;
+        };
+        let result = buildPart(parts[0] || '');
+        if (parts.length > 1) {
+          result += '-' + buildPart(parts[1]);
+        }
+        this.value = result.slice(0, 11);
       });
     }
 
