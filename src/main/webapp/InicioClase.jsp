@@ -326,7 +326,9 @@
                 <tr>
                   <th>#</th>
                   <th>Apellido(s) y nombre(s)</th>
-                  <th>Estado (P/A)</th>
+                  <th style="width:140px;">Anotaciones</th>
+                  <th style="width:120px;">P/A</th>
+                  <th style="width:160px;">Rasgos Conductuales</th>
                 </tr>
               </thead>
               <tbody>
@@ -337,10 +339,36 @@
                       <c:out value="${alumno.apellido}" />, <c:out value="${alumno.nombre}" />
                     </td>
                     <td>
+                      <select name="anotaciones_${alumno.id}" class="form-control form-control-sm" multiple style="height:auto; padding:4px;">
+                        <option value="N1">N1</option>
+                        <option value="N2">N2</option>
+                        <option value="N3">N3</option>
+                        <option value="N4">N4</option>
+                        <option value="N5">N5</option>
+                        <option value="N6">N6</option>
+                        <option value="N7">N7</option>
+                        <option value="N8">N8</option>
+                        <option value="N9">N9</option>
+                      </select>
+                    </td>
+                    <td>
                       <label style="margin:0;display:flex;align-items:center;gap:6px;font-weight:500;">
                         <input type="checkbox" name="alumnosAusentes" value="${alumno.id}" class="ausente-checkbox" />
                         Ausente
                       </label>
+                    </td>
+                    <td>
+                      <select name="rasgos_${alumno.id}" class="form-control form-control-sm" multiple style="height:auto; padding:4px;">
+                        <option value="R1">Comportamiento</option>
+                        <option value="R2">Participación</option>
+                        <option value="R3">Puntualidad</option>
+                        <option value="R4">Respeto</option>
+                        <option value="R5">Dedicación</option>
+                        <option value="R6">Trabajo en equipo</option>
+                        <option value="R7">Limpieza</option>
+                        <option value="R8">Responsabilidad</option>
+                        <option value="R9">Atención</option>
+                      </select>
                     </td>
                   </tr>
                 </c:forEach>
