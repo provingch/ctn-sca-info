@@ -344,9 +344,7 @@
                   <tr>
                     <td>${loop.index + 1}</td>
                     <td>
-                      <a href="${pageContext.request.contextPath}/inicio?view=rasgos-form&rasgoPlanillaId=${empty rasgoPlanillaSeleccionada ? '' : rasgoPlanillaSeleccionada.id}&alumnoId=${alumno.id}" style="font-weight:600; color:var(--accent);">
-                        <c:out value="${alumno.apellido}" />, <c:out value="${alumno.nombre}" />
-                      </a>
+                      <c:out value="${alumno.apellido}" />, <c:out value="${alumno.nombre}" />
                     </td>
                     <td>
                       <label style="margin:0;display:flex;align-items:center;gap:6px;font-weight:500;">
@@ -421,7 +419,11 @@
               <tbody>
                 <c:forEach var="asistencia" items="${rasgoAsistencias}">
                   <tr>
-                    <td><c:out value="${asistencia.alumnoNombreCompleto}" /></td>
+                    <td>
+                      <a href="${pageContext.request.contextPath}/inicio?view=rasgos-form&asistenciaId=${asistencia.id}" style="font-weight:600; color:var(--accent);">
+                        <c:out value="${asistencia.alumnoNombreCompleto}" />
+                      </a>
+                    </td>
                     <td><c:out value="${asistencia.estado}" /></td>
                     <td><c:out value="${empty asistencia.faltaCodigo ? '—' : asistencia.faltaCodigo}" /></td>
                     <td><c:out value="${empty asistencia.faltaObservacion ? '—' : asistencia.faltaObservacion}" /></td>
