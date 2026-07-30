@@ -74,7 +74,8 @@ public class RasgoPlanillaDao extends conexion {
                         ps.setInt(2, alumno.getId());
                         ps.setString(3, alumno.getNombre());
                         ps.setString(4, alumno.getApellido());
-                        ps.setString(5, alumno.getGoogleEmail());
+                        String alumnoEmail = alumno.getGoogleEmail();
+                        ps.setString(5, alumnoEmail == null || alumnoEmail.isBlank() ? "" : alumnoEmail);
                         ps.setString(6, estado);
                         if (supportsFaltaColumns[0]) {
                             ps.setString(7, null);
