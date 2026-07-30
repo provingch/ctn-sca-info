@@ -4178,6 +4178,129 @@ html[data-theme="dark"] #totpQrCanvas img {
   border-color: var(--line);
 }
 
+.login-about {
+  width: 100%;
+  margin: 12px 0 18px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent) 5%, var(--paper));
+}
+
+.login-about summary {
+  display: flex;
+  min-height: 46px;
+  padding: 11px 14px;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  font-weight: 800;
+  list-style: none;
+  cursor: pointer;
+  transition: background-color .18s ease, color .18s ease;
+}
+
+.login-about summary::-webkit-details-marker {
+  display: none;
+}
+
+.login-about summary:hover {
+  background: var(--accent-soft);
+}
+
+.login-about summary:focus-visible {
+  outline: none;
+  box-shadow: inset var(--focus-ring);
+}
+
+.login-about__icon {
+  display: grid;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+}
+
+.login-about__icon svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.login-about__chevron {
+  width: 8px;
+  height: 8px;
+  margin-left: auto;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform .18s ease;
+}
+
+.login-about[open] summary {
+  border-bottom: 1px solid var(--line);
+  background: var(--accent-soft);
+}
+
+.login-about[open] .login-about__chevron {
+  transform: rotate(225deg);
+}
+
+.app-transparency-content {
+  margin: 0;
+}
+
+.login-about .app-transparency-content {
+  padding: 16px;
+}
+
+.app-transparency-content h2 {
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-size: 1.1rem;
+}
+
+.app-transparency-content p {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: .9rem;
+  line-height: 1.65;
+}
+
+.app-transparency-content p:last-child {
+  margin-bottom: 0;
+}
+
+.app-transparency-content a {
+  color: var(--accent-deep);
+  font-weight: 700;
+}
+
+.legal-transparency-section {
+  margin: 26px 0;
+  padding: 22px;
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--line));
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(145deg, var(--accent-soft), transparent 65%),
+    var(--color-bg-muted);
+}
+
+.legal-transparency-section .app-transparency-content h2 {
+  margin-top: 0;
+}
+
+.legal-transparency-section .app-transparency-content p {
+  font-size: inherit;
+}
+
 body.legal-page {
   min-height: 100vh;
 }

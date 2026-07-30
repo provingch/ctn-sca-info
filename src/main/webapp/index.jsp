@@ -129,7 +129,7 @@
     <meta name="apple-mobile-web-app-title" content="SCA">
     <link rel="apple-touch-icon" href="${pageContext.request.contextPath}/icons/pwa/apple-touch-icon.png">
   <link rel="stylesheet" href="${pageContext.request.contextPath}/vendor/flat-ui/css/flat-ui.css">
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=250">
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=256">
     <link rel="icon" type="image/x-icon" href="${pageContext.request.contextPath}/images/ctn-logo.svg">
   </head>
 
@@ -168,12 +168,20 @@
             <h1>Iniciar sesión</h1>
             <p>Sistema de informes académicos</p>
           </div>
-          <section class="site-hero" style="max-width:880px;margin:12px auto 18px;padding:12px 18px;border-radius:6px;background:transparent;border:1px solid rgba(0,0,0,0.04)">
-            <h2 style="margin:0 0 6px 0;font-size:1.1rem">Sistema de Carpeta Academica</h2>
-            <p style="margin:0;color:var(--muted);">Plataforma del Colegio Técnico Nacional para gestionar planillas, cursos y tareas, y para integrar autorizaciones con Google Classroom de forma segura.</p>
-            <p style="margin-top:8px;color:var(--muted);font-size:0.9rem;">Nombre de la aplicación en la pantalla de consentimiento de Google: <strong>Sistema de Carpeta Academica</strong></p>
-            <p style="margin-top:8px;color:var(--muted);font-size:0.85rem;">Contacto: <a href="mailto:provingchill@gmail.com">provingchill@gmail.com</a></p>
-          </section>
+          <details class="login-about">
+            <summary>
+              <span class="login-about__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <circle cx="12" cy="12" r="9"></circle>
+                  <path d="M12 10.5v6"></path>
+                  <circle cx="12" cy="7.5" r="1"></circle>
+                </svg>
+              </span>
+              <span>Acerca de este sistema</span>
+              <span class="login-about__chevron" aria-hidden="true"></span>
+            </summary>
+            <%@ include file="/WEB-INF/includes/app-transparency.jspf" %>
+          </details>
           <c:if test="${loginError}">
               <div class="login-error">Nombre de usuario o contraseña incorrectos.</div>
           </c:if>

@@ -31,7 +31,7 @@
   <meta name="apple-mobile-web-app-title" content="SCA">
   <link rel="apple-touch-icon" href="${pageContext.request.contextPath}/icons/pwa/apple-touch-icon.png">
   <link rel="stylesheet" href="${pageContext.request.contextPath}/vendor/flat-ui/css/flat-ui.css">
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=251">
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=256">
   <link rel="icon" type="image/x-icon" href="${pageContext.request.contextPath}/images/ctn-logo.svg">
 </head>
 <body class="legal-page" data-page="privacy-policy" data-user-level="${empty sessionScope.user ? '1' : sessionScope.user.level}" data-specialty="general" data-specialty-source="system">
@@ -61,6 +61,10 @@
     <a class="legal-back-link" href="${homeUrl}">← Volver al inicio</a>
     <h1>Política de Privacidad</h1>
     <p>En Colegio Técnico Nacional valoramos tu privacidad. Esta página describe cómo recopilamos, usamos y protegemos tus datos cuando utilizas el sistema SCA.</p>
+
+    <div class="legal-transparency-section">
+      <%@ include file="/WEB-INF/includes/app-transparency.jspf" %>
+    </div>
 
     <h2>1. Datos que recopilamos</h2>
     <ul>
