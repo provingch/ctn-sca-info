@@ -95,4 +95,21 @@ public class GoogleClassroomUtilsTest {
         assertEquals("tp 1", GoogleClassroomUtils.normalizeTitle("TP 1"));
         assertEquals("trabajo practico 2", GoogleClassroomUtils.normalizeTitle("Trabajo Práctico 2"));
     }
+
+    @Test
+    public void testCursoLevelUsesAcademicYearProgression() {
+        int currentYear = AcademicPeriod.current();
+
+        Curso currentPromotion = new Curso(1, "Algoritmia", currentYear, "A");
+        assertEquals(3, currentPromotion.getNivel());
+
+        Curso previousPromotion = new Curso(1, "Algoritmia", currentYear - 1, "A");
+        assertEquals(3, previousPromotion.getNivel());
+
+        Curso nextPromotion = new Curso(1, "Algoritmia", currentYear + 1, "A");
+        assertEquals(2, nextPromotion.getNivel());
+
+        Curso futurePromotion = new Curso(1, "Algoritmia", currentYear + 2, "A");
+        assertEquals(1, futurePromotion.getNivel());
+    }
 }

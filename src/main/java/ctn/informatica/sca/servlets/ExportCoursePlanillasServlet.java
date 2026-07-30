@@ -77,7 +77,7 @@ public class ExportCoursePlanillasServlet extends HttpServlet {
             int curso = Integer.parseInt(cursoStr.trim()); // 1..3 as user enters
             int periodo = Integer.parseInt(periodoStr.trim()); // period (year)
             // compute promocion from the selected course level (1º/2º/3º)
-            int promocion = periodo - curso + 2;
+            int promocion = periodo - curso + 3;
             if (promocion <= 0) {
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST, "El curso seleccionado no corresponde a una promoción válida");
                 return;
