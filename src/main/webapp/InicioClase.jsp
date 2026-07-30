@@ -286,18 +286,6 @@
               </select>
             </div>
             <div>
-              <label for="nombreDocente" style="font-weight:600;">Docente responsable</label>
-              <input id="nombreDocente" class="form-control" value="${sessionScope.user.fullName}" />
-            </div>
-            <div>
-              <label for="anioLectivo" style="font-weight:600;">Año lectivo</label>
-              <input id="anioLectivo" type="number" class="form-control" />
-            </div>
-            <div>
-              <label for="fechaClase" style="font-weight:600;">Fecha de clase</label>
-              <input id="fechaClase" type="date" class="form-control" />
-            </div>
-            <div>
               <label for="horarioClase" style="font-weight:600;">Horario (Ej: 07:00 a 09:20)</label>
               <input id="horarioClase" class="form-control" placeholder="Ej: 07:00 a 09:20" />
             </div>
@@ -731,9 +719,6 @@
           turno: document.getElementById('classTurno') ? document.getElementById('classTurno').value : '',
           instrumentoId: Number(document.getElementById('instrumentoId') ? document.getElementById('instrumentoId').value : 0),
           tema: document.getElementById('temaRasgo') ? document.getElementById('temaRasgo').value : '',
-          docente: document.getElementById('nombreDocente') ? document.getElementById('nombreDocente').value : '',
-          anioLectivo: document.getElementById('anioLectivo') ? document.getElementById('anioLectivo').value : '',
-          fechaClase: document.getElementById('fechaClase') ? document.getElementById('fechaClase').value : '',
           horarioClase: document.getElementById('horarioClase') ? document.getElementById('horarioClase').value : '',
           cantidadHoras: document.getElementById('cantidadHoras') ? document.getElementById('cantidadHoras').value : '',
           modalidad: document.getElementById('modalidadClase') ? document.getElementById('modalidadClase').value : '',
@@ -745,18 +730,7 @@
       });
     }
 
-    const anioLectivo = document.getElementById('anioLectivo');
-    const fechaClase = document.getElementById('fechaClase');
     const now = new Date();
-    if (anioLectivo && !anioLectivo.value) {
-      anioLectivo.value = String(now.getFullYear());
-    }
-    if (fechaClase && !fechaClase.value) {
-      const yyyy = now.getFullYear();
-      const mm = String(now.getMonth() + 1).padStart(2, '0');
-      const dd = String(now.getDate()).padStart(2, '0');
-      fechaClase.value = yyyy + '-' + mm + '-' + dd;
-    }
   })();
   </script>
 
