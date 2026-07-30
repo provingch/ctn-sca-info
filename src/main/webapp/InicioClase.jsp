@@ -277,12 +277,12 @@
           </div>
           <div class="class-grid">
             <div>
-              <label for="horarioClase" style="font-weight:600;">Horario (Ej: 07:00 a 09:20)</label>
+              <label for="horarioClase" style="font-weight:600;">Horario</label>
               <input id="horarioClase" class="form-control" placeholder="Ej: 07:00 a 09:20" />
             </div>
             <div>
               <label for="cantidadHoras" style="font-weight:600;">Cant. horas cátedra</label>
-              <input id="cantidadHoras" type="number" min="1" class="form-control" value="2" />
+              <input id="cantidadHoras" type="number" min="1" step="1" inputmode="numeric" pattern="[0-9]*" class="form-control" value="2" oninput="this.value = this.value.replace(/[^0-9]/g, '');" />
             </div>
             <div>
               <label for="modalidadClase" style="font-weight:600;">Modalidad</label>
@@ -684,10 +684,14 @@
       clearButton.addEventListener('click', function () {
         const tema = document.getElementById('temaRasgo');
         const horario = document.getElementById('horarioClase');
+        const cantidadHoras = document.getElementById('cantidadHoras');
+        const modalidad = document.getElementById('modalidadClase');
         const observaciones = document.getElementById('observacionesGenerales');
         const checkboxes = document.querySelectorAll('.ausente-checkbox');
         if (tema) tema.value = '';
         if (horario) horario.value = '';
+        if (cantidadHoras) cantidadHoras.value = '';
+        if (modalidad) modalidad.value = 'Presencial';
         if (observaciones) observaciones.value = '';
         checkboxes.forEach(c => { c.checked = false; });
       });
