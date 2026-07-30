@@ -336,14 +336,11 @@
                     <td>
                       <c:out value="${alumno.apellido}" />, <c:out value="${alumno.nombre}" />
                     </td>
-                    <td style="text-align:right; vertical-align:middle;">
-                      <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
-                        <span style="font-weight:600; font-size:0.9rem;">P/A</span>
-                        <label style="margin:0;display:flex;align-items:center;gap:6px;font-weight:500;">
-                          <input type="checkbox" name="alumnosAusentes" value="${alumno.id}" class="ausente-checkbox" />
-                          Ausente
-                        </label>
-                      </div>
+                    <td style="text-align:right;">
+                      <label style="margin:0;display:flex;align-items:center;gap:6px;font-weight:500;justify-content:flex-end;">
+                        <input type="checkbox" name="alumnosAusentes" value="${alumno.id}" class="ausente-checkbox" />
+                        Ausente
+                      </label>
                     </td>
                   </tr>
                 </c:forEach>
