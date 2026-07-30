@@ -8,7 +8,7 @@
 <!doctype html>
 <html data-theme="light">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8" />
   <title>Styleguide — Foundation</title>
   <link rel="manifest" href="${pageContext.request.contextPath}/manifest.jsp">
   <meta name="theme-color" content="#1f2d3d">

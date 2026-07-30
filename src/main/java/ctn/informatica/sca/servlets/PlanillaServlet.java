@@ -192,6 +192,7 @@ public class PlanillaServlet extends HttpServlet {
             // Diagnostic output: if ?diag=1 is provided, return a small JSON
             String diag = request.getParameter("diag");
             if (diag != null && ("1".equals(diag) || "true".equalsIgnoreCase(diag))) {
+                response.setCharacterEncoding("UTF-8");
                 response.setContentType("application/json;charset=UTF-8");
                 try (PrintWriter out = response.getWriter()) {
                     String safeName = planilla.getNombre() == null ? "" : planilla.getNombre().replace("\\", "\\\\").replace("\"", "\\\"");

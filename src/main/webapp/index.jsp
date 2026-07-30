@@ -4,7 +4,7 @@
     Author     : jonat
 --%>
 
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@page import="java.util.Optional"%>
 <%@page import="jakarta.servlet.http.Cookie"%>
 <%@page import="ctn.informatica.sca.dao.UserDao"%>
@@ -115,10 +115,10 @@
 <html data-theme="light">
 
   <head>
+    <meta charset="UTF-8">
     <title>Sistema de Carpeta Academica</title>
     <meta name="description" content="Sistema de Carpeta Académica (SCA) — plataforma del Colegio Técnico Nacional para gestionar planillas, cursos y la integración con Google Classroom.">
     <meta name="author" content="Colegio Técnico Nacional">
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="manifest" href="${pageContext.request.contextPath}/manifest.jsp">
     <!-- Google site verification: reemplaza TOKEN_DE_VERIFICACION por el valor que te dé Google -->
