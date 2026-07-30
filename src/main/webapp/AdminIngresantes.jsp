@@ -1,11 +1,11 @@
-<%@ page contentType="text/html" pageEncoding="UTF-8" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <!DOCTYPE html>
 <html data-theme="light">
 <head>
-  <title>SCA - Ingresantes</title>
   <meta charset="UTF-8" />
+  <title>SCA - Ingresantes</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="manifest" href="${pageContext.request.contextPath}/manifest.jsp">
   <meta name="theme-color" content="#1f2d3d">
