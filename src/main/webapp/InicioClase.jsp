@@ -1,11 +1,11 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page contentType="text/html; charset=UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 
 <!DOCTYPE html>
 <html data-theme="light">
 <head>
-  <meta charset="UTF-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SCA - Iniciar clase</title>
   <link rel="manifest" href="${pageContext.request.contextPath}/manifest.jsp">
@@ -135,7 +135,7 @@
         </button>
         <a class="navbar-brand ctn-navbar-brand" href="${pageContext.request.contextPath}/inicio" aria-label="Ir a inicio">
           <img class="header-logo" src="${pageContext.request.contextPath}/images/ctn-logo.svg" alt="CTN">
-          <span>Colegio Técnico Nacional</span>
+          <span>Colegio T&eacute;cnico Nacional</span>
         </a>
       </div>
       <div class="collapse navbar-collapse" id="ctnNavbarMenu">
@@ -432,8 +432,8 @@
 
     <footer class="footer">
       <hr>
-          <p>Colegio Técnico Nacional</p>
-    <p><a href="${pageContext.request.contextPath}/privacidad">Política de privacidad</a> | <a href="${pageContext.request.contextPath}/terminos">Términos de servicio</a></p>
+          <p>Colegio T&eacute;cnico Nacional</p>
+    <p><a href="${pageContext.request.contextPath}/privacidad">Pol&iacute;tica de privacidad</a> | <a href="${pageContext.request.contextPath}/terminos">T&eacute;rminos de servicio</a></p>
     </footer>
   </main>
 

@@ -14,7 +14,6 @@ import ctn.informatica.sca.model.User;
 import ctn.informatica.sca.util.RememberMeTokenStore;
 import ctn.informatica.sca.util.ScaUiContext;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.Cookie;
@@ -36,9 +35,7 @@ public class LoginServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        request.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        response.setContentType("text/html; charset=UTF-8");
+        response.setContentType("text/html");
 
         String username = request.getParameter("username");
         String password = request.getParameter("password");

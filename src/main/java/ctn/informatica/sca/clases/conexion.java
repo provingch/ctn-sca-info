@@ -40,8 +40,7 @@ public class conexion {
     }
 
     public Connection getCon() throws SQLException {
-        String url = "jdbc:mysql://" + host + "/" + base
-                + "?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci";
+        String url = "jdbc:mysql://" + host + "/" + base + "?useUnicode=true&characterEncoding=UTF-8";
         try {
             con = DriverManager.getConnection(url, this.usuario, this.contra);
             Logger.getLogger(conexion.class.getName()).log(Level.INFO, "DB connected to {0}/{1}", new Object[]{host, base});

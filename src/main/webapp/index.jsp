@@ -4,7 +4,7 @@
     Author     : jonat
 --%>
 
-<%@page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@page import="java.util.Optional"%>
 <%@page import="jakarta.servlet.http.Cookie"%>
 <%@page import="ctn.informatica.sca.dao.UserDao"%>
@@ -115,10 +115,10 @@
 <html data-theme="light">
 
   <head>
-    <meta charset="UTF-8">
     <title>Sistema de Carpeta Academica</title>
-    <meta name="description" content="Sistema de Carpeta Académica (SCA) — plataforma del Colegio Técnico Nacional para gestionar planillas, cursos y la integración con Google Classroom.">
-    <meta name="author" content="Colegio Técnico Nacional">
+    <meta name="description" content="Sistema de Carpeta Acad&eacute;mica (SCA) &mdash; plataforma del Colegio T&eacute;cnico Nacional para gestionar planillas, cursos y la integraci&oacute;n con Google Classroom.">
+    <meta name="author" content="Colegio T&eacute;cnico Nacional">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="manifest" href="${pageContext.request.contextPath}/manifest.jsp">
     <!-- Google site verification: reemplaza TOKEN_DE_VERIFICACION por el valor que te dé Google -->
@@ -140,14 +140,14 @@
     <div class="container-fluid">
       <div class="navbar-header">
         <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#ctnNavbarMenu" aria-expanded="false">
-          <span class="sr-only">Abrir navegación</span>
+          <span class="sr-only">Abrir navegaci&oacute;n</span>
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
         </button>
         <a class="navbar-brand ctn-navbar-brand" href="${pageContext.request.contextPath}/index.jsp" aria-label="Ir a inicio">
           <img class="header-logo" src="${pageContext.request.contextPath}/images/ctn-logo.svg" alt="CTN">
-          <span>Colegio Técnico Nacional</span>
+          <span>Colegio T&eacute;cnico Nacional</span>
         </a>
       </div>
       <div class="collapse navbar-collapse" id="ctnNavbarMenu">
@@ -165,8 +165,8 @@
             <img class="login-logo" src="${pageContext.request.contextPath}/images/ctn-logo-2.svg">
           </div>
           <div class="login-heading">
-            <h1>Iniciar sesión</h1>
-            <p>Sistema de informes académicos</p>
+            <h1>Iniciar sesi&oacute;n</h1>
+            <p>Sistema de informes acad&eacute;micos</p>
           </div>
           <details class="login-about">
             <summary>
@@ -183,18 +183,18 @@
             <%@ include file="/WEB-INF/includes/app-transparency.jspf" %>
           </details>
           <c:if test="${loginError}">
-              <div class="login-error">Nombre de usuario o contraseña incorrectos.</div>
+              <div class="login-error">Nombre de usuario o contrase&ntilde;a incorrectos.</div>
           </c:if>
           <c:if test="${param.notice == 'login-required'}">
-              <div class="login-info">Inicia sesión para ver tus planillas y cursos. Si estás corrigiendo la vinculación de alumnos, entra con tu usuario de integración tras iniciar sesión.</div>
+              <div class="login-info">Inicia sesi&oacute;n para ver tus planillas y cursos. Si est&aacute;s corrigiendo la vinculaci&oacute;n de alumnos, entra con tu usuario de integraci&oacute;n tras iniciar sesi&oacute;n.</div>
           </c:if>
           <form class="login-form" action="${pageContext.request.contextPath}/login" method="post">
             <input class="form-username" placeholder="Usuario" type="text" name="username" autocomplete="username">
             <div class="password-field">
-              <input class="form-password" id="loginPassword" placeholder="Contraseña" type="password" name="password" autocomplete="current-password">
+              <input class="form-password" id="loginPassword" placeholder="Contrase&ntilde;a" type="password" name="password" autocomplete="current-password">
               <button class="password-toggle" id="passwordToggle" type="button"
                       aria-controls="loginPassword" aria-pressed="false"
-                      aria-label="Mostrar contraseña" title="Mostrar contraseña">
+                      aria-label="Mostrar contrase&ntilde;a" title="Mostrar contrase&ntilde;a">
                 <svg class="password-toggle__icon password-toggle__icon--show" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M2.25 12s3.5-6 9.75-6 9.75 6 9.75 6-3.5 6-9.75 6-9.75-6-9.75-6Z"></path>
                   <circle cx="12" cy="12" r="2.75"></circle>
@@ -208,10 +208,10 @@
             <div class="login-remember">
               <label>
                 <input type="checkbox" name="rememberMe" value="true">
-                <span>Mantener sesión</span>
+                <span>Mantener sesi&oacute;n</span>
               </label>
             </div>
-            <input class="form-submit" type="submit" value="Iniciar Sesión">
+            <input class="form-submit" type="submit" value="Iniciar Sesi&oacute;n">
           </form>
         </div>
       </div>
@@ -219,8 +219,8 @@
 
     <footer class="footer">
       <hr>
-          <p>Colegio Técnico Nacional</p>
-    <p><a href="${pageContext.request.contextPath}/privacidad">Política de privacidad</a> | <a href="${pageContext.request.contextPath}/terminos">Términos de servicio</a></p>
+          <p>Colegio T&eacute;cnico Nacional</p>
+    <p><a href="${pageContext.request.contextPath}/privacidad">Pol&iacute;tica de privacidad</a> | <a href="${pageContext.request.contextPath}/terminos">T&eacute;rminos de servicio</a></p>
     </footer>
 
     <!-- Cookie Consent Banner -->
@@ -228,7 +228,7 @@
       <div class="cookie-consent-content">
         <div class="cookie-consent-text">
           <strong>Cookies funcionales</strong>
-          <p>Usamos cookies necesarias para iniciar sesión, mantener la sesión activa y recordar tu preferencia de tema. Si marcás “Mantener sesión”, estas cookies son obligatorias.</p>
+          <p>Usamos cookies necesarias para iniciar sesi&oacute;n, mantener la sesi&oacute;n activa y recordar tu preferencia de tema. Si marc&aacute;s &ldquo;Mantener sesi&oacute;n&rdquo;, estas cookies son obligatorias.</p>
         </div>
         <div class="cookie-consent-actions">
           <button id="acceptCookies" class="cookie-consent-btn cookie-consent-btn-primary">Entendido</button>
@@ -250,8 +250,8 @@
         passwordInput.type = showPassword ? 'text' : 'password';
         passwordToggle.classList.toggle('is-visible', showPassword);
         passwordToggle.setAttribute('aria-pressed', String(showPassword));
-        passwordToggle.setAttribute('aria-label', showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña');
-        passwordToggle.title = showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña';
+        passwordToggle.setAttribute('aria-label', showPassword ? 'Ocultar contrase\u00f1a' : 'Mostrar contrase\u00f1a');
+        passwordToggle.title = showPassword ? 'Ocultar contrase\u00f1a' : 'Mostrar contrase\u00f1a';
         passwordInput.focus({ preventScroll: true });
       });
     })();

@@ -10,7 +10,7 @@
 {
   "name": "SCA",
   "short_name": "SCA",
-  "description": "Sistema de informes académicos del Colegio Técnico Nacional",
+  "description": "Sistema de informes académicos del Colegio T\u00e9cnico Nacional",
   "start_url": "<%= startUrl %>",
   "scope": "<%= scope %>",
   "display": "standalone",
