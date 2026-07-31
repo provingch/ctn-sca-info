@@ -4135,19 +4135,21 @@ body[data-user-level="4"] .grade-table td {
 .parent-portal .parent-child-card__name { font-size: 1.06rem; }
 .parent-portal .parent-child-card__average { display: block; padding: 0; color: var(--muted); font-size: .85rem; }
 .parent-portal .parent-child-card__average strong { color: var(--accent-deep); font-size: inherit; }
-.parent-portal .parent-summary-card { display: grid; gap: 9px; overflow: visible; border: 0; background: transparent; box-shadow: none; }
-.parent-portal .parent-summary-card__heading { padding: 16px 0 10px; border-bottom: 1px solid var(--line); background: transparent; }
-.parent-portal .parent-summary-card .section-heading { font-size: 1.02rem; color: var(--ink); }
-.parent-subject-accordion { overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); box-shadow: var(--shadow-sm); }
+.parent-portal .parent-summary-card { margin: 0 0 28px; overflow: hidden; border-top: 4px solid var(--accent); background: var(--paper); box-shadow: var(--shadow-sm); }
+.parent-portal .parent-summary-card__heading { border-bottom: 1px solid var(--line); background: var(--accent-soft); }
+.parent-portal .parent-summary-card .section-heading { padding: 14px 18px; font-size: 1.02rem; color: var(--accent-deep); }
+.parent-subject-list { display: grid; gap: 10px; padding: 14px; background: var(--color-bg-muted); }
+.parent-subject-accordion { overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); box-shadow: none; }
 .parent-subject-accordion[open] { border-color: color-mix(in srgb, var(--accent) 42%, var(--line)); }
-.parent-subject-accordion summary { display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 62px; padding: 12px 15px; cursor: pointer; list-style: none; }
+.parent-subject-accordion summary { display: grid; grid-template-columns: minmax(170px, 1fr) repeat(4, minmax(70px, auto)) 22px; align-items: center; gap: 18px; min-height: 68px; padding: 12px 15px; cursor: pointer; list-style: none; }
 .parent-subject-accordion summary::-webkit-details-marker { display: none; }
+.parent-subject-accordion summary::marker { content: ""; }
 .parent-subject-accordion summary::after { content: '›'; flex: 0 0 auto; color: var(--muted); font-size: 1.55rem; line-height: 1; transition: transform .18s ease; }
 .parent-subject-accordion[open] summary::after { transform: rotate(90deg); }
-.parent-subject-accordion__title, .parent-subject-accordion__grade { display: grid; gap: 2px; }
+.parent-subject-accordion__title, .parent-subject-accordion__metric { display: grid; gap: 3px; }
 .parent-subject-accordion__title strong { color: var(--ink); }
-.parent-subject-accordion__title small, .parent-subject-accordion__grade small { color: var(--muted); font-size: .82rem; }
-.parent-subject-accordion__grade { margin-left: auto; text-align: right; color: var(--accent-deep); }
+.parent-subject-accordion__metric { min-width: 70px; text-align: right; color: var(--accent-deep); }
+.parent-subject-accordion__metric small { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; }
 .parent-task-table-wrap { border-top: 1px solid var(--line); overflow-x: auto; }
 .parent-task-table { min-width: 480px; margin: 0; }
 .parent-task-table th { background: color-mix(in srgb, var(--accent) 10%, var(--paper)); color: var(--ink); }
@@ -4156,8 +4158,10 @@ body[data-user-level="4"] .grade-table td {
 
 @media (max-width: 540px) {
   .parent-portal .parent-hero { padding: 17px 18px; }
-  .parent-subject-accordion summary { align-items: flex-start; gap: 10px; }
-  .parent-subject-accordion__grade { margin-left: 0; text-align: left; }
+  .parent-subject-list { padding: 10px; }
+  .parent-subject-accordion summary { grid-template-columns: 1fr auto; align-items: flex-start; gap: 10px; }
+  .parent-subject-accordion__metric { display: none; }
+  .parent-subject-accordion__metric:nth-of-type(3) { display: grid; grid-column: 1; text-align: left; }
 }
 
 .capacity-specialty {
