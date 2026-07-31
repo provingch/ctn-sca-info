@@ -178,4 +178,30 @@ public class PadreDao extends conexion {
         }
         return out;
     }
+
+    public List<ParentTaskGrade> findTaskGradesForAlumno(int alumnoId) throws SQLException {
+        String sql = "SELECT t.id AS tarea_id, t.titulo, t.fecha, t.total, t.planilla_id, "
+                + "COALESCE(puntaje.puntos, 0) AS puntos "
+                + "FROM tarea t "
+                + "LEFT JOIN registro r ON r.planilla_id = t.planilla_id AND r.alumno_id = ? "
+                + "LEFT JOIN puntaje ON puntaje.tarea_id = t.id AND puntaje.registro_id = r.id "
+                + "ORDER BY t.planilla_id, t.fecha, t.id";
+        List<ParentTaskGrade> out = new ArrayList<>();
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, alumnoId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    ParentTaskGrade task = new ParentTaskGrade();
+                    task.setTareaId(rs.getInt("tarea_id"));
+                    task.setTareaTitulo(rs.getString("titulo"));
+                    task.setFecha(rs.getObject("fecha", java.time.LocalDate.class));
+                    task.setTotal(rs.getInt("total"));
+                    task.setPuntos(rs.getInt("puntos"));
+                    task.setPlanillaId(rs.getInt("planilla_id"));
+                    out.add(task);
+                }
+            }
+        }
+        return out;
+    }
 }
