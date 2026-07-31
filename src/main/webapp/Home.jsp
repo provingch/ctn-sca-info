@@ -129,7 +129,7 @@
           <input type="hidden" name="planillaId" value="${planillas[0].id}" />
           <input type="hidden" name="materiaId" value="${planillas[0].materiaId}" />
         </c:if>
-        <button type="submit" name="view" value="clase" class="home-view-tab${viewMode eq 'clase-inicio' ? ' is-active' : ''}" role="tab" aria-selected="${viewMode eq 'clase-inicio'}" aria-controls="clase-panel">
+        <button type="submit" name="view" value="clase" class="home-view-tab${viewMode eq 'clase' ? ' is-active' : ''}" role="tab" aria-selected="${viewMode eq 'clase'}" aria-controls="clase-panel">
           <span class="home-view-tab__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" focusable="false"><path d="M7 4.8v14.4L19 12 7 4.8Z"/></svg>
           </span>
@@ -163,28 +163,6 @@
       <div id="filterPendingState" class="empty-state empty-state-card home-filter-pending" role="status" hidden>
         Completá Especialidad, Curso y Sección para continuar.
       </div>
-
-      <c:if test="${viewMode eq 'clase-inicio'}">
-        <section id="clase-panel" class="quick-class-card home-tab-panel" role="tabpanel">
-          <div class="quick-class-card__heading">
-            <h2>
-              Nueva sesión
-              <c:if test="${not empty selCurso}">
-                — ${selCurso.especialidad} ${selCurso.curso}° ${selCurso.seccion}
-              </c:if>
-            </h2>
-            <p><c:out value="${nowFormatted}" /></p>
-          </div>
-          <form class="quick-class-form" action="${pageContext.request.contextPath}/inicio" method="get">
-            <input type="hidden" name="view" value="clase" />
-            <input type="hidden" name="cursoId" id="quickClassCursoId" value="${empty selCurso ? '' : selCurso.id}" />
-            <input type="hidden" name="etapa" value="${selEtapa}" />
-            <label for="quickClassActivity">Actividad realizada</label>
-            <input id="quickClassActivity" name="tema" type="text" maxlength="150" placeholder="Ej.: práctica de subredes" required />
-            <button type="submit" class="btn btn-primary">Iniciar clase ↗</button>
-          </form>
-        </section>
-      </c:if>
 
       <c:if test="${viewMode eq 'planillas'}">
       <div id="filterResults">
