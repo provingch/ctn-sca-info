@@ -4079,6 +4079,45 @@ body[data-user-level="4"] .grade-table td {
   font-size: 14px;
 }
 
+/* Parent portal: specialty colors are scoped to each child, not the whole page. */
+.parent-portal { --parent-neutral: var(--color-info); }
+.parent-hero[data-specialty="general"] { --hero-tone: var(--parent-neutral); }
+.parent-child-selector { margin: 24px 0; }
+.parent-child-selector__heading, .parent-summary-card__heading, .parent-task-card__heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.parent-child-selector__heading { align-items: end; margin: 0 0 12px; }
+.parent-child-selector__heading h2, .parent-child-selector__heading p, .parent-summary-card__heading p, .parent-task-card__heading p { margin: 0; }
+.parent-child-selector__heading h2 { font-size: 1.1rem; color: var(--ink); }
+.parent-child-selector__heading p, .parent-summary-card__hint, .parent-task-card__heading > span { color: var(--muted); font-size: .9rem; }
+.parent-child-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.parent-child-card { display: grid; grid-template-columns: 5px minmax(0, 1fr) auto; min-height: 106px; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); color: var(--ink); box-shadow: var(--shadow-sm); text-decoration: none; transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
+.parent-child-card:hover, .parent-child-card:focus-visible { color: var(--ink); border-color: var(--accent); box-shadow: 0 12px 28px color-mix(in srgb, var(--accent) 18%, transparent); outline: none; transform: translateY(-2px); text-decoration: none; }
+.parent-child-card.is-active { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 12px 28px color-mix(in srgb, var(--accent) 20%, transparent); }
+.parent-child-card__accent { background: var(--accent); }
+.parent-child-card__content { display: grid; align-content: center; gap: 7px; padding: 16px; }
+.parent-child-card__name { font-weight: 800; line-height: 1.25; }
+.parent-child-card__specialty, .parent-specialty-label { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: .86rem; }
+.parent-specialty-dot { display: inline-block; flex: 0 0 9px; width: 9px; height: 9px; border: 1px solid color-mix(in srgb, var(--accent) 76%, var(--ink)); border-radius: 50%; background: var(--accent); }
+.parent-child-card__average { display: grid; align-content: center; justify-items: end; gap: 2px; min-width: 82px; padding: 16px 16px 16px 4px; color: var(--accent-deep); }
+.parent-child-card__average strong { font-size: 1.2rem; }
+.parent-child-card__average small { color: var(--muted); font-size: .72rem; text-align: right; }
+.parent-summary-card, .parent-task-card { overflow: hidden; border-top: 4px solid var(--accent); }
+.parent-summary-card__heading, .parent-task-card__heading { padding: 16px 18px; border-bottom: 1px solid var(--line); background: var(--accent-soft); }
+.parent-summary-card .section-heading, .parent-task-card .section-heading { padding: 0; background: transparent; color: var(--accent-deep); }
+.parent-summary-card__heading p, .parent-task-card__heading p { margin-top: 3px; color: var(--muted); }
+.parent-subject-table { margin: 0; }
+.parent-subject-row { cursor: pointer; }
+.parent-subject-row td:first-child a { color: var(--accent-deep); font-weight: 700; text-decoration: none; }
+.parent-subject-row:hover td, .parent-subject-row:focus td, .parent-subject-row.is-selected td { background: var(--accent-soft-strong) !important; }
+.parent-subject-row:focus { outline: 3px solid color-mix(in srgb, var(--accent) 38%, transparent); outline-offset: -3px; }
+.parent-task-card { margin-top: 20px; }
+
+@media (max-width: 640px) {
+  .parent-child-selector__heading, .parent-summary-card__heading, .parent-task-card__heading { align-items: flex-start; flex-direction: column; }
+  .parent-child-grid { grid-template-columns: 1fr; }
+  .parent-child-card { min-height: 94px; }
+  .parent-summary-card__hint { display: none; }
+}
+
 .capacity-specialty {
   --group-accent: var(--accent) !important;
   --group-contrast: var(--accent-contrast) !important;

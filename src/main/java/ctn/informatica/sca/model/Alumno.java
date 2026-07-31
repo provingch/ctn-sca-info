@@ -10,6 +10,7 @@ public class Alumno {
     private String correoEncargado2;
     private String googleUserId;
     private String googleEmail;
+    private String especialidadNombre;
 
     public int getId() {
         return id;
@@ -82,4 +83,7 @@ public class Alumno {
     public void setGoogleEmail(String googleEmail) {
         this.googleEmail = googleEmail;
     }
+
+    public String getEspecialidadNombre() { return especialidadNombre; }
+    public void setEspecialidadNombre(String especialidadNombre) { this.especialidadNombre = especialidadNombre; }
 }

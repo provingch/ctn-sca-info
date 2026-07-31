@@ -80,9 +80,11 @@ public class PadreDao extends conexion {
     }
 
     public List<Alumno> findChildrenByPadreId(int padreId) throws SQLException {
-        String sql = "SELECT a.id, a.nombre, a.apellido, a.curso_id "
+        String sql = "SELECT a.id, a.nombre, a.apellido, a.curso_id, e.nombre AS especialidad_nombre "
                 + "FROM alumno_padre ap "
                 + "JOIN alumno a ON a.id = ap.alumno_id "
+                + "JOIN curso c ON c.id = a.curso_id "
+                + "JOIN especialidad e ON e.id = c.especialidad_id "
                 + "WHERE ap.padre_id = ? "
                 + "ORDER BY a.apellido, a.nombre";
         List<Alumno> alumnos = new ArrayList<>();
@@ -95,6 +97,7 @@ public class PadreDao extends conexion {
                     alumno.setNombre(rs.getString("nombre"));
                     alumno.setApellido(rs.getString("apellido"));
                     alumno.setCursoId(rs.getInt("curso_id"));
+                    alumno.setEspecialidadNombre(rs.getString("especialidad_nombre"));
                     alumnos.add(alumno);
                 }
             }
@@ -106,7 +109,8 @@ public class PadreDao extends conexion {
         String sql = "SELECT a.id AS alumno_id, a.nombre AS alumno_nombre, a.apellido AS alumno_apellido, "
                 + "c.id AS curso_id, e.nombre AS especialidad_nombre, m.id AS materia_id, m.nombre AS materia_nombre, p.id AS planilla_id, "
                 + "COALESCE(SUM(CASE WHEN puntaje.puntos IS NULL THEN 0 ELSE puntaje.puntos END), 0) AS puntos, "
-                + "COALESCE((SELECT SUM(t2.total) FROM tarea t2 WHERE t2.planilla_id = p.id), 0) AS total_posible "
+                + "COALESCE((SELECT SUM(t2.total) FROM tarea t2 WHERE t2.planilla_id = p.id), 0) AS total_posible, "
+                + "COUNT(DISTINCT t.id) AS tareas_count "
                 + "FROM alumno_padre ap "
                 + "JOIN alumno a ON a.id = ap.alumno_id "
                 + "JOIN curso c ON c.id = a.curso_id "
@@ -140,6 +144,7 @@ public class PadreDao extends conexion {
                     }
                     item.setPuntos(rs.getInt("puntos"));
                     item.setTotalPosible(rs.getInt("total_posible"));
+                    item.setTareasCount(rs.getInt("tareas_count"));
                     item.recomputeDerivedValues();
                 }
             }

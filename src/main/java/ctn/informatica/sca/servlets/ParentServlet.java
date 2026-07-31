@@ -70,14 +70,43 @@ public class ParentServlet extends HttpServlet {
 
             selectedAlumnoId = resolveSelectedAlumnoId(hijos, selectedAlumnoId);
 
-            if (selectedPlanillaId == null && selectedAlumnoId != null && !summary.isEmpty()) {
-                for (ParentSummaryItem item : summary) {
-                    if (item.getAlumnoId() != null && item.getAlumnoId() == selectedAlumnoId) {
-                        selectedPlanillaId = item.getPlanillaId();
-                        selectedMateriaId = item.getMateriaId();
+            List<ParentSummaryItem> selectedSummary = new ArrayList<>();
+            String selectedEspecialidad = "general";
+            for (ParentSummaryItem item : summary) {
+                if (item.getAlumnoId() != null && item.getAlumnoId().equals(selectedAlumnoId)) {
+                    selectedSummary.add(item);
+                    if (item.getEspecialidadNombre() != null && !item.getEspecialidadNombre().isBlank()) {
+                        selectedEspecialidad = item.getEspecialidadNombre();
+                    }
+                }
+            }
+
+            if (selectedAlumnoId != null) {
+                for (Alumno hijo : hijos) {
+                    if (hijo.getId() == selectedAlumnoId && hijo.getEspecialidadNombre() != null
+                            && !hijo.getEspecialidadNombre().isBlank()) {
+                        selectedEspecialidad = hijo.getEspecialidadNombre();
                         break;
                     }
                 }
+            }
+
+            ParentSummaryItem selectedSubject = null;
+            if (selectedPlanillaId != null) {
+                for (ParentSummaryItem item : selectedSummary) {
+                    if (item.getPlanillaId().equals(selectedPlanillaId)
+                            && (selectedMateriaId == null || item.getMateriaId().equals(selectedMateriaId))) {
+                        selectedSubject = item;
+                        break;
+                    }
+                }
+            }
+            if (selectedSubject == null) {
+                selectedPlanillaId = null;
+                selectedMateriaId = null;
+            } else {
+                selectedPlanillaId = selectedSubject.getPlanillaId();
+                selectedMateriaId = selectedSubject.getMateriaId();
             }
 
             List<ParentTaskGrade> tareasPorAlumno = new ArrayList<>();
@@ -85,21 +114,30 @@ public class ParentServlet extends HttpServlet {
                 tareasPorAlumno = padreDao.findTaskGradesForAlumnoPlanilla(selectedAlumnoId, selectedPlanillaId);
             }
 
-            Map<String, List<ParentSummaryItem>> summaryByEspecialidad = new LinkedHashMap<>();
+            Map<Integer, Integer> promedioPorAlumno = new LinkedHashMap<>();
+            Map<Integer, Integer> puntosPorAlumno = new LinkedHashMap<>();
+            Map<Integer, Integer> totalPorAlumno = new LinkedHashMap<>();
             for (ParentSummaryItem item : summary) {
-                String especialidad = item.getEspecialidadNombre() == null || item.getEspecialidadNombre().isBlank()
-                        ? "Sin especialidad"
-                        : item.getEspecialidadNombre();
-                summaryByEspecialidad.computeIfAbsent(especialidad, key -> new ArrayList<>()).add(item);
+                int alumnoId = item.getAlumnoId();
+                puntosPorAlumno.merge(alumnoId, item.getPuntos(), Integer::sum);
+                totalPorAlumno.merge(alumnoId, item.getTotalPosible(), Integer::sum);
+            }
+            for (Alumno hijo : hijos) {
+                int puntos = puntosPorAlumno.getOrDefault(hijo.getId(), 0);
+                int total = totalPorAlumno.getOrDefault(hijo.getId(), 0);
+                promedioPorAlumno.put(hijo.getId(), total > 0 ? (int) Math.round((puntos * 100.0) / total) : 0);
             }
 
             request.setAttribute("padre", session != null ? session.getAttribute("padre") : null);
             request.setAttribute("hijos", hijos);
+            request.setAttribute("multipleHijos", hijos.size() > 1);
             request.setAttribute("selectedAlumnoId", selectedAlumnoId);
             request.setAttribute("selectedMateriaId", selectedMateriaId);
             request.setAttribute("selectedPlanillaId", selectedPlanillaId);
-            request.setAttribute("summary", summary);
-            request.setAttribute("summaryByEspecialidad", summaryByEspecialidad);
+            request.setAttribute("selectedEspecialidad", selectedEspecialidad);
+            request.setAttribute("selectedSummary", selectedSummary);
+            request.setAttribute("selectedSubject", selectedSubject);
+            request.setAttribute("promedioPorAlumno", promedioPorAlumno);
             request.setAttribute("tareasPorAlumno", tareasPorAlumno);
             request.getRequestDispatcher("/Parent.jsp").forward(request, response);
         } catch (SQLException ex) {

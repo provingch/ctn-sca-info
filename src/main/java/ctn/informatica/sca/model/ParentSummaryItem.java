@@ -15,6 +15,7 @@ public class ParentSummaryItem {
     private Integer cursoId;
     private Integer planillaId;
     private String especialidadNombre;
+    private int tareasCount;
     private Map<Integer, Integer> tareaPuntajes = new LinkedHashMap<>();
 
     public void recomputeDerivedValues() {
@@ -60,6 +61,8 @@ public class ParentSummaryItem {
     public void setPlanillaId(Integer planillaId) { this.planillaId = planillaId; }
     public String getEspecialidadNombre() { return especialidadNombre; }
     public void setEspecialidadNombre(String especialidadNombre) { this.especialidadNombre = especialidadNombre; }
+    public int getTareasCount() { return tareasCount; }
+    public void setTareasCount(int tareasCount) { this.tareasCount = tareasCount; }
     public Map<Integer, Integer> getTareaPuntajes() { return tareaPuntajes; }
     public void setTareaPuntajes(Map<Integer, Integer> tareaPuntajes) { this.tareaPuntajes = tareaPuntajes; }
 }
