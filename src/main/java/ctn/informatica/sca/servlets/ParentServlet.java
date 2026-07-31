@@ -109,9 +109,11 @@ public class ParentServlet extends HttpServlet {
                 selectedMateriaId = selectedSubject.getMateriaId();
             }
 
-            List<ParentTaskGrade> tareasPorAlumno = new ArrayList<>();
-            if (selectedAlumnoId != null && selectedPlanillaId != null) {
-                tareasPorAlumno = padreDao.findTaskGradesForAlumnoPlanilla(selectedAlumnoId, selectedPlanillaId);
+            Map<Integer, List<ParentTaskGrade>> tareasPorPlanilla = new LinkedHashMap<>();
+            if (selectedAlumnoId != null) {
+                for (ParentTaskGrade task : padreDao.findTaskGradesForAlumno(selectedAlumnoId)) {
+                    tareasPorPlanilla.computeIfAbsent(task.getPlanillaId(), key -> new ArrayList<>()).add(task);
+                }
             }
 
             Map<Integer, Integer> promedioPorAlumno = new LinkedHashMap<>();
@@ -138,7 +140,7 @@ public class ParentServlet extends HttpServlet {
             request.setAttribute("selectedSummary", selectedSummary);
             request.setAttribute("selectedSubject", selectedSubject);
             request.setAttribute("promedioPorAlumno", promedioPorAlumno);
-            request.setAttribute("tareasPorAlumno", tareasPorAlumno);
+            request.setAttribute("tareasPorPlanilla", tareasPorPlanilla);
             request.getRequestDispatcher("/Parent.jsp").forward(request, response);
         } catch (SQLException ex) {
             throw new ServletException("Unable to load parent summary", ex);
