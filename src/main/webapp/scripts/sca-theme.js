@@ -25,6 +25,85 @@
     return normalizeSpecialty(document.body ? document.body.getAttribute('data-specialty') : '');
   }
 
+  function isProtectedPage() {
+    return Boolean(document.body && document.body.getAttribute('data-user-level'));
+  }
+
+  function startPageTransition() {
+    if (document.body) {
+      document.body.classList.add('sca-page-transitioning');
+    }
+  }
+
+  function stopPageTransition() {
+    if (document.body) {
+      document.body.classList.remove('sca-page-transitioning');
+    }
+  }
+
+  function shouldMaskNavigation(link) {
+    if (!link || !link.href || link.target === '_blank' || link.hasAttribute('download')) {
+      return false;
+    }
+
+    const rawHref = link.getAttribute('href');
+    if (!rawHref || rawHref === '#' || rawHref.startsWith('javascript:')) {
+      return false;
+    }
+
+    try {
+      const targetUrl = new URL(link.href, window.location.href);
+      if (targetUrl.origin !== window.location.origin) {
+        return false;
+      }
+
+      const currentUrl = new URL(window.location.href);
+      return targetUrl.pathname !== currentUrl.pathname
+        || targetUrl.search !== currentUrl.search;
+    } catch (ignored) {
+      return false;
+    }
+  }
+
+  function installProtectedNavigationGuard() {
+    if (!isProtectedPage()) {
+      return;
+    }
+
+    window.addEventListener('pageshow', function (event) {
+      if (event.persisted) {
+        startPageTransition();
+        window.location.reload();
+        return;
+      }
+      stopPageTransition();
+    });
+
+    window.addEventListener('pagehide', function () {
+      startPageTransition();
+    });
+
+    document.addEventListener('click', function (event) {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+      }
+
+      const link = event.target.closest('a[href]');
+      if (!shouldMaskNavigation(link)) {
+        return;
+      }
+
+      startPageTransition();
+    }, true);
+
+    document.addEventListener('submit', function (event) {
+      if (event.defaultPrevented) {
+        return;
+      }
+      startPageTransition();
+    }, true);
+  }
+
   function syncSpecialtyScopes(root) {
     const scope = root || document;
     scope.querySelectorAll('[data-specialty]').forEach(function (element) {
@@ -367,6 +446,7 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     const body = document.body;
+    stopPageTransition();
     syncSpecialtyScopes(document);
     syncParentSpecialty(body);
     syncTabScopedProfileSpecialty();
@@ -379,5 +459,6 @@
     }
     applyThemeFromAttr();
     ensureSessionDropdown();
+    installProtectedNavigationGuard();
   });
 })();
