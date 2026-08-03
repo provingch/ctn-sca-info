@@ -3469,27 +3469,27 @@ html[data-theme="dark"] .inicio-shell {
 }
 
 .home-view-tab--primary {
-  border-color: color-mix(in srgb, #c59a18 52%, var(--line));
+  border-color: var(--accent);
   background:
-    linear-gradient(145deg, color-mix(in srgb, #f4d27a 22%, transparent), transparent 62%),
+    linear-gradient(145deg, var(--accent-soft), transparent 60%),
     var(--paper);
 }
 
 .home-view-tab--primary:hover,
 .home-view-tab--primary:focus {
-  border-color: color-mix(in srgb, #c59a18 74%, var(--line));
+  border-color: var(--accent);
   background:
-    linear-gradient(145deg, color-mix(in srgb, #f4d27a 28%, transparent), transparent 62%),
+    linear-gradient(145deg, var(--accent-soft), transparent 60%),
     var(--paper);
 }
 
 .home-view-tab--primary.is-active,
 .home-view-tab--primary[aria-selected="true"] {
-  border-color: #c59a18;
+  border-color: var(--accent);
   background:
-    linear-gradient(145deg, color-mix(in srgb, #f4d27a 28%, transparent), transparent 60%),
+    linear-gradient(145deg, var(--accent-soft), transparent 60%),
     var(--paper);
-  box-shadow: 0 0 0 1px #c59a18, var(--shadow-md);
+  box-shadow: 0 0 0 1px var(--accent), var(--shadow-md);
 }
 
 .home-view-tab:disabled {

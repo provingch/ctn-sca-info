@@ -160,6 +160,10 @@
         </button>
       </form>
 
+      <div class="class-view-toolbar">
+        <a class="btn btn-default back-button" href="${pageContext.request.contextPath}/inicio">← Volver al inicio</a>
+      </div>
+
       <div id="filterPendingState" class="empty-state empty-state-card home-filter-pending" role="status" hidden>
         Completá Especialidad, Curso y Sección para continuar.
       </div>

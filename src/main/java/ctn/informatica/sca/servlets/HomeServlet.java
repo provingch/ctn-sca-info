@@ -101,6 +101,13 @@ public class HomeServlet extends HttpServlet {
             log("Error loading cursos for user " + user.getId(), sqle);
             throw new ServletException("Unable to load planillas", sqle);
         }
+
+        if (shouldRenderLanding(request)) {
+            request.setAttribute("cursos", cursos);
+            request.getRequestDispatcher("/Inicio.jsp").forward(request, response);
+            return;
+        }
+
         String cursoIdStr = request.getParameter("cursoId");
         String etapaStr = request.getParameter("etapa");
 
@@ -528,6 +535,15 @@ public class HomeServlet extends HttpServlet {
             return VIEW_CLASE;
         }
         return VIEW_CLASE;
+    }
+
+    private boolean shouldRenderLanding(HttpServletRequest request) {
+        return safeTrim(request.getParameter("view")).isEmpty()
+                && safeTrim(request.getParameter("cursoId")).isEmpty()
+                && safeTrim(request.getParameter("especialidad")).isEmpty()
+                && safeTrim(request.getParameter("promocion")).isEmpty()
+                && safeTrim(request.getParameter("seccion")).isEmpty()
+                && safeTrim(request.getParameter("etapa")).isEmpty();
     }
 
     private int parseIntOrDefault(String rawValue, int defaultValue) {
