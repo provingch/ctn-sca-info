@@ -106,7 +106,7 @@ public class AuthFilter implements Filter {
                 try {
                     Profesor profesor = new ctn.informatica.sca.dao.ProfesorDao().findById(restoredUser.getId());
                     session.setAttribute("profesor", profesor);
-                    String specialty = "informatica";
+                    String specialty = "general";
                     if (profesor != null && profesor.getEspecialidadId() != null) {
                         try {
                             Especialidad especialidad = new EspecialidadDao().findById(profesor.getEspecialidadId());
@@ -114,7 +114,7 @@ public class AuthFilter implements Filter {
                                 specialty = ScaUiContext.normalizeSpecialty(especialidad.getNombre());
                             }
                         } catch (Exception ignoredEspecialidad) {
-                            specialty = "informatica";
+                            specialty = "general";
                         }
                     }
                     session.setAttribute("scaSpecialty", specialty);

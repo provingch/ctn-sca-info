@@ -77,7 +77,7 @@ public class LoginServlet extends HttpServlet {
                 session.setAttribute("user", user);
                 if (profesor != null) {
                     session.setAttribute("profesor", profesor);
-                    String specialty = "informatica";
+                    String specialty = "general";
                     if (profesor.getEspecialidadId() != null) {
                         try {
                             Especialidad especialidad = new EspecialidadDao().findById(profesor.getEspecialidadId());
@@ -85,7 +85,7 @@ public class LoginServlet extends HttpServlet {
                                 specialty = ScaUiContext.normalizeSpecialty(especialidad.getNombre());
                             }
                         } catch (Exception ignoredEspecialidad) {
-                            specialty = "informatica";
+                            specialty = "general";
                         }
                     }
                     session.setAttribute("scaSpecialty", specialty);

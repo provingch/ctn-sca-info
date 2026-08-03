@@ -98,7 +98,7 @@ public class TotpServlet extends HttpServlet {
                 try {
                     Profesor profesor = new ProfesorDao().findById(user.getId());
                     session.setAttribute("profesor", profesor);
-                    String specialty = "informatica";
+                    String specialty = "general";
                     if (profesor != null && profesor.getEspecialidadId() != null) {
                         String specialtyCandidate = new ctn.informatica.sca.dao.EspecialidadDao().findById(profesor.getEspecialidadId()).getNombre();
                         if (specialtyCandidate != null && !specialtyCandidate.isBlank()) {

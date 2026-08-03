@@ -38,7 +38,7 @@
                             try {
                                 Profesor profesor = new ProfesorDao().findById(restoredUser.getId());
                                 restoredSession.setAttribute("profesor", profesor);
-                                String specialty = "informatica";
+                              String specialty = "general";
                                 if (profesor != null && profesor.getEspecialidadId() != null) {
                                     Especialidad especialidad = new EspecialidadDao().findById(profesor.getEspecialidadId());
                                     if (especialidad != null && especialidad.getNombre() != null && !especialidad.getNombre().isBlank()) {
@@ -110,9 +110,6 @@
         return;
     }
 %>
-
-<!DOCTYPE html>
-<html data-theme="light">
 
   <c:set var="pageTitle" value="Sistema de Carpeta Academica" scope="request" />
   <c:set var="headExtraFragment" value="/WEB-INF/includes/head-extra-index.jspf" scope="request" />
