@@ -82,7 +82,7 @@
           <select id="cursoId" name="cursoId" class="form-control" required>
             <option value="">Seleccionar</option>
             <c:forEach var="curso" items="${cursos}">
-              <option value="${curso.id}">${curso.especialidad} · ${curso.cursoOrdinal} · Sección ${curso.seccion}</option>
+              <option value="${curso.id}"><c:out value="${curso.especialidad}" /> · <c:out value="${curso.cursoOrdinal}" /> · Sección <c:out value="${curso.seccion}" /></option>
             </c:forEach>
           </select>
         </div>
@@ -110,24 +110,24 @@
             <select id="courseFilter" class="form-control">
               <option value="">Todos los cursos</option>
               <c:forEach var="curso" items="${cursos}">
-                <option value="${curso.id}">${curso.especialidad} · ${curso.cursoOrdinal} · Sección ${curso.seccion}</option>
+                <option value="${curso.id}"><c:out value="${curso.especialidad}" /> · <c:out value="${curso.cursoOrdinal}" /> · Sección <c:out value="${curso.seccion}" /></option>
               </c:forEach>
             </select>
           </div>
         </div>
         <div class="capacity-grid" id="studentList">
           <c:forEach var="alumno" items="${alumnos}">
-            <form class="capacity-card student-card" data-name="${alumno.apellido} ${alumno.nombre}" data-course="${alumno.cursoId}" method="post" action="${pageContext.request.contextPath}/admin/ingresantes">
+            <form class="capacity-card student-card" data-name="<c:out value='${alumno.apellido} ${alumno.nombre}' />" data-course="${alumno.cursoId}" method="post" action="${pageContext.request.contextPath}/admin/ingresantes">
               <input type="hidden" name="action" value="editar" />
               <input type="hidden" name="alumnoId" value="${alumno.id}" />
-              <div class="capacity-v">${alumno.apellido}, ${alumno.nombre}</div>
+              <div class="capacity-v"><c:out value="${alumno.apellido}" />, <c:out value="${alumno.nombre}" /></div>
               <div class="form-group">
                 <label>Nombre</label>
-                <input name="nombre" class="form-control" value="${alumno.nombre}" required />
+                <input name="nombre" class="form-control" value="<c:out value='${alumno.nombre}' />" required />
               </div>
               <div class="form-group">
                 <label>Apellido</label>
-                <input name="apellido" class="form-control" value="${alumno.apellido}" required />
+                <input name="apellido" class="form-control" value="<c:out value='${alumno.apellido}' />" required />
               </div>
               <div class="form-group">
                 <label>CI</label>
@@ -137,17 +137,17 @@
                 <label>Curso / Sección</label>
                 <select name="cursoId" class="form-control" required>
                   <c:forEach var="curso" items="${cursos}">
-                    <option value="${curso.id}" ${curso.id == alumno.cursoId ? 'selected' : ''}>${curso.especialidad} · ${curso.cursoOrdinal} · Sección ${curso.seccion}</option>
+                    <option value="${curso.id}" ${curso.id == alumno.cursoId ? 'selected' : ''}><c:out value="${curso.especialidad}" /> · <c:out value="${curso.cursoOrdinal}" /> · Sección <c:out value="${curso.seccion}" /></option>
                   </c:forEach>
                 </select>
               </div>
               <div class="form-group">
                 <label>Correo del encargado</label>
-                <input name="correoEncargado" class="form-control" value="${alumno.correoEncargado}" />
+                <input name="correoEncargado" class="form-control" value="<c:out value='${alumno.correoEncargado}' />" />
               </div>
               <div class="form-group">
                 <label>Correo alternativo</label>
-                <input name="correoEncargado2" class="form-control" value="${alumno.correoEncargado2}" />
+                <input name="correoEncargado2" class="form-control" value="<c:out value='${alumno.correoEncargado2}' />" />
               </div>
               <button class="btn btn-primary" type="submit">Guardar</button>
             </form>
