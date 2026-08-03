@@ -107,6 +107,17 @@ main {
   flex-direction: column;
 }
 
+body.sca-page-transitioning main,
+body.sca-page-transitioning .footer {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+body.sca-page-transitioning {
+  cursor: progress;
+}
+
 .page-shell,
 .container {
   width: 100%;
