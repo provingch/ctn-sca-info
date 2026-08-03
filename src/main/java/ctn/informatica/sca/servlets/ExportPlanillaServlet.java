@@ -116,6 +116,8 @@ public class ExportPlanillaServlet extends HttpServlet {
 
         } catch (NumberFormatException nfe) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid planillaId");
+        } catch (IllegalStateException ise) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, ise.getMessage());
         } catch (SQLException sqle) {
             log("Database error in ExportPlanillaServlet", sqle);
             throw new ServletException("Database error", sqle);

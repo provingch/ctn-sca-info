@@ -145,7 +145,7 @@ public class PlanillaProcesoWorkbookBuilder {
         if (tareasPorMes.size() > MONTH_BLOCK_COUNT) {
             // TODO: si una etapa usa más meses que los 5 bloques de la plantilla, hay que acordar con negocio
             // si se regeneran columnas/meses o si se rediseña la plantilla oficial. No truncar silenciosamente.
-            throw new IllegalStateException("La plantilla oficial solo soporta " + MONTH_BLOCK_COUNT + " meses por etapa. Se encontraron " + tareasPorMes.size() + " meses en la planilla " + data.planilla().getId());
+            throw new IllegalStateException("La plantilla oficial solo soporta " + MONTH_BLOCK_COUNT + " meses con tareas por etapa. Se encontraron " + tareasPorMes.size() + " meses ocupados en la planilla " + data.planilla().getId() + ": " + describeMonths(tareasPorMes.keySet()));
         }
 
         Map<Integer, Integer> taskColumnById = allocateTaskColumns(tareasPorMes, layout, data.planilla().getId());
@@ -171,6 +171,14 @@ public class PlanillaProcesoWorkbookBuilder {
             grouped.computeIfAbsent(YearMonth.from(tarea.getFecha()), ignored -> new ArrayList<>()).add(tarea);
         }
         return grouped;
+    }
+
+    private String describeMonths(Collection<YearMonth> months) {
+        List<String> labels = new ArrayList<>();
+        for (YearMonth month : months) {
+            labels.add(capitalize(month.getMonth().getDisplayName(TextStyle.FULL, SPANISH)) + " " + month.getYear());
+        }
+        return String.join(", ", labels);
     }
 
     private Map<Integer, Integer> allocateTaskColumns(Map<YearMonth, List<Tarea>> tareasPorMes, StageLayout layout, int planillaId) {

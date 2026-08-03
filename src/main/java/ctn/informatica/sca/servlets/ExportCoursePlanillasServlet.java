@@ -164,6 +164,8 @@ public class ExportCoursePlanillasServlet extends HttpServlet {
 
         } catch (NumberFormatException nfe) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid numeric parameter");
+        } catch (IllegalStateException ise) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, ise.getMessage());
         } catch (SQLException | ClassNotFoundException ex) {
             log("DB error generating course planillas", ex);
             throw new ServletException("Database error", ex);
