@@ -15,7 +15,7 @@
     <p>Change specialty to preview institutional accents.</p>
     <select id="specialtySelect">
       <option value="">(default)</option>
-      <option value="inform&#97;tica">informática</option>
+      <option value="informatica">informatica</option>
       <option value="construcciones">construcciones</option>
       <option value="quimica">quimica</option>
       <option value="electronica">electronica</option>
