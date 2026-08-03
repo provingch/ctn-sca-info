@@ -5,10 +5,10 @@
 <head>
   <title>SCA - Padres</title>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="manifest" href="${pageContext.request.contextPath}/manifest.jsp"><meta name="theme-color" content="#1f2d3d">
+  <link rel="manifest" href="${pageContext.request.contextPath}/manifest.jsp?v=${assetVersion}"><meta name="theme-color" content="#1f2d3d">
   <link rel="apple-touch-icon" href="${pageContext.request.contextPath}/icons/pwa/apple-touch-icon.png">
   <link rel="stylesheet" href="${pageContext.request.contextPath}/vendor/flat-ui/css/flat-ui.css">
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=252">
+  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=${assetVersion}">
   <link rel="icon" type="image/x-icon" href="${pageContext.request.contextPath}/images/ctn-logo.svg">
 </head>
 <body class="parent-portal" data-user-level="${sessionScope.user.level}" data-specialty="general" data-specialty-source="parent-portal">
@@ -30,6 +30,6 @@
     </section>
   </c:if>
 </section><footer class="footer"><hr><p>Colegio Técnico Nacional</p><p><a href="${pageContext.request.contextPath}/privacidad">Política de privacidad</a> | <a href="${pageContext.request.contextPath}/terminos">Términos de servicio</a></p></footer></main>
-<script src="${pageContext.request.contextPath}/vendor/flat-ui/js/vendor/jquery.min.js"></script><script src="${pageContext.request.contextPath}/vendor/flat-ui/js/flat-ui.js"></script><script src="${pageContext.request.contextPath}/scripts/sca-theme.js?v=170"></script>
-<script>if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('${pageContext.request.contextPath}/sw.js')); }</script>
+<script src="${pageContext.request.contextPath}/vendor/flat-ui/js/vendor/jquery.min.js"></script><script src="${pageContext.request.contextPath}/vendor/flat-ui/js/flat-ui.js"></script><script src="${pageContext.request.contextPath}/scripts/sca-theme.js?v=${assetVersion}"></script>
+<script>if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('${pageContext.request.contextPath}/sw.js?v=${assetVersion}')); }</script>
 </body></html>
