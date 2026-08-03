@@ -2,157 +2,13 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 
-<!DOCTYPE html>
-<html data-theme="light">
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SCA - Iniciar clase</title>
-  <link rel="manifest" href="${pageContext.request.contextPath}/manifest.jsp?v=${assetVersion}">
-  <meta name="theme-color" content="#1f2d3d">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="SCA">
-  <link rel="apple-touch-icon" href="${pageContext.request.contextPath}/icons/pwa/apple-touch-icon.png">
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/vendor/flat-ui/css/flat-ui.css">
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=${assetVersion}">
-  <link rel="icon" type="image/x-icon" href="${pageContext.request.contextPath}/images/ctn-logo.svg">
-  <style>
-    .inicio-shell {
-      background: linear-gradient(165deg, color-mix(in srgb, var(--accent) 14%, transparent) 0%, rgba(255, 255, 255, 1) 38%);
-      border-radius: 16px;
-      border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--color-border));
-      box-shadow: 0 12px 28px color-mix(in srgb, var(--accent) 16%, transparent);
-      padding: 16px;
-      margin-bottom: 12px;
-    }
-    .inicio-hero-title {
-      margin: 4px 0 6px;
-      font-size: 1.6rem;
-      line-height: 1.2;
-      color: var(--color-text);
-    }
-    .inicio-hero-subtitle {
-      margin: 0;
-      color: var(--color-text-muted);
-      max-width: 78ch;
-    }
-    .pill-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-    .ctn-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      border-radius: 999px;
-      padding: 6px 10px;
-      border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--color-border));
-      background: color-mix(in srgb, var(--accent) 18%, var(--color-surface-alt));
-      color: color-mix(in srgb, var(--color-text) 80%, var(--accent));
-      font-weight: 600;
-      font-size: 0.85rem;
-    }
-    .class-grid {
-      display: grid;
-      gap: 12px;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    }
-    .class-card {
-      border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--color-border));
-      border-top: 4px solid color-mix(in srgb, var(--accent) 76%, var(--color-border));
-      border-radius: 14px;
-      padding: 14px;
-      background: var(--color-surface);
-      box-shadow: 0 8px 24px color-mix(in srgb, var(--accent) 12%, transparent);
-    }
-    .class-card-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-    .class-card h3 {
-      margin: 0;
-      font-size: 1.05rem;
-    }
-    .student-pill {
-      display: inline-flex;
-      gap: 8px;
-      align-items: center;
-      border: 1px solid color-mix(in srgb, var(--accent) 36%, var(--color-border));
-      background: color-mix(in srgb, var(--accent) 12%, var(--color-surface));
-      border-radius: 999px;
-      padding: 5px 10px;
-      margin-right: 8px;
-    }
-
-    #reportBox {
-      border-color: color-mix(in srgb, var(--accent) 34%, var(--color-border));
-      background: color-mix(in srgb, var(--accent) 10%, var(--color-surface));
-    }
-    .section-tools {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-    }
-    .result-output {
-      min-height: 120px;
-      border-radius: 10px;
-      border: 1px solid var(--color-border);
-      background: #0f2032;
-      color: #7ff3b4;
-      padding: 12px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
-      font-size: 0.86rem;
-      white-space: pre-wrap;
-      word-break: break-word;
-      display: none;
-    }
-    @media (max-width: 700px) {
-      .inicio-hero-title {
-        font-size: 1.32rem;
-      }
-    }
-  </style>
-</head>
+<c:set var="pageTitle" value="Iniciar clase" scope="request" />
+<c:set var="headExtraFragment" value="/WEB-INF/includes/head-style-inicioclase.jspf" scope="request" />
+<%@ include file="/WEB-INF/includes/head.jspf" %>
 
 <body data-user-level="${sessionScope.user.level}" data-specialty="${empty sessionScope.scaSpecialty ? 'general' : sessionScope.scaSpecialty}" data-specialty-source="session">
-  <c:url var="profileUrl" value="/perfil" />
-  <c:url var="logoutUrl" value="/logout" />
-  <header class="navbar navbar-default navbar-fixed-top ctn-navbar" role="navigation">
-    <div class="container-fluid">
-      <div class="navbar-header">
-        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#ctnNavbarMenu" aria-expanded="false">
-          <span class="sr-only">Abrir navegación</span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-        </button>
-        <a class="navbar-brand ctn-navbar-brand" href="${pageContext.request.contextPath}/inicio" aria-label="Ir a inicio">
-          <img class="header-logo" src="${pageContext.request.contextPath}/images/ctn-logo.svg" alt="CTN">
-          <span>Colegio T&eacute;cnico Nacional</span>
-        </a>
-      </div>
-      <div class="collapse navbar-collapse" id="ctnNavbarMenu">
-        <ul class="nav navbar-nav navbar-right ctn-navbar-actions">
-          <li class="ctn-theme-item"></li>
-          <li><a class="manual-link" href="${pageContext.request.contextPath}/pdfs/manual-profesor.pdf" target="_blank" rel="noopener noreferrer">Manual</a></li>
-          <li class="dropdown">
-            <a href="#" id="sessionButton" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Sesión <span class="caret"></span></a>
-            <ul class="dropdown-menu" id="sessionMenu" role="menu" aria-labelledby="sessionButton">
-              <li><a role="menuitem" href="${profileUrl}">Mi Perfil</a></li>
-              <li><a role="menuitem" class="session-logout" href="${logoutUrl}">Cerrar Sesión</a></li>
-            </ul>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </header>
+  <c:set var="manualHrefOverride" value="${pageContext.request.contextPath}/pdfs/manual-profesor.pdf" />
+  <%@ include file="/WEB-INF/includes/navbar.jspf" %>
 
   <main>
     <section class="container page-shell">
@@ -833,15 +689,6 @@
   })();
   </script>
 
-  <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/vendor/jquery.min.js"></script>
-  <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/flat-ui.js"></script>
-  <script src="${pageContext.request.contextPath}/scripts/sca-theme.js?v=${assetVersion}"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('${pageContext.request.contextPath}/sw.js?v=${assetVersion}');
-      });
-    }
-  </script>
+  <%@ include file="/WEB-INF/includes/footer-scripts.jspf" %>
 </body>
 </html>

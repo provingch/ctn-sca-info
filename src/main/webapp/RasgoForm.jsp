@@ -1,15 +1,8 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SCA - Formulario de asistencia</title>
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/vendor/flat-ui/css/flat-ui.css">
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=${assetVersion}">
-</head>
+<c:set var="pageTitle" value="Formulario de asistencia" scope="request" />
+<%@ include file="/WEB-INF/includes/head.jspf" %>
 <body data-user-level="${sessionScope.user.level}" data-specialty="${empty sessionScope.scaSpecialty ? 'general' : sessionScope.scaSpecialty}" data-specialty-source="session">
   <main class="container" style="padding-top:40px;max-width:760px;">
     <h1>Formulario de asistencia</h1>
