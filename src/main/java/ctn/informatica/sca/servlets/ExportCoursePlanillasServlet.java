@@ -7,12 +7,17 @@ package ctn.informatica.sca.servlets;
 import ctn.informatica.sca.dao.EspecialidadDao;
 import ctn.informatica.sca.dao.PlanillaDao;
 import ctn.informatica.sca.dao.PlanillaDao.PlanillaInfo;
+import ctn.informatica.sca.dao.ProfesorDao;
 import ctn.informatica.sca.dao.StudentRowDao;
 import ctn.informatica.sca.dao.TareaDao;
+import ctn.informatica.sca.dao.CursoDao;
+import ctn.informatica.sca.model.Curso;
 import ctn.informatica.sca.model.Planilla;
+import ctn.informatica.sca.model.Profesor;
 import ctn.informatica.sca.model.StudentRow;
 import ctn.informatica.sca.model.Tarea;
 import ctn.informatica.sca.model.User;
+import ctn.informatica.sca.util.PlanillaProcesoWorkbookBuilder;
 import java.io.IOException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -23,10 +28,10 @@ import jakarta.servlet.http.HttpSession;
 import java.io.OutputStream;
 import java.net.URLEncoder;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 /**
@@ -36,6 +41,8 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 @WebServlet(name = "ExportCoursePlanillasServlet", urlPatterns = {"/planilla/export-course"})
 public class ExportCoursePlanillasServlet extends HttpServlet {
+
+    private final PlanillaProcesoWorkbookBuilder workbookBuilder = new PlanillaProcesoWorkbookBuilder();
 
     // helper: sanitize sheet name to 31 chars and remove invalid chars
     private String safeSheetName(String name, int maxLength) {
@@ -102,78 +109,42 @@ public class ExportCoursePlanillasServlet extends HttpServlet {
                 // ignore - just fallback to id in filename
             }
 
-            // Build workbook with one sheet per planilla (subject)
-            try (XSSFWorkbook wb = new XSSFWorkbook()) {
-                for (PlanillaInfo pi : planillas) {
-                    Planilla p = pi.getPlanilla();
-                    String materiaNombre = pi.getMateriaNombre();
+            List<PlanillaProcesoWorkbookBuilder.PlanillaSheetData> exportSheets = new ArrayList<>();
+            CursoDao cursoDao = new CursoDao();
+            ProfesorDao profesorDao = new ProfesorDao();
 
-                    // load tareas for this planilla
-                    List<Tarea> tareas = new TareaDao().consultarTarea(p.getId());
-                    Map<Integer, Integer> tareaMax = new java.util.HashMap<>();
-                    int totalPossiblePoints = 0;
-                    for (Tarea t : tareas) {
-                        tareaMax.put(t.getId(), t.getTotal());
-                        totalPossiblePoints += t.getTotal();
-                    }
+            for (PlanillaInfo pi : planillas) {
+                Planilla p = planillaDao.findById(pi.getPlanilla().getId());
+                if (p == null) {
+                    continue;
+                }
+                List<Tarea> tareas = new TareaDao().consultarTarea(p.getId());
+                Map<Integer, Integer> tareaMax = new HashMap<>();
+                int totalPossiblePoints = 0;
+                for (Tarea t : tareas) {
+                    tareaMax.put(t.getId(), t.getTotal());
+                    totalPossiblePoints += t.getTotal();
+                }
+                p.computeGradeRanges(totalPossiblePoints);
 
-                    // load student rows for this planilla
-                    List<StudentRow> rows = new StudentRowDao().loadRowsForPlanilla(p, tareaMax, totalPossiblePoints);
+                List<StudentRow> rows = new StudentRowDao().loadRowsForPlanilla(p, tareaMax, totalPossiblePoints);
+                Curso cursoData = cursoDao.findById(p.getCursoId());
+                Profesor profesor = profesorDao.findById(p.getProfesorId());
+                String profesorNombre = profesor == null ? "" : profesor.getFullName();
 
-                    String sheetName = safeSheetName(materiaNombre != null ? materiaNombre : ("Materia-" + p.getMateriaId()), 31);
-                    // avoid duplicate names: if same name already exists, append index.
-                    String baseName = sheetName;
-                    int dup = 1;
-                    while (wb.getSheet(sheetName) != null) {
-                        sheetName = safeSheetName(baseName + "-" + dup, 31);
-                        dup++;
-                    }
+                exportSheets.add(new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                        p,
+                        cursoData,
+                        pi.getMateriaNombre(),
+                        profesorNombre,
+                        "",
+                        tareas,
+                        rows,
+                        resolveFirstStageGrades(planillaDao, p)
+                ));
+            }
 
-                    Sheet sheet = wb.createSheet(sheetName);
-
-                    // header
-                    int col = 0;
-                    Row header = sheet.createRow(0);
-                    header.createCell(col++).setCellValue("#");
-                    header.createCell(col++).setCellValue("Alumno");
-                    header.createCell(col++).setCellValue("Total (" + totalPossiblePoints + ")");
-                    header.createCell(col++).setCellValue("Porcentaje");
-                    header.createCell(col++).setCellValue("Nota");
-                    for (Tarea t : tareas) {
-                        header.createCell(col++).setCellValue(t.getTitulo() + " (TP:" + t.getTotal() + ")");
-                    }
-
-                    // data rows
-                    int r = 1;
-                    for (StudentRow sr : rows) {
-                        Row excelRow = sheet.createRow(r++);
-                        int c = 0;
-                        excelRow.createCell(c++).setCellValue(r - 1);
-                        excelRow.createCell(c++).setCellValue(sr.getAlumnoNombre());
-                        excelRow.createCell(c++).setCellValue(sr.getTotal());
-                        excelRow.createCell(c++).setCellValue(sr.getPorcentaje());
-                        excelRow.createCell(c++).setCellValue(sr.getNota());
-                        Map<Integer, Integer> grades = sr.getGrades();
-                        for (Tarea t : tareas) {
-                            Integer val = grades != null ? grades.get(t.getId()) : null;
-                            if (val != null) {
-                                excelRow.createCell(c++).setCellValue(val);
-                            } else {
-                                excelRow.createCell(c++).setBlank();
-                            }
-                        }
-                    }
-
-                    // autosize a limited number of columns (avoid very expensive autosize on many columns)
-                    int autosizeLimit = Math.min(8 + tareas.size(), 40);
-                    for (int i = 0; i < autosizeLimit; i++) {
-                        try {
-                            sheet.autoSizeColumn(i);
-                        } catch (Exception ignore) {}
-                    }
-
-                } // end for each planilla
-
+            try (XSSFWorkbook wb = workbookBuilder.buildCourseWorkbook(exportSheets)) {
                 // prepare response filename
                 String safeEspecialidad = (especialidadName != null && !especialidadName.trim().isEmpty())
                         ? especialidadName.replaceAll("[^A-Za-z0-9 _-]", "").replaceAll("\\s+", "_")
@@ -200,5 +171,32 @@ public class ExportCoursePlanillasServlet extends HttpServlet {
             log("Error generating excel", ex);
             throw new ServletException("Unexpected error", ex);
         }
+    }
+
+    private Map<Integer, Integer> resolveFirstStageGrades(PlanillaDao planillaDao, Planilla planilla) throws SQLException {
+        if (planilla.getEtapaIndex() != 2) {
+            return Map.of();
+        }
+
+        Planilla firstStagePlanilla = planillaDao.findByCompositeKey(planilla.getCursoId(), planilla.getMateriaId(), 1);
+        if (firstStagePlanilla == null) {
+            return Map.of();
+        }
+
+        List<Tarea> tareasPrimeraEtapa = new TareaDao().consultarTarea(firstStagePlanilla.getId());
+        Map<Integer, Integer> tareaMaxPrimeraEtapa = new HashMap<>();
+        int totalPossiblePointsPrimeraEtapa = 0;
+        for (Tarea tarea : tareasPrimeraEtapa) {
+            tareaMaxPrimeraEtapa.put(tarea.getId(), tarea.getTotal());
+            totalPossiblePointsPrimeraEtapa += tarea.getTotal();
+        }
+        firstStagePlanilla.computeGradeRanges(totalPossiblePointsPrimeraEtapa);
+
+        List<StudentRow> firstStageRows = new StudentRowDao().loadRowsForPlanilla(firstStagePlanilla, tareaMaxPrimeraEtapa, totalPossiblePointsPrimeraEtapa);
+        Map<Integer, Integer> gradesByAlumno = new HashMap<>();
+        for (StudentRow row : firstStageRows) {
+            gradesByAlumno.put(row.getAlumnoId(), firstStagePlanilla.getNotaForSum(row.getTotal()));
+        }
+        return gradesByAlumno;
     }
 }
