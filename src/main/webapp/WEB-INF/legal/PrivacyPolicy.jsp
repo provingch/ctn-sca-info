@@ -18,44 +18,13 @@
     <c:url var="homeUrl" value="/inicio" />
   </c:otherwise>
 </c:choose>
-<!DOCTYPE html>
-<html data-theme="light">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pol&iacute;tica de Privacidad | SCA</title>
-  <link rel="manifest" href="${pageContext.request.contextPath}/manifest.jsp?v=${assetVersion}">
-  <meta name="theme-color" content="#1f2d3d">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="SCA">
-  <link rel="apple-touch-icon" href="${pageContext.request.contextPath}/icons/pwa/apple-touch-icon.png">
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/vendor/flat-ui/css/flat-ui.css">
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=${assetVersion}">
-  <link rel="icon" type="image/x-icon" href="${pageContext.request.contextPath}/images/ctn-logo.svg">
-</head>
+<c:set var="pageTitle" value="Política de Privacidad" scope="request" />
+<%@ include file="/WEB-INF/includes/head.jspf" %>
 <body class="legal-page" data-page="privacy-policy" data-user-level="${empty sessionScope.user ? '1' : sessionScope.user.level}" data-specialty="general" data-specialty-source="system">
-  <header class="navbar navbar-default navbar-fixed-top ctn-navbar" role="navigation">
-    <div class="container-fluid">
-      <div class="navbar-header">
-        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#ctnNavbarMenu" aria-expanded="false">
-          <span class="sr-only">Abrir navegación</span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-        </button>
-        <a class="navbar-brand ctn-navbar-brand" href="${homeUrl}" aria-label="Ir al inicio">
-          <img class="header-logo" src="${pageContext.request.contextPath}/images/ctn-logo.svg" alt="CTN">
-          <span>Colegio T&eacute;cnico Nacional</span>
-        </a>
-      </div>
-      <div class="collapse navbar-collapse" id="ctnNavbarMenu">
-        <ul class="nav navbar-nav navbar-right ctn-navbar-actions">
-          <li class="ctn-theme-item"></li>
-        </ul>
-      </div>
-    </div>
-  </header>
+  <c:set var="navbarHomeUrl" value="${homeUrl}" />
+  <c:set var="navbarHomeAriaLabel" value="Ir al inicio" />
+  <c:set var="navbarShowSessionMenu" value="false" />
+  <%@ include file="/WEB-INF/includes/navbar.jspf" %>
 
   <main class="page-shell legal-shell">
     <a class="legal-back-link" href="${homeUrl}">← Volver al inicio</a>
@@ -89,8 +58,6 @@
       <a href="${pageContext.request.contextPath}/terminos">Ver Condiciones del Servicio</a>
     </div>
   </main>
-  <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/vendor/jquery.min.js"></script>
-  <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/flat-ui.js"></script>
-  <script src="${pageContext.request.contextPath}/scripts/sca-theme.js?v=${assetVersion}"></script>
+  <%@ include file="/WEB-INF/includes/footer-scripts.jspf" %>
 </body>
 </html>
