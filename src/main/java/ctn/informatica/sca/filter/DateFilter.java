@@ -24,6 +24,8 @@ import java.util.Locale;
 @WebFilter(filterName = "DateFilter", urlPatterns = {"/*"})
 public class DateFilter implements Filter {
 
+    private static final String ASSET_VERSION_PARAM = "sca.asset.version";
+    private static final String ASSET_VERSION_FALLBACK = "0.6.5";
     private static final Locale PY_LOCALE = new Locale.Builder().setLanguage("es").setRegion("PY").build();
     private static final DateTimeFormatter FMT
             = DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM 'de' yyyy", PY_LOCALE);
@@ -35,6 +37,7 @@ public class DateFilter implements Filter {
 
         HttpServletRequest request = (HttpServletRequest) req;
         String uri = request.getRequestURI();
+        request.setAttribute("assetVersion", resolveAssetVersion(request));
 
         // Exclude login page(s) and static resources:
         if (!uri.contains("/login") && !isStaticResource(uri)) {
@@ -54,6 +57,25 @@ public class DateFilter implements Filter {
                 || lower.endsWith(".jpeg") || lower.endsWith(".gif")
                 || lower.endsWith(".woff") || lower.endsWith(".woff2")
                 || lower.endsWith(".map") || lower.contains("/static/");
+    }
+
+    private String resolveAssetVersion(HttpServletRequest request) {
+        String configured = request.getServletContext().getInitParameter(ASSET_VERSION_PARAM);
+        if (configured != null && !configured.isBlank()) {
+            return configured.trim();
+        }
+
+        String systemValue = System.getProperty(ASSET_VERSION_PARAM);
+        if (systemValue != null && !systemValue.isBlank()) {
+            return systemValue.trim();
+        }
+
+        String envValue = System.getenv("SCA_ASSET_VERSION");
+        if (envValue != null && !envValue.isBlank()) {
+            return envValue.trim();
+        }
+
+        return ASSET_VERSION_FALLBACK;
     }
 
     private String capitalizeFirst(String s, Locale locale) {
