@@ -32,7 +32,7 @@
   <link rel="icon" type="image/x-icon" href="${pageContext.request.contextPath}/images/ctn-logo.svg">
 </head>
 
-<body data-user-level="${sessionScope.user.level}" data-specialty="${empty sessionScope.scaSpecialty ? 'informatica' : sessionScope.scaSpecialty}" data-specialty-source="session">
+<body data-user-level="${sessionScope.user.level}" data-specialty="${empty sessionScope.scaSpecialty ? 'general' : sessionScope.scaSpecialty}" data-specialty-source="session">
   <c:url var="profileUrl" value="/perfil" />
   <c:url var="logoutUrl" value="/logout" />
   <header class="navbar navbar-default navbar-fixed-top ctn-navbar" role="navigation">
