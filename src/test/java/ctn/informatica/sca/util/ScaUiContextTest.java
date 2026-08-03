@@ -8,7 +8,8 @@ class ScaUiContextTest {
     @Test
     void normalizeSpecialtyConvertsLabelsToCanonicalTokens() {
         assertEquals("mecanica-automotriz", ScaUiContext.normalizeSpecialty("Mecánica Automotriz"));
-        assertEquals("informatica", ScaUiContext.normalizeSpecialty("   "));
+        assertEquals("general", ScaUiContext.normalizeSpecialty(null));
+        assertEquals("general", ScaUiContext.normalizeSpecialty("   "));
         assertEquals("quimica", ScaUiContext.normalizeSpecialty("quimica"));
         assertEquals("construcciones", ScaUiContext.normalizeSpecialty("Construcciones Civiles"));
         assertEquals("quimica", ScaUiContext.normalizeSpecialty("Química Industrial"));
