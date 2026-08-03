@@ -5,8 +5,6 @@
     return;
   }
 %>
-<!doctype html>
-<html data-theme="light">
 <c:set var="pageTitle" value="Styleguide — Foundation" scope="request" />
 <c:set var="headExtraFragment" value="/WEB-INF/includes/head-style-styleguide.jspf" scope="request" />
 <%@ include file="/WEB-INF/includes/head.jspf" %>
@@ -17,7 +15,7 @@
     <p>Change specialty to preview institutional accents.</p>
     <select id="specialtySelect">
       <option value="">(default)</option>
-      <option value="informatica">informatica</option>
+      <option value="inform&#97;tica">informática</option>
       <option value="construcciones">construcciones</option>
       <option value="quimica">quimica</option>
       <option value="electronica">electronica</option>

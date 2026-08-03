@@ -9,11 +9,11 @@ public final class ScaUiContext {
 
     public static String normalizeSpecialty(String value) {
         if (value == null) {
-            return "informatica";
+            return "general";
         }
         String normalized = value.trim().toLowerCase(Locale.ROOT);
         if (normalized.isEmpty()) {
-            return "informatica";
+            return "general";
         }
         return switch (normalized) {
             case "mecánica automotriz", "mecanica automotriz", "mecánica-automotriz", "mecanica-automotriz" -> "mecanica-automotriz";
