@@ -20,5 +20,7 @@
   <link rel="stylesheet" href="${pageContext.request.contextPath}/vendor/flat-ui/css/flat-ui.css">
   <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=${assetVersion}">
   <link rel="icon" type="image/x-icon" href="${pageContext.request.contextPath}/images/ctn-logo.svg">
-  <%-- Cualquier <style> específico de la página va DESPUÉS de este include, en la página que lo llama --%>
+  <c:if test="${not empty headExtraFragment}">
+    <jsp:include page="${headExtraFragment}" />
+  </c:if>
 </head>

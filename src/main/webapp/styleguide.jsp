@@ -7,19 +7,9 @@
 %>
 <!doctype html>
 <html data-theme="light">
-<head>
-  <meta charset="utf-8" />
-  <title>Styleguide — Foundation</title>
-  <link rel="manifest" href="${pageContext.request.contextPath}/manifest.jsp?v=${assetVersion}">
-  <meta name="theme-color" content="#1f2d3d">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="SCA">
-  <link rel="apple-touch-icon" href="${pageContext.request.contextPath}/icons/pwa/apple-touch-icon.png">
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/vendor/flat-ui/css/flat-ui.css">
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=${assetVersion}">
-  <style>body{padding:24px}</style>
-</head>
+<c:set var="pageTitle" value="Styleguide — Foundation" scope="request" />
+<c:set var="headExtraFragment" value="/WEB-INF/includes/head-style-styleguide.jspf" scope="request" />
+<%@ include file="/WEB-INF/includes/head.jspf" %>
 <body data-user-level="${sessionScope.user.level}" data-specialty="${empty sessionScope.scaSpecialty ? 'general' : sessionScope.scaSpecialty}" data-specialty-source="session">
   <h1>Design System — Tokens & Components</h1>
   <section>
@@ -78,16 +68,7 @@
     <p><a href="${pageContext.request.contextPath}/privacidad">Pol&iacute;tica de privacidad</a> | <a href="${pageContext.request.contextPath}/terminos">T&eacute;rminos de servicio</a></p>
   </footer>
 
-  <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/vendor/jquery.min.js"></script>
-  <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/flat-ui.js"></script>
-  <script src="${pageContext.request.contextPath}/scripts/sca-theme.js?v=${assetVersion}"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('${pageContext.request.contextPath}/sw.js?v=${assetVersion}');
-      });
-    }
-  </script>
+  <%@ include file="/WEB-INF/includes/footer-scripts.jspf" %>
   <script>
     document.getElementById('specialtySelect').addEventListener('change', function(e){
       var val = e.target.value;

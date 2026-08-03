@@ -6,6 +6,15 @@
 --%>
 <c:url var="profileUrl" value="/perfil" />
 <c:url var="logoutUrl" value="/logout" />
+<c:if test="${empty navbarHomeUrl}">
+  <c:set var="navbarHomeUrl" value="${pageContext.request.contextPath}/inicio" />
+</c:if>
+<c:if test="${empty navbarHomeAriaLabel}">
+  <c:set var="navbarHomeAriaLabel" value="Ir a inicio" />
+</c:if>
+<c:if test="${empty navbarShowSessionMenu}">
+  <c:set var="navbarShowSessionMenu" value="true" />
+</c:if>
 <header class="navbar navbar-default navbar-fixed-top ctn-navbar" role="navigation">
   <div class="container-fluid">
     <div class="navbar-header">
@@ -15,7 +24,7 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand ctn-navbar-brand" href="${pageContext.request.contextPath}/inicio" aria-label="Ir a inicio">
+      <a class="navbar-brand ctn-navbar-brand" href="${navbarHomeUrl}" aria-label="${navbarHomeAriaLabel}">
         <img class="header-logo" src="${pageContext.request.contextPath}/images/ctn-logo.svg" alt="CTN">
         <span>Colegio T&eacute;cnico Nacional</span>
       </a>
@@ -23,31 +32,36 @@
     <div class="collapse navbar-collapse" id="ctnNavbarMenu">
       <ul class="nav navbar-nav navbar-right ctn-navbar-actions">
         <li class="ctn-theme-item"></li>
-        <c:choose>
-          <c:when test="${sessionScope.user.level == 1}">
-            <c:set var="manualHref" value="${pageContext.request.contextPath}/pdfs/manual-profesor.pdf" />
-          </c:when>
-          <c:when test="${sessionScope.user.level == 2}">
-            <c:set var="manualHref" value="${pageContext.request.contextPath}/pdfs/manual-evaluador.pdf" />
-          </c:when>
-          <c:when test="${sessionScope.user.level == 3}">
-            <c:set var="manualHref" value="${pageContext.request.contextPath}/pdfs/manual-administrador.pdf" />
-          </c:when>
-          <c:when test="${sessionScope.user.level == 4}">
-            <c:set var="manualHref" value="${pageContext.request.contextPath}/pdfs/manual-padres.pdf" />
-          </c:when>
-          <c:otherwise>
-            <c:set var="manualHref" value="${pageContext.request.contextPath}/pdfs/manual-profesor.pdf" />
-          </c:otherwise>
-        </c:choose>
-        <li><a class="manual-link" href="${manualHref}" target="_blank" rel="noopener noreferrer">Manual</a></li>
-        <li class="dropdown">
-          <a href="#" id="sessionButton" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Sesión <span class="caret"></span></a>
-          <ul class="dropdown-menu" id="sessionMenu" role="menu" aria-labelledby="sessionButton">
-            <li><a role="menuitem" href="${profileUrl}">Mi Perfil</a></li>
-            <li><a role="menuitem" class="session-logout" href="${logoutUrl}">Cerrar Sesión</a></li>
-          </ul>
-        </li>
+        <c:if test="${navbarShowSessionMenu}">
+          <c:choose>
+            <c:when test="${sessionScope.user.level == 1}">
+              <c:set var="manualHref" value="${pageContext.request.contextPath}/pdfs/manual-profesor.pdf" />
+            </c:when>
+            <c:when test="${sessionScope.user.level == 2}">
+              <c:set var="manualHref" value="${pageContext.request.contextPath}/pdfs/manual-evaluador.pdf" />
+            </c:when>
+            <c:when test="${sessionScope.user.level == 3}">
+              <c:set var="manualHref" value="${pageContext.request.contextPath}/pdfs/manual-administrador.pdf" />
+            </c:when>
+            <c:when test="${sessionScope.user.level == 4}">
+              <c:set var="manualHref" value="${pageContext.request.contextPath}/pdfs/manual-padres.pdf" />
+            </c:when>
+            <c:otherwise>
+              <c:set var="manualHref" value="${pageContext.request.contextPath}/pdfs/manual-profesor.pdf" />
+            </c:otherwise>
+          </c:choose>
+          <c:if test="${not empty manualHrefOverride}">
+            <c:set var="manualHref" value="${manualHrefOverride}" />
+          </c:if>
+          <li><a class="manual-link" href="${manualHref}" target="_blank" rel="noopener noreferrer">Manual</a></li>
+          <li class="dropdown">
+            <a href="#" id="sessionButton" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Sesión <span class="caret"></span></a>
+            <ul class="dropdown-menu" id="sessionMenu" role="menu" aria-labelledby="sessionButton">
+              <li><a role="menuitem" href="${profileUrl}">Mi Perfil</a></li>
+              <li><a role="menuitem" class="session-logout" href="${logoutUrl}">Cerrar Sesión</a></li>
+            </ul>
+          </li>
+        </c:if>
       </ul>
     </div>
   </div>

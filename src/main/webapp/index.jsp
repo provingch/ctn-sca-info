@@ -114,49 +114,16 @@
 <!DOCTYPE html>
 <html data-theme="light">
 
-  <head>
-    <title>Sistema de Carpeta Academica</title>
-    <meta name="description" content="Sistema de Carpeta Acad&eacute;mica (SCA) &mdash; plataforma del Colegio T&eacute;cnico Nacional para gestionar planillas, cursos y la integraci&oacute;n con Google Classroom.">
-    <meta name="author" content="Colegio T&eacute;cnico Nacional">
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="manifest" href="${pageContext.request.contextPath}/manifest.jsp?v=${assetVersion}">
-    <!-- Google site verification: reemplaza TOKEN_DE_VERIFICACION por el valor que te dé Google -->
-    <meta name="google-site-verification" content="TOKEN_DE_VERIFICACION" />
-    <meta name="theme-color" content="#1f2d3d">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="SCA">
-    <link rel="apple-touch-icon" href="${pageContext.request.contextPath}/icons/pwa/apple-touch-icon.png">
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/vendor/flat-ui/css/flat-ui.css">
-  <link rel="stylesheet" href="${pageContext.request.contextPath}/styles/ctn-theme.css?v=${assetVersion}">
-    <link rel="icon" type="image/x-icon" href="${pageContext.request.contextPath}/images/ctn-logo.svg">
-  </head>
+  <c:set var="pageTitle" value="Sistema de Carpeta Academica" scope="request" />
+  <c:set var="headExtraFragment" value="/WEB-INF/includes/head-extra-index.jspf" scope="request" />
+  <%@ include file="/WEB-INF/includes/head.jspf" %>
 
   <!-- as convention the class names must be in english -->
 
   <body class="login-page" data-user-level="${sessionScope.user.level}" data-specialty="${empty sessionScope.scaSpecialty ? 'general' : sessionScope.scaSpecialty}" data-specialty-source="session">
-    <header class="navbar navbar-default navbar-fixed-top ctn-navbar" role="navigation">
-    <div class="container-fluid">
-      <div class="navbar-header">
-        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#ctnNavbarMenu" aria-expanded="false">
-          <span class="sr-only">Abrir navegaci&oacute;n</span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-        </button>
-        <a class="navbar-brand ctn-navbar-brand" href="${pageContext.request.contextPath}/index.jsp" aria-label="Ir a inicio">
-          <img class="header-logo" src="${pageContext.request.contextPath}/images/ctn-logo.svg" alt="CTN">
-          <span>Colegio T&eacute;cnico Nacional</span>
-        </a>
-      </div>
-      <div class="collapse navbar-collapse" id="ctnNavbarMenu">
-        <ul class="nav navbar-nav navbar-right ctn-navbar-actions">
-          <li class="ctn-theme-item"></li>
-        </ul>
-      </div>
-    </div>
-  </header>
+    <c:set var="navbarHomeUrl" value="${pageContext.request.contextPath}/index.jsp" />
+    <c:set var="navbarShowSessionMenu" value="false" />
+    <%@ include file="/WEB-INF/includes/navbar.jspf" %>
 
     <main class="login-main">
       <div class="login-wrapper">
@@ -235,9 +202,7 @@
         </div>
       </div>
     </div>
-  <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/vendor/jquery.min.js"></script>
-  <script src="${pageContext.request.contextPath}/vendor/flat-ui/js/flat-ui.js"></script>
-  <script src="${pageContext.request.contextPath}/scripts/sca-theme.js?v=${assetVersion}"></script>
+  <%@ include file="/WEB-INF/includes/footer-scripts.jspf" %>
     <script src="${pageContext.request.contextPath}/scripts/cookie-consent.js?v=164"></script>
   <script>
     (function () {
@@ -255,13 +220,6 @@
         passwordInput.focus({ preventScroll: true });
       });
     })();
-  </script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('${pageContext.request.contextPath}/sw.js?v=${assetVersion}');
-      });
-    }
   </script>
   </body>
 
