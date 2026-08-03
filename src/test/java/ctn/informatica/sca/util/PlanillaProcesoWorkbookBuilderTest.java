@@ -105,6 +105,38 @@ class PlanillaProcesoWorkbookBuilderTest {
         }
     }
 
+        @Test
+        void buildSingleWorkbookUsesOnlyOccupiedMonthsWhenThereAreGaps() throws IOException {
+                PlanillaProcesoWorkbookBuilder builder = new PlanillaProcesoWorkbookBuilder();
+                Planilla planilla = new Planilla(44, 3, 7, "comun", "Matemática", 2026, "primera", 5);
+                Curso curso = new Curso(3, "Informática", 2027, "A");
+
+                List<Tarea> tareas = List.of(
+                                tarea(401, LocalDate.of(2026, 3, 10), 10, "Marzo"),
+                                tarea(402, LocalDate.of(2026, 5, 12), 10, "Mayo"),
+                                tarea(403, LocalDate.of(2026, 7, 20), 10, "Julio")
+                );
+
+                PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                                planilla,
+                                curso,
+                                "Matemática",
+                                "Ada Lovelace",
+                                "",
+                                tareas,
+                                List.of(studentRow(1, "Alfa, Ana", Map.of())),
+                                Map.of()
+                );
+
+                try (XSSFWorkbook workbook = builder.buildSingleWorkbook(data, "Planilla con huecos")) {
+                        Sheet sheet = workbook.getSheetAt(0);
+                        assertEquals("Marzo", sheet.getRow(5).getCell(2).getStringCellValue());
+                        assertEquals("Mayo", sheet.getRow(5).getCell(15).getStringCellValue());
+                        assertEquals("Julio", sheet.getRow(5).getCell(28).getStringCellValue());
+                        assertEquals("", sheet.getRow(5).getCell(41).getStringCellValue());
+                }
+        }
+
     @Test
     void buildSingleWorkbookFailsWhenMonthExceedsTemplateCapacity() {
         PlanillaProcesoWorkbookBuilder builder = new PlanillaProcesoWorkbookBuilder();
@@ -130,6 +162,39 @@ class PlanillaProcesoWorkbookBuilderTest {
                 () -> builder.buildSingleWorkbook(data, "Planilla Matemática"));
 
         assertEquals(true, ex.getMessage().contains("12 columnas"));
+    }
+
+    @Test
+    void buildSingleWorkbookFailsListingOnlyOccupiedMonths() {
+        PlanillaProcesoWorkbookBuilder builder = new PlanillaProcesoWorkbookBuilder();
+        Planilla planilla = new Planilla(55, 3, 7, "comun", "Matemática", 2026, "primera", 5);
+        Curso curso = new Curso(3, "Informática", 2027, "A");
+
+        List<Tarea> tareas = List.of(
+                tarea(501, LocalDate.of(2026, 1, 5), 5, "Enero"),
+                tarea(502, LocalDate.of(2026, 3, 5), 5, "Marzo"),
+                tarea(503, LocalDate.of(2026, 5, 5), 5, "Mayo"),
+                tarea(504, LocalDate.of(2026, 7, 5), 5, "Julio"),
+                tarea(505, LocalDate.of(2026, 9, 5), 5, "Septiembre"),
+                tarea(506, LocalDate.of(2026, 11, 5), 5, "Noviembre")
+        );
+
+        PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                planilla,
+                curso,
+                "Matemática",
+                "Ada Lovelace",
+                "",
+                tareas,
+                List.of(),
+                Map.of()
+        );
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> builder.buildSingleWorkbook(data, "Planilla Matemática"));
+
+        assertEquals(true, ex.getMessage().contains("meses ocupados"));
+        assertEquals(true, ex.getMessage().contains("Enero 2026, Marzo 2026, Mayo 2026, Julio 2026, Septiembre 2026, Noviembre 2026"));
     }
 
     private static Tarea tarea(int id, LocalDate fecha, int total, String titulo) {
