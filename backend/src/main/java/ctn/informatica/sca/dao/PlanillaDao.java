@@ -4,6 +4,7 @@
  */
 package ctn.informatica.sca.dao;
 
+import org.springframework.stereotype.Repository;
 import ctn.informatica.sca.clases.conexion;
 import ctn.informatica.sca.model.Materia;
 import ctn.informatica.sca.model.Planilla;
@@ -22,6 +23,7 @@ import java.util.Set;
  *
  * @author jonat
  */
+@Repository
 public class PlanillaDao extends conexion {
 
     private static final int DEFAULT_PERIOD = ctn.informatica.sca.util.AcademicPeriod.current();

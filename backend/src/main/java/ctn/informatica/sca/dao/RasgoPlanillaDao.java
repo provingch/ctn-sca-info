@@ -1,5 +1,6 @@
 package ctn.informatica.sca.dao;
 
+import org.springframework.stereotype.Repository;
 import ctn.informatica.sca.clases.conexion;
 import ctn.informatica.sca.model.Alumno;
 import ctn.informatica.sca.model.RasgoAsistencia;
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+@Repository
 public class RasgoPlanillaDao extends conexion {
 
     static String buildInsertAsistenciaSql(boolean includeFaltaCodigo, boolean includeFaltaObservacion) {

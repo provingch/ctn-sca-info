@@ -5,6 +5,7 @@
 
 package ctn.informatica.sca.dao;
 
+import org.springframework.stereotype.Repository;
 import ctn.informatica.sca.clases.conexion;
 import ctn.informatica.sca.model.Planilla;
 import ctn.informatica.sca.model.StudentRow;
@@ -21,6 +22,7 @@ import java.util.Map;
  *
  * @author jonat
  */
+@Repository
 public class StudentRowDao extends conexion {
     public static boolean shouldIncludeAlumnoForPlanillaCurso(int alumnoCursoId, int planillaCursoId) {
         return alumnoCursoId == planillaCursoId;

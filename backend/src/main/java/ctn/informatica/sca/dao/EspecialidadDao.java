@@ -4,6 +4,7 @@
  */
 package ctn.informatica.sca.dao;
 
+import org.springframework.stereotype.Repository;
 import ctn.informatica.sca.clases.conexion;
 import ctn.informatica.sca.model.Especialidad;
 import java.sql.Connection;
@@ -16,6 +17,7 @@ import java.util.List;
  *
  * @author jonat
  */
+@Repository
 public class EspecialidadDao extends conexion {
 
     public EspecialidadDao() {

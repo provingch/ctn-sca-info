@@ -1,5 +1,6 @@
 package ctn.informatica.sca.dao;
 
+import org.springframework.stereotype.Repository;
 import ctn.informatica.sca.clases.conexion;
 import ctn.informatica.sca.model.PushSubscription;
 import java.sql.Connection;
@@ -10,6 +11,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
+@Repository
 public class PushSubscriptionDao extends conexion {
 
     private PushSubscription map(ResultSet rs) throws SQLException {

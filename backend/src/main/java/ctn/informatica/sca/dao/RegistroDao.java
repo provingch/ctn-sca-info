@@ -4,6 +4,7 @@
  */
 package ctn.informatica.sca.dao;
 
+import org.springframework.stereotype.Repository;
 import ctn.informatica.sca.clases.conexion;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
  *
  * @author jonat
  */
+@Repository
 public class RegistroDao extends conexion {
     /**
      * Returns a map alumnoId -> registroId for the given planilla and alumnoIds set.
