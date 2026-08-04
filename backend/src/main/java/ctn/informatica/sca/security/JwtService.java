@@ -26,12 +26,12 @@ public class JwtService {
     }
 
     /** Token definitivo, ya autenticado (post 2FA si aplica). */
-    public String generateAccessToken(Long userId, String rol) {
+    public String generateAccessToken(Long userId, int level) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + accessTokenMinutes * 60_000);
         return Jwts.builder()
                 .subject(String.valueOf(userId))
-                .claim("rol", rol)
+                .claim("level", level)
                 .claim("type", "access")
                 .issuedAt(now)
                 .expiration(expiry)
@@ -40,11 +40,12 @@ public class JwtService {
     }
 
     /** Token intermedio, solo válido para completar el paso de 2FA. */
-    public String generateTempToken(Long userId) {
+    public String generateTempToken(Long userId, int level) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + tempTokenMinutes * 60_000);
         return Jwts.builder()
                 .subject(String.valueOf(userId))
+                .claim("level", level)
                 .claim("type", "temp")
                 .issuedAt(now)
                 .expiration(expiry)
@@ -56,8 +57,8 @@ public class JwtService {
         return Long.valueOf(parseClaims(token).getSubject());
     }
 
-    public String extractRol(String token) {
-        return parseClaims(token).get("rol", String.class);
+    public Integer extractLevel(String token) {
+        return parseClaims(token).get("level", Integer.class);
     }
 
     public boolean isAccessToken(String token) {
