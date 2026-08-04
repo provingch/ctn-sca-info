@@ -26,7 +26,10 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable()) // no hay cookies de sesión, no aplica CSRF clásico
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/api/health").permitAll()
+                .requestMatchers("/api/auth/login", "/api/auth/2fa/verify", "/api/auth/refresh", "/api/auth/logout", "/api/health").permitAll()
+                .requestMatchers("/api/planillas/**", "/api/tareas/**").hasRole("LEVEL_1")
+                .requestMatchers("/api/evaluacion/**").hasRole("LEVEL_2")
+                .requestMatchers("/api/instrumentos").hasRole("LEVEL_1")
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
