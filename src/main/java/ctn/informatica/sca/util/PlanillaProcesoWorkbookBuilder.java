@@ -138,10 +138,11 @@ public class PlanillaProcesoWorkbookBuilder {
 
     private void populateSheet(XSSFSheet sheet, PlanillaSheetData data) {
         StageLayout layout = layoutFor(data.planilla());
-        int currentTotalPossiblePoints = totalPossiblePoints(data.tareas());
+        List<Tarea> tareasEtapa = filterTasksByEtapa(data.tareas(), data.planilla().getEtapaIndex());
+        int currentTotalPossiblePoints = totalPossiblePoints(tareasEtapa);
         data.planilla().computeGradeRanges(currentTotalPossiblePoints);
 
-        Map<YearMonth, List<Tarea>> tareasPorMes = groupTasksByMonth(data.tareas());
+        Map<YearMonth, List<Tarea>> tareasPorMes = groupTasksByMonth(tareasEtapa);
         if (tareasPorMes.size() > MONTH_BLOCK_COUNT) {
             // TODO: si una etapa usa más meses que los 5 bloques de la plantilla, hay que acordar con negocio
             // si se regeneran columnas/meses o si se rediseña la plantilla oficial. No truncar silenciosamente.
@@ -171,6 +172,23 @@ public class PlanillaProcesoWorkbookBuilder {
             grouped.computeIfAbsent(YearMonth.from(tarea.getFecha()), ignored -> new ArrayList<>()).add(tarea);
         }
         return grouped;
+    }
+
+    public static List<Tarea> filterTasksByEtapa(List<Tarea> tareas, int planillaEtapaIndex) {
+        if (tareas == null || tareas.isEmpty() || (planillaEtapaIndex != 1 && planillaEtapaIndex != 2)) {
+            return tareas == null ? List.of() : tareas;
+        }
+
+        List<Tarea> filtered = new ArrayList<>();
+        for (Tarea tarea : tareas) {
+            if (tarea == null || tarea.getFecha() == null) {
+                continue;
+            }
+            if (Tarea.resolveEtapaIndexByPublicationDate(tarea.getFecha()) == planillaEtapaIndex) {
+                filtered.add(tarea);
+            }
+        }
+        return filtered;
     }
 
     private String describeMonths(Collection<YearMonth> months) {
