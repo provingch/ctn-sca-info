@@ -4,6 +4,7 @@
  */
 package ctn.informatica.sca.dao;
 
+import org.springframework.stereotype.Repository;
 import ctn.informatica.sca.clases.conexion;
 import ctn.informatica.sca.model.Instrumento;
 import java.sql.Connection;
@@ -19,6 +20,7 @@ import java.util.List;
  */
 // package com.yourcompany.dao;
 
+@Repository
 public class InstrumentoDao extends conexion {
 
     /**

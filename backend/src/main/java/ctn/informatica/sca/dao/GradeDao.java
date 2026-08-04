@@ -4,6 +4,7 @@
  */
 package ctn.informatica.sca.dao;
 
+import org.springframework.stereotype.Repository;
 import ctn.informatica.sca.clases.conexion;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -14,6 +15,7 @@ import java.util.Map;
  *
  * @author jonat
  */
+@Repository
 public class GradeDao extends conexion {
     /**
      * grades: registroId -> (tareaId -> puntos)

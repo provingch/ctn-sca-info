@@ -4,6 +4,7 @@
  */
 package ctn.informatica.sca.dao;
 
+import org.springframework.stereotype.Repository;
 import ctn.informatica.sca.clases.conexion;
 import ctn.informatica.sca.model.Tarea;
 import java.sql.Connection;
@@ -23,6 +24,7 @@ import java.util.Set;
  *
  * @author jonat
  */
+@Repository
 public class TareaDao extends conexion {
 
     public ArrayList<Tarea> consultarTarea(int planillaId) throws SQLException {

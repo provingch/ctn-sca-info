@@ -40,6 +40,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -57,6 +58,39 @@ public class ProfileController {
 
     private static final Map<Integer, String> pendingTotpSecrets = new ConcurrentHashMap<>();
 
+    private final AsignacionDao asignacionDao;
+    private final CursoDao cursoDao;
+    private final EspecialidadDao especialidadDao;
+    private final MateriaDao materiaDao;
+    private final PadreDao padreDao;
+    private final ProfesorDao profesorDao;
+    private final PushSubscriptionDao pushSubscriptionDao;
+    private final UserDao userDao;
+
+    public ProfileController() {
+        this(new AsignacionDao(), new CursoDao(), new EspecialidadDao(), new MateriaDao(), new PadreDao(), new ProfesorDao(), new PushSubscriptionDao(), new UserDao());
+    }
+
+    @Autowired
+    public ProfileController(
+            AsignacionDao asignacionDao,
+            CursoDao cursoDao,
+            EspecialidadDao especialidadDao,
+            MateriaDao materiaDao,
+            PadreDao padreDao,
+            ProfesorDao profesorDao,
+            PushSubscriptionDao pushSubscriptionDao,
+            UserDao userDao) {
+        this.asignacionDao = asignacionDao;
+        this.cursoDao = cursoDao;
+        this.especialidadDao = especialidadDao;
+        this.materiaDao = materiaDao;
+        this.padreDao = padreDao;
+        this.profesorDao = profesorDao;
+        this.pushSubscriptionDao = pushSubscriptionDao;
+        this.userDao = userDao;
+    }
+
     @GetMapping
     @PreAuthorize("hasAnyRole('LEVEL_1','LEVEL_2','LEVEL_3','LEVEL_4')")
     public ProfileResponse getProfile(Authentication authentication) {
@@ -68,10 +102,10 @@ public class ProfileController {
         boolean isParentProfile = user.getLevel() == 4;
 
         if (isStaffProfile) {
-            profesor = new ProfesorDao().findById(user.getId());
+            profesor = profesorDao.findById(user.getId());
         } else if (isParentProfile) {
             try {
-                padre = new PadreDao().findById(user.getId());
+                padre = padreDao.findById(user.getId());
             } catch (SQLException ex) {
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al cargar el perfil familiar", ex);
             }
@@ -88,10 +122,10 @@ public class ProfileController {
         if (profesor != null) {
             googleClassroomConnected = GoogleClassroomService.isGoogleConnected(profesor);
             try {
-                teacherMaterias = new MateriaDao().listByProfesor(profesor.getId());
-                availableMaterias = new MateriaDao().listAvailableForProfesor(profesor.getId());
-                misAsignaciones = new AsignacionDao().findByProfesor(profesor.getId());
-                manualTeacherSubjectsText = new ProfesorDao().findManualSubjectsText(profesor.getId());
+                teacherMaterias = materiaDao.listByProfesor(profesor.getId());
+                availableMaterias = materiaDao.listAvailableForProfesor(profesor.getId());
+                misAsignaciones = asignacionDao.findByProfesor(profesor.getId());
+                manualTeacherSubjectsText = profesorDao.findManualSubjectsText(profesor.getId());
             } catch (SQLException ex) {
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al cargar datos del perfil", ex);
             }
@@ -99,7 +133,7 @@ public class ProfileController {
 
         if (profesor != null && googleClassroomConnected) {
             try {
-                List<ctn.informatica.sca.model.Curso> cursos = new CursoDao().consultarCursos(user.getId());
+                List<ctn.informatica.sca.model.Curso> cursos = cursoDao.consultarCursos(user.getId());
                 List<String> subjectNames = materiaNames(teacherMaterias);
                 subjectNames.addAll(parseManualSubjects(manualTeacherSubjectsText));
                 googleClassroomCourses = GoogleClassroomService.listAllowedCourses(profesor, cursos, subjectNames);
@@ -109,7 +143,7 @@ public class ProfileController {
         }
 
         try {
-            especialidades = new EspecialidadDao().findAll();
+            especialidades = especialidadDao.findAll();
         } catch (Exception ex) {
             especialidades = Collections.emptyList();
         }
@@ -270,18 +304,18 @@ public class ProfileController {
         try {
             boolean passwordUpdated = false;
             if (user.getLevel() >= 1 && user.getLevel() <= 3) {
-                Profesor profesor = new ProfesorDao().findById(user.getId());
+                Profesor profesor = profesorDao.findById(user.getId());
                 if (profesor != null && profesor.getContrasenia() != null && PasswordUtil.matches(request.currentPassword(), profesor.getContrasenia())) {
                     profesor.setContrasenia(request.newPassword());
-                    passwordUpdated = new ProfesorDao().update(profesor);
+                    passwordUpdated = profesorDao.update(profesor);
                 } else {
                     errors.add("La contraseña actual es incorrecta.");
                 }
             } else if (user.getLevel() == 4) {
-                Padre padre = new PadreDao().findById(user.getId());
+                Padre padre = padreDao.findById(user.getId());
                 if (padre != null && padre.getContrasenia() != null && PasswordUtil.matches(request.currentPassword(), padre.getContrasenia())) {
                     padre.setContrasenia(request.newPassword());
-                    passwordUpdated = new PadreDao().update(padre);
+                    passwordUpdated = padreDao.update(padre);
                 } else {
                     errors.add("La contraseña actual es incorrecta.");
                 }
@@ -320,7 +354,7 @@ public class ProfileController {
 
         try {
             if (user.getLevel() == 4) {
-                Padre padre = new PadreDao().findById(user.getId());
+                Padre padre = padreDao.findById(user.getId());
                 if (padre == null) {
                     throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se pudo cargar el perfil del usuario.");
                 }
@@ -351,13 +385,13 @@ public class ProfileController {
                 if (!errors.isEmpty()) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, String.join(" ", errors));
                 }
-                if (!new PadreDao().update(padre)) {
+                if (!padreDao.update(padre)) {
                     throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudieron guardar los datos. Intente de nuevo más tarde.");
                 }
                 return;
             }
 
-            Profesor profesor = new ProfesorDao().findById(user.getId());
+            Profesor profesor = profesorDao.findById(user.getId());
             if (profesor == null) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se pudo cargar el perfil del usuario.");
             }
@@ -412,7 +446,7 @@ public class ProfileController {
             if (!errors.isEmpty()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, String.join(" ", errors));
             }
-            if (!new ProfesorDao().update(profesor)) {
+            if (!profesorDao.update(profesor)) {
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudieron guardar los datos. Intente de nuevo más tarde.");
             }
         } catch (SQLException ex) {
@@ -513,7 +547,7 @@ public class ProfileController {
         if (specialtyId != null && !specialtyId.trim().isEmpty()) {
             try {
                 int id = Integer.parseInt(specialtyId);
-                Especialidad especialidad = new EspecialidadDao().findById(id);
+                Especialidad especialidad = especialidadDao.findById(id);
                 if (especialidad != null) {
                     return especialidad;
                 }
@@ -523,7 +557,7 @@ public class ProfileController {
         }
         if (specialtyName != null && !specialtyName.trim().isEmpty()) {
             try {
-                for (Especialidad especialidad : new EspecialidadDao().findAll()) {
+                for (Especialidad especialidad : especialidadDao.findAll()) {
                     if (especialidad.getNombre() != null && especialidad.getNombre().equalsIgnoreCase(specialtyName.trim())) {
                         return especialidad;
                     }
@@ -534,7 +568,7 @@ public class ProfileController {
         }
         if (specialtyToken != null && !specialtyToken.trim().isEmpty()) {
             try {
-                for (Especialidad especialidad : new EspecialidadDao().findAll()) {
+                for (Especialidad especialidad : especialidadDao.findAll()) {
                     if (especialidad.getNombre() != null && ScaUiContext.normalizeSpecialty(especialidad.getNombre()).equals(specialtyToken.trim())) {
                         return especialidad;
                     }
@@ -551,18 +585,18 @@ public class ProfileController {
             return false;
         }
         if (user.getLevel() == 4) {
-            Padre padre = new PadreDao().findById(user.getId());
+            Padre padre = padreDao.findById(user.getId());
             if (padre == null) {
                 return false;
             }
             padre.setTotpSecret(totpSecret);
-            return new PadreDao().update(padre);
+            return padreDao.update(padre);
         } else {
-            Profesor profesor = new ProfesorDao().findById(user.getId());
+            Profesor profesor = profesorDao.findById(user.getId());
             if (profesor == null) {
                 return false;
             }
-            return new ProfesorDao().updateTotpSecret(profesor.getId(), totpSecret);
+            return profesorDao.updateTotpSecret(profesor.getId(), totpSecret);
         }
     }
 
@@ -571,7 +605,7 @@ public class ProfileController {
             return "Sin especialidad";
         }
         try {
-            Especialidad especialidad = new EspecialidadDao().findById(profesor.getEspecialidadId());
+            Especialidad especialidad = especialidadDao.findById(profesor.getEspecialidadId());
             if (especialidad != null && especialidad.getNombre() != null && !especialidad.getNombre().isBlank()) {
                 return especialidad.getNombre();
             }
@@ -609,7 +643,7 @@ public class ProfileController {
             return false;
         }
         try {
-            return !new PushSubscriptionDao().findByUser(user.getId(), resolveUserType(user)).isEmpty();
+            return !pushSubscriptionDao.findByUser(user.getId(), resolveUserType(user)).isEmpty();
         } catch (SQLException ex) {
             return false;
         }
@@ -625,7 +659,7 @@ public class ProfileController {
     private User requireUser(Authentication authentication) {
         int userId = ApiAuth.requireUserId(authentication);
         try {
-            User user = new UserDao().findById(userId);
+            User user = userDao.findById(userId);
             if (user == null) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado");
             }

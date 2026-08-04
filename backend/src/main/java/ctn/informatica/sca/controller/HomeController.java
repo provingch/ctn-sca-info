@@ -43,6 +43,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -61,6 +62,39 @@ public class HomeController {
     private static final String VIEW_CLASE = "clase";
     private static final String VIEW_PLANILLAS = "planillas";
 
+    private final CursoDao cursoDao;
+    private final ProfesorDao profesorDao;
+    private final PlanillaDao planillaDao;
+    private final MateriaDao materiaDao;
+    private final AlumnoDao alumnoDao;
+    private final RasgoPlanillaDao rasgoPlanillaDao;
+    private final InstrumentoDao instrumentoDao;
+    private final UserDao userDao;
+
+    public HomeController() {
+        this(new CursoDao(), new ProfesorDao(), new PlanillaDao(), new MateriaDao(), new AlumnoDao(), new RasgoPlanillaDao(), new InstrumentoDao(), new UserDao());
+    }
+
+    @Autowired
+    public HomeController(
+            CursoDao cursoDao,
+            ProfesorDao profesorDao,
+            PlanillaDao planillaDao,
+            MateriaDao materiaDao,
+            AlumnoDao alumnoDao,
+            RasgoPlanillaDao rasgoPlanillaDao,
+            InstrumentoDao instrumentoDao,
+            UserDao userDao) {
+        this.cursoDao = cursoDao;
+        this.profesorDao = profesorDao;
+        this.planillaDao = planillaDao;
+        this.materiaDao = materiaDao;
+        this.alumnoDao = alumnoDao;
+        this.rasgoPlanillaDao = rasgoPlanillaDao;
+        this.instrumentoDao = instrumentoDao;
+        this.userDao = userDao;
+    }
+
     @GetMapping
     @PreAuthorize("hasAnyRole('LEVEL_1','LEVEL_2','LEVEL_3','LEVEL_4')")
     public HomeResponse getHome(
@@ -71,7 +105,7 @@ public class HomeController {
         User user = requireUser(authentication);
         List<Curso> cursos;
         try {
-            cursos = new CursoDao().consultarCursos(user.getId());
+            cursos = cursoDao.consultarCursos(user.getId());
         } catch (SQLException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al cargar los cursos", ex);
         }
@@ -103,7 +137,7 @@ public class HomeController {
 
         if (user.getLevel() != 4) {
             try {
-                profesor = new ProfesorDao().findById(user.getId());
+                profesor = profesorDao.findById(user.getId());
             } catch (Exception ex) {
                 // ignore; not critical for rendering general home state
             }
@@ -112,9 +146,9 @@ public class HomeController {
         if (profesor != null) {
             googleClassroomConnected = GoogleClassroomService.isGoogleConnected(profesor);
             try {
-                teacherSubjects.addAll(new PlanillaDao().findSubjectsByProfesor(profesor.getId()));
-                teacherSubjects.addAll(new MateriaDao().findNamesByProfesor(profesor.getId()));
-                manualTeacherSubjectsText = new ProfesorDao().findManualSubjectsText(profesor.getId());
+                teacherSubjects.addAll(planillaDao.findSubjectsByProfesor(profesor.getId()));
+                teacherSubjects.addAll(materiaDao.findNamesByProfesor(profesor.getId()));
+                manualTeacherSubjectsText = profesorDao.findManualSubjectsText(profesor.getId());
             } catch (SQLException ex) {
                 // ignore; fallback to empty teacher subject list
             }
@@ -144,13 +178,13 @@ public class HomeController {
 
         if (selectedCurso != null) {
             try {
-                planillas = new PlanillaDao().consultarPlanillas(user.getId(), selectedCurso.getId(), selectedEtapa);
+                planillas = planillaDao.consultarPlanillas(user.getId(), selectedCurso.getId(), selectedEtapa);
             } catch (SQLException ex) {
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al cargar las planillas", ex);
             }
 
             try {
-                List<ctn.informatica.sca.model.Materia> materias = new PlanillaDao().findMateriasSinPlanilla(user.getId(), selectedCurso.getId(), selectedEtapa);
+                List<ctn.informatica.sca.model.Materia> materias = planillaDao.findMateriasSinPlanilla(user.getId(), selectedCurso.getId(), selectedEtapa);
                 materiasDetectadas = materias.stream()
                         .map(m -> new HomeMateriaDto(m.getId(), m.getNombre(), m.getCategoria()))
                         .collect(Collectors.toList());
@@ -184,7 +218,7 @@ public class HomeController {
             }
 
             try {
-                List<Alumno> alumnos = new AlumnoDao().findByCursoId(selectedCurso.getId());
+                List<Alumno> alumnos = alumnoDao.findByCursoId(selectedCurso.getId());
                 alumnosValidos = alumnos.stream().filter(this::isCompleteName).collect(Collectors.toList());
                 alumnosInvalidos = alumnos.stream().filter(a -> !isCompleteName(a)).collect(Collectors.toList());
             } catch (SQLException ex) {
@@ -193,11 +227,10 @@ public class HomeController {
             }
 
             try {
-                RasgoPlanillaDao rasgoDao = new RasgoPlanillaDao();
-                rasgoPlanillas = rasgoDao.listarPorProfesorCurso(user.getId(), selectedCurso.getId());
+                rasgoPlanillas = rasgoPlanillaDao.listarPorProfesorCurso(user.getId(), selectedCurso.getId());
                 if (!rasgoPlanillas.isEmpty()) {
                     selectedPlanilla = rasgoPlanillas.get(0);
-                    asistencias = rasgoDao.listarAsistencias(selectedPlanilla.getId());
+                    asistencias = rasgoPlanillaDao.listarAsistencias(selectedPlanilla.getId());
                 }
             } catch (SQLException ex) {
                 rasgoPlanillas = Collections.emptyList();
@@ -235,7 +268,7 @@ public class HomeController {
         }
 
         try {
-            instrumentos = new InstrumentoDao().findAll();
+            instrumentos = instrumentoDao.findAll();
         } catch (SQLException ex) {
             instrumentos = Collections.emptyList();
         }
@@ -286,7 +319,7 @@ public class HomeController {
 
         List<Alumno> alumnos;
         try {
-            alumnos = new AlumnoDao().findByCursoId(cursoId);
+            alumnos = alumnoDao.findByCursoId(cursoId);
         } catch (SQLException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al cargar alumnos para el curso", ex);
         }
@@ -302,7 +335,7 @@ public class HomeController {
 
         String temaPersistido = composeTemaConContexto(request.instrumentoId() == null ? 0 : request.instrumentoId(), request.turno(), tema);
         try {
-            new RasgoPlanillaDao().crearPlanillaRasgo(cursoId, user.getId(), temaPersistido, elegibles, ausentes);
+            rasgoPlanillaDao.crearPlanillaRasgo(cursoId, user.getId(), temaPersistido, elegibles, ausentes);
         } catch (SQLException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo crear la planilla de rasgos", ex);
         }
@@ -320,7 +353,7 @@ public class HomeController {
         }
         String estado = "presente".equalsIgnoreCase(request.estado()) ? "presente" : "ausente";
         try {
-            new RasgoPlanillaDao().registrarRespuesta(request.asistenciaId(), estado);
+            rasgoPlanillaDao.registrarRespuesta(request.asistenciaId(), estado);
         } catch (SQLException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo registrar la asistencia", ex);
         }
@@ -338,8 +371,7 @@ public class HomeController {
         }
 
         try {
-            RasgoPlanillaDao dao = new RasgoPlanillaDao();
-            RasgoAsistencia asistencia = dao.findAsistenciaById(request.asistenciaId());
+            RasgoAsistencia asistencia = rasgoPlanillaDao.findAsistenciaById(request.asistenciaId());
             if (asistencia == null) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Asistencia no encontrada");
             }
@@ -348,9 +380,9 @@ public class HomeController {
                 estado = "pendiente";
             }
             if (request.faltaCodigo() == null || request.faltaCodigo().trim().isEmpty()) {
-                dao.registrarRespuesta(request.asistenciaId(), estado);
+                rasgoPlanillaDao.registrarRespuesta(request.asistenciaId(), estado);
             } else {
-                dao.registrarRespuesta(request.asistenciaId(), estado, request.faltaCodigo(), request.faltaObservacion());
+                rasgoPlanillaDao.registrarRespuesta(request.asistenciaId(), estado, request.faltaCodigo(), request.faltaObservacion());
             }
         } catch (SQLException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo asignar el código de falta", ex);
@@ -360,7 +392,7 @@ public class HomeController {
     private User requireUser(Authentication authentication) {
         int userId = ApiAuth.requireUserId(authentication);
         try {
-            User user = new UserDao().findById(userId);
+            User user = userDao.findById(userId);
             if (user == null) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado");
             }
@@ -438,7 +470,7 @@ public class HomeController {
 
     private List<Instrumento> loadInstrumentos() {
         try {
-            return new InstrumentoDao().findAll();
+            return instrumentoDao.findAll();
         } catch (SQLException ex) {
             return Collections.emptyList();
         }

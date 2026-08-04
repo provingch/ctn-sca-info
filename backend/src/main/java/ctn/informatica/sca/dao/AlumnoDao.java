@@ -1,5 +1,6 @@
 package ctn.informatica.sca.dao;
 
+import org.springframework.stereotype.Repository;
 import ctn.informatica.sca.clases.conexion;
 import ctn.informatica.sca.model.Alumno;
 
@@ -12,6 +13,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+@Repository
 public class AlumnoDao extends conexion {
 
     public List<Alumno> findAll() throws SQLException {
