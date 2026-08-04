@@ -225,7 +225,7 @@ wait_for_app_response() {
   local attempt=1
 
   while (( attempt <= retries )); do
-    if curl -fsS -I "$APP_URL" >/dev/null; then
+    if curl -fsS "$APP_URL" >/dev/null; then
       return 0
     fi
     sleep "$delay"
