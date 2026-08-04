@@ -57,7 +57,10 @@ public class PadreDao extends conexion {
             if (password == null || password.trim().isEmpty()) {
                 password = "password";
             }
-            ps.setString(5, PasswordUtil.hash(password));
+            if (!PasswordUtil.isBcryptHash(password)) {
+                password = PasswordUtil.hash(password);
+            }
+            ps.setString(5, password);
             ps.setString(6, padre.getTelefono());
             ps.setString(7, padre.getCorreo());
             if (padre.getTotpSecret() != null && !padre.getTotpSecret().isBlank()) {

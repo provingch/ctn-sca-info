@@ -170,14 +170,10 @@ public class ProfesorDao extends conexion {
             if (password == null || password.trim().isEmpty()) {
                 password = "password";
             }
-            ps.setString(4, PasswordUtil.hash(password));
-            ps.setInt(5, p.getNivel());
-
-            if (p.getCi() != null)       ps.setInt(6, p.getCi());
-            else                          ps.setNull(6, Types.INTEGER);
-
-            if (p.getTelefono() != null)  ps.setInt(7, p.getTelefono());
-            else                          ps.setNull(7, Types.INTEGER);
+        if (!PasswordUtil.isBcryptHash(password)) {
+            password = PasswordUtil.hash(password);
+        }
+        ps.setString(4, password);
 
             if (p.getCelular() != null)   ps.setInt(8, p.getCelular());
             else                          ps.setNull(8, Types.INTEGER);
