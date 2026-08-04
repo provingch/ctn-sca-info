@@ -2,8 +2,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="${PROJECT_DIR:-$SCRIPT_DIR}"
-MODULE_DIR="${MODULE_DIR:-$PROJECT_DIR/backend}"
+
+# Repository root (for git pull) and backend project directory (for Maven build).
+REPO_DIR="${REPO_DIR:-$SCRIPT_DIR}"
+PROJECT_DIR="${PROJECT_DIR:-$REPO_DIR/backend}"
 
 SERVICE_NAME="${SERVICE_NAME:-sca-backend}"
 APP_USER="${APP_USER:-sca}"
@@ -212,31 +214,31 @@ require_command sudo
 
 normalize_db_type
 
-if [[ ! -d "$PROJECT_DIR/.git" ]]; then
+if [[ ! -d "$REPO_DIR/.git" ]]; then
   cat >&2 <<MSG
-Project directory is not a git repository: $PROJECT_DIR
+Repository directory is not a git repository: $REPO_DIR
 
-Verify PROJECT_DIR points to your repository root.
+Verify REPO_DIR points to your repository root.
 MSG
   exit 1
 fi
 
-if [[ ! -f "$MODULE_DIR/pom.xml" ]]; then
-  echo "Cannot find Maven module at: $MODULE_DIR" >&2
+if [[ ! -f "$PROJECT_DIR/pom.xml" ]]; then
+  echo "Cannot find backend Maven project at: $PROJECT_DIR" >&2
   exit 1
 fi
 
 echo "==> Pulling latest changes"
-git -C "$PROJECT_DIR" pull --ff-only
+git -C "$REPO_DIR" pull --ff-only
 
 configure_service_env
 
 echo "==> Building Spring Boot JAR"
-mvn -f "$MODULE_DIR/pom.xml" clean package -DskipTests
+mvn -f "$PROJECT_DIR/pom.xml" clean package -DskipTests
 
-BUILT_JAR="$(find "$MODULE_DIR/target" -maxdepth 1 -type f -name "*.jar" ! -name "original-*.jar" | head -n 1)"
+BUILT_JAR="$(find "$PROJECT_DIR/target" -maxdepth 1 -type f -name "*.jar" ! -name "original-*.jar" | head -n 1)"
 if [[ -z "$BUILT_JAR" ]]; then
-  echo "No runnable .jar file found under $MODULE_DIR/target" >&2
+  echo "No runnable .jar file found under $PROJECT_DIR/target" >&2
   exit 1
 fi
 
