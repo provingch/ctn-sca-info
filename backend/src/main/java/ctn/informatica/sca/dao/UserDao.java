@@ -38,6 +38,17 @@ public class UserDao {
         return findParentUserById(id);
     }
 
+    public User findByIdAndLevel(int id, int level) throws Exception {
+        if (level == PARENT_LEVEL) {
+            return findParentUserById(id);
+        }
+        User user = findProfessorUserById(id);
+        if (user != null && user.getLevel() == level) {
+            return user;
+        }
+        return null;
+    }
+
     private User findProfessorUser(String username, String password) throws Exception {
         String sql = "select * from profesor where usuario = ?";
         try (Connection con = new conexion().getCon();
