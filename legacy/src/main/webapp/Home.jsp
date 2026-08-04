@@ -54,9 +54,6 @@
 
       <c:set var="planillaCount" value="${fn:length(planillas)}" />
       <c:url var="planillasTabAction" value="/inicio" />
-      <c:if test="${planillaCount == 1}">
-        <c:url var="planillasTabAction" value="/planilla" />
-      </c:if>
       <form class="home-view-tabs" action="${pageContext.request.contextPath}/inicio" method="get" role="tablist" aria-label="Vista principal del curso">
         <input type="hidden" name="cursoId" id="tabCursoId" value="${empty selCurso ? '' : selCurso.id}" />
         <input type="hidden" name="etapa" value="${selEtapa}" />
@@ -128,7 +125,7 @@
         </c:if>
 
         <c:choose>
-          <c:when test="${planillaCount > 1}">
+          <c:when test="${planillaCount >= 1}">
             <div class="section-block home-tab-panel" id="planillas-panel" role="tabpanel">
               <div class="section-heading course-planillas-heading">Planillas del curso</div>
               <div class="planilla-grid course-planilla-grid" data-planilla-count="${planillaCount}">
