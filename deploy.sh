@@ -240,6 +240,20 @@ print_diagnostics() {
   sudo journalctl -u "$SERVICE_NAME" -n 150 --no-pager || true
 }
 
+ensure_service_exists() {
+  if sudo systemctl list-unit-files --type=service --no-legend | awk '{print $1}' | grep -Fxq "${SERVICE_NAME}.service"; then
+    return 0
+  fi
+
+  echo "Systemd service not found: ${SERVICE_NAME}.service" >&2
+  echo "Set SERVICE_NAME to your real unit name and run deploy again." >&2
+  echo "Example: SERVICE_NAME=sca ./deploy.sh" >&2
+  echo "" >&2
+  echo "Possible related services on this host:" >&2
+  sudo systemctl list-unit-files --type=service --no-legend | awk '{print $1}' | grep -Ei 'sca|ctn|backend|tomcat' || true
+  exit 1
+}
+
 require_command git
 require_command mvn
 require_command find
@@ -263,6 +277,8 @@ if [[ ! -f "$PROJECT_DIR/pom.xml" ]]; then
   echo "Tip: set PROJECT_DIR explicitly, for example PROJECT_DIR=/home/deploy/ctn-sca-info/backend" >&2
   exit 1
 fi
+
+ensure_service_exists
 
 echo "==> Pulling latest changes"
 git -C "$REPO_DIR" pull --ff-only
