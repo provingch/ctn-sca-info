@@ -44,6 +44,7 @@ GOOGLE_REDIRECT_URI="${GOOGLE_REDIRECT_URI:-}"
 
 SYSTEMD_DROPIN_DIR="/etc/systemd/system/${SERVICE_NAME}.service.d"
 SYSTEMD_DROPIN_FILE="${SYSTEMD_DROPIN_DIR}/ctn-sca-info.conf"
+SYSTEMD_UNIT_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 
 require_command() {
   command -v "$1" >/dev/null 2>&1 || {
@@ -245,13 +246,40 @@ ensure_service_exists() {
     return 0
   fi
 
-  echo "Systemd service not found: ${SERVICE_NAME}.service" >&2
-  echo "Set SERVICE_NAME to your real unit name and run deploy again." >&2
-  echo "Example: SERVICE_NAME=sca ./deploy.sh" >&2
-  echo "" >&2
-  echo "Possible related services on this host:" >&2
-  sudo systemctl list-unit-files --type=service --no-legend | awk '{print $1}' | grep -Ei 'sca|ctn|backend|tomcat' || true
-  exit 1
+  echo "==> Service ${SERVICE_NAME}.service not found; creating a systemd unit for this JAR"
+  local java_bin
+  java_bin="$(command -v java || true)"
+  if [[ -z "$java_bin" ]]; then
+    echo "Cannot find java in PATH. Install Java and run deploy again." >&2
+    exit 1
+  fi
+
+  local tmp_unit
+  tmp_unit="$(mktemp)"
+  cat > "$tmp_unit" <<UNIT
+[Unit]
+Description=CTN SCA Backend
+After=network.target
+
+[Service]
+Type=simple
+User=$APP_USER
+Group=$APP_GROUP
+WorkingDirectory=$INSTALL_DIR
+EnvironmentFile=$DB_ENV_FILE
+ExecStart=$java_bin -jar $INSTALL_DIR/$JAR_NAME
+SuccessExitStatus=143
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+
+  sudo install -o root -g root -m 644 "$tmp_unit" "$SYSTEMD_UNIT_FILE"
+  rm -f "$tmp_unit"
+  sudo systemctl daemon-reload
+  sudo systemctl enable "$SERVICE_NAME" >/dev/null
 }
 
 require_command git
@@ -260,6 +288,7 @@ require_command find
 require_command curl
 require_command systemctl
 require_command sudo
+require_command java
 
 normalize_db_type
 
