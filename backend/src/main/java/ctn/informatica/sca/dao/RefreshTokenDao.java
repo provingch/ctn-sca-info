@@ -7,7 +7,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import org.springframework.stereotype.Repository;
 
+@Repository
 public class RefreshTokenDao extends conexion {
 
     public void insert(String tokenHash, int userId, int userLevel, Instant expiresAt, String userAgent, String ipAddress) throws SQLException {

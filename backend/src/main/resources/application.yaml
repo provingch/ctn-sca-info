@@ -9,3 +9,9 @@ jwt:
   secret: ${JWT_SECRET:cambiar-este-secreto-en-produccion-minimo-32-caracteres}
   access-token-minutes: 60
   temp-token-minutes: 5
+
+google:
+  client:
+    id: ${GOOGLE_CLIENT_ID:}
+    secret: ${GOOGLE_CLIENT_SECRET:}
+  redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:8081/api/google/oauth/callback}

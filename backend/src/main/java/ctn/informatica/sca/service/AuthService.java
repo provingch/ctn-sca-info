@@ -15,10 +15,14 @@ import org.springframework.stereotype.Service;
 public class AuthService {
 
     private final UserDao userDao;
+    private final PadreDao padreDao;
+    private final ProfesorDao profesorDao;
     private final JwtService jwtService;
 
-    public AuthService(UserDao userDao, JwtService jwtService) {
+    public AuthService(UserDao userDao, PadreDao padreDao, ProfesorDao profesorDao, JwtService jwtService) {
         this.userDao = userDao;
+        this.padreDao = padreDao;
+        this.profesorDao = profesorDao;
         this.jwtService = jwtService;
     }
 
@@ -78,10 +82,10 @@ public class AuthService {
     private String getTotpSecret(User user) {
         try {
             if (user.getLevel() == 4) {
-                var padre = new PadreDao().findById(user.getId());
+                var padre = padreDao.findById(user.getId());
                 return padre != null ? padre.getTotpSecret() : null;
             } else {
-                var profesor = new ProfesorDao().findById(user.getId());
+                var profesor = profesorDao.findById(user.getId());
                 return profesor != null ? profesor.getTotpSecret() : null;
             }
         } catch (Exception e) {

@@ -29,6 +29,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/login", "/api/auth/2fa/verify", "/api/auth/refresh", "/api/auth/logout", "/api/health").permitAll()
                 .requestMatchers("/api/planillas/**", "/api/tareas/**").hasRole("LEVEL_1")
                 .requestMatchers("/api/evaluacion/**").hasRole("LEVEL_2")
+                .requestMatchers("/api/google/oauth/callback").hasAnyRole("LEVEL_1", "LEVEL_2", "LEVEL_3")
                 .requestMatchers("/api/instrumentos").hasRole("LEVEL_1")
                 .anyRequest().authenticated()
             )
