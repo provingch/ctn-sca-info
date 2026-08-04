@@ -1,3 +1,11 @@
+server:
+  port: 8081
+
 spring:
   application:
-    name: sca
+    name: sca-backend
+
+jwt:
+  secret: ${JWT_SECRET:cambiar-este-secreto-en-produccion-minimo-32-caracteres}
+  access-token-minutes: 60
+  temp-token-minutes: 5
