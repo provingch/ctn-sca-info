@@ -27,6 +27,10 @@ DB_PORT="${SCA_DB_PORT:-${CTN_DB_PORT:-}}"
 DB_USER="${SCA_DB_USER:-${CTN_DB_USER:-testadmin}}"
 DB_PASSWORD_INPUT="${SCA_DB_PASSWORD:-${CTN_DB_PASSWORD:-}}"
 
+GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID:-}"
+GOOGLE_CLIENT_SECRET="${GOOGLE_CLIENT_SECRET:-}"
+GOOGLE_REDIRECT_URI="${GOOGLE_REDIRECT_URI:-}"
+
 SYSTEMD_DROPIN_DIR="/etc/systemd/system/${SERVICE_NAME}.service.d"
 SYSTEMD_DROPIN_FILE="${SYSTEMD_DROPIN_DIR}/ctn-sca-info.conf"
 
@@ -120,6 +124,21 @@ write_db_env_file() {
     return
   fi
 
+  if [[ -z "$GOOGLE_CLIENT_ID" || -z "$GOOGLE_CLIENT_SECRET" || -z "$GOOGLE_REDIRECT_URI" ]]; then
+    cat >&2 <<MSG
+Google OAuth values are required to initialize or rewrite $DB_ENV_FILE.
+
+Set these environment variables and run deploy again:
+  GOOGLE_CLIENT_ID
+  GOOGLE_CLIENT_SECRET
+  GOOGLE_REDIRECT_URI
+
+Example:
+  GOOGLE_CLIENT_ID='...' GOOGLE_CLIENT_SECRET='...' GOOGLE_REDIRECT_URI='https://ctn-sca.ddns.net/google/callback' ./deploy.sh
+MSG
+    exit 1
+  fi
+
   echo "==> Writing runtime config to $DB_ENV_FILE"
   local tmp_env
   tmp_env="$(mktemp)"
@@ -145,6 +164,11 @@ write_db_env_file() {
     printf 'SPRING_DATASOURCE_URL=%q\n' "$jdbc_url"
     printf 'SPRING_DATASOURCE_USERNAME=%q\n' "$DB_USER"
     printf 'SPRING_DATASOURCE_PASSWORD=%q\n' "$password"
+
+    # Google OAuth values used by AppConfig.get("google.client.*").
+    printf 'GOOGLE_CLIENT_ID=%q\n' "$GOOGLE_CLIENT_ID"
+    printf 'GOOGLE_CLIENT_SECRET=%q\n' "$GOOGLE_CLIENT_SECRET"
+    printf 'GOOGLE_REDIRECT_URI=%q\n' "$GOOGLE_REDIRECT_URI"
   } > "$tmp_env"
 
   sudo install -o root -g root -m 600 "$tmp_env" "$DB_ENV_FILE"
