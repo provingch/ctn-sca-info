@@ -19,8 +19,8 @@ if [[ -z "$PROJECT_DIR" ]]; then
 fi
 
 SERVICE_NAME="${SERVICE_NAME:-sca-backend}"
-APP_USER="${APP_USER:-sca}"
-APP_GROUP="${APP_GROUP:-sca}"
+APP_USER="${APP_USER:-deploy}"
+APP_GROUP="${APP_GROUP:-deploy}"
 INSTALL_DIR="${INSTALL_DIR:-/opt/ctn-sca-info/backend}"
 JAR_NAME="${JAR_NAME:-sca-backend.jar}"
 
