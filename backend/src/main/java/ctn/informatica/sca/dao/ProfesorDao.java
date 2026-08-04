@@ -9,7 +9,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import org.springframework.stereotype.Repository;
 
+@Repository
 public class ProfesorDao extends conexion {
 
     // ── helper para mapear un ResultSet a Profesor ──────────────────────────

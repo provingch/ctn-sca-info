@@ -19,8 +19,8 @@ public class RefreshTokenService {
     private final RefreshTokenDao refreshTokenDao;
     private final SecureRandom secureRandom = new SecureRandom();
 
-    public RefreshTokenService() {
-        this.refreshTokenDao = new RefreshTokenDao();
+    public RefreshTokenService(RefreshTokenDao refreshTokenDao) {
+        this.refreshTokenDao = refreshTokenDao;
     }
 
     public String issueToken(int userId, int userLevel, String userAgent, String ipAddress) throws Exception {
