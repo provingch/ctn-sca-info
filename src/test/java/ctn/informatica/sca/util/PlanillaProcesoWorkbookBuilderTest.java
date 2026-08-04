@@ -73,7 +73,7 @@ class PlanillaProcesoWorkbookBuilderTest {
         Curso curso = new Curso(3, "Informática", 2027, "A");
 
         List<Tarea> tareas = List.of(
-                tarea(201, LocalDate.of(2026, 7, 10), 12, "Laboratorio 1"),
+                tarea(201, LocalDate.of(2026, 7, 20), 12, "Laboratorio 1"),
                 tarea(202, LocalDate.of(2026, 8, 18), 18, "Laboratorio 2")
         );
 
@@ -132,8 +132,41 @@ class PlanillaProcesoWorkbookBuilderTest {
                         Sheet sheet = workbook.getSheetAt(0);
                         assertEquals("Marzo", sheet.getRow(5).getCell(2).getStringCellValue());
                         assertEquals("Mayo", sheet.getRow(5).getCell(15).getStringCellValue());
-                        assertEquals("Julio", sheet.getRow(5).getCell(28).getStringCellValue());
+                            assertEquals("", sheet.getRow(5).getCell(28).getStringCellValue());
                         assertEquals("", sheet.getRow(5).getCell(41).getStringCellValue());
+                }
+        }
+
+        @Test
+        void buildSingleWorkbookFiltersOutTasksFromOtherEtapaByDate() throws IOException {
+                PlanillaProcesoWorkbookBuilder builder = new PlanillaProcesoWorkbookBuilder();
+                Planilla planilla = new Planilla(46, 3, 7, "comun", "Matemática", 2026, "segunda", 5);
+                Curso curso = new Curso(3, "Informática", 2027, "A");
+
+                List<Tarea> tareas = List.of(
+                                tarea(461, LocalDate.of(2026, 3, 10), 10, "Debe excluirse (primera)"),
+                                tarea(462, LocalDate.of(2026, 8, 12), 10, "Debe incluirse (segunda)"),
+                                tarea(463, LocalDate.of(2026, 10, 3), 10, "Debe incluirse (segunda)")
+                );
+
+                PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                                planilla,
+                                curso,
+                                "Matemática",
+                                "Ada Lovelace",
+                                "",
+                                tareas,
+                                List.of(studentRow(1, "Alfa, Ana", Map.of())),
+                                Map.of(1, 3)
+                );
+
+                try (XSSFWorkbook workbook = builder.buildSingleWorkbook(data, "Planilla etapa 2")) {
+                        Sheet sheet = workbook.getSheetAt(0);
+                        assertEquals("Agosto", sheet.getRow(5).getCell(3).getStringCellValue());
+                        assertEquals("Octubre", sheet.getRow(5).getCell(16).getStringCellValue());
+                        assertEquals("", sheet.getRow(5).getCell(29).getStringCellValue());
+                        assertEquals("Debe incluirse (segunda)", sheet.getRow(6).getCell(3).getStringCellValue());
+                        assertEquals("Debe incluirse (segunda)", sheet.getRow(6).getCell(16).getStringCellValue());
                 }
         }
 
@@ -172,11 +205,11 @@ class PlanillaProcesoWorkbookBuilderTest {
 
         List<Tarea> tareas = List.of(
                 tarea(501, LocalDate.of(2026, 1, 5), 5, "Enero"),
-                tarea(502, LocalDate.of(2026, 3, 5), 5, "Marzo"),
-                tarea(503, LocalDate.of(2026, 5, 5), 5, "Mayo"),
-                tarea(504, LocalDate.of(2026, 7, 5), 5, "Julio"),
-                tarea(505, LocalDate.of(2026, 9, 5), 5, "Septiembre"),
-                tarea(506, LocalDate.of(2026, 11, 5), 5, "Noviembre")
+                tarea(502, LocalDate.of(2026, 2, 5), 5, "Febrero"),
+                tarea(503, LocalDate.of(2026, 3, 5), 5, "Marzo"),
+                tarea(504, LocalDate.of(2026, 4, 5), 5, "Abril"),
+                tarea(505, LocalDate.of(2026, 5, 5), 5, "Mayo"),
+                tarea(506, LocalDate.of(2026, 6, 5), 5, "Junio")
         );
 
         PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
@@ -194,7 +227,7 @@ class PlanillaProcesoWorkbookBuilderTest {
                 () -> builder.buildSingleWorkbook(data, "Planilla Matemática"));
 
         assertEquals(true, ex.getMessage().contains("meses ocupados"));
-        assertEquals(true, ex.getMessage().contains("Enero 2026, Marzo 2026, Mayo 2026, Julio 2026, Septiembre 2026, Noviembre 2026"));
+        assertEquals(true, ex.getMessage().contains("Enero 2026, Febrero 2026, Marzo 2026, Abril 2026, Mayo 2026, Junio 2026"));
     }
 
     private static Tarea tarea(int id, LocalDate fecha, int total, String titulo) {

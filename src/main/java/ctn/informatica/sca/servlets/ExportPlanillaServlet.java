@@ -68,7 +68,9 @@ public class ExportPlanillaServlet extends HttpServlet {
             }
 
             // load tareas and rows (re-use the same DAO methods you use in PlanillaServlet)
-            List<Tarea> tareas = new TareaDao().consultarTarea(planilla.getId());
+                List<Tarea> tareas = PlanillaProcesoWorkbookBuilder.filterTasksByEtapa(
+                    new TareaDao().consultarTarea(planilla.getId()),
+                    planilla.getEtapaIndex());
             Map<Integer, Integer> tareaMax = new HashMap<>();
             int totalPossiblePoints = 0;
             for (Tarea t : tareas) {
@@ -135,7 +137,9 @@ public class ExportPlanillaServlet extends HttpServlet {
             return Map.of();
         }
 
-        List<Tarea> tareasPrimeraEtapa = new TareaDao().consultarTarea(firstStagePlanilla.getId());
+        List<Tarea> tareasPrimeraEtapa = PlanillaProcesoWorkbookBuilder.filterTasksByEtapa(
+            new TareaDao().consultarTarea(firstStagePlanilla.getId()),
+            firstStagePlanilla.getEtapaIndex());
         Map<Integer, Integer> tareaMaxPrimeraEtapa = new HashMap<>();
         int totalPossiblePointsPrimeraEtapa = 0;
         for (Tarea tarea : tareasPrimeraEtapa) {

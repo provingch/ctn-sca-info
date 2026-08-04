@@ -118,7 +118,9 @@ public class ExportCoursePlanillasServlet extends HttpServlet {
                 if (p == null) {
                     continue;
                 }
-                List<Tarea> tareas = new TareaDao().consultarTarea(p.getId());
+                List<Tarea> tareas = PlanillaProcesoWorkbookBuilder.filterTasksByEtapa(
+                    new TareaDao().consultarTarea(p.getId()),
+                    p.getEtapaIndex());
                 Map<Integer, Integer> tareaMax = new HashMap<>();
                 int totalPossiblePoints = 0;
                 for (Tarea t : tareas) {
@@ -185,7 +187,9 @@ public class ExportCoursePlanillasServlet extends HttpServlet {
             return Map.of();
         }
 
-        List<Tarea> tareasPrimeraEtapa = new TareaDao().consultarTarea(firstStagePlanilla.getId());
+        List<Tarea> tareasPrimeraEtapa = PlanillaProcesoWorkbookBuilder.filterTasksByEtapa(
+            new TareaDao().consultarTarea(firstStagePlanilla.getId()),
+            firstStagePlanilla.getEtapaIndex());
         Map<Integer, Integer> tareaMaxPrimeraEtapa = new HashMap<>();
         int totalPossiblePointsPrimeraEtapa = 0;
         for (Tarea tarea : tareasPrimeraEtapa) {
