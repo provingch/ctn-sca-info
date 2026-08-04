@@ -4,6 +4,7 @@
  */
 package ctn.informatica.sca.dao;
 
+import org.springframework.stereotype.Repository;
 import ctn.informatica.sca.clases.conexion;
 import ctn.informatica.sca.model.User;
 import ctn.informatica.sca.util.PasswordUtil;
@@ -15,6 +16,7 @@ import java.sql.ResultSet;
  *
  * @author jonat
  */
+@Repository
 public class UserDao {
 
     private static final int PARENT_LEVEL = 4;
