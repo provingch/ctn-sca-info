@@ -1,0 +1,139 @@
+package ctn.informatica.sca.model;
+
+import java.sql.Timestamp;
+
+public class RasgoAsistencia {
+
+    private int id;
+    private int planillaRasgoId;
+    private int alumnoId;
+    private String alumnoNombre;
+    private String alumnoApellido;
+    private String alumnoEmail;
+    private String estado;
+    private String faltaCodigo;
+    private String faltaObservacion;
+    private Timestamp respondedAt;
+    private String tema;
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public int getPlanillaRasgoId() {
+        return planillaRasgoId;
+    }
+
+    public void setPlanillaRasgoId(int planillaRasgoId) {
+        this.planillaRasgoId = planillaRasgoId;
+    }
+
+    public int getAlumnoId() {
+        return alumnoId;
+    }
+
+    public void setAlumnoId(int alumnoId) {
+        this.alumnoId = alumnoId;
+    }
+
+    public String getAlumnoNombre() {
+        return alumnoNombre;
+    }
+
+    public void setAlumnoNombre(String alumnoNombre) {
+        this.alumnoNombre = alumnoNombre;
+    }
+
+    public String getAlumnoApellido() {
+        return alumnoApellido;
+    }
+
+    public void setAlumnoApellido(String alumnoApellido) {
+        this.alumnoApellido = alumnoApellido;
+    }
+
+    public String getAlumnoEmail() {
+        return alumnoEmail;
+    }
+
+    public void setAlumnoEmail(String alumnoEmail) {
+        this.alumnoEmail = alumnoEmail;
+    }
+
+    public String getEstado() {
+        return estado;
+    }
+
+    public void setEstado(String estado) {
+        this.estado = estado;
+    }
+
+    public String getFaltaCodigo() {
+        return faltaCodigo;
+    }
+
+    public void setFaltaCodigo(String faltaCodigo) {
+        this.faltaCodigo = faltaCodigo;
+    }
+
+    public String getFaltaObservacion() {
+        return faltaObservacion;
+    }
+
+    public void setFaltaObservacion(String faltaObservacion) {
+        this.faltaObservacion = faltaObservacion;
+    }
+
+    public Timestamp getRespondedAt() {
+        return respondedAt;
+    }
+
+    public void setRespondedAt(Timestamp respondedAt) {
+        this.respondedAt = respondedAt;
+    }
+
+    public String getTema() {
+        return tema;
+    }
+
+    public void setTema(String tema) {
+        this.tema = tema;
+    }
+
+    public String getAlumnoNombreCompleto() {
+        String nombre = alumnoNombre == null ? "" : alumnoNombre.trim();
+        String apellido = alumnoApellido == null ? "" : alumnoApellido.trim();
+        if (apellido.isEmpty()) {
+            return nombre;
+        }
+        if (nombre.isEmpty()) {
+            return apellido;
+        }
+        return nombre + " " + apellido;
+    }
+
+    public String getCodigoDescripcion() {
+        if (faltaCodigo == null) {
+            return "Sin código asignado";
+        }
+        return switch (faltaCodigo) {
+            case "V" -> "Presencia en clase";
+            case "P" -> "Presencia en clase";
+            case "A" -> "Ausencia en clase";
+            case "N1" -> "Llegada tardía a clase";
+            case "N2" -> "Sale del aula sin autorización";
+            case "N3" -> "No realiza la tarea asignada en clase";
+            case "N4" -> "No dispone de los materiales necesarios";
+            case "N5" -> "No presenta las tareas asignadas para la casa";
+            case "N6" -> "Utiliza vocabulario indebido en clase";
+            case "N7" -> "Charla mucho en clase";
+            case "N8" -> "No utiliza el uniforme establecido";
+            case "N9" -> "Ausente en clase, presente en la Institución";
+            default -> "Sin código asignado";
+        };
+    }
+}
