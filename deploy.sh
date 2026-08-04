@@ -5,7 +5,18 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Repository root (for git pull) and backend project directory (for Maven build).
 REPO_DIR="${REPO_DIR:-$SCRIPT_DIR}"
-PROJECT_DIR="${PROJECT_DIR:-$REPO_DIR/backend}"
+PROJECT_DIR="${PROJECT_DIR:-}"
+
+if [[ -z "$PROJECT_DIR" ]]; then
+  if [[ -f "$REPO_DIR/backend/pom.xml" ]]; then
+    PROJECT_DIR="$REPO_DIR/backend"
+  elif [[ -f "$REPO_DIR/pom.xml" ]]; then
+    PROJECT_DIR="$REPO_DIR"
+  else
+    # Keep the legacy default path in the error message context below.
+    PROJECT_DIR="$REPO_DIR/backend"
+  fi
+fi
 
 SERVICE_NAME="${SERVICE_NAME:-sca-backend}"
 APP_USER="${APP_USER:-sca}"
@@ -248,7 +259,8 @@ MSG
 fi
 
 if [[ ! -f "$PROJECT_DIR/pom.xml" ]]; then
-  echo "Cannot find backend Maven project at: $PROJECT_DIR" >&2
+  echo "Cannot find Maven project (pom.xml) at: $PROJECT_DIR" >&2
+  echo "Tip: set PROJECT_DIR explicitly, for example PROJECT_DIR=/home/deploy/ctn-sca-info/backend" >&2
   exit 1
 fi
 
