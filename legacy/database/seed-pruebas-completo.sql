@@ -114,12 +114,12 @@ INSERT INTO curso (id, especialidad_id, promocion, seccion) VALUES
 INSERT INTO profesor
 (id, nombre, apellido, usuario, contrasenia, ci, telefono, celular, correo, google_email, google_access_token, google_refresh_token, google_token_expiry, materias_manual, totp_secret, especialidad_id, nivel)
 VALUES
-(1, 'Laura', 'Rojas', 'profe.informatica', 'ctn2025', 4010101, 0981111111, 0981111111, 'laura.rojas@ctn.local', NULL, NULL, NULL, NULL, 'Programación I, Redes y Comunicaciones, Base de Datos', 'JBSWY3DPEHPK3PXP', 5, 1),
-(2, 'Diego', 'Mora', 'profe.electricidad', 'ctn2025', 4020202, 0982222222, 0982222222, 'diego.mora@ctn.local', NULL, NULL, NULL, NULL, 'Instalaciones Eléctricas, Automatización', 'JBSWY3DPEHPK3PXP', 2, 1),
-(3, 'Admin', 'Sistema', 'admin', 'ctn2025', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2),
-(4, 'Integración', 'Informática', 'informatica-itg', 'ctn2025', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 5, 3),
-(5, 'Integración', 'Electricidad', 'electricidad-itg', 'ctn2025', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, 3),
-(6, 'María', 'Benítez', 'profe.construcciones', 'ctn2025', 4030303, 0983333333, 0983333333, 'maria.benitez@ctn.local', NULL, NULL, NULL, NULL, 'Dibujo Técnico, Seguridad e Higiene', 'JBSWY3DPEHPK3PXP', 1, 1);
+(1, 'Laura', 'Rojas', 'profe.informatica', '$2a$12$.XtepfNOTDYo8KIrWMg2FenWwa/xy8qyAKYWASI2kLoCTpbyBCG9e', 4010101, 0981111111, 0981111111, 'laura.rojas@ctn.local', NULL, NULL, NULL, NULL, 'Programación I, Redes y Comunicaciones, Base de Datos', 'JBSWY3DPEHPK3PXP', 5, 1),
+(2, 'Diego', 'Mora', 'profe.electricidad', '$2a$12$o6GzQT.DgSo9ia7uEtTTCO6twr/1tJ0.YdINSv.LZGS2qwzIIjKjO', 4020202, 0982222222, 0982222222, 'diego.mora@ctn.local', NULL, NULL, NULL, NULL, 'Instalaciones Eléctricas, Automatización', 'JBSWY3DPEHPK3PXP', 2, 1),
+(3, 'Admin', 'Sistema', 'admin', '$2a$12$XAY7hr.xbjY5fEfkLZ3iGuesxni3tAMk2AiwwaVU4mQUYZX9K83gi', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2),
+(4, 'Integración', 'Informática', 'informatica-itg', '$2a$12$Z/IthcDmd6yGrQ7dVurSuuWmoEX3ki4wFUrOQ4H8BMHH6GQNbvHkq', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 5, 3),
+(5, 'Integración', 'Electricidad', 'electricidad-itg', '$2a$12$cBqTonpZM9WytnZdQ.QHb.mrbt9EfwXOB1HLp/h.1DPAXmvhyZBbW', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, 3),
+(6, 'María', 'Benítez', 'profe.construcciones', '$2a$12$lenPx0fTorJasjCwRILVsu4vnhj4uN2lUfbkkYYo72LlEUEKwuXSa', 4030303, 0983333333, 0983333333, 'maria.benitez@ctn.local', NULL, NULL, NULL, NULL, 'Dibujo Técnico, Seguridad e Higiene', 'JBSWY3DPEHPK3PXP', 1, 1);
 
 -- ========================================
 -- MATERIAS
@@ -186,8 +186,8 @@ INSERT INTO instrumento (id, nombre) VALUES
 -- PADRES
 -- ========================================
 INSERT INTO padre (id, ci, nombre, apellido, usuario, contrasenia, telefono, correo, totp_secret) VALUES
-(1, 5010101, 'Carlos', 'Pérez', 'padre.carlos', 'ctn2025', '0971000001', 'carlos.perez@example.com', 'JBSWY3DPEHPK3PXP'),
-(2, 5020202, 'María', 'González', 'madre.maria', 'ctn2025', '0971000002', 'maria.gonzalez@example.com', NULL);
+(1, 5010101, 'Carlos', 'Pérez', 'padre.carlos', '$2a$12$fpCw8U19s2vP251KKlU/l.ZWe/P7.xEMOkgdx6gUfjfJD5p8CPYnq', '0971000001', 'carlos.perez@example.com', 'JBSWY3DPEHPK3PXP'),
+(2, 5020202, 'María', 'González', 'madre.maria', '$2a$12$YeEP6cyKLXYJ.xIpzh2UtuBD7ZwUQLskV/FCcC5nDWaahH2KFPwk.', '0971000002', 'maria.gonzalez@example.com', NULL);
 
 -- ========================================
 -- ALUMNOS
