@@ -136,21 +136,6 @@ write_db_env_file() {
     return
   fi
 
-  if [[ -z "$GOOGLE_CLIENT_ID" || -z "$GOOGLE_CLIENT_SECRET" || -z "$GOOGLE_REDIRECT_URI" ]]; then
-    cat >&2 <<MSG
-Google OAuth values are required to initialize or rewrite $DB_ENV_FILE.
-
-Set these environment variables and run deploy again:
-  GOOGLE_CLIENT_ID
-  GOOGLE_CLIENT_SECRET
-  GOOGLE_REDIRECT_URI
-
-Example:
-  GOOGLE_CLIENT_ID='...' GOOGLE_CLIENT_SECRET='...' GOOGLE_REDIRECT_URI='https://ctn-sca.ddns.net/google/callback' ./deploy.sh
-MSG
-    exit 1
-  fi
-
   echo "==> Writing runtime config to $DB_ENV_FILE"
   local tmp_env
   tmp_env="$(mktemp)"
@@ -178,9 +163,15 @@ MSG
     printf 'SPRING_DATASOURCE_PASSWORD=%q\n' "$password"
 
     # Google OAuth values used by AppConfig.get("google.client.*").
-    printf 'GOOGLE_CLIENT_ID=%q\n' "$GOOGLE_CLIENT_ID"
-    printf 'GOOGLE_CLIENT_SECRET=%q\n' "$GOOGLE_CLIENT_SECRET"
-    printf 'GOOGLE_REDIRECT_URI=%q\n' "$GOOGLE_REDIRECT_URI"
+    if [[ -n "$GOOGLE_CLIENT_ID" ]]; then
+      printf 'GOOGLE_CLIENT_ID=%q\n' "$GOOGLE_CLIENT_ID"
+    fi
+    if [[ -n "$GOOGLE_CLIENT_SECRET" ]]; then
+      printf 'GOOGLE_CLIENT_SECRET=%q\n' "$GOOGLE_CLIENT_SECRET"
+    fi
+    if [[ -n "$GOOGLE_REDIRECT_URI" ]]; then
+      printf 'GOOGLE_REDIRECT_URI=%q\n' "$GOOGLE_REDIRECT_URI"
+    fi
   } > "$tmp_env"
 
   sudo install -o root -g root -m 600 "$tmp_env" "$DB_ENV_FILE"
