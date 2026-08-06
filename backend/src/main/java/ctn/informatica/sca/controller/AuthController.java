@@ -17,10 +17,14 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
+
+    private static final Logger LOGGER = Logger.getLogger(AuthController.class.getName());
 
     private final AuthService authService;
     private final JwtService jwtService;
@@ -47,6 +51,7 @@ public class AuthController {
         } catch (AuthService.AuthException e) {
             return ResponseEntity.status(401).body(e.getMessage());
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error in /api/auth/login", e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo emitir token de sesión extendida", e);
         }
     }
@@ -60,6 +65,7 @@ public class AuthController {
         } catch (AuthService.AuthException e) {
             return ResponseEntity.status(401).body(e.getMessage());
         } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error in /api/auth/2fa/verify", e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo emitir token de sesión extendida", e);
         }
     }
@@ -102,7 +108,7 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
-    private void maybeIssueRefreshCookie(Boolean rememberMe, String accessToken, Integer level, HttpServletRequest request, HttpServletResponse response) throws Exception {
+    private void maybeIssueRefreshCookie(Boolean rememberMe, String accessToken, Integer level, HttpServletRequest request, HttpServletResponse response) {
         if (!Boolean.TRUE.equals(rememberMe)) {
             return;
         }
@@ -110,14 +116,17 @@ public class AuthController {
             return;
         }
 
-        Long userId = jwtService.extractUserId(accessToken);
-        String refreshToken = refreshTokenService.issueToken(
-                userId.intValue(),
-                level,
-                request.getHeader("User-Agent"),
-                request.getRemoteAddr());
-
-        setRefreshCookie(response, refreshToken, request.isSecure());
+        try {
+            Long userId = jwtService.extractUserId(accessToken);
+            String refreshToken = refreshTokenService.issueToken(
+                    userId.intValue(),
+                    level,
+                    request.getHeader("User-Agent"),
+                    request.getRemoteAddr());
+            setRefreshCookie(response, refreshToken, request.isSecure());
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Could not issue remember-me refresh cookie; login will continue without persistent session", e);
+        }
     }
 
     private String readRefreshCookie(HttpServletRequest request) {
