@@ -25,7 +25,22 @@ public final class PasswordUtil {
             return false;
         }
         if (isBcryptHash(stored)) {
-            return BCrypt.checkpw(plainText, stored);
+            try {
+                return BCrypt.checkpw(plainText, stored);
+            } catch (IllegalArgumentException ex) {
+                // Algunos salts históricos usan prefijos no soportados por la
+                // implementación actual de jBCrypt (ej. prefijos personalizados).
+                // Intentamos normalizar el prefijo a $2b$ y reintentar la verificación.
+                String normalized = normalizeBcryptPrefix(stored);
+                if (!normalized.equals(stored)) {
+                    try {
+                        return BCrypt.checkpw(plainText, normalized);
+                    } catch (IllegalArgumentException ex2) {
+                        return false;
+                    }
+                }
+                return false;
+            }
         }
         // Fallback para migración: comparación de texto plano (será rehasheado en el próximo login)
         return stored.equals(plainText);
@@ -36,5 +51,13 @@ public final class PasswordUtil {
      */
     public static boolean isBcryptHash(String value) {
         return value != null && (value.startsWith("$2a$") || value.startsWith("$2b$") || value.startsWith("$2y$"));
+    }
+
+    private static String normalizeBcryptPrefix(String hash) {
+        if (hash == null) return null;
+        if (hash.startsWith("$2a$") || hash.startsWith("$2y$") || hash.startsWith("$2x$")) {
+            return "$2b$" + hash.substring(4);
+        }
+        return hash;
     }
 }
