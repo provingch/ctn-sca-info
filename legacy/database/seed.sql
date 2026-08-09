@@ -150,22 +150,22 @@ INSERT INTO curso (id, especialidad_id, promocion, seccion) VALUES
 -- Todas las contraseñas de profesor usan BCrypt. Los usuarios que no especifican contraseña en
 -- el INSERT inicial reciben el valor por defecto "password", que aquí se hashea explícitamente.
 INSERT INTO profesor (id, nombre, apellido, usuario, contrasenia, nivel, ci, telefono, celular) VALUES
-(1, 'Graciela', 'López', 'glopez', '$2b$12$Mx8sHmuXDLnNPxb65J.0fObQGnStITg9jtuemcwvEuWwPq16/n8.q', 1, 1234567, 0999123456, 0999123456),
-(2, 'Daniel', 'Lenguaza', 'dlenguaza', '$2b$12$Mx8sHmuXDLnNPxb65J.0fObQGnStITg9tuemcwvEuWwPq16/n8.q', 1, NULL, NULL, NULL),
-(3, 'Mirian', 'Montania', 'mmontania', '$2b$12$Mx8sHmuXDLnNPxb65J.0fObQGnStITg9tuemcwvEuWwPq16/n8.q', 1, NULL, NULL, NULL),
-(4, 'Federico', 'González', 'fgonzalez', '$2b$12$Mx8sHmuXDLnNPxb65J.0fObQGnStITg9tuemcwvEuWwPq16/n8.q', 1, NULL, NULL, NULL),
-(5, 'Irma', 'Cardozo', 'icardozo', '$2b$12$Mx8sHmuXDLnNPxb65J.0fObQGnStITg9tuemcwvEuWwPq16/n8.q', 1, NULL, NULL, NULL),
-(6, 'Cristian', 'Delgado', 'cdelgado', '$2b$12$Mx8sHmuXDLnNPxb65J.0fObQGnStITg9tuemcwvEuWwPq16/n8.q', 1, NULL, NULL, NULL),
-(7, 'Susana', 'Alvarenga', 'salvarenga', '$2b$12$Mx8sHmuXDLnNPxb65J.0fObQGnStITg9tuemcwvEuWwPq16/n8.q', 1, NULL, NULL, NULL),
-(8, 'Ruth', 'Estigarribia', 'restigarribia', '$2b$12$Mx8sHmuXDLnNPxb65J.0fObQGnStITg9tuemcwvEuWwPq16/n8.q', 1, NULL, NULL, NULL),
-(9, 'Ruth', 'Roman', 'rroman', '$2b$12$Mx8sHmuXDLnNPxb65J.0fObQGnStITg9tuemcwvEuWwPq16/n8.q', 1, NULL, NULL, NULL),
-(10, 'Laura', 'Rivas', 'lrivas', '$2b$12$Mx8sHmuXDLnNPxb65J.0fObQGnStITg9tuemcwvEuWwPq16/n8.q', 1, NULL, NULL, NULL),
-(11, 'Claudia', 'Burgos', 'cburgos', '$2b$12$Mx8sHmuXDLnNPxb65J.0fObQGnStITg9tuemcwvEuWwPq16/n8.q', 1, NULL, NULL, NULL),
-(12, 'Gerardo', 'Ovelar', 'govelar', '$2b$12$Mx8sHmuXDLnNPxb65J.0fObQGnStITg9tuemcwvEuWwPq16/n8.q', 1, NULL, NULL, NULL),
-(13, 'Andres', 'Rojas', 'arojas', '$2b$12$Mx8sHmuXDLnNPxb65J.0fObQGnStITg9tuemcwvEuWwPq16/n8.q', 1, NULL, NULL, NULL),
-(14, NULL, NULL, 'admin', '$2b$12$Mx8sHmuXDLnNPxb65J.0fObQGnStITg9tuemcwvEuWwPq16/n8.q', 2, NULL, NULL, NULL),
-(15, 'Integración', 'Informática', 'informatica-itg', '$2b$12$dY1Gt90541sE0Z2H0Rq2ZOuGo4RyzE3iY9jSE6uPPR/gBfx1ClK2y', 3, NULL, NULL, NULL),
-(16, 'Integración', 'Electricidad', 'electricidad-itg', '$2b$12$o6GzQT.DgSo9ia7uEtTTCO6twr/1tJ0.YdINSv.LZGS2qwzIIjKjO', 3, NULL, NULL, NULL);
+(1, 'Graciela', 'López', 'glopez', '$2a$12$Mx8sHmuXDLnNPxb65J.0fObQGnStITg9jtuemcwvEuWwPq16/n8.q', 1, 1234567, 0999123456, 0999123456),
+(2, 'Daniel', 'Lenguaza', 'dlenguaza', '$2a$12$Vc1RHJKE..cWMhXKCIw4TuLItGxaLK1c9ihaW4W089HM3J.7ViT4S', 1, NULL, NULL, NULL),
+(3, 'Mirian', 'Montania', 'mmontania', '$2a$12$D9PSiFJtF3zWCaOAoj5fo.jnk1NErsvr2JReOcsW89NNi0gFRUE62', 1, NULL, NULL, NULL),
+(4, 'Federico', 'González', 'fgonzalez', '$2a$12$HgoTv0bB2wVAeyGVWV7nse0r32QCMK/lBe3l0d6gLoT5ChqEfkD0G', 1, NULL, NULL, NULL),
+(5, 'Irma', 'Cardozo', 'icardozo', '$2a$12$5XkmDXZ063edbln9DU79JeEjwkqSJSNkhqFvkSw.fb6SOKTU8vWPG', 1, NULL, NULL, NULL),
+(6, 'Cristian', 'Delgado', 'cdelgado', '$2a$12$v0mQtozByRrvEb4q3AdUPex7.GUmAv.KO97bVLvw815oM4Sfa.iYm', 1, NULL, NULL, NULL),
+(7, 'Susana', 'Alvarenga', 'salvarenga', '$2a$12$L8AvNH/mz0wZ6wtF4sXvcuZF9nyfafHcFLL1jIJEo3DZkeyvztxKm', 1, NULL, NULL, NULL),
+(8, 'Ruth', 'Estigarribia', 'restigarribia', '$2a$12$00LbTSSG1cSwCgqFdtapX./Uva0X1LGIZiLc6SAOpjIFPjiulwFdG', 1, NULL, NULL, NULL),
+(9, 'Ruth', 'Roman', 'rroman', '$2a$12$5mK5xhwFz4lPEAWKRnZqHOf1mDo7FcLpFMDrWIF/jxB2HLh1GRg0.', 1, NULL, NULL, NULL),
+(10, 'Laura', 'Rivas', 'lrivas', '$2a$12$fNXBqgpr8yvOY0WB097QguIamlwl0ht.uEJL28BQ.XcFjAAl2oMXu', 1, NULL, NULL, NULL),
+(11, 'Claudia', 'Burgos', 'cburgos', '$2a$12$Qh2naJ3WUgTkpC3gGEIDFOGIfrUdfLaxAc7BE8ErG2yX9R1NUAfwG', 1, NULL, NULL, NULL),
+(12, 'Gerardo', 'Ovelar', 'govelar', '$2a$12$0L8/lq4KKZalqpn8MFTGne27JlCnZYTB3nAsG9UVz3Pco15zFjJda', 1, NULL, NULL, NULL),
+(13, 'Andres', 'Rojas', 'arojas', '$2a$12$HKnSpla9KV0wfSwvtOzoLOWmYwF9/WEv5/.q6MOmoiPInbtx9ICCm', 1, NULL, NULL, NULL),
+(14, NULL, NULL, 'admin', '$2a$12$eKkcfGM5uKevTwzcSBInb.TKpGCD7lzBOKivqYl6r297R6OlRY4Hi', 2, NULL, NULL, NULL),
+(15, 'Integración', 'Informática', 'informatica-itg', '$2a$12$dY1Gt90541sE0Z2H0Rq2ZOuGo4RyzE3iY9jSE6uPPR/gBfx1ClK2y', 3, NULL, NULL, NULL),
+(16, 'Integración', 'Electricidad', 'electricidad-itg', '$2a$12$o6GzQT.DgSo9ia7uEtTTCO6twr/1tJ0.YdINSv.LZGS2qwzIIjKjO', 3, NULL, NULL, NULL);
 
 -- ========================================
 -- MATERIAS
@@ -202,7 +202,7 @@ INSERT INTO instrumento (id, nombre) VALUES
 -- ========================================
 -- Password de ejemplo: ctn2025
 INSERT INTO padre (id, ci, nombre, apellido, usuario, contrasenia, telefono, correo) VALUES
-(1, 1111111, 'Carlos', 'González', 'padre1', '$2b$12$dY1Gt90541sE0Z2H0Rq2ZOuGo4RyzE3iY9jSE6uPPR/gBfx1ClK2y', '0971000000', 'padre1@example.com');
+(1, 1111111, 'Carlos', 'González', 'padre1', '$2a$12$dY1Gt90541sE0Z2H0Rq2ZOuGo4RyzE3iY9jSE6uPPR/gBfx1ClK2y', '0971000000', 'padre1@example.com');
 
 -- ========================================
 -- PLANILLAS
