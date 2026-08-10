@@ -6,6 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Repository root (for git pull) and backend project directory (for Maven build).
 REPO_DIR="${REPO_DIR:-$SCRIPT_DIR}"
 PROJECT_DIR="${PROJECT_DIR:-}"
+FRONTEND_DIR="${FRONTEND_DIR:-$REPO_DIR/frontend}"
 
 if [[ -z "$PROJECT_DIR" ]]; then
   if [[ -f "$REPO_DIR/backend/pom.xml" ]]; then
@@ -290,6 +291,23 @@ print_diagnostics() {
   sudo journalctl -u "$SERVICE_NAME" -n 150 --no-pager || true
 }
 
+build_frontend() {
+  if [[ ! -f "$FRONTEND_DIR/package.json" ]]; then
+    echo "==> No frontend/ found at $FRONTEND_DIR (nothing to build yet); skipping"
+    return 0
+  fi
+
+  require_command npm
+
+  echo "==> Building frontend (Vite) into backend/src/main/resources/static"
+  if [[ -f "$FRONTEND_DIR/package-lock.json" ]]; then
+    npm --prefix "$FRONTEND_DIR" ci
+  else
+    npm --prefix "$FRONTEND_DIR" install
+  fi
+  npm --prefix "$FRONTEND_DIR" run build
+}
+
 ensure_service_exists() {
   if sudo systemctl list-unit-files --type=service --no-legend | awk '{print $1}' | grep -Fxq "${SERVICE_NAME}.service"; then
     return 0
@@ -363,6 +381,8 @@ echo "==> Pulling latest changes"
 git -C "$REPO_DIR" pull --ff-only
 
 configure_service_env
+
+build_frontend
 
 echo "==> Building Spring Boot JAR"
 mvn -f "$PROJECT_DIR/pom.xml" clean package -DskipTests
