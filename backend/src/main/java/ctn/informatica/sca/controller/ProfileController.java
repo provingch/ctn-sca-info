@@ -658,8 +658,11 @@ public class ProfileController {
 
     private User requireUser(Authentication authentication) {
         int userId = ApiAuth.requireUserId(authentication);
+        int userLevel = ApiAuth.requireUserLevel(authentication);
         try {
-            User user = userDao.findById(userId);
+            // Profesor y padre viven en tablas diferentes y sus ids pueden coincidir.
+            // El rol firmado en el JWT evita resolver la cuenta desde la tabla errónea.
+            User user = userDao.findByIdAndLevel(userId, userLevel);
             if (user == null) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado");
             }

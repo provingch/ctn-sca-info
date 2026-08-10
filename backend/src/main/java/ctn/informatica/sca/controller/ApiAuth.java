@@ -31,4 +31,23 @@ final class ApiAuth {
 
         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado");
     }
+
+    static int requireUserLevel(Authentication authentication) {
+        if (authentication == null || authentication.getAuthorities() == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado");
+        }
+        return authentication.getAuthorities().stream()
+                .map(authority -> authority.getAuthority())
+                .filter(authority -> authority != null && authority.startsWith("ROLE_LEVEL_"))
+                .map(authority -> authority.substring("ROLE_LEVEL_".length()))
+                .map(level -> {
+                    try {
+                        return Integer.parseInt(level);
+                    } catch (NumberFormatException ex) {
+                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token inválido");
+                    }
+                })
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token sin rol de usuario"));
+    }
 }
