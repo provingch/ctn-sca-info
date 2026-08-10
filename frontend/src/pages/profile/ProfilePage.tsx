@@ -1,34 +1,28 @@
-import { useEffect, useState } from 'react';
-import { getProfile, type ProfileResponse } from '../../api/profile';
+import { useEffect, useState, type FormEvent } from 'react';
+import { changePassword, confirmTotp, disableTotp, getProfile, prepareTotp, saveProfile, type ProfileResponse } from '../../api/profile';
 import { ApiError } from '../../api/client';
+import AppShell from '../../components/AppShell';
 
 export default function ProfilePage() {
-  const [data, setData] = useState<ProfileResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<ProfileResponse | null>(null); const [status, setStatus] = useState(''); const [tab, setTab] = useState<'profile' | 'security' | 'activity'>('profile');
+  const load = () => getProfile().then(setData).catch((e) => setStatus(e instanceof ApiError ? e.message : 'Error al cargar el perfil.'));
+  useEffect(() => { void load(); }, []);
+  if (!data) return <AppShell title="Mi perfil"><section className="panel">{status || 'Cargando…'}</section></AppShell>;
+  return <AppShell title={data.profileOwner.fullName || 'Mi perfil'}><section className="profile-hero"><div className="avatar">{(data.profileOwner.nombre?.[0] || 'S')}{(data.profileOwner.apellido?.[0] || '')}</div><div><span className="badge">{data.profileRoleLabel}</span><p>{data.profileAccessDescription}</p></div></section><div className="tabs"><button className={tab === 'profile' ? 'active' : ''} onClick={() => setTab('profile')}>Datos personales</button><button className={tab === 'security' ? 'active' : ''} onClick={() => setTab('security')}>Seguridad</button><button className={tab === 'activity' ? 'active' : ''} onClick={() => setTab('activity')}>Actividad</button></div>{status && <div className="notice">{status}</div>}{tab === 'profile' && <ProfileForm data={data} done={(m) => { setStatus(m); load(); }} />}{tab === 'security' && <Security data={data} done={(m) => { setStatus(m); load(); }} />}{tab === 'activity' && <section className="panel"><h2>Actividad reciente</h2>{((data.activityLog as string[]) || []).map((item, i) => <p className="history-row" key={i}>{item}</p>)}</section>}</AppShell>;
+}
 
-  useEffect(() => {
-    let cancelled = false;
-    getProfile()
-      .then((res) => {
-        if (!cancelled) setData(res);
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err instanceof ApiError ? err.message : 'Error al cargar el perfil.');
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+function ProfileForm({ data, done }: { data: ProfileResponse; done: (m: string) => void }) {
+  const p = data.profileOwner; const [form, setForm] = useState({ correo: p.correo || '', telefono: p.telefono || '', celular: p.celular || '', usuario: p.usuario || '', nombre: p.nombre || '', apellido: p.apellido || '', ci: p.ci, nivel: null });
+  async function submit(e: FormEvent) { e.preventDefault(); try { await saveProfile(form); done('Datos guardados.'); } catch (err) { done(err instanceof ApiError ? err.message : 'No se pudo guardar.'); } }
+  return <section className="panel"><form className="form-grid" onSubmit={submit}><label>Nombre<input value={form.nombre} disabled={!data.canEditAdminOnlyProfileFields} onChange={(e) => setForm({ ...form, nombre: e.target.value })} /></label><label>Apellido<input value={form.apellido} disabled={!data.canEditAdminOnlyProfileFields} onChange={(e) => setForm({ ...form, apellido: e.target.value })} /></label><label>Usuario<input value={form.usuario} required onChange={(e) => setForm({ ...form, usuario: e.target.value })} /></label><label>Correo<input type="email" value={form.correo} onChange={(e) => setForm({ ...form, correo: e.target.value })} /></label><label>Teléfono<input value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} /></label><label>Celular<input value={form.celular} onChange={(e) => setForm({ ...form, celular: e.target.value })} /></label><button className="button">Guardar cambios</button></form></section>;
+}
 
-  if (error) return <p className="form-error">{error}</p>;
-  if (!data) return <p>Cargando…</p>;
-
-  return (
-    <div>
-      <h1>Perfil</h1>
-      <p>{data.profileOwner.fullName}</p>
-      <p>{data.profileRoleLabel}</p>
-      <p>{data.profileAccessDescription}</p>
-    </div>
-  );
+function Security({ data, done }: { data: ProfileResponse; done: (m: string) => void }) {
+  const [passwords, setPasswords] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' }); const [code, setCode] = useState('');
+  const pendingSecret = typeof data.pendingTotpSecret === 'string' ? data.pendingTotpSecret : '';
+  async function password(e: FormEvent) { e.preventDefault(); try { await changePassword(passwords); setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' }); done('Contraseña actualizada.'); } catch (err) { done(err instanceof ApiError ? err.message : 'No se pudo actualizar.'); } }
+  async function start2fa() { try { await prepareTotp(); done('Se generó una clave de configuración. Actualizá la vista para verla.'); } catch (err) { done(err instanceof ApiError ? err.message : 'No se pudo preparar 2FA.'); } }
+  async function verify2fa() { try { await confirmTotp(code); done('Verificación en dos pasos activada.'); } catch (err) { done(err instanceof ApiError ? err.message : 'Código inválido.'); } }
+  async function turnOff() { try { await disableTotp(); done('Verificación en dos pasos desactivada.'); } catch (err) { done(err instanceof ApiError ? err.message : 'No se pudo desactivar.'); } }
+  return <div className="two-column"><form className="panel form-grid" onSubmit={password}><h2>Cambiar contraseña</h2><label>Contraseña actual<input type="password" value={passwords.currentPassword} onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })} /></label><label>Nueva contraseña<input type="password" minLength={6} value={passwords.newPassword} onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })} /></label><label>Confirmar<input type="password" value={passwords.confirmPassword} onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })} /></label><button className="button">Actualizar contraseña</button></form><section className="panel form-grid"><h2>Verificación en dos pasos</h2><p>Estado: <strong>{data.totpEnabled ? 'Activa' : 'Inactiva'}</strong></p>{pendingSecret && <><code className="secret">{pendingSecret}</code><label>Código de la app<input inputMode="numeric" value={code} onChange={(e) => setCode(e.target.value)} /></label><button className="button" onClick={verify2fa}>Confirmar activación</button></>}{data.totpEnabled ? <button className="button danger" onClick={turnOff}>Desactivar 2FA</button> : !pendingSecret && <button className="button secondary" onClick={start2fa}>Configurar 2FA</button>}</section></div>;
 }

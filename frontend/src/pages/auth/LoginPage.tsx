@@ -28,7 +28,7 @@ export default function LoginPage() {
         setTempToken(res.tempToken);
         setStep('twofactor');
       } else {
-        navigate('/home', { replace: true });
+        navigate('/', { replace: true });
       }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo iniciar sesión.');
@@ -44,7 +44,7 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       await verify2fa(tempToken, code, rememberMe);
-      navigate('/home', { replace: true });
+      navigate('/', { replace: true });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Código inválido.');
     } finally {
