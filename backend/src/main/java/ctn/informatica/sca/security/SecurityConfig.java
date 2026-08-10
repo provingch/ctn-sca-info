@@ -2,6 +2,7 @@ package ctn.informatica.sca.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -27,6 +28,15 @@ public class SecurityConfig {
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/error", "/api/auth/login", "/api/auth/2fa/verify", "/api/auth/refresh", "/api/auth/logout", "/api/health").permitAll()
+                // Shell estático de la SPA (React): tiene que poder cargar sin estar
+                // autenticado, porque ahí vive la propia pantalla de login. La
+                // protección real sigue pasando por cada endpoint /api/**, no por
+                // estos archivos. "/login","/home","/profile" son rutas client-side
+                // de React Router: el navegador las pide como GET normal en un F5 o
+                // acceso directo, y SpaForwardController las reenvía a index.html.
+                // Agregar acá cada ruta nueva de React a medida que se sume un Bloque.
+                .requestMatchers(HttpMethod.GET, "/", "/index.html", "/assets/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/login", "/home", "/profile").permitAll()
                 .requestMatchers("/api/planillas/**", "/api/tareas/**").hasRole("LEVEL_1")
                 .requestMatchers("/api/evaluacion/**").hasRole("LEVEL_2")
                 .requestMatchers("/api/google/oauth/callback").hasAnyRole("LEVEL_1", "LEVEL_2", "LEVEL_3")
