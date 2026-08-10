@@ -4,14 +4,19 @@ import ctn.informatica.sca.dao.CursoDao;
 import ctn.informatica.sca.dao.GradeDao;
 import ctn.informatica.sca.dao.MateriaDao;
 import ctn.informatica.sca.dao.PlanillaDao;
+import ctn.informatica.sca.dao.ProfesorDao;
 import ctn.informatica.sca.dao.RegistroDao;
 import ctn.informatica.sca.dao.StudentRowDao;
 import ctn.informatica.sca.dao.TareaDao;
+import ctn.informatica.sca.google.ClassroomSyncOrchestrator;
+import ctn.informatica.sca.google.GoogleClassroomService;
 import ctn.informatica.sca.model.Curso;
 import ctn.informatica.sca.model.Materia;
 import ctn.informatica.sca.model.Planilla;
+import ctn.informatica.sca.model.Profesor;
 import ctn.informatica.sca.model.StudentRow;
 import ctn.informatica.sca.model.Tarea;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -21,6 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -36,6 +42,24 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 @RequestMapping("/api/planillas")
 public class PlanillaController {
+
+    private final PlanillaDao planillaDao;
+    private final ProfesorDao profesorDao;
+    private final ClassroomSyncOrchestrator classroomSyncOrchestrator;
+
+    public PlanillaController() {
+        this(new PlanillaDao(), new ProfesorDao(), new ClassroomSyncOrchestrator());
+    }
+
+    @Autowired
+    public PlanillaController(
+            PlanillaDao planillaDao,
+            ProfesorDao profesorDao,
+            ClassroomSyncOrchestrator classroomSyncOrchestrator) {
+        this.planillaDao = planillaDao;
+        this.profesorDao = profesorDao;
+        this.classroomSyncOrchestrator = classroomSyncOrchestrator;
+    }
 
     @GetMapping("/{planillaId}")
     public PlanillaDetailResponse getById(@PathVariable int planillaId, Authentication authentication) {
@@ -79,12 +103,11 @@ public class PlanillaController {
         }
 
         try {
-            PlanillaDao dao = new PlanillaDao();
-            Planilla planilla = dao.findByCompositeKey(request.cursoId(), request.materiaId(), etapa);
+            Planilla planilla = planillaDao.findByCompositeKey(request.cursoId(), request.materiaId(), etapa);
             boolean created = false;
 
             if (planilla == null) {
-                planilla = dao.crear(request.cursoId(), request.materiaId(), etapa, userId);
+                planilla = planillaDao.crear(request.cursoId(), request.materiaId(), etapa, userId);
                 created = true;
             }
 
@@ -221,13 +244,32 @@ public class PlanillaController {
     }
 
     @PostMapping("/{planillaId}/sync/classroom")
-    public ResponseEntity<Map<String, String>> syncClassroomNotImplemented(@PathVariable int planillaId) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
-                .body(Map.of("message", "TODO: migrar sync de Classroom en fase aparte", "planillaId", String.valueOf(planillaId)));
+    public ClassroomSyncResponse syncClassroom(@PathVariable int planillaId, Authentication authentication) {
+        int userId = ApiAuth.requireUserId(authentication);
+        try {
+            Planilla planilla = requireOwnedPlanillaById(planillaId, userId);
+            Profesor profesor = profesorDao.findById(userId);
+            if (profesor == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Profesor no encontrado");
+            }
+            ClassroomSyncOrchestrator.ClassroomSyncResult result = classroomSyncOrchestrator.syncPlanillaWithClassroom(profesor, planilla);
+            return new ClassroomSyncResponse(
+                    planilla.getId(),
+                    result.googleCourseId(),
+                    result.classroomCourseMapped(),
+                    result.importedCourseworks(),
+                    result.linkedStudents(),
+                    result.importedGrades(),
+                    result.message());
+        } catch (SQLException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al sincronizar Classroom", ex);
+        } catch (IOException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al sincronizar Classroom", ex);
+        }
     }
 
     private Planilla requireOwnedPlanillaById(int planillaId, int userId) throws SQLException {
-        Planilla planilla = new PlanillaDao().findById(planillaId);
+        Planilla planilla = planillaDao.findById(planillaId);
         if (planilla == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Planilla no encontrada");
         }
@@ -241,7 +283,7 @@ public class PlanillaController {
         if (cursoId == null || materiaId == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "cursoId y materiaId son requeridos");
         }
-        Planilla planilla = new PlanillaDao().findByCompositeKey(cursoId, materiaId, etapa);
+        Planilla planilla = planillaDao.findByCompositeKey(cursoId, materiaId, etapa);
         if (planilla == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Planilla no encontrada");
         }
@@ -399,6 +441,16 @@ public class PlanillaController {
             int skippedCount,
             List<String> warnings,
             int planillaId) {
+    }
+
+    public record ClassroomSyncResponse(
+            int planillaId,
+            String googleCourseId,
+            boolean classroomCourseMapped,
+            int importedCourseworks,
+            int linkedStudents,
+            int importedGrades,
+            String message) {
     }
 
     public record PlanillaDetailResponse(
