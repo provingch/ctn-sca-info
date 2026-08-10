@@ -23,10 +23,14 @@ public class AuthService {
         this.userDao = userDao;
         this.padreDao = padreDao;
         this.profesorDao = profesorDao;
-        this.jwtService = jwtService;
+    import org.slf4j.Logger;
+    import org.slf4j.LoggerFactory;
     }
 
     public static class AuthException extends RuntimeException {
+
+        private static final Logger log = LoggerFactory.getLogger(AuthService.class);
+
         public AuthException(String message) { super(message); }
     }
 
@@ -48,7 +52,8 @@ public class AuthService {
             return new LoginResponse(true, tempToken, null, null);
         }
 
-        String accessToken = jwtService.generateAccessToken((long) user.getId(), user.getLevel());
+                log.error("[AUTH] Error de base de datos durante login para usuario {}", req.username(), e);
+                throw new RuntimeException("Error de base de datos durante login", e);
         return new LoginResponse(false, null, accessToken, user.getLevel());
     }
 
@@ -61,8 +66,13 @@ public class AuthService {
         User user;
         try {
             user = userDao.findById(userId.intValue());
-        } catch (Exception e) {
-            throw new RuntimeException("Error de base de datos durante verificación 2FA", e);
+            try {
+                String accessToken = jwtService.generateAccessToken((long) user.getId(), user.getLevel());
+                return new LoginResponse(false, null, accessToken, user.getLevel());
+            } catch (Exception e) {
+                log.error("[AUTH] Error generando access token para usuario {}", user.getId(), e);
+                throw e;
+            }
         }
         if (user == null) {
             throw new AuthException("Usuario no encontrado");
@@ -86,7 +96,12 @@ public class AuthService {
                 return padre != null ? padre.getTotpSecret() : null;
             } else {
                 var profesor = profesorDao.findById(user.getId());
-                return profesor != null ? profesor.getTotpSecret() : null;
+            try {
+                String accessToken = jwtService.generateAccessToken((long) user.getId(), user.getLevel());
+                return new LoginResponse(false, null, accessToken, user.getLevel());
+            } catch (Exception e) {
+                log.error("[AUTH] Error generando access token para usuario {}", user.getId(), e);
+                throw e;
             }
         } catch (Exception e) {
             return null; // igual que el original: si falla la búsqueda del secreto, sigue sin 2FA
