@@ -30,6 +30,14 @@ import java.util.Set;
 @Component
 public class ClassroomSyncOrchestrator {
 
+    private final ctn.informatica.sca.dao.CursoDao cursoDao;
+    private final ctn.informatica.sca.dao.AlumnoDao alumnoDao;
+    private final ctn.informatica.sca.dao.TareaDao tareaDao;
+    private final ctn.informatica.sca.dao.RegistroDao registroDao;
+    private final ctn.informatica.sca.dao.GradeDao gradeDao;
+    private final ctn.informatica.sca.dao.PlanillaDao planillaDao;
+    private final ctn.informatica.sca.dao.InstrumentoDao instrumentoDao;
+
     public record ClassroomSyncResult(
             String googleCourseId,
             boolean classroomCourseMapped,
@@ -39,21 +47,70 @@ public class ClassroomSyncOrchestrator {
             String message) {
     }
 
+    public ClassroomSyncOrchestrator() {
+        this(new ctn.informatica.sca.dao.CursoDao(),
+                new ctn.informatica.sca.dao.AlumnoDao(),
+                new ctn.informatica.sca.dao.TareaDao(),
+                new ctn.informatica.sca.dao.RegistroDao(),
+                new ctn.informatica.sca.dao.GradeDao(),
+                new ctn.informatica.sca.dao.PlanillaDao(),
+                new ctn.informatica.sca.dao.InstrumentoDao());
+    }
+
+    // Package-visible constructor for testing/injection
+    private final GoogleClassroomAdapter classroomAdapter;
+
+    public ClassroomSyncOrchestrator(ctn.informatica.sca.dao.CursoDao cursoDao,
+                                     ctn.informatica.sca.dao.AlumnoDao alumnoDao,
+                                     ctn.informatica.sca.dao.TareaDao tareaDao,
+                                     ctn.informatica.sca.dao.RegistroDao registroDao,
+                                     ctn.informatica.sca.dao.GradeDao gradeDao,
+                                     ctn.informatica.sca.dao.PlanillaDao planillaDao,
+                                     ctn.informatica.sca.dao.InstrumentoDao instrumentoDao) {
+        this.cursoDao = cursoDao;
+        this.alumnoDao = alumnoDao;
+        this.tareaDao = tareaDao;
+        this.registroDao = registroDao;
+        this.gradeDao = gradeDao;
+        this.planillaDao = planillaDao;
+        this.instrumentoDao = instrumentoDao;
+        this.classroomAdapter = new GoogleClassroomAdapter();
+    }
+
+    // Package-visible constructor for testing/injection with adapter
+    ClassroomSyncOrchestrator(ctn.informatica.sca.dao.CursoDao cursoDao,
+                              ctn.informatica.sca.dao.AlumnoDao alumnoDao,
+                              ctn.informatica.sca.dao.TareaDao tareaDao,
+                              ctn.informatica.sca.dao.RegistroDao registroDao,
+                              ctn.informatica.sca.dao.GradeDao gradeDao,
+                              ctn.informatica.sca.dao.PlanillaDao planillaDao,
+                              ctn.informatica.sca.dao.InstrumentoDao instrumentoDao,
+                              GoogleClassroomAdapter adapter) {
+        this.cursoDao = cursoDao;
+        this.alumnoDao = alumnoDao;
+        this.tareaDao = tareaDao;
+        this.registroDao = registroDao;
+        this.gradeDao = gradeDao;
+        this.planillaDao = planillaDao;
+        this.instrumentoDao = instrumentoDao;
+        this.classroomAdapter = adapter == null ? new GoogleClassroomAdapter() : adapter;
+    }
+
     public ClassroomSyncResult syncPlanillaWithClassroom(Profesor profesor, Planilla planilla) throws IOException, SQLException {
         if (profesor == null || planilla == null) {
             return new ClassroomSyncResult(null, false, 0, 0, 0, "Datos de planilla o profesor no disponibles.");
         }
 
-        if (!GoogleClassroomService.isGoogleConnected(profesor)) {
+        if (!classroomAdapter.isGoogleConnected(profesor)) {
             return new ClassroomSyncResult(null, false, 0, 0, 0, "Google Classroom no está conectado para este profesor.");
         }
 
-        Curso curso = new CursoDao().findById(planilla.getCursoId());
+        Curso curso = cursoDao.findById(planilla.getCursoId());
         if (curso == null) {
             return new ClassroomSyncResult(null, false, 0, 0, 0, "No se encontró el curso asociado a la planilla.");
         }
 
-        Optional<Course> resolvedCourse = GoogleClassroomService.resolveCourseForPlanilla(profesor, curso, planilla, new PlanillaDao());
+        Optional<Course> resolvedCourse = classroomAdapter.resolveCourseForPlanilla(profesor, curso, planilla);
         if (resolvedCourse.isEmpty()) {
             return new ClassroomSyncResult(planilla.getGoogleCourseId(), false, 0, 0, 0,
                     "No se encontró un curso de Classroom compatible con esta planilla.");
@@ -64,8 +121,8 @@ public class ClassroomSyncOrchestrator {
         boolean mapped = classroomCourseId != null && !classroomCourseId.isBlank();
 
         int importedCourseworks = importCourseworkForPlanilla(profesor, planilla, classroomCourse);
-        List<Alumno> alumnos = new AlumnoDao().findByCursoId(planilla.getCursoId());
-        int linkedStudents = GoogleClassroomService.syncStudentIdentities(profesor, classroomCourseId, alumnos);
+        List<Alumno> alumnos = alumnoDao.findByCursoId(planilla.getCursoId());
+        int linkedStudents = classroomAdapter.syncStudentIdentities(profesor, classroomCourseId, alumnos);
         int importedGrades = importGradesForPlanilla(profesor, planilla, classroomCourse, alumnos);
 
         StringBuilder message = new StringBuilder();
@@ -104,9 +161,9 @@ public class ClassroomSyncOrchestrator {
         }
 
         try {
-            TareaDao tareaDao = new TareaDao();
+            TareaDao tareaDao = this.tareaDao;
             Set<String> existingCourseworkIds = tareaDao.getGoogleCourseworkIdsForPlanilla(planilla.getId());
-            List<CourseWork> courseWorks = GoogleClassroomService.listCourseWorkForCourse(profesor, classroomCourse.getId());
+            List<CourseWork> courseWorks = classroomAdapter.listCourseWorkForCourse(profesor, classroomCourse.getId());
             if (courseWorks.isEmpty()) {
                 return 0;
             }
@@ -150,12 +207,12 @@ public class ClassroomSyncOrchestrator {
         }
 
         try {
-            Map<String, Integer> studentLookup = GoogleClassroomService.linkStudentsForCourse(profesor, classroomCourse.getId(), alumnos);
+            Map<String, Integer> studentLookup = classroomAdapter.linkStudentsForCourse(profesor, classroomCourse.getId(), alumnos);
             if (studentLookup.isEmpty()) {
                 return 0;
             }
 
-            TareaDao tareaDao = new TareaDao();
+            TareaDao tareaDao = this.tareaDao;
             List<Tarea> tareas = tareaDao.consultarTarea(planilla.getId());
             Map<String, Integer> tareaIdByGoogleCourseworkId = new HashMap<>();
             for (Tarea tarea : tareas) {
@@ -167,8 +224,8 @@ public class ClassroomSyncOrchestrator {
                 return 0;
             }
 
-            RegistroDao registroDao = new RegistroDao();
-            GradeDao gradeDao = new GradeDao();
+            RegistroDao registroDao = this.registroDao;
+            GradeDao gradeDao = this.gradeDao;
             Map<Integer, Map<Integer, Integer>> gradesByRegistro = new HashMap<>();
             int imported = 0;
 
@@ -176,7 +233,7 @@ public class ClassroomSyncOrchestrator {
                 if (tarea.getGoogleCourseworkId() == null || tarea.getGoogleCourseworkId().isBlank()) {
                     continue;
                 }
-                List<com.google.api.services.classroom.model.StudentSubmission> submissions = GoogleClassroomService.listStudentSubmissionsForCourseWork(profesor, classroomCourse.getId(), tarea.getGoogleCourseworkId());
+                List<com.google.api.services.classroom.model.StudentSubmission> submissions = classroomAdapter.listStudentSubmissionsForCourseWork(profesor, classroomCourse.getId(), tarea.getGoogleCourseworkId());
                 for (com.google.api.services.classroom.model.StudentSubmission submission : submissions) {
                     if (submission == null || submission.getUserId() == null || submission.getUserId().isBlank()) {
                         continue;
@@ -219,7 +276,7 @@ public class ClassroomSyncOrchestrator {
 
     private int selectDefaultInstrumentId() {
         try {
-            InstrumentoDao instrumentoDao = new InstrumentoDao();
+            InstrumentoDao instrumentoDao = this.instrumentoDao;
             var instrumentos = instrumentoDao.findAll();
             if (instrumentos == null || instrumentos.isEmpty()) {
                 return 1;
