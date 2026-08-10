@@ -132,6 +132,21 @@ write_db_env_file() {
   db_port="$(default_db_port)"
   jdbc_url="$(build_jdbc_url "$db_port")"
 
+    # Determine or generate JWT secret to persist in the env file. Prefer
+    # user-provided SCA_JWT_SECRET or JWT_SECRET; otherwise generate a strong
+    # random secret to avoid insecure hardcoded fallbacks in the application.
+    local jwt_secret=""
+    if [[ -n "${SCA_JWT_SECRET:-}" ]]; then
+      jwt_secret="$SCA_JWT_SECRET"
+    elif [[ -n "${JWT_SECRET:-}" ]]; then
+      jwt_secret="$JWT_SECRET"
+    else
+      if command -v openssl >/dev/null 2>&1; then
+        jwt_secret="$(openssl rand -base64 48)"
+        echo "==> Generated a new JWT secret to persist in $DB_ENV_FILE"
+      fi
+    fi
+
   if [[ -f "$DB_ENV_FILE" && -z "$password" ]]; then
     return
   fi
@@ -171,6 +186,11 @@ write_db_env_file() {
     fi
     if [[ -n "$GOOGLE_REDIRECT_URI" ]]; then
       printf 'GOOGLE_REDIRECT_URI=%q\n' "$GOOGLE_REDIRECT_URI"
+    fi
+    # Persist JWT secret for the application (SPRING / direct property mapping)
+    if [[ -n "$jwt_secret" ]]; then
+      printf 'JWT_SECRET=%q\n' "$jwt_secret"
+      printf 'SCA_JWT_SECRET=%q\n' "$jwt_secret"
     fi
   } > "$tmp_env"
 
@@ -280,6 +300,7 @@ require_command curl
 require_command systemctl
 require_command sudo
 require_command java
+require_command openssl
 
 normalize_db_type
 
