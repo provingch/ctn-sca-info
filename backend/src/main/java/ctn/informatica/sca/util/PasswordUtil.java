@@ -1,6 +1,7 @@
 package ctn.informatica.sca.util;
 
 import org.mindrot.jbcrypt.BCrypt;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 public final class PasswordUtil {
     private PasswordUtil() {
@@ -28,18 +29,17 @@ public final class PasswordUtil {
             try {
                 return BCrypt.checkpw(plainText, stored);
             } catch (IllegalArgumentException ex) {
-                // Algunos salts históricos usan prefijos no soportados por la
-                // implementación actual de jBCrypt (ej. prefijos personalizados).
-                // Intentamos normalizar el prefijo a $2b$ y reintentar la verificación.
-                String normalized = normalizeBcryptPrefix(stored);
-                if (!normalized.equals(stored)) {
-                    try {
-                        return BCrypt.checkpw(plainText, normalized);
-                    } catch (IllegalArgumentException ex2) {
-                        return false;
-                    }
+                // Algunos salts históricos o revisiones ($2b$) pueden no ser
+                // aceptadas por la versión de jBCrypt incluida en el runtime.
+                // Intentamos un fallback a la implementación de Spring
+                // `BCryptPasswordEncoder` que soporta más revisiones.
+                try {
+                    BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+                    return encoder.matches(plainText, stored);
+                } catch (Exception ex2) {
+                    // Si tampoco funciona, no hay forma de validar con este hash.
+                    return false;
                 }
-                return false;
             }
         }
         // Fallback para migración: comparación de texto plano (será rehasheado en el próximo login)
