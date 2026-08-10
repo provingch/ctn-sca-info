@@ -68,7 +68,13 @@ public class AuthService {
         }
         Long userId = jwtService.extractUserId(req.tempToken());
 
-        User user = userDao.findById(userId.intValue());
+        User user;
+        try {
+            user = userDao.findById(userId.intValue());
+        } catch (Exception e) {
+            log.error("[AUTH] Error de base de datos durante verify2fa para userId {}", userId, e);
+            throw new RuntimeException("Error de base de datos durante verify2fa", e);
+        }
         if (user == null) {
             throw new AuthException("Usuario no encontrado");
         }
