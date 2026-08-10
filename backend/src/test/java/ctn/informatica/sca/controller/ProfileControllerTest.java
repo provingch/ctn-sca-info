@@ -25,12 +25,20 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ProfileControllerTest {
+
+    private Authentication authentication(int userId, int level) {
+        return new UsernamePasswordAuthenticationToken(
+                userId,
+                null,
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_LEVEL_" + level)));
+    }
 
     @Mock
     private AsignacionDao asignacionDao;
@@ -62,13 +70,13 @@ class ProfileControllerTest {
     @Test
     void shouldChangeProfessorPasswordWhenCurrentPasswordMatches() throws Exception {
         User user = new User(1, "profesor", "Profesor Uno", 1);
-        Authentication authentication = new UsernamePasswordAuthenticationToken(user.getId(), null);
+        Authentication authentication = authentication(user.getId(), user.getLevel());
 
         Profesor profesor = new Profesor();
         profesor.setId(1);
         profesor.setContrasenia(PasswordUtil.hash("actual"));
 
-        when(userDao.findById(1)).thenReturn(user);
+        when(userDao.findByIdAndLevel(1, 1)).thenReturn(user);
         when(profesorDao.findById(1)).thenReturn(profesor);
         when(profesorDao.update(any())).thenReturn(true);
 
@@ -82,13 +90,13 @@ class ProfileControllerTest {
     @Test
     void shouldChangeParentPasswordWhenCurrentPasswordMatches() throws Exception {
         User user = new User(2, "padre", "Padre Uno", 4);
-        Authentication authentication = new UsernamePasswordAuthenticationToken(user.getId(), null);
+        Authentication authentication = authentication(user.getId(), user.getLevel());
 
         Padre padre = new Padre();
         padre.setId(2);
         padre.setContrasenia(PasswordUtil.hash("actualpadre"));
 
-        when(userDao.findById(2)).thenReturn(user);
+        when(userDao.findByIdAndLevel(2, 4)).thenReturn(user);
         when(padreDao.findById(2)).thenReturn(padre);
         when(padreDao.update(any())).thenReturn(true);
 
@@ -102,7 +110,7 @@ class ProfileControllerTest {
     @Test
     void shouldReturnParentProfileWhenUserIsParent() throws Exception {
         User user = new User(11, "padre", "Padre Uno", 4);
-        Authentication authentication = new UsernamePasswordAuthenticationToken(user.getId(), null);
+        Authentication authentication = authentication(user.getId(), user.getLevel());
 
         Padre padre = new Padre();
         padre.setId(11);
@@ -111,7 +119,7 @@ class ProfileControllerTest {
         padre.setUsuario("padre");
         padre.setCorreo("padre@example.com");
 
-        when(userDao.findById(11)).thenReturn(user);
+        when(userDao.findByIdAndLevel(11, 4)).thenReturn(user);
         when(padreDao.findById(11)).thenReturn(padre);
         when(especialidadDao.findAll()).thenReturn(Collections.emptyList());
         when(pushSubscriptionDao.findByUser(11, "padre")).thenReturn(Collections.emptyList());
@@ -122,18 +130,20 @@ class ProfileControllerTest {
         assertFalse(response.isProfessorProfile());
         assertFalse(response.pushEnabled());
         assertEquals("Familia", response.profileRoleLabel());
+        assertEquals("padre", response.profileOwner().usuario());
+        verify(profesorDao, never()).findById(11);
     }
 
     @Test
     void shouldSaveProfessorProfileWhenValuesAreValid() throws Exception {
         User user = new User(3, "profesor", "Administrador", 3);
-        Authentication authentication = new UsernamePasswordAuthenticationToken(user.getId(), null);
+        Authentication authentication = authentication(user.getId(), user.getLevel());
 
         Profesor profesor = new Profesor();
         profesor.setId(3);
         profesor.setUsuario("profesor");
 
-        when(userDao.findById(3)).thenReturn(user);
+        when(userDao.findByIdAndLevel(3, 3)).thenReturn(user);
         when(profesorDao.findById(3)).thenReturn(profesor);
         when(profesorDao.update(any())).thenReturn(true);
 

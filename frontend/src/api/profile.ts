@@ -1,9 +1,3 @@
-/**
- * Espejo parcial de ProfileController.java / ProfileResponse.
- * Igual que en home.ts: tipamos lo esencial para Bloque 2 y dejamos el
- * resto (Google Classroom, TOTP, materias, asignaciones) como unknown
- * hasta que la pantalla de perfil completa los necesite.
- */
 import { apiRequest } from './client';
 
 export interface ProfileOwnerDto {
@@ -20,6 +14,10 @@ export interface ProfileOwnerDto {
   gcAccessToken: string | null;
 }
 
+export interface ProfileMateriaDto { id: number; nombre: string; categoria: string | null; }
+export interface ProfileAssignmentDto { id: number; materiaNombre: string; cursoDescripcion: string; }
+export interface ProfileClassroomCourseDto { id: string; name: string; section: string | null; room: string | null; }
+
 export interface ProfileResponse {
   profileOwner: ProfileOwnerDto;
   isProfessorProfile: boolean;
@@ -27,16 +25,21 @@ export interface ProfileResponse {
   isStaffProfile: boolean;
   profileRoleLabel: string;
   profileAccessDescription: string;
+  showMateriasPanel: boolean;
+  showGoogleClassroomPanel: boolean;
+  showSecurityPanel: boolean;
+  showActivityPanel: boolean;
+  canEditAdminOnlyProfileFields: boolean;
+  googleClassroomConnected: boolean;
+  googleClassroomCourses: ProfileClassroomCourseDto[];
+  teacherMaterias: ProfileMateriaDto[];
+  misAsignaciones: ProfileAssignmentDto[];
+  profesorEspecialidadNombre: string;
+  activityLog: string[];
   totpEnabled: boolean;
+  pendingTotpSecret: string | null;
+  totpProvisioningUri: string | null;
   pushEnabled: boolean;
-  // showMateriasPanel, showGoogleClassroomPanel, showSecurityPanel,
-  // showActivityPanel, canEditAdminOnlyProfileFields, googleClassroom*,
-  // teacherMaterias, misAsignaciones, availableMaterias, especialidades,
-  // profesorEspecialidadNombre, manualTeacherSubjectsText, activityLog,
-  // pendingTotpSecret, totpProvisioningUri, pushPublicKey:
-  // pendientes de tipar cuando la pantalla de perfil los consuma
-  // (ver backend ProfileResponse.java para los nombres exactos).
-  [key: string]: unknown;
 }
 
 export interface ChangePasswordRequest {
