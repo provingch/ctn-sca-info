@@ -129,11 +129,11 @@ read_env_file_value() {
   local key="$1"
   local line
 
-  if [[ ! -f "$DB_ENV_FILE" ]]; then
+  if ! sudo test -f "$DB_ENV_FILE"; then
     return
   fi
 
-  line="$(grep -E "^${key}=" "$DB_ENV_FILE" | tail -n 1 || true)"
+  line="$(sudo grep -E "^${key}=" "$DB_ENV_FILE" 2>/dev/null | tail -n 1 || true)"
   if [[ -z "$line" ]]; then
     return
   fi
