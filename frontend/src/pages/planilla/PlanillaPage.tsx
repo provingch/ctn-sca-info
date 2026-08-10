@@ -43,7 +43,7 @@ export default function PlanillaPage() {
 
   if (!data) return <AppShell title="Planilla"><div className="panel">{status || 'Cargando…'}</div></AppShell>;
   return (
-    <AppShell title={data.planilla.materiaNombre}>
+    <AppShell title={data.planilla.materiaNombre} subtitle={data.curso ? `${data.curso.nivel}° ${data.curso.seccion} · ${data.planilla.etapa}` : data.planilla.etapa} specialty={data.curso?.especialidad}>
       <div className="toolbar">
         <Link className="button secondary" to="/home">← Volver</Link>
         <Link className="button" to={`/planilla/${id}/tarea`}>Agregar tarea</Link>
