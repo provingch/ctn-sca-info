@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import ThemeToggle from '../../components/ThemeToggle';
 
 const privacy = [
   ['Datos que recopilamos', 'El sistema almacena datos de identificación, contacto y trayectoria académica necesarios para prestar el servicio.'],
@@ -15,5 +16,5 @@ const terms = [
 ];
 export default function LegalPage() {
   const isPrivacy = useLocation().pathname.includes('privacidad'); const sections = isPrivacy ? privacy : terms;
-  return <main className="legal-page"><Link to="/">← Volver al inicio</Link><article><p className="eyebrow">SCA · Colegio Técnico Nacional</p><h1>{isPrivacy ? 'Política de Privacidad' : 'Condiciones del Servicio'}</h1><p className="lead">Última actualización: 10 de agosto de 2026</p>{sections.map(([title, copy], i) => <section key={title}><h2>{i + 1}. {title}</h2><p>{copy}</p></section>)}<hr/><Link to={isPrivacy ? '/terminos' : '/privacidad'}>{isPrivacy ? 'Ver Condiciones del Servicio' : 'Ver Política de Privacidad'}</Link></article></main>;
+  return <main className="legal-page"><div className="legal-toolbar"><Link to="/">← Volver al inicio</Link><ThemeToggle /></div><article><p className="eyebrow">SCA · Colegio Técnico Nacional</p><h1>{isPrivacy ? 'Política de Privacidad' : 'Condiciones del Servicio'}</h1><p className="lead">Última actualización: 10 de agosto de 2026</p>{sections.map(([title, copy], i) => <section key={title}><h2>{i + 1}. {title}</h2><p>{copy}</p></section>)}<hr/><Link to={isPrivacy ? '/terminos' : '/privacidad'}>{isPrivacy ? 'Ver Condiciones del Servicio' : 'Ver Política de Privacidad'}</Link></article></main>;
 }

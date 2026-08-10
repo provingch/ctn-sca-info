@@ -1,10 +1,12 @@
 import type { ReactNode } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import ThemeToggle from './ThemeToggle';
+import { normalizeSpecialty } from '../theme/theme';
 
 const roleNames: Record<number, string> = { 1: 'Profesor', 2: 'Evaluador', 3: 'Administrador', 4: 'Padre / Encargado' };
 
-export default function AppShell({ children, title }: { children: ReactNode; title?: string }) {
+export default function AppShell({ children, title, subtitle, specialty }: { children: ReactNode; title?: string; subtitle?: string; specialty?: string | null }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -14,20 +16,21 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
   }
 
   return (
-    <div className="app-frame">
+    <div className="app-frame" data-specialty={normalizeSpecialty(specialty)}>
       <header className="app-header">
-        <NavLink className="brand" to="/">SCA <span>CTN</span></NavLink>
+        <NavLink className="brand" to="/" aria-label="Ir al inicio"><span className="brand-mark">CTN</span><span className="brand-copy"><strong>SCA</strong><small>Carpeta Académica</small></span></NavLink>
         <nav className="app-nav" aria-label="Navegación principal">
           {user?.level === 1 && <NavLink to="/home">Cursos</NavLink>}
           {user?.level === 2 && <NavLink to="/evaluacion">Evaluación</NavLink>}
           {user?.level === 3 && <NavLink to="/admin">Administración</NavLink>}
           {user?.level === 4 && <NavLink to="/padre">Mis hijos</NavLink>}
           <NavLink to="/profile">Mi perfil</NavLink>
+          <ThemeToggle compact />
           <button className="nav-button" type="button" onClick={signOut}>Cerrar sesión</button>
         </nav>
       </header>
       <main className="app-main">
-        {title && <div className="page-heading"><p>{user ? roleNames[user.level] ?? 'Usuario' : 'SCA'}</p><h1>{title}</h1></div>}
+        {title && <section className="page-hero"><div className="hero-content"><span className="hero-kicker"><i />{user ? roleNames[user.level] ?? 'Usuario' : 'SCA'}</span><h1>{title}</h1><p>{subtitle || 'Sistema de Carpetas Académicas del Colegio Técnico Nacional'}</p></div><div className="hero-emblem" aria-hidden="true"><span>CTN</span></div></section>}
         {children}
       </main>
       <footer className="app-footer">
