@@ -27,7 +27,8 @@ JAR_NAME="${JAR_NAME:-sca-backend.jar}"
 APP_PORT="${APP_PORT:-8080}"
 APP_URL="${APP_URL:-http://127.0.0.1:${APP_PORT}/api/health}"
 STARTUP_TIMEOUT_SECONDS="${STARTUP_TIMEOUT_SECONDS:-90}"
-HEALTHCHECK_RETRIES="${HEALTHCHECK_RETRIES:-45}"
+# Reasonable defaults: try 10 times with 2s delay (≈20s) — app needs ~8-11s to boot
+HEALTHCHECK_RETRIES="${HEALTHCHECK_RETRIES:-10}"
 HEALTHCHECK_DELAY_SECONDS="${HEALTHCHECK_DELAY_SECONDS:-2}"
 
 DB_ENV_FILE="${DB_ENV_FILE:-/etc/ctn-sca-info-backend.env}"
@@ -124,6 +125,27 @@ MSG
   printf "%s" "$password"
 }
 
+read_env_file_value() {
+  local key="$1"
+  local line
+
+  if [[ ! -f "$DB_ENV_FILE" ]]; then
+    return
+  fi
+
+  line="$(grep -E "^${key}=" "$DB_ENV_FILE" | tail -n 1 || true)"
+  if [[ -z "$line" ]]; then
+    return
+  fi
+
+  local value="${line#${key}=}"
+  value="${value%\"}"
+  value="${value#\"}"
+  value="${value%\'}"
+  value="${value#\'}"
+  printf '%s' "$value"
+}
+
 write_db_env_file() {
   local password="$1"
   local db_port
@@ -132,22 +154,36 @@ write_db_env_file() {
   db_port="$(default_db_port)"
   jdbc_url="$(build_jdbc_url "$db_port")"
 
-    # Determine or generate JWT secret to persist in the env file. Prefer
-    # user-provided SCA_JWT_SECRET or JWT_SECRET; otherwise generate a strong
-    # random secret to avoid insecure hardcoded fallbacks in the application.
-    local jwt_secret=""
-    if [[ -n "${SCA_JWT_SECRET:-}" ]]; then
-      jwt_secret="$SCA_JWT_SECRET"
-    elif [[ -n "${JWT_SECRET:-}" ]]; then
-      jwt_secret="$JWT_SECRET"
-    else
-      if command -v openssl >/dev/null 2>&1; then
-        jwt_secret="$(openssl rand -base64 48)"
-        echo "==> Generated a new JWT secret to persist in $DB_ENV_FILE"
+  local persisted_jwt_secret=""
+  local persisted_password=""
+  if [[ -f "$DB_ENV_FILE" ]]; then
+    persisted_jwt_secret="$(read_env_file_value 'JWT_SECRET')"
+    if [[ -z "$password" ]]; then
+      persisted_password="$(read_env_file_value 'SCA_DB_PASSWORD')"
+      if [[ -z "$persisted_password" ]]; then
+        persisted_password="$(read_env_file_value 'CTN_DB_PASSWORD')"
       fi
+      password="$persisted_password"
     fi
+  fi
 
-  if [[ -f "$DB_ENV_FILE" && -z "$password" ]]; then
+  # Determine or generate JWT secret to persist in the env file. Priority:
+  # 1) explicit env vars SCA_JWT_SECRET / JWT_SECRET passed by operator
+  # 2) existing value already persisted in $DB_ENV_FILE (if present)
+  # 3) generate a strong random secret using openssl
+  local jwt_secret=""
+  if [[ -n "${SCA_JWT_SECRET:-}" ]]; then
+    jwt_secret="$SCA_JWT_SECRET"
+  elif [[ -n "${JWT_SECRET:-}" ]]; then
+    jwt_secret="$JWT_SECRET"
+  elif [[ -n "$persisted_jwt_secret" ]]; then
+    jwt_secret="$persisted_jwt_secret"
+  elif command -v openssl >/dev/null 2>&1; then
+    jwt_secret="$(openssl rand -base64 48)"
+    echo "==> Generated a new JWT secret to persist in $DB_ENV_FILE"
+  fi
+
+  if [[ -f "$DB_ENV_FILE" && -z "$password" && -z "${SCA_JWT_SECRET:-}" && -z "${JWT_SECRET:-}" && -z "$GOOGLE_CLIENT_ID" && -z "$GOOGLE_CLIENT_SECRET" && -z "$GOOGLE_REDIRECT_URI" ]]; then
     return
   fi
 
@@ -236,9 +272,11 @@ wait_for_app_response() {
   local attempt=1
 
   while (( attempt <= retries )); do
-    if curl -fsS "$APP_URL" >/dev/null; then
+    # Use a small per-request timeout to avoid long hangs and allow retries
+    if curl -fsS --max-time 5 "$APP_URL" >/dev/null; then
       return 0
     fi
+    echo "==> Health check failed on attempt ${attempt}/${retries}, retrying in ${delay}s..."
     sleep "$delay"
     attempt=$((attempt + 1))
   done
@@ -351,7 +389,8 @@ fi
 
 echo "==> Checking response on $APP_URL"
 if ! wait_for_app_response; then
-  echo "Application is not responding on $APP_URL" >&2
+  echo "ERROR: Health check failed after ${HEALTHCHECK_RETRIES} attempts." >&2
+  echo "       Review the service with: journalctl -u ${SERVICE_NAME}.service" >&2
   print_diagnostics
   exit 1
 fi
