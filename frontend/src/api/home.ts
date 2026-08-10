@@ -36,7 +36,25 @@ export interface HomeResponse {
   // rasgoAsistencias, rasgoAlumnos*, instrumentos:
   // pendientes de tipar cuando se construya la pantalla que los consume
   // (ver backend HomeResponse.java para los nombres exactos).
+  materiasDetectadas: Array<{ id: number; nombre: string; categoria: string }>;
+  googleClassroomConnected: boolean;
+  googleClassroomError: string | null;
+  googleClassroomCourses: Array<{ id: string; name: string; section: string; url: string }>;
+  rasgoPlanillas: Array<{ id: number; tema: string; fechaClase: string }>;
+  rasgoPlanillaSeleccionada: { id: number; tema: string; fechaClase: string } | null;
+  rasgoAsistencias: Array<{ id: number; alumnoNombreCompleto: string; estado: string; faltaCodigo: string | null; faltaObservacion: string | null }>;
+  rasgoAlumnosValidos: Array<{ id: number; nombre: string; apellido: string }>;
+  rasgoAlumnosInvalidos: Array<{ id: number; nombre: string; apellido: string }>;
+  instrumentos: Array<{ id: number; nombre: string }>;
   [key: string]: unknown;
+}
+
+export function createClass(payload: { cursoId: number; etapa: number; instrumentoId: number; turno: string; tema: string; alumnosAusentes: number[] }) {
+  return apiRequest<void>('/api/home/create-rasgo-planilla', { method: 'POST', body: payload });
+}
+
+export function updateAttendance(asistenciaId: number, estado: string) {
+  return apiRequest<void>('/api/home/submit-rasgo-asistencia', { method: 'POST', body: { asistenciaId, estado } });
 }
 
 export interface GetHomeParams {

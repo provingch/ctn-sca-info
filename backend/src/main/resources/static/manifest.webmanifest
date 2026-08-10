@@ -1,0 +1,12 @@
+{
+  "name": "SCA - Colegio Técnico Nacional",
+  "short_name": "SCA CTN",
+  "description": "Sistema de carpetas académicas del Colegio Técnico Nacional",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3f5f2",
+  "theme_color": "#0b675d",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

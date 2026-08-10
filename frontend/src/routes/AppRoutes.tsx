@@ -1,37 +1,41 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from '../context/AuthContext';
 import { ProtectedRoute } from './ProtectedRoute';
+import RoleLanding from './RoleLanding';
 import LoginPage from '../pages/auth/LoginPage';
 import HomePage from '../pages/home/HomePage';
 import ProfilePage from '../pages/profile/ProfilePage';
+import PlanillaPage from '../pages/planilla/PlanillaPage';
+import TareaPage from '../pages/planilla/TareaPage';
+import EvaluacionPage from '../pages/evaluacion/EvaluacionPage';
+import LegalPage from '../pages/legal/LegalPage';
+import AdminPage from '../pages/admin/AdminPage';
+import ParentPage from '../pages/parent/ParentPage';
+import StyleguidePage from '../pages/styleguide/StyleguidePage';
+
+const protect = (element: React.ReactNode) => <ProtectedRoute>{element}</ProtectedRoute>;
 
 export default function AppRoutes() {
-  return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route
-            path="/home"
-            element={
-              <ProtectedRoute>
-                <HomePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            }
-          />
-          {/* Bloque 3 en curso: /planilla, /evaluacion se agregan cuando su
-              backend termine de validarse end-to-end (ver contexto de sesión) */}
-          <Route path="*" element={<Navigate to="/home" replace />} />
-        </Routes>
-      </AuthProvider>
-    </BrowserRouter>
-  );
+  return <BrowserRouter><AuthProvider><Routes>
+    <Route path="/login" element={<LoginPage />} />
+    <Route path="/privacidad" element={<LegalPage />} />
+    <Route path="/terminos" element={<LegalPage />} />
+    <Route path="/" element={<RoleLanding />} />
+    <Route path="/home" element={protect(<HomePage />)} />
+    <Route path="/inicio" element={protect(<HomePage />)} />
+    <Route path="/profile" element={protect(<ProfilePage />)} />
+    <Route path="/perfil" element={protect(<ProfilePage />)} />
+    <Route path="/planilla/:planillaId" element={protect(<PlanillaPage />)} />
+    <Route path="/planilla/:planillaId/tarea" element={protect(<TareaPage />)} />
+    <Route path="/planilla/:planillaId/tarea/:tareaId" element={protect(<TareaPage />)} />
+    <Route path="/evaluacion" element={protect(<EvaluacionPage />)} />
+    <Route path="/admin" element={protect(<AdminPage />)} />
+    <Route path="/admin/materias" element={protect(<AdminPage />)} />
+    <Route path="/admin/usuarios" element={protect(<AdminPage />)} />
+    <Route path="/admin/asignaciones" element={protect(<AdminPage />)} />
+    <Route path="/admin/ingresantes" element={protect(<AdminPage />)} />
+    <Route path="/padre" element={protect(<ParentPage />)} />
+    <Route path="/styleguide" element={protect(<StyleguidePage />)} />
+    <Route path="*" element={<RoleLanding />} />
+  </Routes></AuthProvider></BrowserRouter>;
 }

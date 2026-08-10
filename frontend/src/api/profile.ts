@@ -52,3 +52,11 @@ export function getProfile(): Promise<ProfileResponse> {
 export function changePassword(payload: ChangePasswordRequest): Promise<void> {
   return apiRequest<void>('/api/profile/change-password', { method: 'POST', body: payload });
 }
+
+export function saveProfile(payload: { correo: string; telefono: string; celular: string; usuario: string; nombre: string; apellido: string; ci: number | null; nivel: number | null }): Promise<void> {
+  return apiRequest<void>('/api/profile/save-profile', { method: 'POST', body: payload });
+}
+
+export const prepareTotp = () => apiRequest<void>('/api/profile/prepare-totp', { method: 'POST' });
+export const confirmTotp = (totpSetupCode: string) => apiRequest<void>('/api/profile/confirm-totp', { method: 'POST', body: { totpSetupCode } });
+export const disableTotp = () => apiRequest<void>('/api/profile/disable-totp', { method: 'POST' });
