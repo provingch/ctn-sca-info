@@ -9,10 +9,14 @@ import ctn.informatica.sca.dto.Verify2faRequest;
 import ctn.informatica.sca.model.User;
 import ctn.informatica.sca.security.JwtService;
 import ctn.informatica.sca.util.TotpUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AuthService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     private final UserDao userDao;
     private final PadreDao padreDao;
@@ -23,14 +27,10 @@ public class AuthService {
         this.userDao = userDao;
         this.padreDao = padreDao;
         this.profesorDao = profesorDao;
-    import org.slf4j.Logger;
-    import org.slf4j.LoggerFactory;
+        this.jwtService = jwtService;
     }
 
     public static class AuthException extends RuntimeException {
-
-        private static final Logger log = LoggerFactory.getLogger(AuthService.class);
-
         public AuthException(String message) { super(message); }
     }
 
@@ -39,6 +39,7 @@ public class AuthService {
         try {
             user = userDao.findByUsernameAndPassword(req.username(), req.password());
         } catch (Exception e) {
+            log.error("[AUTH] Error de base de datos durante login para usuario {}", req.username(), e);
             throw new RuntimeException("Error de base de datos durante login", e);
         }
         if (user == null) {
@@ -52,9 +53,13 @@ public class AuthService {
             return new LoginResponse(true, tempToken, null, null);
         }
 
-                log.error("[AUTH] Error de base de datos durante login para usuario {}", req.username(), e);
-                throw new RuntimeException("Error de base de datos durante login", e);
-        return new LoginResponse(false, null, accessToken, user.getLevel());
+        try {
+            String accessToken = jwtService.generateAccessToken((long) user.getId(), user.getLevel());
+            return new LoginResponse(false, null, accessToken, user.getLevel());
+        } catch (Exception e) {
+            log.error("[AUTH] Error generando access token para usuario {}", user.getId(), e);
+            throw e;
+        }
     }
 
     public LoginResponse verify2fa(Verify2faRequest req) {
@@ -63,17 +68,7 @@ public class AuthService {
         }
         Long userId = jwtService.extractUserId(req.tempToken());
 
-        User user;
-        try {
-            user = userDao.findById(userId.intValue());
-            try {
-                String accessToken = jwtService.generateAccessToken((long) user.getId(), user.getLevel());
-                return new LoginResponse(false, null, accessToken, user.getLevel());
-            } catch (Exception e) {
-                log.error("[AUTH] Error generando access token para usuario {}", user.getId(), e);
-                throw e;
-            }
-        }
+        User user = userDao.findById(userId.intValue());
         if (user == null) {
             throw new AuthException("Usuario no encontrado");
         }
@@ -83,8 +78,13 @@ public class AuthService {
             throw new AuthException("Código de autenticación inválido");
         }
 
-        String accessToken = jwtService.generateAccessToken((long) user.getId(), user.getLevel());
-        return new LoginResponse(false, null, accessToken, user.getLevel());
+        try {
+            String accessToken = jwtService.generateAccessToken((long) user.getId(), user.getLevel());
+            return new LoginResponse(false, null, accessToken, user.getLevel());
+        } catch (Exception e) {
+            log.error("[AUTH] Error generando access token para usuario {}", user.getId(), e);
+            throw e;
+        }
     }
 
     // Réplica exacta de la regla en LoginServlet/TotpServlet: nivel 4 (padre) busca
@@ -96,12 +96,7 @@ public class AuthService {
                 return padre != null ? padre.getTotpSecret() : null;
             } else {
                 var profesor = profesorDao.findById(user.getId());
-            try {
-                String accessToken = jwtService.generateAccessToken((long) user.getId(), user.getLevel());
-                return new LoginResponse(false, null, accessToken, user.getLevel());
-            } catch (Exception e) {
-                log.error("[AUTH] Error generando access token para usuario {}", user.getId(), e);
-                throw e;
+                return profesor != null ? profesor.getTotpSecret() : null;
             }
         } catch (Exception e) {
             return null; // igual que el original: si falla la búsqueda del secreto, sigue sin 2FA
