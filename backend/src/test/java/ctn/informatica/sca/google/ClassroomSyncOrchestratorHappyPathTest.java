@@ -7,6 +7,7 @@ import ctn.informatica.sca.model.Alumno;
 import ctn.informatica.sca.model.Curso;
 import ctn.informatica.sca.model.Planilla;
 import ctn.informatica.sca.model.Profesor;
+import ctn.informatica.sca.model.Tarea;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -71,7 +72,12 @@ public class ClassroomSyncOrchestratorHappyPathTest {
         s.setAssignedGrade(8.0);
         when(adapter.listStudentSubmissionsForCourseWork(any(), anyString(), anyString())).thenReturn(List.of(s));
 
-        when(tareaDao.consultarTarea(42)).thenReturn(new java.util.ArrayList<>());
+        Tarea tareaExistente = new Tarea();
+        tareaExistente.setId(500);
+        tareaExistente.setPlanillaId(42);
+        tareaExistente.setGoogleCourseworkId("cw-1");
+        tareaExistente.setTotal(10);
+        when(tareaDao.consultarTarea(42)).thenReturn(List.of(tareaExistente));
 
         // registrar registros
         when(registroDao.getRegistroIdsForPlanilla(eq(42), anySet())).thenReturn(Map.of(11, 1001));
@@ -87,7 +93,8 @@ public class ClassroomSyncOrchestratorHappyPathTest {
         assertTrue(result.classroomCourseMapped());
         assertEquals(1, result.importedCourseworks());
         assertEquals(1, result.linkedStudents());
-        // importedGrades depends on tarea detection — we ensured consultaTarea empty so importedGrades may be 0
-        assertTrue(result.importedGrades() >= 0);
+        // La tarea mockeada tiene googleCourseworkId="cw-1", que matchea el CourseWork mockeado,
+        // así que el submission con assignedGrade=8.0 debe importarse como 1 nota.
+        assertEquals(1, result.importedGrades());
     }
 }
