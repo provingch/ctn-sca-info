@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ThemeToggle from './ThemeToggle';
+import CtnLogo from './CtnLogo';
 import { normalizeSpecialty } from '../theme/theme';
 
 const roleNames: Record<number, string> = { 1: 'Profesor', 2: 'Evaluador', 3: 'Administrador', 4: 'Padre / Encargado' };
@@ -18,7 +19,7 @@ export default function AppShell({ children, title, subtitle, specialty }: { chi
   return (
     <div className="app-frame" data-specialty={normalizeSpecialty(specialty)}>
       <header className="app-header">
-        <NavLink className="brand" to="/" aria-label="Ir al inicio"><span className="brand-mark">CTN</span><span className="brand-copy"><strong>SCA</strong><small>Carpeta Académica</small></span></NavLink>
+        <NavLink className="brand" to="/" aria-label="Ir al inicio"><span className="brand-mark"><CtnLogo /></span><span className="brand-copy"><strong>SCA</strong><small>Carpeta Académica</small></span></NavLink>
         <nav className="app-nav" aria-label="Navegación principal">
           {user?.level === 1 && <NavLink to="/home">Cursos</NavLink>}
           {user?.level === 2 && <NavLink to="/evaluacion">Evaluación</NavLink>}
@@ -30,7 +31,7 @@ export default function AppShell({ children, title, subtitle, specialty }: { chi
         </nav>
       </header>
       <main className="app-main">
-        {title && <section className="page-hero"><div className="hero-content"><span className="hero-kicker"><i />{user ? roleNames[user.level] ?? 'Usuario' : 'SCA'}</span><h1>{title}</h1><p>{subtitle || 'Sistema de Carpetas Académicas del Colegio Técnico Nacional'}</p></div><div className="hero-emblem" aria-hidden="true"><span>CTN</span></div></section>}
+        {title && <section className="page-hero"><div className="hero-content"><span className="hero-kicker"><i />{user ? roleNames[user.level] ?? 'Usuario' : 'SCA'}</span><h1>{title}</h1><p>{subtitle || 'Sistema de Carpetas Académicas del Colegio Técnico Nacional'}</p></div><div className="hero-emblem"><CtnLogo /></div></section>}
         {children}
       </main>
       <footer className="app-footer">

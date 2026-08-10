@@ -140,3 +140,11 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
   .auth-page { padding: 14px; }.auth-brand-panel { padding: 70px 12px 8px; }.auth-brand-panel h2 { font-size: 2.45rem; }.auth-form { padding: 28px 22px; }.public-theme-toggle { top: 16px; right: 16px; }
   .public-theme-toggle .theme-toggle { width: 42px; padding: 0; }.public-theme-toggle .theme-toggle span { display: none; }
 }
+
+/* Identidad institucional: usa los SVG oficiales incluidos en el frontend legado. */
+.ctn-logo { display: block; width: 100%; height: 100%; object-fit: contain; }
+.brand-mark { width: 44px; height: 44px; padding: 1px; border: 0; border-radius: 0; background: transparent; }
+.hero-emblem { padding: 12px; }
+.hero-emblem .ctn-logo { filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .2)); transform: rotate(-4deg); }
+.auth-brand-mark { width: 112px; height: 112px; border: 0; border-radius: 0; background: transparent; backdrop-filter: none; }
+.auth-brand-mark .ctn-logo { filter: drop-shadow(0 12px 22px rgba(0, 0, 0, .32)); }
