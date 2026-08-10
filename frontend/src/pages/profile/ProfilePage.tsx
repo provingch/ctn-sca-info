@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 import { changePassword, confirmTotp, disableTotp, getProfile, prepareTotp, saveProfile, type ProfileResponse } from '../../api/profile';
 import { ApiError } from '../../api/client';
 import AppShell from '../../components/AppShell';
@@ -10,8 +10,24 @@ export default function ProfilePage() {
   const [data, setData] = useState<ProfileResponse | null>(null);
   const [status, setStatus] = useState('');
   const [tab, setTab] = useState<ProfileTab>('profile');
+  const profilePageRef = useRef<HTMLDivElement>(null);
+  const identityRef = useRef<HTMLElement>(null);
   const load = useCallback(async () => { try { setData(await getProfile()); } catch (error) { setStatus(message(error, 'Error al cargar el perfil.')); } }, []);
   useEffect(() => { void load(); }, [load]);
+  useLayoutEffect(() => {
+    const page = profilePageRef.current;
+    const identity = identityRef.current;
+    if (!page || !identity) return;
+
+    const updateIdentityHeight = () => {
+      page.style.setProperty('--profile-identity-height', `${Math.ceil(identity.getBoundingClientRect().height)}px`);
+    };
+
+    updateIdentityHeight();
+    const observer = new ResizeObserver(updateIdentityHeight);
+    observer.observe(identity);
+    return () => observer.disconnect();
+  }, [data]);
 
   if (!data) return <AppShell title="Mi perfil"><section className="panel">{status || 'Cargando…'}</section></AppShell>;
 
@@ -21,7 +37,8 @@ export default function ProfilePage() {
   const finish = async (text: string) => { setStatus(text); await load(); };
 
   return <AppShell title="Mi perfil" subtitle={`Cuenta de ${owner.usuario || 'usuario'} · ${data.profileRoleLabel}`}>
-    <section className="profile-identity">
+    <div className="profile-page" ref={profilePageRef}>
+    <section className="profile-identity" ref={identityRef}>
       <div className="avatar" aria-hidden="true">{initials}</div>
       <div className="profile-identity-copy"><span className="badge">{data.profileRoleLabel}</span><h2>{owner.fullName?.trim() || owner.usuario || 'Usuario SCA'}</h2><strong>@{owner.usuario || 'sin-usuario'}</strong><p>{data.profileAccessDescription}</p></div>
       <div className="profile-completion"><span>Perfil completado</span><strong>{completion}%</strong><div><i style={{ width: `${completion}%` }} /></div></div>
@@ -42,6 +59,7 @@ export default function ProfilePage() {
         {tab === 'app' && <AppStatus data={data} />}
         {tab === 'activity' && <Activity entries={data.activityLog} />}
       </div>
+    </div>
     </div>
   </AppShell>;
 }

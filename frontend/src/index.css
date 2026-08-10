@@ -121,7 +121,8 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 
 @media (min-width: 901px) {
   .profile-identity { position: sticky; top: 92px; z-index: 15; isolation: isolate; background: color-mix(in srgb, var(--paper) 96%, transparent); box-shadow: 0 14px 34px color-mix(in srgb, var(--ink) 13%, transparent); backdrop-filter: blur(18px); }
-  .profile-menu { position: sticky; top: 240px; z-index: 10; max-height: calc(100vh - 258px); overflow-y: auto; overscroll-behavior: contain; background: color-mix(in srgb, var(--paper) 97%, transparent); box-shadow: 0 12px 28px color-mix(in srgb, var(--ink) 10%, transparent); backdrop-filter: blur(16px); scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+  .profile-page { --profile-identity-height: 126px; }
+  .profile-menu { position: sticky; top: calc(92px + var(--profile-identity-height) + 22px); z-index: 10; max-height: calc(100vh - 132px - var(--profile-identity-height)); overflow-y: auto; overscroll-behavior: contain; background: color-mix(in srgb, var(--paper) 97%, transparent); box-shadow: 0 12px 28px color-mix(in srgb, var(--ink) 10%, transparent); backdrop-filter: blur(16px); scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
 }
 
 .auth-page { min-height: 100vh; position: relative; display: grid; grid-template-columns: minmax(320px, 1fr) minmax(360px, 480px) minmax(96px, .25fr); align-items: stretch; padding: 28px; gap: 28px; background: radial-gradient(circle at 12% 12%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 31rem), linear-gradient(145deg, #101832, #18264a 58%, color-mix(in srgb, var(--accent) 70%, #111b39)); }
