@@ -25,6 +25,9 @@
   --radius-sm: 9px;
   --radius: 14px;
   --radius-lg: 20px;
+  --scrollbar-track: #dfe7ef;
+  --scrollbar-thumb: #8a9bb0;
+  --scrollbar-thumb-hover: #65768d;
   background: var(--bg);
   color: var(--ink);
 }
@@ -51,6 +54,9 @@
   --danger: #ef8181;
   --shadow-sm: 0 14px 34px rgba(0, 0, 0, .22);
   --shadow-md: 0 22px 56px rgba(0, 0, 0, .34);
+  --scrollbar-track: #0b1019;
+  --scrollbar-thumb: #43526a;
+  --scrollbar-thumb-hover: #637595;
 }
 
 [data-specialty="informatica"] { --accent: #7a1f2b; --accent-deep: #641723; --accent-soft: #f7e9eb; --accent-strong: #efd2d6; --hero-tone: #7a1f2b; }
@@ -71,7 +77,12 @@
 :root[data-theme="dark"] [data-specialty="electromecanica"] { --accent: #829aff; --accent-deep: #bcc8ff; --accent-soft: #252e59; --accent-strong: #313d78; --hero-tone: #4055d9; }
 :root[data-theme="dark"] [data-specialty="electricidad"] { --accent: #65c9ed; --accent-deep: #a9e2f5; --accent-soft: #183541; --accent-strong: #204958; --hero-tone: #2188b1; }
 
-* { box-sizing: border-box; }
+* { box-sizing: border-box; scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track); }
+*::-webkit-scrollbar { width: 12px; height: 12px; }
+*::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+*::-webkit-scrollbar-thumb { min-height: 42px; border: 3px solid var(--scrollbar-track); border-radius: 999px; background: var(--scrollbar-thumb); }
+*::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+*::-webkit-scrollbar-corner { background: var(--scrollbar-track); }
 html { min-width: 320px; min-height: 100%; background: var(--bg); transition: background-color .2s ease, color .2s ease; }
 body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink); }
 body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(circle at 4% 3%, color-mix(in srgb, var(--accent) 10%, transparent) 0, transparent 28rem), radial-gradient(circle at 96% 92%, color-mix(in srgb, var(--accent) 7%, transparent) 0, transparent 30rem), radial-gradient(color-mix(in srgb, var(--accent) 13%, transparent) .7px, transparent .7px) 0 0 / 22px 22px, var(--bg); }
@@ -155,3 +166,77 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .hero-emblem .ctn-logo { filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .2)); transform: rotate(-4deg); }
 .auth-brand-mark { width: 112px; height: 112px; border: 0; border-radius: 0; background: transparent; backdrop-filter: none; }
 .auth-brand-mark .ctn-logo { filter: drop-shadow(0 12px 22px rgba(0, 0, 0, .32)); }
+
+@media (max-width: 1100px) {
+  .app-main { width: min(100% - 32px, 1180px); }
+  .page-hero { padding-inline: 30px; }
+  .profile-workspace { grid-template-columns: 200px minmax(0, 1fr); gap: 18px; }
+  .profile-card-grid { grid-template-columns: 1fr; }
+  .profile-form-actions { grid-column: 1; }
+}
+
+@media (max-width: 900px) {
+  .app-header { top: 10px; width: calc(100% - 24px); margin-top: 10px; }
+  .app-main { width: calc(100% - 28px); padding: 30px 0 56px; }
+  .page-hero { min-height: 164px; margin-bottom: 22px; padding: 28px; }
+  .page-hero h1 { font-size: clamp(2rem, 7vw, 3rem); }
+  .hero-emblem { width: 86px; height: 86px; flex-basis: 86px; }
+  .two-column { grid-template-columns: 1fr; }
+  .profile-workspace { grid-template-columns: 1fr; }
+  .profile-menu { position: static; max-height: none; grid-template-columns: repeat(4, minmax(140px, 1fr)); overflow-x: auto; overscroll-behavior-inline: contain; }
+  .profile-menu button { min-width: 140px; }
+  .profile-card-grid { grid-template-columns: 1fr 1fr; }
+  .profile-form-actions { grid-column: 1 / -1; }
+  .auth-brand-panel { max-width: none; }
+}
+
+@media (max-width: 680px) {
+  .app-header { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; padding: 8px 10px; overflow: hidden; }
+  .brand { flex: 1 1 auto; }
+  .app-nav { width: 100%; justify-content: flex-start; flex-wrap: nowrap; gap: 4px; padding-bottom: 3px; overflow-x: auto; overscroll-behavior-inline: contain; }
+  .app-nav > * { flex: 0 0 auto; }
+  .app-nav a, .theme-toggle, .nav-button { min-height: 36px; }
+  .app-main { width: calc(100% - 20px); padding-top: 20px; }
+  .page-hero { min-height: 142px; padding: 22px 20px; border-radius: 16px; }
+  .page-hero h1 { margin-top: 10px; font-size: clamp(1.8rem, 10vw, 2.4rem); }
+  .page-hero p { font-size: .92rem; }
+  .panel, .nav-card { padding: 20px; }
+  .profile-identity { gap: 14px; padding: 18px; }
+  .avatar { width: 60px; height: 60px; flex-basis: 60px; border-radius: 18px; font-size: 1.3rem; }
+  .profile-identity-copy h2 { font-size: 1.25rem; }
+  .profile-completion { margin-left: 74px; }
+  .profile-menu { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 8px; }
+  .profile-menu button { min-width: 0; padding: 11px; }
+  .profile-card-grid { grid-template-columns: 1fr; }
+  .profile-form-actions { grid-column: 1; }
+  .summary-grid { gap: 10px; }
+  .metric { padding: 16px; }
+  .metric strong { font-size: 1.15rem; }
+  .admin-list > div { align-items: flex-start; flex-direction: column; }
+  .subject-list summary { gap: 14px; }
+}
+
+@media (max-width: 480px) {
+  .app-header { width: calc(100% - 12px); margin-top: 6px; border-radius: 14px; }
+  .app-main { width: calc(100% - 16px); padding-bottom: 42px; }
+  .app-nav a { padding-inline: 9px; font-size: .72rem; }
+  .page-hero { min-height: 128px; margin-bottom: 16px; padding: 20px 18px; }
+  .hero-kicker { font-size: .65rem; }
+  .panel, .nav-card, .choice-grid button { padding: 18px; border-radius: 12px; }
+  .summary-grid { grid-template-columns: 1fr; }
+  .choice-grid { gap: 14px; }
+  .choice-grid button { min-height: 170px; }
+  .toolbar.filters > select { flex-basis: 100%; }
+  .profile-identity { display: grid; grid-template-columns: 58px minmax(0, 1fr); }
+  .profile-completion { grid-column: 1 / -1; width: 100%; margin-left: 0; }
+  .profile-menu button small { font-size: .68rem; }
+  .profile-list > div { padding-block: 11px; }
+  .profile-form-actions .button { width: 100%; }
+  .auth-brand-panel { padding-top: 62px; }
+  .auth-brand-mark { width: 88px; height: 88px; }
+  .auth-brand-panel h2 { font-size: 2.05rem; }
+  .auth-form { padding: 24px 18px; }
+  .legal-page { width: calc(100% - 20px); margin-block: 20px; }
+  .legal-page article { padding: 24px 18px; }
+  .app-footer { width: calc(100% - 24px); text-align: center; }
+}
