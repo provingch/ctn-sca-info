@@ -77,7 +77,7 @@ public class ClassroomSyncOrchestratorHappyPathTest {
         tareaExistente.setPlanillaId(42);
         tareaExistente.setGoogleCourseworkId("cw-1");
         tareaExistente.setTotal(10);
-        when(tareaDao.consultarTarea(42)).thenReturn(List.of(tareaExistente));
+        when(tareaDao.consultarTarea(42)).thenReturn(new java.util.ArrayList<>(List.of(tareaExistente)));
 
         // registrar registros
         when(registroDao.getRegistroIdsForPlanilla(eq(42), anySet())).thenReturn(Map.of(11, 1001));
