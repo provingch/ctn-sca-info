@@ -4,6 +4,7 @@ import { getCursosEvaluacion, getEspecialidades, type CursoEvaluacion, type Espe
 import { ApiError } from '../../api/client';
 import { useSpecialty } from '../../context/SpecialtyContext';
 import { normalizeSpecialty } from '../../theme/theme';
+import AnimatedSelect from '../../components/AnimatedSelect';
 
 export default function EvaluacionPage() {
   const specialty = useSpecialty();
@@ -54,24 +55,15 @@ export default function EvaluacionPage() {
       <p className="lead">Elegí la especialidad, el curso, la sección y el período académico para generar sus planillas.</p>
       {status && <div className="notice error" role="alert">{status}</div>}
       <label>Especialidad
-        <select value={especialidadId} required onChange={(event) => changeSpecialty(Number(event.target.value))}>
-          <option value="0">Seleccione una especialidad…</option>
-          {especialidades.map((item) => <option key={item.id} value={item.id}>{item.nombre}</option>)}
-        </select>
+        <AnimatedSelect ariaLabel="Especialidad" value={especialidadId || ''} required placeholder="Seleccione una especialidad…" onChange={(value) => changeSpecialty(Number(value))} options={especialidades.map((item) => ({ value: item.id, label: item.nombre }))} />
       </label>
       <label>Curso
-        <select value={cursoNivel} required disabled={!especialidadId || niveles.length === 0} onChange={(event) => { setCursoNivel(Number(event.target.value)); setSeccion(''); }}>
-          <option value="0">{especialidadId ? 'Seleccione un curso…' : 'Primero seleccione una especialidad'}</option>
-          {niveles.map((nivel) => <option key={nivel} value={nivel}>{nivel}°</option>)}
-        </select>
+        <AnimatedSelect ariaLabel="Curso" value={cursoNivel || ''} required disabled={!especialidadId || niveles.length === 0} placeholder={especialidadId ? 'Seleccione un curso…' : 'Primero seleccione una especialidad'} onChange={(value) => { setCursoNivel(Number(value)); setSeccion(''); }} options={niveles.map((nivel) => ({ value: nivel, label: `${nivel}°` }))} />
       </label>
       <label>Sección
-        <select value={seccion} required disabled={!cursoNivel || secciones.length === 0} onChange={(event) => setSeccion(event.target.value)}>
-          <option value="">{cursoNivel ? 'Seleccione una sección…' : 'Primero seleccione un curso'}</option>
-          {secciones.map((item) => <option key={item} value={item}>Sección {item}</option>)}
-        </select>
+        <AnimatedSelect ariaLabel="Sección" value={seccion} required disabled={!cursoNivel || secciones.length === 0} placeholder={cursoNivel ? 'Seleccione una sección…' : 'Primero seleccione un curso'} onChange={setSeccion} options={secciones.map((item) => ({ value: item, label: `Sección ${item}` }))} />
       </label>
-      <label>Etapa<select value={etapa} onChange={(event) => setEtapa(event.target.value)}><option value="primera">Primera etapa</option><option value="segunda">Segunda etapa</option></select></label>
+      <label>Etapa<AnimatedSelect ariaLabel="Etapa" value={etapa} onChange={setEtapa} options={[{ value: 'primera', label: 'Primera etapa' }, { value: 'segunda', label: 'Segunda etapa' }]} /></label>
       <label>Período<input type="number" min="2000" value={periodo} onChange={(event) => setPeriodo(Number(event.target.value))} /></label>
       <a className={`button ${!selected ? 'disabled' : ''}`} href={exportUrl} aria-disabled={!selected}>Descargar planillas</a>
     </section>

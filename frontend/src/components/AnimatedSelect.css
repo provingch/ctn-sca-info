@@ -1,0 +1,42 @@
+.animated-select { position: relative; width: 100%; min-width: 0; color: var(--ink); font-weight: 600; }
+.animated-select-native { position: absolute; width: 1px; height: 1px; padding: 0; border: 0; opacity: 0; pointer-events: none; }
+.animated-select-trigger { width: 100%; min-height: 46px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--paper-raised); color: var(--ink); text-align: left; box-shadow: none; transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease; }
+.animated-select-trigger:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--line-strong)); background: color-mix(in srgb, var(--accent-soft) 32%, var(--paper-raised)); }
+.animated-select-trigger:focus-visible, .animated-select.open .animated-select-trigger { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent); }
+.animated-select-trigger .placeholder { color: var(--muted); font-weight: 500; }
+.animated-select-trigger svg { width: 19px; height: 19px; flex: 0 0 19px; fill: none; stroke: var(--accent-deep); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .2s ease; }
+.animated-select.open .animated-select-trigger svg { transform: rotate(180deg); }
+.animated-select.disabled { opacity: .72; }
+.animated-select.disabled .animated-select-trigger { cursor: not-allowed; background: var(--bg-soft); color: var(--muted); }
+.animated-select-popover { position: absolute; z-index: 80; top: calc(100% + 8px); left: 0; right: 0; overflow: hidden; padding: 7px; border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line)); border-radius: 13px; background: color-mix(in srgb, var(--paper-raised) 97%, transparent); box-shadow: var(--shadow-md); backdrop-filter: blur(18px); animation: animated-select-popover-in .18s ease both; }
+.animated-select.open-upward .animated-select-popover { top: auto; bottom: calc(100% + 8px); transform-origin: bottom center; }
+.animated-select-list { position: relative; max-height: min(320px, 48vh); overflow-y: auto; overscroll-behavior: contain; padding: 3px; scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb) transparent; }
+.animated-select-list::-webkit-scrollbar { width: 8px; }
+.animated-select-list::-webkit-scrollbar-track { background: transparent; }
+.animated-select-list::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 99px; background: var(--scrollbar-thumb); background-clip: padding-box; }
+.animated-select-option { position: relative; z-index: 1; width: 100%; min-height: 46px; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 6px; padding: 11px 13px; border: 1px solid transparent; border-radius: 9px; background: var(--bg-soft); color: var(--ink); text-align: left; box-shadow: none; opacity: 0; transform: scale(.96) translateY(5px); animation: animated-select-option-in .2s ease forwards; }
+.animated-select-option:last-child { margin-bottom: 0; }
+.animated-select-option:hover, .animated-select-option.active { border-color: color-mix(in srgb, var(--accent) 32%, var(--line)); background: var(--accent-soft); color: var(--accent-deep); }
+.animated-select-option.selected { border-color: color-mix(in srgb, var(--accent) 48%, var(--line)); background: var(--accent); color: var(--accent-contrast); }
+.animated-select-option i { display: none; width: 23px; height: 23px; flex: 0 0 23px; place-items: center; border-radius: 50%; background: color-mix(in srgb, currentColor 13%, transparent); font-style: normal; font-size: .76rem; }
+.animated-select-option.selected i { display: grid; }
+.animated-select-option:disabled { cursor: not-allowed; opacity: .45; }
+.animated-select-empty { padding: 18px 12px; color: var(--muted); text-align: center; font-weight: 500; }
+.animated-select-gradient { position: absolute; z-index: 2; left: 7px; right: 14px; height: 42px; pointer-events: none; transition: opacity .2s ease; }
+.animated-select-gradient.top { top: 7px; background: linear-gradient(to bottom, var(--paper-raised), transparent); }
+.animated-select-gradient.bottom { bottom: 7px; background: linear-gradient(to top, var(--paper-raised), transparent); }
+
+@keyframes animated-select-popover-in { from { opacity: 0; transform: translateY(-5px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes animated-select-option-in { to { opacity: 1; transform: scale(1) translateY(0); } }
+
+@media (max-width: 680px) {
+  .animated-select-popover { position: fixed; top: auto; right: 10px; bottom: 12px; left: 10px; padding: 10px; border-radius: 17px; }
+  .animated-select.open-upward .animated-select-popover { bottom: 12px; }
+  .animated-select-list { max-height: min(420px, 62vh); }
+  .animated-select-option { min-height: 50px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animated-select-popover, .animated-select-option { animation: none; opacity: 1; transform: none; }
+  .animated-select-trigger, .animated-select-trigger svg, .animated-select-gradient { transition: none; }
+}
