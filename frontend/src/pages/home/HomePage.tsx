@@ -3,17 +3,51 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { createClass, getHome, updateAttendance, type HomeResponse } from '../../api/home';
 import { ApiError } from '../../api/client';
 import AppShell from '../../components/AppShell';
-import { resolvePlanilla } from '../../api/academics';
+import { getEspecialidades, resolvePlanilla, type Especialidad } from '../../api/academics';
 import { useNavigate } from 'react-router-dom';
 
 export default function HomePage() {
-  const [search, setSearch] = useSearchParams(); const [data, setData] = useState<HomeResponse | null>(null); const [error, setError] = useState('');
-  const view = search.get('view') || ''; const cursoId = Number(search.get('cursoId') || 0); const etapa = Number(search.get('etapa') || 1);
-  const load = useCallback(async () => { try { setData(await getHome({ cursoId: cursoId || undefined, etapa, view: view === 'clase' ? 'clase' : 'planillas' })); } catch (e) { setError(e instanceof ApiError ? e.message : 'Error al cargar el inicio.'); } }, [cursoId, etapa, view]);
+  const [search, setSearch] = useSearchParams();
+  const [data, setData] = useState<HomeResponse | null>(null);
+  const [error, setError] = useState('');
+  const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
+  const view = search.get('view') || '';
+  const cursoId = Number(search.get('cursoId') || 0);
+  const etapa = Number(search.get('etapa') || 1);
+  const especialidadId = Number(search.get('especialidadId') || 0);
+  const selectedEspecialidad = especialidades.find((item) => item.id === especialidadId);
+
+  const load = useCallback(async () => {
+    try {
+      setData(await getHome({ cursoId: cursoId || undefined, etapa, view: view === 'clase' ? 'clase' : 'planillas' }));
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Error al cargar el inicio.');
+    }
+  }, [cursoId, etapa, view]);
+
+  useEffect(() => {
+    void getEspecialidades().then(setEspecialidades).catch(() => setEspecialidades([]));
+  }, []);
+
   useEffect(() => { void load(); }, [load]);
+
   if (!view) return <AppShell title="Elegí cómo querés empezar"><div className="choice-grid"><button onClick={() => setSearch({ view: 'clase' })}><span>01</span><h2>Iniciar una clase</h2><p>Asistencia, rasgos e historial del curso.</p></button><button onClick={() => setSearch({ view: 'planillas' })}><span>02</span><h2>Gestionar planillas</h2><p>Tareas, puntajes y sincronización con Classroom.</p></button></div></AppShell>;
   if (!data) return <AppShell title="Panel SCA"><div className="panel">{error || 'Cargando…'}</div></AppShell>;
-  const params = (next: Record<string, string>) => setSearch({ view, cursoId: String(data.selCurso?.id || cursoId), etapa: String(data.selEtapa), ...next });
+
+  const visibleCursos = selectedEspecialidad
+    ? data.cursos.filter((curso) => curso.especialidad === selectedEspecialidad.nombre)
+    : data.cursos;
+
+  const selectedCourseId = data.selCurso?.id ?? cursoId;
+
+  const params = (next: Record<string, string>) => setSearch({
+    view,
+    cursoId: String(data.selCurso?.id || cursoId || ''),
+    etapa: String(data.selEtapa),
+    especialidadId: String(especialidadId || ''),
+    ...next,
+  });
+
   return <>
     <style>{`
       @keyframes idlePulse {
@@ -43,8 +77,23 @@ export default function HomePage() {
       .idle-dot:nth-child(2) { animation-delay: 0.15s; }
       .idle-dot:nth-child(3) { animation-delay: 0.3s; }
     `}</style>
-    <AppShell title="Panel SCA del curso" specialty={data.selCurso?.especialidad}><div className="toolbar filters"><button className="button secondary" onClick={() => setSearch({})}>← Inicio</button><select value={data.selCurso?.id || ''} onChange={(e) => params({ cursoId: e.target.value })}><option value="">Seleccioná un curso</option>{data.cursos.map((c) => <option key={c.id} value={c.id}>{c.curso}° {c.seccion} · {c.especialidad}</option>)}</select><select value={data.selEtapa} onChange={(e) => params({ etapa: e.target.value })}><option value="1">Primera etapa</option><option value="2">Segunda etapa</option></select><button className={`tab ${view === 'clase' ? 'active' : ''}`} onClick={() => params({ view: 'clase' })}>Clase</button><button className={`tab ${view === 'planillas' ? 'active' : ''}`} onClick={() => params({ view: 'planillas' })}>Planillas</button></div>
-      {!data.selCurso ? <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Esperando selección</h2><p>Elegí un curso y una etapa para continuar con la clase.</p></section> : view === 'clase' ? <ClassView data={data} reload={load} /> : <PlanillasView data={data} />}
+    <AppShell title="Panel SCA del curso" specialty={data.selCurso?.especialidad}><div className="toolbar filters"><button className="button secondary" onClick={() => setSearch({})}>← Inicio</button>
+      <label className="inline-filter">Especialidad
+        <select value={especialidadId} onChange={(e) => params({ especialidadId: e.target.value, cursoId: '' })}>
+          <option value="0">Todas</option>
+          {especialidades.map((item) => <option key={item.id} value={item.id}>{item.nombre}</option>)}
+        </select>
+      </label>
+      <label className="inline-filter">Curso
+        <select value={selectedCourseId || ''} onChange={(e) => params({ cursoId: e.target.value })} disabled={visibleCursos.length === 0}>
+          <option value="">Seleccioná un curso</option>
+          {visibleCursos.map((c) => <option key={c.id} value={c.id}>{c.curso}° {c.seccion} · {c.especialidad}</option>)}
+        </select>
+      </label>
+      <button className={`tab ${view === 'clase' ? 'active' : ''}`} onClick={() => params({ view: 'clase' })}>Clase</button>
+      <button className={`tab ${view === 'planillas' ? 'active' : ''}`} onClick={() => params({ view: 'planillas' })}>Planillas</button>
+    </div>
+      {!data.selCurso ? <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Esperando selección</h2><p>Elegí una especialidad y un curso para continuar con la clase.</p></section> : view === 'clase' ? <ClassView data={data} reload={load} /> : <PlanillasView data={data} />}
     </AppShell>
   </>;
 }
