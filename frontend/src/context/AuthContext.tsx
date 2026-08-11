@@ -22,11 +22,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isBootstrapping, setIsBootstrapping] = useState(true);
 
   // Al montar: no hay access token en memoria todavía (se perdió en el reload).
-  // Si el usuario marcó "recordarme" en un login anterior, la cookie httpOnly
-  // SCA_REMEMBER sigue viva y /api/auth/refresh nos devuelve un access token
-  // nuevo sin pedir credenciales. Si no hay cookie (o expiró), el refresh
-  // devuelve 401 y simplemente arrancamos deslogueados: comportamiento
-  // esperado, no es un error.
+  // El backend emite una cookie httpOnly de renovación: SCA_SESSION durante la
+  // sesión normal del navegador o SCA_REMEMBER cuando se eligió "recordarme".
+  // /api/auth/refresh restaura el access token en memoria después de un reload.
+  // Si ninguna cookie existe (o expiró), arrancamos deslogueados.
   useEffect(() => {
     let cancelled = false;
 

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 public class RefreshTokenService {
 
     public static final String COOKIE_NAME = "SCA_REMEMBER";
+    public static final String SESSION_COOKIE_NAME = "SCA_SESSION";
     public static final Duration REFRESH_TTL = Duration.ofDays(30);
 
     private final RefreshTokenDao refreshTokenDao;
