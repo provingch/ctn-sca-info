@@ -154,6 +154,18 @@
 	</dependencies>
 
 	<build>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+			</resource>
+			<resource>
+				<directory>${project.basedir}/../legacy/database</directory>
+				<includes>
+					<include>seed-pruebas-seguro.sql</include>
+				</includes>
+				<targetPath>db</targetPath>
+			</resource>
+		</resources>
                 <plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>

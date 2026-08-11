@@ -11,7 +11,6 @@
 --   usuario: sca.demo.profesor / contraseña: ctn2025
 --   usuario: sca.demo.padre    / contraseña: ctn2025
 
-USE ctndb;
 SET NAMES utf8mb4;
 START TRANSACTION;
 
