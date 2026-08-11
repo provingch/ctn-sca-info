@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import AppShell from '../../components/AppShell';
 import { createTarea, deleteTarea, getInstrumentos, getTarea, updateTarea, type Instrumento } from '../../api/academics';
 import { ApiError } from '../../api/client';
+import AnimatedSelect from '../../components/AnimatedSelect';
 
 export default function TareaPage() {
   const planillaId = Number(useParams().planillaId); const tareaId = Number(useParams().tareaId || 0);
@@ -14,7 +15,7 @@ export default function TareaPage() {
   async function submit(e: FormEvent) { e.preventDefault(); setBusy(true); setStatus(''); try { if (tareaId) await updateTarea(tareaId, form); else await createTarea(planillaId, form); navigate(`/planilla/${planillaId}`); } catch (err) { setStatus(err instanceof ApiError ? err.message : 'No se pudo guardar.'); } finally { setBusy(false); } }
   async function remove() { if (!tareaId || !window.confirm('¿Eliminar esta tarea y sus datos asociados?')) return; setBusy(true); try { await deleteTarea(tareaId); navigate(`/planilla/${planillaId}`); } catch (err) { setStatus(err instanceof ApiError ? err.message : 'No se pudo eliminar.'); setBusy(false); } }
   return <AppShell title={tareaId ? 'Modificar tarea' : 'Agregar tarea'}><form className="panel form-grid" onSubmit={submit}>
-    <label>Instrumento<select value={form.instrumentoId} required onChange={(e) => setForm({ ...form, instrumentoId: Number(e.target.value) })}><option value="">Seleccione…</option>{instrumentos.map((i) => <option key={i.id} value={i.id}>{i.nombre}</option>)}</select></label>
+    <label>Instrumento<AnimatedSelect ariaLabel="Instrumento" value={form.instrumentoId || ''} required placeholder="Seleccione…" onChange={(value) => setForm({ ...form, instrumentoId: Number(value) })} options={instrumentos.map((item) => ({ value: item.id, label: item.nombre }))} /></label>
     <label>Título<input value={form.titulo} required onChange={(e) => setForm({ ...form, titulo: e.target.value })} /></label>
     <label>Fecha<input type="date" value={form.fecha} required onChange={(e) => setForm({ ...form, fecha: e.target.value })} /></label>
     <label>Puntaje total<input type="number" min="1" value={form.total} required onChange={(e) => setForm({ ...form, total: Number(e.target.value) })} /></label>

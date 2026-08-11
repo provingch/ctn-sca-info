@@ -5,6 +5,7 @@ import { ApiError } from '../../api/client';
 import AppShell from '../../components/AppShell';
 import { getEspecialidades, resolvePlanilla, type Especialidad } from '../../api/academics';
 import { useNavigate } from 'react-router-dom';
+import AnimatedSelect from '../../components/AnimatedSelect';
 
 export default function HomePage() {
   const [search, setSearch] = useSearchParams();
@@ -79,16 +80,10 @@ export default function HomePage() {
     `}</style>
     <AppShell title="Panel SCA del curso" specialty={data.selCurso?.especialidad}><div className="toolbar filters"><button className="button secondary" onClick={() => setSearch({})}>← Inicio</button>
       <label className="inline-filter">Especialidad
-        <select value={especialidadId} onChange={(e) => params({ especialidadId: e.target.value, cursoId: '' })}>
-          <option value="0">Todas</option>
-          {especialidades.map((item) => <option key={item.id} value={item.id}>{item.nombre}</option>)}
-        </select>
+        <AnimatedSelect ariaLabel="Especialidad" value={especialidadId} onChange={(value) => params({ especialidadId: value, cursoId: '' })} options={[{ value: 0, label: 'Todas' }, ...especialidades.map((item) => ({ value: item.id, label: item.nombre }))]} />
       </label>
       <label className="inline-filter">Curso
-        <select value={selectedCourseId || ''} onChange={(e) => params({ cursoId: e.target.value })} disabled={visibleCursos.length === 0}>
-          <option value="">Seleccioná un curso</option>
-          {visibleCursos.map((c) => <option key={c.id} value={c.id}>{c.curso}° {c.seccion} · {c.especialidad}</option>)}
-        </select>
+        <AnimatedSelect ariaLabel="Curso" value={selectedCourseId || ''} onChange={(value) => params({ cursoId: value })} disabled={visibleCursos.length === 0} placeholder="Seleccioná un curso" options={visibleCursos.map((course) => ({ value: course.id, label: `${course.curso}° ${course.seccion} · ${course.especialidad}` }))} />
       </label>
       <button className={`tab ${view === 'clase' ? 'active' : ''}`} onClick={() => params({ view: 'clase' })}>Clase</button>
       <button className={`tab ${view === 'planillas' ? 'active' : ''}`} onClick={() => params({ view: 'planillas' })}>Planillas</button>
@@ -109,5 +104,5 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
   const [tema, setTema] = useState(''); const [instrumentoId, setInstrumentoId] = useState(0); const [ausentes, setAusentes] = useState<number[]>([]); const [status, setStatus] = useState('');
   async function create(e: FormEvent) { e.preventDefault(); if (!data.selCurso) return; try { await createClass({ cursoId: data.selCurso.id, etapa: data.selEtapa, instrumentoId, turno: 'turno', tema, alumnosAusentes: ausentes }); setStatus('Clase registrada.'); setTema(''); await reload(); } catch (err) { setStatus(err instanceof ApiError ? err.message : 'No se pudo registrar la clase.'); } }
   async function mark(id: number, estado: string) { await updateAttendance(id, estado); await reload(); }
-  return <div className="two-column"><form className="panel form-grid" onSubmit={create}><h2>Registrar clase</h2><label>Tema<input value={tema} required onChange={(e) => setTema(e.target.value)} /></label><label>Instrumento<select value={instrumentoId} onChange={(e) => setInstrumentoId(Number(e.target.value))}><option value="0">Sin instrumento</option>{data.instrumentos.map((i) => <option key={i.id} value={i.id}>{i.nombre}</option>)}</select></label><fieldset><legend>Alumnos ausentes</legend><div className="check-list">{data.rasgoAlumnosValidos.map((a) => <label key={a.id}><input type="checkbox" checked={ausentes.includes(a.id)} onChange={(e) => setAusentes((v) => e.target.checked ? [...v, a.id] : v.filter((id) => id !== a.id))} />{a.apellido}, {a.nombre}</label>)}</div></fieldset>{status && <div className="notice">{status}</div>}<button className="button">Guardar clase</button></form><section className="panel"><h2>Asistencia e historial</h2>{data.rasgoAsistencias.map((a) => <div className="attendance-row" key={a.id}><span>{a.alumnoNombreCompleto}</span><button className={a.estado === 'presente' ? 'active' : ''} onClick={() => mark(a.id, 'presente')}>Presente</button><button className={a.estado === 'ausente' ? 'active danger' : ''} onClick={() => mark(a.id, 'ausente')}>Ausente</button></div>)}{data.rasgoPlanillas.map((p) => <div className="history-row" key={p.id}><strong>{p.tema}</strong><span>{p.fechaClase}</span></div>)}</section></div>;
+  return <div className="two-column"><form className="panel form-grid" onSubmit={create}><h2>Registrar clase</h2><label>Tema<input value={tema} required onChange={(e) => setTema(e.target.value)} /></label><label>Instrumento<AnimatedSelect ariaLabel="Instrumento" value={instrumentoId} onChange={(value) => setInstrumentoId(Number(value))} options={[{ value: 0, label: 'Sin instrumento' }, ...data.instrumentos.map((item) => ({ value: item.id, label: item.nombre }))]} /></label><fieldset><legend>Alumnos ausentes</legend><div className="check-list">{data.rasgoAlumnosValidos.map((a) => <label key={a.id}><input type="checkbox" checked={ausentes.includes(a.id)} onChange={(e) => setAusentes((v) => e.target.checked ? [...v, a.id] : v.filter((id) => id !== a.id))} />{a.apellido}, {a.nombre}</label>)}</div></fieldset>{status && <div className="notice">{status}</div>}<button className="button">Guardar clase</button></form><section className="panel"><h2>Asistencia e historial</h2>{data.rasgoAsistencias.map((a) => <div className="attendance-row" key={a.id}><span>{a.alumnoNombreCompleto}</span><button className={a.estado === 'presente' ? 'active' : ''} onClick={() => mark(a.id, 'presente')}>Presente</button><button className={a.estado === 'ausente' ? 'active danger' : ''} onClick={() => mark(a.id, 'ausente')}>Ausente</button></div>)}{data.rasgoPlanillas.map((p) => <div className="history-row" key={p.id}><strong>{p.tema}</strong><span>{p.fechaClase}</span></div>)}</section></div>;
 }

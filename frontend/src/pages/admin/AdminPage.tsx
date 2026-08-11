@@ -5,6 +5,7 @@ import { createAdminRecord, deleteAssignment, getAdminCatalog, type AdminCatalog
 import { ApiError } from '../../api/client';
 import { useSpecialty } from '../../context/SpecialtyContext';
 import { normalizeSpecialty } from '../../theme/theme';
+import AnimatedSelect from '../../components/AnimatedSelect';
 
 const modules = [
   { path: '/admin/materias', key: 'materias', title: 'Materias', detail: 'Catálogo, categorías y especialidades' },
@@ -54,10 +55,7 @@ function AdminToolbar({ data, showBack }: { data: AdminCatalog; showBack: boolea
   return <div className="toolbar filters admin-toolbar">
     {showBack && <Link className="button secondary" to="/admin">← Panel general</Link>}
     <label className="inline-filter">Paleta del sistema
-      <select value={selectedId} onChange={(event) => changePalette(Number(event.target.value))}>
-        <option value="0">Institucional (predeterminada)</option>
-        {data.especialidades.map((specialty) => <option key={specialty.id} value={specialty.id}>{specialty.nombre}</option>)}
-      </select>
+      <AnimatedSelect ariaLabel="Paleta del sistema" value={selectedId} onChange={(value) => changePalette(Number(value))} options={[{ value: 0, label: 'Institucional (predeterminada)' }, ...data.especialidades.map((specialty) => ({ value: specialty.id, label: specialty.nombre }))]} />
     </label>
   </div>;
 }
@@ -99,8 +97,8 @@ function CreateForm({ section, data, submit }: { section: string; data: AdminCat
   };
 
   return <form className="form-grid" onSubmit={send}>
-    {section === 'materias' && <>{field('nombre', 'Nombre')}<label>Categoría<select value={form.categoria} onChange={(event) => setForm({ ...form, categoria: event.target.value })}><option value="comun">Común</option><option value="especifico">Específica</option></select></label><Specialties data={data} form={form} setForm={setForm} onChange={specialtyChanged} /></>}
-    {section === 'usuarios' && <>{field('nombre', 'Nombre')}{field('apellido', 'Apellido')}{field('usuario', 'Usuario')}{field('contrasenia', 'Contraseña', 'password')}<label>Nivel<select value={form.nivel} onChange={(event) => setForm({ ...form, nivel: event.target.value })}><option value="1">Profesor</option><option value="2">Evaluador</option><option value="3">Administrador</option></select></label>{field('correo', 'Correo', 'email')}<Specialties data={data} form={form} setForm={setForm} onChange={specialtyChanged} /></>}
+    {section === 'materias' && <>{field('nombre', 'Nombre')}<label>Categoría<AnimatedSelect ariaLabel="Categoría" value={form.categoria} onChange={(value) => setForm({ ...form, categoria: value })} options={[{ value: 'comun', label: 'Común' }, { value: 'especifico', label: 'Específica' }]} /></label><Specialties data={data} form={form} setForm={setForm} onChange={specialtyChanged} /></>}
+    {section === 'usuarios' && <>{field('nombre', 'Nombre')}{field('apellido', 'Apellido')}{field('usuario', 'Usuario')}{field('contrasenia', 'Contraseña', 'password')}<label>Nivel<AnimatedSelect ariaLabel="Nivel" value={form.nivel} onChange={(value) => setForm({ ...form, nivel: value })} options={[{ value: '1', label: 'Profesor' }, { value: '2', label: 'Evaluador' }, { value: '3', label: 'Administrador' }]} /></label>{field('correo', 'Correo', 'email')}<Specialties data={data} form={form} setForm={setForm} onChange={specialtyChanged} /></>}
     {section === 'asignaciones' && <><Select label="Profesor" name="profesorId" items={data.usuarios.map((user) => ({ id: user.id, label: `${user.apellido}, ${user.nombre}` }))} form={form} setForm={setForm} /><Select label="Materia" name="materiaId" items={data.materias.map((subject) => ({ id: subject.id, label: subject.nombre }))} form={form} setForm={setForm} /><Select label="Curso" name="cursoId" items={courseItems(data)} form={form} setForm={setForm} /></>}
     {section === 'ingresantes' && <>{field('nombre', 'Nombre')}{field('apellido', 'Apellido')}{field('ci', 'Cédula', 'number')}<Select label="Curso" name="cursoId" items={courseItems(data)} form={form} setForm={setForm} />{field('correoEncargado', 'Correo del encargado', 'email')}{field('correoEncargado2', 'Segundo correo', 'email')}</>}
     <button className="button">Guardar</button>
@@ -117,7 +115,7 @@ function Specialties({ data, form, setForm, onChange }: FormProps & { data: Admi
 
 type FormProps = { form: Record<string, string>; setForm: (value: Record<string, string>) => void };
 function Select({ label, name, items, form, setForm, optional, onValueChange }: FormProps & { label: string; name: string; items: Array<{ id: number; label: string }>; optional?: boolean; onValueChange?: (value: string) => void }) {
-  return <label>{label}<select required={!optional} value={form[name] || ''} onChange={(event) => { setForm({ ...form, [name]: event.target.value }); onValueChange?.(event.target.value); }}><option value="">Seleccione…</option>{items.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>;
+  return <label>{label}<AnimatedSelect ariaLabel={label} name={name} required={!optional} value={form[name] || ''} placeholder="Seleccione…" options={items.map((item) => ({ value: item.id, label: item.label }))} onChange={(value) => { setForm({ ...form, [name]: value }); onValueChange?.(value); }} /></label>;
 }
 
 function AdminList({ section, data, reload, status }: { section: string; data: AdminCatalog; reload: () => Promise<void>; status: (message: string) => void }) {
