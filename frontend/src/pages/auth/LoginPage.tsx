@@ -107,9 +107,32 @@ export default function LoginPage() {
               onClick={() => setShowPassword((v) => !v)}
               aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
               title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-              style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.1rem', padding: 0 }}
+              style={{
+                border: 'none',
+                background: 'transparent',
+                cursor: 'pointer',
+                color: 'var(--text-muted, #6b7280)',
+                padding: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1rem'
+              }}
             >
-              {showPassword ? '🙈' : '👁️'}
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                {showPassword ? (
+                  <>
+                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M4 4l16 16" />
+                  </>
+                ) : (
+                  <>
+                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </>
+                )}
+              </svg>
             </button>
           </div>
         </label>
