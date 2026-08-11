@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import * as authApi from '../api/auth';
 import { setAccessToken, setOnAuthExpired } from '../api/client';
+import { useSpecialty } from './SpecialtyContext';
 
 export interface AuthUser {
   level: number;
@@ -18,6 +19,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const { resetSpecialty } = useSpecialty();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
 
@@ -64,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async login(username, password, rememberMe) {
         const res = await authApi.login({ username, password, rememberMe });
         if (!res.requiere2fa && res.accessToken && res.level !== null) {
+          resetSpecialty();
           setAccessToken(res.accessToken);
           setUser({ level: res.level });
         }
@@ -72,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async verify2fa(tempToken, code, rememberMe) {
         const res = await authApi.verify2fa({ tempToken, code, rememberMe });
         if (res.accessToken && res.level !== null) {
+          resetSpecialty();
           setAccessToken(res.accessToken);
           setUser({ level: res.level });
         }
@@ -83,10 +87,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } finally {
           setAccessToken(null);
           setUser(null);
+          resetSpecialty();
         }
       },
     }),
-    [user, isBootstrapping],
+    [user, isBootstrapping, resetSpecialty],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

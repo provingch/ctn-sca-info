@@ -1,15 +1,22 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ThemeToggle from './ThemeToggle';
 import CtnLogo from './CtnLogo';
 import { normalizeSpecialty } from '../theme/theme';
+import { useSpecialty } from '../context/SpecialtyContext';
 
 const roleNames: Record<number, string> = { 1: 'Profesor', 2: 'Evaluador', 3: 'Administrador', 4: 'Padre / Encargado' };
 
 export default function AppShell({ children, title, subtitle, specialty }: { children: ReactNode; title?: string; subtitle?: string; specialty?: string | null }) {
   const { user, logout } = useAuth();
+  const { name: selectedSpecialty, selectSpecialty } = useSpecialty();
   const navigate = useNavigate();
+  const effectiveSpecialty = specialty === undefined ? selectedSpecialty : specialty;
+
+  useEffect(() => {
+    if (specialty) selectSpecialty(specialty);
+  }, [specialty, selectSpecialty]);
 
   async function signOut() {
     await logout();
@@ -17,7 +24,7 @@ export default function AppShell({ children, title, subtitle, specialty }: { chi
   }
 
   return (
-    <div className="app-frame" data-specialty={normalizeSpecialty(specialty)}>
+    <div className="app-frame" data-specialty={normalizeSpecialty(effectiveSpecialty)}>
       <header className="app-header">
         <NavLink className="brand" to="/" aria-label="Ir al inicio"><span className="brand-mark"><CtnLogo /></span><span className="brand-copy"><strong>SCA</strong><small>Carpeta Académica</small></span></NavLink>
         <nav className="app-nav" aria-label="Navegación principal">
