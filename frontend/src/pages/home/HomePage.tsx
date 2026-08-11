@@ -14,9 +14,39 @@ export default function HomePage() {
   if (!view) return <AppShell title="Elegí cómo querés empezar"><div className="choice-grid"><button onClick={() => setSearch({ view: 'clase' })}><span>01</span><h2>Iniciar una clase</h2><p>Asistencia, rasgos e historial del curso.</p></button><button onClick={() => setSearch({ view: 'planillas' })}><span>02</span><h2>Gestionar planillas</h2><p>Tareas, puntajes y sincronización con Classroom.</p></button></div></AppShell>;
   if (!data) return <AppShell title="Panel SCA"><div className="panel">{error || 'Cargando…'}</div></AppShell>;
   const params = (next: Record<string, string>) => setSearch({ view, cursoId: String(data.selCurso?.id || cursoId), etapa: String(data.selEtapa), ...next });
-  return <AppShell title="Panel SCA del curso" specialty={data.selCurso?.especialidad}><div className="toolbar filters"><button className="button secondary" onClick={() => setSearch({})}>← Inicio</button><select value={data.selCurso?.id || ''} onChange={(e) => params({ cursoId: e.target.value })}><option value="">Seleccioná un curso</option>{data.cursos.map((c) => <option key={c.id} value={c.id}>{c.curso}° {c.seccion} · {c.especialidad}</option>)}</select><select value={data.selEtapa} onChange={(e) => params({ etapa: e.target.value })}><option value="1">Primera etapa</option><option value="2">Segunda etapa</option></select><button className={`tab ${view === 'clase' ? 'active' : ''}`} onClick={() => params({ view: 'clase' })}>Clase</button><button className={`tab ${view === 'planillas' ? 'active' : ''}`} onClick={() => params({ view: 'planillas' })}>Planillas</button></div>
-    {!data.selCurso ? <section className="panel empty-state"><h2>Seleccioná un curso</h2><p>Usá el selector superior para comenzar.</p></section> : view === 'clase' ? <ClassView data={data} reload={load} /> : <PlanillasView data={data} />}
-  </AppShell>;
+  return <>
+    <style>{`
+      @keyframes idlePulse {
+        0%, 100% { opacity: 0.35; transform: scale(0.96); }
+        50% { opacity: 1; transform: scale(1); }
+      }
+      .idle-state {
+        display: grid;
+        gap: 1rem;
+        text-align: center;
+        padding: 2rem 1.5rem;
+        border: 1px dashed #d0d7e2;
+        background: linear-gradient(135deg, rgba(148, 163, 184, 0.08), rgba(59, 130, 246, 0.04));
+      }
+      .idle-dots {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+      .idle-dot {
+        width: 0.7rem;
+        height: 0.7rem;
+        border-radius: 999px;
+        background: #3b82f6;
+        animation: idlePulse 1.2s ease-in-out infinite;
+      }
+      .idle-dot:nth-child(2) { animation-delay: 0.15s; }
+      .idle-dot:nth-child(3) { animation-delay: 0.3s; }
+    `}</style>
+    <AppShell title="Panel SCA del curso" specialty={data.selCurso?.especialidad}><div className="toolbar filters"><button className="button secondary" onClick={() => setSearch({})}>← Inicio</button><select value={data.selCurso?.id || ''} onChange={(e) => params({ cursoId: e.target.value })}><option value="">Seleccioná un curso</option>{data.cursos.map((c) => <option key={c.id} value={c.id}>{c.curso}° {c.seccion} · {c.especialidad}</option>)}</select><select value={data.selEtapa} onChange={(e) => params({ etapa: e.target.value })}><option value="1">Primera etapa</option><option value="2">Segunda etapa</option></select><button className={`tab ${view === 'clase' ? 'active' : ''}`} onClick={() => params({ view: 'clase' })}>Clase</button><button className={`tab ${view === 'planillas' ? 'active' : ''}`} onClick={() => params({ view: 'planillas' })}>Planillas</button></div>
+      {!data.selCurso ? <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Esperando selección</h2><p>Elegí un curso y una etapa para continuar con la clase.</p></section> : view === 'clase' ? <ClassView data={data} reload={load} /> : <PlanillasView data={data} />}
+    </AppShell>
+  </>;
 }
 
 function PlanillasView({ data }: { data: HomeResponse }) {
