@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from '../context/AuthContext';
+import { SpecialtyProvider } from '../context/SpecialtyContext';
 import { ProtectedRoute } from './ProtectedRoute';
 import RoleLanding from './RoleLanding';
 import LoginPage from '../pages/auth/LoginPage';
@@ -16,7 +17,7 @@ import StyleguidePage from '../pages/styleguide/StyleguidePage';
 const protect = (element: React.ReactNode) => <ProtectedRoute>{element}</ProtectedRoute>;
 
 export default function AppRoutes() {
-  return <BrowserRouter><AuthProvider><Routes>
+  return <BrowserRouter><SpecialtyProvider><AuthProvider><Routes>
     <Route path="/login" element={<LoginPage />} />
     <Route path="/privacidad" element={<LegalPage />} />
     <Route path="/terminos" element={<LegalPage />} />
@@ -37,5 +38,5 @@ export default function AppRoutes() {
     <Route path="/padre" element={protect(<ParentPage />)} />
     <Route path="/styleguide" element={protect(<StyleguidePage />)} />
     <Route path="*" element={<RoleLanding />} />
-  </Routes></AuthProvider></BrowserRouter>;
+  </Routes></AuthProvider></SpecialtyProvider></BrowserRouter>;
 }
