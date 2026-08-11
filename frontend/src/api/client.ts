@@ -5,9 +5,9 @@
  * - El access token vive SOLO en memoria (variable de módulo), nunca en
  *   localStorage/sessionStorage. Se pierde en cada full reload, a propósito:
  *   así se evita la superficie de ataque XSS que implicaría persistirlo.
- * - La sesión de largo plazo ("recordarme") la resuelve el backend con la
- *   cookie httpOnly `SCA_REMEMBER` (ver AuthController.java), que este
- *   cliente nunca lee ni escribe directamente — el browser la maneja sola
+ * - El backend conserva los reloads con `SCA_SESSION` y la sesión de largo
+ *   plazo ("recordarme") con `SCA_REMEMBER`. Ambas son cookies httpOnly que
+ *   este cliente nunca lee ni escribe directamente; el navegador las maneja
  *   porque el front se sirve same-origin desde el mismo jar de Spring Boot.
  * - Al recibir 401, este cliente intenta UNA vez `POST /api/auth/refresh`
  *   (que manda la cookie automáticamente) para obtener un access token
