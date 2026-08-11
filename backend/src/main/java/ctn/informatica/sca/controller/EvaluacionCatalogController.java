@@ -24,11 +24,27 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api")
 public class EvaluacionCatalogController {
 
+    private final CursoDao cursoDao;
+    private final EspecialidadDao especialidadDao;
+    private final InstrumentoDao instrumentoDao;
+    private final RasgoPlanillaDao rasgoPlanillaDao;
+
+    public EvaluacionCatalogController(
+            CursoDao cursoDao,
+            EspecialidadDao especialidadDao,
+            InstrumentoDao instrumentoDao,
+            RasgoPlanillaDao rasgoPlanillaDao) {
+        this.cursoDao = cursoDao;
+        this.especialidadDao = especialidadDao;
+        this.instrumentoDao = instrumentoDao;
+        this.rasgoPlanillaDao = rasgoPlanillaDao;
+    }
+
     @GetMapping("/instrumentos")
     public List<InstrumentoDto> listInstrumentos(Authentication authentication) {
         ApiAuth.requireUserId(authentication);
         try {
-            List<Instrumento> instrumentos = new InstrumentoDao().findAll();
+            List<Instrumento> instrumentos = instrumentoDao.findAll();
             List<InstrumentoDto> response = new ArrayList<>();
             for (Instrumento instrumento : instrumentos) {
                 response.add(new InstrumentoDto(instrumento.getId(), instrumento.getNombre()));
@@ -43,7 +59,7 @@ public class EvaluacionCatalogController {
     public List<EspecialidadDto> listEspecialidades(Authentication authentication) {
         ApiAuth.requireUserId(authentication);
         try {
-            List<Especialidad> especialidades = new EspecialidadDao().findAll();
+            List<Especialidad> especialidades = especialidadDao.findAll();
             List<EspecialidadDto> response = new ArrayList<>();
             for (Especialidad especialidad : especialidades) {
                 response.add(new EspecialidadDto(especialidad.getId(), especialidad.getNombre()));
@@ -58,13 +74,15 @@ public class EvaluacionCatalogController {
     public List<CursoEvaluacionDto> listCursos(
             @RequestParam(required = false) Integer especialidadId,
             Authentication authentication) {
-        int userId = ApiAuth.requireUserId(authentication);
+        ApiAuth.requireUserId(authentication);
         try {
-            List<Curso> cursos = new CursoDao().consultarCursos(userId);
+            // Evaluación es un módulo institucional: el evaluador necesita ver
+            // todos los cursos, no solo los vinculados como si fuera profesor.
+            List<Curso> cursos = cursoDao.findAll();
 
             String selectedEspecialidad = null;
             if (especialidadId != null) {
-                Especialidad especialidad = new EspecialidadDao().findById(especialidadId);
+                Especialidad especialidad = especialidadDao.findById(especialidadId);
                 if (especialidad == null) {
                     return List.of();
                 }
@@ -93,14 +111,14 @@ public class EvaluacionCatalogController {
     public List<ClaseRegistradaDto> listClases(@PathVariable int cursoId, Authentication authentication) {
         int userId = ApiAuth.requireUserId(authentication);
         try {
-            boolean canAccessCurso = new CursoDao().consultarCursos(userId)
+            boolean canAccessCurso = cursoDao.findAll()
                     .stream()
                     .anyMatch(curso -> curso.getId() == cursoId);
             if (!canAccessCurso) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes acceso a este curso");
             }
 
-            List<RasgoPlanilla> clases = new RasgoPlanillaDao().listarPorCurso(cursoId);
+            List<RasgoPlanilla> clases = rasgoPlanillaDao.listarPorCurso(cursoId);
             List<ClaseRegistradaDto> response = new ArrayList<>();
             for (RasgoPlanilla clase : clases) {
                 response.add(new ClaseRegistradaDto(
