@@ -39,6 +39,7 @@ DB_HOST="${SCA_DB_HOST:-${CTN_DB_HOST:-localhost}}"
 DB_PORT="${SCA_DB_PORT:-${CTN_DB_PORT:-}}"
 DB_USER="${SCA_DB_USER:-${CTN_DB_USER:-testadmin}}"
 DB_PASSWORD_INPUT="${SCA_DB_PASSWORD:-${CTN_DB_PASSWORD:-}}"
+LOAD_DEMO_DATA_INPUT="${SCA_LOAD_DEMO_DATA:-}"
 
 GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID:-}"
 GOOGLE_CLIENT_SECRET="${GOOGLE_CLIENT_SECRET:-}"
@@ -157,8 +158,10 @@ write_db_env_file() {
 
   local persisted_jwt_secret=""
   local persisted_password=""
+  local persisted_demo_data=""
   if [[ -f "$DB_ENV_FILE" ]]; then
     persisted_jwt_secret="$(read_env_file_value 'JWT_SECRET')"
+    persisted_demo_data="$(read_env_file_value 'SCA_LOAD_DEMO_DATA')"
     if [[ -z "$password" ]]; then
       persisted_password="$(read_env_file_value 'SCA_DB_PASSWORD')"
       if [[ -z "$persisted_password" ]]; then
@@ -166,6 +169,11 @@ write_db_env_file() {
       fi
       password="$persisted_password"
     fi
+  fi
+
+  local load_demo_data="$LOAD_DEMO_DATA_INPUT"
+  if [[ -z "$load_demo_data" ]]; then
+    load_demo_data="${persisted_demo_data:-false}"
   fi
 
   # Determine or generate JWT secret to persist in the env file. Priority:
@@ -184,7 +192,7 @@ write_db_env_file() {
     echo "==> Generated a new JWT secret to persist in $DB_ENV_FILE"
   fi
 
-  if [[ -f "$DB_ENV_FILE" && -z "$password" && -z "${SCA_JWT_SECRET:-}" && -z "${JWT_SECRET:-}" && -z "$GOOGLE_CLIENT_ID" && -z "$GOOGLE_CLIENT_SECRET" && -z "$GOOGLE_REDIRECT_URI" ]]; then
+  if [[ -f "$DB_ENV_FILE" && -z "$password" && -z "${SCA_JWT_SECRET:-}" && -z "${JWT_SECRET:-}" && -z "$GOOGLE_CLIENT_ID" && -z "$GOOGLE_CLIENT_SECRET" && -z "$GOOGLE_REDIRECT_URI" && -z "$LOAD_DEMO_DATA_INPUT" ]]; then
     return
   fi
 
@@ -213,6 +221,7 @@ write_db_env_file() {
     printf 'SPRING_DATASOURCE_URL=%q\n' "$jdbc_url"
     printf 'SPRING_DATASOURCE_USERNAME=%q\n' "$DB_USER"
     printf 'SPRING_DATASOURCE_PASSWORD=%q\n' "$password"
+    printf 'SCA_LOAD_DEMO_DATA=%q\n' "$load_demo_data"
 
     # Google OAuth values used by AppConfig.get("google.client.*").
     if [[ -n "$GOOGLE_CLIENT_ID" ]]; then
