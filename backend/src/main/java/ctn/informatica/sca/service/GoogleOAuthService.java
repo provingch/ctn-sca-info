@@ -32,12 +32,33 @@ public class GoogleOAuthService {
             ProfesorDao profesorDao,
             @Value("${google.client.id:${GOOGLE_CLIENT_ID:}}") String clientId,
             @Value("${google.client.secret:${GOOGLE_CLIENT_SECRET:}}") String clientSecret,
-            @Value("${google.redirect-uri:${GOOGLE_REDIRECT_URI:http://localhost:8081/api/google/oauth/callback}}") String redirectUri) {
+                @Value("${google.redirect-uri:${GOOGLE_REDIRECT_URI:http://localhost:5173/google/callback}}") String redirectUri) {
         this.profesorDao = profesorDao;
         this.clientId = clientId;
         this.clientSecret = clientSecret;
         this.redirectUri = redirectUri;
     }
+
+            public String buildAuthorizeUrl() {
+            // Scopes necesarios para Classroom + profile/email
+            String scopes = String.join(" ", new String[]{
+                "https://www.googleapis.com/auth/classroom.courses.readonly",
+                "https://www.googleapis.com/auth/classroom.rosters.readonly",
+                "openid",
+                "email",
+                "profile"
+            });
+
+            String encodedScopes = java.net.URLEncoder.encode(scopes, java.nio.charset.StandardCharsets.UTF_8);
+            String encodedRedirect = java.net.URLEncoder.encode(redirectUri, java.nio.charset.StandardCharsets.UTF_8);
+
+            return String.format(
+                "https://accounts.google.com/o/oauth2/v2/auth?client_id=%s&redirect_uri=%s&response_type=code&scope=%s&access_type=offline&prompt=consent&include_granted_scopes=true",
+                clientId,
+                encodedRedirect,
+                encodedScopes
+            );
+            }
 
     public GoogleOAuthCallbackResponse handleCallback(int userId, GoogleOAuthCallbackRequest request) {
         if (request == null) {

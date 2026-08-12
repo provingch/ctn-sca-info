@@ -63,3 +63,11 @@ export function saveProfile(payload: { correo: string; telefono: string; celular
 export const prepareTotp = () => apiRequest<void>('/api/profile/prepare-totp', { method: 'POST' });
 export const confirmTotp = (totpSetupCode: string) => apiRequest<void>('/api/profile/confirm-totp', { method: 'POST', body: { totpSetupCode } });
 export const disableTotp = () => apiRequest<void>('/api/profile/disable-totp', { method: 'POST' });
+
+export function getGoogleAuthorizeUrl(): Promise<{ url: string }> {
+  return apiRequest<{ url: string }>('/api/google/oauth/authorize-url', { method: 'GET' });
+}
+
+export function completeGoogleCallback(payload: { code?: string; state?: string; error?: string }): Promise<{ status: string; message: string }> {
+  return apiRequest<{ status: string; message: string }>('/api/google/oauth/callback', { method: 'POST', body: payload });
+}
