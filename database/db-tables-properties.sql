@@ -242,3 +242,15 @@ CREATE TABLE rasgo_asistencia (
         REFERENCES alumno (id)
         ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Tabla de relación entre alumno y padre (faltaba en el DDL original)
+CREATE TABLE alumno_padre (
+    alumno_id INT NOT NULL,
+    padre_id INT NOT NULL,
+    parentesco VARCHAR(45) DEFAULT 'padre',
+    PRIMARY KEY (alumno_id, padre_id),
+    CONSTRAINT fk_ap_alumno FOREIGN KEY (alumno_id)
+        REFERENCES alumno (id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_ap_padre FOREIGN KEY (padre_id)
+        REFERENCES padre (id) ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
