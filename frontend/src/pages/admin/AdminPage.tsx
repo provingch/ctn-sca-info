@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import AppShell from '../../components/AppShell';
 import { createAdminRecord, deleteAssignment, getAdminCatalog, type AdminCatalog } from '../../api/admin';
@@ -6,6 +6,7 @@ import { ApiError } from '../../api/client';
 import { useSpecialty } from '../../context/SpecialtyContext';
 import { normalizeSpecialty } from '../../theme/theme';
 import AnimatedSelect from '../../components/AnimatedSelect';
+import PasswordInput from '../../components/PasswordInput';
 
 const modules = [
   { path: '/admin/materias', key: 'materias', title: 'Materias', detail: 'Catálogo, categorías y especialidades' },
@@ -90,7 +91,10 @@ function CreateForm({ section, data, submit }: { section: string; data: AdminCat
     if (section === 'asignaciones') submit({ profesorId: numeric('profesorId'), materiaId: numeric('materiaId'), cursoId: numeric('cursoId') });
     if (section === 'ingresantes') submit({ ...form, cursoId: numeric('cursoId'), ci: numeric('ci') });
   }
-  const field = (name: string, label: string, type = 'text') => <label>{label}<input type={type} required={['nombre', 'apellido', 'usuario'].includes(name)} value={form[name] || ''} onChange={(event) => setForm({ ...form, [name]: event.target.value })} /></label>;
+  const field = (name: string, label: string, type = 'text') => {
+    const inputProps = { required: ['nombre', 'apellido', 'usuario'].includes(name), value: form[name] || '', onChange: (event: ChangeEvent<HTMLInputElement>) => setForm({ ...form, [name]: event.target.value }) };
+    return <label>{label}{type === 'password' ? <PasswordInput {...inputProps} /> : <input type={type} {...inputProps} />}</label>;
+  };
   const specialtyChanged = (value: string) => {
     const specialty = data.especialidades.find((item) => item.id === Number(value));
     if (specialty) selectSpecialty(specialty.nombre, specialty.id);

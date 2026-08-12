@@ -89,6 +89,12 @@ body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-even
 a { color: var(--accent-deep); }
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
+.password-field { position: relative; width: 100%; }
+.password-field > input { padding-right: 44px; }
+.password-toggle, .auth-form .password-toggle { position: absolute; top: 50%; right: 11px; width: 30px; height: 30px; min-height: 0; display: grid; place-items: center; padding: 0; border: 0; border-radius: 7px; background: transparent; color: var(--muted); box-shadow: none; transform: translateY(-50%); }
+.password-toggle:hover, .auth-form .password-toggle:hover { background: var(--accent-soft); color: var(--accent-deep); }
+.password-toggle:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 38%, transparent); outline-offset: 1px; }
+.password-toggle svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sans-serif; letter-spacing: -.035em; }
 .page-loading { padding: 4rem; text-align: center; }
 
