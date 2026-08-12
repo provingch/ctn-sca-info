@@ -6,6 +6,7 @@ import RoleLanding from './RoleLanding';
 import LoginPage from '../pages/auth/LoginPage';
 import HomePage from '../pages/home/HomePage';
 import ProfilePage from '../pages/profile/ProfilePage';
+import GoogleCallbackPage from '../pages/google/GoogleCallbackPage';
 import PlanillaPage from '../pages/planilla/PlanillaPage';
 import TareaPage from '../pages/planilla/TareaPage';
 import EvaluacionPage from '../pages/evaluacion/EvaluacionPage';
@@ -26,6 +27,7 @@ export default function AppRoutes() {
     <Route path="/inicio" element={protect(<HomePage />)} />
     <Route path="/profile" element={protect(<ProfilePage />)} />
     <Route path="/perfil" element={protect(<ProfilePage />)} />
+    <Route path="/google/callback" element={protect(<GoogleCallbackPage />)} />
     <Route path="/planilla/:planillaId" element={protect(<PlanillaPage />)} />
     <Route path="/planilla/:planillaId/tarea" element={protect(<TareaPage />)} />
     <Route path="/planilla/:planillaId/tarea/:tareaId" element={protect(<TareaPage />)} />

@@ -20,7 +20,8 @@ public class SpaForwardController {
             "/", "/login", "/home", "/inicio", "/profile", "/perfil",
             "/evaluacion", "/admin", "/admin/{section}", "/padre", "/styleguide",
             "/privacidad", "/terminos", "/planilla/{planillaId}",
-            "/planilla/{planillaId}/tarea", "/planilla/{planillaId}/tarea/{tareaId}"
+            "/planilla/{planillaId}/tarea", "/planilla/{planillaId}/tarea/{tareaId}",
+            "/google/callback"
     })
     public String forwardToIndex() {
         return "forward:/index.html";

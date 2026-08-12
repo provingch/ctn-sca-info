@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
-import { changePassword, confirmTotp, disableTotp, getProfile, prepareTotp, saveProfile, type ProfileResponse } from '../../api/profile';
+import { changePassword, confirmTotp, disableTotp, getProfile, prepareTotp, saveProfile, type ProfileResponse, getGoogleAuthorizeUrl } from '../../api/profile';
 import { ApiError } from '../../api/client';
 import AppShell from '../../components/AppShell';
 
@@ -81,6 +81,19 @@ function ProfileForm({ data, done }: { data: ProfileResponse; done: (text: strin
     <section className="panel form-grid"><Heading number="02" title="Contacto" detail="Canales para comunicaciones del colegio." /><label>Correo electrónico<input type="email" value={form.correo} onChange={(e) => setForm({ ...form, correo: e.target.value })} /></label><label>Teléfono<input inputMode="numeric" value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} /></label>{data.isStaffProfile && <label>Celular<input inputMode="numeric" value={form.celular} onChange={(e) => setForm({ ...form, celular: e.target.value })} /></label>}</section>
     <section className="panel form-grid"><Heading number="03" title="Cuenta" detail="Nombre utilizado para iniciar sesión." /><label>Usuario<input value={form.usuario} required onChange={(e) => setForm({ ...form, usuario: e.target.value })} /></label><div className="account-role"><span>Rol asignado</span><strong>{data.profileRoleLabel}</strong></div></section>
     {data.showGoogleClassroomPanel && <section className="panel form-grid"><Heading number="04" title="Google Classroom" detail="Vinculación académica del profesor." /><State active={data.googleClassroomConnected} title={data.googleClassroomConnected ? 'Cuenta conectada' : 'Sin conexión'} detail={data.profileOwner.googleEmail || 'Todavía no hay una cuenta de Google vinculada.'} />{data.googleClassroomCourses.length > 0 && <p className="muted-copy">{data.googleClassroomCourses.length} curso(s) compatible(s) disponibles.</p>}</section>}
+    {data.showGoogleClassroomPanel && <section className="panel form-grid"><Heading number="04" title="Google Classroom" detail="Vinculación académica del profesor." /><State active={data.googleClassroomConnected} title={data.googleClassroomConnected ? 'Cuenta conectada' : 'Sin conexión'} detail={data.profileOwner.googleEmail || 'Todavía no hay una cuenta de Google vinculada.'} />{data.googleClassroomCourses.length > 0 && <p className="muted-copy">{data.googleClassroomCourses.length} curso(s) compatible(s) disponibles.</p>}
+      <div>
+        {!data.googleClassroomConnected && <button className="button" type="button" onClick={async () => {
+          try {
+            const res = await getGoogleAuthorizeUrl();
+            if (res?.url) window.location.href = res.url;
+          } catch (err: any) {
+            setStatus(err?.message || 'No se pudo iniciar el flujo de Google.');
+          }
+        }}>Conectar con Google</button>}
+        {data.googleClassroomConnected && <button className="button secondary" type="button" onClick={() => { /* Desconectar no implementado aquí */ }}>Desconectar</button>}
+      </div>
+    </section>}
     <div className="profile-form-actions"><button className="button" type="submit">Guardar cambios</button></div>
   </form>;
 }
