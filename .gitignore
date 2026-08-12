@@ -14,8 +14,5 @@ Thumbs.db
 
 **/WEB-INF/config.properties
 
-# Database seed file (may contain sensitive test data)
-database/seed.sql
-
 # Local nginx vhost files for deployment
 nginx/*.local
