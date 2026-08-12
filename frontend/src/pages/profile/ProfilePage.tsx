@@ -53,7 +53,7 @@ export default function ProfilePage() {
       </aside>
       <div className="profile-content">
         {status && <div className="notice" role="status">{status}</div>}
-        {tab === 'profile' && <ProfileForm data={data} done={finish} />}
+        {tab === 'profile' && <ProfileForm data={data} done={finish} setStatus={setStatus} />}
         {tab === 'security' && <Security data={data} done={finish} />}
         {tab === 'subjects' && <Subjects data={data} />}
         {tab === 'app' && <AppStatus data={data} />}
@@ -72,15 +72,14 @@ function Heading({ number, title, detail }: { number: string; title: string; det
   return <header className="panel-heading"><span>{number}</span><div><h2>{title}</h2><p>{detail}</p></div></header>;
 }
 
-function ProfileForm({ data, done }: { data: ProfileResponse; done: (text: string) => Promise<void> }) {
+function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (text: string) => Promise<void>; setStatus: (value: string) => void }) {
   const owner = data.profileOwner;
   const [form, setForm] = useState({ correo: owner.correo || '', telefono: owner.telefono || '', celular: owner.celular || '', usuario: owner.usuario || '', nombre: owner.nombre || '', apellido: owner.apellido || '', ci: owner.ci, nivel: null });
-  async function submit(event: FormEvent) { event.preventDefault(); try { await saveProfile(form); await done('Datos del perfil guardados.'); } catch (error) { setStatus(error, done, 'No se pudo guardar el perfil.'); } }
+  async function submit(event: FormEvent) { event.preventDefault(); try { await saveProfile(form); await done('Datos del perfil guardados.'); } catch (error) { setStatus(message(error, 'No se pudo guardar el perfil.')); } }
   return <form className="profile-card-grid" onSubmit={submit}>
     <section className="panel form-grid"><Heading number="01" title="Información personal" detail="Datos que identifican tu cuenta." /><label>Nombre<input value={form.nombre} disabled={!data.canEditAdminOnlyProfileFields} onChange={(e) => setForm({ ...form, nombre: e.target.value })} /></label><label>Apellido<input value={form.apellido} disabled={!data.canEditAdminOnlyProfileFields} onChange={(e) => setForm({ ...form, apellido: e.target.value })} /></label><label>Cédula<input value={form.ci ?? ''} disabled={!data.canEditAdminOnlyProfileFields} inputMode="numeric" onChange={(e) => setForm({ ...form, ci: e.target.value ? Number(e.target.value) : null })} /></label></section>
     <section className="panel form-grid"><Heading number="02" title="Contacto" detail="Canales para comunicaciones del colegio." /><label>Correo electrónico<input type="email" value={form.correo} onChange={(e) => setForm({ ...form, correo: e.target.value })} /></label><label>Teléfono<input inputMode="numeric" value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} /></label>{data.isStaffProfile && <label>Celular<input inputMode="numeric" value={form.celular} onChange={(e) => setForm({ ...form, celular: e.target.value })} /></label>}</section>
     <section className="panel form-grid"><Heading number="03" title="Cuenta" detail="Nombre utilizado para iniciar sesión." /><label>Usuario<input value={form.usuario} required onChange={(e) => setForm({ ...form, usuario: e.target.value })} /></label><div className="account-role"><span>Rol asignado</span><strong>{data.profileRoleLabel}</strong></div></section>
-    {data.showGoogleClassroomPanel && <section className="panel form-grid"><Heading number="04" title="Google Classroom" detail="Vinculación académica del profesor." /><State active={data.googleClassroomConnected} title={data.googleClassroomConnected ? 'Cuenta conectada' : 'Sin conexión'} detail={data.profileOwner.googleEmail || 'Todavía no hay una cuenta de Google vinculada.'} />{data.googleClassroomCourses.length > 0 && <p className="muted-copy">{data.googleClassroomCourses.length} curso(s) compatible(s) disponibles.</p>}</section>}
     {data.showGoogleClassroomPanel && <section className="panel form-grid"><Heading number="04" title="Google Classroom" detail="Vinculación académica del profesor." /><State active={data.googleClassroomConnected} title={data.googleClassroomConnected ? 'Cuenta conectada' : 'Sin conexión'} detail={data.profileOwner.googleEmail || 'Todavía no hay una cuenta de Google vinculada.'} />{data.googleClassroomCourses.length > 0 && <p className="muted-copy">{data.googleClassroomCourses.length} curso(s) compatible(s) disponibles.</p>}
       <div>
         {!data.googleClassroomConnected && <button className="button" type="button" onClick={async () => {
@@ -88,7 +87,7 @@ function ProfileForm({ data, done }: { data: ProfileResponse; done: (text: strin
             const res = await getGoogleAuthorizeUrl();
             if (res?.url) window.location.href = res.url;
           } catch (err: any) {
-            setStatus(err?.message || 'No se pudo iniciar el flujo de Google.');
+            setStatus(err instanceof ApiError ? err.message : 'No se pudo iniciar el flujo de Google.');
           }
         }}>Conectar con Google</button>}
         {data.googleClassroomConnected && <button className="button secondary" type="button" onClick={() => { /* Desconectar no implementado aquí */ }}>Desconectar</button>}
@@ -105,10 +104,10 @@ function Subjects({ data }: { data: ProfileResponse }) {
 function Security({ data, done }: { data: ProfileResponse; done: (text: string) => Promise<void> }) {
   const [passwords, setPasswords] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [code, setCode] = useState('');
-  async function password(e: FormEvent) { e.preventDefault(); try { await changePassword(passwords); setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' }); await done('Contraseña actualizada.'); } catch (error) { setStatus(error, done, 'No se pudo actualizar la contraseña.'); } }
-  async function start2fa() { try { await prepareTotp(); await done('Clave de configuración generada.'); } catch (error) { setStatus(error, done, 'No se pudo preparar 2FA.'); } }
-  async function verify2fa() { try { await confirmTotp(code); await done('Verificación en dos pasos activada.'); } catch (error) { setStatus(error, done, 'Código inválido.'); } }
-  async function turnOff() { try { await disableTotp(); await done('Verificación en dos pasos desactivada.'); } catch (error) { setStatus(error, done, 'No se pudo desactivar 2FA.'); } }
+  async function password(e: FormEvent) { e.preventDefault(); try { await changePassword(passwords); setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' }); await done('Contraseña actualizada.'); } catch (error) { setStatusWithFallback(error, done, 'No se pudo actualizar la contraseña.'); } }
+  async function start2fa() { try { await prepareTotp(); await done('Clave de configuración generada.'); } catch (error) { setStatusWithFallback(error, done, 'No se pudo preparar 2FA.'); } }
+  async function verify2fa() { try { await confirmTotp(code); await done('Verificación en dos pasos activada.'); } catch (error) { setStatusWithFallback(error, done, 'Código inválido.'); } }
+  async function turnOff() { try { await disableTotp(); await done('Verificación en dos pasos desactivada.'); } catch (error) { setStatusWithFallback(error, done, 'No se pudo desactivar 2FA.'); } }
   return <div className="two-column"><form className="panel form-grid" onSubmit={password}><Heading number="01" title="Cambiar contraseña" detail="Usá al menos seis caracteres." /><label>Contraseña actual<input type="password" required value={passwords.currentPassword} onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })} /></label><label>Nueva contraseña<input type="password" required minLength={6} value={passwords.newPassword} onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })} /></label><label>Confirmar nueva contraseña<input type="password" required value={passwords.confirmPassword} onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })} /></label><button className="button">Actualizar contraseña</button></form><section className="panel form-grid"><Heading number="02" title="Verificación en dos pasos" detail="Protegé el acceso con tu app autenticadora." /><State active={data.totpEnabled} title={data.totpEnabled ? 'Activa' : 'Inactiva'} />{data.pendingTotpSecret && <><code className="secret">{data.pendingTotpSecret}</code><label>Código de la app<input inputMode="numeric" value={code} onChange={(e) => setCode(e.target.value)} /></label><button className="button" type="button" onClick={verify2fa}>Confirmar activación</button></>}{data.totpEnabled ? <button className="button danger" type="button" onClick={turnOff}>Desactivar 2FA</button> : !data.pendingTotpSecret && <button className="button secondary" type="button" onClick={start2fa}>Configurar 2FA</button>}</section></div>;
 }
 
@@ -116,4 +115,4 @@ function AppStatus({ data }: { data: ProfileResponse }) { return <div className=
 function Activity({ entries }: { entries: string[] }) { return <section className="panel"><Heading number="01" title="Actividad reciente" detail="Movimientos registrados para esta cuenta." />{entries.length === 0 ? <Empty title="Aún no hay movimientos" detail="La actividad de tu cuenta aparecerá aquí." /> : entries.map((entry, index) => <p className="history-row" key={`${entry}-${index}`}>{entry}</p>)}</section>; }
 function State({ active, title, detail }: { active: boolean; title: string; detail?: string }) { return <div className={`connection-state ${active ? 'connected' : ''}`}><i /><div><strong>{title}</strong>{detail && <span>{detail}</span>}</div></div>; }
 function Empty({ title, detail }: { title: string; detail: string }) { return <div className="empty-state"><h3>{title}</h3><p>{detail}</p></div>; }
-function setStatus(error: unknown, done: (text: string) => Promise<void>, fallback: string) { void done(message(error, fallback)); }
+function setStatusWithFallback(error: unknown, done: (text: string) => Promise<void>, fallback: string) { void done(message(error, fallback)); }
