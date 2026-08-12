@@ -7,12 +7,19 @@ import { normalizeSpecialty } from '../theme/theme';
 import { useSpecialty } from '../context/SpecialtyContext';
 
 const roleNames: Record<number, string> = { 1: 'Profesor', 2: 'Evaluador', 3: 'Administrador', 4: 'Padre / Encargado' };
+const manualPaths: Record<number, string> = {
+  1: '/pdfs/manual-profesor.pdf',
+  2: '/pdfs/manual-evaluador.pdf',
+  3: '/pdfs/manual-administrador.pdf',
+  4: '/pdfs/manual-padres.pdf',
+};
 
 export default function AppShell({ children, title, subtitle, specialty }: { children: ReactNode; title?: string; subtitle?: string; specialty?: string | null }) {
   const { user, logout } = useAuth();
   const { name: selectedSpecialty, selectSpecialty } = useSpecialty();
   const navigate = useNavigate();
   const effectiveSpecialty = specialty === undefined ? selectedSpecialty : specialty;
+  const manualPath = user ? manualPaths[user.level] : undefined;
 
   useEffect(() => {
     if (specialty) selectSpecialty(specialty);
@@ -34,6 +41,7 @@ export default function AppShell({ children, title, subtitle, specialty }: { chi
           {user?.level === 4 && <NavLink to="/padre">Mis hijos</NavLink>}
           <NavLink to="/profile">Mi perfil</NavLink>
           <ThemeToggle compact />
+          {manualPath && <a href={manualPath} target="_blank" rel="noopener noreferrer">Manual</a>}
           <button className="nav-button" type="button" onClick={signOut}>Cerrar sesión</button>
         </nav>
       </header>
