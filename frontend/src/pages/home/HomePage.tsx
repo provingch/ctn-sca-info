@@ -43,9 +43,9 @@ export default function HomePage() {
 
   const params = (next: Record<string, string>) => setSearch({
     view,
-    cursoId: String(data.selCurso?.id || cursoId || ''),
     etapa: String(data.selEtapa),
     especialidadId: String(especialidadId || ''),
+    cursoId: String(data.selCurso?.id || cursoId || ''),
     ...next,
   });
 
