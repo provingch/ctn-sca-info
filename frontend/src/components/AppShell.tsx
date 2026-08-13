@@ -33,25 +33,29 @@ export default function AppShell({ children, title, subtitle, specialty }: { chi
   return (
     <div className="app-frame" data-specialty={normalizeSpecialty(effectiveSpecialty)}>
       <header className="app-header">
-        <NavLink className="brand" to="/" aria-label="Ir al inicio"><span className="brand-mark"><CtnLogo /></span><span className="brand-copy"><strong>SCA</strong><small>Carpeta Académica</small></span></NavLink>
-        <nav className="app-nav" aria-label="Navegación principal">
-          {user?.level === 1 && <NavLink to="/home">Cursos</NavLink>}
-          {user?.level === 2 && <NavLink to="/evaluacion">Evaluación</NavLink>}
-          {user?.level === 3 && <NavLink to="/admin">Administración</NavLink>}
-          {user?.level === 4 && <NavLink to="/padre">Mis hijos</NavLink>}
-          <NavLink to="/profile">Mi perfil</NavLink>
-          <ThemeToggle compact />
-          {manualPath && <a href={manualPath} target="_blank" rel="noopener noreferrer">Manual</a>}
-          <button className="nav-button" type="button" onClick={signOut}>Cerrar sesión</button>
-        </nav>
+        <div className="app-header-inner">
+          <NavLink className="brand" to="/" aria-label="Ir al inicio"><span className="brand-mark"><CtnLogo /></span><span className="brand-copy"><strong>SCA</strong><small>Carpeta Académica</small></span></NavLink>
+          <nav className="app-nav" aria-label="Navegación principal">
+            {user?.level === 1 && <NavLink to="/home">Cursos</NavLink>}
+            {user?.level === 2 && <NavLink to="/evaluacion">Evaluación</NavLink>}
+            {user?.level === 3 && <NavLink to="/admin">Administración</NavLink>}
+            {user?.level === 4 && <NavLink to="/padre">Mis hijos</NavLink>}
+            <NavLink to="/profile">Mi perfil</NavLink>
+            <ThemeToggle compact />
+            {manualPath && <a href={manualPath} target="_blank" rel="noopener noreferrer">Manual</a>}
+            <button className="nav-button" type="button" onClick={signOut}>Cerrar sesión</button>
+          </nav>
+        </div>
       </header>
       <main className="app-main">
         {title && <section className="page-hero"><div className="hero-content"><span className="hero-kicker"><i />{user ? roleNames[user.level] ?? 'Usuario' : 'SCA'}</span><h1>{title}</h1><p>{subtitle || 'Sistema de Carpetas Académicas del Colegio Técnico Nacional'}</p></div><div className="hero-emblem"><CtnLogo /></div></section>}
         {children}
       </main>
       <footer className="app-footer">
-        <span>Colegio Técnico Nacional</span>
-        <span><NavLink to="/privacidad">Privacidad</NavLink> · <NavLink to="/terminos">Términos</NavLink></span>
+        <div className="app-footer-inner">
+          <span>Colegio Técnico Nacional</span>
+          <span><NavLink to="/privacidad">Privacidad</NavLink> · <NavLink to="/terminos">Términos</NavLink></span>
+        </div>
       </footer>
     </div>
   );
