@@ -38,6 +38,7 @@ public class SecurityConfig {
                 // acceso directo, y SpaForwardController las reenvía a index.html.
                 // Agregar acá cada ruta nueva de React a medida que se sume un Bloque.
                 .requestMatchers(HttpMethod.GET, "/", "/index.html", "/assets/**", "/favicon.svg", "/icons.svg").permitAll()
+                .requestMatchers(HttpMethod.GET, "/pdfs/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/login", "/home", "/inicio", "/profile", "/perfil",
                     "/evaluacion", "/admin", "/admin/**", "/padre", "/styleguide", "/privacidad", "/terminos",
                     "/planilla/**", "/google/callback").permitAll()
