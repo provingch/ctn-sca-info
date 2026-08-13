@@ -39,13 +39,13 @@ export default function HomePage() {
     ? data.cursos.filter((curso) => curso.especialidad === selectedEspecialidad.nombre)
     : data.cursos;
 
-  const selectedCourseId = data.selCurso?.id ?? cursoId;
+  const selectedCourseId = cursoId || data.selCurso?.id;
 
   const params = (next: Record<string, string>) => setSearch({
     view,
     etapa: String(data.selEtapa),
     especialidadId: String(especialidadId || ''),
-    cursoId: String(data.selCurso?.id || cursoId || ''),
+    cursoId: String(cursoId || data.selCurso?.id || ''),
     ...next,
   });
 
