@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import AppShell from '../../components/AppShell';
-import { createAdminRecord, deleteAssignment, getAdminCatalog, type AdminCatalog } from '../../api/admin';
+import { createAdminRecord, deleteAssignment, getAdminCatalog, getMateriaEspecialidades, type AdminCatalog } from '../../api/admin';
 import { ApiError } from '../../api/client';
 import { useSpecialty } from '../../context/SpecialtyContext';
 import { normalizeSpecialty } from '../../theme/theme';
@@ -82,11 +82,13 @@ function AdminModule({ module, data, reload, status }: {
 
 function CreateForm({ section, data, submit }: { section: string; data: AdminCatalog; submit: (payload: unknown) => void }) {
   const [form, setForm] = useState<Record<string, string>>({ categoria: 'comun', nivel: '1' });
+  const [especialidadIds, setEspecialidadIds] = useState<number[]>([]);
+  const [materiaEspecialidadIds, setMateriaEspecialidadIds] = useState<number[]>([]);
   const { selectSpecialty } = useSpecialty();
   function numeric(name: string) { return form[name] ? Number(form[name]) : null; }
   function send(event: FormEvent) {
     event.preventDefault();
-    if (section === 'materias') submit({ nombre: form.nombre, categoria: form.categoria, especialidadIds: numeric('especialidadId') ? [numeric('especialidadId')] : [] });
+    if (section === 'materias') submit({ nombre: form.nombre, categoria: form.categoria, especialidadIds: especialidadIds });
     if (section === 'usuarios') submit({ ...form, nivel: numeric('nivel'), especialidadId: numeric('especialidadId') });
     if (section === 'asignaciones') submit({ profesorId: numeric('profesorId'), materiaId: numeric('materiaId'), cursoId: numeric('cursoId') });
     if (section === 'ingresantes') submit({ ...form, cursoId: numeric('cursoId'), ci: numeric('ci') });
@@ -101,19 +103,38 @@ function CreateForm({ section, data, submit }: { section: string; data: AdminCat
   };
 
   return <form className="form-grid" onSubmit={send}>
-    {section === 'materias' && <>{field('nombre', 'Nombre')}<label>Categoría<AnimatedSelect ariaLabel="Categoría" value={form.categoria} onChange={(value) => setForm({ ...form, categoria: value })} options={[{ value: 'comun', label: 'Común' }, { value: 'especifico', label: 'Específica' }]} /></label><Specialties data={data} form={form} setForm={setForm} onChange={specialtyChanged} /></>}
+    {section === 'materias' && <>{field('nombre', 'Nombre')}<label>Categoría<AnimatedSelect ariaLabel="Categoría" value={form.categoria} onChange={(value) => setForm({ ...form, categoria: value })} options={[{ value: 'comun', label: 'Común' }, { value: 'especifico', label: 'Específica' }]} /></label><Specialties data={data} form={form} setForm={setForm} onChange={specialtyChanged} especialidadIds={especialidadIds} setEspecialidadIds={setEspecialidadIds} />}</>
     {section === 'usuarios' && <>{field('nombre', 'Nombre')}{field('apellido', 'Apellido')}{field('usuario', 'Usuario')}{field('contrasenia', 'Contraseña', 'password')}<label>Nivel<AnimatedSelect ariaLabel="Nivel" value={form.nivel} onChange={(value) => setForm({ ...form, nivel: value })} options={[{ value: '1', label: 'Profesor' }, { value: '2', label: 'Evaluador' }, { value: '3', label: 'Administrador' }]} /></label>{field('correo', 'Correo', 'email')}<Specialties data={data} form={form} setForm={setForm} onChange={specialtyChanged} /></>}
-    {section === 'asignaciones' && <><Select label="Profesor" name="profesorId" items={data.usuarios.map((user) => ({ id: user.id, label: `${user.apellido}, ${user.nombre}` }))} form={form} setForm={setForm} /><Select label="Materia" name="materiaId" items={data.materias.map((subject) => ({ id: subject.id, label: subject.nombre }))} form={form} setForm={setForm} /><Select label="Curso" name="cursoId" items={courseItems(data)} form={form} setForm={setForm} /></>}
+    {section === 'asignaciones' && <><Select label="Profesor" name="profesorId" items={data.usuarios.map((user) => ({ id: user.id, label: `${user.apellido}, ${user.nombre}` }))} form={form} setForm={setForm} /><Select label="Materia" name="materiaId" items={data.materias.map((subject) => ({ id: subject.id, label: subject.nombre }))} form={form} setForm={setForm} onValueChange={async (value) => {
+        const id = Number(value);
+        if (Number.isInteger(id) && id > 0) {
+          try {
+            const res = await getMateriaEspecialidades(id);
+            setMateriaEspecialidadIds(res || []);
+          } catch (err) {
+            setMateriaEspecialidadIds([]);
+          }
+        } else setMateriaEspecialidadIds([]);
+      }} /><Select label="Curso" name="cursoId" items={courseItems(data, materiaEspecialidadIds)} form={form} setForm={setForm} /></>}
     {section === 'ingresantes' && <>{field('nombre', 'Nombre')}{field('apellido', 'Apellido')}{field('ci', 'Cédula', 'number')}<Select label="Curso" name="cursoId" items={courseItems(data)} form={form} setForm={setForm} />{field('correoEncargado', 'Correo del encargado', 'email')}{field('correoEncargado2', 'Segundo correo', 'email')}</>}
     <button className="button">Guardar</button>
   </form>;
 }
 
-function courseItems(data: AdminCatalog) {
+function courseItems(data: AdminCatalog, allowedEspecialidadIds?: number[]) {
+  if (allowedEspecialidadIds && allowedEspecialidadIds.length > 0) {
+    const allowedNames = data.especialidades.filter((e) => allowedEspecialidadIds.includes(e.id)).map((e) => e.nombre);
+    return data.cursos.filter((course) => allowedNames.includes(course.especialidad)).map((course) => ({ id: course.id, label: `${course.nivel}° ${course.seccion} · ${course.especialidad}` }));
+  }
   return data.cursos.map((course) => ({ id: course.id, label: `${course.nivel}° ${course.seccion} · ${course.especialidad}` }));
 }
 
-function Specialties({ data, form, setForm, onChange }: FormProps & { data: AdminCatalog; onChange: (value: string) => void }) {
+function Specialties({ data, form, setForm, onChange, especialidadIds, setEspecialidadIds }: FormProps & { data: AdminCatalog; onChange: (value: string) => void; especialidadIds?: number[]; setEspecialidadIds?: (ids: number[]) => void }) {
+  // If multi-select handlers are provided, render checkboxes for multi-selection.
+  if (setEspecialidadIds) {
+    const ids = especialidadIds || [];
+    return <fieldset className="checkbox-list"><legend>Especialidades</legend>{data.especialidades.map((s) => <label key={s.id}><input type="checkbox" checked={ids.includes(s.id)} onChange={(e) => { const next = e.target.checked ? [...ids, s.id] : ids.filter((x) => x !== s.id); setEspecialidadIds(next); onChange?.(String(s.id)); }} /> {s.nombre}</label>)}</fieldset>;
+  }
   return <Select label="Especialidad" name="especialidadId" items={data.especialidades.map((specialty) => ({ id: specialty.id, label: specialty.nombre }))} form={form} setForm={setForm} optional onValueChange={onChange} />;
 }
 

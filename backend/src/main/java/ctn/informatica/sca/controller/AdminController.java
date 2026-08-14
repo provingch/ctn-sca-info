@@ -51,6 +51,16 @@ public class AdminController {
         catch (Exception ex) { throw failure("No se pudo crear la materia", ex); }
     }
 
+    @GetMapping("/materias/{id}/especialidades")
+    public List<Integer> materiaEspecialidades(@PathVariable int id, Authentication auth) {
+        ApiAuth.requireUserId(auth);
+        try {
+            return new MateriaDao().listEspecialidadIdsForMateria(id);
+        } catch (Exception ex) {
+            throw failure("No se pudo cargar las especialidades de la materia", ex);
+        }
+    }
+
     @PostMapping("/usuarios") @ResponseStatus(HttpStatus.CREATED)
     public void createUser(@RequestBody UserInput input, Authentication auth) {
         ApiAuth.requireUserId(auth); require(input != null && notBlank(input.nombre()) && notBlank(input.apellido()) && notBlank(input.usuario()), "Nombre, apellido y usuario son requeridos");

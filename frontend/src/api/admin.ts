@@ -10,3 +10,4 @@ export interface AdminCatalog {
 export const getAdminCatalog = () => api.get<AdminCatalog>('/api/admin');
 export const createAdminRecord = (section: string, payload: unknown) => api.post<void>(`/api/admin/${section}`, payload);
 export const deleteAssignment = (id: number) => api.delete<void>(`/api/admin/asignaciones/${id}`);
+export const getMateriaEspecialidades = (materiaId: number) => api.get<number[]>(`/api/admin/materias/${materiaId}/especialidades`);
