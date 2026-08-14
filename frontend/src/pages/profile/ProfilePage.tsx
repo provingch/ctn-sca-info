@@ -30,14 +30,14 @@ export default function ProfilePage() {
     return () => observer.disconnect();
   }, [data]);
 
-  if (!data) return <AppShell title="Mi perfil"><section className="panel">{status || 'Cargando…'}</section></AppShell>;
+  if (!data) return <AppShell><section className="panel">{status || 'Cargando…'}</section></AppShell>;
 
   const owner = data.profileOwner;
   const initials = `${owner.nombre?.[0] || owner.usuario?.[0] || 'S'}${owner.apellido?.[0] || ''}`.toUpperCase();
   const completion = Math.round((Number(Boolean(owner.correo)) + Number(Boolean(owner.telefono)) + Number(Boolean(owner.usuario))) / 3 * 100);
   const finish = async (text: string) => { setStatus(text); await load(); };
 
-  return <AppShell title="Mi perfil" subtitle={`Cuenta de ${owner.usuario || 'usuario'} · ${data.profileRoleLabel}`}>
+  return <AppShell subtitle={`Cuenta de ${owner.usuario || 'usuario'} · ${data.profileRoleLabel}`}>
     <div className="profile-page" ref={profilePageRef}>
     <section className="profile-identity" ref={identityRef}>
       <div className="avatar" aria-hidden="true">{initials}</div>
