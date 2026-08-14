@@ -24,7 +24,7 @@ export default function HomePage() {
   const [syncingAll, setSyncingAll] = useState(false);
   const { selectSpecialty, resetSpecialty } = useSpecialty();
 
-  const setCourseSelection = (value: string) => {
+  const setCourseSelection = (value: string | number) => {
     const nextNivel = Number(value) || null;
     setSelectedNivel(nextNivel);
     setSelectedSeccion('');
@@ -140,10 +140,7 @@ export default function HomePage() {
       </label>
       <label className="inline-filter">Curso
         <AnimatedSelect ariaLabel="Curso" value={selectedNivel ?? ''} onChange={(value) => {
-          const nextValue = Number(value) || null;
-          setSelectedNivel(nextValue);
-          setSelectedSeccion('');
-          params({ cursoId: '' });
+          setCourseSelection(value);
         }} disabled={visibleCursos.length === 0} placeholder="Seleccione el curso" options={[{ value: '', label: 'Seleccione el curso' }, ...courseOptions]} />
       </label>
       <label className="inline-filter">Sección
