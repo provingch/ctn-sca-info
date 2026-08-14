@@ -89,7 +89,7 @@ export default function LoginPage() {
       <form onSubmit={handleCredentialsSubmit} className="auth-form">
         <h1>Iniciar sesión</h1>
         <label>
-          Usuario
+          Usuario o Cédula
           <input value={username} onChange={(e) => setUsername(e.target.value)} autoFocus required />
         </label>
         <label>
