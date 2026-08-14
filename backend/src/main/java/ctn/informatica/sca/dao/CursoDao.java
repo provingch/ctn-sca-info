@@ -35,7 +35,8 @@ public class CursoDao extends conexion {
         String sql = "SELECT DISTINCT c.id, e.nombre AS especialidad, c.promocion, c.seccion "
             + "FROM curso c "
                 + "JOIN especialidad e ON c.especialidad_id = e.id "
-            + "WHERE c.id IN (SELECT DISTINCT p.curso_id FROM planilla p WHERE p.profesor_id = ?) "
+            + "WHERE ( "
+                + "    c.id IN (SELECT DISTINCT p.curso_id FROM planilla p WHERE p.profesor_id = ?) "
                 + "   OR c.especialidad_id IN ( "
                 + "       SELECT DISTINCT me.especialidad_id "
                 + "       FROM planilla p "
@@ -49,6 +50,7 @@ public class CursoDao extends conexion {
                 + "       WHERE pm.profesor_id = ? "
                 + "   ) "
                 + "   OR c.id IN (SELECT curso_id FROM asignacion WHERE profesor_id = ?) "
+            + ") "
             + "AND c.promocion >= ? "
             + "ORDER BY e.nombre, c.promocion, c.seccion";
         try (Connection con = getCon(); PreparedStatement stm = con.prepareStatement(sql)) {
