@@ -38,6 +38,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import jakarta.servlet.http.HttpServletResponse;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import ctn.informatica.sca.util.PlanillaProcesoWorkbookBuilder;
 
 @RestController
 @RequestMapping("/api/planillas")
@@ -240,6 +245,71 @@ public class PlanillaController {
             return new SaveGradesResponse(message, savedCount, skippedCount, warnings, planilla.getId());
         } catch (SQLException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al guardar notas", ex);
+        }
+    }
+
+    @GetMapping("/{planillaId}/export")
+    public void exportPlanilla(@PathVariable int planillaId, Authentication authentication, HttpServletResponse response) {
+        int userId = ApiAuth.requireUserId(authentication);
+        try {
+            Planilla planilla = requireOwnedPlanillaById(planillaId, userId);
+            Curso curso = new CursoDao().findById(planilla.getCursoId());
+            Materia materia = null;
+            String disciplina = "";
+            if (planilla.getMateriaId() > 0) {
+                materia = new MateriaDao().findById(planilla.getMateriaId());
+                if (materia != null && materia.getNombre() != null) {
+                    disciplina = materia.getNombre();
+                }
+            }
+
+            List<Tarea> tareas = filterTasksByEtapa(new TareaDao().consultarTarea(planilla.getId()), planilla.getEtapaIndex());
+            Map<Integer, Integer> maxima = new LinkedHashMap<>();
+            int total = 0;
+            for (Tarea tarea : tareas) { maxima.put(tarea.getId(), tarea.getTotal()); total += tarea.getTotal(); }
+            planilla.computeGradeRanges(total);
+            List<StudentRow> rows = new StudentRowDao().loadRowsForPlanilla(planilla, maxima, total);
+
+            Map<Integer, Integer> firstStageGrades = Map.of();
+            if (planilla.getEtapaIndex() == 2) {
+                Planilla first = new PlanillaDao().findByCompositeKey(planilla.getCursoId(), planilla.getMateriaId(), 1);
+                if (first != null) {
+                    List<Tarea> tareasPrimera = filterTasksByEtapa(new TareaDao().consultarTarea(first.getId()), 1);
+                    Map<Integer, Integer> maximaPrim = new LinkedHashMap<>(); int totalPrim = 0;
+                    for (Tarea t : tareasPrimera) { maximaPrim.put(t.getId(), t.getTotal()); totalPrim += t.getTotal(); }
+                    first.computeGradeRanges(totalPrim);
+                    for (StudentRow row : new StudentRowDao().loadRowsForPlanilla(first, maximaPrim, totalPrim)) {
+                        firstStageGrades = new HashMap<>(firstStageGrades);
+                        ((HashMap<Integer,Integer>) firstStageGrades).put(row.getAlumnoId(), first.getNotaForSum(row.getTotal()));
+                    }
+                }
+            }
+
+            Profesor profesor = profesorDao.findById(userId);
+            String profesorNombre = profesor == null ? "" : profesor.getFullName();
+
+            PlanillaProcesoWorkbookBuilder.PlanillaSheetData sheetData = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                    planilla,
+                    curso,
+                    disciplina,
+                    profesorNombre,
+                    "",
+                    tareas,
+                    rows,
+                    firstStageGrades
+            );
+
+            String base = "Planilla_" + (disciplina.isBlank() ? planilla.getId() : disciplina.replaceAll("[^A-Za-z0-9_-]", "_")) + "_" + planilla.getPeriodo();
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + URLEncoder.encode(base + ".xlsx", StandardCharsets.UTF_8).replace("+", "%20"));
+
+            try (XSSFWorkbook workbook = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(sheetData, "Planilla")) {
+                workbook.write(response.getOutputStream());
+            }
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo generar el archivo", ex);
         }
     }
 
