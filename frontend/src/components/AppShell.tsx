@@ -34,7 +34,13 @@ export default function AppShell({ children, title, subtitle, specialty }: { chi
     <div className="app-frame" data-specialty={normalizeSpecialty(effectiveSpecialty)}>
       <header className="app-header">
         <div className="app-header-inner">
-          <NavLink className="brand" to="/" aria-label="Ir al inicio"><span className="brand-mark"><CtnLogo /></span><span className="brand-copy"><strong>SCA</strong><small>Carpeta Académica</small></span></NavLink>
+          <NavLink className="brand" to="/" aria-label="Ir al inicio">
+            <span className="brand-mark"><CtnLogo /></span>
+            <span className="brand-copy">
+              <span className="brand-title">Sistema de Carpeta Académica</span>
+              <small className="brand-sub">Colegio Técnico Nacional de Asunción</small>
+            </span>
+          </NavLink>
           <nav className="app-nav" aria-label="Navegación principal">
             {user?.level === 1 && <NavLink to="/home">Cursos</NavLink>}
             {user?.level === 2 && <NavLink to="/evaluacion">Evaluación</NavLink>}
