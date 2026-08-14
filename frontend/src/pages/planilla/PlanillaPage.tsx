@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import AppShell from '../../components/AppShell';
-import { getPlanilla, resolvePlanilla, saveGrades, syncClassroom, type PlanillaDetail } from '../../api/academics';
+import { getPlanilla, resolvePlanilla, syncClassroom, type PlanillaDetail } from '../../api/academics';
 import { ApiError } from '../../api/client';
 
 // Etiquetas de nota en orden descendente (5 -> 1), igual que el JSP legacy
@@ -16,7 +16,6 @@ export default function PlanillaPage() {
   const [data, setData] = useState<PlanillaDetail | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
   const [status, setStatus] = useState('');
-  const [busy, setBusy] = useState(false);
   const [switchingEtapa, setSwitchingEtapa] = useState(false);
 
   useEffect(() => {
@@ -37,28 +36,17 @@ export default function PlanillaPage() {
     if (!data.planilla) return;
     (async () => {
       try {
-        setBusy(true); setStatus('Sincronizando Classroom…');
+        setStatus('Sincronizando Classroom…');
         await syncClassroom(id);
         setData(await getPlanilla(id));
         setStatus('Sincronización completada.');
       } catch (e) {
         setStatus(e instanceof ApiError ? e.message : 'No se pudo sincronizar Classroom.');
-      } finally { setBusy(false); }
+      }
     })();
   }, [data, id]);
 
   const totals = useMemo(() => data?.rows.map((row) => data.tareas.reduce((sum, t) => sum + Number(values[`${row.alumnoId}:${t.id}`] || 0), 0)) ?? [], [data, values]);
-
-  async function save() {
-    if (!data) return;
-    setBusy(true); setStatus('');
-    try {
-      const grades = data.rows.map((row) => ({ alumnoId: row.alumnoId, items: data.tareas.map((t) => ({ tareaId: t.id, puntos: values[`${row.alumnoId}:${t.id}`] === '' ? null : Number(values[`${row.alumnoId}:${t.id}`]) })) }));
-      const result = await saveGrades(id, grades);
-      setStatus([result.message, ...result.warnings].join(' '));
-    } catch (e) { setStatus(e instanceof ApiError ? e.message : 'No se pudieron guardar las notas.'); }
-    finally { setBusy(false); }
-  }
 
   // manual sync removed; synchronization runs automatically on load
 
@@ -106,8 +94,10 @@ export default function PlanillaPage() {
         <button className="button secondary" disabled title="Descarga individual pendiente de migrar (Bloque 4)">
           Descargar
         </button>
-        <button className="button" onClick={save} disabled={busy}>{busy ? 'Procesando…' : 'Guardar notas'}</button>
       </div>
+      <section className="panel notice">
+        Las notas se sincronizan desde Google Classroom y se muestran aquí en formato de planilla. No hace falta guardar cambios manualmente.
+      </section>
       <section className="summary-grid">
         <article className="metric"><span>Curso</span><strong>{data.curso ? `${data.curso.nivel}° ${data.curso.seccion}` : '—'}</strong></article>
         <article className="metric"><span>Etapa</span><strong>{data.planilla.etapa}</strong></article>
@@ -154,7 +144,7 @@ export default function PlanillaPage() {
           </thead>
           <tbody>{data.rows.map((row, rowIndex) => {
             const percent = data.planilla.totalPossiblePoints ? Math.round(totals[rowIndex] * 100 / data.planilla.totalPossiblePoints) : 0;
-            return <tr key={row.alumnoId}><th>{row.alumnoNombre}</th>{data.tareas.map((t) => <td key={t.id}><input aria-label={`${row.alumnoNombre}, ${t.titulo}`} type="number" min="0" max={t.total} value={values[`${row.alumnoId}:${t.id}`] ?? ''} onChange={(e) => setValues((v) => ({ ...v, [`${row.alumnoId}:${t.id}`]: e.target.value }))} /></td>)}<td>{totals[rowIndex]}</td><td>{percent}%</td><td>{row.nota}</td></tr>;
+            return <tr key={row.alumnoId}><th>{row.alumnoNombre}</th>{data.tareas.map((t) => <td key={t.id}><input aria-label={`${row.alumnoNombre}, ${t.titulo}`} type="number" min="0" max={t.total} value={values[`${row.alumnoId}:${t.id}`] ?? ''} onChange={(e) => setValues((v) => ({ ...v, [`${row.alumnoId}:${t.id}`]: e.target.value }))} disabled /></td>)}<td>{totals[rowIndex]}</td><td>{percent}%</td><td>{row.nota}</td></tr>;
           })}</tbody>
         </table>
       </div>

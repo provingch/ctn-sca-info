@@ -1,10 +1,11 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { ApiError } from '../../api/client';
 import ThemeToggle from '../../components/ThemeToggle';
 import CtnLogo from '../../components/CtnLogo';
 import PasswordInput from '../../components/PasswordInput';
+import { applyTheme, getInitialTheme } from '../../theme/theme';
 
 type Step = 'credentials' | 'twofactor';
 
@@ -20,6 +21,10 @@ export default function LoginPage() {
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    applyTheme(getInitialTheme());
+  }, []);
 
   async function handleCredentialsSubmit(e: FormEvent) {
     e.preventDefault();
