@@ -428,4 +428,29 @@ public class MateriaDao extends conexion {
         }
         return conflicts;
     }
+
+    public boolean delete(int materiaId) throws SQLException {
+        String checkSql = "SELECT 1 FROM planilla WHERE materia_id = ? LIMIT 1";
+        try (Connection c = getCon(); PreparedStatement checkPs = c.prepareStatement(checkSql)) {
+            checkPs.setInt(1, materiaId);
+            try (ResultSet rs = checkPs.executeQuery()) {
+                if (rs.next()) return false; // referenced by planilla
+            }
+        }
+
+        try (Connection c = getCon()) {
+            try (PreparedStatement ps = c.prepareStatement("DELETE FROM profesor_materia WHERE materia_id = ?")) {
+                ps.setInt(1, materiaId);
+                ps.executeUpdate();
+            }
+            try (PreparedStatement ps = c.prepareStatement("DELETE FROM materia_especialidad WHERE materia_id = ?")) {
+                ps.setInt(1, materiaId);
+                ps.executeUpdate();
+            }
+            try (PreparedStatement ps = c.prepareStatement("DELETE FROM materia WHERE id = ?")) {
+                ps.setInt(1, materiaId);
+                return ps.executeUpdate() == 1;
+            }
+        }
+    }
 }

@@ -170,8 +170,14 @@ public class AlumnoDao extends conexion {
                 if (!columns.next()) {
                     return false;
                 }
-            }
 
+    public boolean delete(int alumnoId) throws SQLException {
+        String sql = "DELETE FROM alumno WHERE id = ?";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, alumnoId);
+            return ps.executeUpdate() == 1;
+        }
+    }
             String sql = "UPDATE alumno SET google_user_id = ?, google_email = ? WHERE id = ?";
             try (PreparedStatement ps = con.prepareStatement(sql)) {
                 ps.setString(1, googleUserId);
