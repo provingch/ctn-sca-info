@@ -172,12 +172,53 @@ function courseItems(data: AdminCatalog, allowedEspecialidadIds?: number[]) {
   return data.cursos.map((course) => ({ id: course.id, label: `${course.nivel}° ${course.seccion} · ${course.especialidad}` }));
 }
 
-function Specialties({ data, form, setForm, onChange, especialidadIds, setEspecialidadIds }: FormProps & { data: AdminCatalog; onChange: (value: string) => void; especialidadIds?: number[]; setEspecialidadIds?: (ids: number[]) => void }) {
-  // If multi-select handlers are provided, render checkboxes for multi-selection.
+function Specialties({ data, form, setForm, onChange, especialidadIds, setEspecialidadIds, categoria }: FormProps & { data: AdminCatalog; onChange: (value: string) => void; especialidadIds?: number[]; setEspecialidadIds?: (ids: number[]) => void; categoria?: string }) {
+  // When used for materia creation (setEspecialidadIds provided):
+  // - if categoria === 'especifico' -> allow only one specialty (single select)
+  // - if categoria === 'comun' -> allow multi-selection (checkboxes)
   if (setEspecialidadIds) {
     const ids = especialidadIds || [];
-    return <fieldset className="checkbox-list"><legend>Especialidades</legend>{data.especialidades.map((s) => <label key={s.id}><input type="checkbox" checked={ids.includes(s.id)} onChange={(e) => { const next = e.target.checked ? [...ids, s.id] : ids.filter((x) => x !== s.id); setEspecialidadIds(next); onChange?.(String(s.id)); }} /> {s.nombre}</label>)}</fieldset>;
+    if (categoria === 'especifico') {
+      // single-select: update the array to contain only the selected id
+      return (
+        <label>
+          Especialidad
+          <AnimatedSelect
+            ariaLabel="Especialidad"
+            value={ids[0] || ''}
+            onChange={(value) => {
+              const n = Number(value);
+              setEspecialidadIds(Number.isInteger(n) && n > 0 ? [n] : []);
+              onChange?.(value);
+            }}
+            options={[{ value: '', label: 'Seleccione…' }, ...data.especialidades.map((s) => ({ value: s.id, label: s.nombre }))]}
+          />
+        </label>
+      );
+    }
+
+    return (
+      <fieldset className="checkbox-list">
+        <legend>Especialidades</legend>
+        {data.especialidades.map((s) => (
+          <label key={s.id}>
+            <input
+              type="checkbox"
+              checked={ids.includes(s.id)}
+              onChange={(e) => {
+                const next = e.target.checked ? [...ids, s.id] : ids.filter((x) => x !== s.id);
+                setEspecialidadIds(next);
+                onChange?.(String(s.id));
+              }}
+            />
+            {s.nombre}
+          </label>
+        ))}
+      </fieldset>
+    );
   }
+
+  // Default usage (e.g., user creation) -> single select
   return <Select label="Especialidad" name="especialidadId" items={data.especialidades.map((specialty) => ({ id: specialty.id, label: specialty.nombre }))} form={form} setForm={setForm} optional onValueChange={onChange} />;
 }
 
