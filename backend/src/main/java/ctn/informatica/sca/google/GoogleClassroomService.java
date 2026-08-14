@@ -259,7 +259,7 @@ public final class GoogleClassroomService {
         for (Course course : allCourses) {
             String name = course.getName();
             String room = course.getRoom();
-            Optional<GoogleClassroomUtils.CourseKey> key = parseCourseKey(name, room);
+            Optional<GoogleClassroomUtils.CourseKey> key = parseCourseKey(name, room, course.getSection());
 
             // Diagnostic: show what parsing produced for this course
             try {
@@ -582,10 +582,11 @@ public final class GoogleClassroomService {
         // mismo curso (nivel+sección) tiene varias planillas de materias distintas.
         String normalizedMateria = GoogleClassroomUtils.normalizeSubjectName(planilla.getNombre());
 
-        // Curso que calza por identidad (nivel/sección/especialidad) pero sin
-        // confirmar la materia; se usa como último recurso si ningún curso de
-        // Classroom incluye el nombre de la materia en su título/aula.
-        Course fallbackCourseIdentityOnly = null;
+        // Acumulamos candidatos por identidad (nivel/sección/especialidad). Si
+        // hay exactamente uno y ninguno coincidió por materia, lo usaremos como
+        // fallback. Si hay más de uno, devolvemos vacío para evitar asignar la
+        // misma clase a varias planillas distintas.
+        List<Course> identityCandidates = new ArrayList<>();
 
         for (Course course : courses) {
             String name = course.getName();
@@ -602,13 +603,9 @@ public final class GoogleClassroomService {
             }
             if (key.isPresent() && curso.matchesCourseKey(key.get())) {
                 if (subjectMatches) {
-                    // Coincide el curso Y la materia: es el match correcto, no hay
-                    // ambigüedad posible, se puede devolver de inmediato.
                     return Optional.of(course);
                 }
-                if (fallbackCourseIdentityOnly == null) {
-                    fallbackCourseIdentityOnly = course;
-                }
+                identityCandidates.add(course);
                 continue;
             }
 
@@ -625,22 +622,18 @@ public final class GoogleClassroomService {
                 boolean specialtyMatches = !normalizedEspecialidad.isBlank()
                         && (normalizedTitle.contains(normalizedEspecialidad) || normalizedRoom.contains(normalizedEspecialidad));
                 if (sectionMatches || roomMatches || specialtyMatches) {
-                    if (subjectMatches) {
-                        return Optional.of(course);
-                    }
-                    if (fallbackCourseIdentityOnly == null) {
-                        fallbackCourseIdentityOnly = course;
-                    }
+                        if (subjectMatches) {
+                            return Optional.of(course);
+                        }
+                        identityCandidates.add(course);
                 }
             }
         }
 
-        // Si un profesor tiene varias planillas (materias distintas) para el mismo
-        // curso, priorizamos el match confirmado por materia (arriba). Si ninguno
-        // incluyó el nombre de la materia en el título/aula del curso de Classroom,
-        // recurrimos al match "por identidad de curso" para no romper el caso común
-        // de un profesor con una sola materia por curso.
-        return Optional.ofNullable(fallbackCourseIdentityOnly);
+        if (identityCandidates.size() == 1) {
+            return Optional.of(identityCandidates.get(0));
+        }
+        return Optional.empty();
     }
 
     private static Integer tryExtractLevel(String text) {
