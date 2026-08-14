@@ -27,7 +27,15 @@ public class Curso {
     }
 
     public int getCurso() {
-        int curso = promocion - period + 3;
+        // promocion = año de egreso. Con period como año actual:
+        //  promocion == period       -> 3° (último año, egresa este año)
+        //  promocion == period + 1   -> 2°
+        //  promocion == period + 2   -> 1° (recién ingresa)
+        // Las promociones ya egresadas (promocion < period) se filtran antes,
+        // en CursoDao (WHERE ... AND c.promocion >= ?), así que acá no debería
+        // llegar ningún caso con curso < 1 en operación normal — el clamp
+        // queda como resguardo defensivo, no como comportamiento esperado.
+        int curso = period - promocion + 3;
         if (curso < 1) {
             return 1;
         }
