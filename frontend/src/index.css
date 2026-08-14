@@ -163,7 +163,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .auth-brand-panel { display: flex; flex-direction: column; justify-content: center; max-width: 650px; padding: clamp(28px, 7vw, 90px); color: var(--ink); }.auth-brand-mark { width: 76px; height: 76px; display: grid; place-items: center; border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--line)); border-radius: 20px; background: rgba(255,255,255,.54); font-weight: 950; letter-spacing: -.06em; backdrop-filter: blur(10px); }.auth-brand-panel p { margin: 28px 0 8px; font-size: .76rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; opacity: .72; }.auth-brand-panel h2 { max-width: 620px; margin: 0 0 22px; color: var(--ink); font-size: clamp(2.2rem, 5vw, 4.8rem); line-height: .98; font-weight: 900; }.auth-brand-panel small { color: var(--muted); }
 
 /* Ensure login page fits viewport without extra vertical scroll on typical desktops */
-.auth-page { align-items: center; }
+.auth-page { align-items: center; justify-items: center; }
 @media (max-height: 720px) {
   .auth-page { align-items: stretch; }
 }
