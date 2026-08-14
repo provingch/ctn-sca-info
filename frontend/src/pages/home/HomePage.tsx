@@ -181,8 +181,180 @@ function PlanillasView({ data, syncingProp, setSyncingProp }: { data: HomeRespon
 }
 
 function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise<void> }) {
-  const [tema, setTema] = useState(''); const [instrumentoId, setInstrumentoId] = useState(0); const [ausentes, setAusentes] = useState<number[]>([]); const [status, setStatus] = useState('');
-  async function create(e: FormEvent) { e.preventDefault(); if (!data.selCurso) return; try { await createClass({ cursoId: data.selCurso.id, etapa: data.selEtapa, instrumentoId, turno: 'turno', tema, alumnosAusentes: ausentes }); setStatus('Clase registrada.'); setTema(''); await reload(); } catch (err) { setStatus(err instanceof ApiError ? err.message : 'No se pudo registrar la clase.'); } }
-  async function mark(id: number, estado: string) { await updateAttendance(id, estado); await reload(); }
-  return <div className="two-column"><form className="panel form-grid" onSubmit={create}><h2>Registrar clase</h2><label>Tema<input value={tema} required onChange={(e) => setTema(e.target.value)} /></label><label>Instrumento<AnimatedSelect ariaLabel="Instrumento" value={instrumentoId} onChange={(value) => setInstrumentoId(Number(value))} options={[{ value: 0, label: 'Sin instrumento' }, ...data.instrumentos.map((item) => ({ value: item.id, label: item.nombre }))]} /></label><fieldset><legend>Alumnos ausentes</legend><div className="check-list">{data.rasgoAlumnosValidos.map((a) => <label key={a.id}><input type="checkbox" checked={ausentes.includes(a.id)} onChange={(e) => setAusentes((v) => e.target.checked ? [...v, a.id] : v.filter((id) => id !== a.id))} />{a.apellido}, {a.nombre}</label>)}</div></fieldset>{status && <div className="notice">{status}</div>}<button className="button">Guardar clase</button></form><section className="panel"><h2>Asistencia e historial</h2>{data.rasgoAsistencias.map((a) => <div className="attendance-row" key={a.id}><span>{a.alumnoNombreCompleto}</span><button className={a.estado === 'presente' ? 'active' : ''} onClick={() => mark(a.id, 'presente')}>Presente</button><button className={a.estado === 'ausente' ? 'active danger' : ''} onClick={() => mark(a.id, 'ausente')}>Ausente</button></div>)}{data.rasgoPlanillas.map((p) => <div className="history-row" key={p.id}><strong>{p.tema}</strong><span>{p.fechaClase}</span></div>)}</section></div>;
+  const [tema, setTema] = useState('');
+  const [instrumentoId, setInstrumentoId] = useState(0);
+  const [ausentes, setAusentes] = useState<number[]>([]);
+  const [status, setStatus] = useState('');
+  const [horario, setHorario] = useState('');
+  const [cantidadHoras, setCantidadHoras] = useState('');
+  const [modalidad, setModalidad] = useState('Presencial');
+  const [observaciones, setObservaciones] = useState('');
+
+  async function create(e: FormEvent) {
+    e.preventDefault();
+    if (!data.selCurso) return;
+    try {
+      await createClass({ cursoId: data.selCurso.id, etapa: data.selEtapa, instrumentoId, turno: 'turno', tema, alumnosAusentes: ausentes });
+      setStatus('Clase registrada.');
+      setTema('');
+      setHorario('');
+      setCantidadHoras('');
+      setModalidad('Presencial');
+      setInstrumentoId(0);
+      setAusentes([]);
+      setObservaciones('');
+      await reload();
+    } catch (err) {
+      setStatus(err instanceof ApiError ? err.message : 'No se pudo registrar la clase.');
+    }
+  }
+
+  async function mark(id: number, estado: string) {
+    await updateAttendance(id, estado);
+    await reload();
+  }
+
+  function clearForm() {
+    setTema('');
+    setHorario('');
+    setCantidadHoras('');
+    setModalidad('Presencial');
+    setInstrumentoId(0);
+    setAusentes([]);
+    setObservaciones('');
+    setStatus('');
+  }
+
+  return (
+    <div className="two-column">
+      <form className="panel" onSubmit={create} style={{ display: 'grid', gap: 12 }}>
+        <input type="hidden" name="action" value="create-rasgo-planilla" />
+        <input type="hidden" name="cursoId" value={data.selCurso ? String(data.selCurso.id) : ''} id="formCursoId" />
+        <input type="hidden" name="turno" value="turno" id="formTurno" />
+        <input type="hidden" name="etapa" value={String(data.selEtapa)} />
+
+        <div className="class-card">
+          <div className="class-card-head">
+            <h3>Datos de clase</h3>
+            <button type="button" className="btn btn-default btn-sm" id="clearButton" onClick={clearForm}>Limpiar formulario</button>
+          </div>
+          <div className="class-grid">
+            <div>
+              <label htmlFor="horarioClase" style={{ fontWeight: 600 }}>Horario</label>
+              <input id="horarioClase" className="form-control" placeholder="Ej: 07:00-09:20" value={horario} onChange={(e) => setHorario(e.target.value)} inputMode="numeric" maxLength={11} />
+            </div>
+            <div>
+              <label htmlFor="cantidadHoras" style={{ fontWeight: 600 }}>Cant. horas cátedra</label>
+              <input id="cantidadHoras" type="number" min={1} max={12} step={1} inputMode="numeric" className="form-control" readOnly placeholder="Automático" value={cantidadHoras} />
+            </div>
+            <div>
+              <label htmlFor="modalidadClase" style={{ fontWeight: 600 }}>Modalidad</label>
+              <select id="modalidadClase" className="form-control" value={modalidad} onChange={(e) => setModalidad(e.target.value)}>
+                <option>Presencial</option>
+                <option>Virtual</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="instrumentoId" style={{ fontWeight: 600 }}>Tipo de clase (Instrumento)</label>
+              <AnimatedSelect ariaLabel="Instrumento" value={instrumentoId} onChange={(value) => setInstrumentoId(Number(value))} options={[{ value: 0, label: 'Sin instrumento' }, ...data.instrumentos.map((item) => ({ value: item.id, label: item.nombre }))]} />
+            </div>
+            <div>
+              <label htmlFor="temaRasgo" style={{ fontWeight: 600 }}>Contenido específico desarrollado</label>
+              <input id="temaRasgo" name="tema" className="form-control" maxLength={150} value={tema} onChange={(e) => setTema(e.target.value)} placeholder="Ej.: Integrales definidas y aplicaciones" required />
+            </div>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label htmlFor="observacionesGenerales" style={{ fontWeight: 600 }}>Observaciones generales</label>
+              <textarea id="observacionesGenerales" className="form-control" rows={3} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Cualquier eventualidad general de la clase..." />
+            </div>
+          </div>
+        </div>
+
+        <div className="class-card">
+          <h3>3. Asistencia general y justificativos</h3>
+          <div style={{ marginBottom: 10 }}>
+            <span className="student-pill">Habilitados: <strong>{data.rasgoAlumnosValidos.length}</strong></span>
+            <span className="student-pill">Incompletos: <strong>{data.rasgoAlumnosInvalidos.length}</strong></span>
+          </div>
+          <div className="empty-state empty-state-card" style={{ textAlign: 'left', marginBottom: 8 }}>
+            Marca ausentes en la lista. Los no marcados se guardan como presentes.
+          </div>
+          <div className="table-responsive" style={{ marginBottom: 8 }}>
+            <table className="table table-striped" id="tablaAsistencia">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Apellido(s) y nombre(s)</th>
+                  <th style={{ textAlign: 'right', width: 140 }}>Estado (P/A)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.rasgoAlumnosValidos.map((alumno, idx) => (
+                  <tr key={alumno.id}>
+                    <td>{idx + 1}</td>
+                    <td>{alumno.apellido}, {alumno.nombre}</td>
+                    <td style={{ textAlign: 'right' }}>
+                      <label style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
+                        <input className="ausente-checkbox" type="checkbox" value={String(alumno.id)} checked={ausentes.includes(alumno.id)} onChange={(e) => setAusentes((v) => e.target.checked ? [...v, alumno.id] : v.filter((id) => id !== alumno.id))} />
+                        Ausente
+                      </label>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="class-card">
+          <h3>4. Reportes de asistencia</h3>
+          <div className="class-grid" style={{ gridTemplateColumns: '220px minmax(0,1fr)' }}>
+            <button type="button" className="btn btn-default" onClick={() => {
+              const aus = ausentes.length;
+              const total = data.rasgoAlumnosValidos.length;
+              const presentes = Math.max(total - aus, 0);
+              const porcentaje = total > 0 ? Math.round((presentes * 100) / total) : 0;
+              setStatus(`Total alumnos: ${total} | Presentes: ${presentes} | Ausentes: ${aus} | Asistencia: ${porcentaje}%`);
+            }}>Generar reporte de asistencia</button>
+            <div id="reportBox" className="empty-state empty-state-card" style={{ textAlign: 'left' }}>{status || 'Aún no hay resumen de asistencia.'}</div>
+          </div>
+        </div>
+
+        <div className="class-card" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <button type="submit" className="btn btn-primary">Guardar inicio de clase</button>
+          <button type="button" className="btn btn-default" onClick={() => {
+            const payload = {
+              cursoId: data.selCurso ? Number(data.selCurso.id) : 0,
+              instrumentoId: instrumentoId,
+              tema,
+              horarioClase: horario,
+              cantidadHoras,
+              modalidad,
+              observaciones,
+              alumnosAusentes: ausentes
+            };
+            // mostrar JSON temporal en consola (equivalente al botón export de JSP)
+            // el backend actual solo usa la estructura mínima enviada por createClass
+            console.log('Payload Clase:', payload);
+            alert(JSON.stringify(payload, null, 2));
+          }}>Ver datos JSON generados</button>
+        </div>
+
+        <pre id="resultOutput" className="result-output" style={{ display: 'none' }} />
+      </form>
+
+      <section className="panel">
+        <h2>Asistencia e historial</h2>
+        {data.rasgoAsistencias.map((a) => (
+          <div className="attendance-row" key={a.id}>
+            <span>{a.alumnoNombreCompleto}</span>
+            <button className={a.estado === 'presente' ? 'active' : ''} onClick={() => mark(a.id, 'presente')}>Presente</button>
+            <button className={a.estado === 'ausente' ? 'active danger' : ''} onClick={() => mark(a.id, 'ausente')}>Ausente</button>
+          </div>
+        ))}
+        {data.rasgoPlanillas.map((p) => (
+          <div className="history-row" key={p.id}><strong>{p.tema}</strong><span>{p.fechaClase}</span></div>
+        ))}
+      </section>
+    </div>
+  );
 }
