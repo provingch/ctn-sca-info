@@ -15,7 +15,7 @@ import AdminPage from '../pages/admin/AdminPage';
 import ParentPage from '../pages/parent/ParentPage';
 import StyleguidePage from '../pages/styleguide/StyleguidePage';
 
-const protect = (element: React.ReactNode) => <ProtectedRoute>{element}</ProtectedRoute>;
+const protect = (element: React.ReactNode, allowedLevels?: number[]) => <ProtectedRoute allowedLevels={allowedLevels}>{element}</ProtectedRoute>;
 
 export default function AppRoutes() {
   return <BrowserRouter><SpecialtyProvider><AuthProvider><Routes>
@@ -23,22 +23,22 @@ export default function AppRoutes() {
     <Route path="/privacidad" element={<LegalPage />} />
     <Route path="/terminos" element={<LegalPage />} />
     <Route path="/" element={<RoleLanding />} />
-    <Route path="/home" element={protect(<HomePage />)} />
-    <Route path="/inicio" element={protect(<HomePage />)} />
-    <Route path="/profile" element={protect(<ProfilePage />)} />
-    <Route path="/perfil" element={protect(<ProfilePage />)} />
-    <Route path="/google/callback" element={protect(<GoogleCallbackPage />)} />
-    <Route path="/planilla/:planillaId" element={protect(<PlanillaPage />)} />
-    <Route path="/planilla/:planillaId/tarea" element={protect(<TareaPage />)} />
-    <Route path="/planilla/:planillaId/tarea/:tareaId" element={protect(<TareaPage />)} />
-    <Route path="/evaluacion" element={protect(<EvaluacionPage />)} />
-    <Route path="/admin" element={protect(<AdminPage />)} />
-    <Route path="/admin/materias" element={protect(<AdminPage />)} />
-    <Route path="/admin/usuarios" element={protect(<AdminPage />)} />
-    <Route path="/admin/asignaciones" element={protect(<AdminPage />)} />
-    <Route path="/admin/ingresantes" element={protect(<AdminPage />)} />
-    <Route path="/padre" element={protect(<ParentPage />)} />
-    <Route path="/styleguide" element={protect(<StyleguidePage />)} />
+    <Route path="/home" element={protect(<HomePage />, [1])} />
+    <Route path="/inicio" element={protect(<HomePage />, [1])} />
+    <Route path="/profile" element={protect(<ProfilePage />, [1, 2, 3, 4])} />
+    <Route path="/perfil" element={protect(<ProfilePage />, [1, 2, 3, 4])} />
+    <Route path="/google/callback" element={protect(<GoogleCallbackPage />, [1, 2, 3, 4])} />
+    <Route path="/planilla/:planillaId" element={protect(<PlanillaPage />, [1])} />
+    <Route path="/planilla/:planillaId/tarea" element={protect(<TareaPage />, [1])} />
+    <Route path="/planilla/:planillaId/tarea/:tareaId" element={protect(<TareaPage />, [1])} />
+    <Route path="/evaluacion" element={protect(<EvaluacionPage />, [2])} />
+    <Route path="/admin" element={protect(<AdminPage />, [3])} />
+    <Route path="/admin/materias" element={protect(<AdminPage />, [3])} />
+    <Route path="/admin/usuarios" element={protect(<AdminPage />, [3])} />
+    <Route path="/admin/asignaciones" element={protect(<AdminPage />, [3])} />
+    <Route path="/admin/ingresantes" element={protect(<AdminPage />, [3])} />
+    <Route path="/padre" element={protect(<ParentPage />, [4])} />
+    <Route path="/styleguide" element={protect(<StyleguidePage />, [3])} />
     <Route path="*" element={<RoleLanding />} />
   </Routes></AuthProvider></SpecialtyProvider></BrowserRouter>;
 }

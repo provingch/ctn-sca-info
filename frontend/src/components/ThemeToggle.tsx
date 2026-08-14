@@ -1,9 +1,14 @@
-import { useState } from 'react';
-import { getInitialTheme, persistTheme, type Theme } from '../theme/theme';
+import { useEffect, useState } from 'react';
+import { applyTheme, getInitialTheme, persistTheme, type Theme } from '../theme/theme';
 
 export default function ThemeToggle({ compact = false }: { compact?: boolean }) {
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
   const isDark = theme === 'dark';
+
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
+
   function toggle() {
     const next = isDark ? 'light' : 'dark';
     setTheme(next);

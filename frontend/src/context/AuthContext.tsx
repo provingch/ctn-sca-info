@@ -64,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       isBootstrapping,
       async login(username, password, rememberMe) {
+        setUser(null);
         const res = await authApi.login({ username, password, rememberMe });
         if (!res.requiere2fa && res.accessToken && res.level !== null) {
           resetSpecialty();
@@ -73,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return res;
       },
       async verify2fa(tempToken, code, rememberMe) {
+        setUser(null);
         const res = await authApi.verify2fa({ tempToken, code, rememberMe });
         if (res.accessToken && res.level !== null) {
           resetSpecialty();
