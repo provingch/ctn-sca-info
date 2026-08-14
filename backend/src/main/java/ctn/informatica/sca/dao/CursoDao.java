@@ -31,10 +31,11 @@ public class CursoDao extends conexion {
 
     public ArrayList<Curso> consultarCursos(int userId) throws SQLException {
         ArrayList<Curso> cursos = new ArrayList<>();
+        int period = ctn.informatica.sca.util.AcademicPeriod.current();
         String sql = "SELECT DISTINCT c.id, e.nombre AS especialidad, c.promocion, c.seccion "
-                + "FROM curso c "
+            + "FROM curso c "
                 + "JOIN especialidad e ON c.especialidad_id = e.id "
-                + "WHERE c.id IN (SELECT DISTINCT p.curso_id FROM planilla p WHERE p.profesor_id = ?) "
+            + "WHERE c.id IN (SELECT DISTINCT p.curso_id FROM planilla p WHERE p.profesor_id = ?) "
                 + "   OR c.especialidad_id IN ( "
                 + "       SELECT DISTINCT me.especialidad_id "
                 + "       FROM planilla p "
@@ -48,12 +49,14 @@ public class CursoDao extends conexion {
                 + "       WHERE pm.profesor_id = ? "
                 + "   ) "
                 + "   OR c.id IN (SELECT curso_id FROM asignacion WHERE profesor_id = ?) "
-                + "ORDER BY e.nombre, c.promocion, c.seccion";
+            + "AND c.promocion >= ? "
+            + "ORDER BY e.nombre, c.promocion, c.seccion";
         try (Connection con = getCon(); PreparedStatement stm = con.prepareStatement(sql)) {
             stm.setInt(1, userId);
             stm.setInt(2, userId);
             stm.setInt(3, userId);
             stm.setInt(4, userId);
+            stm.setInt(5, period);
             ResultSet rs = stm.executeQuery();
             while (rs.next()) {
                 int curso_id = rs.getInt("id");
@@ -97,10 +100,13 @@ public class CursoDao extends conexion {
 
     public ArrayList<Curso> findAll() throws SQLException {
         ArrayList<Curso> cursos = new ArrayList<>();
+        int period = ctn.informatica.sca.util.AcademicPeriod.current();
         String sql = "SELECT c.id, e.nombre AS especialidad, c.promocion, c.seccion "
                 + "FROM curso c JOIN especialidad e ON c.especialidad_id = e.id "
+                + "WHERE c.promocion >= ? "
                 + "ORDER BY e.nombre, c.promocion, c.seccion";
         try (Connection con = getCon(); PreparedStatement stm = con.prepareStatement(sql)) {
+            stm.setInt(1, period);
             try (ResultSet rs = stm.executeQuery()) {
                 while (rs.next()) {
                     int curso_id = rs.getInt("id");
