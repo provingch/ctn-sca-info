@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
+import QRCode from 'qrcode';
 import { changePassword, confirmTotp, disableTotp, getProfile, prepareTotp, saveProfile, type ProfileResponse, getGoogleAuthorizeUrl } from '../../api/profile';
 import { ApiError } from '../../api/client';
 import AppShell from '../../components/AppShell';
@@ -102,6 +103,39 @@ function Subjects({ data }: { data: ProfileResponse }) {
   return <div className="profile-section-stack"><section className="summary-grid"><article className="metric"><span>Especialidad</span><strong>{data.profesorEspecialidadNombre || 'Sin especialidad'}</strong></article><article className="metric"><span>Materias</span><strong>{data.teacherMaterias.length}</strong></article><article className="metric"><span>Asignaciones</span><strong>{data.misAsignaciones.length}</strong></article></section><section className="panel"><Heading number="01" title="Asignaciones de materias" detail="Materias y cursos vinculados a tu perfil." />{data.misAsignaciones.length === 0 ? <Empty title="Sin asignaciones" detail="Administración todavía no vinculó materias y cursos a este perfil." /> : <div className="profile-list"><div className="profile-list-header"><span>Materia</span><span>Curso</span></div>{data.misAsignaciones.map((item) => <div key={item.id}><strong>{item.materiaNombre}</strong><span>{item.cursoDescripcion}</span></div>)}</div>}</section>{data.teacherMaterias.length > 0 && <section className="panel"><h2>Materias asociadas</h2><div className="chip-list">{data.teacherMaterias.map((item) => <span key={item.id}>{item.nombre}<small>{item.categoria}</small></span>)}</div></section>}</div>;
 }
 
+function TOTPSetupCard({ provisioningUri, secret, code, onCodeChange, onConfirm }: { provisioningUri: string | null; secret: string; code: string; onCodeChange: (value: string) => void; onConfirm: () => void }) {
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!provisioningUri) {
+      setQrDataUrl(null);
+      return;
+    }
+
+    let disposed = false;
+    QRCode.toDataURL(provisioningUri, {
+      errorCorrectionLevel: 'M',
+      margin: 1,
+      width: 220,
+      color: { dark: '#111827', light: '#ffffff' }
+    }).then((url) => {
+      if (!disposed) setQrDataUrl(url);
+    }).catch(() => {
+      if (!disposed) setQrDataUrl(null);
+    });
+
+    return () => {
+      disposed = true;
+    };
+  }, [provisioningUri]);
+
+  return <>
+    {qrDataUrl ? <div className="totp-qr-box"><img src={qrDataUrl} alt="Código QR para autenticación de dos factores" /></div> : <code className="secret">{secret}</code>}
+    <label>Código de la app<input inputMode="numeric" value={code} onChange={(e) => onCodeChange(e.target.value)} /></label>
+    <button className="button" type="button" onClick={onConfirm}>Confirmar activación</button>
+  </>;
+}
+
 function Security({ data, done }: { data: ProfileResponse; done: (text: string) => Promise<void> }) {
   const [passwords, setPasswords] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [code, setCode] = useState('');
@@ -109,7 +143,7 @@ function Security({ data, done }: { data: ProfileResponse; done: (text: string) 
   async function start2fa() { try { await prepareTotp(); await done('Clave de configuración generada.'); } catch (error) { setStatusWithFallback(error, done, 'No se pudo preparar 2FA.'); } }
   async function verify2fa() { try { await confirmTotp(code); await done('Verificación en dos pasos activada.'); } catch (error) { setStatusWithFallback(error, done, 'Código inválido.'); } }
   async function turnOff() { try { await disableTotp(); await done('Verificación en dos pasos desactivada.'); } catch (error) { setStatusWithFallback(error, done, 'No se pudo desactivar 2FA.'); } }
-  return <div className="two-column"><form className="panel form-grid" onSubmit={password}><Heading number="01" title="Cambiar contraseña" detail="Usá al menos seis caracteres." /><label>Contraseña actual<PasswordInput required value={passwords.currentPassword} onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })} /></label><label>Nueva contraseña<PasswordInput required minLength={6} value={passwords.newPassword} onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })} /></label><label>Confirmar nueva contraseña<PasswordInput required value={passwords.confirmPassword} onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })} /></label><button className="button">Actualizar contraseña</button></form><section className="panel form-grid"><Heading number="02" title="Verificación en dos pasos" detail="Protegé el acceso con tu app autenticadora." /><State active={data.totpEnabled} title={data.totpEnabled ? 'Activa' : 'Inactiva'} />{data.pendingTotpSecret && <><code className="secret">{data.pendingTotpSecret}</code><label>Código de la app<input inputMode="numeric" value={code} onChange={(e) => setCode(e.target.value)} /></label><button className="button" type="button" onClick={verify2fa}>Confirmar activación</button></>}{data.totpEnabled ? <button className="button danger" type="button" onClick={turnOff}>Desactivar 2FA</button> : !data.pendingTotpSecret && <button className="button secondary" type="button" onClick={start2fa}>Configurar 2FA</button>}</section></div>;
+  return <div className="two-column"><form className="panel form-grid" onSubmit={password}><Heading number="01" title="Cambiar contraseña" detail="Usá al menos seis caracteres." /><label>Contraseña actual<PasswordInput required value={passwords.currentPassword} onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })} /></label><label>Nueva contraseña<PasswordInput required minLength={6} value={passwords.newPassword} onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })} /></label><label>Confirmar nueva contraseña<PasswordInput required value={passwords.confirmPassword} onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })} /></label><button className="button">Actualizar contraseña</button></form><section className="panel form-grid"><Heading number="02" title="Verificación en dos pasos" detail="Protegé el acceso con tu app autenticadora." /><State active={data.totpEnabled} title={data.totpEnabled ? 'Activa' : 'Inactiva'} />{data.pendingTotpSecret && <TOTPSetupCard provisioningUri={data.totpProvisioningUri} secret={data.pendingTotpSecret} code={code} onCodeChange={setCode} onConfirm={verify2fa} />}{data.totpEnabled ? <button className="button danger" type="button" onClick={turnOff}>Desactivar 2FA</button> : !data.pendingTotpSecret && <button className="button secondary" type="button" onClick={start2fa}>Configurar 2FA</button>}</section></div>;
 }
 
 function AppStatus({ data }: { data: ProfileResponse }) { return <div className="two-column"><section className="panel"><Heading number="01" title="Aplicación SCA" detail="Acceso rápido desde este dispositivo." /><p>Podés instalar SCA desde el menú de tu navegador para usarla como una aplicación.</p></section><section className="panel"><Heading number="02" title="Notificaciones" detail="Estado asociado a este usuario." /><State active={data.pushEnabled} title={data.pushEnabled ? 'Activadas' : 'Desactivadas'} /></section></div>; }
