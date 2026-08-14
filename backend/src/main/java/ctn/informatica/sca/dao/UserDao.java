@@ -4,13 +4,15 @@
  */
 package ctn.informatica.sca.dao;
 
-import org.springframework.stereotype.Repository;
-import ctn.informatica.sca.clases.conexion;
-import ctn.informatica.sca.model.User;
-import ctn.informatica.sca.util.PasswordUtil;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+
+import org.springframework.stereotype.Repository;
+
+import ctn.informatica.sca.clases.conexion;
+import ctn.informatica.sca.model.User;
+import ctn.informatica.sca.util.PasswordUtil;
 
 /**
  *
