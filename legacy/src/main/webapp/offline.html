@@ -41,7 +41,30 @@
   <main class="card">
     <h1>Sin conexión temporal</h1>
     <p>La app está intentando volver a cargar, pero por ahora no hay acceso a Internet. Reintentá más tarde o volvé al inicio cuando la conexión esté disponible.</p>
-    <a href="/inicio">Volver al inicio</a>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">
+      <button id="retryBtn" style="padding:10px 16px;border-radius:999px;background:#2b6cb0;color:#fff;border:none;font-weight:600;cursor:pointer;">Reintentar ahora</button>
+      <a id="manualHome" href="/home" style="display:inline-block;padding:10px 16px;border-radius:999px;background:#7a1f2b;color:#fff;text-decoration:none;font-weight:600;">Ir al inicio</a>
+    </div>
+    <div id="offlineStatus" style="margin-top:12px;color:#666;font-size:0.95rem;"></div>
   </main>
+  <script>
+    async function tryRestore() {
+      const statusEl = document.getElementById('offlineStatus');
+      try {
+        if (statusEl) statusEl.textContent = 'Comprobando sesión...';
+        const res = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include', headers: { 'Accept': 'application/json' } });
+        if (res.ok) { location.href = '/home'; return; }
+        if (res.status === 401) { location.href = '/login'; return; }
+        if (statusEl) statusEl.textContent = 'Conexión disponible pero no se pudo restaurar la sesión.';
+      } catch (e) {
+        if (statusEl) statusEl.textContent = 'Sin conexión. Reintentando cuando vuelva la red...';
+      }
+    }
+
+    document.getElementById('retryBtn')?.addEventListener('click', tryRestore);
+    window.addEventListener('online', () => { tryRestore(); });
+    if (navigator.onLine) setTimeout(tryRestore, 500); else (document.getElementById('offlineStatus')?.textContent = 'Sin conexión. Volvé cuando tengas red o pulsa Reintentar.');
+    setInterval(() => { if (navigator.onLine) tryRestore(); }, 10000);
+  </script>
 </body>
 </html>
