@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { createClass, getHome, updateAttendance, type HomeResponse } from '../../api/home';
 import { ApiError } from '../../api/client';
 import AppShell from '../../components/AppShell';
-import { getEspecialidades, resolvePlanilla, type Especialidad } from '../../api/academics';
+import { getEspecialidades, resolvePlanilla, syncClassroom, type Especialidad } from '../../api/academics';
 import { useNavigate } from 'react-router-dom';
 import AnimatedSelect from '../../components/AnimatedSelect';
 
@@ -19,6 +19,7 @@ export default function HomePage() {
   const selectedEspecialidad = especialidades.find((item) => item.id === especialidadId);
   const [selectedNivel, setSelectedNivel] = useState<number | null>(null);
   const [selectedSeccion, setSelectedSeccion] = useState<string | number | ''>('');
+  const [syncingAll, setSyncingAll] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -104,12 +105,12 @@ export default function HomePage() {
       <button className={`tab ${view === 'clase' ? 'active' : ''}`} onClick={() => params({ view: 'clase' })}>Clase</button>
       <button className={`tab ${view === 'planillas' ? 'active' : ''}`} onClick={() => params({ view: 'planillas' })}>Planillas</button>
     </div>
-      {!data.selCurso ? <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Esperando selección</h2><p>Elegí una especialidad y un curso para continuar con la clase.</p></section> : view === 'clase' ? <ClassView data={data} reload={load} /> : <PlanillasView data={data} />}
+      {!data.selCurso ? <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Esperando selección</h2><p>Elegí una especialidad y un curso para continuar con la clase.</p></section> : view === 'clase' ? <ClassView data={data} reload={load} /> : <PlanillasView data={data} syncingProp={syncingAll} setSyncingProp={setSyncingAll} />}
     </AppShell>
   </>;
 }
 
-function PlanillasView({ data }: { data: HomeResponse }) {
+function PlanillasView({ data, syncingProp, setSyncingProp }: { data: HomeResponse; syncingProp?: boolean; setSyncingProp?: (v: boolean) => void }) {
   const navigate = useNavigate();
   const existingMateriaIds = new Set(data.planillas.map((p) => p.materiaId));
   async function openMateria(materiaId: number) { if (!data.selCurso) return; const result = await resolvePlanilla(data.selCurso.id, materiaId, data.selEtapa); navigate(`/planilla/${result.planillaId}`); }
@@ -118,19 +119,26 @@ function PlanillasView({ data }: { data: HomeResponse }) {
     if (!data.googleClassroomConnected) return;
     let cancelled = false;
     (async () => {
-      for (const p of data.planillas) {
-        if (cancelled) return;
-        try {
-          await import('../../api/academics').then((m) => m.syncClassroom(p.id)).catch(() => null);
-        } catch (_) {
-          // ignore per-planilla errors
+      setSyncingProp?.(true);
+      try {
+        for (const p of data.planillas) {
+          if (cancelled) break;
+          try {
+            await syncClassroom(p.id);
+          } catch (_) {
+            // ignore per-planilla errors
+          }
         }
+      } finally {
+        if (!cancelled) setSyncingProp?.(false);
       }
     })();
-    return () => { cancelled = true; };
-  }, [data.googleClassroomConnected, data.planillas]);
+    return () => { cancelled = true; setSyncingProp?.(false); };
+  }, [data.googleClassroomConnected, data.planillas, setSyncingProp]);
 
-  return <><section className="summary-grid"><article className="metric"><span>Curso</span><strong>{data.selCurso?.curso}° {data.selCurso?.seccion}</strong></article><article className="metric"><span>Etapa</span><strong>{data.selEtapa}ª</strong></article><article className="metric"><span>Planillas</span><strong>{data.planillas.length}</strong></article><article className="metric"><span>Classroom</span><strong>{data.googleClassroomConnected ? 'Conectado' : 'Sin conexión'}</strong></article></section><div className="card-grid">{data.planillas.map((p) => <Link className="nav-card" key={p.id} to={`/planilla/${p.id}`}><span>{p.periodo}</span><h2>{p.nombre}</h2><p>{p.tareasCount} tareas registradas</p><strong>Abrir planilla →</strong></Link>)}{data.materiasDetectadas.filter((m) => !existingMateriaIds.has(m.id)).map((m) => <button className="nav-card add-card" key={m.id} onClick={() => openMateria(m.id)}><span>{m.categoria}</span><h2>{m.nombre}</h2><p>Crear la planilla para esta etapa.</p><strong>Crear y abrir →</strong></button>)}{data.planillas.length === 0 && data.materiasDetectadas.length === 0 && <section className="panel empty-state"><h2>Sin materias asignadas</h2><p>Consultá con administración para asociar materias al curso.</p></section>}</div></>;
+  const syncing = syncingProp ?? false;
+
+  return <><section className="summary-grid"><article className="metric"><span>Curso</span><strong>{data.selCurso?.curso}° {data.selCurso?.seccion}</strong></article><article className="metric"><span>Etapa</span><strong>{data.selEtapa}ª</strong></article><article className="metric"><span>Planillas</span><strong>{data.planillas.length}</strong></article><article className="metric"><span>Classroom</span><strong>{syncing ? 'Sincronizando…' : (data.googleClassroomConnected ? 'Conectado' : 'Sin conexión')}</strong></article></section><div className="card-grid">{data.planillas.map((p) => <Link className="nav-card" key={p.id} to={`/planilla/${p.id}`}><span>{p.periodo}</span><h2>{p.nombre}</h2><p>{p.tareasCount} tareas registradas</p><strong>Abrir planilla →</strong></Link>)}{data.materiasDetectadas.filter((m) => !existingMateriaIds.has(m.id)).map((m) => <button className="nav-card add-card" key={m.id} onClick={() => openMateria(m.id)}><span>{m.categoria}</span><h2>{m.nombre}</h2><p>Crear la planilla para esta etapa.</p><strong>Crear y abrir →</strong></button>)}{data.planillas.length === 0 && data.materiasDetectadas.length === 0 && <section className="panel empty-state"><h2>Sin materias asignadas</h2><p>Consultá con administración para asociar materias al curso.</p></section>}</div></>;
 }
 
 function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise<void> }) {
