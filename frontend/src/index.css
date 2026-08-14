@@ -274,3 +274,13 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
   .legal-page article { padding: 24px 18px; }
   .app-footer .app-footer-inner { text-align: center; }
 }
+
+/* Escala de notas (Planilla) — mismos colores que Planilla.jsp legacy */
+.grade-ranges-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.grade-chip { display: inline-block; padding: 6px 8px; border-radius: 6px; color: #fff; font-weight: 800; font-size: .85rem; }
+.grade-chip strong { margin-right: 6px; }
+.grade-chip--5 { background: #16a34a; } /* verde */
+.grade-chip--4 { background: #84cc16; } /* verde lima */
+.grade-chip--3 { background: #f59e0b; } /* ámbar */
+.grade-chip--2 { background: #f97316; } /* naranja */
+.grade-chip--1 { background: #ef4444; } /* rojo */
