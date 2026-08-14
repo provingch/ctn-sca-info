@@ -102,23 +102,66 @@ function CreateForm({ section, data, submit }: { section: string; data: AdminCat
     if (specialty) selectSpecialty(specialty.nombre, specialty.id);
   };
 
-  return <form className="form-grid" onSubmit={send}>
-    {section === 'materias' && <>{field('nombre', 'Nombre')}<label>Categoría<AnimatedSelect ariaLabel="Categoría" value={form.categoria} onChange={(value) => setForm({ ...form, categoria: value })} options={[{ value: 'comun', label: 'Común' }, { value: 'especifico', label: 'Específica' }]} /></label><Specialties data={data} form={form} setForm={setForm} onChange={specialtyChanged} especialidadIds={especialidadIds} setEspecialidadIds={setEspecialidadIds} />}</>
-    {section === 'usuarios' && <>{field('nombre', 'Nombre')}{field('apellido', 'Apellido')}{field('usuario', 'Usuario')}{field('contrasenia', 'Contraseña', 'password')}<label>Nivel<AnimatedSelect ariaLabel="Nivel" value={form.nivel} onChange={(value) => setForm({ ...form, nivel: value })} options={[{ value: '1', label: 'Profesor' }, { value: '2', label: 'Evaluador' }, { value: '3', label: 'Administrador' }]} /></label>{field('correo', 'Correo', 'email')}<Specialties data={data} form={form} setForm={setForm} onChange={specialtyChanged} /></>}
-    {section === 'asignaciones' && <><Select label="Profesor" name="profesorId" items={data.usuarios.map((user) => ({ id: user.id, label: `${user.apellido}, ${user.nombre}` }))} form={form} setForm={setForm} /><Select label="Materia" name="materiaId" items={data.materias.map((subject) => ({ id: subject.id, label: subject.nombre }))} form={form} setForm={setForm} onValueChange={async (value) => {
-        const id = Number(value);
-        if (Number.isInteger(id) && id > 0) {
-          try {
-            const res = await getMateriaEspecialidades(id);
-            setMateriaEspecialidadIds(res || []);
-          } catch (err) {
-            setMateriaEspecialidadIds([]);
-          }
-        } else setMateriaEspecialidadIds([]);
-      }} /><Select label="Curso" name="cursoId" items={courseItems(data, materiaEspecialidadIds)} form={form} setForm={setForm} /></>}
-    {section === 'ingresantes' && <>{field('nombre', 'Nombre')}{field('apellido', 'Apellido')}{field('ci', 'Cédula', 'number')}<Select label="Curso" name="cursoId" items={courseItems(data)} form={form} setForm={setForm} />{field('correoEncargado', 'Correo del encargado', 'email')}{field('correoEncargado2', 'Segundo correo', 'email')}</>}
-    <button className="button">Guardar</button>
-  </form>;
+  return (
+    <form className="form-grid" onSubmit={send}>
+      {section === 'materias' && (
+        <>
+          {field('nombre', 'Nombre')}
+          <label>
+            Categoría
+            <AnimatedSelect ariaLabel="Categoría" value={form.categoria} onChange={(value) => setForm({ ...form, categoria: value })} options={[{ value: 'comun', label: 'Común' }, { value: 'especifico', label: 'Específica' }]} />
+          </label>
+          <Specialties data={data} form={form} setForm={setForm} onChange={specialtyChanged} especialidadIds={especialidadIds} setEspecialidadIds={setEspecialidadIds} />
+        </>
+      )}
+
+      {section === 'usuarios' && (
+        <>
+          {field('nombre', 'Nombre')}
+          {field('apellido', 'Apellido')}
+          {field('usuario', 'Usuario')}
+          {field('contrasenia', 'Contraseña', 'password')}
+          <label>
+            Nivel
+            <AnimatedSelect ariaLabel="Nivel" value={form.nivel} onChange={(value) => setForm({ ...form, nivel: value })} options={[{ value: '1', label: 'Profesor' }, { value: '2', label: 'Evaluador' }, { value: '3', label: 'Administrador' }]} />
+          </label>
+          {field('correo', 'Correo', 'email')}
+          <Specialties data={data} form={form} setForm={setForm} onChange={specialtyChanged} />
+        </>
+      )}
+
+      {section === 'asignaciones' && (
+        <>
+          <Select label="Profesor" name="profesorId" items={data.usuarios.map((user) => ({ id: user.id, label: `${user.apellido}, ${user.nombre}` }))} form={form} setForm={setForm} />
+          <Select label="Materia" name="materiaId" items={data.materias.map((subject) => ({ id: subject.id, label: subject.nombre }))} form={form} setForm={setForm} onValueChange={async (value) => {
+            const id = Number(value);
+            if (Number.isInteger(id) && id > 0) {
+              try {
+                const res = await getMateriaEspecialidades(id);
+                setMateriaEspecialidadIds(res || []);
+              } catch (err) {
+                setMateriaEspecialidadIds([]);
+              }
+            } else setMateriaEspecialidadIds([]);
+          }} />
+          <Select label="Curso" name="cursoId" items={courseItems(data, materiaEspecialidadIds)} form={form} setForm={setForm} />
+        </>
+      )}
+
+      {section === 'ingresantes' && (
+        <>
+          {field('nombre', 'Nombre')}
+          {field('apellido', 'Apellido')}
+          {field('ci', 'Cédula', 'number')}
+          <Select label="Curso" name="cursoId" items={courseItems(data)} form={form} setForm={setForm} />
+          {field('correoEncargado', 'Correo del encargado', 'email')}
+          {field('correoEncargado2', 'Segundo correo', 'email')}
+        </>
+      )}
+
+      <button className="button">Guardar</button>
+    </form>
+  );
 }
 
 function courseItems(data: AdminCatalog, allowedEspecialidadIds?: number[]) {
