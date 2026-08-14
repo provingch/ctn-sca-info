@@ -6,6 +6,7 @@ import AppShell from '../../components/AppShell';
 import { getEspecialidades, resolvePlanilla, syncClassroom, type Especialidad } from '../../api/academics';
 import { useNavigate } from 'react-router-dom';
 import AnimatedSelect from '../../components/AnimatedSelect';
+import { useSpecialty } from '../../context/SpecialtyContext';
 
 export default function HomePage() {
   const [search, setSearch] = useSearchParams();
@@ -20,6 +21,7 @@ export default function HomePage() {
   const [selectedNivel, setSelectedNivel] = useState<number | null>(null);
   const [selectedSeccion, setSelectedSeccion] = useState<string | number | ''>('');
   const [syncingAll, setSyncingAll] = useState(false);
+  const { selectSpecialty, resetSpecialty } = useSpecialty();
 
   const load = useCallback(async () => {
     try {
@@ -32,6 +34,17 @@ export default function HomePage() {
   useEffect(() => {
     void getEspecialidades().then(setEspecialidades).catch(() => setEspecialidades([]));
   }, []);
+
+  // Sync application palette with selected especialidad in query
+  useEffect(() => {
+    const id = Number(search.get('especialidadId') || 0);
+    if (id) {
+      const s = especialidades.find((item) => item.id === id);
+      if (s) selectSpecialty(s.nombre, s.id);
+    } else {
+      resetSpecialty();
+    }
+  }, [search, especialidades, selectSpecialty, resetSpecialty]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -87,7 +100,16 @@ export default function HomePage() {
     `}</style>
     <AppShell title="Panel SCA del curso" specialty={data.selCurso?.especialidad}><div className="toolbar filters"><button className="button secondary" onClick={() => setSearch({})}>← Inicio</button>
       <label className="inline-filter">Especialidad
-        <AnimatedSelect ariaLabel="Especialidad" value={especialidadId} onChange={(value) => params({ especialidadId: value, cursoId: '' })} options={[{ value: 0, label: 'Todas' }, ...especialidades.map((item) => ({ value: item.id, label: item.nombre }))]} />
+        <AnimatedSelect ariaLabel="Especialidad" value={especialidadId} onChange={(value) => {
+          params({ especialidadId: value, cursoId: '' });
+          const id = Number(value || 0);
+          if (id) {
+            const s = especialidades.find((item) => item.id === id);
+            if (s) selectSpecialty(s.nombre, s.id);
+          } else {
+            resetSpecialty();
+          }
+        }} options={[{ value: 0, label: 'Todas' }, ...especialidades.map((item) => ({ value: item.id, label: item.nombre }))]} />
       </label>
       <label className="inline-filter">Nivel
         <AnimatedSelect ariaLabel="Nivel" value={selectedNivel ?? ''} onChange={(value) => { const v = Number(value) || null; setSelectedNivel(v); setSelectedSeccion(''); params({ cursoId: '' }); }} disabled={visibleCursos.length === 0} placeholder="Nivel" options={[{ value: '', label: 'Todos' }, ...niveles.map((n) => ({ value: n, label: `${n}°` }))]} />
