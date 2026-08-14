@@ -17,6 +17,8 @@ export default function HomePage() {
   const etapa = Number(search.get('etapa') || 1);
   const especialidadId = Number(search.get('especialidadId') || 0);
   const selectedEspecialidad = especialidades.find((item) => item.id === especialidadId);
+  const [selectedNivel, setSelectedNivel] = useState<number | null>(null);
+  const [selectedSeccion, setSelectedSeccion] = useState<string | number | ''>('');
 
   const load = useCallback(async () => {
     try {
@@ -39,7 +41,11 @@ export default function HomePage() {
     ? data.cursos.filter((curso) => curso.especialidad === selectedEspecialidad.nombre)
     : data.cursos;
 
-  const selectedCourseId = cursoId || data.selCurso?.id;
+  // const selectedCourseId = cursoId || data.selCurso?.id;
+
+  // derive unique niveles and secciones for selectors
+  const niveles = Array.from(new Set(visibleCursos.map((c) => Number(c.curso)))).map((n) => Number(n)).filter((n) => !isNaN(n)).sort((a, b) => a - b);
+  const seccionesForNivel = (nivel: number) => Array.from(new Set(visibleCursos.filter((c) => Number(c.curso) === nivel).map((c) => c.seccion))).sort();
 
   const params = (next: Record<string, string>) => setSearch({
     view,
@@ -82,8 +88,18 @@ export default function HomePage() {
       <label className="inline-filter">Especialidad
         <AnimatedSelect ariaLabel="Especialidad" value={especialidadId} onChange={(value) => params({ especialidadId: value, cursoId: '' })} options={[{ value: 0, label: 'Todas' }, ...especialidades.map((item) => ({ value: item.id, label: item.nombre }))]} />
       </label>
-      <label className="inline-filter">Curso
-        <AnimatedSelect ariaLabel="Curso" value={selectedCourseId || ''} onChange={(value) => params({ cursoId: value })} disabled={visibleCursos.length === 0} placeholder="Seleccioná un curso" options={visibleCursos.map((course) => ({ value: course.id, label: `${course.curso}° ${course.seccion} · ${course.especialidad}` }))} />
+      <label className="inline-filter">Nivel
+        <AnimatedSelect ariaLabel="Nivel" value={selectedNivel ?? ''} onChange={(value) => { const v = Number(value) || null; setSelectedNivel(v); setSelectedSeccion(''); params({ cursoId: '' }); }} disabled={visibleCursos.length === 0} placeholder="Nivel" options={[{ value: '', label: 'Todos' }, ...niveles.map((n) => ({ value: n, label: `${n}°` }))]} />
+      </label>
+      <label className="inline-filter">Sección
+          <AnimatedSelect ariaLabel="Sección" value={selectedSeccion ?? ''} onChange={(value) => {
+          setSelectedSeccion(value);
+          // find matching curso id for current specialty+nivel+seccion
+          const nivel = selectedNivel ?? (data.selCurso ? Number(data.selCurso.curso) : undefined);
+          const seccion = String(value);
+          const match = visibleCursos.find((c) => (nivel == null || Number(c.curso) === nivel) && c.seccion === seccion && (!selectedEspecialidad || c.especialidad === selectedEspecialidad.nombre));
+          params({ cursoId: match ? String(match.id) : '' });
+        }} disabled={visibleCursos.length === 0 || (selectedNivel == null && !data.selCurso)} placeholder="Sección" options={[{ value: '', label: 'Todas' }, ...(selectedNivel != null ? seccionesForNivel(selectedNivel).map((s) => ({ value: s, label: String(s) })) : [])]} />
       </label>
       <button className={`tab ${view === 'clase' ? 'active' : ''}`} onClick={() => params({ view: 'clase' })}>Clase</button>
       <button className={`tab ${view === 'planillas' ? 'active' : ''}`} onClick={() => params({ view: 'planillas' })}>Planillas</button>
@@ -97,6 +113,23 @@ function PlanillasView({ data }: { data: HomeResponse }) {
   const navigate = useNavigate();
   const existingMateriaIds = new Set(data.planillas.map((p) => p.materiaId));
   async function openMateria(materiaId: number) { if (!data.selCurso) return; const result = await resolvePlanilla(data.selCurso.id, materiaId, data.selEtapa); navigate(`/planilla/${result.planillaId}`); }
+  // Auto-sync planillas in background when Classroom is connected
+  useEffect(() => {
+    if (!data.googleClassroomConnected) return;
+    let cancelled = false;
+    (async () => {
+      for (const p of data.planillas) {
+        if (cancelled) return;
+        try {
+          await import('../../api/academics').then((m) => m.syncClassroom(p.id)).catch(() => null);
+        } catch (_) {
+          // ignore per-planilla errors
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [data.googleClassroomConnected, data.planillas]);
+
   return <><section className="summary-grid"><article className="metric"><span>Curso</span><strong>{data.selCurso?.curso}° {data.selCurso?.seccion}</strong></article><article className="metric"><span>Etapa</span><strong>{data.selEtapa}ª</strong></article><article className="metric"><span>Planillas</span><strong>{data.planillas.length}</strong></article><article className="metric"><span>Classroom</span><strong>{data.googleClassroomConnected ? 'Conectado' : 'Sin conexión'}</strong></article></section><div className="card-grid">{data.planillas.map((p) => <Link className="nav-card" key={p.id} to={`/planilla/${p.id}`}><span>{p.periodo}</span><h2>{p.nombre}</h2><p>{p.tareasCount} tareas registradas</p><strong>Abrir planilla →</strong></Link>)}{data.materiasDetectadas.filter((m) => !existingMateriaIds.has(m.id)).map((m) => <button className="nav-card add-card" key={m.id} onClick={() => openMateria(m.id)}><span>{m.categoria}</span><h2>{m.nombre}</h2><p>Crear la planilla para esta etapa.</p><strong>Crear y abrir →</strong></button>)}{data.planillas.length === 0 && data.materiasDetectadas.length === 0 && <section className="panel empty-state"><h2>Sin materias asignadas</h2><p>Consultá con administración para asociar materias al curso.</p></section>}</div></>;
 }
 

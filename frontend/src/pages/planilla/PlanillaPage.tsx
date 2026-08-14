@@ -29,6 +29,24 @@ export default function PlanillaPage() {
     }).catch((e) => setStatus(e instanceof ApiError ? e.message : 'No se pudo cargar la planilla.'));
   }, [id]);
 
+  // Auto-sync once when planilla data is loaded and Classroom is available
+  const syncRanRef = { current: false } as { current: boolean };
+  useEffect(() => {
+    if (!data || syncRanRef.current) return;
+    syncRanRef.current = true;
+    if (!data.planilla) return;
+    (async () => {
+      try {
+        setBusy(true); setStatus('Sincronizando Classroom…');
+        await syncClassroom(id);
+        setData(await getPlanilla(id));
+        setStatus('Sincronización completada.');
+      } catch (e) {
+        setStatus(e instanceof ApiError ? e.message : 'No se pudo sincronizar Classroom.');
+      } finally { setBusy(false); }
+    })();
+  }, [data, id]);
+
   const totals = useMemo(() => data?.rows.map((row) => data.tareas.reduce((sum, t) => sum + Number(values[`${row.alumnoId}:${t.id}`] || 0), 0)) ?? [], [data, values]);
 
   async function save() {
@@ -42,12 +60,7 @@ export default function PlanillaPage() {
     finally { setBusy(false); }
   }
 
-  async function sync() {
-    setBusy(true); setStatus('');
-    try { setStatus((await syncClassroom(id)).message); setData(await getPlanilla(id)); }
-    catch (e) { setStatus(e instanceof ApiError ? e.message : 'No se pudo sincronizar Classroom.'); }
-    finally { setBusy(false); }
-  }
+  // manual sync removed; synchronization runs automatically on load
 
   // Igual que el <select id="etapaSelect"> del JSP legacy: cambiar de etapa
   // resuelve (o crea) la planilla de esa etapa para el mismo curso/materia
@@ -84,7 +97,7 @@ export default function PlanillaPage() {
           </select>
         </label>
         <Link className="button" to={`/planilla/${id}/tarea`}>Agregar tarea</Link>
-        <button className="button secondary" onClick={sync} disabled={busy}>Sincronizar Classroom</button>
+        {/* Sincronización ahora automática al cargar la planilla */}
         {/* La descarga por planilla individual (equivalente a
             ExportPlanillaServlet del legacy) todavía no está migrada al
             backend nuevo -- solo existe la exportación por curso completo
