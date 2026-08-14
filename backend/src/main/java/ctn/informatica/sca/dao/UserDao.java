@@ -50,11 +50,18 @@ public class UserDao {
     }
 
     private User findProfessorUser(String username, String password) throws Exception {
-        String sql = "select * from profesor where usuario = ?";
+        String sql = "select * from profesor where usuario = ? OR ci = ?";
         try (Connection con = new conexion().getCon();
                 PreparedStatement stm = con.prepareStatement(sql)) {
 
             stm.setString(1, username);
+            try {
+                int ciVal = Integer.parseInt(username);
+                stm.setInt(2, ciVal);
+            } catch (NumberFormatException ex) {
+                stm.setNull(2, java.sql.Types.INTEGER);
+            }
+
             try (ResultSet rs = stm.executeQuery()) {
                 if (!rs.next()) {
                     return null;
@@ -106,11 +113,18 @@ public class UserDao {
     }
 
     private User findParentUser(String username, String password) throws Exception {
-        String sql = "select id, nombre, apellido, usuario, contrasenia from padre where usuario = ?";
+        String sql = "select id, nombre, apellido, usuario, contrasenia from padre where usuario = ? OR ci = ?";
         try (Connection con = new conexion().getCon();
                 PreparedStatement stm = con.prepareStatement(sql)) {
 
             stm.setString(1, username);
+            try {
+                int ciVal = Integer.parseInt(username);
+                stm.setInt(2, ciVal);
+            } catch (NumberFormatException ex) {
+                stm.setNull(2, java.sql.Types.INTEGER);
+            }
+
             try (ResultSet rs = stm.executeQuery()) {
                 if (!rs.next()) {
                     return null;
