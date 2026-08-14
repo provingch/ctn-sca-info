@@ -16,3 +16,14 @@ Thumbs.db
 
 # Local nginx vhost files for deployment
 nginx/*.local
+
+# Generated frontend/static assets (Vite) copied into backend resources
+/backend/src/main/resources/static/assets/
+/backend/src/main/resources/static/index-*.js
+/backend/src/main/resources/static/index-*.css
+
+# Frontend build output
+/frontend/dist/
+
+# Backend packaged static assets from previous builds
+/backend/target/classes/static/assets/
