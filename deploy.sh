@@ -416,6 +416,31 @@ clean_frontend_residues() {
     echo "==> Removing generated assets in $target_assets"
     find "$target_assets" -maxdepth 1 -type f \( -name 'index-*.js' -o -name 'index-*.css' -o -name 'index-*.js.map' -o -name 'index-*.css.map' \) -print0 | xargs -0 -r rm -f --
   fi
+
+  # Remove untracked backend build residues (target, classes, generated-sources) only
+  remove_untracked_under() {
+    local abs_path="$1"
+    # Derive repository-relative path (git expects paths relative to repo root)
+    local rel_path
+    rel_path="${abs_path#$REPO_DIR/}"
+    # Ask git for untracked files under this path
+    local untracked
+    untracked=$(git -C "$REPO_DIR" ls-files --others --exclude-standard -- "$rel_path" 2>/dev/null || true)
+    if [[ -n "$untracked" ]]; then
+      echo "==> Removing untracked files under $rel_path"
+      # Remove each untracked path (safe: only removes untracked files)
+      printf '%s\n' "$untracked" | while IFS= read -r f; do
+        rm -rf -- "$REPO_DIR/$f" || true
+      done
+    fi
+  }
+
+  # Candidate backend/build paths to scan for untracked files
+  for p in "$PROJECT_DIR/target" "$REPO_DIR/target" "$PROJECT_DIR/classes" "$PROJECT_DIR/generated-sources" "$PROJECT_DIR/src/main/resources/static"; do
+    if [[ -e "$p" ]]; then
+      remove_untracked_under "$p"
+    fi
+  done
 }
 
 clean_frontend_residues
