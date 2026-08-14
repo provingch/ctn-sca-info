@@ -102,6 +102,13 @@ function CreateForm({ section, data, submit }: { section: string; data: AdminCat
     if (specialty) selectSpecialty(specialty.nombre, specialty.id);
   };
 
+  // Ensure when switching to 'especifico' category we keep at most one selected especialidad
+  useEffect(() => {
+    if (form.categoria === 'especifico' && especialidadIds.length > 1) {
+      setEspecialidadIds([especialidadIds[0]]);
+    }
+  }, [form.categoria]);
+
   return (
     <form className="form-grid" onSubmit={send}>
       {section === 'materias' && (
@@ -111,7 +118,7 @@ function CreateForm({ section, data, submit }: { section: string; data: AdminCat
             Categoría
             <AnimatedSelect ariaLabel="Categoría" value={form.categoria} onChange={(value) => setForm({ ...form, categoria: value })} options={[{ value: 'comun', label: 'Común' }, { value: 'especifico', label: 'Específica' }]} />
           </label>
-          <Specialties data={data} form={form} setForm={setForm} onChange={specialtyChanged} especialidadIds={especialidadIds} setEspecialidadIds={setEspecialidadIds} />
+          <Specialties data={data} form={form} setForm={setForm} onChange={specialtyChanged} especialidadIds={especialidadIds} setEspecialidadIds={setEspecialidadIds} categoria={form.categoria} />
         </>
       )}
 
