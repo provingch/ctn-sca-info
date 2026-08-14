@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import AppShell from '../../components/AppShell';
-import { createAdminRecord, deleteAssignment, getAdminCatalog, getMateriaEspecialidades, type AdminCatalog } from '../../api/admin';
+import { createAdminRecord, deleteAssignment, getAdminCatalog, deleteAdminRecord, getMateriaEspecialidades, type AdminCatalog } from '../../api/admin';
 import { ApiError } from '../../api/client';
 import { useSpecialty } from '../../context/SpecialtyContext';
 import { normalizeSpecialty } from '../../theme/theme';
@@ -102,12 +102,15 @@ function CreateForm({ section, data, submit }: { section: string; data: AdminCat
     if (specialty) selectSpecialty(specialty.nombre, specialty.id);
   };
 
-  // Ensure when switching to 'especifico' category we keep at most one selected especialidad
-  useEffect(() => {
-    if (form.categoria === 'especifico' && especialidadIds.length > 1) {
+  function handleCategoriaChange(value: string) {
+    // If switching to 'especifico' while multiple especialidades are selected, ask before trimming
+    if (value === 'especifico' && especialidadIds.length > 1) {
+      const proceed = window.confirm('Al cambiar a "Específica" solo se conservará una especialidad. ¿Desea continuar y conservar la primera seleccionada?');
+      if (!proceed) return;
       setEspecialidadIds([especialidadIds[0]]);
     }
-  }, [form.categoria]);
+    setForm({ ...form, categoria: value });
+  }
 
   return (
     <form className="form-grid" onSubmit={send}>
@@ -116,7 +119,7 @@ function CreateForm({ section, data, submit }: { section: string; data: AdminCat
           {field('nombre', 'Nombre')}
           <label>
             Categoría
-            <AnimatedSelect ariaLabel="Categoría" value={form.categoria} onChange={(value) => setForm({ ...form, categoria: value })} options={[{ value: 'comun', label: 'Común' }, { value: 'especifico', label: 'Específica' }]} />
+            <AnimatedSelect ariaLabel="Categoría" value={form.categoria} onChange={handleCategoriaChange} options={[{ value: 'comun', label: 'Común' }, { value: 'especifico', label: 'Específica' }]} />
           </label>
           <Specialties data={data} form={form} setForm={setForm} onChange={specialtyChanged} especialidadIds={especialidadIds} setEspecialidadIds={setEspecialidadIds} categoria={form.categoria} />
         </>
@@ -235,13 +238,65 @@ function Select({ label, name, items, form, setForm, optional, onValueChange }: 
 }
 
 function AdminList({ section, data, reload, status }: { section: string; data: AdminCatalog; reload: () => Promise<void>; status: (message: string) => void }) {
-  if (section === 'materias') return <div className="admin-list">{data.materias.map((subject) => <div key={subject.id}><strong>{subject.nombre}</strong><span>{subject.categoria}</span></div>)}</div>;
-  if (section === 'usuarios') return <div className="admin-list">{data.usuarios.map((user) => <div key={user.id}><strong>{user.apellido}, {user.nombre}</strong><span>{user.usuario} · nivel {user.nivel}</span></div>)}</div>;
-  if (section === 'ingresantes') return <div className="admin-list">{data.alumnos.map((student) => <div key={student.id}><strong>{student.apellido}, {student.nombre}</strong><span>{data.cursos.find((course) => course.id === student.cursoId)?.especialidad || 'Curso'} · CI {student.ci || '—'}</span></div>)}</div>;
+  if (section === 'materias') {
+    return (
+      <div className="admin-list">
+        {data.materias.map((subject) => (
+          <div key={subject.id}>
+            <strong>{subject.nombre}</strong>
+            <span>{subject.categoria}</span>
+            <button className="button danger" onClick={async () => {
+              if (!window.confirm('¿Eliminar esta materia? Esta acción fallará si existen planillas que la referencian.')) return;
+              try { await deleteAdminRecord('materias', subject.id); status('Materia eliminada.'); await reload(); }
+              catch (error) { status(error instanceof ApiError ? error.message : 'No se pudo eliminar.'); }
+            }}>Eliminar</button>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (section === 'usuarios') {
+    return (
+      <div className="admin-list">
+        {data.usuarios.map((user) => (
+          <div key={user.id}>
+            <strong>{user.apellido}, {user.nombre}</strong>
+            <span>{user.usuario} · nivel {user.nivel}</span>
+            <button className="button danger" onClick={async () => {
+              if (!window.confirm('¿Eliminar este usuario?')) return;
+              try { await deleteAdminRecord('usuarios', user.id); status('Usuario eliminado.'); await reload(); }
+              catch (error) { status(error instanceof ApiError ? error.message : 'No se pudo eliminar.'); }
+            }}>Eliminar</button>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (section === 'ingresantes') {
+    return (
+      <div className="admin-list">
+        {data.alumnos.map((student) => (
+          <div key={student.id}>
+            <strong>{student.apellido}, {student.nombre}</strong>
+            <span>{data.cursos.find((course) => course.id === student.cursoId)?.especialidad || 'Curso'} · CI {student.ci || '—'}</span>
+            <button className="button danger" onClick={async () => {
+              if (!window.confirm('¿Eliminar este ingresante?')) return;
+              try { await deleteAdminRecord('ingresantes', student.id); status('Ingresante eliminado.'); await reload(); }
+              catch (error) { status(error instanceof ApiError ? error.message : 'No se pudo eliminar.'); }
+            }}>Eliminar</button>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   async function remove(id: number) {
     if (!window.confirm('¿Eliminar esta asignación?')) return;
     try { await deleteAssignment(id); status('Asignación eliminada.'); await reload(); }
     catch (error) { status(error instanceof ApiError ? error.message : 'No se pudo eliminar.'); }
   }
+
   return <div className="admin-list">{data.asignaciones.map((assignment) => <div key={assignment.id}><span><strong>{assignment.profesor}</strong><small>{assignment.materia} · {assignment.curso}</small></span><button className="button danger" onClick={() => remove(assignment.id)}>Eliminar</button></div>)}</div>;
 }
