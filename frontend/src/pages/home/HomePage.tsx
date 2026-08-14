@@ -234,20 +234,20 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
         <div className="class-card">
           <div className="class-card-head">
             <h3>Datos de clase</h3>
-            <button type="button" className="btn btn-default btn-sm" id="clearButton" onClick={clearForm}>Limpiar formulario</button>
+            <button type="button" className="button secondary" id="clearButton" onClick={clearForm}>Limpiar formulario</button>
           </div>
           <div className="class-grid">
             <div>
               <label htmlFor="horarioClase" style={{ fontWeight: 600 }}>Horario</label>
-              <input id="horarioClase" className="form-control" placeholder="Ej: 07:00-09:20" value={horario} onChange={(e) => setHorario(e.target.value)} inputMode="numeric" maxLength={11} />
+              <input id="horarioClase" placeholder="Ej: 07:00-09:20" value={horario} onChange={(e) => setHorario(e.target.value)} inputMode="numeric" maxLength={11} />
             </div>
             <div>
               <label htmlFor="cantidadHoras" style={{ fontWeight: 600 }}>Cant. horas cátedra</label>
-              <input id="cantidadHoras" type="number" min={1} max={12} step={1} inputMode="numeric" className="form-control" readOnly placeholder="Automático" value={cantidadHoras} />
+              <input id="cantidadHoras" type="number" min={1} max={12} step={1} inputMode="numeric" readOnly placeholder="Automático" value={cantidadHoras} />
             </div>
             <div>
               <label htmlFor="modalidadClase" style={{ fontWeight: 600 }}>Modalidad</label>
-              <select id="modalidadClase" className="form-control" value={modalidad} onChange={(e) => setModalidad(e.target.value)}>
+              <select id="modalidadClase" value={modalidad} onChange={(e) => setModalidad(e.target.value)}>
                 <option>Presencial</option>
                 <option>Virtual</option>
               </select>
@@ -258,11 +258,11 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
             </div>
             <div>
               <label htmlFor="temaRasgo" style={{ fontWeight: 600 }}>Contenido específico desarrollado</label>
-              <input id="temaRasgo" name="tema" className="form-control" maxLength={150} value={tema} onChange={(e) => setTema(e.target.value)} placeholder="Ej.: Integrales definidas y aplicaciones" required />
+              <input id="temaRasgo" name="tema" maxLength={150} value={tema} onChange={(e) => setTema(e.target.value)} placeholder="Ej.: Integrales definidas y aplicaciones" required />
             </div>
             <div style={{ gridColumn: '1 / -1' }}>
               <label htmlFor="observacionesGenerales" style={{ fontWeight: 600 }}>Observaciones generales</label>
-              <textarea id="observacionesGenerales" className="form-control" rows={3} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Cualquier eventualidad general de la clase..." />
+              <textarea id="observacionesGenerales" rows={3} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Cualquier eventualidad general de la clase..." />
             </div>
           </div>
         </div>
@@ -306,7 +306,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
         <div className="class-card">
           <h3>4. Reportes de asistencia</h3>
           <div className="class-grid" style={{ gridTemplateColumns: '220px minmax(0,1fr)' }}>
-            <button type="button" className="btn btn-default" onClick={() => {
+            <button type="button" className="button secondary" onClick={() => {
               const aus = ausentes.length;
               const total = data.rasgoAlumnosValidos.length;
               const presentes = Math.max(total - aus, 0);
@@ -318,8 +318,8 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
         </div>
 
         <div className="class-card" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-          <button type="submit" className="btn btn-primary">Guardar inicio de clase</button>
-          <button type="button" className="btn btn-default" onClick={() => {
+          <button type="submit" className="button">Guardar inicio de clase</button>
+          <button type="button" className="button secondary" onClick={() => {
             const payload = {
               cursoId: data.selCurso ? Number(data.selCurso.id) : 0,
               instrumentoId: instrumentoId,
