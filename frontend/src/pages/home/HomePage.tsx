@@ -125,7 +125,7 @@ export default function HomePage() {
             resetSpecialty();
           }
         }} options={[{ value: 0, label: 'Todas' }, ...especialidades.map((item) => ({ value: item.id, label: item.nombre }))]} />
-        <small style={{ marginLeft: 10 }}>{especialidades.length ? especialidades.map((e) => e.nombre).join(', ') : 'Cargando especialidades...'}</small>
+        {/* Lista de especialidades removida por solicitud del equipo */}
       </label>
       <label className="inline-filter">Nivel
         <AnimatedSelect ariaLabel="Nivel" value={selectedNivel ?? ''} onChange={(value) => { const v = Number(value) || null; setSelectedNivel(v); setSelectedSeccion(''); params({ cursoId: '' }); }} disabled={visibleCursos.length === 0} placeholder="Nivel" options={[{ value: '', label: 'Todos' }, ...niveles.map((n) => ({ value: n, label: `${n}°` }))]} />
