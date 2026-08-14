@@ -37,6 +37,19 @@ export default function HomePage() {
     void getAdminCatalog().then((cat) => setEspecialidades(cat.especialidades)).catch(() => setEspecialidades([]));
   }, []);
 
+  // If admin catalog doesn't provide especialidades (e.g. network/auth),
+  // derive a fallback list from the cursos returned by getHome so the
+  // select always shows options for the user to pick.
+  useEffect(() => {
+    if (especialidades.length === 0 && data) {
+      const names = Array.from(new Set(data.cursos.map((c) => c.especialidad).filter(Boolean)));
+      if (names.length > 0) {
+        const fallback = names.map((nombre, i) => ({ id: 100000 + i, nombre } as Especialidad));
+        setEspecialidades(fallback);
+      }
+    }
+  }, [data, especialidades.length]);
+
   // Sync application palette with selected especialidad in query
   useEffect(() => {
     const id = Number(search.get('especialidadId') || 0);
@@ -112,6 +125,7 @@ export default function HomePage() {
             resetSpecialty();
           }
         }} options={[{ value: 0, label: 'Todas' }, ...especialidades.map((item) => ({ value: item.id, label: item.nombre }))]} />
+        <small style={{ marginLeft: 10 }}>{especialidades.length ? especialidades.map((e) => e.nombre).join(', ') : 'Cargando especialidades...'}</small>
       </label>
       <label className="inline-filter">Nivel
         <AnimatedSelect ariaLabel="Nivel" value={selectedNivel ?? ''} onChange={(value) => { const v = Number(value) || null; setSelectedNivel(v); setSelectedSeccion(''); params({ cursoId: '' }); }} disabled={visibleCursos.length === 0} placeholder="Nivel" options={[{ value: '', label: 'Todos' }, ...niveles.map((n) => ({ value: n, label: `${n}°` }))]} />
@@ -144,7 +158,8 @@ function PlanillasView({ data, syncingProp, setSyncingProp }: { data: HomeRespon
     let cancelled = false;
     (async () => {
       setSyncingProp?.(true);
-      try {
+      try 
+      {
         for (const p of data.planillas) {
           if (cancelled) break;
           try {
