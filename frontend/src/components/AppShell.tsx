@@ -30,6 +30,17 @@ export default function AppShell({ children, title, subtitle, specialty }: { chi
     navigate('/login', { replace: true });
   }
 
+  async function wipeImportedTareas() {
+    if (!confirm('¿Borrar todas las tareas importadas desde Google Classroom? Esta acción es irreversible.')) return;
+    try {
+      const res = await (await fetch('/api/admin/debug/wipe-tareas', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' } })).json();
+      alert('Tareas borradas: ' + (res.deleted ?? '0'));
+    } catch (err) {
+      console.error(err);
+      alert('Error al borrar tareas: ' + (err instanceof Error ? err.message : String(err)));
+    }
+  }
+
   return (
     <div className="app-frame" data-specialty={normalizeSpecialty(effectiveSpecialty)}>
       <header className="app-header">
@@ -49,6 +60,9 @@ export default function AppShell({ children, title, subtitle, specialty }: { chi
             <NavLink to="/profile">Mi perfil</NavLink>
             <ThemeToggle compact />
             {manualPath && <a href={manualPath} target="_blank" rel="noopener noreferrer">Manual</a>}
+            {user?.level === 3 && (
+              <button className="nav-button" type="button" onClick={wipeImportedTareas} title="Debug: wipe tareas importadas">Wipe tareas</button>
+            )}
             <button className="nav-button" type="button" onClick={signOut}>Cerrar sesión</button>
           </nav>
         </div>

@@ -218,6 +218,28 @@ public class TareaDao extends conexion {
             ps.executeUpdate();
         }
     }
+
+    /**
+     * Borra tareas que provienen de Google Classroom (tienen google_coursework_id)
+     * Si planillaId es null borra todas las tareas importadas; si se pasa un id
+     * borra solo las de esa planilla.
+     * Devuelve la cantidad de filas afectadas.
+     */
+    public int deleteImportedTasks(Integer planillaId) throws SQLException {
+        String sql;
+        if (planillaId == null) {
+            sql = "DELETE FROM tarea WHERE google_coursework_id IS NOT NULL";
+            try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+                return ps.executeUpdate();
+            }
+        } else {
+            sql = "DELETE FROM tarea WHERE planilla_id = ? AND google_coursework_id IS NOT NULL";
+            try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+                ps.setInt(1, planillaId);
+                return ps.executeUpdate();
+            }
+        }
+    }
     
     public boolean update(Tarea tarea) throws SQLException {
     String selectSql = "SELECT total FROM tarea WHERE id = ? FOR UPDATE";
