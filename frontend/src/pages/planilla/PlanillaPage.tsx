@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import AppShell from '../../components/AppShell';
 import { getPlanilla, resolvePlanilla, syncClassroom, type PlanillaDetail } from '../../api/academics';
@@ -29,7 +29,7 @@ export default function PlanillaPage() {
   }, [id]);
 
   // Auto-sync once when planilla data is loaded and Classroom is available
-  const syncRanRef = { current: false } as { current: boolean };
+  const syncRanRef = useRef(false);
   useEffect(() => {
     if (!data || syncRanRef.current) return;
     syncRanRef.current = true;
