@@ -27,7 +27,7 @@ public class Curso {
     }
 
     public int getCurso() {
-        int curso = period - promocion + 3;
+        int curso = promocion - period + 3;
         if (curso < 1) {
             return 1;
         }
