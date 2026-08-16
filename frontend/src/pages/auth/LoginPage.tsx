@@ -72,7 +72,7 @@ export default function LoginPage() {
             Código
             <input
               value={code}
-              onChange={(e) => setCode(e.target.value)}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
               inputMode="numeric"
               autoFocus
               required

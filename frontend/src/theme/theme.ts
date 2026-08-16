@@ -21,6 +21,12 @@ export function persistTheme(theme: Theme): void {
 
 export function normalizeSpecialty(value?: string | null): string {
   const normalized = (value || 'general').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/[_\s]+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
-  const aliases: Record<string, string> = { 'construcciones-civiles': 'construcciones', 'construccion-civil': 'construcciones', 'quimica-industrial': 'quimica' };
+  const aliases: Record<string, string> = {
+    'construcciones-civiles': 'construcciones',
+    'construccion-civil': 'construcciones',
+    'quimica-industrial': 'quimica',
+    'mecanica-industrial': 'mecanica-general',
+    'mecanica-general': 'mecanica-general'
+  };
   return aliases[normalized] || normalized || 'general';
 }

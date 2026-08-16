@@ -24,6 +24,13 @@ export default function HomePage() {
   const [syncingAll, setSyncingAll] = useState(false);
   const { selectSpecialty, resetSpecialty } = useSpecialty();
 
+  const setCourseSelection = (value: string | number) => {
+    const nextNivel = Number(value) || null;
+    setSelectedNivel(nextNivel);
+    setSelectedSeccion('');
+    params({ cursoId: '' });
+  };
+
   const load = useCallback(async () => {
     try {
       setData(await getHome({ cursoId: cursoId || undefined, etapa, view: view === 'clase' ? 'clase' : 'planillas' }));
@@ -84,6 +91,9 @@ export default function HomePage() {
     ...next,
   });
 
+  const courseOptions = niveles.map((n) => ({ value: n, label: `${n}°` }));
+  const sectionOptions = (selectedNivel != null ? seccionesForNivel(selectedNivel) : []).map((s) => ({ value: s, label: String(s) }));
+
   return <>
     <style>{`
       @keyframes idlePulse {
@@ -113,9 +123,11 @@ export default function HomePage() {
       .idle-dot:nth-child(2) { animation-delay: 0.15s; }
       .idle-dot:nth-child(3) { animation-delay: 0.3s; }
     `}</style>
-    <AppShell title="Panel SCA del curso" specialty={data.selCurso?.especialidad}><div className="toolbar filters"><button className="button secondary" onClick={() => setSearch({})}>← Inicio</button>
+    <AppShell title="Panel SCA del curso" specialty={selectedEspecialidad?.nombre ?? data.selCurso?.especialidad}><div className="toolbar filters"><button className="button secondary" onClick={() => setSearch({})}>← Inicio</button>
       <label className="inline-filter">Especialidad
-        <AnimatedSelect ariaLabel="Especialidad" value={especialidadId} onChange={(value) => {
+        <AnimatedSelect ariaLabel="Especialidad" value={especialidadId || ''} onChange={(value) => {
+          setSelectedNivel(null);
+          setSelectedSeccion('');
           params({ especialidadId: value, cursoId: '' });
           const id = Number(value || 0);
           if (id) {
@@ -124,21 +136,21 @@ export default function HomePage() {
           } else {
             resetSpecialty();
           }
-        }} options={[{ value: 0, label: 'Todas' }, ...especialidades.map((item) => ({ value: item.id, label: item.nombre }))]} />
-        {/* Lista de especialidades removida por solicitud del equipo */}
+        }} placeholder="Seleccione la especialidad" options={[{ value: '', label: 'Seleccione la especialidad' }, ...especialidades.map((item) => ({ value: item.id, label: item.nombre }))]} />
       </label>
-      <label className="inline-filter">Nivel
-        <AnimatedSelect ariaLabel="Nivel" value={selectedNivel ?? ''} onChange={(value) => { const v = Number(value) || null; setSelectedNivel(v); setSelectedSeccion(''); params({ cursoId: '' }); }} disabled={visibleCursos.length === 0} placeholder="Nivel" options={[{ value: '', label: 'Todos' }, ...niveles.map((n) => ({ value: n, label: `${n}°` }))]} />
+      <label className="inline-filter">Curso
+        <AnimatedSelect ariaLabel="Curso" value={selectedNivel ?? ''} onChange={(value) => {
+          setCourseSelection(value);
+        }} disabled={visibleCursos.length === 0} placeholder="Seleccione el curso" options={[{ value: '', label: 'Seleccione el curso' }, ...courseOptions]} />
       </label>
       <label className="inline-filter">Sección
           <AnimatedSelect ariaLabel="Sección" value={selectedSeccion ?? ''} onChange={(value) => {
           setSelectedSeccion(value);
-          // find matching curso id for current specialty+nivel+seccion
           const nivel = selectedNivel ?? (data.selCurso ? Number(data.selCurso.curso) : undefined);
           const seccion = String(value);
           const match = visibleCursos.find((c) => (nivel == null || Number(c.curso) === nivel) && c.seccion === seccion && (!selectedEspecialidad || c.especialidad === selectedEspecialidad.nombre));
           params({ cursoId: match ? String(match.id) : '' });
-        }} disabled={visibleCursos.length === 0 || (selectedNivel == null && !data.selCurso)} placeholder="Sección" options={[{ value: '', label: 'Todas' }, ...(selectedNivel != null ? seccionesForNivel(selectedNivel).map((s) => ({ value: s, label: String(s) })) : [])]} />
+        }} disabled={visibleCursos.length === 0 || (selectedNivel == null && !data.selCurso)} placeholder="Seleccione la sección" options={[{ value: '', label: 'Seleccione la sección' }, ...sectionOptions]} />
       </label>
     </div>
       {!data.selCurso ? <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Esperando selección</h2><p>Elegí una especialidad y un curso para continuar con la clase.</p></section> : view === 'clase' ? <ClassView data={data} reload={load} /> : <PlanillasView data={data} syncingProp={syncingAll} setSyncingProp={setSyncingAll} />}
@@ -180,6 +192,7 @@ function PlanillasView({ data, syncingProp, setSyncingProp }: { data: HomeRespon
 
 function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise<void> }) {
   const [tema, setTema] = useState('');
+  const [disciplina, setDisciplina] = useState('');
   const [instrumentoId, setInstrumentoId] = useState(0);
   const [ausentes, setAusentes] = useState<number[]>([]);
   const [status, setStatus] = useState('');
@@ -188,6 +201,16 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
   const [modalidad, setModalidad] = useState('Presencial');
   const [observaciones, setObservaciones] = useState('');
 
+  const handleHorarioInput = (value: string) => {
+    const sanitized = value.replace(/[^\d:-]/g, '').slice(0, 11);
+    setHorario(sanitized);
+  };
+
+  const handleCantidadHorasInput = (value: string) => {
+    const sanitized = value.replace(/\D/g, '').slice(0, 2);
+    setCantidadHoras(sanitized);
+  };
+
   async function create(e: FormEvent) {
     e.preventDefault();
     if (!data.selCurso) return;
@@ -195,6 +218,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
       await createClass({ cursoId: data.selCurso.id, etapa: data.selEtapa, instrumentoId, turno: 'turno', tema, alumnosAusentes: ausentes });
       setStatus('Clase registrada.');
       setTema('');
+      setDisciplina('');
       setHorario('');
       setCantidadHoras('');
       setModalidad('Presencial');
@@ -214,6 +238,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
 
   function clearForm() {
     setTema('');
+    setDisciplina('');
     setHorario('');
     setCantidadHoras('');
     setModalidad('Presencial');
@@ -233,36 +258,40 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
 
         <div className="class-card">
           <div className="class-card-head">
-            <h3>Datos de clase</h3>
-            <button type="button" className="btn btn-default btn-sm" id="clearButton" onClick={clearForm}>Limpiar formulario</button>
+            <h3>Registro de clase</h3>
+            <button type="button" className="button secondary" id="clearButton" onClick={clearForm}>Limpiar formulario</button>
           </div>
           <div className="class-grid">
-            <div>
-              <label htmlFor="horarioClase" style={{ fontWeight: 600 }}>Horario</label>
-              <input id="horarioClase" className="form-control" placeholder="Ej: 07:00-09:20" value={horario} onChange={(e) => setHorario(e.target.value)} inputMode="numeric" maxLength={11} />
+            <div className="class-field">
+              <label htmlFor="horarioClase">Horario</label>
+              <input id="horarioClase" placeholder="Ej: 07:00-09:20" value={horario} onChange={(e) => handleHorarioInput(e.target.value)} inputMode="numeric" maxLength={11} pattern="^\\d{2}:\\d{2}-\\d{2}:\\d{2}$" />
             </div>
-            <div>
-              <label htmlFor="cantidadHoras" style={{ fontWeight: 600 }}>Cant. horas cátedra</label>
-              <input id="cantidadHoras" type="number" min={1} max={12} step={1} inputMode="numeric" className="form-control" readOnly placeholder="Automático" value={cantidadHoras} />
+            <div className="class-field">
+              <label htmlFor="cantidadHoras">Cant. horas cátedra</label>
+              <input id="cantidadHoras" type="text" inputMode="numeric" maxLength={2} value={cantidadHoras} onChange={(e) => handleCantidadHorasInput(e.target.value)} placeholder="Ej: 18" />
             </div>
-            <div>
-              <label htmlFor="modalidadClase" style={{ fontWeight: 600 }}>Modalidad</label>
-              <select id="modalidadClase" className="form-control" value={modalidad} onChange={(e) => setModalidad(e.target.value)}>
+            <div className="class-field">
+              <label htmlFor="modalidadClase">Modalidad</label>
+              <select id="modalidadClase" value={modalidad} onChange={(e) => setModalidad(e.target.value)}>
                 <option>Presencial</option>
                 <option>Virtual</option>
               </select>
             </div>
-            <div>
-              <label htmlFor="instrumentoId" style={{ fontWeight: 600 }}>Tipo de clase (Instrumento)</label>
+            <div className="class-field">
+              <label htmlFor="instrumentoId">Tipo de clase</label>
               <AnimatedSelect ariaLabel="Instrumento" value={instrumentoId} onChange={(value) => setInstrumentoId(Number(value))} options={[{ value: 0, label: 'Sin instrumento' }, ...data.instrumentos.map((item) => ({ value: item.id, label: item.nombre }))]} />
             </div>
-            <div>
-              <label htmlFor="temaRasgo" style={{ fontWeight: 600 }}>Contenido específico desarrollado</label>
-              <input id="temaRasgo" name="tema" className="form-control" maxLength={150} value={tema} onChange={(e) => setTema(e.target.value)} placeholder="Ej.: Integrales definidas y aplicaciones" required />
+            <div className="class-field">
+              <label htmlFor="disciplinaClase">Disciplina</label>
+              <input id="disciplinaClase" value={disciplina} onChange={(e) => setDisciplina(e.target.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/g, '').slice(0, 40))} placeholder="Ej.: Matemática" />
             </div>
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label htmlFor="observacionesGenerales" style={{ fontWeight: 600 }}>Observaciones generales</label>
-              <textarea id="observacionesGenerales" className="form-control" rows={3} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Cualquier eventualidad general de la clase..." />
+            <div className="class-field">
+              <label htmlFor="temaRasgo">Contenido específico desarrollado</label>
+              <input id="temaRasgo" name="tema" maxLength={150} value={tema} onChange={(e) => setTema(e.target.value)} placeholder="Ej.: Integrales definidas y aplicaciones" required />
+            </div>
+            <div className="class-field class-field--full">
+              <label htmlFor="observacionesGenerales">Observaciones generales</label>
+              <textarea id="observacionesGenerales" rows={3} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Cualquier eventualidad general de la clase..." />
             </div>
           </div>
         </div>
@@ -306,7 +335,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
         <div className="class-card">
           <h3>4. Reportes de asistencia</h3>
           <div className="class-grid" style={{ gridTemplateColumns: '220px minmax(0,1fr)' }}>
-            <button type="button" className="btn btn-default" onClick={() => {
+            <button type="button" className="button secondary" onClick={() => {
               const aus = ausentes.length;
               const total = data.rasgoAlumnosValidos.length;
               const presentes = Math.max(total - aus, 0);
@@ -318,8 +347,8 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
         </div>
 
         <div className="class-card" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-          <button type="submit" className="btn btn-primary">Guardar inicio de clase</button>
-          <button type="button" className="btn btn-default" onClick={() => {
+          <button type="submit" className="button">Guardar inicio de clase</button>
+          <button type="button" className="button secondary" onClick={() => {
             const payload = {
               cursoId: data.selCurso ? Number(data.selCurso.id) : 0,
               instrumentoId: instrumentoId,
