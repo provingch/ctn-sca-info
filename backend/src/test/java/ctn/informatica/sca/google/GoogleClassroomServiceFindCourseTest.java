@@ -87,4 +87,33 @@ class GoogleClassroomServiceFindCourseTest {
         assertTrue(chosen.isPresent());
         assertEquals("c-orientacion", chosen.get().getId());
     }
+
+    @Test
+    void ignoraUnCursoGuardadoObsoletoCuandoLaMateriaYaNoCoincide() {
+        Course laboratorioRedes = new Course()
+                .setId("c-lab-redes")
+                .setName("Laboratorio Redes 3ro A")
+                .setSection(String.valueOf(CURRENT_PERIOD))
+                .setRoom("Informática");
+
+        Course algoritmica = new Course()
+                .setId("c-algoritmica")
+                .setName("Algorítmica 3ro A")
+                .setSection(String.valueOf(CURRENT_PERIOD))
+                .setRoom("Informática");
+
+        Course orientacion = new Course()
+                .setId("c-orientacion")
+                .setName("Orientación 3ro A")
+                .setSection(String.valueOf(CURRENT_PERIOD))
+                .setRoom("");
+
+        Curso curso3roAInformatica = new Curso(1, "Informática", CURRENT_PERIOD, "A");
+        Planilla planillaOrientacion = new Planilla(20, 0, 0, "Orientación Informática", CURRENT_PERIOD, "primera", 0, 0, "");
+        List<Course> courses = List.of(laboratorioRedes, algoritmica, orientacion);
+
+        assertEquals("c-orientacion", GoogleClassroomService.chooseCourseFromList(courses, curso3roAInformatica, planillaOrientacion).orElseThrow().getId());
+        assertTrue(GoogleClassroomService.isCourseCompatibleWithPlanilla(orientacion, curso3roAInformatica, planillaOrientacion, courses));
+        assertTrue(!GoogleClassroomService.isCourseCompatibleWithPlanilla(laboratorioRedes, curso3roAInformatica, planillaOrientacion, courses));
+    }
 }
