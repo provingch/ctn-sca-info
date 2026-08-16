@@ -4674,3 +4674,266 @@ body.legal-page {
     min-height: 156px;
   }
 }
+
+/* Planilla: búsqueda, ordenamiento y resumen de alumnos */
+.planilla-table-tools {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+  box-shadow: var(--shadow-sm);
+}
+
+.planilla-student-search {
+  width: min(100%, 420px);
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.planilla-student-search input[type="search"] {
+  width: 100%;
+  min-height: 42px;
+  margin: 0;
+  padding: 9px 13px;
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--line));
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-input, var(--paper));
+  color: var(--ink);
+  box-shadow: none;
+  transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
+}
+
+.planilla-student-search input[type="search"]:hover {
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--line));
+}
+
+.planilla-student-search input[type="search"]:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring);
+}
+
+.planilla-student-search input[type="search"]::placeholder {
+  color: var(--muted);
+  opacity: .82;
+}
+
+.planilla-student-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 7px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--line));
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+  font-size: 12px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.planilla-table-tools + .table-container {
+  margin-top: 12px;
+}
+
+.planilla-table-tools + .table-container .table-responsive {
+  max-height: clamp(360px, 66vh, 720px);
+  position: relative;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.planilla-table .table-heading {
+  height: 42px;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  padding-block: 8px;
+}
+
+.planilla-table .table-column-head {
+  top: 42px;
+}
+
+.planilla-table .sortable-column-head {
+  align-items: stretch;
+  padding: 0;
+}
+
+.table-sort-button {
+  width: 100%;
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: minmax(0, auto) 14px;
+  align-content: center;
+  align-items: center;
+  justify-content: center;
+  gap: 2px 6px;
+  margin: 0;
+  padding: 8px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.table-sort-button small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.table-sort-button:hover,
+.table-sort-button.is-active {
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+}
+
+.table-sort-button:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: none;
+  box-shadow: inset var(--focus-ring);
+}
+
+.table-sort-indicator {
+  width: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.table-sort-indicator::before {
+  content: "↕";
+}
+
+[aria-sort="ascending"] .table-sort-indicator::before {
+  content: "↑";
+}
+
+[aria-sort="descending"] .table-sort-indicator::before {
+  content: "↓";
+}
+
+[aria-sort="ascending"] .table-sort-indicator,
+[aria-sort="descending"] .table-sort-indicator {
+  color: var(--accent-deep);
+  font-weight: 900;
+}
+
+.planilla-table .student-row > .cell {
+  transition: background-color .15s ease;
+}
+
+.planilla-table .student-row:hover > .cell {
+  background: var(--accent-soft);
+}
+
+.planilla-table .row-total-cell,
+.planilla-table .row-percentage-cell,
+.planilla-table .row-grade-cell {
+  align-items: center;
+  text-align: center;
+  font-family: var(--font-mono);
+}
+
+.planilla-table .row-total-cell small {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.planilla-table .row-total,
+.planilla-table .row-porcentaje {
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.planilla-table .student-grade-chip {
+  min-width: 34px;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 5px 10px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: none;
+}
+
+.planilla-filter-empty {
+  position: sticky;
+  left: 0;
+  width: 100%;
+  padding: 28px 18px;
+  background: var(--paper);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.planilla-filter-empty[hidden],
+.planilla-table .student-row[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 680px) {
+  .planilla-table-tools {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 13px;
+  }
+
+  .planilla-student-search {
+    width: 100%;
+  }
+
+  .planilla-student-count {
+    align-self: flex-start;
+  }
+
+  .planilla-table-tools + .table-container .table-responsive {
+    max-height: 62vh;
+  }
+}
+
+@media print {
+  .planilla-table-tools {
+    display: none;
+  }
+
+  .planilla-table-tools + .table-container .table-responsive {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .planilla-table .table-heading,
+  .planilla-table .table-column-head {
+    position: static;
+  }
+}

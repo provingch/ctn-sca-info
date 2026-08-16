@@ -150,6 +150,121 @@
       }
     })();
 
+    // --------------- student search, count and sorting ---------------
+    (function studentTableControls() {
+      const table = document.getElementById('planillaStudentTable');
+      const searchInput = document.getElementById('studentSearch');
+      const count = document.getElementById('studentCount');
+      const emptyState = document.getElementById('studentFilterEmpty');
+      if (!table) return;
+
+      const rows = Array.from(table.querySelectorAll('[data-student-row]'));
+      const sortButtons = Array.from(table.querySelectorAll('[data-sort-key]'));
+      const collator = typeof Intl !== 'undefined' && Intl.Collator
+        ? new Intl.Collator('es', { sensitivity: 'base', numeric: true })
+        : null;
+      let activeSortKey = null;
+      let activeSortDirection = null;
+
+      function normalizeText(value) {
+        const text = String(value || '').toLocaleLowerCase('es');
+        return typeof text.normalize === 'function'
+          ? text.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          : text;
+      }
+
+      function compareNames(first, second) {
+        const firstName = first.dataset.studentName || '';
+        const secondName = second.dataset.studentName || '';
+        return collator ? collator.compare(firstName, secondName) : firstName.localeCompare(secondName);
+      }
+
+      function visibleRows() {
+        return rows.filter(function (row) { return !row.hidden; });
+      }
+
+      function updateRowIndexes() {
+        visibleRows().forEach(function (row, index) {
+          const indexCell = row.querySelector('.col-index');
+          if (indexCell) indexCell.textContent = String(index + 1);
+        });
+      }
+
+      function updateCount() {
+        if (!count) return;
+        const visible = visibleRows().length;
+        const total = rows.length;
+        if (visible === total) {
+          count.textContent = total + ' ' + (total === 1 ? 'alumno' : 'alumnos');
+        } else {
+          count.textContent = visible + ' de ' + total + ' alumnos';
+        }
+      }
+
+      function applyFilter() {
+        const query = normalizeText(searchInput ? searchInput.value.trim() : '');
+        rows.forEach(function (row) {
+          row.hidden = query !== '' && !normalizeText(row.dataset.studentName).includes(query);
+        });
+        const hasVisibleRows = visibleRows().length > 0;
+        if (emptyState) emptyState.hidden = hasVisibleRows;
+        updateRowIndexes();
+        updateCount();
+      }
+
+      function updateSortIndicators() {
+        sortButtons.forEach(function (button) {
+          const key = button.dataset.sortKey;
+          const header = button.closest('[data-sort-header]');
+          const isActive = key === activeSortKey && activeSortDirection;
+          button.classList.toggle('is-active', !!isActive);
+          if (header) header.setAttribute('aria-sort', isActive ? activeSortDirection : 'none');
+
+          const label = key === 'percentage' ? 'por porcentaje' : (key === 'grade' ? 'por nota' : 'por total');
+          const nextDirection = !isActive || activeSortDirection === 'descending' ? 'ascendente' : 'descendente';
+          button.setAttribute('aria-label', 'Ordenar ' + label + ' de forma ' + nextDirection);
+        });
+      }
+
+      function sortRows() {
+        const sortedRows = rows.slice().sort(function (first, second) {
+          if (!activeSortKey || !activeSortDirection) {
+            return Number(first.dataset.originalIndex) - Number(second.dataset.originalIndex);
+          }
+
+          const firstValue = Number(first.dataset[activeSortKey] || 0);
+          const secondValue = Number(second.dataset[activeSortKey] || 0);
+          const numericResult = firstValue - secondValue;
+          const result = numericResult === 0 ? compareNames(first, second) : numericResult;
+          return activeSortDirection === 'ascending' ? result : -result;
+        });
+
+        sortedRows.forEach(function (row) { table.appendChild(row); });
+        updateRowIndexes();
+      }
+
+      sortButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+          const key = button.dataset.sortKey;
+          if (activeSortKey !== key) {
+            activeSortKey = key;
+            activeSortDirection = 'ascending';
+          } else if (activeSortDirection === 'ascending') {
+            activeSortDirection = 'descending';
+          } else {
+            activeSortKey = null;
+            activeSortDirection = null;
+          }
+          sortRows();
+          updateSortIndicators();
+        });
+      });
+
+      if (searchInput) searchInput.addEventListener('input', applyFilter);
+      updateSortIndicators();
+      applyFilter();
+    })();
+
     // --------------- live nota recalculation ---------------
     (function liveNotaUpdate() {
       if (!window.planillaGradeRanges || typeof window.planillaGradeRanges !== 'object') return;
@@ -177,8 +292,6 @@
       function updateRowSummary(input) {
         const row = input.closest('.table-row');
         if (!row) return;
-        const summaryCell = row.querySelector('.row-summary');
-        if (!summaryCell) return;
 
         let total = 0;
         let maxTotal = 0;
@@ -197,20 +310,22 @@
         const porcentaje = maxTotal > 0 ? Math.round((total * 100) / maxTotal) : 0;
         const nota = getNotaForSum(total);
 
-        const totalSpan = summaryCell.querySelector('.row-total');
-        const porcentajeSpan = summaryCell.querySelector('.row-porcentaje');
-        const notaSpan = summaryCell.querySelector('.row-nota');
+        const totalSpan = row.querySelector('.row-total');
+        const porcentajeSpan = row.querySelector('.row-porcentaje');
+        const notaSpan = row.querySelector('.row-nota');
 
         if (totalSpan) totalSpan.textContent = total;
         if (porcentajeSpan) porcentajeSpan.textContent = porcentaje;
         if (notaSpan) notaSpan.textContent = nota;
+        row.dataset.total = String(total);
+        row.dataset.percentage = String(porcentaje);
+        row.dataset.grade = String(nota);
 
-        // apply grade color class according to nota (estado)
+        // Reuse the same grade palette shown in the scale above the table.
         if (notaSpan) {
-          notaSpan.classList.remove('grade-ok', 'grade-warn', 'grade-bad');
-          if (nota >= 4) notaSpan.classList.add('grade-ok');
-          else if (nota >= 3) notaSpan.classList.add('grade-warn');
-          else notaSpan.classList.add('grade-bad');
+          notaSpan.classList.remove('grade-chip--one', 'grade-chip--two', 'grade-chip--three', 'grade-chip--four', 'grade-chip--five');
+          notaSpan.classList.add('grade-chip--' + ({ 1: 'one', 2: 'two', 3: 'three', 4: 'four', 5: 'five' }[nota] || 'one'));
+          notaSpan.setAttribute('aria-label', 'Nota ' + nota);
         }
       }
 

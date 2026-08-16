@@ -65,8 +65,8 @@
             <label for="etapaSelect">Etapa</label>
             <select class="selEtapa" id="etapaSelect" name="etapa" onchange="this.form.submit()">
               <option value="">Seleccione una etapa</option>
-              <option value="1" ${ etapa == 1? "selected" : ""}>primera etapa</option>
-              <option value="2" ${ etapa == 2? "selected" : ""}>segunda etapa</option>
+              <option value="1" ${ etapa == 1? "selected" : ""}>Primera etapa</option>
+              <option value="2" ${ etapa == 2? "selected" : ""}>Segunda etapa</option>
             </select>
           </form>
 
@@ -106,9 +106,24 @@
           <c:set var="taskColumns" value="${taskColumns} 88px" />
         </c:forEach>
 
+        <div class="planilla-table-tools" role="search" aria-label="Buscar alumnos en la planilla">
+          <label class="planilla-student-search" for="studentSearch">
+            <span>Buscar alumno</span>
+            <input id="studentSearch"
+                   type="search"
+                   placeholder="Nombre del alumno…"
+                   autocomplete="off"
+                   spellcheck="false"
+                   data-ignore-dirty />
+          </label>
+          <span id="studentCount" class="planilla-student-count" aria-live="polite">
+            ${fn:length(rows)} ${fn:length(rows) == 1 ? 'alumno' : 'alumnos'}
+          </span>
+        </div>
+
         <div class="table-container">
           <div class="table-responsive">
-            <div class="table planilla-table" style="grid-template-columns: 44px 220px 112px${taskColumns} minmax(0, 1fr);">
+            <div id="planillaStudentTable" class="table planilla-table" style="grid-template-columns: 44px minmax(200px, 240px) 92px 82px 74px${taskColumns} minmax(0, 1fr);">
               <div class="table-row">
                 <div class="table-heading">
                   Tareas - ${planilla.nombre}
@@ -119,7 +134,25 @@
                   <img src="${pageContext.request.contextPath}/images/ctn-logo.svg" alt="CTN">
                 </div>
                 <div class="cell col-alumno table-column-head">Alumno</div>
-                <div class="cell table-column-head">Total (${totalPossiblePoints})</div>
+                <div class="cell table-column-head sortable-column-head" role="columnheader" data-sort-header="total" aria-sort="none">
+                  <button class="table-sort-button" type="button" data-sort-key="total" aria-label="Ordenar por total">
+                    <span>Total</span>
+                    <span class="table-sort-indicator" aria-hidden="true"></span>
+                    <small>${totalPossiblePoints} puntos</small>
+                  </button>
+                </div>
+                <div class="cell table-column-head sortable-column-head" role="columnheader" data-sort-header="percentage" aria-sort="none">
+                  <button class="table-sort-button" type="button" data-sort-key="percentage" aria-label="Ordenar por porcentaje">
+                    <span>%</span>
+                    <span class="table-sort-indicator" aria-hidden="true"></span>
+                  </button>
+                </div>
+                <div class="cell table-column-head sortable-column-head" role="columnheader" data-sort-header="grade" aria-sort="none">
+                  <button class="table-sort-button" type="button" data-sort-key="grade" aria-label="Ordenar por nota">
+                    <span>Nota</span>
+                    <span class="table-sort-indicator" aria-hidden="true"></span>
+                  </button>
+                </div>
                 <c:forEach var="t" items="${tareas}" varStatus="ts">
                   <div class="cell table-column-head task-column-head">
                     <span class="task-identifier">T${ts.index + 1}</span>
@@ -151,12 +184,31 @@
               </div>
 
               <c:forEach var="row" items="${rows}" varStatus="rs">
-                <div class="table-row">
+                <c:set var="notaClass" value="grade-chip--one" />
+                <c:choose>
+                  <c:when test="${row.nota == 5}"><c:set var="notaClass" value="grade-chip--five" /></c:when>
+                  <c:when test="${row.nota == 4}"><c:set var="notaClass" value="grade-chip--four" /></c:when>
+                  <c:when test="${row.nota == 3}"><c:set var="notaClass" value="grade-chip--three" /></c:when>
+                  <c:when test="${row.nota == 2}"><c:set var="notaClass" value="grade-chip--two" /></c:when>
+                </c:choose>
+                <div class="table-row student-row"
+                     data-student-row
+                     data-student-name="${fn:escapeXml(row.alumnoNombre)}"
+                     data-total="${row.total}"
+                     data-percentage="${row.porcentaje}"
+                     data-grade="${row.nota}"
+                     data-original-index="${rs.index}">
                   <div class="cell col-index">${rs.index + 1}</div>
-                  <div class="cell col-alumno">${row.alumnoNombre}</div>
-                  <div class="cell row-summary">
-                    <div>Total: <span class="row-total">${row.total}</span> (<span class="row-porcentaje">${row.porcentaje}</span>%)</div>
-                    <div>Nota: <span class="row-nota">${row.nota}</span></div>
+                  <div class="cell col-alumno"><c:out value="${row.alumnoNombre}" /></div>
+                  <div class="cell row-summary row-total-cell">
+                    <span class="row-total">${row.total}</span>
+                    <small>de ${totalPossiblePoints}</small>
+                  </div>
+                  <div class="cell row-percentage-cell">
+                    <span><span class="row-porcentaje">${row.porcentaje}</span>&percnt;</span>
+                  </div>
+                  <div class="cell row-grade-cell">
+                    <span class="grade-chip ${notaClass} student-grade-chip row-nota" aria-label="Nota ${row.nota}">${row.nota}</span>
                   </div>
                   <c:forEach var="t" items="${tareas}">
                     <div class="cell grade-cell">
@@ -172,6 +224,9 @@
                 </div>
               </c:forEach>
 
+            </div>
+            <div id="studentFilterEmpty" class="planilla-filter-empty" hidden>
+              No se encontraron alumnos con ese nombre.
             </div>
           </div>
         </div>
