@@ -456,6 +456,11 @@ public final class GoogleClassroomService {
             return Optional.empty();
         }
 
+        List<Course> teacherCourses = listTeacherCourses(profesor);
+        if (teacherCourses.isEmpty()) {
+            return Optional.empty();
+        }
+
         if (planilla.getGoogleCourseId() != null && !planilla.getGoogleCourseId().isBlank()) {
             try {
                 Course cachedCourse = buildClassroomClient(profesor)
@@ -463,15 +468,19 @@ public final class GoogleClassroomService {
                         .get(planilla.getGoogleCourseId())
                         .execute();
                 if (cachedCourse != null) {
-                    persistCourseAssociation(planilla, planillaDao, cachedCourse);
-                    return Optional.of(cachedCourse);
+                    if (isCourseCompatibleWithPlanilla(cachedCourse, curso, planilla, teacherCourses)) {
+                        persistCourseAssociation(planilla, planillaDao, cachedCourse);
+                        return Optional.of(cachedCourse);
+                    }
+                    System.out.println("[DEBUG] Rechazado curso Classroom cacheado como obsoleto para planilla id=" + planilla.getId()
+                            + " googleCourseId=" + planilla.getGoogleCourseId() + " nombre='" + cachedCourse.getName() + "'");
                 }
             } catch (IOException ioe) {
                 System.out.println("[DEBUG] Unable to fetch Classroom course by saved google_course_id=" + planilla.getGoogleCourseId() + ": " + ioe.getMessage());
             }
         }
 
-        Optional<Course> resolved = findCourseForPlanilla(profesor, curso, planilla);
+        Optional<Course> resolved = chooseCourseFromList(teacherCourses, curso, planilla);
         if (resolved.isPresent()) {
             persistCourseAssociation(planilla, planillaDao, resolved.get());
         }
@@ -578,6 +587,18 @@ public final class GoogleClassroomService {
         }
 
         return chooseCourseFromList(courses, curso, planilla);
+    }
+
+    public static boolean isCourseCompatibleWithPlanilla(Course course, Curso curso, Planilla planilla, List<Course> availableCourses) {
+        if (course == null || curso == null || planilla == null || availableCourses == null || availableCourses.isEmpty()) {
+            return false;
+        }
+        if (course.getId() == null || course.getId().isBlank()) {
+            return false;
+        }
+
+        Optional<Course> expectedCourse = chooseCourseFromList(availableCourses, curso, planilla);
+        return expectedCourse.isPresent() && expectedCourse.get().getId().equals(course.getId());
     }
 
     public static Optional<Course> chooseCourseFromList(List<Course> courses, Curso curso, Planilla planilla) {
