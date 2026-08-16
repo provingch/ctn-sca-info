@@ -54,7 +54,7 @@ public class PlanillaControllerTest {
         Authentication auth = mock(Authentication.class);
         when(auth.getPrincipal()).thenReturn(5);
 
-        ClassroomSyncOrchestrator.ClassroomSyncResult result = new ClassroomSyncOrchestrator.ClassroomSyncResult("C100", true, 2, 3, 4, "ok");
+        ClassroomSyncOrchestrator.ClassroomSyncResult result = new ClassroomSyncOrchestrator.ClassroomSyncResult("C100", true, 2, 3, 4, null, null, null, "ok");
         when(orchestrator.syncPlanillaWithClassroom(eq(prof), eq(p))).thenReturn(result);
 
         var response = controller.syncClassroom(10, auth);
