@@ -12,3 +12,4 @@ export const createAdminRecord = (section: string, payload: unknown) => api.post
 export const deleteAssignment = (id: number) => api.delete<void>(`/api/admin/asignaciones/${id}`);
 export const deleteAdminRecord = (section: string, id: number) => api.delete<void>(`/api/admin/${section}/${id}`);
 export const getMateriaEspecialidades = (materiaId: number) => api.get<number[]>(`/api/admin/materias/${materiaId}/especialidades`);
+export const wipePlanillaSyncImports = (planillaId: number) => api.post<{ message: string; deletedGrades: number; deletedTasks: number }>(`/api/admin/planillas/${planillaId}/sync/wipe`);

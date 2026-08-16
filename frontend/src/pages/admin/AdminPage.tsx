@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import AppShell from '../../components/AppShell';
-import { createAdminRecord, deleteAssignment, getAdminCatalog, deleteAdminRecord, getMateriaEspecialidades, type AdminCatalog } from '../../api/admin';
+import { createAdminRecord, deleteAssignment, getAdminCatalog, deleteAdminRecord, getMateriaEspecialidades, wipePlanillaSyncImports, type AdminCatalog } from '../../api/admin';
 import { ApiError } from '../../api/client';
 import { useSpecialty } from '../../context/SpecialtyContext';
 import { normalizeSpecialty } from '../../theme/theme';
@@ -20,6 +20,9 @@ export default function AdminPage() {
   const selected = modules.find((module) => module.path === location.pathname);
   const [data, setData] = useState<AdminCatalog | null>(null);
   const [status, setStatus] = useState('');
+  const [wipeId, setWipeId] = useState('');
+  const [wiping, setWiping] = useState(false);
+  const [wipeResult, setWipeResult] = useState<string | null>(null);
   const load = useCallback(async () => {
     try {
       setData(await getAdminCatalog());
@@ -40,6 +43,34 @@ export default function AdminPage() {
     {!selected
       ? <div className="card-grid">{modules.map((module) => <Link className="nav-card" to={module.path} key={module.path}><span>Gestionar</span><h2>{module.title}</h2><p>{module.detail}</p><strong>Abrir →</strong></Link>)}</div>
       : <AdminModule module={selected} data={data} reload={load} status={setStatus} />}
+
+    {/* Panel rápido de wipe de importaciones por planilla (solo administradores) */}
+    <section className="panel">
+      <h2>Wipe: importaciones Classroom</h2>
+      <p>Ingresa el ID de la planilla para borrar tareas y notas importadas desde Classroom.</p>
+      <label>
+        Planilla ID
+        <input type="number" value={wipeId} onChange={(e) => setWipeId(e.target.value)} />
+      </label>
+      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+        <button className="button danger" disabled={wiping || !wipeId} onClick={async () => {
+          if (!wipeId) return;
+          if (!window.confirm('¿Confirmas borrar todas las tareas y notas importadas desde Classroom para la planilla ' + wipeId + '? Esta acción no se puede deshacer.')) return;
+          try {
+            setWiping(true);
+            setWipeResult(null);
+            const res = await wipePlanillaSyncImports(Number(wipeId));
+            setWipeResult(res.message + ' (tareas borradas: ' + (res.deletedTasks ?? 0) + ', notas borradas: ' + (res.deletedGrades ?? 0) + ')');
+            await load();
+          } catch (err) {
+            setWipeResult(err instanceof ApiError ? err.message : 'Error al ejecutar wipe');
+          } finally { setWiping(false); }
+        }}>Wipe planilla</button>
+        <button className="button" onClick={() => { setWipeId(''); setWipeResult(null); }}>Limpiar</button>
+      </div>
+      {wiping && <div className="notice">Ejecutando wipe…</div>}
+      {wipeResult && <div className="notice">{wipeResult}</div>}
+    </section>
   </AppShell>;
 }
 
