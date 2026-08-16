@@ -322,14 +322,17 @@ public class PlanillaController {
             if (profesor == null) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Profesor no encontrado");
             }
-            ClassroomSyncOrchestrator.ClassroomSyncResult result = classroomSyncOrchestrator.syncPlanillaWithClassroom(profesor, planilla);
-            return new ClassroomSyncResponse(
+                ClassroomSyncOrchestrator.ClassroomSyncResult result = classroomSyncOrchestrator.syncPlanillaWithClassroom(profesor, planilla);
+                return new ClassroomSyncResponse(
                     planilla.getId(),
                     result.googleCourseId(),
                     result.classroomCourseMapped(),
                     result.importedCourseworks(),
                     result.linkedStudents(),
                     result.importedGrades(),
+                    result.courseName(),
+                    result.courseSection(),
+                    result.courseAlternateLink(),
                     result.message());
         } catch (SQLException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al sincronizar Classroom", ex);
@@ -530,15 +533,18 @@ public class PlanillaController {
             int planillaId) {
     }
 
-    public record ClassroomSyncResponse(
+        public record ClassroomSyncResponse(
             int planillaId,
             String googleCourseId,
             boolean classroomCourseMapped,
             int importedCourseworks,
             int linkedStudents,
             int importedGrades,
+            String courseName,
+            String courseSection,
+            String courseAlternateLink,
             String message) {
-    }
+        }
 
     public record PlanillaDetailResponse(
             PlanillaHeaderDto planilla,

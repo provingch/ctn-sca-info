@@ -22,7 +22,7 @@ export default function PlanillaPage() {
   const [data, setData] = useState<PlanillaDetail | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
   const [status, setStatus] = useState('');
-  const [resolvedCourse, setResolvedCourse] = useState<{ googleCourseId?: string | null; classroomCourseMapped?: boolean; message?: string } | null>(null);
+  const [resolvedCourse, setResolvedCourse] = useState<{ googleCourseId?: string | null; classroomCourseMapped?: boolean; courseName?: string | null; courseSection?: string | null; courseAlternateLink?: string | null; message?: string } | null>(null);
   const [switchingEtapa, setSwitchingEtapa] = useState(false);
   const [studentSearch, setStudentSearch] = useState('');
   const [studentSort, setStudentSort] = useState<{ key: StudentSortKey; direction: SortDirection } | null>(null);
@@ -48,10 +48,16 @@ export default function PlanillaPage() {
         setStatus('Sincronizando Classroom…');
         const res = await syncClassroom(id);
         setStatus('Sincronización completada.');
-        setResolvedCourse({ googleCourseId: res.googleCourseId, classroomCourseMapped: res.classroomCourseMapped, message: res.message });
+        setResolvedCourse({ googleCourseId: res.googleCourseId, classroomCourseMapped: res.classroomCourseMapped, courseName: res.courseName, courseSection: res.courseSection, courseAlternateLink: res.courseAlternateLink, message: res.message });
         setData(await getPlanilla(id));
+        // clear status after a short delay
+        setTimeout(() => setStatus(''), 4000);
       } catch (e) {
         setStatus(e instanceof ApiError ? e.message : 'No se pudo sincronizar Classroom.');
+        setTimeout(() => setStatus(''), 5000);
+      } finally {
+        // ensure any transient UI flags are reset
+        setSwitchingEtapa(false);
       }
     })();
   }, [data, id]);
@@ -144,7 +150,11 @@ export default function PlanillaPage() {
       </section>
       {resolvedCourse && resolvedCourse.classroomCourseMapped && resolvedCourse.googleCourseId && data.planilla.googleCourseId !== resolvedCourse.googleCourseId && (
         <div className="notice">
-          <div>Se encontró un curso de Classroom posiblemente correspondiente: <strong>{resolvedCourse.googleCourseId}</strong></div>
+          <div>
+            Se encontró un curso de Classroom posiblemente correspondiente:
+            <div style={{marginTop:6}}><strong>{resolvedCourse.courseName ?? resolvedCourse.googleCourseId}</strong> {resolvedCourse.courseSection && <span>· {resolvedCourse.courseSection}</span>}</div>
+            {resolvedCourse.courseAlternateLink && <div style={{marginTop:6}}><a href={resolvedCourse.courseAlternateLink} target="_blank" rel="noopener noreferrer">Abrir en Classroom</a></div>}
+          </div>
           <div style={{marginTop:8}}>
             <button className="button" onClick={async () => {
               try {
