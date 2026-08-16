@@ -62,11 +62,15 @@ public class Curso {
         }
         boolean sameLevel = this.getNivel() == courseKey.getNivel();
         boolean sameSection = this.seccion != null && this.seccion.equalsIgnoreCase(courseKey.getSeccion());
-        String expectedSpecialty = normalizeValue(courseKey.getSala());
-        if (expectedSpecialty.isBlank()) {
+        String sala = courseKey.getSala();
+        if (sala == null || sala.isBlank()) {
             return false;
         }
-        boolean sameSpecialty = normalizeValue(this.especialidad).equals(expectedSpecialty);
+        // Use the normalized-phrase containment used elsewhere to detect whether
+        // the Classroom "room" declares the specialty. This is less strict
+        // than a plain equals on the parsed token and aligns with
+        // GoogleClassroomService.roomStatesSpecialty()
+        boolean sameSpecialty = ctn.informatica.sca.google.GoogleClassroomUtils.containsNormalizedPhrase(sala, this.especialidad);
         return sameLevel && sameSection && sameSpecialty;
     }
 

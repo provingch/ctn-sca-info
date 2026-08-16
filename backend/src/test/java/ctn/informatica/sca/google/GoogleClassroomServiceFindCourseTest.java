@@ -1,0 +1,50 @@
+package ctn.informatica.sca.google;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.google.api.services.classroom.model.Course;
+import ctn.informatica.sca.model.Curso;
+import ctn.informatica.sca.model.Planilla;
+import ctn.informatica.sca.util.AcademicPeriod;
+import java.util.List;
+import java.util.Optional;
+import org.junit.jupiter.api.Test;
+
+class GoogleClassroomServiceFindCourseTest {
+
+    private static final int CURRENT_PERIOD = AcademicPeriod.current();
+
+    private Curso cursoInformatica2doA() {
+        return new Curso(1, "Informática", CURRENT_PERIOD + 1, "A");
+    }
+
+    private Curso cursoElectricidad2doA() {
+        return new Curso(2, "Electricidad", CURRENT_PERIOD + 1, "A");
+    }
+
+    @Test
+    void eligeLaClaseCorrectaSegunLaSalaEspecialidad() {
+        Course c1 = new Course()
+                .setId("c-informatica")
+                .setName("Matemática 2do A")
+                .setSection(String.valueOf(CURRENT_PERIOD))
+                .setRoom("Informática");
+
+        Course c2 = new Course()
+                .setId("c-electricidad")
+                .setName("Matemática 2do A")
+                .setSection(String.valueOf(CURRENT_PERIOD))
+                .setRoom("Electricidad");
+
+        Planilla p = new Planilla(10, 0, 0, "Matemática", CURRENT_PERIOD, "primera", 0, 0, "");
+
+        Optional<Course> chosenForInformatica = GoogleClassroomService.chooseCourseFromList(List.of(c1, c2), cursoInformatica2doA(), p);
+        assertTrue(chosenForInformatica.isPresent());
+        assertEquals("c-informatica", chosenForInformatica.get().getId());
+
+        Optional<Course> chosenForElectricidad = GoogleClassroomService.chooseCourseFromList(List.of(c1, c2), cursoElectricidad2doA(), p);
+        assertTrue(chosenForElectricidad.isPresent());
+        assertEquals("c-electricidad", chosenForElectricidad.get().getId());
+    }
+}

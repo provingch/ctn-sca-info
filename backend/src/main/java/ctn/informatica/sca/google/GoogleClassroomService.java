@@ -577,16 +577,17 @@ public final class GoogleClassroomService {
             return Optional.empty();
         }
 
+        return chooseCourseFromList(courses, curso, planilla);
+    }
+
+    public static Optional<Course> chooseCourseFromList(List<Course> courses, Curso curso, Planilla planilla) {
+        if (courses == null || courses.isEmpty() || curso == null || planilla == null) {
+            return Optional.empty();
+        }
+
         String normalizedEspecialidad = GoogleClassroomUtils.normalizeSubjectName(curso.getEspecialidad());
-        // Nombre de la materia de ESTA planilla puntual (ya viene resuelto desde
-        // PlanillaDao vía el JOIN con materia). Se usa para desambiguar cuando un
-        // mismo curso (nivel+sección) tiene varias planillas de materias distintas.
         String normalizedMateria = GoogleClassroomUtils.normalizeSubjectName(planilla.getNombre());
 
-        // Acumulamos candidatos por identidad (nivel/sección/especialidad). Si
-        // hay exactamente uno y ninguno coincidió por materia, lo usaremos como
-        // fallback. Si hay más de uno, devolvemos vacío para evitar asignar la
-        // misma clase a varias planillas distintas.
         List<Course> identityCandidates = new ArrayList<>();
 
         for (Course course : courses) {
@@ -602,7 +603,8 @@ public final class GoogleClassroomService {
             if (key.isEmpty() && section != null && !section.isBlank()) {
                 key = parseCourseKey(name + " " + section, room, section);
             }
-            if (key.isPresent() && curso.matchesCourseKey(key.get())) {
+
+            if (courseMatchesTeacherCurso(course, List.of(curso))) {
                 if (subjectMatches) {
                     return Optional.of(course);
                 }
@@ -610,23 +612,17 @@ public final class GoogleClassroomService {
                 continue;
             }
 
-            // Fallback: use course-level identity (level + section/room + specialty).
             Integer maybeLevel = tryExtractLevel(name);
             if (maybeLevel != null && maybeLevel == curso.getNivel()) {
-                String normalizedTitle = GoogleClassroomUtils.normalizeTitle(name);
-                String normalizedRoom = GoogleClassroomUtils.normalizeSubjectName(room);
                 boolean sectionMatches = curso.getSeccion() != null
                         && !curso.getSeccion().isBlank()
                         && (course.getSection() != null && course.getSection().equalsIgnoreCase(curso.getSeccion()));
-                boolean roomMatches = !normalizedRoom.isBlank()
-                        && normalizedRoom.contains(GoogleClassroomUtils.normalizeSubjectName(curso.getSeccion()));
-                boolean specialtyMatches = !normalizedEspecialidad.isBlank()
-                        && (normalizedTitle.contains(normalizedEspecialidad) || normalizedRoom.contains(normalizedEspecialidad));
-                if (sectionMatches || roomMatches || specialtyMatches) {
-                        if (subjectMatches) {
-                            return Optional.of(course);
-                        }
-                        identityCandidates.add(course);
+                boolean roomStatesSpecialty = room != null && roomStatesSpecialty(room, curso);
+                if (sectionMatches && roomStatesSpecialty) {
+                    if (subjectMatches) {
+                        return Optional.of(course);
+                    }
+                    identityCandidates.add(course);
                 }
             }
         }
