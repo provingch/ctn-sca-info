@@ -585,35 +585,100 @@ public final class GoogleClassroomService {
             return Optional.empty();
         }
 
-        String normalizedEspecialidad = GoogleClassroomUtils.normalizeSubjectName(curso.getEspecialidad());
-        String normalizedMateria = GoogleClassroomUtils.normalizeSubjectName(planilla.getNombre());
+        // Caso real: "Orientación" es una materia común, cargada en la BD una
+        // vez por especialidad con el nombre sufijado (ej. "Orientación
+        // Informática", "Orientación Electricidad") para poder tener una
+        // planilla propia por especialidad. La clase real en Google Classroom,
+        // sin embargo, se llama simplemente "Orientación" -- nadie repite el
+        // nombre de la especialidad en el título de una clase común. Antes de
+        // esto, esa clase nunca pasaba el filtro de especialidad (la Sala no
+        // dice "Informática") y quedaba sin detectar aunque el curso
+        // (nivel+sección+año) coincidiera perfecto.
+        //
+        // Para materias cuyo nombre en la BD YA incluye la especialidad como
+        // sufijo, un match de nombre contra la clase de Classroom (usando el
+        // nombre "pelado", sin el sufijo) es tan confiable como que la Sala lo
+        // declare -- porque ESA planilla puntual ya está atada a una
+        // especialidad concreta en la BD. Para materias sin ese sufijo (ej.
+        // "Matemática", que puede repetirse igual en varias especialidades)
+        // esto NO aplica: ahí seguimos dependiendo pura y exclusivamente de
+        // que la Sala declare la especialidad para desambiguar
+        // (ver GoogleClassroomServiceFindCourseTest.eligeLaClaseCorrectaSegunLaSalaEspecialidad).
+        MateriaCore materiaCore = stripEspecialidadSuffix(planilla.getNombre(), curso.getEspecialidad());
+        String normalizedMateria = GoogleClassroomUtils.normalizeSubjectName(materiaCore.core());
 
         List<Course> identityCandidates = new ArrayList<>();
 
         for (Course course : courses) {
             String name = course.getName();
             String room = course.getRoom();
+            String section = course.getSection();
+
+            Optional<GoogleClassroomUtils.CourseKey> key = parseCourseKey(name, room, section);
+            if (key.isEmpty()) {
+                continue;
+            }
+            boolean sameLevel = curso.getNivel() == key.get().getNivel();
+            boolean sameSection = curso.getSeccion() != null && curso.getSeccion().equalsIgnoreCase(key.get().getSeccion());
+            boolean samePeriod = curso.getPeriod() == key.get().getPeriodo();
+            if (!(sameLevel && sameSection && samePeriod)) {
+                continue;
+            }
 
             boolean subjectMatches = !normalizedMateria.isBlank()
                     && (GoogleClassroomUtils.containsNormalizedPhrase(name, normalizedMateria)
                     || GoogleClassroomUtils.containsNormalizedPhrase(room, normalizedMateria));
 
-            if (courseMatchesTeacherCurso(course, List.of(curso))) {
-                if (subjectMatches) {
-                    return Optional.of(course);
-                }
-                identityCandidates.add(course);
+            boolean specialtyConfirmed = roomStatesSpecialty(room, curso)
+                    || (materiaCore.especialidadEraSufijo() && subjectMatches);
+
+            if (!specialtyConfirmed) {
                 continue;
             }
-            // No further fallback logic: rely on courseMatchesTeacherCurso which
-            // enforces level + section + room-declares-specialty. Keeping extra
-            // heuristics led to accidental matches and is intentionally removed.
+
+            if (subjectMatches) {
+                return Optional.of(course);
+            }
+            identityCandidates.add(course);
         }
 
         if (identityCandidates.size() == 1) {
             return Optional.of(identityCandidates.get(0));
         }
         return Optional.empty();
+    }
+
+    private record MateriaCore(String core, boolean especialidadEraSufijo) {
+    }
+
+    /**
+     * Si el nombre de la materia local termina (o empieza) con el nombre de
+     * la especialidad del curso -- ej. "Orientación Informática" con
+     * especialidad "Informática" -- devuelve el nombre "pelado" (sin ese
+     * sufijo/prefijo) junto con especialidadEraSufijo=true. Si no encuentra
+     * ese patrón, devuelve el nombre sin modificar y especialidadEraSufijo=false.
+     */
+    private static MateriaCore stripEspecialidadSuffix(String materiaNombre, String especialidad) {
+        if (materiaNombre == null || materiaNombre.isBlank() || especialidad == null || especialidad.isBlank()) {
+            return new MateriaCore(materiaNombre, false);
+        }
+        String normalizedMateria = GoogleClassroomUtils.normalizeSubjectName(materiaNombre);
+        String normalizedEspecialidad = GoogleClassroomUtils.normalizeSubjectName(especialidad);
+        if (normalizedEspecialidad.isBlank() || normalizedMateria.equals(normalizedEspecialidad)) {
+            return new MateriaCore(materiaNombre, false);
+        }
+
+        String suffix = " " + normalizedEspecialidad;
+        if (normalizedMateria.endsWith(suffix)) {
+            String core = normalizedMateria.substring(0, normalizedMateria.length() - suffix.length()).trim();
+            return new MateriaCore(core, !core.isBlank());
+        }
+        String prefix = normalizedEspecialidad + " ";
+        if (normalizedMateria.startsWith(prefix)) {
+            String core = normalizedMateria.substring(prefix.length()).trim();
+            return new MateriaCore(core, !core.isBlank());
+        }
+        return new MateriaCore(materiaNombre, false);
     }
 
     // tryExtractLevel is now unused after removing the weak fallback logic.
