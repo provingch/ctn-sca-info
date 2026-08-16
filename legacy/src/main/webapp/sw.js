@@ -1,4 +1,4 @@
-const ASSET_VERSION = '0.6.5';
+const ASSET_VERSION = '0.6.6';
 const CACHE_NAME = `ctn-cache-v${ASSET_VERSION}`;
 const CORE_ASSETS = [
   './offline.html',

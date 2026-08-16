@@ -18,12 +18,14 @@ export default function AppShell({ children, title, subtitle, specialty }: { chi
   const { user, logout } = useAuth();
   const { name: selectedSpecialty, selectSpecialty } = useSpecialty();
   const navigate = useNavigate();
-  const effectiveSpecialty = specialty === undefined ? selectedSpecialty : specialty;
+  const effectiveSpecialty = selectedSpecialty || specialty || null;
   const manualPath = user ? manualPaths[user.level] : undefined;
 
   useEffect(() => {
-    if (specialty) selectSpecialty(specialty);
-  }, [specialty, selectSpecialty]);
+    if (specialty && specialty !== selectedSpecialty) {
+      selectSpecialty(specialty);
+    }
+  }, [specialty, selectedSpecialty, selectSpecialty]);
 
   async function signOut() {
     await logout();
