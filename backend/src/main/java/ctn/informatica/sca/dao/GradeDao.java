@@ -70,4 +70,11 @@ public class GradeDao extends conexion {
         }
     }
 
+    public int deleteImportedGradesForAllPlans() throws SQLException {
+        String sql = "DELETE p FROM puntaje p JOIN tarea t ON p.tarea_id = t.id WHERE t.google_coursework_id IS NOT NULL";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            return ps.executeUpdate();
+        }
+    }
+
 }

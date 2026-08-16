@@ -310,6 +310,22 @@ public class PlanillaDao extends conexion {
         }
     }
 
+    public int clearClassroomCourseIds() throws SQLException {
+        try (Connection con = getCon()) {
+            DatabaseMetaData metaData = con.getMetaData();
+            try (ResultSet columns = metaData.getColumns(null, null, "planilla", "google_course_id")) {
+                if (!columns.next()) {
+                    return 0;
+                }
+            }
+
+            String sql = "UPDATE planilla SET google_course_id = NULL WHERE google_course_id IS NOT NULL";
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                return ps.executeUpdate();
+            }
+        }
+    }
+
     public Planilla fromResultSet(ResultSet rs) throws SQLException {
         if (rs.next()) {
             int planilla_id = rs.getInt("id");
