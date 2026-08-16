@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import AppShell from '../../components/AppShell';
 import { getPlanilla, resolvePlanilla, syncClassroom, confirmClassroomMapping, type PlanillaDetail } from '../../api/academics';
@@ -16,6 +16,19 @@ function normalizeStudentName(value: string) {
   return value.toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
+function createGradeValues(result: PlanillaDetail) {
+  const initial: Record<string, string> = {};
+  result.rows.forEach((row) => row.grades.forEach((grade) => {
+    initial[`${row.alumnoId}:${grade.tareaId}`] = grade.puntos == null ? '' : String(grade.puntos);
+  }));
+  return initial;
+}
+
+function formatShortDate(value: string | null | undefined) {
+  if (!value) return '—';
+  return new Intl.DateTimeFormat('es-PY', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${value}T00:00:00Z`));
+}
+
 export default function PlanillaPage() {
   const id = Number(useParams().planillaId);
   const navigate = useNavigate();
@@ -24,43 +37,61 @@ export default function PlanillaPage() {
   const [status, setStatus] = useState('');
   const [resolvedCourse, setResolvedCourse] = useState<{ googleCourseId?: string | null; classroomCourseMapped?: boolean; courseName?: string | null; courseSection?: string | null; courseAlternateLink?: string | null; message?: string } | null>(null);
   const [switchingEtapa, setSwitchingEtapa] = useState(false);
+  const [syncingClassroom, setSyncingClassroom] = useState(false);
   const [studentSearch, setStudentSearch] = useState('');
   const [studentSort, setStudentSort] = useState<{ key: StudentSortKey; direction: SortDirection } | null>(null);
+  const [freezeStudents, setFreezeStudents] = useState(() => localStorage.getItem('planilla-freeze-students') !== 'false');
+  const activePlanillaIdRef = useRef(id);
+  activePlanillaIdRef.current = id;
+
+  const applyPlanillaData = useCallback((result: PlanillaDetail) => {
+    setData(result);
+    setValues(createGradeValues(result));
+  }, []);
 
   useEffect(() => {
     if (!Number.isInteger(id)) return;
+    let active = true;
+    setData(null);
+    setResolvedCourse(null);
+    setStudentSearch('');
+    setStudentSort(null);
     getPlanilla(id).then((result) => {
-      setData(result);
-      const initial: Record<string, string> = {};
-      result.rows.forEach((row) => row.grades.forEach((g) => { initial[`${row.alumnoId}:${g.tareaId}`] = g.puntos == null ? '' : String(g.puntos); }));
-      setValues(initial);
-    }).catch((e) => setStatus(e instanceof ApiError ? e.message : 'No se pudo cargar la planilla.'));
-  }, [id]);
+      if (active) applyPlanillaData(result);
+    }).catch((e) => {
+      if (active) setStatus(e instanceof ApiError ? e.message : 'No se pudo cargar la planilla.');
+    });
+    return () => { active = false; };
+  }, [applyPlanillaData, id]);
 
-  // Auto-sync once when planilla data is loaded and Classroom is available
-  const syncRanRef = useRef(false);
+  const performClassroomSync = useCallback(async (planillaId: number, automatic = false) => {
+    setSyncingClassroom(true);
+    try {
+      setStatus('Sincronizando tareas y calificaciones de Classroom…');
+      const result = await syncClassroom(planillaId);
+      const refreshed = await getPlanilla(planillaId);
+      if (activePlanillaIdRef.current !== planillaId) return;
+      applyPlanillaData(refreshed);
+      setResolvedCourse({ googleCourseId: result.googleCourseId, classroomCourseMapped: result.classroomCourseMapped, courseName: result.courseName, courseSection: result.courseSection, courseAlternateLink: result.courseAlternateLink, message: result.message });
+      setStatus(`${result.message || 'Sincronización completada.'} ${refreshed.tareas.length} ${refreshed.tareas.length === 1 ? 'tarea disponible' : 'tareas disponibles'}.`);
+      if (automatic) setTimeout(() => {
+        if (activePlanillaIdRef.current === planillaId) setStatus('');
+      }, 4000);
+    } catch (e) {
+      if (activePlanillaIdRef.current === planillaId) setStatus(e instanceof ApiError ? e.message : 'No se pudo sincronizar Classroom.');
+    } finally {
+      if (activePlanillaIdRef.current === planillaId) setSyncingClassroom(false);
+    }
+  }, [applyPlanillaData]);
+
+  // Se sincroniza una vez por cada planilla/etapa visitada. Un ref booleano
+  // impedía sincronizar la segunda etapa al navegar sin desmontar la página.
+  const syncedPlanillasRef = useRef(new Set<number>());
   useEffect(() => {
-    if (!data || syncRanRef.current) return;
-    syncRanRef.current = true;
-    if (!data.planilla) return;
-    (async () => {
-      try {
-        setStatus('Sincronizando Classroom…');
-        const res = await syncClassroom(id);
-        setStatus('Sincronización completada.');
-        setResolvedCourse({ googleCourseId: res.googleCourseId, classroomCourseMapped: res.classroomCourseMapped, courseName: res.courseName, courseSection: res.courseSection, courseAlternateLink: res.courseAlternateLink, message: res.message });
-        setData(await getPlanilla(id));
-        // clear status after a short delay
-        setTimeout(() => setStatus(''), 4000);
-      } catch (e) {
-        setStatus(e instanceof ApiError ? e.message : 'No se pudo sincronizar Classroom.');
-        setTimeout(() => setStatus(''), 5000);
-      } finally {
-        // ensure any transient UI flags are reset
-        setSwitchingEtapa(false);
-      }
-    })();
-  }, [data, id]);
+    if (!data || data.planilla.id !== id || syncedPlanillasRef.current.has(id)) return;
+    syncedPlanillasRef.current.add(id);
+    void performClassroomSync(id, true);
+  }, [data, id, performClassroomSync]);
 
   const computedRows = useMemo(() => {
     if (!data) return [];
@@ -87,8 +118,6 @@ export default function PlanillaPage() {
     });
   }, [computedRows, studentSearch, studentSort]);
 
-  // manual sync removed; synchronization runs automatically on load
-
   // Igual que el <select id="etapaSelect"> del JSP legacy: cambiar de etapa
   // resuelve (o crea) la planilla de esa etapa para el mismo curso/materia
   // y navega a su id. resolvePlanilla ya existe en la API (usado también
@@ -104,7 +133,7 @@ export default function PlanillaPage() {
         navigate(`/planilla/${result.planillaId}`, { replace: true });
       } else {
         // refrescar datos en sitio
-        setData(await getPlanilla(result.planillaId));
+        applyPlanillaData(await getPlanilla(result.planillaId));
       }
     } catch (e) {
       setStatus(e instanceof ApiError ? e.message : 'No se pudo cambiar de etapa.');
@@ -112,6 +141,11 @@ export default function PlanillaPage() {
       // asegurar que el selector quede usable en todos los caminos
       setSwitchingEtapa(false);
     }
+  }
+
+  function toggleFreezeStudents(checked: boolean) {
+    setFreezeStudents(checked);
+    localStorage.setItem('planilla-freeze-students', String(checked));
   }
 
   function changeStudentSort(key: StudentSortKey) {
@@ -140,6 +174,9 @@ export default function PlanillaPage() {
             <option value={2}>Segunda etapa</option>
           </select>
         </label>
+        <button className="button secondary" type="button" disabled={syncingClassroom} onClick={() => void performClassroomSync(id)}>
+          {syncingClassroom ? 'Sincronizando…' : 'Sincronizar Classroom'}
+        </button>
         <Link className="button" to={`/planilla/${id}/tarea`}>Agregar tarea</Link>
         {/* Habilitamos la descarga individual usando fetch+blob para incluir Authorization */}
         <button className="button" onClick={async () => {
@@ -154,6 +191,7 @@ export default function PlanillaPage() {
       <section className="summary-grid">
         <article className="metric"><span>Curso</span><strong>{data.curso ? `${data.curso.nivel}° ${data.curso.seccion}` : '—'}</strong></article>
         <article className="metric"><span>Etapa</span><strong>{data.planilla.etapa}</strong></article>
+        <article className="metric"><span>Período</span><strong>{formatShortDate(data.planilla.planillaDesde)} – {formatShortDate(data.planilla.planillaHasta)}</strong></article>
         <article className="metric"><span>Total</span><strong>{data.planilla.totalPossiblePoints} pts</strong></article>
         <article className="metric"><span>Exigencia</span><strong>{data.planilla.exigenciaPorcentaje}%</strong></article>
       </section>
@@ -171,7 +209,7 @@ export default function PlanillaPage() {
                 await confirmClassroomMapping(id, resolvedCourse.googleCourseId!);
                 setStatus('Asociación guardada.');
                 setResolvedCourse(null);
-                setData(await getPlanilla(id));
+                applyPlanillaData(await getPlanilla(id));
               } catch (e) {
                 setStatus(e instanceof ApiError ? e.message : 'No se pudo guardar la asociación.');
               }
@@ -200,30 +238,29 @@ export default function PlanillaPage() {
           Buscar alumno
           <input type="search" value={studentSearch} onChange={(event) => setStudentSearch(event.target.value)} placeholder="Nombre del alumno…" autoComplete="off" spellCheck={false} />
         </label>
-        <span className="planilla-student-count" aria-live="polite">
-          {visibleRows.length === computedRows.length
-            ? `${computedRows.length} ${computedRows.length === 1 ? 'alumno' : 'alumnos'}`
-            : `${visibleRows.length} de ${computedRows.length} alumnos`}
-        </span>
+        <div className="planilla-student-tool-actions">
+          <label className="planilla-freeze-toggle">
+            <input type="checkbox" checked={freezeStudents} onChange={(event) => toggleFreezeStudents(event.target.checked)} />
+            Fijar alumnos
+          </label>
+          <span className="planilla-student-count" aria-live="polite">
+            {visibleRows.length === computedRows.length
+              ? `${computedRows.length} ${computedRows.length === 1 ? 'alumno' : 'alumnos'}`
+              : `${visibleRows.length} de ${computedRows.length} alumnos`}
+          </span>
+        </div>
       </section>
-      <div className="table-wrap planilla-grade-table-wrap">
+      <section className="planilla-table-panel" aria-labelledby="planilla-table-title">
+        <header className="planilla-table-heading">
+          <div><span>Tareas</span><h2 id="planilla-table-title">{data.planilla.materiaNombre}</h2></div>
+          <small>{data.tareas.length} {data.tareas.length === 1 ? 'tarea' : 'tareas'} en esta etapa</small>
+        </header>
+      <div className={`table-wrap planilla-grade-table-wrap${freezeStudents ? ' freeze-students' : ''}`}>
         <table className="grade-table planilla-grade-table">
           <thead>
             <tr>
-              <th>Alumno</th>
-              {data.tareas.map((t) => (
-                <th key={t.id}>
-                  {/* Igual que el JSP legacy: si la tarea viene de Google
-                      Classroom, el título linkea directo al coursework en
-                      Classroom (nueva pestaña); si no, a la edición interna. */}
-                  {t.googleCourseworkUrl ? (
-                    <a href={t.googleCourseworkUrl} target="_blank" rel="noopener noreferrer">{t.titulo}</a>
-                  ) : (
-                    <Link to={`/planilla/${id}/tarea/${t.id}`}>{t.titulo}</Link>
-                  )}
-                  <small>{t.total} pts{t.googleCourseworkUrl && ' · '}{t.googleCourseworkUrl && <Link to={`/planilla/${id}/tarea/${t.id}`}>editar</Link>}</small>
-                </th>
-              ))}
+              <th className="planilla-number-heading">#</th>
+              <th className="planilla-student-heading">Alumno</th>
               {(['total', 'percentage', 'grade'] as const).map((key) => {
                 const label = key === 'total' ? 'Total' : key === 'percentage' ? '%' : 'Nota';
                 const activeDirection = studentSort?.key === key ? studentSort.direction : undefined;
@@ -233,20 +270,39 @@ export default function PlanillaPage() {
                   </button>
                 </th>;
               })}
+              {data.tareas.map((task, taskIndex) => (
+                <th key={task.id} className="planilla-task-heading">
+                  <span className="planilla-task-number">T{taskIndex + 1}</span>
+                  {task.googleCourseworkUrl ? (
+                    <a href={task.googleCourseworkUrl} target="_blank" rel="noopener noreferrer">{task.titulo}</a>
+                  ) : (
+                    <Link to={`/planilla/${id}/tarea/${task.id}`}>{task.titulo}</Link>
+                  )}
+                  <small>TP: {task.total}{task.fechaInicio ? ` · ${formatShortDate(task.fechaInicio)}` : ''}</small>
+                  {task.googleCourseworkUrl && <Link className="planilla-task-edit" to={`/planilla/${id}/tarea/${task.id}`}>Editar</Link>}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {visibleRows.map(({ row, total, percentage }) => <tr key={row.alumnoId}>
-              <th>{row.alumnoNombre}</th>
-              {data.tareas.map((t) => <td key={t.id}><input aria-label={`${row.alumnoNombre}, ${t.titulo}`} type="number" min="0" max={t.total} value={values[`${row.alumnoId}:${t.id}`] ?? ''} onChange={(e) => setValues((v) => ({ ...v, [`${row.alumnoId}:${t.id}`]: e.target.value }))} disabled /></td>)}
-              <td className="student-total-cell">{total}</td>
+            {visibleRows.map(({ row, originalIndex, total, percentage }) => <tr key={row.alumnoId}>
+              <td className="planilla-row-number">{originalIndex + 1}</td>
+              <th className="planilla-student-name" scope="row">{row.alumnoNombre}</th>
+              <td className="student-total-cell">{total}<small>de {data.planilla.totalPossiblePoints}</small></td>
               <td className="student-percentage-cell">{percentage}%</td>
               <td><span className={`grade-chip grade-chip--${Math.min(5, Math.max(1, row.nota))} student-grade-pill`} aria-label={`Nota ${row.nota}`}>{row.nota}</span></td>
+              {data.tareas.map((task) => {
+                const grade = values[`${row.alumnoId}:${task.id}`];
+                return <td key={task.id} className="planilla-task-grade" aria-label={`${row.alumnoNombre}, ${task.titulo}: ${grade === '' || grade == null ? 'sin calificación' : `${grade} puntos`}`}>
+                  <span>{grade === '' || grade == null ? '—' : grade}</span>
+                </td>;
+              })}
             </tr>)}
-            {visibleRows.length === 0 && <tr><td className="planilla-student-empty" colSpan={data.tareas.length + 4}>No se encontraron alumnos con ese nombre.</td></tr>}
+            {visibleRows.length === 0 && <tr><td className="planilla-student-empty" colSpan={data.tareas.length + 5}>No se encontraron alumnos con ese nombre.</td></tr>}
           </tbody>
         </table>
       </div>
+      </section>
     </AppShell>
   );
 }

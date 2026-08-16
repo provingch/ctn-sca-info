@@ -7,7 +7,7 @@ export interface Tarea {
   googleCourseworkUrl: string | null; gradesCleared?: boolean; warning?: string | null;
 }
 export interface PlanillaDetail {
-  planilla: { id: number; cursoId: number; materiaId: number; materiaNombre: string; categoria: string; etapa: string; etapaIndex: number; periodo: number; exigenciaPorcentaje: number; totalPossiblePoints: number; googleCourseId?: string | null };
+  planilla: { id: number; cursoId: number; materiaId: number; materiaNombre: string; categoria: string; etapa: string; etapaIndex: number; periodo: number; exigenciaPorcentaje: number; totalPossiblePoints: number; planillaDesde: string | null; planillaHasta: string | null; googleCourseId?: string | null };
   curso: { id: number; especialidad: string; seccion: string; nivel: number } | null;
   tareas: Tarea[];
   rows: Array<{ registroId: number; alumnoId: number; alumnoNombre: string; grades: Array<{ tareaId: number; puntos: number | null }>; total: number; porcentaje: number; nota: number }>;

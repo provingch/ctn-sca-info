@@ -489,17 +489,9 @@ public class PlanillaController {
     }
 
     private List<Tarea> filterTasksByEtapa(List<Tarea> tareas, int planillaEtapaIndex) {
-        if (tareas == null || tareas.isEmpty() || (planillaEtapaIndex != 1 && planillaEtapaIndex != 2)) {
-            return tareas;
-        }
-
-        List<Tarea> filtered = new ArrayList<>();
-        for (Tarea tarea : tareas) {
-            if (Tarea.resolveEtapaIndexByPublicationDate(tarea.getFecha()) == planillaEtapaIndex) {
-                filtered.add(tarea);
-            }
-        }
-        return filtered;
+        // Cada etapa tiene su propia planilla y la tarea ya está asociada mediante
+        // planilla_id. Inferirla otra vez por fecha ocultaba tareas importadas.
+        return tareas;
     }
 
     private int resolveDefaultEtapa(LocalDate today) {
