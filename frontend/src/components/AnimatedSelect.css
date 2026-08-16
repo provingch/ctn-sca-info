@@ -1,13 +1,18 @@
 .animated-select { position: relative; width: 100%; min-width: 0; color: var(--ink); font-weight: 600; }
-.animated-select-native { position: absolute; width: 1px; height: 1px; padding: 0; border: 0; opacity: 0; pointer-events: none; }
+.animated-select > .animated-select-native { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); border: 0; opacity: 0; white-space: nowrap; pointer-events: none; }
 .animated-select-trigger { width: 100%; min-height: 46px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--paper-raised); color: var(--ink); text-align: left; box-shadow: none; transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease; }
 .animated-select-trigger:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--line-strong)); background: color-mix(in srgb, var(--accent-soft) 32%, var(--paper-raised)); }
 .animated-select-trigger:focus-visible, .animated-select.open .animated-select-trigger { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent); }
 .animated-select-trigger .placeholder { color: var(--muted); font-weight: 500; }
 .animated-select-trigger svg { width: 19px; height: 19px; flex: 0 0 19px; fill: none; stroke: var(--accent-deep); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .2s ease; }
 .animated-select.open .animated-select-trigger svg { transform: rotate(180deg); }
-.animated-select.disabled { opacity: .72; }
-.animated-select.disabled .animated-select-trigger { cursor: not-allowed; background: var(--bg-soft); color: var(--muted); }
+.animated-select.disabled { opacity: 1; }
+.animated-select.disabled .animated-select-trigger,
+.animated-select.disabled .animated-select-trigger:hover { cursor: not-allowed; border-color: var(--line-strong); background: color-mix(in srgb, var(--ink) 10%, var(--bg-soft)); color: color-mix(in srgb, var(--muted) 78%, var(--ink)); }
+.animated-select.disabled .animated-select-trigger svg { stroke: color-mix(in srgb, var(--muted) 82%, var(--ink)); }
+:root[data-theme="dark"] .animated-select.disabled .animated-select-trigger,
+:root[data-theme="dark"] .animated-select.disabled .animated-select-trigger:hover { border-color: color-mix(in srgb, var(--line-strong) 72%, var(--bg)); background: color-mix(in srgb, var(--bg) 82%, var(--paper)); color: color-mix(in srgb, var(--muted) 82%, var(--bg)); }
+:root[data-theme="dark"] .animated-select.disabled .animated-select-trigger svg { stroke: color-mix(in srgb, var(--muted) 82%, var(--bg)); }
 .animated-select-popover { position: absolute; z-index: 80; top: calc(100% + 8px); left: 0; right: 0; overflow: hidden; padding: 7px; border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line)); border-radius: 13px; background: color-mix(in srgb, var(--paper-raised) 97%, transparent); box-shadow: var(--shadow-md); backdrop-filter: blur(18px); animation: animated-select-popover-in .18s ease both; }
 .animated-select.open-upward .animated-select-popover { top: auto; bottom: calc(100% + 8px); transform-origin: bottom center; }
 .animated-select-list { position: relative; max-height: min(320px, 48vh); overflow-y: auto; overscroll-behavior: contain; padding: 3px; scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb) transparent; }
