@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import AppShell from '../../components/AppShell';
 import { getPlanilla, resolvePlanilla, syncClassroom, type PlanillaDetail } from '../../api/academics';
-import { ApiError } from '../../api/client';
+import { ApiError, apiDownload } from '../../api/client';
 
 // Etiquetas de nota en orden descendente (5 -> 1), igual que el JSP legacy
 // (Planilla.jsp: chips grade-chip--five..one). "1" no tiene rango propio en
@@ -85,8 +85,14 @@ export default function PlanillaPage() {
           </select>
         </label>
         <Link className="button" to={`/planilla/${id}/tarea`}>Agregar tarea</Link>
-        {/* Habilitamos la descarga individual usando el endpoint backend recién agregado */}
-        <a className="button" href={`/api/planillas/${id}/export`}>Descargar</a>
+        {/* Habilitamos la descarga individual usando fetch+blob para incluir Authorization */}
+        <button className="button" onClick={async () => {
+          try {
+            await apiDownload(`/api/planillas/${id}/export`, `planilla-${id}.xlsx`);
+          } catch (e) {
+            setStatus(e instanceof ApiError ? e.message : 'Error en la descarga');
+          }
+        }}>Descargar</button>
       </div>
       {/* Mensaje informativo removido por solicitud de UX */}
       <section className="summary-grid">
