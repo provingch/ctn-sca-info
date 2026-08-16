@@ -338,6 +338,22 @@ public class PlanillaController {
         }
     }
 
+    @PostMapping("/{planillaId}/classroom")
+    public ConfirmClassroomResponse confirmClassroom(@PathVariable int planillaId, @RequestBody ConfirmClassroomRequest req, Authentication authentication) {
+        int userId = ApiAuth.requireUserId(authentication);
+        if (req == null || req.googleCourseId() == null || req.googleCourseId().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "googleCourseId es requerido");
+        }
+        try {
+            Planilla planilla = requireOwnedPlanillaById(planillaId, userId);
+            boolean ok = this.planillaDao.updateClassroomCourseId(planillaId, req.googleCourseId());
+            if (!ok) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo persistir la asociación");
+            return new ConfirmClassroomResponse("Asociación con Classroom guardada.", planillaId, req.googleCourseId());
+        } catch (SQLException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al guardar la asociación con Classroom", ex);
+        }
+    }
+
     private Planilla requireOwnedPlanillaById(int planillaId, int userId) throws SQLException {
         Planilla planilla = planillaDao.findById(planillaId);
         if (planilla == null) {
@@ -453,7 +469,8 @@ public class PlanillaController {
                 (int) Math.round(100 * planilla.getExigencia()),
                 totalPossiblePoints,
                 minStart,
-                maxEnd);
+                maxEnd,
+                planilla.getGoogleCourseId());
 
         CursoDto cursoDto = curso == null
                 ? null
@@ -545,7 +562,8 @@ public class PlanillaController {
             int exigenciaPorcentaje,
             int totalPossiblePoints,
             LocalDate planillaDesde,
-            LocalDate planillaHasta) {
+            LocalDate planillaHasta,
+            String googleCourseId) {
     }
 
     public record CursoDto(int id, String especialidad, String seccion, int nivel) {
@@ -579,4 +597,8 @@ public class PlanillaController {
 
     public record GradeRangeDto(int minInclusive, int maxInclusive) {
     }
+
+    public record ConfirmClassroomRequest(String googleCourseId) {}
+
+    public record ConfirmClassroomResponse(String message, int planillaId, String googleCourseId) {}
 }

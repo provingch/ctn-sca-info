@@ -7,7 +7,7 @@ export interface Tarea {
   googleCourseworkUrl: string | null; gradesCleared?: boolean; warning?: string | null;
 }
 export interface PlanillaDetail {
-  planilla: { id: number; cursoId: number; materiaId: number; materiaNombre: string; categoria: string; etapa: string; etapaIndex: number; periodo: number; exigenciaPorcentaje: number; totalPossiblePoints: number };
+  planilla: { id: number; cursoId: number; materiaId: number; materiaNombre: string; categoria: string; etapa: string; etapaIndex: number; periodo: number; exigenciaPorcentaje: number; totalPossiblePoints: number; googleCourseId?: string | null };
   curso: { id: number; especialidad: string; seccion: string; nivel: number } | null;
   tareas: Tarea[];
   rows: Array<{ registroId: number; alumnoId: number; alumnoNombre: string; grades: Array<{ tareaId: number; puntos: number | null }>; total: number; porcentaje: number; nota: number }>;
@@ -21,6 +21,8 @@ export const getPlanilla = (id: number) => api.get<PlanillaDetail>(`/api/planill
 export const resolvePlanilla = (cursoId: number, materiaId: number, etapa: number) => api.post<{ planillaId: number }>('/api/planillas/resolve', { cursoId, materiaId, etapa });
 export const saveGrades = (id: number, grades: unknown[]) => api.post<{ message: string; warnings: string[] }>(`/api/planillas/${id}/notas`, { grades });
 export const syncClassroom = (id: number) => api.post<{ message: string }>(`/api/planillas/${id}/sync/classroom`);
+export const confirmClassroomMapping = (planillaId: number, googleCourseId: string) => api.post<{ message: string }>(`/api/planillas/${planillaId}/classroom`, { googleCourseId });
+
 export const getInstrumentos = () => api.get<Instrumento[]>('/api/instrumentos');
 export const getTarea = (id: number) => api.get<Tarea>(`/api/tareas/${id}`);
 export const createTarea = (planillaId: number, body: Omit<Tarea, 'id' | 'planillaId' | 'fechaInicio' | 'fechaLimite' | 'googleCourseworkId' | 'googleCourseworkUrl'>) => api.post<Tarea>(`/api/planillas/${planillaId}/tareas`, body);

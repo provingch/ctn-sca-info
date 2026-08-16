@@ -21,11 +21,13 @@ export default function HomePage() {
   const selectedEspecialidad = especialidades.find((item) => item.id === especialidadId);
   const [selectedNivel, setSelectedNivel] = useState<number | null>(null);
   const [selectedSeccion, setSelectedSeccion] = useState<string | number | ''>('');
+  const [selectionLoading, setSelectionLoading] = useState(false);
   const [syncingAll, setSyncingAll] = useState(false);
   const { selectSpecialty, resetSpecialty } = useSpecialty();
 
   const setCourseSelection = (value: string | number) => {
     const nextNivel = Number(value) || null;
+    setSelectionLoading(true);
     setSelectedNivel(nextNivel);
     setSelectedSeccion('');
     params({ cursoId: '' });
@@ -36,6 +38,8 @@ export default function HomePage() {
       setData(await getHome({ cursoId: cursoId || undefined, etapa, view: view === 'clase' ? 'clase' : 'planillas' }));
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Error al cargar el inicio.');
+    } finally {
+      setSelectionLoading(false);
     }
   }, [cursoId, etapa, view]);
 
@@ -145,6 +149,7 @@ export default function HomePage() {
       </label>
       <label className="inline-filter">Sección
           <AnimatedSelect ariaLabel="Sección" value={selectedSeccion ?? ''} onChange={(value) => {
+          setSelectionLoading(true);
           setSelectedSeccion(value);
           const nivel = selectedNivel ?? (data.selCurso ? Number(data.selCurso.curso) : undefined);
           const seccion = String(value);
@@ -153,7 +158,7 @@ export default function HomePage() {
         }} disabled={visibleCursos.length === 0 || (selectedNivel == null && !data.selCurso)} placeholder="Seleccione la sección" options={[{ value: '', label: 'Seleccione la sección' }, ...sectionOptions]} />
       </label>
     </div>
-      {!data.selCurso ? <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Esperando selección</h2><p>Elegí una especialidad y un curso para continuar con la clase.</p></section> : view === 'clase' ? <ClassView data={data} reload={load} /> : <PlanillasView data={data} syncingProp={syncingAll} setSyncingProp={setSyncingAll} />}
+      {selectionLoading ? <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Cargando planilla…</h2><p>Esperá un momento mientras cargamos la planilla seleccionada.</p></section> : (!data.selCurso ? <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Esperando selección</h2><p>Elegí una especialidad y un curso para continuar con la clase.</p></section> : view === 'clase' ? <ClassView data={data} reload={load} /> : <PlanillasView data={data} syncingProp={syncingAll} setSyncingProp={setSyncingAll} />)}
     </AppShell>
   </>;
 }

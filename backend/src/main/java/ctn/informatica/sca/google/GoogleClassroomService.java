@@ -461,52 +461,12 @@ public final class GoogleClassroomService {
             return Optional.empty();
         }
 
-        if (planilla.getGoogleCourseId() != null && !planilla.getGoogleCourseId().isBlank()) {
-            try {
-                Course cachedCourse = buildClassroomClient(profesor)
-                        .courses()
-                        .get(planilla.getGoogleCourseId())
-                        .execute();
-                if (cachedCourse != null) {
-                    if (isCourseCompatibleWithPlanilla(cachedCourse, curso, planilla, teacherCourses)) {
-                        persistCourseAssociation(planilla, planillaDao, cachedCourse);
-                        return Optional.of(cachedCourse);
-                    }
-                    System.out.println("[DEBUG] Rechazado curso Classroom cacheado como obsoleto para planilla id=" + planilla.getId()
-                            + " googleCourseId=" + planilla.getGoogleCourseId() + " nombre='" + cachedCourse.getName() + "'");
-                }
-            } catch (IOException ioe) {
-                System.out.println("[DEBUG] Unable to fetch Classroom course by saved google_course_id=" + planilla.getGoogleCourseId() + ": " + ioe.getMessage());
-            }
-        }
-
-        Optional<Course> resolved = chooseCourseFromList(teacherCourses, curso, planilla);
-        if (resolved.isPresent()) {
-            persistCourseAssociation(planilla, planillaDao, resolved.get());
-        }
-        return resolved;
-    }
-
-    private static void persistCourseAssociation(Planilla planilla, PlanillaDao planillaDao, Course course) throws IOException {
-        if (planilla == null || course == null || course.getId() == null || course.getId().isBlank()) {
-            return;
-        }
-        if (planillaDao == null) {
-            planillaDao = new PlanillaDao();
-        }
-        String courseId = course.getId();
-        if (courseId.equals(planilla.getGoogleCourseId())) {
-            return;
-        }
-        try {
-            planillaDao.updateClassroomCourseId(planilla.getId(), courseId);
-            planilla.setGoogleCourseId(courseId);
-        } catch (SQLException sqle) {
-            throw new IOException("No se pudo persistir la asociación con el curso de Google Classroom", sqle);
-        }
-    }
-
-    public static List<CourseWork> listCourseWorkForCourse(Profesor profesor, String courseId) throws IOException {
+        // Do NOT use or persist cached google_course_id to avoid stale associations.
+        // Always resolve against the teacher's current courses and return the match
+        // without saving it server-side. This keeps discovery authoritative and
+        // avoids surprise imports from the wrong Classroom course.
+        return chooseCourseFromList(teacherCourses, curso, planilla);
+    }    public static List<CourseWork> listCourseWorkForCourse(Profesor profesor, String courseId) throws IOException {
         if (profesor == null || courseId == null || courseId.isBlank() || !isGoogleConnected(profesor)) {
             return Collections.emptyList();
         }
