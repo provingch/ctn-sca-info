@@ -98,9 +98,18 @@ export default function PlanillaPage() {
     setSwitchingEtapa(true); setStatus('');
     try {
       const result = await resolvePlanilla(data.planilla.cursoId, data.planilla.materiaId, nuevaEtapa);
-      navigate(`/planilla/${result.planillaId}`, { replace: true });
+      // Si la resolución devuelve una planilla distinta, navegamos a ella; si devuelve
+      // la misma id, recargamos los datos para evitar quedarnos con el selector bloqueado.
+      if (result.planillaId && result.planillaId !== id) {
+        navigate(`/planilla/${result.planillaId}`, { replace: true });
+      } else {
+        // refrescar datos en sitio
+        setData(await getPlanilla(result.planillaId));
+      }
     } catch (e) {
       setStatus(e instanceof ApiError ? e.message : 'No se pudo cambiar de etapa.');
+    } finally {
+      // asegurar que el selector quede usable en todos los caminos
       setSwitchingEtapa(false);
     }
   }
