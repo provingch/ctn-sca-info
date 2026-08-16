@@ -285,3 +285,11 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .grade-chip--3 { background: #f59e0b; } /* ámbar */
 .grade-chip--2 { background: #f97316; } /* naranja */
 .grade-chip--1 { background: #ef4444; } /* rojo */
+
+/* Ocultar flechas de inputs numéricos en la tabla de notas (solo lectura) */
+.grade-table input[type=number]::-webkit-outer-spin-button,
+.grade-table input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.grade-table input[type=number] { -moz-appearance: textfield; }
