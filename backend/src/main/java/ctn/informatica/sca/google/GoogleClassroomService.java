@@ -691,6 +691,8 @@ public final class GoogleClassroomService {
         return GoogleClassroomUtils.normalizeSubjectName(value).replaceAll("\\s+", " ").trim();
     }
 
+    
+
     private static String normalizeEmail(String email) {
         if (email == null || email.isBlank()) {
             return null;
