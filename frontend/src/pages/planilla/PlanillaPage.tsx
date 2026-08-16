@@ -29,6 +29,10 @@ function formatShortDate(value: string | null | undefined) {
   return new Intl.DateTimeFormat('es-PY', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${value}T00:00:00Z`));
 }
 
+function stageDateDescription(stageIndex: number) {
+  return stageIndex === 2 ? 'Desde el 15 de julio' : 'Hasta el 14 de julio';
+}
+
 export default function PlanillaPage() {
   const id = Number(useParams().planillaId);
   const navigate = useNavigate();
@@ -190,8 +194,8 @@ export default function PlanillaPage() {
       {/* Mensaje informativo removido por solicitud de UX */}
       <section className="summary-grid">
         <article className="metric"><span>Curso</span><strong>{data.curso ? `${data.curso.nivel}° ${data.curso.seccion}` : '—'}</strong></article>
-        <article className="metric"><span>Etapa</span><strong>{data.planilla.etapa}</strong></article>
-        <article className="metric"><span>Período</span><strong>{formatShortDate(data.planilla.planillaDesde)} – {formatShortDate(data.planilla.planillaHasta)}</strong></article>
+        <article className="metric"><span>Etapa</span><strong>{data.planilla.etapa}</strong><small>{stageDateDescription(data.planilla.etapaIndex)}</small></article>
+        <article className="metric"><span>Fechas de tareas</span><strong>{formatShortDate(data.planilla.planillaDesde)} – {formatShortDate(data.planilla.planillaHasta)}</strong></article>
         <article className="metric"><span>Total</span><strong>{data.planilla.totalPossiblePoints} pts</strong></article>
         <article className="metric"><span>Exigencia</span><strong>{data.planilla.exigenciaPorcentaje}%</strong></article>
       </section>
@@ -261,15 +265,6 @@ export default function PlanillaPage() {
             <tr>
               <th className="planilla-number-heading">#</th>
               <th className="planilla-student-heading">Alumno</th>
-              {(['total', 'percentage', 'grade'] as const).map((key) => {
-                const label = key === 'total' ? 'Total' : key === 'percentage' ? '%' : 'Nota';
-                const activeDirection = studentSort?.key === key ? studentSort.direction : undefined;
-                return <th key={key} className="sortable-grade-heading" aria-sort={activeDirection ?? 'none'}>
-                  <button type="button" onClick={() => changeStudentSort(key)} aria-label={`Ordenar por ${label}${activeDirection ? `, actualmente ${activeDirection === 'ascending' ? 'ascendente' : 'descendente'}` : ''}`}>
-                    <span>{label}</span><i aria-hidden="true" />
-                  </button>
-                </th>;
-              })}
               {data.tareas.map((task, taskIndex) => (
                 <th key={task.id} className="planilla-task-heading">
                   <span className="planilla-task-number">T{taskIndex + 1}</span>
@@ -282,21 +277,30 @@ export default function PlanillaPage() {
                   {task.googleCourseworkUrl && <Link className="planilla-task-edit" to={`/planilla/${id}/tarea/${task.id}`}>Editar</Link>}
                 </th>
               ))}
+              {(['total', 'percentage', 'grade'] as const).map((key) => {
+                const label = key === 'total' ? 'Total' : key === 'percentage' ? '%' : 'Nota';
+                const activeDirection = studentSort?.key === key ? studentSort.direction : undefined;
+                return <th key={key} className="sortable-grade-heading" aria-sort={activeDirection ?? 'none'}>
+                  <button type="button" onClick={() => changeStudentSort(key)} aria-label={`Ordenar por ${label}${activeDirection ? `, actualmente ${activeDirection === 'ascending' ? 'ascendente' : 'descendente'}` : ''}`}>
+                    <span>{label}</span><i aria-hidden="true" />
+                  </button>
+                </th>;
+              })}
             </tr>
           </thead>
           <tbody>
             {visibleRows.map(({ row, originalIndex, total, percentage }) => <tr key={row.alumnoId}>
               <td className="planilla-row-number">{originalIndex + 1}</td>
               <th className="planilla-student-name" scope="row">{row.alumnoNombre}</th>
-              <td className="student-total-cell">{total}<small>de {data.planilla.totalPossiblePoints}</small></td>
-              <td className="student-percentage-cell">{percentage}%</td>
-              <td><span className={`grade-chip grade-chip--${Math.min(5, Math.max(1, row.nota))} student-grade-pill`} aria-label={`Nota ${row.nota}`}>{row.nota}</span></td>
               {data.tareas.map((task) => {
                 const grade = values[`${row.alumnoId}:${task.id}`];
                 return <td key={task.id} className="planilla-task-grade" aria-label={`${row.alumnoNombre}, ${task.titulo}: ${grade === '' || grade == null ? 'sin calificación' : `${grade} puntos`}`}>
                   <span>{grade === '' || grade == null ? '—' : grade}</span>
                 </td>;
               })}
+              <td className="student-total-cell">{total}<small>de {data.planilla.totalPossiblePoints}</small></td>
+              <td className="student-percentage-cell">{percentage}%</td>
+              <td><span className={`grade-chip grade-chip--${Math.min(5, Math.max(1, row.nota))} student-grade-pill`} aria-label={`Nota ${row.nota}`}>{row.nota}</span></td>
             </tr>)}
             {visibleRows.length === 0 && <tr><td className="planilla-student-empty" colSpan={data.tareas.length + 5}>No se encontraron alumnos con ese nombre.</td></tr>}
           </tbody>

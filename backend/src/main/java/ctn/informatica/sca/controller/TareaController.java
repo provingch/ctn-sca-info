@@ -154,8 +154,17 @@ public class TareaController {
     }
 
     private List<Tarea> filterTasksByEtapa(List<Tarea> tareas, int planillaEtapaIndex) {
-        // planilla_id determina la etapa; la fecha es metadata de la tarea.
-        return tareas;
+        if (tareas == null || tareas.isEmpty() || (planillaEtapaIndex != 1 && planillaEtapaIndex != 2)) {
+            return tareas;
+        }
+
+        List<Tarea> filtered = new ArrayList<>();
+        for (Tarea tarea : tareas) {
+            if (Tarea.resolveEtapaIndexByPublicationDate(tarea.getFecha()) == planillaEtapaIndex) {
+                filtered.add(tarea);
+            }
+        }
+        return filtered;
     }
 
     private TareaResponse toResponse(Tarea tarea, boolean gradesCleared, String warning) {
