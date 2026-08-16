@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import AppShell from '../../components/AppShell';
-import { getParentSummary, type ParentResponse } from '../../api/parent';
+import { getParentSummary, type ParentResponse, type ParentTaskStatus } from '../../api/parent';
 import { ApiError } from '../../api/client';
 import { normalizeSpecialty } from '../../theme/theme';
 
@@ -49,7 +49,7 @@ export default function ParentPage() {
               {materia.tareas.map((tarea) => (
                 <div className="history-row" key={tarea.id}>
                   <span><strong>{tarea.titulo}</strong><small>{tarea.fecha}</small></span>
-                  <strong>{tarea.puntos} / {tarea.total}</strong>
+                  <TaskResult estado={tarea.estado} puntos={tarea.puntos} total={tarea.total} />
                 </div>
               ))}
             </div>
@@ -64,4 +64,18 @@ export default function ParentPage() {
       </div>
     </AppShell>
   );
+}
+
+function TaskResult({ estado, puntos, total }: { estado: ParentTaskStatus; puntos: number | null; total: number }) {
+  if (estado === 'CALIFICADA') {
+    return <div className="parent-task-result graded"><strong>{puntos ?? 0} / {total}</strong><small>Calificada</small></div>;
+  }
+
+  const labels: Record<Exclude<ParentTaskStatus, 'CALIFICADA'>, string> = {
+    ENTREGADA_PENDIENTE: 'Entregada · pendiente',
+    NO_ENTREGADA: 'No entregada',
+    PENDIENTE: 'Pendiente',
+  };
+
+  return <div className="parent-task-result"><span className={`parent-task-status ${estado.toLowerCase().replace('_', '-')}`}>{labels[estado]}</span><small>de {total} puntos</small></div>;
 }

@@ -258,6 +258,11 @@ public class ClassroomSyncOrchestrator {
                         assignedGrade = submission.getDraftGrade();
                     }
                     if (assignedGrade == null) {
+                        String submissionState = submission.getState();
+                        if ("TURNED_IN".equals(submissionState) || "RETURNED".equals(submissionState)) {
+                            gradesByRegistro.computeIfAbsent(registroId, k -> new HashMap<>())
+                                    .put(tarea.getId(), null);
+                        }
                         continue;
                     }
                     int puntos = (int) Math.round(assignedGrade);
