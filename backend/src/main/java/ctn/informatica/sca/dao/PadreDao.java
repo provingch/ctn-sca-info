@@ -158,7 +158,8 @@ public class PadreDao extends conexion {
     }
 
     public List<ParentTaskGrade> findTaskGradesForAlumnoPlanilla(int alumnoId, int planillaId) throws SQLException {
-        String sql = "SELECT t.id AS tarea_id, t.titulo, t.fecha, t.total, COALESCE(puntaje.puntos, 0) AS puntos "
+        String sql = "SELECT t.id AS tarea_id, t.titulo, t.fecha, t.fecha_limite, t.total, t.google_coursework_id, "
+                + "puntaje.tarea_id AS puntaje_tarea_id, puntaje.puntos "
                 + "FROM tarea t "
                 + "LEFT JOIN registro r ON r.planilla_id = t.planilla_id AND r.alumno_id = ? "
                 + "LEFT JOIN puntaje ON puntaje.tarea_id = t.id AND puntaje.registro_id = r.id "
@@ -175,7 +176,12 @@ public class PadreDao extends conexion {
                     task.setTareaTitulo(rs.getString("titulo"));
                     task.setFecha(rs.getObject("fecha", java.time.LocalDate.class));
                     task.setTotal(rs.getInt("total"));
-                    task.setPuntos(rs.getInt("puntos"));
+                    Integer puntos = rs.getObject("puntos", Integer.class);
+                    boolean tienePuntaje = rs.getObject("puntaje_tarea_id") != null;
+                    java.time.LocalDate fechaLimite = rs.getObject("fecha_limite", java.time.LocalDate.class);
+                    boolean tareaClassroom = rs.getString("google_coursework_id") != null;
+                    task.setPuntos(puntos);
+                    task.setEstado(ParentTaskGrade.resolveEstado(tienePuntaje, puntos, tareaClassroom, fechaLimite, java.time.LocalDate.now()));
                     task.setPlanillaId(planillaId);
                     out.add(task);
                 }
@@ -185,8 +191,8 @@ public class PadreDao extends conexion {
     }
 
     public List<ParentTaskGrade> findTaskGradesForAlumno(int alumnoId) throws SQLException {
-        String sql = "SELECT t.id AS tarea_id, t.titulo, t.fecha, t.total, t.planilla_id, "
-                + "COALESCE(puntaje.puntos, 0) AS puntos "
+        String sql = "SELECT t.id AS tarea_id, t.titulo, t.fecha, t.fecha_limite, t.total, t.planilla_id, t.google_coursework_id, "
+                + "puntaje.tarea_id AS puntaje_tarea_id, puntaje.puntos "
                 + "FROM tarea t "
                 + "LEFT JOIN registro r ON r.planilla_id = t.planilla_id AND r.alumno_id = ? "
                 + "LEFT JOIN puntaje ON puntaje.tarea_id = t.id AND puntaje.registro_id = r.id "
@@ -201,7 +207,12 @@ public class PadreDao extends conexion {
                     task.setTareaTitulo(rs.getString("titulo"));
                     task.setFecha(rs.getObject("fecha", java.time.LocalDate.class));
                     task.setTotal(rs.getInt("total"));
-                    task.setPuntos(rs.getInt("puntos"));
+                    Integer puntos = rs.getObject("puntos", Integer.class);
+                    boolean tienePuntaje = rs.getObject("puntaje_tarea_id") != null;
+                    java.time.LocalDate fechaLimite = rs.getObject("fecha_limite", java.time.LocalDate.class);
+                    boolean tareaClassroom = rs.getString("google_coursework_id") != null;
+                    task.setPuntos(puntos);
+                    task.setEstado(ParentTaskGrade.resolveEstado(tienePuntaje, puntos, tareaClassroom, fechaLimite, java.time.LocalDate.now()));
                     task.setPlanillaId(rs.getInt("planilla_id"));
                     out.add(task);
                 }
