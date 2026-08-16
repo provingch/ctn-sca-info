@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import AppShell from '../../components/AppShell';
-import { getPlanilla, resolvePlanilla, syncClassroom, type PlanillaDetail } from '../../api/academics';
+import { getPlanilla, resolvePlanilla, syncClassroom, confirmClassroomMapping, type PlanillaDetail } from '../../api/academics';
 import { ApiError, apiDownload } from '../../api/client';
 
 // Etiquetas de nota en orden descendente (5 -> 1), igual que el JSP legacy
@@ -22,6 +22,7 @@ export default function PlanillaPage() {
   const [data, setData] = useState<PlanillaDetail | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
   const [status, setStatus] = useState('');
+  const [resolvedCourse, setResolvedCourse] = useState<{ googleCourseId?: string | null; classroomCourseMapped?: boolean; message?: string } | null>(null);
   const [switchingEtapa, setSwitchingEtapa] = useState(false);
   const [studentSearch, setStudentSearch] = useState('');
   const [studentSort, setStudentSort] = useState<{ key: StudentSortKey; direction: SortDirection } | null>(null);
@@ -45,9 +46,10 @@ export default function PlanillaPage() {
     (async () => {
       try {
         setStatus('Sincronizando Classroom…');
-        await syncClassroom(id);
-        setData(await getPlanilla(id));
+        const res = await syncClassroom(id);
         setStatus('Sincronización completada.');
+        setResolvedCourse({ googleCourseId: res.googleCourseId, classroomCourseMapped: res.classroomCourseMapped, message: res.message });
+        setData(await getPlanilla(id));
       } catch (e) {
         setStatus(e instanceof ApiError ? e.message : 'No se pudo sincronizar Classroom.');
       }
@@ -140,6 +142,25 @@ export default function PlanillaPage() {
         <article className="metric"><span>Total</span><strong>{data.planilla.totalPossiblePoints} pts</strong></article>
         <article className="metric"><span>Exigencia</span><strong>{data.planilla.exigenciaPorcentaje}%</strong></article>
       </section>
+      {resolvedCourse && resolvedCourse.classroomCourseMapped && resolvedCourse.googleCourseId && data.planilla.googleCourseId !== resolvedCourse.googleCourseId && (
+        <div className="notice">
+          <div>Se encontró un curso de Classroom posiblemente correspondiente: <strong>{resolvedCourse.googleCourseId}</strong></div>
+          <div style={{marginTop:8}}>
+            <button className="button" onClick={async () => {
+              try {
+                setStatus('Guardando asociación…');
+                await confirmClassroomMapping(id, resolvedCourse.googleCourseId!);
+                setStatus('Asociación guardada.');
+                setResolvedCourse(null);
+                setData(await getPlanilla(id));
+              } catch (e) {
+                setStatus(e instanceof ApiError ? e.message : 'No se pudo guardar la asociación.');
+              }
+            }}>Confirmar curso Classroom</button>
+            <button className="button secondary" onClick={() => setResolvedCourse(null)} style={{marginLeft:8}}>Ignorar</button>
+          </div>
+        </div>
+      )}
       {Object.keys(gr).length > 0 && (
         <section className="grade-ranges-bar" aria-label="Escala de notas">
           {GRADE_KEYS_DESC.map((key) => gr[key] && (
