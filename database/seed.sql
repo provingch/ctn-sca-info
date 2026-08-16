@@ -170,15 +170,44 @@ INSERT INTO profesor (id, nombre, apellido, usuario, contrasenia, nivel, ci, tel
 -- ========================================
 -- MATERIAS
 -- ========================================
--- Las materias ya no se insertan en el seed inicial.
--- El catálogo se construye desde el perfil del profesor mediante
--- el formulario de integración y la carga manual de materias.
+-- Materias manuales de prueba para Classroom/parseo de cursos.
+INSERT INTO materia (id, nombre, categoria) VALUES
+(1, 'Laboratorio Redes', 'especifico'),
+(2, 'Algoritmica', 'especifico'),
+(3, 'Orientacion', 'comun');
 
 -- ========================================
 -- RELACIÓN MATERIA-ESPECIALIDAD
 -- ========================================
--- Las relaciones de especialidad se resuelven en la UI de perfil
--- al guardar una materia nueva, sin depender del seed fijo.
+INSERT INTO materia_especialidad (materia_id, especialidad_id) VALUES
+(1, 5),
+(2, 5),
+(3, 1),
+(3, 2),
+(3, 3),
+(3, 4),
+(3, 5),
+(3, 6),
+(3, 7),
+(3, 8);
+
+-- ========================================
+-- RELACIÓN PROFESOR-MATERIA
+-- ========================================
+INSERT INTO profesor_materia (profesor_id, materia_id) VALUES
+(1, 1),
+(1, 2),
+(8, 3);
+
+-- ========================================
+-- ASIGNACIONES CURSO-MATERIA-PROFESOR
+-- ========================================
+INSERT INTO asignacion (id, profesor_id, materia_id, curso_id) VALUES
+(1, 1, 1, 3),
+(2, 1, 2, 1),
+(3, 8, 3, 1),
+(4, 8, 3, 3),
+(5, 8, 3, 5);
 
 -- ========================================
 -- INSTRUMENTOS
