@@ -20,7 +20,7 @@ export interface Especialidad { id: number; nombre: string }
 export const getPlanilla = (id: number) => api.get<PlanillaDetail>(`/api/planillas/${id}`);
 export const resolvePlanilla = (cursoId: number, materiaId: number, etapa: number) => api.post<{ planillaId: number }>('/api/planillas/resolve', { cursoId, materiaId, etapa });
 export const saveGrades = (id: number, grades: unknown[]) => api.post<{ message: string; warnings: string[] }>(`/api/planillas/${id}/notas`, { grades });
-export interface ClassroomSyncResponse { planillaId: number; googleCourseId?: string | null; classroomCourseMapped: boolean; importedCourseworks: number; linkedStudents: number; importedGrades: number; message: string }
+export interface ClassroomSyncResponse { planillaId: number; googleCourseId?: string | null; classroomCourseMapped: boolean; importedCourseworks: number; linkedStudents: number; importedGrades: number; courseName?: string | null; courseSection?: string | null; courseAlternateLink?: string | null; message: string }
 export const syncClassroom = (id: number) => api.post<ClassroomSyncResponse>(`/api/planillas/${id}/sync/classroom`);
 export const confirmClassroomMapping = (planillaId: number, googleCourseId: string) => api.post<{ message: string }>(`/api/planillas/${planillaId}/classroom`, { googleCourseId });
 

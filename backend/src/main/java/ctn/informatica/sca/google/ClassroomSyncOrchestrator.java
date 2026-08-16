@@ -44,6 +44,9 @@ public class ClassroomSyncOrchestrator {
             int importedCourseworks,
             int linkedStudents,
             int importedGrades,
+            String courseName,
+            String courseSection,
+            String courseAlternateLink,
             String message) {
     }
 
@@ -152,7 +155,10 @@ public class ClassroomSyncOrchestrator {
             message.append(".");
         }
 
-        return new ClassroomSyncResult(classroomCourseId, mapped, importedCourseworks, linkedStudents, importedGrades, message.toString());
+        String courseName = classroomCourse.getName();
+        String courseSection = classroomCourse.getSection();
+        String courseAlternateLink = classroomCourse.getAlternateLink();
+        return new ClassroomSyncResult(classroomCourseId, mapped, importedCourseworks, linkedStudents, importedGrades, courseName, courseSection, courseAlternateLink, message.toString());
     }
 
     private int importCourseworkForPlanilla(Profesor profesor, Planilla planilla, Course classroomCourse) {
