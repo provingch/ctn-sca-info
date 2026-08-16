@@ -307,6 +307,48 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .grade-chip--2 { background: #f97316; } /* naranja */
 .grade-chip--1 { background: #ef4444; } /* rojo */
 
+.planilla-student-tools { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin: 18px 0 12px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); box-shadow: var(--shadow-sm); }
+.planilla-student-search { width: min(100%, 420px); margin: 0; color: var(--ink); font-size: .78rem; font-weight: 800; }
+.planilla-student-search input[type="search"] { min-height: 42px; border-color: color-mix(in srgb, var(--accent) 18%, var(--line)); box-shadow: none; transition: border-color .18s ease, box-shadow .18s ease; }
+.planilla-student-search input[type="search"]:hover { border-color: color-mix(in srgb, var(--accent) 38%, var(--line)); }
+.planilla-student-search input[type="search"]:focus { border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent); }
+.planilla-student-count { display: inline-flex; align-items: center; justify-content: center; min-height: 34px; padding: 7px 12px; border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--line)); border-radius: 999px; background: var(--accent-soft); color: var(--accent-deep); font-size: .76rem; font-weight: 850; white-space: nowrap; }
+.planilla-grade-table-wrap { max-height: clamp(360px, 66vh, 720px); overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.planilla-grade-table thead th { position: sticky; top: 0; z-index: 3; box-shadow: inset 0 -1px var(--line); }
+.planilla-grade-table thead th:first-child { z-index: 4; }
+.planilla-grade-table tbody tr:hover > th,
+.planilla-grade-table tbody tr:hover > td { background: var(--accent-soft); }
+.planilla-grade-table .sortable-grade-heading { padding: 0; }
+.sortable-grade-heading button { min-width: 72px; min-height: 54px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 12px; border: 0; background: transparent; color: inherit; font-weight: 850; box-shadow: none; }
+.sortable-grade-heading button:hover,
+.sortable-grade-heading[aria-sort="ascending"] button,
+.sortable-grade-heading[aria-sort="descending"] button { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.sortable-grade-heading button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 35%, transparent); outline-offset: -4px; }
+.sortable-grade-heading i { width: 14px; display: inline-flex; align-items: center; justify-content: center; color: var(--muted); font-style: normal; line-height: 1; }
+.sortable-grade-heading i::before { content: "↕"; }
+.sortable-grade-heading[aria-sort="ascending"] i::before { content: "↑"; }
+.sortable-grade-heading[aria-sort="descending"] i::before { content: "↓"; }
+.sortable-grade-heading[aria-sort="ascending"] i,
+.sortable-grade-heading[aria-sort="descending"] i { color: var(--accent-deep); font-weight: 900; }
+.student-total-cell,
+.student-percentage-cell { font-weight: 850; font-variant-numeric: tabular-nums; }
+.grade-chip.student-grade-pill { min-width: 36px; min-height: 28px; display: inline-flex; align-items: center; justify-content: center; margin: 0; padding: 5px 10px; border-radius: 999px; font-size: .82rem; line-height: 1; box-shadow: none; }
+.planilla-grade-table .planilla-student-empty { padding: 36px 20px; color: var(--muted); font-weight: 700; text-align: center; }
+
+@media (max-width: 680px) {
+  .planilla-student-tools { align-items: stretch; flex-direction: column; padding: 13px; }
+  .planilla-student-search { width: 100%; }
+  .planilla-student-count { align-self: flex-start; }
+  .planilla-grade-table-wrap { max-height: 62vh; }
+}
+
+@media print {
+  .planilla-student-tools { display: none; }
+  .planilla-grade-table-wrap { max-height: none; overflow: visible; }
+  .planilla-grade-table thead th,
+  .planilla-grade-table th:first-child { position: static; }
+}
+
 /* Ocultar flechas de inputs numéricos en la tabla de notas (solo lectura) */
 .grade-table input[type=number]::-webkit-outer-spin-button,
 .grade-table input[type=number]::-webkit-inner-spin-button {

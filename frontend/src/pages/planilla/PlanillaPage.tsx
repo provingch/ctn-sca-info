@@ -9,6 +9,12 @@ import { ApiError, apiDownload } from '../../api/client';
 // gradeRanges (es "todo lo que quede por debajo del piso de 2"), así que se
 // arma su etiqueta a partir del minInclusive de "2".
 const GRADE_KEYS_DESC = ['5', '4', '3', '2'] as const;
+type StudentSortKey = 'total' | 'percentage' | 'grade';
+type SortDirection = 'ascending' | 'descending';
+
+function normalizeStudentName(value: string) {
+  return value.toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
 
 export default function PlanillaPage() {
   const id = Number(useParams().planillaId);
@@ -17,6 +23,8 @@ export default function PlanillaPage() {
   const [values, setValues] = useState<Record<string, string>>({});
   const [status, setStatus] = useState('');
   const [switchingEtapa, setSwitchingEtapa] = useState(false);
+  const [studentSearch, setStudentSearch] = useState('');
+  const [studentSort, setStudentSort] = useState<{ key: StudentSortKey; direction: SortDirection } | null>(null);
 
   useEffect(() => {
     if (!Number.isInteger(id)) return;
@@ -46,7 +54,30 @@ export default function PlanillaPage() {
     })();
   }, [data, id]);
 
-  const totals = useMemo(() => data?.rows.map((row) => data.tareas.reduce((sum, t) => sum + Number(values[`${row.alumnoId}:${t.id}`] || 0), 0)) ?? [], [data, values]);
+  const computedRows = useMemo(() => {
+    if (!data) return [];
+    return data.rows.map((row, originalIndex) => {
+      const total = data.tareas.reduce((sum, task) => sum + Number(values[`${row.alumnoId}:${task.id}`] || 0), 0);
+      const percentage = data.planilla.totalPossiblePoints ? Math.round(total * 100 / data.planilla.totalPossiblePoints) : 0;
+      return { row, originalIndex, total, percentage };
+    });
+  }, [data, values]);
+
+  const visibleRows = useMemo(() => {
+    const query = normalizeStudentName(studentSearch.trim());
+    const filtered = query
+      ? computedRows.filter(({ row }) => normalizeStudentName(row.alumnoNombre).includes(query))
+      : computedRows.slice();
+
+    return filtered.sort((first, second) => {
+      if (!studentSort) return first.originalIndex - second.originalIndex;
+      const firstValue = studentSort.key === 'grade' ? first.row.nota : first[studentSort.key];
+      const secondValue = studentSort.key === 'grade' ? second.row.nota : second[studentSort.key];
+      const numericResult = firstValue - secondValue;
+      const result = numericResult || first.row.alumnoNombre.localeCompare(second.row.alumnoNombre, 'es', { sensitivity: 'base' });
+      return studentSort.direction === 'ascending' ? result : -result;
+    });
+  }, [computedRows, studentSearch, studentSort]);
 
   // manual sync removed; synchronization runs automatically on load
 
@@ -64,6 +95,14 @@ export default function PlanillaPage() {
       setStatus(e instanceof ApiError ? e.message : 'No se pudo cambiar de etapa.');
       setSwitchingEtapa(false);
     }
+  }
+
+  function changeStudentSort(key: StudentSortKey) {
+    setStudentSort((current) => {
+      if (!current || current.key !== key) return { key, direction: 'ascending' };
+      if (current.direction === 'ascending') return { key, direction: 'descending' };
+      return null;
+    });
   }
 
   if (!data) return <AppShell title="Planilla"><div className="panel">{status || 'Cargando…'}</div></AppShell>;
@@ -109,15 +148,26 @@ export default function PlanillaPage() {
             </span>
           ))}
           {onePointCeiling !== null && (
-            <span className="grade-chip grade-chip--one" title={`${onePointCeiling} puntos o menos`}>
+            <span className="grade-chip grade-chip--1" title={`${onePointCeiling} puntos o menos`}>
               <strong>1</strong>{onePointCeiling} o menos
             </span>
           )}
         </section>
       )}
       {status && <div className="notice">{status}</div>}
-      <div className="table-wrap">
-        <table className="grade-table">
+      <section className="planilla-student-tools" role="search" aria-label="Buscar alumnos en la planilla">
+        <label className="planilla-student-search">
+          Buscar alumno
+          <input type="search" value={studentSearch} onChange={(event) => setStudentSearch(event.target.value)} placeholder="Nombre del alumno…" autoComplete="off" spellCheck={false} />
+        </label>
+        <span className="planilla-student-count" aria-live="polite">
+          {visibleRows.length === computedRows.length
+            ? `${computedRows.length} ${computedRows.length === 1 ? 'alumno' : 'alumnos'}`
+            : `${visibleRows.length} de ${computedRows.length} alumnos`}
+        </span>
+      </section>
+      <div className="table-wrap planilla-grade-table-wrap">
+        <table className="grade-table planilla-grade-table">
           <thead>
             <tr>
               <th>Alumno</th>
@@ -134,15 +184,27 @@ export default function PlanillaPage() {
                   <small>{t.total} pts{t.googleCourseworkUrl && ' · '}{t.googleCourseworkUrl && <Link to={`/planilla/${id}/tarea/${t.id}`}>editar</Link>}</small>
                 </th>
               ))}
-              <th>Total</th>
-              <th>%</th>
-              <th>Nota</th>
+              {(['total', 'percentage', 'grade'] as const).map((key) => {
+                const label = key === 'total' ? 'Total' : key === 'percentage' ? '%' : 'Nota';
+                const activeDirection = studentSort?.key === key ? studentSort.direction : undefined;
+                return <th key={key} className="sortable-grade-heading" aria-sort={activeDirection ?? 'none'}>
+                  <button type="button" onClick={() => changeStudentSort(key)} aria-label={`Ordenar por ${label}${activeDirection ? `, actualmente ${activeDirection === 'ascending' ? 'ascendente' : 'descendente'}` : ''}`}>
+                    <span>{label}</span><i aria-hidden="true" />
+                  </button>
+                </th>;
+              })}
             </tr>
           </thead>
-          <tbody>{data.rows.map((row, rowIndex) => {
-            const percent = data.planilla.totalPossiblePoints ? Math.round(totals[rowIndex] * 100 / data.planilla.totalPossiblePoints) : 0;
-            return <tr key={row.alumnoId}><th>{row.alumnoNombre}</th>{data.tareas.map((t) => <td key={t.id}><input aria-label={`${row.alumnoNombre}, ${t.titulo}`} type="number" min="0" max={t.total} value={values[`${row.alumnoId}:${t.id}`] ?? ''} onChange={(e) => setValues((v) => ({ ...v, [`${row.alumnoId}:${t.id}`]: e.target.value }))} disabled /></td>)}<td>{totals[rowIndex]}</td><td>{percent}%</td><td>{row.nota}</td></tr>;
-          })}</tbody>
+          <tbody>
+            {visibleRows.map(({ row, total, percentage }) => <tr key={row.alumnoId}>
+              <th>{row.alumnoNombre}</th>
+              {data.tareas.map((t) => <td key={t.id}><input aria-label={`${row.alumnoNombre}, ${t.titulo}`} type="number" min="0" max={t.total} value={values[`${row.alumnoId}:${t.id}`] ?? ''} onChange={(e) => setValues((v) => ({ ...v, [`${row.alumnoId}:${t.id}`]: e.target.value }))} disabled /></td>)}
+              <td className="student-total-cell">{total}</td>
+              <td className="student-percentage-cell">{percentage}%</td>
+              <td><span className={`grade-chip grade-chip--${Math.min(5, Math.max(1, row.nota))} student-grade-pill`} aria-label={`Nota ${row.nota}`}>{row.nota}</span></td>
+            </tr>)}
+            {visibleRows.length === 0 && <tr><td className="planilla-student-empty" colSpan={data.tareas.length + 4}>No se encontraron alumnos con ese nombre.</td></tr>}
+          </tbody>
         </table>
       </div>
     </AppShell>
