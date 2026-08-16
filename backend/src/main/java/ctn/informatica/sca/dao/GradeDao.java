@@ -25,8 +25,7 @@ public class GradeDao extends conexion {
         if (grades == null || grades.isEmpty()) return;
         String sql = "INSERT INTO puntaje (registro_id, tarea_id, puntos) VALUES (?, ?, ?) " +
                      "ON DUPLICATE KEY UPDATE puntos = VALUES(puntos)";
-        try (Connection con = getCon();
-             PreparedStatement stm = con.prepareStatement(sql)) {
+        try (Connection con = getCon(); PreparedStatement stm = con.prepareStatement(sql)) {
             try {
                 con.setAutoCommit(false);
                 for (Map.Entry<Integer, Map<Integer, Integer>> rEntry : grades.entrySet()) {
@@ -57,4 +56,18 @@ public class GradeDao extends conexion {
             }
         }
     }
+
+    /**
+     * Borra todas las filas de `puntaje` asociadas a tareas importadas
+     * (tienen google_coursework_id) de una planilla concreta.
+     * Devuelve la cantidad de filas afectadas.
+     */
+    public int deleteGradesForPlanilla(int planillaId) throws SQLException {
+        String sql = "DELETE p FROM puntaje p JOIN tarea t ON p.tarea_id = t.id WHERE t.planilla_id = ? AND t.google_coursework_id IS NOT NULL";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, planillaId);
+            return ps.executeUpdate();
+        }
+    }
+
 }

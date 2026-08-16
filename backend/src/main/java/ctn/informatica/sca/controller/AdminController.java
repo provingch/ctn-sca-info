@@ -6,6 +6,8 @@ import ctn.informatica.sca.dao.CursoDao;
 import ctn.informatica.sca.dao.EspecialidadDao;
 import ctn.informatica.sca.dao.MateriaDao;
 import ctn.informatica.sca.dao.ProfesorDao;
+import ctn.informatica.sca.dao.TareaDao;
+import ctn.informatica.sca.dao.GradeDao;
 import ctn.informatica.sca.model.Alumno;
 import ctn.informatica.sca.model.Asignacion;
 import ctn.informatica.sca.model.Curso;
@@ -28,6 +30,18 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
+    private final TareaDao tareaDao;
+    private final GradeDao gradeDao;
+
+    public AdminController() {
+        this.tareaDao = new TareaDao();
+        this.gradeDao = new GradeDao();
+    }
+
+    AdminController(TareaDao tareaDao, GradeDao gradeDao) {
+        this.tareaDao = tareaDao;
+        this.gradeDao = gradeDao;
+    }
     @GetMapping
     public CatalogResponse catalog(Authentication authentication) {
         ApiAuth.requireUserId(authentication);
@@ -42,8 +56,9 @@ public class AdminController {
         } catch (Exception ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo cargar el panel administrativo", ex);
         }
-    }
 
+        // (no constructors injected here)
+        }
     @PostMapping("/materias") @ResponseStatus(HttpStatus.CREATED)
     public void createMateria(@RequestBody MateriaInput input, Authentication auth) {
         ApiAuth.requireUserId(auth); require(input != null && notBlank(input.nombre()), "El nombre es requerido");
@@ -114,6 +129,20 @@ public class AdminController {
         try { new AlumnoDao().create(input.nombre().trim(), input.apellido().trim(), input.cursoId(), input.ci(), input.correoEncargado(), input.correoEncargado2()); } catch (Exception ex) { throw failure("No se pudo crear el ingresante", ex); }
     }
 
+    @PostMapping("/planillas/{id}/sync/wipe")
+    public WipeResponse wipePlanillaSync(@PathVariable int id, Authentication auth) {
+        ApiAuth.requireUserId(auth);
+        try {
+            // Borrar notas importadas para las tareas importadas de Classroom
+            int deletedGrades = this.gradeDao.deleteGradesForPlanilla(id);
+            // Borrar tareas importadas (google_coursework_id IS NOT NULL)
+            int deletedTasks = this.tareaDao.deleteImportedTasks(id);
+            return new WipeResponse("Wipe de importaciones completado.", deletedGrades, deletedTasks, id);
+        } catch (Exception ex) {
+            throw failure("No se pudo realizar wipe de sincronización", ex);
+        }
+    }
+
     private void require(boolean condition, String message) { if (!condition) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message); }
     private boolean notBlank(String value) { return value != null && !value.isBlank(); }
     private ResponseStatusException failure(String message, Exception ex) { return new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, ex); }
@@ -129,4 +158,5 @@ public class AdminController {
     public record UserInput(String nombre, String apellido, String usuario, String contrasenia, int nivel, String correo, Integer especialidadId) {}
     public record AssignmentInput(int profesorId, int materiaId, int cursoId) {}
     public record StudentInput(String nombre, String apellido, int cursoId, Integer ci, String correoEncargado, String correoEncargado2) {}
+    public record WipeResponse(String message, int deletedGrades, int deletedTasks, int planillaId) {}
 }
