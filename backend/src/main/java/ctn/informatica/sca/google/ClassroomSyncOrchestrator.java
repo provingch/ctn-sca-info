@@ -313,7 +313,25 @@ public class ClassroomSyncOrchestrator {
 
     private LocalDate resolveCourseWorkDate(CourseWork courseWork) {
         LocalDate due = resolveCourseWorkDueDate(courseWork);
-        return due != null ? due : LocalDate.now();
+        if (due != null) {
+            return due;
+        }
+        LocalDate scheduled = resolveCourseWorkStartDate(courseWork);
+        if (scheduled != null) {
+            return scheduled;
+        }
+        if (courseWork != null && courseWork.getCreationTime() != null && !courseWork.getCreationTime().isBlank()) {
+            try {
+                return java.time.OffsetDateTime.parse(courseWork.getCreationTime()).toLocalDate();
+            } catch (Exception ex) {
+                try {
+                    return java.time.Instant.parse(courseWork.getCreationTime()).atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+                } catch (Exception ignored) {
+                    // Mantener el fallback únicamente para datos antiguos sin fecha.
+                }
+            }
+        }
+        return LocalDate.now();
     }
 
     private LocalDate resolveCourseWorkStartDate(CourseWork courseWork) {

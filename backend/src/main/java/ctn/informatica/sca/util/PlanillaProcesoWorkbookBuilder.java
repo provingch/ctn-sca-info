@@ -175,9 +175,20 @@ public class PlanillaProcesoWorkbookBuilder {
     }
 
     public static List<Tarea> filterTasksByEtapa(List<Tarea> tareas, int planillaEtapaIndex) {
-        // La lista ya proviene de una planilla de etapa específica. Conservarla
-        // completa mantiene la vista y el archivo exportado en sincronía.
-        return tareas == null ? List.of() : tareas;
+        if (tareas == null || tareas.isEmpty() || (planillaEtapaIndex != 1 && planillaEtapaIndex != 2)) {
+            return tareas == null ? List.of() : tareas;
+        }
+
+        List<Tarea> filtered = new ArrayList<>();
+        for (Tarea tarea : tareas) {
+            if (tarea == null || tarea.getFecha() == null) {
+                continue;
+            }
+            if (Tarea.resolveEtapaIndexByPublicationDate(tarea.getFecha()) == planillaEtapaIndex) {
+                filtered.add(tarea);
+            }
+        }
+        return filtered;
     }
 
     private String describeMonths(Collection<YearMonth> months) {
