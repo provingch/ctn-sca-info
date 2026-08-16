@@ -145,3 +145,53 @@ export const api = {
   put: <T>(path: string, body?: unknown) => apiRequest<T>(path, { method: 'PUT', body }),
   delete: <T>(path: string) => apiRequest<T>(path, { method: 'DELETE' }),
 };
+
+/**
+ * Descarga un recurso binario autenticado usando fetch+blob y fuerza la
+ * descarga del navegador sin navegar a la URL real (necesario cuando el
+ * access token se mantiene SOLO en memoria). Devuelve el nombre de fichero
+ * utilizado o lanza ApiError.
+ */
+export async function apiDownload(path: string, fallbackFilename = 'download.bin'): Promise<string> {
+  // rawRequest incluye Authorization cuando accessToken está presente
+  let response = await rawRequest(path, { method: 'GET' });
+
+  if (response.status === 401) {
+    const refreshed = await tryRefresh();
+    if (refreshed) {
+      response = await rawRequest(path, { method: 'GET' });
+    } else {
+      setAccessToken(null);
+      onAuthExpired?.();
+    }
+  }
+
+  if (!response.ok) {
+    const body = await parseBody(response);
+    const message = typeof body === 'string' && body.length > 0 ? body : `Error ${response.status} en ${path}`;
+    throw new ApiError(response.status, message, body);
+  }
+
+  const blob = await response.blob();
+  const contentDisposition = response.headers.get('content-disposition') || '';
+  const filename = extractFilename(contentDisposition) || fallbackFilename;
+
+  const blobUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = blobUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  // Liberar el objeto URL después de un tiempo corto
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+  return filename;
+}
+
+function extractFilename(contentDisposition: string): string | null {
+  if (!contentDisposition) return null;
+  // ejemplo: attachment; filename="planilla-5.xlsx"
+  const filenameMatch = /filename\*=UTF-8''([^;\n\r]+)|filename="?([^";\n\r]+)"?/.exec(contentDisposition);
+  if (!filenameMatch) return null;
+  return decodeURIComponent((filenameMatch[1] || filenameMatch[2] || '').trim());
+}
