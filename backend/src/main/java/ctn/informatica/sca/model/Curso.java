@@ -57,21 +57,15 @@ public class Curso {
     }
 
     public boolean matchesCourseKey(ctn.informatica.sca.google.GoogleClassroomUtils.CourseKey courseKey) {
-        if (courseKey == null) {
-            return false;
-        }
-        boolean sameLevel = this.getNivel() == courseKey.getNivel();
-        boolean sameSection = this.seccion != null && this.seccion.equalsIgnoreCase(courseKey.getSeccion());
-        String sala = courseKey.getSala();
-        if (sala == null || sala.isBlank()) {
-            return false;
-        }
-        // Use the normalized-phrase containment used elsewhere to detect whether
-        // the Classroom "room" declares the specialty. This is less strict
-        // than a plain equals on the parsed token and aligns with
-        // GoogleClassroomService.roomStatesSpecialty()
-        boolean sameSpecialty = ctn.informatica.sca.google.GoogleClassroomUtils.containsNormalizedPhrase(sala, this.especialidad);
-        return sameLevel && sameSection && sameSpecialty;
+        // Deprecated: CourseKey.sala is derived from the course name (subject),
+        // not from the Classroom "room" field. Matching specialty must be
+        // performed against the real Classroom room value, not this token.
+        // This method was previously used by older sync helpers; it's now
+        // intentionally removed to avoid accidental subject-vs-specialty
+        // comparisons. If callers need to match identity, use
+        // GoogleClassroomService.courseMatchesTeacherCurso(course, List.of(this))
+        // or pass the actual Classroom `room` string for comparison.
+        throw new UnsupportedOperationException("matchesCourseKey is deprecated; use courseMatchesTeacherCurso or provide real room");
     }
 
     private String normalizeValue(String value) {
