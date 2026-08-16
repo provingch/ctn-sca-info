@@ -80,8 +80,8 @@ export default function PlanillaPage() {
         <label className="inline-filter">
           Etapa
           <select value={data.planilla.etapaIndex} disabled={switchingEtapa} onChange={(e) => changeEtapa(Number(e.target.value))}>
-            <option value={1}>primera etapa</option>
-            <option value={2}>segunda etapa</option>
+            <option value={1}>Primera etapa</option>
+            <option value={2}>Segunda etapa</option>
           </select>
         </label>
         <Link className="button" to={`/planilla/${id}/tarea`}>Agregar tarea</Link>
