@@ -101,22 +101,22 @@ public class ClassroomSyncOrchestrator {
 
     public ClassroomSyncResult syncPlanillaWithClassroom(Profesor profesor, Planilla planilla) throws IOException, SQLException {
         if (profesor == null || planilla == null) {
-            return new ClassroomSyncResult(null, false, 0, 0, 0, "Datos de planilla o profesor no disponibles.");
+            return new ClassroomSyncResult(null, false, 0, 0, 0, null, null, null, "Datos de planilla o profesor no disponibles.");
         }
 
         if (!classroomAdapter.isGoogleConnected(profesor)) {
-            return new ClassroomSyncResult(null, false, 0, 0, 0, "Google Classroom no está conectado para este profesor.");
+            return new ClassroomSyncResult(null, false, 0, 0, 0, null, null, null, "Google Classroom no está conectado para este profesor.");
         }
 
         Curso curso = cursoDao.findById(planilla.getCursoId());
         if (curso == null) {
-            return new ClassroomSyncResult(null, false, 0, 0, 0, "No se encontró el curso asociado a la planilla.");
+            return new ClassroomSyncResult(null, false, 0, 0, 0, null, null, null, "No se encontró el curso asociado a la planilla.");
         }
 
         Optional<Course> resolvedCourse = classroomAdapter.resolveCourseForPlanilla(profesor, curso, planilla);
         if (resolvedCourse.isEmpty()) {
-            return new ClassroomSyncResult(planilla.getGoogleCourseId(), false, 0, 0, 0,
-                    "No se encontró un curso de Classroom compatible con esta planilla.");
+            return new ClassroomSyncResult(planilla.getGoogleCourseId(), false, 0, 0, 0, null, null, null,
+                "No se encontró un curso de Classroom compatible con esta planilla.");
         }
 
         Course classroomCourse = resolvedCourse.get();
