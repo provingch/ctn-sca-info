@@ -85,19 +85,10 @@ export default function PlanillaPage() {
           </select>
         </label>
         <Link className="button" to={`/planilla/${id}/tarea`}>Agregar tarea</Link>
-        {/* Sincronización ahora automática al cargar la planilla */}
-        {/* La descarga por planilla individual (equivalente a
-            ExportPlanillaServlet del legacy) todavía no está migrada al
-            backend nuevo -- solo existe la exportación por curso completo
-            (/api/evaluacion/export, Bloque 4). Deshabilitado a propósito
-            hasta que se migre ese endpoint. */}
-        <button className="button secondary" disabled title="Descarga individual pendiente de migrar (Bloque 4)">
-          Descargar
-        </button>
+        {/* Habilitamos la descarga individual usando el endpoint backend recién agregado */}
+        <a className="button" href={`/api/planillas/${id}/export`}>Descargar</a>
       </div>
-      <section className="panel notice">
-        Las notas se sincronizan desde Google Classroom y se muestran aquí en formato de planilla. No hace falta guardar cambios manualmente.
-      </section>
+      {/* Mensaje informativo removido por solicitud de UX */}
       <section className="summary-grid">
         <article className="metric"><span>Curso</span><strong>{data.curso ? `${data.curso.nivel}° ${data.curso.seccion}` : '—'}</strong></article>
         <article className="metric"><span>Etapa</span><strong>{data.planilla.etapa}</strong></article>

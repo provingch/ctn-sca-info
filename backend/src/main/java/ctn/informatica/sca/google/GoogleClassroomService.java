@@ -200,38 +200,39 @@ public final class GoogleClassroomService {
         String section = course.getSection();
         Optional<GoogleClassroomUtils.CourseKey> key = parseCourseKey(name, room, section);
 
-        String specialtyHint = GoogleClassroomUtils.extractSpecialtyHint(name, room);
-        if (specialtyHint.isBlank()) {
+        if (key.isEmpty()) {
             return false;
         }
 
-        if (key.isPresent()) {
-            for (Curso curso : cursos) {
-                boolean sameLevel = curso.getNivel() == key.get().getNivel();
-                boolean sameSection = curso.getSeccion() != null && curso.getSeccion().equalsIgnoreCase(key.get().getSeccion());
-                boolean samePeriod = curso.getPeriod() == key.get().getPeriodo();
-                boolean sameSpecialty = specialtyHintMatchesCurso(specialtyHint, curso);
-                if (sameLevel && sameSection && samePeriod && sameSpecialty) {
-                    return true;
-                }
+        for (Curso curso : cursos) {
+            boolean sameLevel = curso.getNivel() == key.get().getNivel();
+            boolean sameSection = curso.getSeccion() != null && curso.getSeccion().equalsIgnoreCase(key.get().getSeccion());
+            boolean samePeriod = curso.getPeriod() == key.get().getPeriodo();
+            boolean sameSpecialty = roomStatesSpecialty(room, curso);
+            if (sameLevel && sameSection && samePeriod && sameSpecialty) {
+                return true;
             }
         }
 
         return false;
     }
 
-    private static boolean specialtyHintMatchesCurso(String specialtyHint, Curso curso) {
-        if (curso == null || specialtyHint == null || specialtyHint.isBlank()) {
+    /**
+     * Convención acordada para el campo "Sala" de Google Classroom: además de
+     * nivel+sección (en el nombre) y año (en la Sección de Classroom), la Sala
+     * debe declarar explícitamente la ESPECIALIDAD a la que pertenece la clase
+     * (ej. "Informática"). Antes esto se inferia recortando nivel+sección del
+     * nombre de la clase, pero lo que queda ahí es la MATERIA puntual (ej.
+     * "Algorítmica"), no la especialidad -- son conceptos distintos y casi
+     * nunca coinciden como texto, lo que hacía que casi ninguna clase pasara
+     * este filtro. Ahora se exige que la Sala mencione la especialidad de
+     * forma explícita.
+     */
+    private static boolean roomStatesSpecialty(String room, Curso curso) {
+        if (curso == null || room == null || room.isBlank()) {
             return false;
         }
-        String normalizedHint = GoogleClassroomUtils.normalizeSubjectName(specialtyHint);
-        String normalizedCurso = GoogleClassroomUtils.normalizeSubjectName(curso.getEspecialidad());
-        if (normalizedHint.isBlank() || normalizedCurso.isBlank()) {
-            return false;
-        }
-        return normalizedHint.equals(normalizedCurso)
-                || normalizedHint.contains(normalizedCurso)
-                || normalizedCurso.contains(normalizedHint);
+        return GoogleClassroomUtils.containsNormalizedPhrase(room, curso.getEspecialidad());
     }
 
     public static List<Course> listAllowedCourses(Profesor profesor, List<Curso> cursos, List<String> teacherSubjects) throws IOException {
