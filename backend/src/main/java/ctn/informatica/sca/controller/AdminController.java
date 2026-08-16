@@ -8,6 +8,7 @@ import ctn.informatica.sca.dao.MateriaDao;
 import ctn.informatica.sca.dao.ProfesorDao;
 import ctn.informatica.sca.dao.TareaDao;
 import ctn.informatica.sca.dao.GradeDao;
+import ctn.informatica.sca.dao.PlanillaDao;
 import ctn.informatica.sca.model.Alumno;
 import ctn.informatica.sca.model.Asignacion;
 import ctn.informatica.sca.model.Curso;
@@ -32,15 +33,18 @@ import org.springframework.web.server.ResponseStatusException;
 public class AdminController {
     private final TareaDao tareaDao;
     private final GradeDao gradeDao;
+    private final PlanillaDao planillaDao;
 
     public AdminController() {
         this.tareaDao = new TareaDao();
         this.gradeDao = new GradeDao();
+        this.planillaDao = new PlanillaDao();
     }
 
-    AdminController(TareaDao tareaDao, GradeDao gradeDao) {
+    AdminController(TareaDao tareaDao, GradeDao gradeDao, PlanillaDao planillaDao) {
         this.tareaDao = tareaDao;
         this.gradeDao = gradeDao;
+        this.planillaDao = planillaDao;
     }
     @GetMapping
     public CatalogResponse catalog(Authentication authentication) {
@@ -133,13 +137,25 @@ public class AdminController {
     public WipeResponse wipePlanillaSync(@PathVariable int id, Authentication auth) {
         ApiAuth.requireUserId(auth);
         try {
-            // Borrar notas importadas para las tareas importadas de Classroom
             int deletedGrades = this.gradeDao.deleteGradesForPlanilla(id);
-            // Borrar tareas importadas (google_coursework_id IS NOT NULL)
             int deletedTasks = this.tareaDao.deleteImportedTasks(id);
-            return new WipeResponse("Wipe de importaciones completado.", deletedGrades, deletedTasks, id);
+            int clearedGoogleCourseIds = this.planillaDao.updateClassroomCourseId(id, null) ? 1 : 0;
+            return new WipeResponse("Wipe de importaciones completado.", deletedGrades, deletedTasks, id, clearedGoogleCourseIds);
         } catch (Exception ex) {
             throw failure("No se pudo realizar wipe de sincronización", ex);
+        }
+    }
+
+    @PostMapping("/sync/wipe-all")
+    public GlobalWipeResponse wipeAllClassroomSync(Authentication auth) {
+        ApiAuth.requireUserId(auth);
+        try {
+            int deletedGrades = this.gradeDao.deleteImportedGradesForAllPlans();
+            int deletedTasks = this.tareaDao.deleteImportedTasks(null);
+            int clearedGoogleCourseIds = this.planillaDao.clearClassroomCourseIds();
+            return new GlobalWipeResponse("Wipe global de sincronización Classroom completado.", deletedGrades, deletedTasks, clearedGoogleCourseIds);
+        } catch (Exception ex) {
+            throw failure("No se pudo realizar wipe global de sincronización", ex);
         }
     }
 
@@ -158,5 +174,6 @@ public class AdminController {
     public record UserInput(String nombre, String apellido, String usuario, String contrasenia, int nivel, String correo, Integer especialidadId) {}
     public record AssignmentInput(int profesorId, int materiaId, int cursoId) {}
     public record StudentInput(String nombre, String apellido, int cursoId, Integer ci, String correoEncargado, String correoEncargado2) {}
-    public record WipeResponse(String message, int deletedGrades, int deletedTasks, int planillaId) {}
+    public record WipeResponse(String message, int deletedGrades, int deletedTasks, int planillaId, int clearedGoogleCourseIds) {}
+    public record GlobalWipeResponse(String message, int deletedGrades, int deletedTasks, int clearedGoogleCourseIds) {}
 }

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import AppShell from '../../components/AppShell';
-import { createAdminRecord, deleteAssignment, getAdminCatalog, deleteAdminRecord, getMateriaEspecialidades, wipePlanillaSyncImports, type AdminCatalog } from '../../api/admin';
+import { createAdminRecord, deleteAssignment, getAdminCatalog, deleteAdminRecord, getMateriaEspecialidades, wipeAllClassroomSync, wipePlanillaSyncImports, type AdminCatalog } from '../../api/admin';
 import { ApiError } from '../../api/client';
 import { useSpecialty } from '../../context/SpecialtyContext';
 import { normalizeSpecialty } from '../../theme/theme';
@@ -60,12 +60,24 @@ export default function AdminPage() {
             setWiping(true);
             setWipeResult(null);
             const res = await wipePlanillaSyncImports(Number(wipeId));
-            setWipeResult(res.message + ' (tareas borradas: ' + (res.deletedTasks ?? 0) + ', notas borradas: ' + (res.deletedGrades ?? 0) + ')');
+            setWipeResult(res.message + ' (tareas borradas: ' + (res.deletedTasks ?? 0) + ', notas borradas: ' + (res.deletedGrades ?? 0) + ', curso cacheado limpiado: ' + (res.clearedGoogleCourseIds ?? 0) + ')');
             await load();
           } catch (err) {
             setWipeResult(err instanceof ApiError ? err.message : 'Error al ejecutar wipe');
           } finally { setWiping(false); }
         }}>Wipe planilla</button>
+        <button className="button danger" disabled={wiping} onClick={async () => {
+          if (!window.confirm('¿Confirmas borrar TODO el cache de sincronización de Classroom? Esto elimina tareas, notas y asociaciones de curso de todas las planillas.')) return;
+          try {
+            setWiping(true);
+            setWipeResult(null);
+            const res = await wipeAllClassroomSync();
+            setWipeResult(res.message + ' (tareas borradas: ' + (res.deletedTasks ?? 0) + ', notas borradas: ' + (res.deletedGrades ?? 0) + ', cursos cacheados limpiados: ' + (res.clearedGoogleCourseIds ?? 0) + ')');
+            await load();
+          } catch (err) {
+            setWipeResult(err instanceof ApiError ? err.message : 'Error al ejecutar wipe global');
+          } finally { setWiping(false); }
+        }}>Wipe global Classroom</button>
         <button className="button" onClick={() => { setWipeId(''); setWipeResult(null); }}>Limpiar</button>
       </div>
       {wiping && <div className="notice">Ejecutando wipe…</div>}
