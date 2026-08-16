@@ -598,12 +598,6 @@ public final class GoogleClassroomService {
                     && (GoogleClassroomUtils.containsNormalizedPhrase(name, normalizedMateria)
                     || GoogleClassroomUtils.containsNormalizedPhrase(room, normalizedMateria));
 
-            String section = course.getSection();
-            Optional<GoogleClassroomUtils.CourseKey> key = parseCourseKey(name, room, section);
-            if (key.isEmpty() && section != null && !section.isBlank()) {
-                key = parseCourseKey(name + " " + section, room, section);
-            }
-
             if (courseMatchesTeacherCurso(course, List.of(curso))) {
                 if (subjectMatches) {
                     return Optional.of(course);
@@ -611,20 +605,9 @@ public final class GoogleClassroomService {
                 identityCandidates.add(course);
                 continue;
             }
-
-            Integer maybeLevel = tryExtractLevel(name);
-            if (maybeLevel != null && maybeLevel == curso.getNivel()) {
-                boolean sectionMatches = curso.getSeccion() != null
-                        && !curso.getSeccion().isBlank()
-                        && (course.getSection() != null && course.getSection().equalsIgnoreCase(curso.getSeccion()));
-                boolean roomStatesSpecialty = room != null && roomStatesSpecialty(room, curso);
-                if (sectionMatches && roomStatesSpecialty) {
-                    if (subjectMatches) {
-                        return Optional.of(course);
-                    }
-                    identityCandidates.add(course);
-                }
-            }
+            // No further fallback logic: rely on courseMatchesTeacherCurso which
+            // enforces level + section + room-declares-specialty. Keeping extra
+            // heuristics led to accidental matches and is intentionally removed.
         }
 
         if (identityCandidates.size() == 1) {
@@ -633,14 +616,8 @@ public final class GoogleClassroomService {
         return Optional.empty();
     }
 
-    private static Integer tryExtractLevel(String text) {
-        if (text == null || text.isBlank()) return null;
-        String lower = text.toLowerCase(java.util.Locale.ROOT);
-        if (lower.matches(".*\\b(primero|1ro|1er|1)\\b.*")) return 1;
-        if (lower.matches(".*\\b(segundo|2do|2)\\b.*")) return 2;
-        if (lower.matches(".*\\b(tercero|3ro|3)\\b.*")) return 3;
-        return null;
-    }
+    // tryExtractLevel is now unused after removing the weak fallback logic.
+    // It is kept commented for reference but will be removed in a future cleanup.
 
     private static String normalizePersonName(String value) {
         if (value == null || value.isBlank()) {
