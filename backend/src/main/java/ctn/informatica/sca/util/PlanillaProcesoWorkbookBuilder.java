@@ -30,6 +30,8 @@ public class PlanillaProcesoWorkbookBuilder {
     private static final String TEMPLATE_RESOURCE = "templates/PLANTILLA_PLANILLA_PROCESO_CTN.xlsx";
     private static final String LEGEND_SHEET = "LEYENDA_PARA_DESARROLLO";
     private static final int MONTH_BLOCK_COUNT = 5;
+    private static final int INSTRUMENTS_PER_MONTH = 12;
+    private static final int MONTH_BLOCK_WIDTH = 13;
     private static final int MONTH_HEADER_ROW = 5;
     private static final int INSTRUMENT_TITLE_ROW = 6;
     private static final int TP_ROW = 7;
@@ -152,6 +154,8 @@ public class PlanillaProcesoWorkbookBuilder {
         replaceCommonMarkers(sheet, data);
         fillMonthBlocks(sheet, tareasPorMes, taskColumnById, layout);
         fillStudentRows(sheet, data, taskColumnById, layout);
+        clearTemplatePlaceholders(sheet);
+        setTeacherSignature(sheet, data);
     }
 
     private int monthBlockWidth(List<Tarea> tareasMes) {
@@ -248,25 +252,39 @@ public class PlanillaProcesoWorkbookBuilder {
     private void fillMonthBlocks(Sheet sheet, Map<YearMonth, List<Tarea>> tareasPorMes, Map<Integer, Integer> taskColumnById, StageLayout layout) {
         List<Map.Entry<YearMonth, List<Tarea>>> months = new ArrayList<>(tareasPorMes.entrySet());
         int currentColumn = layout.firstMonthColumn();
-        for (Map.Entry<YearMonth, List<Tarea>> monthEntry : months) {
-            int firstCol = currentColumn;
+
+        for (int monthBlockIndex = 0; monthBlockIndex < MONTH_BLOCK_COUNT; monthBlockIndex++) {
             Row monthHeaderRow = getOrCreateRow(sheet, MONTH_HEADER_ROW);
             Row titleRow = getOrCreateRow(sheet, INSTRUMENT_TITLE_ROW);
             Row tpRow = getOrCreateRow(sheet, TP_ROW);
-            List<Tarea> tareasMes = monthEntry.getValue() == null ? List.of() : monthEntry.getValue();
-            String monthLabel = capitalize(monthEntry.getKey().getMonth().getDisplayName(TextStyle.FULL, SPANISH));
 
+            String monthLabel = "";
+            List<Tarea> tareasMes = List.of();
+            if (monthBlockIndex < months.size()) {
+                Map.Entry<YearMonth, List<Tarea>> monthEntry = months.get(monthBlockIndex);
+                monthLabel = capitalize(monthEntry.getKey().getMonth().getDisplayName(TextStyle.FULL, SPANISH));
+                tareasMes = monthEntry.getValue() == null ? List.of() : monthEntry.getValue();
+            }
+
+            int firstCol = currentColumn;
             setStringCell(monthHeaderRow, firstCol, monthLabel);
 
-            for (int instrumentIndex = 0; instrumentIndex < tareasMes.size(); instrumentIndex++) {
+            for (int instrumentIndex = 0; instrumentIndex < INSTRUMENTS_PER_MONTH; instrumentIndex++) {
                 int colIndex = firstCol + 2 + instrumentIndex;
                 Cell titleCell = getOrCreateCell(titleRow, colIndex);
                 Cell tpCell = getOrCreateCell(tpRow, colIndex);
-                Tarea tarea = tareasMes.get(instrumentIndex);
-                titleCell.setCellValue(safeString(tarea.getTitulo()));
-                setNumericCell(tpCell, tarea.getTotal());
-                taskColumnById.put(tarea.getId(), colIndex);
+
+                if (instrumentIndex < tareasMes.size()) {
+                    Tarea tarea = tareasMes.get(instrumentIndex);
+                    titleCell.setCellValue(safeString(tarea.getTitulo()));
+                    setNumericCell(tpCell, tarea.getTotal());
+                    taskColumnById.put(tarea.getId(), colIndex);
+                } else {
+                    titleCell.setBlank();
+                    tpCell.setBlank();
+                }
             }
+
             currentColumn += monthBlockWidth(tareasMes);
         }
     }
@@ -432,6 +450,42 @@ public class PlanillaProcesoWorkbookBuilder {
 
     private void setStringCell(Cell cell, String value) {
         cell.setCellValue(safeString(value));
+    }
+
+    private void clearTemplatePlaceholders(Sheet sheet) {
+        for (Row row : sheet) {
+            for (Cell cell : row) {
+                if (cell == null || cell.getCellType() != CellType.STRING) {
+                    continue;
+                }
+                String value = cell.getStringCellValue();
+                if (value != null && value.contains("{{")) {
+                    cell.setCellValue("");
+                }
+            }
+        }
+    }
+
+    private void setTeacherSignature(Sheet sheet, PlanillaSheetData data) {
+        if (data == null || data.profesorNombre() == null || data.profesorNombre().isBlank()) {
+            return;
+        }
+
+        Row signatureRow = sheet.getRow(14);
+        if (signatureRow == null) {
+            return;
+        }
+
+        for (Cell cell : signatureRow) {
+            if (cell == null) {
+                continue;
+            }
+            String value = cell.getCellType() == CellType.STRING ? cell.getStringCellValue() : "";
+            if (value != null && value.toLowerCase(Locale.ROOT).contains("firma del docente")) {
+                cell.setCellValue(data.profesorNombre());
+                return;
+            }
+        }
     }
 
     private void setNumericCell(Cell cell, Number value) {
