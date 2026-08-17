@@ -30,8 +30,6 @@ public class PlanillaProcesoWorkbookBuilder {
     private static final String TEMPLATE_RESOURCE = "templates/PLANTILLA_PLANILLA_PROCESO_CTN.xlsx";
     private static final String LEGEND_SHEET = "LEYENDA_PARA_DESARROLLO";
     private static final int MONTH_BLOCK_COUNT = 5;
-    private static final int INSTRUMENTS_PER_MONTH = 12;
-    private static final int MONTH_BLOCK_WIDTH = 13;
     private static final int MONTH_HEADER_ROW = 5;
     private static final int INSTRUMENT_TITLE_ROW = 6;
     private static final int TP_ROW = 7;
@@ -156,6 +154,11 @@ public class PlanillaProcesoWorkbookBuilder {
         fillStudentRows(sheet, data, taskColumnById, layout);
     }
 
+    private int monthBlockWidth(List<Tarea> tareasMes) {
+        int actualTasks = tareasMes == null ? 0 : tareasMes.size();
+        return Math.max(2, actualTasks + 2);
+    }
+
     private Map<YearMonth, List<Tarea>> groupTasksByMonth(List<Tarea> tareas) {
         Map<YearMonth, List<Tarea>> grouped = new LinkedHashMap<>();
         if (tareas == null) {
@@ -201,30 +204,28 @@ public class PlanillaProcesoWorkbookBuilder {
 
     private Map<Integer, Integer> allocateTaskColumns(Map<YearMonth, List<Tarea>> tareasPorMes, StageLayout layout, int planillaId) {
         Map<Integer, Integer> mapping = new HashMap<>();
-        int monthIndex = 0;
+        int nextColumn = layout.firstMonthColumn();
         for (List<Tarea> tareasMes : tareasPorMes.values()) {
-            if (tareasMes.size() > INSTRUMENTS_PER_MONTH) {
-                // TODO: si una materia supera la capacidad mensual de la plantilla oficial, definir con el usuario
-                // si se amplían columnas o se cambia el criterio. La plantilla actual tiene 12 instrumentos por mes.
-                throw new IllegalStateException("La planilla " + planillaId + " tiene " + tareasMes.size() + " tareas en un mismo mes, pero la plantilla oficial solo reserva " + INSTRUMENTS_PER_MONTH + " columnas de instrumento por mes");
+            int availableSlots = Math.max(0, tareasMes == null ? 0 : tareasMes.size());
+            if (availableSlots > 0) {
+                for (int taskIndex = 0; taskIndex < tareasMes.size(); taskIndex++) {
+                    mapping.put(tareasMes.get(taskIndex).getId(), nextColumn + 2 + taskIndex);
+                }
             }
-            int firstCol = layout.firstMonthColumn() + (monthIndex * MONTH_BLOCK_WIDTH);
-            for (int taskIndex = 0; taskIndex < tareasMes.size(); taskIndex++) {
-                mapping.put(tareasMes.get(taskIndex).getId(), firstCol + taskIndex);
-            }
-            monthIndex++;
+            nextColumn += monthBlockWidth(tareasMes);
         }
         return mapping;
     }
 
     private void replaceCommonMarkers(Sheet sheet, PlanillaSheetData data) {
         Map<String, String> replacements = new LinkedHashMap<>();
+        Curso curso = data.curso();
         replacements.put("{{DISCIPLINA}}", safeString(data.disciplina()));
-        replacements.put("{{ESPECIALIDAD}}", safeString(data.curso().getEspecialidad()));
+        replacements.put("{{ESPECIALIDAD}}", curso == null ? "" : safeString(curso.getEspecialidad()));
         replacements.put("{{PROFESOR}}", safeString(data.profesorNombre()));
-        replacements.put("{{CURSO}}", stripOrdinalSuffix(safeString(data.curso().getCursoOrdinal())));
+        replacements.put("{{CURSO}}", curso == null ? "" : stripOrdinalSuffix(safeString(curso.getCursoOrdinal())));
         replacements.put("{{TURNO}}", safeString(data.turno()));
-        replacements.put("{{SECCION}}", safeString(data.curso().getSeccion()));
+        replacements.put("{{SECCION}}", curso == null ? "" : safeString(curso.getSeccion()));
         replacements.put("{{ANIO}}", String.valueOf(data.planilla().getPeriodo()));
 
         for (Row row : sheet) {
@@ -246,36 +247,27 @@ public class PlanillaProcesoWorkbookBuilder {
 
     private void fillMonthBlocks(Sheet sheet, Map<YearMonth, List<Tarea>> tareasPorMes, Map<Integer, Integer> taskColumnById, StageLayout layout) {
         List<Map.Entry<YearMonth, List<Tarea>>> months = new ArrayList<>(tareasPorMes.entrySet());
-        for (int monthBlockIndex = 0; monthBlockIndex < MONTH_BLOCK_COUNT; monthBlockIndex++) {
-            int firstCol = layout.firstMonthColumn() + (monthBlockIndex * MONTH_BLOCK_WIDTH);
+        int currentColumn = layout.firstMonthColumn();
+        for (Map.Entry<YearMonth, List<Tarea>> monthEntry : months) {
+            int firstCol = currentColumn;
             Row monthHeaderRow = getOrCreateRow(sheet, MONTH_HEADER_ROW);
             Row titleRow = getOrCreateRow(sheet, INSTRUMENT_TITLE_ROW);
             Row tpRow = getOrCreateRow(sheet, TP_ROW);
-
-            String monthLabel = "";
-            List<Tarea> tareasMes = List.of();
-            if (monthBlockIndex < months.size()) {
-                Map.Entry<YearMonth, List<Tarea>> monthEntry = months.get(monthBlockIndex);
-                monthLabel = capitalize(monthEntry.getKey().getMonth().getDisplayName(TextStyle.FULL, SPANISH));
-                tareasMes = monthEntry.getValue();
-            }
+            List<Tarea> tareasMes = monthEntry.getValue() == null ? List.of() : monthEntry.getValue();
+            String monthLabel = capitalize(monthEntry.getKey().getMonth().getDisplayName(TextStyle.FULL, SPANISH));
 
             setStringCell(monthHeaderRow, firstCol, monthLabel);
 
-            for (int instrumentIndex = 0; instrumentIndex < INSTRUMENTS_PER_MONTH; instrumentIndex++) {
-                Cell titleCell = getOrCreateCell(titleRow, firstCol + instrumentIndex);
-                Cell tpCell = getOrCreateCell(tpRow, firstCol + instrumentIndex);
-
-                if (instrumentIndex < tareasMes.size()) {
-                    Tarea tarea = tareasMes.get(instrumentIndex);
-                    titleCell.setCellValue(safeString(tarea.getTitulo()));
-                    setNumericCell(tpCell, tarea.getTotal());
-                    taskColumnById.put(tarea.getId(), firstCol + instrumentIndex);
-                } else {
-                    titleCell.setBlank();
-                    tpCell.setBlank();
-                }
+            for (int instrumentIndex = 0; instrumentIndex < tareasMes.size(); instrumentIndex++) {
+                int colIndex = firstCol + 2 + instrumentIndex;
+                Cell titleCell = getOrCreateCell(titleRow, colIndex);
+                Cell tpCell = getOrCreateCell(tpRow, colIndex);
+                Tarea tarea = tareasMes.get(instrumentIndex);
+                titleCell.setCellValue(safeString(tarea.getTitulo()));
+                setNumericCell(tpCell, tarea.getTotal());
+                taskColumnById.put(tarea.getId(), colIndex);
             }
+            currentColumn += monthBlockWidth(tareasMes);
         }
     }
 
@@ -322,17 +314,19 @@ public class PlanillaProcesoWorkbookBuilder {
     }
 
     private void fillStudentRows(Sheet sheet, PlanillaSheetData data, Map<Integer, Integer> taskColumnById, StageLayout layout) {
+        int maxColumn = layout.firstMonthColumn();
+        for (Integer col : taskColumnById.values()) {
+            maxColumn = Math.max(maxColumn, col);
+        }
+
         for (int rowOffset = 0; rowOffset < data.rows().size(); rowOffset++) {
             StudentRow studentRow = data.rows().get(rowOffset);
             Row excelRow = getOrCreateRow(sheet, FIRST_STUDENT_ROW + rowOffset);
             setNumericCell(getOrCreateCell(excelRow, 0), rowOffset + 1);
             setStringCell(excelRow, 1, studentRow.getAlumnoNombre());
 
-            for (int monthBlockIndex = 0; monthBlockIndex < MONTH_BLOCK_COUNT; monthBlockIndex++) {
-                int firstCol = layout.firstMonthColumn() + (monthBlockIndex * MONTH_BLOCK_WIDTH);
-                for (int instrumentIndex = 0; instrumentIndex < INSTRUMENTS_PER_MONTH; instrumentIndex++) {
-                    getOrCreateCell(excelRow, firstCol + instrumentIndex).setBlank();
-                }
+            for (int col = layout.firstMonthColumn(); col <= maxColumn; col++) {
+                getOrCreateCell(excelRow, col).setBlank();
             }
 
             Map<Integer, Integer> grades = studentRow.getGrades();

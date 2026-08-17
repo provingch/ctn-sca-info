@@ -198,18 +198,16 @@ public final class GoogleClassroomService {
         String name = course.getName();
         String room = course.getRoom();
         String section = course.getSection();
-        Optional<GoogleClassroomUtils.CourseKey> key = parseCourseKey(name, room, section);
-
-        if (key.isEmpty()) {
-            return false;
-        }
 
         for (Curso curso : cursos) {
+            Optional<GoogleClassroomUtils.CourseKey> key = GoogleClassroomUtils.parseCourseKey(name, room, section, curso.getPeriod());
+            if (key.isEmpty()) {
+                continue;
+            }
             boolean sameLevel = curso.getNivel() == key.get().getNivel();
             boolean sameSection = curso.getSeccion() != null && curso.getSeccion().equalsIgnoreCase(key.get().getSeccion());
-            boolean samePeriod = curso.getPeriod() == key.get().getPeriodo();
             boolean sameSpecialty = roomStatesSpecialty(room, curso);
-            if (sameLevel && sameSection && samePeriod && sameSpecialty) {
+            if (sameLevel && sameSection && sameSpecialty) {
                 return true;
             }
         }
@@ -595,14 +593,13 @@ public final class GoogleClassroomService {
             String room = course.getRoom();
             String section = course.getSection();
 
-            Optional<GoogleClassroomUtils.CourseKey> key = parseCourseKey(name, room, section);
+            Optional<GoogleClassroomUtils.CourseKey> key = GoogleClassroomUtils.parseCourseKey(name, room, section, curso.getPeriod());
             if (key.isEmpty()) {
                 continue;
             }
             boolean sameLevel = curso.getNivel() == key.get().getNivel();
             boolean sameSection = curso.getSeccion() != null && curso.getSeccion().equalsIgnoreCase(key.get().getSeccion());
-            boolean samePeriod = curso.getPeriod() == key.get().getPeriodo();
-            if (!(sameLevel && sameSection && samePeriod)) {
+            if (!(sameLevel && sameSection)) {
                 continue;
             }
 
