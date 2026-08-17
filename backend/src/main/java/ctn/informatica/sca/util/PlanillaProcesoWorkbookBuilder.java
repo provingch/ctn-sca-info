@@ -275,6 +275,12 @@ public class PlanillaProcesoWorkbookBuilder {
             }
 
             int firstCol = currentColumn;
+            // Ensure block columns are visible before writing into them
+            if (!tareasMes.isEmpty() && sheet instanceof XSSFSheet xssfEnsure) {
+                xssfEnsure.setColumnHidden(firstCol, false);
+                xssfEnsure.setColumnHidden(firstCol + 1, false);
+            }
+
             setStringCell(monthHeaderRow, firstCol, monthLabel);
 
             for (int instrumentIndex = 0; instrumentIndex < INSTRUMENTS_PER_MONTH; instrumentIndex++) {
@@ -284,6 +290,10 @@ public class PlanillaProcesoWorkbookBuilder {
 
                 if (instrumentIndex < tareasMes.size()) {
                     Tarea tarea = tareasMes.get(instrumentIndex);
+                    // Un-hide the specific instrument column in case a previous month hid it
+                    if (sheet instanceof XSSFSheet xssfEnsure) {
+                        xssfEnsure.setColumnHidden(colIndex, false);
+                    }
                     titleCell.setCellValue(safeString(tarea.getTitulo()));
                     setNumericCell(tpCell, tarea.getTotal());
                     taskColumnById.put(tarea.getId(), colIndex);
@@ -300,6 +310,9 @@ public class PlanillaProcesoWorkbookBuilder {
 
             currentColumn += monthBlockWidth(tareasMes);
         }
+        // After processing all month blocks, hide any leftover columns between the
+        // last used month column and the first fixed-final column of the layout.
+        hideLeftoverColumns(sheet, currentColumn, layout);
     }
 
     private void hideUnusedColumnsInMonthBlock(Sheet sheet, int firstColOfBlock, int taskCount) {
@@ -319,6 +332,37 @@ public class PlanillaProcesoWorkbookBuilder {
         xssfSheet.setColumnHidden(firstColOfBlock + 1, true);
         for (int i = 0; i < INSTRUMENTS_PER_MONTH; i++) {
             xssfSheet.setColumnHidden(firstColOfBlock + 2 + i, true);
+        }
+    }
+
+    private void hideLeftoverColumns(Sheet sheet, int currentColumn, StageLayout layout) {
+        if (!(sheet instanceof XSSFSheet xssfSheet)) {
+            return;
+        }
+
+        int boundary = Integer.MAX_VALUE;
+        int[] candidates = new int[]{
+                layout.totalGeneralColumn(),
+                layout.currentStageGradeColumn(),
+                layout.firstStageGradeColumn(),
+                layout.stageSumColumn(),
+                layout.finalAverageColumn(),
+                layout.complementaryColumn(),
+                layout.regularizationColumn()
+        };
+
+        for (int c : candidates) {
+            if (c >= 0 && c >= currentColumn) {
+                boundary = Math.min(boundary, c);
+            }
+        }
+
+        if (boundary == Integer.MAX_VALUE) {
+            return;
+        }
+
+        for (int col = currentColumn; col < boundary; col++) {
+            xssfSheet.setColumnHidden(col, true);
         }
     }
 
