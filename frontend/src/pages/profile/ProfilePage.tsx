@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 import { changePassword, confirmTotp, disableTotp, getProfile, prepareTotp, saveProfile, type ProfileResponse, getGoogleAuthorizeUrl } from '../../api/profile';
 
 const SIGNATURE_PERSISTENCE_MAX_BYTES = 1_500_000;
+const SIGNATURE_MOBILE_MEDIA_QUERY = '(max-width: 680px), (max-height: 680px) and (pointer: coarse)';
 import { ApiError } from '../../api/client';
 import AppShell from '../../components/AppShell';
 import PasswordInput from '../../components/PasswordInput';
@@ -83,7 +84,10 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
   const [form, setForm] = useState({ correo: owner.correo || '', telefono: owner.telefono || '', celular: owner.celular || '', usuario: owner.usuario || '', nombre: owner.nombre || '', apellido: owner.apellido || '', ci: owner.ci, nivel: null, firmaImagen: owner.firmaImagen ?? null });
   const [signatureError, setSignatureError] = useState('');
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
+  const isDrawingRef = useRef(false);
+  const signatureBeforeModalRef = useRef<string | null>(null);
+  const [isSignatureMobile, setIsSignatureMobile] = useState(() => window.matchMedia(SIGNATURE_MOBILE_MEDIA_QUERY).matches);
+  const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const haveSignature = Boolean(form.firmaImagen);
 
   async function submit(event: FormEvent) { event.preventDefault(); try { await saveProfile(form); await done('Datos del perfil guardados.'); } catch (error) { setStatus(message(error, 'No se pudo guardar el perfil.')); } }
@@ -116,14 +120,15 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
     reader.readAsDataURL(file);
   }
 
-  function prepareCanvas() {
+  const prepareCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const context = canvas.getContext('2d');
     if (!context) return;
-    const isMobile = window.innerWidth < 700;
-    const width = isMobile ? 280 : 420;
-    const height = 140;
+    const rect = canvas.getBoundingClientRect();
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+    const width = Math.min(Math.max(Math.round(rect.width * pixelRatio), 280), 1200);
+    const height = Math.min(Math.max(Math.round(rect.height * pixelRatio), 140), 520);
     canvas.width = width;
     canvas.height = height;
     context.fillStyle = '#ffffff';
@@ -140,15 +145,62 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
       };
       img.src = form.firmaImagen;
     }
+  }, [form.firmaImagen]);
+
+  useEffect(() => {
+    const media = window.matchMedia(SIGNATURE_MOBILE_MEDIA_QUERY);
+    const updateMode = () => {
+      setIsSignatureMobile(media.matches);
+      if (!media.matches) setIsSignatureModalOpen(false);
+    };
+    media.addEventListener('change', updateMode);
+    return () => media.removeEventListener('change', updateMode);
+  }, []);
+
+  useEffect(() => {
+    if (!isSignatureMobile || isSignatureModalOpen) prepareCanvas();
+  }, [isSignatureMobile, isSignatureModalOpen, prepareCanvas]);
+
+  useEffect(() => {
+    if (!isSignatureModalOpen) return;
+    const scrollY = window.scrollY;
+    const previous = {
+      overflow: document.body.style.overflow,
+      position: document.body.style.position,
+      top: document.body.style.top,
+      width: document.body.style.width,
+    };
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+    return () => {
+      document.body.style.overflow = previous.overflow;
+      document.body.style.position = previous.position;
+      document.body.style.top = previous.top;
+      document.body.style.width = previous.width;
+      window.scrollTo(0, scrollY);
+    };
+  }, [isSignatureModalOpen]);
+
+  function openSignatureModal() {
+    signatureBeforeModalRef.current = form.firmaImagen;
+    setIsSignatureModalOpen(true);
   }
 
-  useEffect(() => { prepareCanvas(); }, [form.firmaImagen]);
+  function closeSignatureModal(keepChanges: boolean) {
+    isDrawingRef.current = false;
+    if (!keepChanges) setForm((current) => ({ ...current, firmaImagen: signatureBeforeModalRef.current }));
+    setIsSignatureModalOpen(false);
+  }
 
   function drawStart(event: React.PointerEvent<HTMLCanvasElement>) {
     const canvas = canvasRef.current;
     const context = canvas?.getContext('2d');
     if (!canvas || !context) return;
-    setIsDrawing(true);
+    event.preventDefault();
+    canvas.setPointerCapture(event.pointerId);
+    isDrawingRef.current = true;
     const rect = canvas.getBoundingClientRect();
     const x = (event.clientX - rect.left) * (canvas.width / rect.width);
     const y = (event.clientY - rect.top) * (canvas.height / rect.height);
@@ -159,7 +211,8 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
   }
 
   function drawMove(event: React.PointerEvent<HTMLCanvasElement>) {
-    if (!isDrawing) return;
+    if (!isDrawingRef.current) return;
+    event.preventDefault();
     const canvas = canvasRef.current;
     const context = canvas?.getContext('2d');
     if (!canvas || !context) return;
@@ -170,11 +223,12 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
     context.stroke();
   }
 
-  function finishDrawing() {
-    if (!isDrawing) return;
-    setIsDrawing(false);
+  function finishDrawing(event?: React.PointerEvent<HTMLCanvasElement>) {
+    if (!isDrawingRef.current) return;
+    isDrawingRef.current = false;
     const canvas = canvasRef.current;
     if (!canvas) return;
+    if (event && canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
     const dataUrl = canvas.toDataURL('image/png');
     const normalized = normalizeSignatureDataUrl(dataUrl);
     if (normalized) setForm({ ...form, firmaImagen: normalized });
@@ -197,15 +251,36 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
     <section className="panel form-grid"><Heading number="02" title="Contacto" detail="Canales para comunicaciones del colegio." /><label>Correo electrónico<input type="email" value={form.correo} onChange={(e) => setForm({ ...form, correo: e.target.value })} /></label><label>Teléfono<input inputMode="numeric" value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} /></label>{data.isStaffProfile && <label>Celular<input inputMode="numeric" value={form.celular} onChange={(e) => setForm({ ...form, celular: e.target.value })} /></label>}</section>
     <section className="panel form-grid"><Heading number="03" title="Cuenta" detail="Nombre utilizado para iniciar sesión." /><label>Usuario<input value={form.usuario} required onChange={(e) => setForm({ ...form, usuario: e.target.value })} /></label><div className="account-role"><span>Rol asignado</span><strong>{data.profileRoleLabel}</strong></div></section>
     {data.isProfessorProfile && <section className="panel form-grid"><Heading number="04" title="Firma del docente" detail="Se usa en la exportación y se limpia automáticamente si no hay dato." />
-      <div className="signature-box">
-        <canvas ref={canvasRef} onPointerDown={drawStart} onPointerMove={drawMove} onPointerUp={finishDrawing} onPointerLeave={finishDrawing} />
-      </div>
+      {!isSignatureMobile && <div className="signature-box">
+        <canvas ref={canvasRef} onPointerDown={drawStart} onPointerMove={drawMove} onPointerUp={finishDrawing} onPointerCancel={finishDrawing} />
+      </div>}
+      {isSignatureMobile && <div className="signature-mobile-entry">
+        <div className="signature-preview" aria-label={haveSignature ? 'Vista previa de la firma guardada' : 'No hay una firma dibujada'}>
+          {haveSignature ? <img src={form.firmaImagen ?? ''} alt="Firma del docente" /> : <span>Sin firma</span>}
+        </div>
+        <button className="button signature-open-button" type="button" onClick={openSignatureModal}>Firmar en pantalla completa</button>
+      </div>}
       <div className="signature-actions">
         <label className="button secondary upload-button"><input type="file" accept="image/*" onChange={(e) => handleFileUpload(e.target.files?.[0] ?? null)} />Subir imagen</label>
         <button className="button secondary" type="button" onClick={clearSignature}>Borrar</button>
       </div>
       {signatureError && <p className="muted-copy error-copy">{signatureError}</p>}
       {haveSignature && <p className="muted-copy">Se usará la firma en la exportación; si no existe, se mostrará tu nombre.</p>}
+      {isSignatureMobile && isSignatureModalOpen && <div className="signature-modal" role="dialog" aria-modal="true" aria-labelledby="signature-modal-title">
+        <div className="signature-modal-header">
+          <div><span>Firma del docente</span><h2 id="signature-modal-title">Firmá dentro del recuadro</h2></div>
+          <button className="signature-modal-close" type="button" aria-label="Cancelar y cerrar" onClick={() => closeSignatureModal(false)}>×</button>
+        </div>
+        <div className="signature-modal-canvas">
+          <canvas ref={canvasRef} onPointerDown={drawStart} onPointerMove={drawMove} onPointerUp={finishDrawing} onPointerCancel={finishDrawing} />
+        </div>
+        <p>Usá el dedo o un lápiz táctil. La página permanecerá fija mientras escribís.</p>
+        <div className="signature-modal-actions">
+          <button className="button secondary" type="button" onClick={() => closeSignatureModal(false)}>Cancelar</button>
+          <button className="button secondary" type="button" onClick={clearSignature}>Borrar</button>
+          <button className="button" type="button" onClick={() => closeSignatureModal(true)}>Usar firma</button>
+        </div>
+      </div>}
     </section>}
     {data.showGoogleClassroomPanel && <section className="panel form-grid"><Heading number={data.isProfessorProfile ? '05' : '04'} title="Google Classroom" detail="Vinculación académica del profesor." /><State active={data.googleClassroomConnected} title={data.googleClassroomConnected ? 'Cuenta conectada' : 'Sin conexión'} detail={data.profileOwner.googleEmail || 'Todavía no hay una cuenta de Google vinculada.'} />{data.googleClassroomCourses.length > 0 && <p className="muted-copy">{data.googleClassroomCourses.length} curso(s) compatible(s) disponibles.</p>}
       <div>

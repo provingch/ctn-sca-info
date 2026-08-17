@@ -189,6 +189,28 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .security-2fa-panel > .panel-heading { margin-bottom: 2px; }
 .security-2fa-status .connection-state { min-height: 42px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; }
 .security-2fa-panel .security-2fa-action { align-self: flex-start; width: fit-content; min-width: 148px; min-height: 40px; height: auto; padding: 9px 16px; flex: 0 0 auto; }
+.signature-box, .signature-preview { overflow: hidden; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: #fff; }
+.signature-box { height: 150px; }
+.signature-box canvas { width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: none; }
+.signature-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.signature-actions .button { width: auto; }
+.upload-button { position: relative; overflow: hidden; cursor: pointer; }
+.upload-button input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.signature-mobile-entry { display: grid; gap: 12px; }
+.signature-preview { height: 118px; display: grid; place-items: center; }
+.signature-preview img { width: 100%; height: 100%; display: block; object-fit: contain; }
+.signature-preview span { color: var(--muted); font-size: .82rem; font-weight: 750; }
+.signature-open-button { width: 100%; }
+.signature-modal { position: fixed; inset: 0; z-index: 1000; display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; gap: 14px; padding: max(18px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); background: var(--bg); color: var(--ink); overscroll-behavior: none; }
+.signature-modal-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.signature-modal-header span { color: var(--accent); font-size: .7rem; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+.signature-modal-header h2 { margin: 4px 0 0; font-size: clamp(1.2rem, 5vw, 1.55rem); }
+.signature-modal-close { width: 42px; height: 42px; display: grid; place-items: center; flex: 0 0 42px; border: 1px solid var(--line); border-radius: 50%; background: var(--paper); color: var(--ink); font-size: 1.65rem; line-height: 1; cursor: pointer; }
+.signature-modal-canvas { min-height: 180px; overflow: hidden; border: 2px solid var(--accent); border-radius: var(--radius); background: #fff; box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 12%, transparent); }
+.signature-modal-canvas canvas { width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: none; user-select: none; -webkit-user-select: none; }
+.signature-modal > p { margin: 0; color: var(--muted); font-size: .8rem; text-align: center; }
+.signature-modal-actions { display: grid; grid-template-columns: 1fr 1fr 1.25fr; gap: 9px; }
+.signature-modal-actions .button { width: 100%; min-width: 0; padding-inline: 10px; }
 
 @media (min-width: 901px) {
   .profile-identity { position: sticky; top: 92px; z-index: 15; isolation: isolate; background: color-mix(in srgb, var(--paper) 96%, transparent); box-shadow: 0 14px 34px color-mix(in srgb, var(--ink) 13%, transparent); backdrop-filter: blur(18px); }
@@ -315,6 +337,8 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
   .profile-menu button { min-width: 0; padding: 11px; }
   .profile-card-grid { grid-template-columns: 1fr; }
   .profile-form-actions { grid-column: 1; }
+  .signature-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .signature-actions .button { width: 100%; }
   .summary-grid { gap: 10px; }
   .metric { padding: 16px; }
   .metric strong { font-size: 1.15rem; }
@@ -411,6 +435,14 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
   .planilla-student-search { width: 100%; }
   .planilla-student-tool-actions { justify-content: flex-start; }
   .planilla-grade-table-wrap { max-height: 62vh; }
+}
+
+@media (max-width: 680px) and (orientation: landscape), (max-height: 680px) and (orientation: landscape) and (pointer: coarse) {
+  .signature-modal { grid-template-columns: minmax(180px, .7fr) minmax(0, 1.8fr); grid-template-rows: minmax(0, 1fr) auto; }
+  .signature-modal-header { grid-column: 1; grid-row: 1; }
+  .signature-modal-canvas { grid-column: 2; grid-row: 1 / -1; }
+  .signature-modal > p { display: none; }
+  .signature-modal-actions { grid-column: 1; grid-row: 2; grid-template-columns: 1fr; }
 }
 
 @media print {
