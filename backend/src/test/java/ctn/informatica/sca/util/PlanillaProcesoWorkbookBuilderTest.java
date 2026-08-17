@@ -2,6 +2,7 @@ package ctn.informatica.sca.util;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ctn.informatica.sca.model.Planilla;
 import ctn.informatica.sca.model.StudentRow;
@@ -203,6 +204,130 @@ class PlanillaProcesoWorkbookBuilderTest {
             
             System.out.println("\n>>> Test result: Found " + hiddenCount + " hidden columns <<<");
             assertNotNull(sheet, "Sheet debe existir");
+        }
+    }
+
+    @Test
+    void consecutiveMonthsKeepColumnsVisible() throws IOException {
+        Planilla planilla = new Planilla(11, 1, 1, "comun", "Consec", 2026, "primera", 7);
+
+        // Month 1: 3 tasks
+        Tarea m1t1 = new Tarea(); m1t1.setId(601); m1t1.setFecha(LocalDate.of(2026, 2, 5)); m1t1.setTitulo("M1-A"); m1t1.setTotal(5);
+        Tarea m1t2 = new Tarea(); m1t2.setId(602); m1t2.setFecha(LocalDate.of(2026, 2, 10)); m1t2.setTitulo("M1-B"); m1t2.setTotal(6);
+        Tarea m1t3 = new Tarea(); m1t3.setId(603); m1t3.setFecha(LocalDate.of(2026, 2, 20)); m1t3.setTitulo("M1-C"); m1t3.setTotal(7);
+
+        // Month 2: 8 tasks
+        List<Tarea> month2 = new java.util.ArrayList<>();
+        for (int i = 0; i < 8; i++) {
+            Tarea t = new Tarea();
+            t.setId(700 + i);
+            t.setFecha(LocalDate.of(2026, 3, 5 + i));
+            t.setTitulo("M2-" + (i + 1));
+            t.setTotal(5 + i);
+            month2.add(t);
+        }
+
+        List<Tarea> all = new java.util.ArrayList<>();
+        all.add(m1t1); all.add(m1t2); all.add(m1t3); all.addAll(month2);
+
+        StudentRow s = new StudentRow(); s.setAlumnoId(1); s.setAlumnoNombre("X"); s.setGrades(Map.of()); s.setTotal(0);
+
+        PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                planilla,
+                new ctn.informatica.sca.model.Curso(11, "Consec", 2026, "A"),
+                "Consec",
+                "Prof",
+                "Mañana",
+                all,
+                List.of(s),
+                Map.of(),
+                null
+        );
+
+        try (XSSFWorkbook workbook = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(data, "Consec")) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Row titleRow = sheet.getRow(6);
+
+            int m1start = -1;
+            int m2start = -1;
+            for (int c = 0; c < 300; c++) {
+                Cell cell = titleRow.getCell(c);
+                if (cell != null && cell.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING) {
+                    String v = cell.getStringCellValue();
+                    if ("M1-A".equals(v)) m1start = c;
+                    if ("M2-1".equals(v)) m2start = c;
+                }
+            }
+            assertTrue(m1start >= 0, "Debe encontrarse M1-A");
+            assertTrue(m2start >= 0, "Debe encontrarse M2-1");
+            org.apache.poi.xssf.usermodel.XSSFSheet xs = (org.apache.poi.xssf.usermodel.XSSFSheet) sheet;
+            for (int i = 0; i < 3; i++) {
+                assertFalse(xs.isColumnHidden(m1start + i), "Columna M1 debe estar visible: " + (m1start + i));
+            }
+            for (int i = 0; i < 8; i++) {
+                assertFalse(xs.isColumnHidden(m2start + i), "Columna M2 debe estar visible: " + (m2start + i));
+            }
+        }
+    }
+
+    @Test
+    void singleMonthNoLeftoverVisibleColumns() throws IOException {
+        Planilla planilla = new Planilla(12, 1, 1, "comun", "Single", 2026, "primera", 7);
+        Tarea t1 = new Tarea(); t1.setId(801); t1.setFecha(LocalDate.of(2026, 2, 5)); t1.setTitulo("S1-1"); t1.setTotal(5);
+        Tarea t2 = new Tarea(); t2.setId(802); t2.setFecha(LocalDate.of(2026, 2, 15)); t2.setTitulo("S1-2"); t2.setTotal(6);
+        StudentRow s = new StudentRow(); s.setAlumnoId(1); s.setAlumnoNombre("Y"); s.setGrades(Map.of(801,5,802,6)); s.setTotal(11);
+
+        PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                planilla,
+                new ctn.informatica.sca.model.Curso(12, "Single", 2026, "A"),
+                "Single",
+                "Prof",
+                "Mañana",
+                List.of(t1, t2),
+                List.of(s),
+                Map.of(),
+                null
+        );
+
+        try (XSSFWorkbook workbook = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(data, "Single")) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Row titleRow = sheet.getRow(6);
+
+            int first = -1;
+            for (int c = 0; c < 300; c++) {
+                Cell cell = titleRow.getCell(c);
+                if (cell != null && cell.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING) {
+                    String v = cell.getStringCellValue();
+                    if ("S1-1".equals(v)) { first = c; break; }
+                }
+            }
+            assertTrue(first >= 0, "Debe encontrarse S1-1");
+            int lastInstrument = first + 1; // two tasks
+
+            int boundary = -1;
+            org.apache.poi.xssf.usermodel.XSSFSheet xs = (org.apache.poi.xssf.usermodel.XSSFSheet) sheet;
+            boolean foundBoundary = false;
+            for (int c = lastInstrument + 1; c < 300; c++) {
+                boolean hasContent = false;
+                for (int r : new int[]{5,6,7}) {
+                    Row rr = sheet.getRow(r);
+                    if (rr == null) continue;
+                    Cell cc = rr.getCell(c);
+                    if (cc != null && cc.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING) {
+                        String vv = cc.getStringCellValue();
+                        if (vv != null && !vv.isBlank()) { hasContent = true; break; }
+                    }
+                }
+                if (!hasContent) {
+                    // If the column is empty, it must be hidden
+                    assertTrue(xs.isColumnHidden(c), "Columna sobrante debe estar oculta: " + c);
+                } else {
+                    boundary = c;
+                    foundBoundary = true;
+                    break;
+                }
+            }
+            assertTrue(foundBoundary, "Debe encontrarse una columna fija con contenido a la derecha");
         }
     }
 }
