@@ -1,10 +1,14 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import * as authApi from '../api/auth';
+import { getProfile } from '../api/profile';
 import { setAccessToken, setOnAuthExpired } from '../api/client';
 import { useSpecialty } from './SpecialtyContext';
 
 export interface AuthUser {
   level: number;
+  displayName?: string;
+  username?: string;
+  initials?: string;
 }
 
 interface AuthContextValue {
@@ -14,6 +18,7 @@ interface AuthContextValue {
   login: (username: string, password: string, rememberMe: boolean) => Promise<authApi.LoginResponse>;
   verify2fa: (tempToken: string, code: string, rememberMe: boolean) => Promise<authApi.LoginResponse>;
   logout: () => Promise<void>;
+  refreshUserIdentity: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -49,6 +54,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       cancelled = true;
     };
   }, []);
+
+  const refreshUserIdentity = useCallback(async () => {
+    const activeLevel = user?.level;
+    if (!activeLevel) return;
+    try {
+      const profile = await getProfile();
+      const owner = profile.profileOwner;
+      const displayName = owner.fullName?.trim() || owner.usuario?.trim() || 'Usuario SCA';
+      const initials = `${owner.nombre?.trim()[0] || owner.usuario?.trim()[0] || 'S'}${owner.apellido?.trim()[0] || ''}`.toUpperCase();
+      setUser((current) => current?.level === activeLevel
+        ? { ...current, displayName, username: owner.usuario?.trim() || undefined, initials }
+        : current);
+    } catch {
+      // La sesión sigue siendo válida aunque el resumen del perfil no esté disponible.
+    }
+  }, [user?.level]);
+
+  useEffect(() => {
+    void refreshUserIdentity();
+  }, [refreshUserIdentity]);
 
   // Si un refresh automático (disparado por un 401 durante uso normal)
   // también falla, client.ts llama a este callback para forzar logout.
@@ -92,8 +117,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           resetSpecialty();
         }
       },
+      refreshUserIdentity,
     }),
-    [user, isBootstrapping, resetSpecialty],
+    [user, isBootstrapping, resetSpecialty, refreshUserIdentity],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

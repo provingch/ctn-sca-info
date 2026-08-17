@@ -6,11 +6,13 @@ const SIGNATURE_PERSISTENCE_MAX_BYTES = 1_500_000;
 import { ApiError } from '../../api/client';
 import AppShell from '../../components/AppShell';
 import PasswordInput from '../../components/PasswordInput';
+import { useAuth } from '../../context/AuthContext';
 
 type ProfileTab = 'profile' | 'security' | 'subjects' | 'app' | 'activity';
 const message = (error: unknown, fallback: string) => error instanceof ApiError ? error.message : fallback;
 
 export default function ProfilePage() {
+  const { refreshUserIdentity } = useAuth();
   const [data, setData] = useState<ProfileResponse | null>(null);
   const [status, setStatus] = useState('');
   const [tab, setTab] = useState<ProfileTab>('profile');
@@ -38,7 +40,7 @@ export default function ProfilePage() {
   const owner = data.profileOwner;
   const initials = `${owner.nombre?.[0] || owner.usuario?.[0] || 'S'}${owner.apellido?.[0] || ''}`.toUpperCase();
   const completion = Math.round((Number(Boolean(owner.correo)) + Number(Boolean(owner.telefono)) + Number(Boolean(owner.usuario))) / 3 * 100);
-  const finish = async (text: string) => { setStatus(text); await load(); };
+  const finish = async (text: string) => { setStatus(text); await Promise.all([load(), refreshUserIdentity()]); };
 
   return <AppShell subtitle={`Cuenta de ${owner.usuario || 'usuario'} · ${data.profileRoleLabel}`}>
     <div className="profile-page" ref={profilePageRef}>

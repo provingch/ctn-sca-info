@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { applyTheme, getInitialTheme, persistTheme, type Theme } from '../theme/theme';
+import { applyTheme, getInitialTheme, persistTheme, THEME_CHANGE_EVENT, type Theme } from '../theme/theme';
 
 export default function ThemeToggle({ compact = false }: { compact?: boolean }) {
   const [theme, setTheme] = useState<Theme>(getInitialTheme);
@@ -8,6 +8,17 @@ export default function ThemeToggle({ compact = false }: { compact?: boolean }) 
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
+
+  useEffect(() => {
+    const syncTheme = (event: Event) => setTheme((event as CustomEvent<Theme>).detail || getInitialTheme());
+    const syncStoredTheme = () => setTheme(getInitialTheme());
+    window.addEventListener(THEME_CHANGE_EVENT, syncTheme);
+    window.addEventListener('storage', syncStoredTheme);
+    return () => {
+      window.removeEventListener(THEME_CHANGE_EVENT, syncTheme);
+      window.removeEventListener('storage', syncStoredTheme);
+    };
+  }, []);
 
   function toggle() {
     const next = isDark ? 'light' : 'dark';
