@@ -4,9 +4,14 @@ import ctn.informatica.sca.model.Curso;
 import ctn.informatica.sca.model.Planilla;
 import ctn.informatica.sca.model.StudentRow;
 import ctn.informatica.sca.model.Tarea;
+import java.awt.Color;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.YearMonth;
+import java.util.Base64;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -16,11 +21,16 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import javax.imageio.ImageIO;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellCopyPolicy;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.ClientAnchor;
+import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.Drawing;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -144,8 +154,6 @@ public class PlanillaProcesoWorkbookBuilder {
 
         Map<YearMonth, List<Tarea>> tareasPorMes = groupTasksByMonth(tareasEtapa);
         if (tareasPorMes.size() > MONTH_BLOCK_COUNT) {
-            // TODO: si una etapa usa más meses que los 5 bloques de la plantilla, hay que acordar con negocio
-            // si se regeneran columnas/meses o si se rediseña la plantilla oficial. No truncar silenciosamente.
             throw new IllegalStateException("La plantilla oficial solo soporta " + MONTH_BLOCK_COUNT + " meses con tareas por etapa. Se encontraron " + tareasPorMes.size() + " meses ocupados en la planilla " + data.planilla().getId() + ": " + describeMonths(tareasPorMes.keySet()));
         }
 
@@ -285,7 +293,32 @@ public class PlanillaProcesoWorkbookBuilder {
                 }
             }
 
+            hideUnusedColumnsInMonthBlock(sheet, firstCol, tareasMes.size());
+            if (tareasMes.isEmpty()) {
+                hideEntireMonthBlock(sheet, firstCol);
+            }
+
             currentColumn += monthBlockWidth(tareasMes);
+        }
+    }
+
+    private void hideUnusedColumnsInMonthBlock(Sheet sheet, int firstColOfBlock, int taskCount) {
+        for (int i = taskCount; i < INSTRUMENTS_PER_MONTH; i++) {
+            int colIndex = firstColOfBlock + 2 + i;
+            if (sheet instanceof XSSFSheet) {
+                ((XSSFSheet) sheet).setColumnHidden(colIndex, true);
+            }
+        }
+    }
+
+    private void hideEntireMonthBlock(Sheet sheet, int firstColOfBlock) {
+        if (!(sheet instanceof XSSFSheet xssfSheet)) {
+            return;
+        }
+        xssfSheet.setColumnHidden(firstColOfBlock, true);
+        xssfSheet.setColumnHidden(firstColOfBlock + 1, true);
+        for (int i = 0; i < INSTRUMENTS_PER_MONTH; i++) {
+            xssfSheet.setColumnHidden(firstColOfBlock + 2 + i, true);
         }
     }
 
@@ -467,25 +500,111 @@ public class PlanillaProcesoWorkbookBuilder {
     }
 
     private void setTeacherSignature(Sheet sheet, PlanillaSheetData data) {
-        if (data == null || data.profesorNombre() == null || data.profesorNombre().isBlank()) {
+        if (data == null) {
             return;
         }
 
-        Row signatureRow = sheet.getRow(14);
-        if (signatureRow == null) {
-            return;
-        }
-
-        for (Cell cell : signatureRow) {
-            if (cell == null) {
+        Cell targetCell = null;
+        for (Row row : sheet) {
+            if (row == null) {
                 continue;
             }
-            String value = cell.getCellType() == CellType.STRING ? cell.getStringCellValue() : "";
-            if (value != null && value.toLowerCase(Locale.ROOT).contains("firma del docente")) {
-                cell.setCellValue(data.profesorNombre());
-                return;
+            for (Cell cell : row) {
+                if (cell == null) {
+                    continue;
+                }
+                if (cell.getCellType() != CellType.STRING) {
+                    continue;
+                }
+                String value = cell.getStringCellValue();
+                if (value != null && value.toLowerCase(Locale.ROOT).contains("firma del docente")) {
+                    targetCell = cell;
+                    break;
+                }
+            }
+            if (targetCell != null) {
+                break;
             }
         }
+
+        if (targetCell == null) {
+            return;
+        }
+
+        if (data.firmaImagen() != null && !data.firmaImagen().isBlank()) {
+            try {
+                insertSignatureImage(sheet, targetCell, data.firmaImagen());
+                return;
+            } catch (Exception ex) {
+                targetCell.setCellValue("");
+            }
+        }
+
+        if (data.profesorNombre() != null && !data.profesorNombre().isBlank()) {
+            targetCell.setCellValue(data.profesorNombre());
+        }
+    }
+
+    private void insertSignatureImage(Sheet sheet, Cell targetCell, String firmaImagen) throws IOException {
+        if (sheet == null || targetCell == null || firmaImagen == null || firmaImagen.isBlank()) {
+            return;
+        }
+
+        String dataUrl = firmaImagen.trim();
+        if (!dataUrl.startsWith("data:image/")) {
+            throw new IOException("Firma inválida: no es una imagen base64");
+        }
+
+        String encoded = dataUrl.substring(dataUrl.indexOf(',') + 1);
+        byte[] imageBytes = Base64.getDecoder().decode(encoded);
+        BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageBytes));
+        if (image == null) {
+            throw new IOException("Firma inválida: no se pudo decodificar la imagen");
+        }
+
+        BufferedImage transparent = removeWhiteBackground(image);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ImageIO.write(transparent, "PNG", out);
+
+        int col = targetCell.getColumnIndex();
+        int row = targetCell.getRowIndex();
+        Drawing<?> drawing = sheet.createDrawingPatriarch();
+        CreationHelper helper = sheet.getWorkbook().getCreationHelper();
+        ClientAnchor anchor = helper.createClientAnchor();
+        anchor.setCol1(col + 1);
+        anchor.setRow1(row);
+        anchor.setCol2(col + 4);
+        anchor.setRow2(row + 2);
+
+        int pictureIndex = ((Workbook) sheet.getWorkbook()).addPicture(out.toByteArray(), Workbook.PICTURE_TYPE_PNG);
+        drawing.createPicture(anchor, pictureIndex);
+        targetCell.setCellValue("");
+    }
+
+    private BufferedImage removeWhiteBackground(BufferedImage original) {
+        int width = original.getWidth();
+        int height = original.getHeight();
+        BufferedImage processed = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int argb = original.getRGB(x, y);
+                Color color = new Color(argb, true);
+                int alpha = color.getAlpha();
+                int red = color.getRed();
+                int green = color.getGreen();
+                int blue = color.getBlue();
+                boolean isBackgroundLike = alpha < 230
+                        || (red > 240 && green > 240 && blue > 240);
+                if (isBackgroundLike) {
+                    processed.setRGB(x, y, new Color(255, 255, 255, 0).getRGB());
+                } else {
+                    processed.setRGB(x, y, argb);
+                }
+            }
+        }
+
+        return processed;
     }
 
     private void setNumericCell(Cell cell, Number value) {
@@ -531,6 +650,7 @@ public class PlanillaProcesoWorkbookBuilder {
             String turno,
             List<Tarea> tareas,
             List<StudentRow> rows,
-            Map<Integer, Integer> firstStageGrades) {
+            Map<Integer, Integer> firstStageGrades,
+            String firmaImagen) {
     }
 }

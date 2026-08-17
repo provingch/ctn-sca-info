@@ -8,6 +8,7 @@ public record SaveProfileRequest(
         String nombre,
         String apellido,
         Integer ci,
-        Integer nivel
+        Integer nivel,
+        String firmaImagen
 ) {
 }

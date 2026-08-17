@@ -442,6 +442,9 @@ public class ProfileController {
                     errors.add("Solo el administrador puede modificar el nivel.");
                 }
             }
+            if (request.firmaImagen() != null) {
+                profesor.setFirmaImagen(request.firmaImagen().trim().isEmpty() ? null : request.firmaImagen().trim());
+            }
 
             if (!errors.isEmpty()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, String.join(" ", errors));
@@ -467,7 +470,8 @@ public class ProfileController {
                     profesor.getCelular() == null ? null : String.valueOf(profesor.getCelular()),
                     profesor.getUsuario(),
                     profesor.getGoogleEmail(),
-                    profesor.getGcAccessToken()
+                    profesor.getGcAccessToken(),
+                    profesor.getFirmaImagen()
             );
         }
         if (padre != null) {
@@ -482,10 +486,11 @@ public class ProfileController {
                     null,
                     padre.getUsuario(),
                     null,
+                    null,
                     null
             );
         }
-        return new ProfileOwnerDto(null, null, null, null, null, null, null, null, null, null, null);
+        return new ProfileOwnerDto(null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     private AsignacionDto toAsignacionDto(Asignacion asignacion) {

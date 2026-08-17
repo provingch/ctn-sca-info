@@ -58,7 +58,17 @@ public class EvaluacionExportController {
                 planilla.computeGradeRanges(total);
                 List<StudentRow> rows = new StudentRowDao().loadRowsForPlanilla(planilla, maxima, total);
                 Profesor profesor = new ProfesorDao().findById(planilla.getProfesorId());
-                sheets.add(new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(planilla, curso, info.getMateriaNombre(), profesor == null ? "" : profesor.getFullName(), "", tareas, rows, firstStageGrades(planillaDao, planilla)));
+                sheets.add(new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                        planilla,
+                        curso,
+                        info.getMateriaNombre(),
+                        profesor == null ? "" : profesor.getFullName(),
+                        "",
+                        tareas,
+                        rows,
+                        firstStageGrades(planillaDao, planilla),
+                        profesor == null ? null : profesor.getFirmaImagen()
+                ));
             }
             if (sheets.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No hay planillas para los filtros seleccionados");
             String base = "Planillas_" + curso.getEspecialidad().replaceAll("[^A-Za-z0-9_-]", "_") + "_" + curso.getNivel() + curso.getSeccion() + "_" + periodo;
