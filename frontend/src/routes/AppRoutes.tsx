@@ -14,6 +14,7 @@ import LegalPage from '../pages/legal/LegalPage';
 import AdminPage from '../pages/admin/AdminPage';
 import ParentPage from '../pages/parent/ParentPage';
 import StyleguidePage from '../pages/styleguide/StyleguidePage';
+import OfflinePage from '../pages/OfflinePage';
 
 const protect = (element: React.ReactNode, allowedLevels?: number[]) => <ProtectedRoute allowedLevels={allowedLevels}>{element}</ProtectedRoute>;
 
@@ -39,6 +40,7 @@ export default function AppRoutes() {
     <Route path="/admin/ingresantes" element={protect(<AdminPage />, [3])} />
     <Route path="/padre" element={protect(<ParentPage />, [4])} />
     <Route path="/styleguide" element={protect(<StyleguidePage />, [3])} />
+    <Route path="/offline" element={<OfflinePage />} />
     <Route path="*" element={<RoleLanding />} />
   </Routes></AuthProvider></SpecialtyProvider></BrowserRouter>;
 }
