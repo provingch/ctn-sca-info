@@ -2,6 +2,7 @@ const ASSET_VERSION = '0.6.6';
 const CACHE_NAME = `ctn-cache-v${ASSET_VERSION}`;
 const CORE_ASSETS = [
   './offline.html',
+  '/offline',
   `./styles/ctn-theme.css?v=${ASSET_VERSION}`,
   `./scripts/sca-theme.js?v=${ASSET_VERSION}`,
   './images/ctn-logo.svg',
@@ -35,7 +36,7 @@ self.addEventListener('fetch', (event) => {
   if (!isSameOrigin) return;
 
   if (request.mode === 'navigate' || request.destination === 'document') {
-    event.respondWith(networkFirst(request, './offline.html'));
+    event.respondWith(networkFirst(request, '/offline'));
     return;
   }
 
@@ -102,7 +103,7 @@ async function staleWhileRevalidate(request) {
     return networkResponse;
   }
 
-  const offline = await caches.match('./offline.html');
+  const offline = await caches.match('/offline');
   return offline;
 }
 
