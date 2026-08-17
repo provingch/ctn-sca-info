@@ -72,13 +72,11 @@ public class Planilla{
     }
 
     public double getExigencia(String categoria) {
-        return switch (categoria) {
-            case "comun" ->
-                .7;
-            case "especifico" ->
-                .8;
-            default ->
-                .7;
+        String normalized = categoria == null ? "" : categoria.trim().toLowerCase();
+        return switch (normalized) {
+            case "comun" -> .7;
+            case "especifico" -> .8;
+            default -> .7;
         };
     }
 

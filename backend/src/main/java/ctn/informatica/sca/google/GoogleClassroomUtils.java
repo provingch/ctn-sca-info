@@ -15,7 +15,8 @@ public final class GoogleClassroomUtils {
     private static final Pattern LEVEL_PATTERN = Pattern.compile("(?<![\\p{L}\\p{N}])(primero|segundo|tercero|1(?:º|°|ro|er)?|2(?:º|°|do)?|3(?:º|°|ro)?|[123])(?=(?:\\s*|[°º\\-])?[abc]|\\b)", Pattern.CASE_INSENSITIVE);
     private static final Pattern SECTION_PATTERN = Pattern.compile("(?:^|[^\\p{L}\\p{N}]|[0-9°º])([abc])(?=\\b|\\s|$)", Pattern.CASE_INSENSITIVE);
     private static final Pattern SINGLE_YEAR_PATTERN = Pattern.compile("\\b(20\\d{2})\\b");
-    private static final Pattern YEAR_RANGE_PATTERN = Pattern.compile("\\b(20\\d{2})\\s*[/\\-]\\s*(20\\d{2})\\b");
+    // Accept ranges like "2025-2026" but also "2025/26" or "2025-26" (end year may be two digits)
+    private static final Pattern YEAR_RANGE_PATTERN = Pattern.compile("\\b(20\\d{2})\\s*[/\\-]\\s*(?:20)?(\\d{2})\\b");
 
     private GoogleClassroomUtils() {
         // util class
@@ -30,6 +31,10 @@ public final class GoogleClassroomUtils {
     }
 
     public static Optional<CourseKey> parseCourseKey(String courseName, String room, String section) {
+        return parseCourseKey(courseName, room, section, AcademicPeriod.current());
+    }
+
+    public static Optional<CourseKey> parseCourseKey(String courseName, String room, String section, int expectedPeriod) {
         if (courseName == null || courseName.isBlank()) {
             return Optional.empty();
         }
@@ -43,15 +48,18 @@ public final class GoogleClassroomUtils {
             return Optional.empty();
         }
 
-        int currentPeriod = AcademicPeriod.current();
-        if (!isAcademicPeriodCompatible(courseName, room, section, currentPeriod)) {
+        // Require an explicit academic period token (single year or range) to
+        // disambiguate courses that otherwise share level/section/sala but
+        // belong to different academic years.
+        if (!hasExplicitAcademicPeriod(courseName, room, section)) {
             return Optional.empty();
         }
 
-        // El periodo debe coincidir siempre con el año académico actual, porque
-        // courseMatchesTeacherCurso compara el valor de esta key contra
-        // curso.getPeriod(), que también se recalcula como AcademicPeriod.current().
-        int periodo = currentPeriod;
+        if (!isAcademicPeriodCompatible(courseName, room, section, expectedPeriod)) {
+            return Optional.empty();
+        }
+
+        int periodo = expectedPeriod;
 
         String sala = stripLevelAndSection(normalizedName);
         return Optional.of(new CourseKey(level, courseSection, sala, periodo));
@@ -97,7 +105,12 @@ public final class GoogleClassroomUtils {
             Matcher rangeMatcher = YEAR_RANGE_PATTERN.matcher(trimmedSection);
             if (rangeMatcher.find()) {
                 int startYear = Integer.parseInt(rangeMatcher.group(1));
-                int endYear = Integer.parseInt(rangeMatcher.group(2));
+                String endGroup = rangeMatcher.group(2);
+                int endYearDigits = Integer.parseInt(endGroup);
+                int endYear = (startYear / 100) * 100 + endYearDigits;
+                if (endYear < startYear) {
+                    endYear += 100;
+                }
                 return currentPeriod >= startYear && currentPeriod <= endYear;
             }
         }
@@ -106,7 +119,12 @@ public final class GoogleClassroomUtils {
             Matcher rangeMatcher = YEAR_RANGE_PATTERN.matcher(courseName);
             if (rangeMatcher.find()) {
                 int startYear = Integer.parseInt(rangeMatcher.group(1));
-                int endYear = Integer.parseInt(rangeMatcher.group(2));
+                String endGroup = rangeMatcher.group(2);
+                int endYearDigits = Integer.parseInt(endGroup);
+                int endYear = (startYear / 100) * 100 + endYearDigits;
+                if (endYear < startYear) {
+                    endYear += 100;
+                }
                 return currentPeriod >= startYear && currentPeriod <= endYear;
             }
 
@@ -132,7 +150,12 @@ public final class GoogleClassroomUtils {
         Matcher combinedRangeMatcher = YEAR_RANGE_PATTERN.matcher(combined);
         if (combinedRangeMatcher.find()) {
             int startYear = Integer.parseInt(combinedRangeMatcher.group(1));
-            int endYear = Integer.parseInt(combinedRangeMatcher.group(2));
+            String endGroup = combinedRangeMatcher.group(2);
+            int endYearDigits = Integer.parseInt(endGroup);
+            int endYear = (startYear / 100) * 100 + endYearDigits;
+            if (endYear < startYear) {
+                endYear += 100;
+            }
             return currentPeriod >= startYear && currentPeriod <= endYear;
         }
 
@@ -152,6 +175,43 @@ public final class GoogleClassroomUtils {
         String withoutLevel = LEVEL_PATTERN.matcher(text).replaceAll(" ");
         String withoutSection = SECTION_PATTERN.matcher(withoutLevel).replaceAll(" ");
         return withoutSection.replaceAll("\\s+", " ").trim();
+    }
+
+    private static boolean hasExplicitAcademicPeriod(String courseName, String room, String section) {
+        if (section != null && !section.isBlank()) {
+            String trimmed = section.trim();
+            if (trimmed.matches("20\\d{2}")) {
+                return true;
+            }
+            Matcher rangeMatcher = YEAR_RANGE_PATTERN.matcher(trimmed);
+            if (rangeMatcher.find()) {
+                return true;
+            }
+        }
+
+        if (courseName != null && !courseName.isBlank()) {
+            Matcher rangeMatcher = YEAR_RANGE_PATTERN.matcher(courseName);
+            if (rangeMatcher.find()) {
+                return true;
+            }
+            Matcher singleMatcher = SINGLE_YEAR_PATTERN.matcher(courseName);
+            if (singleMatcher.find()) {
+                return true;
+            }
+        }
+
+        if (room != null && !room.isBlank()) {
+            Matcher rangeMatcher = YEAR_RANGE_PATTERN.matcher(room);
+            if (rangeMatcher.find()) {
+                return true;
+            }
+            Matcher singleMatcher = SINGLE_YEAR_PATTERN.matcher(room);
+            if (singleMatcher.find()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static String normalizeTitle(String title) {
