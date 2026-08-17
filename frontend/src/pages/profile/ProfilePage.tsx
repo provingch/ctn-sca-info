@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 import QRCode from 'qrcode';
 import { changePassword, confirmTotp, disableTotp, getProfile, prepareTotp, saveProfile, type ProfileResponse, getGoogleAuthorizeUrl } from '../../api/profile';
+
+const SIGNATURE_PERSISTENCE_MAX_BYTES = 1_500_000;
 import { ApiError } from '../../api/client';
 import AppShell from '../../components/AppShell';
 import PasswordInput from '../../components/PasswordInput';
@@ -76,13 +78,134 @@ function Heading({ number, title, detail }: { number: string; title: string; det
 
 function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (text: string) => Promise<void>; setStatus: (value: string) => void }) {
   const owner = data.profileOwner;
-  const [form, setForm] = useState({ correo: owner.correo || '', telefono: owner.telefono || '', celular: owner.celular || '', usuario: owner.usuario || '', nombre: owner.nombre || '', apellido: owner.apellido || '', ci: owner.ci, nivel: null });
+  const [form, setForm] = useState({ correo: owner.correo || '', telefono: owner.telefono || '', celular: owner.celular || '', usuario: owner.usuario || '', nombre: owner.nombre || '', apellido: owner.apellido || '', ci: owner.ci, nivel: null, firmaImagen: owner.firmaImagen ?? null });
+  const [signatureError, setSignatureError] = useState('');
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const haveSignature = Boolean(form.firmaImagen);
+
   async function submit(event: FormEvent) { event.preventDefault(); try { await saveProfile(form); await done('Datos del perfil guardados.'); } catch (error) { setStatus(message(error, 'No se pudo guardar el perfil.')); } }
+
+  function normalizeSignatureDataUrl(dataUrl: string): string | null {
+    if (!dataUrl || !dataUrl.startsWith('data:image/')) return null;
+    const matched = /^data:image\/(png|jpeg|jpg|webp);base64,/.exec(dataUrl);
+    if (!matched) return null;
+    const payload = dataUrl.substring(dataUrl.indexOf(',') + 1);
+    const decodedBytes = typeof window !== 'undefined' ? atob(payload).length : 0;
+    if (decodedBytes > SIGNATURE_PERSISTENCE_MAX_BYTES) {
+      setSignatureError('La firma es demasiado grande. Probá con una imagen más pequeña.');
+      return null;
+    }
+    setSignatureError('');
+    return dataUrl;
+  }
+
+  function handleFileUpload(file: File | null) {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setSignatureError('Solo se permiten imágenes para la firma.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = normalizeSignatureDataUrl(String(reader.result || ''));
+      if (result) setForm({ ...form, firmaImagen: result });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function prepareCanvas() {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const context = canvas.getContext('2d');
+    if (!context) return;
+    const isMobile = window.innerWidth < 700;
+    const width = isMobile ? 280 : 420;
+    const height = 140;
+    canvas.width = width;
+    canvas.height = height;
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, width, height);
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+    context.lineWidth = 2.5;
+    context.strokeStyle = '#111827';
+    if (form.firmaImagen) {
+      const img = new Image();
+      img.onload = () => {
+        context.clearRect(0, 0, width, height);
+        context.drawImage(img, 0, 0, width, height);
+      };
+      img.src = form.firmaImagen;
+    }
+  }
+
+  useEffect(() => { prepareCanvas(); }, [form.firmaImagen]);
+
+  function drawStart(event: React.PointerEvent<HTMLCanvasElement>) {
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext('2d');
+    if (!canvas || !context) return;
+    setIsDrawing(true);
+    const rect = canvas.getBoundingClientRect();
+    const x = (event.clientX - rect.left) * (canvas.width / rect.width);
+    const y = (event.clientY - rect.top) * (canvas.height / rect.height);
+    context.beginPath();
+    context.moveTo(x, y);
+    context.lineTo(x, y);
+    context.stroke();
+  }
+
+  function drawMove(event: React.PointerEvent<HTMLCanvasElement>) {
+    if (!isDrawing) return;
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext('2d');
+    if (!canvas || !context) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = (event.clientX - rect.left) * (canvas.width / rect.width);
+    const y = (event.clientY - rect.top) * (canvas.height / rect.height);
+    context.lineTo(x, y);
+    context.stroke();
+  }
+
+  function finishDrawing() {
+    if (!isDrawing) return;
+    setIsDrawing(false);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const dataUrl = canvas.toDataURL('image/png');
+    const normalized = normalizeSignatureDataUrl(dataUrl);
+    if (normalized) setForm({ ...form, firmaImagen: normalized });
+  }
+
+  function clearSignature() {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const context = canvas.getContext('2d');
+    if (!context) return;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    setForm({ ...form, firmaImagen: null });
+    setSignatureError('');
+  }
+
   return <form className="profile-card-grid" onSubmit={submit}>
     <section className="panel form-grid"><Heading number="01" title="Información personal" detail="Datos que identifican tu cuenta." /><label>Nombre<input value={form.nombre} disabled={!data.canEditAdminOnlyProfileFields} onChange={(e) => setForm({ ...form, nombre: e.target.value })} /></label><label>Apellido<input value={form.apellido} disabled={!data.canEditAdminOnlyProfileFields} onChange={(e) => setForm({ ...form, apellido: e.target.value })} /></label><label>Cédula<input value={form.ci ?? ''} disabled={!data.canEditAdminOnlyProfileFields} inputMode="numeric" onChange={(e) => setForm({ ...form, ci: e.target.value ? Number(e.target.value) : null })} /></label></section>
     <section className="panel form-grid"><Heading number="02" title="Contacto" detail="Canales para comunicaciones del colegio." /><label>Correo electrónico<input type="email" value={form.correo} onChange={(e) => setForm({ ...form, correo: e.target.value })} /></label><label>Teléfono<input inputMode="numeric" value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} /></label>{data.isStaffProfile && <label>Celular<input inputMode="numeric" value={form.celular} onChange={(e) => setForm({ ...form, celular: e.target.value })} /></label>}</section>
     <section className="panel form-grid"><Heading number="03" title="Cuenta" detail="Nombre utilizado para iniciar sesión." /><label>Usuario<input value={form.usuario} required onChange={(e) => setForm({ ...form, usuario: e.target.value })} /></label><div className="account-role"><span>Rol asignado</span><strong>{data.profileRoleLabel}</strong></div></section>
-    {data.showGoogleClassroomPanel && <section className="panel form-grid"><Heading number="04" title="Google Classroom" detail="Vinculación académica del profesor." /><State active={data.googleClassroomConnected} title={data.googleClassroomConnected ? 'Cuenta conectada' : 'Sin conexión'} detail={data.profileOwner.googleEmail || 'Todavía no hay una cuenta de Google vinculada.'} />{data.googleClassroomCourses.length > 0 && <p className="muted-copy">{data.googleClassroomCourses.length} curso(s) compatible(s) disponibles.</p>}
+    {data.isProfessorProfile && <section className="panel form-grid"><Heading number="04" title="Firma del docente" detail="Se usa en la exportación y se limpia automáticamente si no hay dato." />
+      <div className="signature-box">
+        <canvas ref={canvasRef} onPointerDown={drawStart} onPointerMove={drawMove} onPointerUp={finishDrawing} onPointerLeave={finishDrawing} />
+      </div>
+      <div className="signature-actions">
+        <label className="button secondary upload-button"><input type="file" accept="image/*" onChange={(e) => handleFileUpload(e.target.files?.[0] ?? null)} />Subir imagen</label>
+        <button className="button secondary" type="button" onClick={clearSignature}>Borrar</button>
+      </div>
+      {signatureError && <p className="muted-copy error-copy">{signatureError}</p>}
+      {haveSignature && <p className="muted-copy">Se usará la firma en la exportación; si no existe, se mostrará tu nombre.</p>}
+    </section>}
+    {data.showGoogleClassroomPanel && <section className="panel form-grid"><Heading number={data.isProfessorProfile ? '05' : '04'} title="Google Classroom" detail="Vinculación académica del profesor." /><State active={data.googleClassroomConnected} title={data.googleClassroomConnected ? 'Cuenta conectada' : 'Sin conexión'} detail={data.profileOwner.googleEmail || 'Todavía no hay una cuenta de Google vinculada.'} />{data.googleClassroomCourses.length > 0 && <p className="muted-copy">{data.googleClassroomCourses.length} curso(s) compatible(s) disponibles.</p>}
       <div>
         {!data.googleClassroomConnected && <button className="button" type="button" onClick={async () => {
           try {

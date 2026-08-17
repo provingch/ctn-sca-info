@@ -155,7 +155,8 @@ class ProfileControllerTest {
                 "Juan",
                 "Perez",
                 12345678,
-                1
+                1,
+                null
         );
 
         controller.saveProfile(request, authentication);

@@ -42,6 +42,7 @@ public class ProfesorDao extends conexion {
         long expiry = rs.getLong("google_token_expiry");
         if (!rs.wasNull()) p.setGcTokenExpiry(expiry);
         p.setTotpSecret(rs.getString("totp_secret"));
+        p.setFirmaImagen(rs.getString("firma_imagen"));
         return p;
     }
 
@@ -49,7 +50,7 @@ public class ProfesorDao extends conexion {
     public Profesor findById(int id) {
         final String sql = "SELECT id, nombre, apellido, usuario, contrasenia, nivel, "
                          + "ci, telefono, celular, correo, especialidad_id, google_email, "
-                         + "google_access_token, google_refresh_token, google_token_expiry, totp_secret "
+                         + "google_access_token, google_refresh_token, google_token_expiry, totp_secret, firma_imagen "
                          + "FROM profesor WHERE id = ?";
         try (Connection c = getCon();
              PreparedStatement ps = c.prepareStatement(sql)) {
@@ -69,7 +70,7 @@ public class ProfesorDao extends conexion {
     public Profesor findByGoogleEmail(String email) {
         final String sql = "SELECT id, nombre, apellido, usuario, contrasenia, nivel, "
                          + "ci, telefono, celular, correo, especialidad_id, google_email, "
-                         + "google_access_token, google_refresh_token, google_token_expiry, totp_secret "
+                         + "google_access_token, google_refresh_token, google_token_expiry, totp_secret, firma_imagen "
                          + "FROM profesor WHERE google_email = ? OR correo = ?";
         try (Connection c = getCon();
              PreparedStatement ps = c.prepareStatement(sql)) {
@@ -159,7 +160,7 @@ public class ProfesorDao extends conexion {
         final String sql = "UPDATE profesor "
                          + "SET nombre = ?, apellido = ?, usuario = ?, "
                          + "    contrasenia = ?, nivel = ?, ci = ?, telefono = ?, "
-                         + "    celular = ?, correo = ?, especialidad_id = ? "
+                         + "    celular = ?, correo = ?, especialidad_id = ?, firma_imagen = ? "
                          + "WHERE id = ?";
         try (Connection c = getCon();
              PreparedStatement ps = c.prepareStatement(sql)) {
@@ -192,7 +193,12 @@ public class ProfesorDao extends conexion {
             ps.setString(9, p.getCorreo());
             if (p.getEspecialidadId() != null) ps.setInt(10, p.getEspecialidadId());
             else                                ps.setNull(10, Types.INTEGER);
-            ps.setInt(11, p.getId());
+            if (p.getFirmaImagen() != null && !p.getFirmaImagen().isBlank()) {
+                ps.setString(11, p.getFirmaImagen());
+            } else {
+                ps.setNull(11, Types.VARCHAR);
+            }
+            ps.setInt(12, p.getId());
 
             return ps.executeUpdate() == 1;
         } catch (SQLException ex) {
@@ -204,7 +210,7 @@ public class ProfesorDao extends conexion {
     public java.util.List<Profesor> findAll() {
         final String sql = "SELECT id, nombre, apellido, usuario, contrasenia, nivel, "
                          + "ci, telefono, celular, correo, especialidad_id, google_email, "
-                         + "google_access_token, google_refresh_token, google_token_expiry, totp_secret "
+                         + "google_access_token, google_refresh_token, google_token_expiry, totp_secret, firma_imagen "
                          + "FROM profesor ORDER BY apellido, nombre";
         java.util.List<Profesor> out = new java.util.ArrayList<>();
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql);
@@ -223,6 +229,22 @@ public class ProfesorDao extends conexion {
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
             if (totpSecret != null && !totpSecret.isBlank()) {
                 ps.setString(1, totpSecret);
+            } else {
+                ps.setNull(1, Types.VARCHAR);
+            }
+            ps.setInt(2, profesorId);
+            return ps.executeUpdate() == 1;
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean updateFirmaImagen(int profesorId, String firmaImagen) {
+        final String sql = "UPDATE profesor SET firma_imagen = ? WHERE id = ?";
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
+            if (firmaImagen != null && !firmaImagen.isBlank()) {
+                ps.setString(1, firmaImagen);
             } else {
                 ps.setNull(1, Types.VARCHAR);
             }

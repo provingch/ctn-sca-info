@@ -27,6 +27,7 @@ public class Profesor {
     private String gcRefreshToken;
     private long gcTokenExpiry;
     private String totpSecret;
+    private String firmaImagen;
 
     // getters y setters
     public String getGoogleEmail() { return googleEmail; }
@@ -43,6 +44,9 @@ public class Profesor {
 
     public String getTotpSecret() { return totpSecret; }
     public void setTotpSecret(String totpSecret) { this.totpSecret = totpSecret; }
+
+    public String getFirmaImagen() { return firmaImagen; }
+    public void setFirmaImagen(String firmaImagen) { this.firmaImagen = firmaImagen; }
 
     public String getFullName() {
         String n = nombre == null ? "" : nombre;

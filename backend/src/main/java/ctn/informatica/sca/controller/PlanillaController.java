@@ -296,7 +296,8 @@ public class PlanillaController {
                     "",
                     tareas,
                     rows,
-                    firstStageGrades
+                    firstStageGrades,
+                    profesor == null ? null : profesor.getFirmaImagen()
             );
 
             String base = "Planilla_" + (disciplina.isBlank() ? planilla.getId() : disciplina.replaceAll("[^A-Za-z0-9_-]", "_")) + "_" + planilla.getPeriodo();

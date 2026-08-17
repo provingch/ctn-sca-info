@@ -12,6 +12,7 @@ export interface ProfileOwnerDto {
   usuario: string | null;
   googleEmail: string | null;
   gcAccessToken: string | null;
+  firmaImagen: string | null;
 }
 
 export interface ProfileMateriaDto { id: number; nombre: string; categoria: string | null; }
@@ -56,7 +57,7 @@ export function changePassword(payload: ChangePasswordRequest): Promise<void> {
   return apiRequest<void>('/api/profile/change-password', { method: 'POST', body: payload });
 }
 
-export function saveProfile(payload: { correo: string; telefono: string; celular: string; usuario: string; nombre: string; apellido: string; ci: number | null; nivel: number | null }): Promise<void> {
+export function saveProfile(payload: { correo: string; telefono: string; celular: string; usuario: string; nombre: string; apellido: string; ci: number | null; nivel: number | null; firmaImagen?: string | null }): Promise<void> {
   return apiRequest<void>('/api/profile/save-profile', { method: 'POST', body: payload });
 }
 
