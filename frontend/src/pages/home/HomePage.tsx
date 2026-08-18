@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { createClass, getHome, updateAttendance, type HomeResponse } from '../../api/home';
+import { createClass, getHome, type HomeResponse } from '../../api/home';
 import { ApiError } from '../../api/client';
 import AppShell from '../../components/AppShell';
 import { resolvePlanilla, syncClassroom, type Especialidad } from '../../api/academics';
@@ -24,6 +24,12 @@ export default function HomePage() {
   const [selectionLoading, setSelectionLoading] = useState(false);
   const [syncingAll, setSyncingAll] = useState(false);
   const { selectSpecialty, resetSpecialty } = useSpecialty();
+  const selectionComplete = Boolean(especialidadId && selectedNivel != null && selectedSeccion && cursoId);
+
+  const hasEspecialidad = !!especialidadId;
+  const hasCursoSeleccionado = !!cursoId;
+  const selectedCourseNivel = selectedNivel ?? (data?.selCurso ? Number(data.selCurso.curso) : null);
+  const hasSeccionSeleccionada = !!selectedSeccion || !!(data?.selCurso?.seccion && hasCursoSeleccionado);
 
   const setCourseSelection = (value: string | number) => {
     const nextNivel = Number(value) || null;
@@ -42,6 +48,15 @@ export default function HomePage() {
       setSelectionLoading(false);
     }
   }, [cursoId, etapa, view]);
+
+  useEffect(() => {
+    if (data?.selCurso && selectedNivel == null) {
+      setSelectedNivel(Number(data.selCurso.curso));
+    }
+    if (data?.selCurso && !selectedSeccion && data.selCurso.seccion) {
+      setSelectedSeccion(data.selCurso.seccion);
+    }
+  }, [data, selectedNivel, selectedSeccion]);
 
   useEffect(() => {
     // use admin catalog to ensure same especialidades list as admin panel
@@ -84,8 +99,26 @@ export default function HomePage() {
   // const selectedCourseId = cursoId || data.selCurso?.id;
 
   // derive unique niveles and secciones for selectors
-  const niveles = Array.from(new Set(visibleCursos.map((c) => Number(c.curso)))).map((n) => Number(n)).filter((n) => !isNaN(n)).sort((a, b) => a - b);
+  const nivelesBase = Array.from(new Set(visibleCursos.map((c) => Number(c.curso)).filter((n) => !isNaN(n) && n > 0)));
+  if (nivelesBase.length > 0 && !nivelesBase.includes(1)) {
+    nivelesBase.push(1);
+  }
+  const niveles = nivelesBase.sort((a, b) => a - b);
   const seccionesForNivel = (nivel: number) => Array.from(new Set(visibleCursos.filter((c) => Number(c.curso) === nivel).map((c) => c.seccion))).sort();
+
+  useEffect(() => {
+    if (!especialidadId) {
+      setSelectedNivel(null);
+      setSelectedSeccion('');
+      return;
+    }
+    if (!cursoId && data?.selCurso) {
+      const nextNivel = Number(data.selCurso.curso);
+      const nextSeccion = data.selCurso.seccion;
+      setSelectedNivel(nextNivel);
+      setSelectedSeccion(nextSeccion);
+    }
+  }, [especialidadId, cursoId, data?.selCurso]);
 
   const params = (next: Record<string, string>) => setSearch({
     view,
@@ -96,7 +129,9 @@ export default function HomePage() {
   });
 
   const courseOptions = niveles.map((n) => ({ value: n, label: `${n}°` }));
-  const sectionOptions = (selectedNivel != null ? seccionesForNivel(selectedNivel) : []).map((s) => ({ value: s, label: String(s) }));
+  const sectionOptions = (selectedCourseNivel != null ? seccionesForNivel(selectedCourseNivel) : []).map((s) => ({ value: s, label: String(s) }));
+
+  const showSelectionWait = view === 'clase' && (!hasEspecialidad || !hasCursoSeleccionado || !hasSeccionSeleccionada);
 
   return <>
     <style>{`
@@ -127,7 +162,7 @@ export default function HomePage() {
       .idle-dot:nth-child(2) { animation-delay: 0.15s; }
       .idle-dot:nth-child(3) { animation-delay: 0.3s; }
     `}</style>
-    <AppShell title="Panel SCA del curso" specialty={selectedEspecialidad?.nombre ?? data.selCurso?.especialidad}><div className="toolbar filters"><button className="button secondary" onClick={() => setSearch({})}>← Inicio</button>
+    <AppShell title="Panel SCA del curso" specialty={selectedEspecialidad?.nombre ?? null}><div className="toolbar filters"><button className="button secondary" onClick={() => setSearch({})}>← Inicio</button>
       <label className="inline-filter">Especialidad
         <AnimatedSelect ariaLabel="Especialidad" value={especialidadId || ''} onChange={(value) => {
           setSelectedNivel(null);
@@ -143,22 +178,22 @@ export default function HomePage() {
         }} placeholder="Seleccione la especialidad" options={[{ value: '', label: 'Seleccione la especialidad' }, ...especialidades.map((item) => ({ value: item.id, label: item.nombre }))]} />
       </label>
       <label className="inline-filter">Curso
-        <AnimatedSelect ariaLabel="Curso" value={selectedNivel ?? ''} onChange={(value) => {
+        <AnimatedSelect ariaLabel="Curso" value={selectedCourseNivel ?? ''} onChange={(value) => {
           setCourseSelection(value);
-        }} disabled={visibleCursos.length === 0} placeholder="Seleccione el curso" options={[{ value: '', label: 'Seleccione el curso' }, ...courseOptions]} />
+        }} disabled={!hasEspecialidad || visibleCursos.length === 0} placeholder="Seleccione el curso" options={[{ value: '', label: 'Seleccione el curso' }, ...courseOptions]} />
       </label>
       <label className="inline-filter">Sección
           <AnimatedSelect ariaLabel="Sección" value={selectedSeccion ?? ''} onChange={(value) => {
           setSelectionLoading(true);
           setSelectedSeccion(value);
-          const nivel = selectedNivel ?? (data.selCurso ? Number(data.selCurso.curso) : undefined);
+          const nivel = selectedCourseNivel ?? (data.selCurso ? Number(data.selCurso.curso) : undefined);
           const seccion = String(value);
           const match = visibleCursos.find((c) => (nivel == null || Number(c.curso) === nivel) && c.seccion === seccion && (!selectedEspecialidad || c.especialidad === selectedEspecialidad.nombre));
           params({ cursoId: match ? String(match.id) : '' });
-        }} disabled={visibleCursos.length === 0 || (selectedNivel == null && !data.selCurso)} placeholder="Seleccione la sección" options={[{ value: '', label: 'Seleccione la sección' }, ...sectionOptions]} />
+        }} disabled={!hasEspecialidad || selectedCourseNivel == null || visibleCursos.length === 0} placeholder="Seleccione la sección" options={[{ value: '', label: 'Seleccione la sección' }, ...sectionOptions]} />
       </label>
     </div>
-      {selectionLoading ? <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Cargando planilla…</h2><p>Esperá un momento mientras cargamos la planilla seleccionada.</p></section> : (!data.selCurso ? <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Esperando selección</h2><p>Elegí una especialidad y un curso para continuar con la clase.</p></section> : view === 'clase' ? <ClassView data={data} reload={load} /> : <PlanillasView data={data} syncingProp={syncingAll} setSyncingProp={setSyncingAll} />)}
+      {selectionLoading ? <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Cargando planilla…</h2><p>Esperá un momento mientras cargamos la planilla seleccionada.</p></section> : (view === 'clase' && showSelectionWait) ? <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Esperando selección</h2><p>Elegí una especialidad, un curso y una sección para continuar con la clase.</p></section> : (view === 'clase' ? <ClassView data={data} reload={load} /> : <PlanillasView data={data} syncingProp={syncingAll} setSyncingProp={setSyncingAll} />)}
     </AppShell>
   </>;
 }
@@ -236,11 +271,6 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
     }
   }
 
-  async function mark(id: number, estado: string) {
-    await updateAttendance(id, estado);
-    await reload();
-  }
-
   function clearForm() {
     setTema('');
     setDisciplina('');
@@ -255,7 +285,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
 
   return (
     <div className="two-column">
-      <form className="panel" onSubmit={create} style={{ display: 'grid', gap: 12 }}>
+      <form className="panel" onSubmit={create} style={{ display: 'grid', gap: 12, gridColumn: '1 / -1' }}>
         <input type="hidden" name="action" value="create-rasgo-planilla" />
         <input type="hidden" name="cursoId" value={data.selCurso ? String(data.selCurso.id) : ''} id="formCursoId" />
         <input type="hidden" name="turno" value="turno" id="formTurno" />
@@ -296,7 +326,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
             </div>
             <div className="class-field class-field--full">
               <label htmlFor="observacionesGenerales">Observaciones generales</label>
-              <textarea id="observacionesGenerales" rows={3} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Cualquier eventualidad general de la clase..." />
+              <textarea id="observacionesGenerales" rows={3} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Cualquier eventualidad general de la clase..." style={{ resize: 'none' }} />
             </div>
           </div>
         </div>
