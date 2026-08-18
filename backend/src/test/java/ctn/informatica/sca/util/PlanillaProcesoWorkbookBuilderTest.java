@@ -162,6 +162,49 @@ class PlanillaProcesoWorkbookBuilderTest {
     }
 
     @Test
+    void diagnostic_verifyInstrumentColumnPositions_currentBuilder_behavior() throws IOException {
+        Planilla planilla = new Planilla(100, 1, 1, "comun", "Verif", 2026, "primera", 1);
+        List<Tarea> tareas = new java.util.ArrayList<>();
+        // Month 1: 3 tasks
+        Tarea t1 = new Tarea(); t1.setId(1001); t1.setFecha(LocalDate.of(2026, 2, 1)); t1.setTitulo("T1"); t1.setTotal(10);
+        Tarea t2 = new Tarea(); t2.setId(1002); t2.setFecha(LocalDate.of(2026, 2, 10)); t2.setTitulo("T2"); t2.setTotal(10);
+        Tarea t3 = new Tarea(); t3.setId(1003); t3.setFecha(LocalDate.of(2026, 2, 20)); t3.setTitulo("T3"); t3.setTotal(10);
+        tareas.add(t1); tareas.add(t2); tareas.add(t3);
+        // Month 2: 7 tasks
+        for (int i = 4; i <= 10; i++) {
+            Tarea tt = new Tarea(); tt.setId(1000 + i); tt.setFecha(LocalDate.of(2026, 4, i)); tt.setTitulo("T" + i); tt.setTotal(10);
+            tareas.add(tt);
+        }
+
+        PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                planilla,
+                null,
+                "Verif",
+                "Docente",
+                "",
+                tareas,
+                List.of(),
+                Map.of(),
+                null
+        );
+
+        try (XSSFWorkbook workbook = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(data, "V")) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Row titleRow = sheet.getRow(6); // instrument title row
+            java.util.List<Integer> nonEmpty = new java.util.ArrayList<>();
+            for (int c = 0; c < 120; c++) {
+                Cell cell = titleRow.getCell(c);
+                if (cell != null && cell.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING && !cell.getStringCellValue().isBlank()) {
+                    nonEmpty.add(c);
+                }
+            }
+            System.out.println("Non-empty instrument title columns: " + nonEmpty);
+            // Expect at least 3 + 7 = 10 instrument title cells present
+            assertTrue(nonEmpty.size() >= 10, "Debe haber al menos 10 títulos de instrumento");
+        }
+    }
+
+    @Test
     void verifyColumnsAreHiddenCorrectly() throws IOException {
         Planilla planilla = new Planilla(99, 1, 1, "comun", "Prueba", 2026, "primera", 7);
 
