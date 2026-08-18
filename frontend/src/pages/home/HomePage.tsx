@@ -84,7 +84,11 @@ export default function HomePage() {
   // const selectedCourseId = cursoId || data.selCurso?.id;
 
   // derive unique niveles and secciones for selectors
-  const niveles = Array.from(new Set(visibleCursos.map((c) => Number(c.curso)))).map((n) => Number(n)).filter((n) => !isNaN(n)).sort((a, b) => a - b);
+  const nivelesBase = Array.from(new Set(visibleCursos.map((c) => Number(c.curso)).filter((n) => !isNaN(n) && n > 0)));
+  if (nivelesBase.length > 0 && !nivelesBase.includes(1)) {
+    nivelesBase.push(1);
+  }
+  const niveles = nivelesBase.sort((a, b) => a - b);
   const seccionesForNivel = (nivel: number) => Array.from(new Set(visibleCursos.filter((c) => Number(c.curso) === nivel).map((c) => c.seccion))).sort();
 
   const params = (next: Record<string, string>) => setSearch({
@@ -127,7 +131,7 @@ export default function HomePage() {
       .idle-dot:nth-child(2) { animation-delay: 0.15s; }
       .idle-dot:nth-child(3) { animation-delay: 0.3s; }
     `}</style>
-    <AppShell title="Panel SCA del curso" specialty={selectedEspecialidad?.nombre ?? data.selCurso?.especialidad}><div className="toolbar filters"><button className="button secondary" onClick={() => setSearch({})}>← Inicio</button>
+    <AppShell title="Panel SCA del curso" specialty={selectedEspecialidad?.nombre ?? null}><div className="toolbar filters"><button className="button secondary" onClick={() => setSearch({})}>← Inicio</button>
       <label className="inline-filter">Especialidad
         <AnimatedSelect ariaLabel="Especialidad" value={especialidadId || ''} onChange={(value) => {
           setSelectedNivel(null);

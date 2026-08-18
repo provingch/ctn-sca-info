@@ -59,6 +59,7 @@
   --scrollbar-thumb-hover: #637595;
 }
 
+:root[data-specialty="general"], [data-specialty="general"] { --accent: #667085; --accent-deep: #3f4d5d; --accent-soft: #edf2f5; --accent-strong: #dde5ec; --hero-tone: #596779; }
 :root[data-specialty="informatica"], [data-specialty="informatica"] { --accent: #7a1f2b; --accent-deep: #5f1520; --accent-soft: #f7e9eb; --accent-strong: #efd2d6; --hero-tone: #7a1f2b; }
 :root[data-specialty="construcciones"], [data-specialty="construcciones"] { --accent: #806826; --accent-deep: #604b17; --accent-soft: #f5f0e4; --accent-strong: #e9dfc8; --hero-tone: #806826; }
 :root[data-specialty="quimica"], [data-specialty="quimica"] { --accent: #f4f7fb; --accent-deep: #dbe3ee; --accent-soft: #f8fafc; --accent-strong: #edf3f8; --hero-tone: #dfeaf5; }
@@ -68,6 +69,7 @@
 :root[data-specialty="electromecanica"], [data-specialty="electromecanica"] { --accent: #3347c5; --accent-deep: #24349a; --accent-soft: #e9ecff; --accent-strong: #d2d8ff; --hero-tone: #3347c5; }
 :root[data-specialty="electricidad"], [data-specialty="electricidad"] { --accent: #6ec3e8; --accent-deep: #2d89b8; --accent-soft: #ecf9ff; --accent-strong: #d3f0fb; --hero-tone: #6ec3e8; }
 
+:root[data-theme="dark"][data-specialty="general"], :root[data-theme="dark"] [data-specialty="general"] { --accent: #aeb8c4; --accent-deep: #dde6f0; --accent-soft: #1f2a35; --accent-strong: #2a3746; --hero-tone: #8b9aa8; }
 :root[data-theme="dark"][data-specialty="informatica"], :root[data-theme="dark"] [data-specialty="informatica"] { --accent: #d17d89; --accent-deep: #f0b8c0; --accent-soft: #3b242c; --accent-strong: #54303a; --hero-tone: #9f4050; }
 :root[data-theme="dark"][data-specialty="construcciones"], :root[data-theme="dark"] [data-specialty="construcciones"] { --accent: #e3ba67; --accent-deep: #f5d99e; --accent-soft: #382f20; --accent-strong: #4e4026; --hero-tone: #9f7935; }
 :root[data-theme="dark"][data-specialty="quimica"], :root[data-theme="dark"] [data-specialty="quimica"] { --accent: #edf3f9; --accent-deep: #ffffff; --accent-soft: #23364a; --accent-strong: #38506a; --hero-tone: #dfe9f2; }
