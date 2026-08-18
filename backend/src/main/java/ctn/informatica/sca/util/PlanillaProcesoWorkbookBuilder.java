@@ -272,6 +272,12 @@ public class PlanillaProcesoWorkbookBuilder {
 
         fillStudentRows(sheet, data, taskColumnById, computed, monthBlocks);
         clearTemplatePlaceholders(sheet);
+
+        // Clean any residual template content to the right of our computed columns.
+        // This removes stale static headers, formulas and merged regions left by
+        // the original template beyond the last real column we use.
+        cleanColumnsAfter(sheet, computed.regularizationColumn());
+
         setTeacherSignature(sheet, data);
     }
 
@@ -701,6 +707,61 @@ public class PlanillaProcesoWorkbookBuilder {
 
         if (data.profesorNombre() != null && !data.profesorNombre().isBlank()) {
             targetCell.setCellValue(data.profesorNombre());
+        }
+    }
+
+    private void cleanColumnsAfter(Sheet sheet, int lastAllowedColumn) {
+        if (sheet == null) return;
+
+        // Remove merged regions that are entirely to the right of lastAllowedColumn
+        if (sheet instanceof XSSFSheet) {
+            XSSFSheet xssf = (XSSFSheet) sheet;
+            java.util.List<CellRangeAddress> merges = xssf.getMergedRegions();
+            for (int i = merges.size() - 1; i >= 0; i--) {
+                CellRangeAddress ca = merges.get(i);
+                if (ca.getFirstColumn() > lastAllowedColumn) {
+                    xssf.removeMergedRegion(i);
+                }
+            }
+        }
+
+        // Prepare a neutral cell style to remove old formatting
+        org.apache.poi.ss.usermodel.Workbook wb = sheet.getWorkbook();
+        org.apache.poi.ss.usermodel.CellStyle neutral = wb.createCellStyle();
+
+        int lastRow = sheet.getLastRowNum();
+        for (int r = 0; r <= lastRow; r++) {
+            Row row = sheet.getRow(r);
+            if (row == null) continue;
+            short lastCellNum = row.getLastCellNum();
+            if (lastCellNum <= 0) continue;
+            for (int c = lastAllowedColumn + 1; c < lastCellNum; c++) {
+                Cell cell = row.getCell(c);
+                if (cell == null) continue;
+                // remove formula/state/value
+                try {
+                    cell.setBlank();
+                } catch (Exception ex) {
+                    // fallback: set empty string
+                    cell.setCellValue("");
+                }
+                // reset style
+                cell.setCellStyle(neutral);
+            }
+        }
+
+        // Optionally shrink/hide any leftover columns to avoid visual remnants
+        if (sheet instanceof XSSFSheet) {
+            XSSFSheet xssf = (XSSFSheet) sheet;
+            int maxColToCheck = Math.max(lastAllowedColumn + 1, 256); // check at least some range
+            for (int col = lastAllowedColumn + 1; col <= maxColToCheck; col++) {
+                try {
+                    xssf.setColumnWidth(col, 1);
+                    xssf.setColumnHidden(col, true);
+                } catch (Exception ex) {
+                    // ignore out-of-range columns
+                }
+            }
         }
     }
 
