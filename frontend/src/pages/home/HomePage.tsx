@@ -250,7 +250,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
 
   return (
     <div className="two-column">
-      <form className="panel" onSubmit={create} style={{ display: 'grid', gap: 12 }}>
+      <form className="panel" onSubmit={create} style={{ display: 'grid', gap: 12, gridColumn: '1 / -1' }}>
         <input type="hidden" name="action" value="create-rasgo-planilla" />
         <input type="hidden" name="cursoId" value={data.selCurso ? String(data.selCurso.id) : ''} id="formCursoId" />
         <input type="hidden" name="turno" value="turno" id="formTurno" />
@@ -291,7 +291,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
             </div>
             <div className="class-field class-field--full">
               <label htmlFor="observacionesGenerales">Observaciones generales</label>
-              <textarea id="observacionesGenerales" rows={3} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Cualquier eventualidad general de la clase..." />
+              <textarea id="observacionesGenerales" rows={3} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Cualquier eventualidad general de la clase..." style={{ resize: 'none' }} />
             </div>
           </div>
         </div>
