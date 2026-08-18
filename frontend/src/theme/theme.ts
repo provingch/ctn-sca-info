@@ -1,6 +1,7 @@
 export type Theme = 'light' | 'dark';
 
 const STORAGE_KEY = 'sca-theme';
+export const THEME_CHANGE_EVENT = 'sca-theme-change';
 
 export function getInitialTheme(): Theme {
   const saved = localStorage.getItem(STORAGE_KEY);
@@ -17,6 +18,7 @@ export function applyTheme(theme: Theme): void {
 export function persistTheme(theme: Theme): void {
   localStorage.setItem(STORAGE_KEY, theme);
   applyTheme(theme);
+  window.dispatchEvent(new CustomEvent<Theme>(THEME_CHANGE_EVENT, { detail: theme }));
 }
 
 export function normalizeSpecialty(value?: string | null): string {
