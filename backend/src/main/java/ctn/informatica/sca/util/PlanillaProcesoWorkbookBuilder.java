@@ -32,6 +32,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellReference;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
@@ -299,6 +300,9 @@ public class PlanillaProcesoWorkbookBuilder {
         List<Map.Entry<YearMonth, List<Tarea>>> months = new ArrayList<>(tareasPorMes.entrySet());
         int currentColumn = layout.firstMonthColumn();
 
+        // Remove merged regions inherited from template that overlap header rows
+        removeHeaderMerges(sheet);
+
         for (int monthBlockIndex = 0; monthBlockIndex < MONTH_BLOCK_COUNT; monthBlockIndex++) {
             Row monthHeaderRow = getOrCreateRow(sheet, MONTH_HEADER_ROW);
             Row titleRow = getOrCreateRow(sheet, INSTRUMENT_TITLE_ROW);
@@ -318,7 +322,6 @@ public class PlanillaProcesoWorkbookBuilder {
             }
 
             int firstCol = currentColumn;
-            setStringCell(monthHeaderRow, firstCol, monthLabel);
 
             for (int instrumentIndex = 0; instrumentIndex < tareasMes.size(); instrumentIndex++) {
                 int colIndex = firstCol + instrumentIndex;
@@ -328,14 +331,42 @@ public class PlanillaProcesoWorkbookBuilder {
                 titleCell.setCellValue(safeString(tarea.getTitulo()));
                 setNumericCell(tpCell, tarea.getTotal());
                 taskColumnById.put(tarea.getId(), colIndex);
+
+                // set column width based on title length (clamped)
+                if (sheet instanceof XSSFSheet) {
+                    int minChars = 4;
+                    int maxChars = 18;
+                    int titleLen = tarea.getTitulo() == null ? 0 : tarea.getTitulo().length();
+                    int desired = Math.max(minChars, Math.min(maxChars, (titleLen / 4) + 4));
+                    ((XSSFSheet) sheet).setColumnWidth(colIndex, desired * 256);
+                }
             }
 
             // Subtotal column immediately after instruments
             int subtotalCol = firstCol + tareasMes.size();
-            setStringCell(getOrCreateRow(sheet, INSTRUMENT_TITLE_ROW).createCell(subtotalCol), "Subtotal");
+            setStringCell(monthHeaderRow, firstCol, monthLabel);
+            int lastInstrumentCol = firstCol + tareasMes.size() - 1;
+            // merge month header across instrument columns
+            sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, MONTH_HEADER_ROW, firstCol, lastInstrumentCol));
+            // set and merge subtotal header vertically (header -> title row)
+            setStringCell(getOrCreateCell(monthHeaderRow, subtotalCol), "Subtotal");
+            sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, subtotalCol, subtotalCol));
 
             // advance to next available column (after subtotal)
             currentColumn = subtotalCol + 1;
+        }
+    }
+
+    private void removeHeaderMerges(Sheet sheet) {
+        if (!(sheet instanceof XSSFSheet)) return;
+        XSSFSheet xssf = (XSSFSheet) sheet;
+        java.util.List<CellRangeAddress> merges = xssf.getMergedRegions();
+        for (int i = merges.size() - 1; i >= 0; i--) {
+            CellRangeAddress ca = merges.get(i);
+            // if the merged region intersects the header rows we use, remove it
+            if (ca.getFirstRow() <= TP_ROW && ca.getLastRow() >= MONTH_HEADER_ROW) {
+                xssf.removeMergedRegion(i);
+            }
         }
     }
 
@@ -345,48 +376,6 @@ public class PlanillaProcesoWorkbookBuilder {
             if (sheet instanceof XSSFSheet) {
                 ((XSSFSheet) sheet).setColumnHidden(colIndex, true);
             }
-        }
-    }
-
-    private void hideEntireMonthBlock(Sheet sheet, int firstColOfBlock) {
-        if (!(sheet instanceof XSSFSheet xssfSheet)) {
-            return;
-        }
-        xssfSheet.setColumnHidden(firstColOfBlock, true);
-        xssfSheet.setColumnHidden(firstColOfBlock + 1, true);
-        for (int i = 0; i < INSTRUMENTS_PER_MONTH; i++) {
-            xssfSheet.setColumnHidden(firstColOfBlock + 2 + i, true);
-        }
-    }
-
-    private void hideLeftoverColumns(Sheet sheet, int currentColumn, StageLayout layout) {
-        if (!(sheet instanceof XSSFSheet xssfSheet)) {
-            return;
-        }
-
-        int boundary = Integer.MAX_VALUE;
-        int[] candidates = new int[]{
-                layout.totalGeneralColumn(),
-                layout.currentStageGradeColumn(),
-                layout.firstStageGradeColumn(),
-                layout.stageSumColumn(),
-                layout.finalAverageColumn(),
-                layout.complementaryColumn(),
-                layout.regularizationColumn()
-        };
-
-        for (int c : candidates) {
-            if (c >= 0 && c >= currentColumn) {
-                boundary = Math.min(boundary, c);
-            }
-        }
-
-        if (boundary == Integer.MAX_VALUE) {
-            return;
-        }
-
-        for (int col = currentColumn; col < boundary; col++) {
-            xssfSheet.setColumnHidden(col, true);
         }
     }
 
