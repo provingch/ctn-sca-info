@@ -417,8 +417,10 @@ public class PlanillaProcesoWorkbookBuilder {
             int subtotalCol = firstCol + tareasMes.size();
             setStringCell(monthHeaderRow, firstCol, monthLabel);
             int lastInstrumentCol = firstCol + tareasMes.size() - 1;
-            // merge month header across instrument columns
-            sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, MONTH_HEADER_ROW, firstCol, lastInstrumentCol));
+            // merge month header across instrument columns if it spans 2+ cols
+            if (lastInstrumentCol > firstCol) {
+                sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, MONTH_HEADER_ROW, firstCol, lastInstrumentCol));
+            }
             // set and merge subtotal header vertically (header -> title row)
             setStringCell(getOrCreateCell(monthHeaderRow, subtotalCol), "Subtotal");
             sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, subtotalCol, subtotalCol));
