@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { createClass, getHome, updateAttendance, type HomeResponse } from '../../api/home';
+import { createClass, getHome, type HomeResponse } from '../../api/home';
 import { ApiError } from '../../api/client';
 import AppShell from '../../components/AppShell';
 import { resolvePlanilla, syncClassroom, type Especialidad } from '../../api/academics';
@@ -234,11 +234,6 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
     } catch (err) {
       setStatus(err instanceof ApiError ? err.message : 'No se pudo registrar la clase.');
     }
-  }
-
-  async function mark(id: number, estado: string) {
-    await updateAttendance(id, estado);
-    await reload();
   }
 
   function clearForm() {
