@@ -161,7 +161,44 @@ public class PlanillaProcesoWorkbookBuilder {
         resizeStudentArea(sheet, data.rows().size());
         replaceCommonMarkers(sheet, data);
         fillMonthBlocks(sheet, tareasPorMes, taskColumnById, layout);
-        fillStudentRows(sheet, data, taskColumnById, layout);
+
+        // Compute runtime positions for fixed-final columns (to the right of month blocks)
+        int nextAvailable = layout.firstMonthColumn();
+        for (Map.Entry<YearMonth, List<Tarea>> entry : tareasPorMes.entrySet()) {
+            List<Tarea> tareasMes = entry.getValue();
+            if (tareasMes == null || tareasMes.isEmpty()) continue;
+            Integer firstTaskId = tareasMes.get(0).getId();
+            Integer firstCol = taskColumnById.get(firstTaskId);
+            if (firstCol == null) continue;
+            int subtotalCol = firstCol + tareasMes.size();
+            nextAvailable = Math.max(nextAvailable, subtotalCol + 1);
+        }
+
+        // Build month blocks info (first/last/subtotal columns) to use when writing student formulas
+        java.util.List<MonthBlock> monthBlocks = new java.util.ArrayList<>();
+        for (Map.Entry<YearMonth, List<Tarea>> entry : tareasPorMes.entrySet()) {
+            List<Tarea> tareasMes = entry.getValue();
+            if (tareasMes == null || tareasMes.isEmpty()) continue;
+            Integer firstTaskId = tareasMes.get(0).getId();
+            Integer firstCol = taskColumnById.get(firstTaskId);
+            if (firstCol == null) continue;
+            int lastInstrument = firstCol + tareasMes.size() - 1;
+            int subtotalCol = firstCol + tareasMes.size();
+            monthBlocks.add(new MonthBlock(firstCol, lastInstrument, subtotalCol));
+        }
+
+        ComputedLayout computed = new ComputedLayout(
+            layout.firstMonthColumn(),
+            nextAvailable,           // totalGeneralColumn
+            nextAvailable + 1,       // currentStageGradeColumn
+            layout.firstStageGradeColumn() >= 0 ? nextAvailable + 2 : -1, // firstStageGradeColumn
+            nextAvailable + 3,       // stageSumColumn
+            nextAvailable + 4,       // finalAverageColumn
+            nextAvailable + 5,       // complementaryColumn
+            nextAvailable + 6        // regularizationColumn
+        );
+
+        fillStudentRows(sheet, data, taskColumnById, computed, monthBlocks);
         clearTemplatePlaceholders(sheet);
         setTeacherSignature(sheet, data);
     }
@@ -218,13 +255,14 @@ public class PlanillaProcesoWorkbookBuilder {
         Map<Integer, Integer> mapping = new HashMap<>();
         int nextColumn = layout.firstMonthColumn();
         for (List<Tarea> tareasMes : tareasPorMes.values()) {
-            int availableSlots = Math.max(0, tareasMes == null ? 0 : tareasMes.size());
-            if (availableSlots > 0) {
-                for (int taskIndex = 0; taskIndex < tareasMes.size(); taskIndex++) {
-                    mapping.put(tareasMes.get(taskIndex).getId(), nextColumn + 2 + taskIndex);
-                }
+            if (tareasMes == null || tareasMes.isEmpty()) {
+                continue; // omit empty months entirely
             }
-            nextColumn += monthBlockWidth(tareasMes);
+            for (int taskIndex = 0; taskIndex < tareasMes.size(); taskIndex++) {
+                mapping.put(tareasMes.get(taskIndex).getId(), nextColumn + taskIndex);
+            }
+            // advance by number of instrument columns + 1 subtotal column
+            nextColumn += tareasMes.size() + 1;
         }
         return mapping;
     }
@@ -274,45 +312,31 @@ public class PlanillaProcesoWorkbookBuilder {
                 tareasMes = monthEntry.getValue() == null ? List.of() : monthEntry.getValue();
             }
 
-            int firstCol = currentColumn;
-            // Ensure block columns are visible before writing into them
-            if (!tareasMes.isEmpty() && sheet instanceof XSSFSheet xssfEnsure) {
-                xssfEnsure.setColumnHidden(firstCol, false);
-                xssfEnsure.setColumnHidden(firstCol + 1, false);
+            if (tareasMes.isEmpty()) {
+                // omit empty month completely
+                continue;
             }
 
+            int firstCol = currentColumn;
             setStringCell(monthHeaderRow, firstCol, monthLabel);
 
-            for (int instrumentIndex = 0; instrumentIndex < INSTRUMENTS_PER_MONTH; instrumentIndex++) {
-                int colIndex = firstCol + 2 + instrumentIndex;
+            for (int instrumentIndex = 0; instrumentIndex < tareasMes.size(); instrumentIndex++) {
+                int colIndex = firstCol + instrumentIndex;
                 Cell titleCell = getOrCreateCell(titleRow, colIndex);
                 Cell tpCell = getOrCreateCell(tpRow, colIndex);
-
-                if (instrumentIndex < tareasMes.size()) {
-                    Tarea tarea = tareasMes.get(instrumentIndex);
-                    // Un-hide the specific instrument column in case a previous month hid it
-                    if (sheet instanceof XSSFSheet xssfEnsure) {
-                        xssfEnsure.setColumnHidden(colIndex, false);
-                    }
-                    titleCell.setCellValue(safeString(tarea.getTitulo()));
-                    setNumericCell(tpCell, tarea.getTotal());
-                    taskColumnById.put(tarea.getId(), colIndex);
-                } else {
-                    titleCell.setBlank();
-                    tpCell.setBlank();
-                }
+                Tarea tarea = tareasMes.get(instrumentIndex);
+                titleCell.setCellValue(safeString(tarea.getTitulo()));
+                setNumericCell(tpCell, tarea.getTotal());
+                taskColumnById.put(tarea.getId(), colIndex);
             }
 
-            hideUnusedColumnsInMonthBlock(sheet, firstCol, tareasMes.size());
-            if (tareasMes.isEmpty()) {
-                hideEntireMonthBlock(sheet, firstCol);
-            }
+            // Subtotal column immediately after instruments
+            int subtotalCol = firstCol + tareasMes.size();
+            setStringCell(getOrCreateRow(sheet, INSTRUMENT_TITLE_ROW).createCell(subtotalCol), "Subtotal");
 
-            currentColumn += monthBlockWidth(tareasMes);
+            // advance to next available column (after subtotal)
+            currentColumn = subtotalCol + 1;
         }
-        // After processing all month blocks, hide any leftover columns between the
-        // last used month column and the first fixed-final column of the layout.
-        hideLeftoverColumns(sheet, currentColumn, layout);
     }
 
     private void hideUnusedColumnsInMonthBlock(Sheet sheet, int firstColOfBlock, int taskCount) {
@@ -408,7 +432,7 @@ public class PlanillaProcesoWorkbookBuilder {
         }
     }
 
-    private void fillStudentRows(Sheet sheet, PlanillaSheetData data, Map<Integer, Integer> taskColumnById, StageLayout layout) {
+    private void fillStudentRows(Sheet sheet, PlanillaSheetData data, Map<Integer, Integer> taskColumnById, ComputedLayout layout, java.util.List<MonthBlock> monthBlocks) {
         int maxColumn = layout.firstMonthColumn();
         for (Integer col : taskColumnById.values()) {
             maxColumn = Math.max(maxColumn, col);
@@ -438,6 +462,25 @@ public class PlanillaProcesoWorkbookBuilder {
                         setNumericCell(gradeCell, entry.getValue());
                     }
                 }
+            }
+
+            // Write subtotal formulas per month (SUM of instruments for that month)
+            java.util.List<String> subtotalAddresses = new java.util.ArrayList<>();
+            for (MonthBlock mb : monthBlocks) {
+                String firstColRef = CellReference.convertNumToColString(mb.firstInstrumentCol());
+                String lastColRef = CellReference.convertNumToColString(mb.lastInstrumentCol());
+                int excelRowIndex = excelRow.getRowNum() + 1; // formulas use 1-based row numbers
+                String range = firstColRef + excelRowIndex + ":" + lastColRef + excelRowIndex;
+                Cell subtotalCell = getOrCreateCell(excelRow, mb.subtotalCol());
+                subtotalCell.setCellFormula("SUM(" + range + ")");
+                subtotalAddresses.add(CellReference.convertNumToColString(mb.subtotalCol()) + excelRowIndex);
+            }
+
+            // Write Total General as SUM of existing subtotals
+            if (!subtotalAddresses.isEmpty()) {
+                String totalFormula = "SUM(" + String.join(",", subtotalAddresses) + ")";
+                Cell totalCell = getOrCreateCell(excelRow, layout.totalGeneralColumn());
+                totalCell.setCellFormula(totalFormula);
             }
 
             int currentStageGrade = data.planilla().getNotaForSum(studentRow.getTotal());
@@ -515,6 +558,23 @@ public class PlanillaProcesoWorkbookBuilder {
         Row row = sheet.getRow(rowIndex);
         return row != null ? row : sheet.createRow(rowIndex);
     }
+
+    private record ComputedLayout(
+            int firstMonthColumn,
+            int totalGeneralColumn,
+            int currentStageGradeColumn,
+            int firstStageGradeColumn,
+            int stageSumColumn,
+            int finalAverageColumn,
+            int complementaryColumn,
+            int regularizationColumn) {
+    }
+
+        private record MonthBlock(
+            int firstInstrumentCol,
+            int lastInstrumentCol,
+            int subtotalCol) {
+        }
 
     private Cell getOrCreateCell(Row row, int columnIndex) {
         Cell cell = row.getCell(columnIndex);
