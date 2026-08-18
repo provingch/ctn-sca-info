@@ -5,6 +5,9 @@ import ctn.informatica.sca.model.Planilla;
 import ctn.informatica.sca.model.StudentRow;
 import ctn.informatica.sca.model.Tarea;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import java.io.FileInputStream;
+import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileOutputStream;
@@ -72,5 +75,43 @@ public class ExportGeneratorTest {
             wb.write(out);
         }
         wb.close();
+
+        // Verify no residual template content exists beyond the last real column
+        // Recompute the computed layout's last column (regularizationColumn)
+        int firstMonthColumn = 2; // matches STAGE_1 in builder
+        // group tasks by month
+        java.util.Map<java.time.YearMonth, java.util.List<Tarea>> grouped = new java.util.LinkedHashMap<>();
+        for (Tarea t : tareas) {
+            grouped.computeIfAbsent(java.time.YearMonth.from(t.getFecha()), k -> new java.util.ArrayList<>()).add(t);
+        }
+        int nextAvailable = firstMonthColumn;
+        for (java.util.List<Tarea> list : grouped.values()) {
+            if (list == null || list.isEmpty()) continue;
+            int subtotalCol = nextAvailable + list.size();
+            nextAvailable = Math.max(nextAvailable, subtotalCol + 1);
+            nextAvailable = subtotalCol + 1; // advance as builder does
+        }
+        int regularizationColumn = nextAvailable + 6;
+
+        try (FileInputStream in = new FileInputStream("target/planilla-test.xlsx")) {
+            XSSFWorkbook checkWb = new XSSFWorkbook(in);
+            XSSFSheet sheet = checkWb.getSheet("Planilla-Prueba");
+            assertNotNull(sheet, "Sheet Planilla-Prueba should exist");
+            int lastRow = sheet.getLastRowNum();
+            for (int r = 0; r <= lastRow; r++) {
+                org.apache.poi.ss.usermodel.Row row = sheet.getRow(r);
+                if (row == null) continue;
+                short lastCellNum = row.getLastCellNum();
+                if (lastCellNum <= 0) continue;
+                for (int c = regularizationColumn + 1; c < lastCellNum; c++) {
+                    org.apache.poi.ss.usermodel.Cell cell = row.getCell(c);
+                    if (cell == null) continue;
+                    // Fail if any non-blank cell remains
+                    assertTrue(cell.getCellType() == org.apache.poi.ss.usermodel.CellType.BLANK || (cell.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING && (cell.getStringCellValue() == null || cell.getStringCellValue().isBlank())),
+                            "Found residual content at row " + r + " col " + c);
+                }
+            }
+            checkWb.close();
+        }
     }
 }
