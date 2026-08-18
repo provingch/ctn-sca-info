@@ -379,6 +379,22 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .grade-chip--2 { background: #f97316; } /* naranja */
 .grade-chip--1 { background: #ef4444; } /* rojo */
 
+.planilla-page { width: 100%; min-width: 0; max-width: 100%; overflow-x: clip; }
+.planilla-page > .toolbar { min-width: 0; }
+.planilla-page .inline-filter { position: relative; }
+.planilla-page .inline-filter > span { color: var(--ink); font-size: .88rem; font-weight: 700; }
+.stage-combobox { position: relative; z-index: 12; min-width: 210px; font-weight: 700; }
+.stage-combobox > button { width: 100%; min-height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--paper-raised); color: var(--ink); text-align: left; box-shadow: none; }
+.stage-combobox > button:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--line-strong)); }
+.stage-combobox > button:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent); }
+.stage-combobox > button:disabled { cursor: wait; background: var(--bg-soft); color: var(--muted); }
+.stage-combobox > button > i { width: 8px; height: 8px; flex: 0 0 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: translateY(-2px) rotate(45deg); transition: transform .16s ease; }
+.stage-combobox.open > button { border-color: var(--accent); border-radius: var(--radius-sm) var(--radius-sm) 0 0; box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 14%, transparent); }
+.stage-combobox.open > button > i { transform: translateY(2px) rotate(225deg); }
+.stage-combobox-options { position: absolute; top: calc(100% - 1px); right: 0; left: 0; z-index: 20; overflow: hidden; padding: 5px; border: 1px solid var(--accent); border-top: 0; border-radius: 0 0 var(--radius-sm) var(--radius-sm); background: var(--paper-raised); box-shadow: var(--shadow-md); }
+.stage-combobox-options > button { width: 100%; min-height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border: 0; border-radius: 7px; background: transparent; color: var(--ink); text-align: left; box-shadow: none; }
+.stage-combobox-options > button:hover, .stage-combobox-options > button[aria-selected="true"] { background: var(--accent-soft); color: var(--accent-deep); }
+.stage-combobox-options > button i { font-style: normal; font-weight: 900; }
 .planilla-student-tools { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin: 18px 0 12px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); box-shadow: var(--shadow-sm); }
 .planilla-student-search { width: min(100%, 420px); margin: 0; color: var(--ink); font-size: .78rem; font-weight: 800; }
 .planilla-student-search input[type="search"] { min-height: 42px; border-color: color-mix(in srgb, var(--accent) 18%, var(--line)); box-shadow: none; transition: border-color .18s ease, box-shadow .18s ease; }
@@ -388,12 +404,12 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .planilla-freeze-toggle { min-height: 34px; display: flex; align-items: center; gap: 8px; padding: 7px 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg-soft); color: var(--muted); font-size: .76rem; white-space: nowrap; }
 .planilla-freeze-toggle input { width: auto; margin: 0; accent-color: var(--accent); }
 .planilla-student-count { display: inline-flex; align-items: center; justify-content: center; min-height: 34px; padding: 7px 12px; border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--line)); border-radius: 999px; background: var(--accent-soft); color: var(--accent-deep); font-size: .76rem; font-weight: 850; white-space: nowrap; }
-.planilla-table-panel { overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); box-shadow: var(--shadow-sm); }
+.planilla-table-panel { width: 100%; min-width: 0; max-width: 100%; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); box-shadow: var(--shadow-sm); }
 .planilla-table-heading { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 14px 18px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--paper-raised) 90%, var(--accent-soft)); }
 .planilla-table-heading div > span { color: var(--accent-deep); font-size: .68rem; font-weight: 900; letter-spacing: .11em; text-transform: uppercase; }
 .planilla-table-heading h2 { margin: 3px 0 0; font-size: 1.05rem; }
 .planilla-table-heading > small { color: var(--muted); font-weight: 700; white-space: nowrap; }
-.planilla-grade-table-wrap { max-height: clamp(360px, 66vh, 720px); overflow: auto; border: 0; border-radius: 0; box-shadow: none; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.planilla-grade-table-wrap { width: 100%; min-width: 0; max-width: 100%; max-height: clamp(360px, 66vh, 720px); overflow: auto; border: 0; border-radius: 0; box-shadow: none; overscroll-behavior: contain; scrollbar-gutter: stable; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; }
 .planilla-grade-table { width: max-content; min-width: 100%; }
 .planilla-grade-table thead th { position: sticky; top: 0; z-index: 3; box-shadow: inset 0 -1px var(--line); }
 .planilla-grade-table th:first-child { min-width: 50px; width: 50px; text-align: center; }
@@ -431,10 +447,24 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .planilla-grade-table .planilla-student-empty { padding: 36px 20px; color: var(--muted); font-weight: 700; text-align: center; }
 
 @media (max-width: 680px) {
+  .planilla-page > .toolbar { align-items: stretch; flex-direction: column; }
+  .planilla-page > .toolbar > .button, .planilla-page > .toolbar > button { width: 100%; }
+  .planilla-page .inline-filter { width: 100%; min-width: 0; }
+  .stage-combobox { width: 100%; min-width: 0; }
+  .stage-combobox-options { position: static; margin-top: -1px; }
+  .grade-ranges-bar { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; overscroll-behavior-inline: contain; scrollbar-width: thin; }
+  .grade-ranges-bar .grade-chip { flex: 0 0 auto; }
   .planilla-student-tools { align-items: stretch; flex-direction: column; padding: 13px; }
   .planilla-student-search { width: 100%; }
   .planilla-student-tool-actions { justify-content: flex-start; }
-  .planilla-grade-table-wrap { max-height: 62vh; }
+  .planilla-table-heading { min-height: 0; align-items: flex-start; flex-direction: column; gap: 5px; padding: 12px 14px; }
+  .planilla-table-heading > small { white-space: normal; }
+  .planilla-table-heading::after { content: "Deslizá la tabla para ver más →"; color: var(--accent-deep); font-size: .7rem; font-weight: 800; }
+  .planilla-grade-table-wrap { max-height: 64vh; scrollbar-gutter: auto; }
+  .planilla-grade-table th:first-child { width: 38px; min-width: 38px; padding-inline: 7px; }
+  .planilla-grade-table .planilla-student-heading, .planilla-grade-table .planilla-student-name { width: 158px; min-width: 158px; max-width: 158px; overflow: hidden; padding-inline: 10px; text-overflow: ellipsis; white-space: nowrap; }
+  .planilla-grade-table-wrap.freeze-students .planilla-student-heading, .planilla-grade-table-wrap.freeze-students .planilla-student-name { left: 38px; }
+  .planilla-task-heading { min-width: 126px; max-width: 150px; }
 }
 
 @media (max-width: 680px) and (orientation: landscape), (max-height: 680px) and (orientation: landscape) and (pointer: coarse) {

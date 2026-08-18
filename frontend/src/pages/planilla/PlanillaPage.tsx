@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import AppShell from '../../components/AppShell';
 import { getPlanilla, resolvePlanilla, syncClassroom, confirmClassroomMapping, type PlanillaDetail } from '../../api/academics';
@@ -31,6 +31,41 @@ function formatShortDate(value: string | null | undefined) {
 
 function stageDateDescription(stageIndex: number) {
   return stageIndex === 2 ? 'Desde el 15 de julio' : 'Hasta el 14 de julio';
+}
+
+function StageCombobox({ value, disabled, onChange }: { value: number; disabled: boolean; onChange: (value: number) => void }) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const listboxId = useId();
+  const stages = [{ value: 1, label: 'Primera etapa' }, { value: 2, label: 'Segunda etapa' }];
+  const selected = stages.find((stage) => stage.value === value) ?? stages[0];
+
+  useEffect(() => {
+    if (!open) return;
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('pointerdown', closeOnOutsidePointer);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOnOutsidePointer);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [open]);
+
+  return <div ref={rootRef} className={`stage-combobox${open ? ' open' : ''}`}>
+    <button type="button" role="combobox" aria-label="Etapa" aria-controls={listboxId} aria-expanded={open} aria-haspopup="listbox" disabled={disabled} onClick={() => setOpen((current) => !current)}>
+      <span>{selected.label}</span><i aria-hidden="true" />
+    </button>
+    {open && <div id={listboxId} className="stage-combobox-options" role="listbox" aria-label="Etapa">
+      {stages.map((stage) => <button key={stage.value} type="button" role="option" aria-selected={stage.value === value} onClick={() => { setOpen(false); if (stage.value !== value) onChange(stage.value); }}>
+        <span>{stage.label}</span>{stage.value === value && <i aria-hidden="true">✓</i>}
+      </button>)}
+    </div>}
+  </div>;
 }
 
 export default function PlanillaPage() {
@@ -169,15 +204,13 @@ export default function PlanillaPage() {
 
   return (
     <AppShell title={data.planilla.materiaNombre} subtitle={data.curso ? `${data.curso.nivel}° ${data.curso.seccion} · ${data.planilla.etapa}` : data.planilla.etapa} specialty={data.curso?.especialidad}>
+      <div className="planilla-page">
       <div className="toolbar">
         <Link className="button secondary" to="/home">← Volver</Link>
-        <label className="inline-filter">
-          Etapa
-          <select value={data.planilla.etapaIndex} disabled={switchingEtapa} onChange={(e) => changeEtapa(Number(e.target.value))}>
-            <option value={1}>Primera etapa</option>
-            <option value={2}>Segunda etapa</option>
-          </select>
-        </label>
+        <div className="inline-filter">
+          <span>Etapa</span>
+          <StageCombobox value={data.planilla.etapaIndex} disabled={switchingEtapa} onChange={changeEtapa} />
+        </div>
         <button className="button secondary" type="button" disabled={syncingClassroom} onClick={() => void performClassroomSync(id)}>
           {syncingClassroom ? 'Sincronizando…' : 'Sincronizar Classroom'}
         </button>
@@ -307,6 +340,7 @@ export default function PlanillaPage() {
         </table>
       </div>
       </section>
+      </div>
     </AppShell>
   );
 }
