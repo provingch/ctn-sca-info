@@ -273,6 +273,11 @@ public class PlanillaProcesoWorkbookBuilder {
         fillStudentRows(sheet, data, taskColumnById, computed, monthBlocks);
         clearTemplatePlaceholders(sheet);
 
+        // Insert teacher signature before cleaning template leftovers so the
+        // placeholder can be located in the original template and the image
+        // is embedded into the drawing layer prior to any cell blanking.
+        setTeacherSignature(sheet, data);
+
         // Determine the last column that was actually written for this planilla
         // instance: if the layout declares first-stage columns (etapa 2) we
         // consider the regularization column; otherwise the current stage
@@ -283,8 +288,6 @@ public class PlanillaProcesoWorkbookBuilder {
             ? computed.regularizationColumn()
             : computed.currentStageGradeColumn();
         cleanColumnsAfter(sheet, lastRealColumn);
-
-        setTeacherSignature(sheet, data);
     }
 
     private int monthBlockWidth(List<Tarea> tareasMes) {
@@ -756,19 +759,10 @@ public class PlanillaProcesoWorkbookBuilder {
             }
         }
 
-        // Optionally shrink/hide any leftover columns to avoid visual remnants
-        if (sheet instanceof XSSFSheet) {
-            XSSFSheet xssf = (XSSFSheet) sheet;
-            int maxColToCheck = Math.max(lastAllowedColumn + 1, 256); // check at least some range
-            for (int col = lastAllowedColumn + 1; col <= maxColToCheck; col++) {
-                try {
-                    xssf.setColumnWidth(col, 1);
-                    xssf.setColumnHidden(col, true);
-                } catch (Exception ex) {
-                    // ignore out-of-range columns
-                }
-            }
-        }
+        // Do not change column widths or hidden state: collapsing columns
+        // caused merged header areas to visually truncate in generated files.
+        // Leave column sizing as defined by the template or earlier logic so
+        // merged headers retain their intended width.
     }
 
     private void insertSignatureImage(Sheet sheet, Cell targetCell, String firmaImagen) throws IOException {
