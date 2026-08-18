@@ -199,6 +199,77 @@ public class PlanillaProcesoWorkbookBuilder {
             nextAvailable + 6        // regularizationColumn
         );
 
+        // Ensure final-column headers are written at their computed positions.
+        // Read original header texts from template positions (if present) and
+        // write them into the computed columns so labels follow the values.
+        Row headerRow = getOrCreateRow(sheet, MONTH_HEADER_ROW);
+        Row titleRow = getOrCreateRow(sheet, INSTRUMENT_TITLE_ROW);
+
+        // helper to read template label safely
+        java.util.function.IntFunction<String> readTemplateLabel = (int col) -> {
+            if (col < 0) return null;
+            Cell c = headerRow.getCell(col);
+            if (c != null && c.getCellType() == CellType.STRING) {
+                String v = c.getStringCellValue();
+                return v == null ? null : v.trim();
+            }
+            return null;
+        };
+
+        // total general
+        String totalLabel = readTemplateLabel.apply(layout.totalGeneralColumn());
+        if (totalLabel == null || totalLabel.isBlank()) {
+            totalLabel = "Total General";
+        }
+        setStringCell(getOrCreateCell(headerRow, computed.totalGeneralColumn()), totalLabel);
+        sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, computed.totalGeneralColumn(), computed.totalGeneralColumn()));
+
+        // current stage grade (label near total general in template)
+        String currentStageLabel = readTemplateLabel.apply(layout.currentStageGradeColumn());
+        if (currentStageLabel == null || currentStageLabel.isBlank()) {
+            currentStageLabel = data.planilla().getEtapaIndex() == 2 ? "Calificación Final 2ª Etapa" : "Calificación Final 1º Etapa";
+        }
+        setStringCell(getOrCreateCell(headerRow, computed.currentStageGradeColumn()), currentStageLabel);
+        sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, computed.currentStageGradeColumn(), computed.currentStageGradeColumn()));
+
+        // first stage / extra columns (only for etapa 2)
+        if (layout.firstStageGradeColumn() >= 0) {
+            String firstStageLabel = readTemplateLabel.apply(layout.firstStageGradeColumn());
+            if (firstStageLabel == null || firstStageLabel.isBlank()) {
+                firstStageLabel = "Calificación Final 1º Etapa";
+            }
+            setStringCell(getOrCreateCell(headerRow, computed.firstStageGradeColumn()), firstStageLabel);
+            sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, computed.firstStageGradeColumn(), computed.firstStageGradeColumn()));
+
+            String stageSumLabel = readTemplateLabel.apply(layout.stageSumColumn());
+            if (stageSumLabel == null || stageSumLabel.isBlank()) {
+                stageSumLabel = "Subtotal Etapa";
+            }
+            setStringCell(getOrCreateCell(headerRow, computed.stageSumColumn()), stageSumLabel);
+            sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, computed.stageSumColumn(), computed.stageSumColumn()));
+
+            String finalAvgLabel = readTemplateLabel.apply(layout.finalAverageColumn());
+            if (finalAvgLabel == null || finalAvgLabel.isBlank()) {
+                finalAvgLabel = "Promedio Final";
+            }
+            setStringCell(getOrCreateCell(headerRow, computed.finalAverageColumn()), finalAvgLabel);
+            sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, computed.finalAverageColumn(), computed.finalAverageColumn()));
+
+            String compLabel = readTemplateLabel.apply(layout.complementaryColumn());
+            if (compLabel == null || compLabel.isBlank()) {
+                compLabel = "Complementaria";
+            }
+            setStringCell(getOrCreateCell(headerRow, computed.complementaryColumn()), compLabel);
+            sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, computed.complementaryColumn(), computed.complementaryColumn()));
+
+            String regLabel = readTemplateLabel.apply(layout.regularizationColumn());
+            if (regLabel == null || regLabel.isBlank()) {
+                regLabel = "Regularización";
+            }
+            setStringCell(getOrCreateCell(headerRow, computed.regularizationColumn()), regLabel);
+            sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, computed.regularizationColumn(), computed.regularizationColumn()));
+        }
+
         fillStudentRows(sheet, data, taskColumnById, computed, monthBlocks);
         clearTemplatePlaceholders(sheet);
         setTeacherSignature(sheet, data);
@@ -301,7 +372,7 @@ public class PlanillaProcesoWorkbookBuilder {
         int currentColumn = layout.firstMonthColumn();
 
         // Remove merged regions inherited from template that overlap header rows
-        removeHeaderMerges(sheet);
+        removeHeaderMerges(sheet, layout);
 
         for (int monthBlockIndex = 0; monthBlockIndex < MONTH_BLOCK_COUNT; monthBlockIndex++) {
             Row monthHeaderRow = getOrCreateRow(sheet, MONTH_HEADER_ROW);
@@ -357,24 +428,17 @@ public class PlanillaProcesoWorkbookBuilder {
         }
     }
 
-    private void removeHeaderMerges(Sheet sheet) {
+    private void removeHeaderMerges(Sheet sheet, StageLayout layout) {
         if (!(sheet instanceof XSSFSheet)) return;
         XSSFSheet xssf = (XSSFSheet) sheet;
         java.util.List<CellRangeAddress> merges = xssf.getMergedRegions();
         for (int i = merges.size() - 1; i >= 0; i--) {
             CellRangeAddress ca = merges.get(i);
-            // if the merged region intersects the header rows we use, remove it
-            if (ca.getFirstRow() <= TP_ROW && ca.getLastRow() >= MONTH_HEADER_ROW) {
+            // if the merged region intersects the header rows we use, and
+            // the region starts at or after the first month column, remove it
+            if (ca.getFirstRow() <= TP_ROW && ca.getLastRow() >= MONTH_HEADER_ROW
+                    && ca.getFirstColumn() >= layout.firstMonthColumn()) {
                 xssf.removeMergedRegion(i);
-            }
-        }
-    }
-
-    private void hideUnusedColumnsInMonthBlock(Sheet sheet, int firstColOfBlock, int taskCount) {
-        for (int i = taskCount; i < INSTRUMENTS_PER_MONTH; i++) {
-            int colIndex = firstColOfBlock + 2 + i;
-            if (sheet instanceof XSSFSheet) {
-                ((XSSFSheet) sheet).setColumnHidden(colIndex, true);
             }
         }
     }
