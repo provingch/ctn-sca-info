@@ -273,10 +273,16 @@ public class PlanillaProcesoWorkbookBuilder {
         fillStudentRows(sheet, data, taskColumnById, computed, monthBlocks);
         clearTemplatePlaceholders(sheet);
 
-        // Clean any residual template content to the right of our computed columns.
-        // This removes stale static headers, formulas and merged regions left by
-        // the original template beyond the last real column we use.
-        cleanColumnsAfter(sheet, computed.regularizationColumn());
+        // Determine the last column that was actually written for this planilla
+        // instance: if the layout declares first-stage columns (etapa 2) we
+        // consider the regularization column; otherwise the current stage
+        // grade column is the last real column for etapa 1. Clean everything
+        // to the right of that column so we don't leave template styling
+        // remnants on sheets that don't use the full theoretical layout.
+        int lastRealColumn = layout.firstStageGradeColumn() >= 0
+            ? computed.regularizationColumn()
+            : computed.currentStageGradeColumn();
+        cleanColumnsAfter(sheet, lastRealColumn);
 
         setTeacherSignature(sheet, data);
     }
