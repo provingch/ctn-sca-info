@@ -273,10 +273,13 @@ public class PlanillaProcesoWorkbookBuilder {
         fillStudentRows(sheet, data, taskColumnById, computed, monthBlocks);
         clearTemplatePlaceholders(sheet);
 
-        // Insert teacher signature before cleaning template leftovers so the
-        // placeholder can be located in the original template and the image
-        // is embedded into the drawing layer prior to any cell blanking.
-        setTeacherSignature(sheet, data);
+        // Compute the signature row to place the teacher signature a couple of
+        // rows below the last student row so it's always inside the area we
+        // preserve from cleanColumnsAfter(). Place the signature in a fixed
+        // early column (column index 1) to avoid landing beyond lastRealColumn.
+        int lastStudentRow = FIRST_STUDENT_ROW + Math.max(0, data.rows() == null ? 0 : data.rows().size()) - 1;
+        int signatureRow = lastStudentRow + 2; // two rows below last student
+        setTeacherSignature(sheet, data, signatureRow, 1);
 
         // Determine the last column that was actually written for this planilla
         // instance: if the layout declares first-stage columns (etapa 2) we
@@ -287,7 +290,7 @@ public class PlanillaProcesoWorkbookBuilder {
         int lastRealColumn = layout.firstStageGradeColumn() >= 0
             ? computed.regularizationColumn()
             : computed.currentStageGradeColumn();
-        cleanColumnsAfter(sheet, lastRealColumn);
+        cleanColumnsAfter(sheet, lastRealColumn, signatureRow);
     }
 
     private int monthBlockWidth(List<Tarea> tareasMes) {
@@ -384,6 +387,8 @@ public class PlanillaProcesoWorkbookBuilder {
 
     private void fillMonthBlocks(Sheet sheet, Map<YearMonth, List<Tarea>> tareasPorMes, Map<Integer, Integer> taskColumnById, StageLayout layout) {
         List<Map.Entry<YearMonth, List<Tarea>>> months = new ArrayList<>(tareasPorMes.entrySet());
+        // Track longest instrument title so we can set an appropriate row height
+        int maxTitleLen = 0;
         int currentColumn = layout.firstMonthColumn();
 
         // Remove merged regions inherited from template that overlap header rows
@@ -415,6 +420,8 @@ public class PlanillaProcesoWorkbookBuilder {
                 Cell tpCell = getOrCreateCell(tpRow, colIndex);
                 Tarea tarea = tareasMes.get(instrumentIndex);
                 titleCell.setCellValue(safeString(tarea.getTitulo()));
+                int tlen = tarea.getTitulo() == null ? 0 : tarea.getTitulo().length();
+                maxTitleLen = Math.max(maxTitleLen, tlen);
                 setNumericCell(tpCell, tarea.getTotal());
                 taskColumnById.put(tarea.getId(), colIndex);
 
@@ -442,6 +449,21 @@ public class PlanillaProcesoWorkbookBuilder {
 
             // advance to next available column (after subtotal)
             currentColumn = subtotalCol + 1;
+        }
+
+        // After populating all instrument titles, set a dynamic row height for the
+        // INSTRUMENT_TITLE_ROW based on the longest title found so short titles do
+        // not keep an excessively tall fixed height from the template.
+        Row titleRowGlobal = getOrCreateRow(sheet, INSTRUMENT_TITLE_ROW);
+        if (maxTitleLen <= 0) {
+            // keep template default if no titles
+        } else {
+            float minHeight = 60f; // points
+            float maxHeight = 110f; // points
+            int clampLen = Math.max(1, Math.min(40, maxTitleLen));
+            float ratio = Math.min(1f, clampLen / 40f);
+            float desired = minHeight + (maxHeight - minHeight) * ratio;
+            titleRowGlobal.setHeightInPoints(desired);
         }
     }
 
@@ -673,43 +695,19 @@ public class PlanillaProcesoWorkbookBuilder {
         }
     }
 
-    private void setTeacherSignature(Sheet sheet, PlanillaSheetData data) {
+    private void setTeacherSignature(Sheet sheet, PlanillaSheetData data, int targetRowIndex, int targetColumnIndex) {
         if (data == null) {
             return;
         }
-
-        Cell targetCell = null;
-        for (Row row : sheet) {
-            if (row == null) {
-                continue;
-            }
-            for (Cell cell : row) {
-                if (cell == null) {
-                    continue;
-                }
-                if (cell.getCellType() != CellType.STRING) {
-                    continue;
-                }
-                String value = cell.getStringCellValue();
-                if (value != null && value.toLowerCase(Locale.ROOT).contains("firma del docente")) {
-                    targetCell = cell;
-                    break;
-                }
-            }
-            if (targetCell != null) {
-                break;
-            }
-        }
-
-        if (targetCell == null) {
-            return;
-        }
+        Row row = getOrCreateRow(sheet, targetRowIndex);
+        Cell targetCell = getOrCreateCell(row, targetColumnIndex);
 
         if (data.firmaImagen() != null && !data.firmaImagen().isBlank()) {
             try {
                 insertSignatureImage(sheet, targetCell, data.firmaImagen());
                 return;
             } catch (Exception ex) {
+                // fallback to text
                 targetCell.setCellValue("");
             }
         }
@@ -719,7 +717,7 @@ public class PlanillaProcesoWorkbookBuilder {
         }
     }
 
-    private void cleanColumnsAfter(Sheet sheet, int lastAllowedColumn) {
+    private void cleanColumnsAfter(Sheet sheet, int lastAllowedColumn, int firstRowToProtect) {
         if (sheet == null) return;
 
         // Remove merged regions that are entirely to the right of lastAllowedColumn
@@ -742,6 +740,9 @@ public class PlanillaProcesoWorkbookBuilder {
         for (int r = 0; r <= lastRow; r++) {
             Row row = sheet.getRow(r);
             if (row == null) continue;
+            // Protect only the specific signature rows (signature row and the following
+            // row) from being blanked; allow cleaning of other rows below that.
+            if (r == firstRowToProtect || r == firstRowToProtect + 1) continue;
             short lastCellNum = row.getLastCellNum();
             if (lastCellNum <= 0) continue;
             for (int c = lastAllowedColumn + 1; c < lastCellNum; c++) {
