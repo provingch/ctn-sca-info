@@ -302,7 +302,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
         </div>
 
         <div className="class-card">
-          <h3>3. Asistencia general y justificativos</h3>
+          <h3>Asistencia general y justificativos</h3>
           <div style={{ marginBottom: 10 }}>
             <span className="student-pill">Habilitados: <strong>{data.rasgoAlumnosValidos.length}</strong></span>
             <span className="student-pill">Incompletos: <strong>{data.rasgoAlumnosInvalidos.length}</strong></span>
@@ -338,7 +338,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
         </div>
 
         <div className="class-card">
-          <h3>4. Reportes de asistencia</h3>
+          <h3>Reportes de asistencia</h3>
           <div className="class-grid" style={{ gridTemplateColumns: '220px minmax(0,1fr)' }}>
             <button type="button" className="button secondary" onClick={() => {
               const aus = ausentes.length;
@@ -374,19 +374,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
         <pre id="resultOutput" className="result-output" style={{ display: 'none' }} />
       </form>
 
-      <section className="panel">
-        <h2>Asistencia e historial</h2>
-        {data.rasgoAsistencias.map((a) => (
-          <div className="attendance-row" key={a.id}>
-            <span>{a.alumnoNombreCompleto}</span>
-            <button className={a.estado === 'presente' ? 'active' : ''} onClick={() => mark(a.id, 'presente')}>Presente</button>
-            <button className={a.estado === 'ausente' ? 'active danger' : ''} onClick={() => mark(a.id, 'ausente')}>Ausente</button>
-          </div>
-        ))}
-        {data.rasgoPlanillas.map((p) => (
-          <div className="history-row" key={p.id}><strong>{p.tema}</strong><span>{p.fechaClase}</span></div>
-        ))}
-      </section>
+      {/* Right-side attendance & history panel removed as requested */}
     </div>
   );
 }
