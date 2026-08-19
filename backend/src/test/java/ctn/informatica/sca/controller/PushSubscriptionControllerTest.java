@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.server.ResponseStatusException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -56,6 +57,15 @@ class PushSubscriptionControllerTest {
         controller.savePushSubscription(new PushSubscriptionSaveRequest("https://example.com/sub", "p256dh", "auth"), authentication);
 
         verify(pushSubscriptionDao, times(1)).save(eq(5), eq("profesor"), anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void shouldRejectIncompletePushSubscription() {
+        Authentication authentication = new UsernamePasswordAuthenticationToken(5, null);
+
+        assertThrows(ResponseStatusException.class, () -> controller.savePushSubscription(
+                new PushSubscriptionSaveRequest("https://example.com/sub", "", "auth"), authentication));
+        verifyNoInteractions(pushSubscriptionDao);
     }
 
     @Test

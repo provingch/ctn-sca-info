@@ -38,7 +38,7 @@ public class PushNotificationService {
         PushSubscriptionDao dao = new PushSubscriptionDao();
         List<PushSubscription> subscriptions = dao.findByUser(userId, userType);
         if (subscriptions.isEmpty()) {
-            return true;
+            return false;
         }
         String payload = buildNotificationPayload(title, body, url);
         boolean sent = true;

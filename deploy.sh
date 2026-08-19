@@ -44,6 +44,8 @@ LOAD_DEMO_DATA_INPUT="${SCA_LOAD_DEMO_DATA:-}"
 GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID:-}"
 GOOGLE_CLIENT_SECRET="${GOOGLE_CLIENT_SECRET:-}"
 GOOGLE_REDIRECT_URI="${GOOGLE_REDIRECT_URI:-}"
+VAPID_PUBLIC_KEY="${CTN_VAPID_PUBLIC_KEY:-}"
+VAPID_PRIVATE_KEY="${CTN_VAPID_PRIVATE_KEY:-}"
 
 SYSTEMD_DROPIN_DIR="/etc/systemd/system/${SERVICE_NAME}.service.d"
 SYSTEMD_DROPIN_FILE="${SYSTEMD_DROPIN_DIR}/ctn-sca-info.conf"
@@ -159,9 +161,13 @@ write_db_env_file() {
   local persisted_jwt_secret=""
   local persisted_password=""
   local persisted_demo_data=""
+  local persisted_vapid_public_key=""
+  local persisted_vapid_private_key=""
   if [[ -f "$DB_ENV_FILE" ]]; then
     persisted_jwt_secret="$(read_env_file_value 'JWT_SECRET')"
     persisted_demo_data="$(read_env_file_value 'SCA_LOAD_DEMO_DATA')"
+    persisted_vapid_public_key="$(read_env_file_value 'CTN_VAPID_PUBLIC_KEY')"
+    persisted_vapid_private_key="$(read_env_file_value 'CTN_VAPID_PRIVATE_KEY')"
     if [[ -z "$password" ]]; then
       persisted_password="$(read_env_file_value 'SCA_DB_PASSWORD')"
       if [[ -z "$persisted_password" ]]; then
@@ -170,6 +176,9 @@ write_db_env_file() {
       password="$persisted_password"
     fi
   fi
+
+  local vapid_public_key="${VAPID_PUBLIC_KEY:-$persisted_vapid_public_key}"
+  local vapid_private_key="${VAPID_PRIVATE_KEY:-$persisted_vapid_private_key}"
 
   local load_demo_data="$LOAD_DEMO_DATA_INPUT"
   if [[ -z "$load_demo_data" ]]; then
@@ -192,7 +201,7 @@ write_db_env_file() {
     echo "==> Generated a new JWT secret to persist in $DB_ENV_FILE"
   fi
 
-  if [[ -f "$DB_ENV_FILE" && -z "$password" && -z "${SCA_JWT_SECRET:-}" && -z "${JWT_SECRET:-}" && -z "$GOOGLE_CLIENT_ID" && -z "$GOOGLE_CLIENT_SECRET" && -z "$GOOGLE_REDIRECT_URI" && -z "$LOAD_DEMO_DATA_INPUT" ]]; then
+  if [[ -f "$DB_ENV_FILE" && -z "$password" && -z "${SCA_JWT_SECRET:-}" && -z "${JWT_SECRET:-}" && -z "$GOOGLE_CLIENT_ID" && -z "$GOOGLE_CLIENT_SECRET" && -z "$GOOGLE_REDIRECT_URI" && -z "$VAPID_PUBLIC_KEY" && -z "$VAPID_PRIVATE_KEY" && -z "$LOAD_DEMO_DATA_INPUT" ]]; then
     return
   fi
 
@@ -232,6 +241,12 @@ write_db_env_file() {
     fi
     if [[ -n "$GOOGLE_REDIRECT_URI" ]]; then
       printf 'GOOGLE_REDIRECT_URI=%q\n' "$GOOGLE_REDIRECT_URI"
+    fi
+    if [[ -n "$vapid_public_key" ]]; then
+      printf 'CTN_VAPID_PUBLIC_KEY=%q\n' "$vapid_public_key"
+    fi
+    if [[ -n "$vapid_private_key" ]]; then
+      printf 'CTN_VAPID_PRIVATE_KEY=%q\n' "$vapid_private_key"
     fi
     # Persist JWT secret for the application (SPRING / direct property mapping)
     if [[ -n "$jwt_secret" ]]; then

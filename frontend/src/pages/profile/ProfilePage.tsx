@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from 'react';
 import QRCode from 'qrcode';
 import { changePassword, confirmTotp, disableTotp, getProfile, prepareTotp, saveProfile, type ProfileResponse, getGoogleAuthorizeUrl } from '../../api/profile';
 
@@ -9,6 +9,8 @@ import { ApiError } from '../../api/client';
 import AppShell from '../../components/AppShell';
 import PasswordInput from '../../components/PasswordInput';
 import { useAuth } from '../../context/AuthContext';
+import { getPushSubscriptionStatus, removePushSubscription, savePushSubscription, sendPushTest, toPushPayload, urlBase64ToUint8Array } from '../../api/push';
+import { getPwaInstallSnapshot, promptPwaInstall, registerPwaServiceWorker, subscribePwaInstall } from '../../pwa/pwa';
 
 type ProfileTab = 'profile' | 'security' | 'subjects' | 'app' | 'activity';
 const message = (error: unknown, fallback: string) => error instanceof ApiError ? error.message : fallback;
@@ -484,7 +486,145 @@ function Security({ data, done }: { data: ProfileResponse; done: (text: string) 
   return <div className="two-column"><form className="panel form-grid" onSubmit={password}><Heading number="01" title="Cambiar contraseña" detail="Usá al menos seis caracteres." /><label>Contraseña actual<PasswordInput required value={passwords.currentPassword} onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })} /></label><label>Nueva contraseña<PasswordInput required minLength={6} value={passwords.newPassword} onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })} /></label><label>Confirmar nueva contraseña<PasswordInput required value={passwords.confirmPassword} onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })} /></label><button className="button">Actualizar contraseña</button></form><section className="panel form-grid security-2fa-panel"><Heading number="02" title="Verificación en dos pasos" detail="Protegé el acceso con tu app autenticadora." /><div className="security-2fa-status"><State active={data.totpEnabled} title={data.totpEnabled ? 'Activa' : 'Inactiva'} /></div>{data.pendingTotpSecret && <TOTPSetupCard provisioningUri={data.totpProvisioningUri} secret={data.pendingTotpSecret} code={code} onCodeChange={setCode} onConfirm={verify2fa} />}{data.totpEnabled ? <button className="button danger security-2fa-action" type="button" onClick={turnOff}>Desactivar 2FA</button> : !data.pendingTotpSecret && <button className="button secondary security-2fa-action" type="button" onClick={start2fa}>Configurar 2FA</button>}</section></div>;
 }
 
-function AppStatus({ data }: { data: ProfileResponse }) { return <div className="two-column"><section className="panel"><Heading number="01" title="Aplicación SCA" detail="Acceso rápido desde este dispositivo." /><p>Podés instalar SCA desde el menú de tu navegador para usarla como una aplicación.</p></section><section className="panel"><Heading number="02" title="Notificaciones" detail="Estado asociado a este usuario." /><State active={data.pushEnabled} title={data.pushEnabled ? 'Activadas' : 'Desactivadas'} /></section></div>; }
+function AppStatus({ data }: { data: ProfileResponse }) {
+  const install = useSyncExternalStore(subscribePwaInstall, getPwaInstallSnapshot, getPwaInstallSnapshot);
+  const pushSupported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  const [pushPermission, setPushPermission] = useState<NotificationPermission>(() => pushSupported ? Notification.permission : 'denied');
+  const [serverSubscribed, setServerSubscribed] = useState(data.pushEnabled);
+  const [deviceSubscribed, setDeviceSubscribed] = useState(false);
+  const [vapidConfigured, setVapidConfigured] = useState(Boolean(data.pushPublicKey));
+  const [busyAction, setBusyAction] = useState<'install' | 'enable' | 'disable' | 'test' | null>(null);
+  const [feedback, setFeedback] = useState('');
+
+  const syncPushState = useCallback(async () => {
+    if (!pushSupported) return;
+    try {
+      const status = await getPushSubscriptionStatus();
+      const registration = await registerPwaServiceWorker();
+      const subscription = await registration?.pushManager.getSubscription();
+      setVapidConfigured(Boolean(status.publicKey));
+      setServerSubscribed(status.subscribed);
+      setDeviceSubscribed(Boolean(subscription));
+      setPushPermission(Notification.permission);
+    } catch (error) {
+      setFeedback(message(error, 'No se pudo consultar el estado de las notificaciones.'));
+    }
+  }, [pushSupported]);
+
+  useEffect(() => { void syncPushState(); }, [syncPushState]);
+
+  const installCopy = {
+    installed: { title: 'Instalada', detail: 'SCA ya se está ejecutando como aplicación.' },
+    ready: { title: 'Lista para instalar', detail: 'Podés agregar SCA a este dispositivo con un solo toque.' },
+    'ios-manual': { title: 'Instalación manual', detail: 'En Safari, tocá Compartir y luego “Agregar a pantalla de inicio”.' },
+    unavailable: { title: 'No disponible', detail: 'Este navegador no admite la instalación de aplicaciones web.' },
+    waiting: { title: 'Disponible desde el navegador', detail: 'Si el botón aún no está activo, usá la opción “Instalar aplicación” del menú del navegador.' },
+  }[install.status];
+
+  const notificationsActive = pushSupported && pushPermission === 'granted' && serverSubscribed && deviceSubscribed;
+  const notificationTitle = !pushSupported
+    ? 'No compatibles'
+    : pushPermission === 'denied'
+      ? 'Bloqueadas en el navegador'
+      : !vapidConfigured
+        ? 'Configuración pendiente'
+        : notificationsActive ? 'Activadas en este dispositivo' : 'Desactivadas';
+
+  async function installApplication() {
+    setBusyAction('install');
+    setFeedback('');
+    try {
+      const result = await promptPwaInstall();
+      setFeedback(result === 'accepted' ? 'Instalación iniciada.' : result === 'dismissed' ? 'La instalación fue cancelada.' : 'La instalación todavía no está disponible en este navegador.');
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  async function enableNotifications() {
+    setBusyAction('enable');
+    setFeedback('');
+    try {
+      if (!pushSupported) throw new Error('Tu navegador no soporta notificaciones push.');
+      const status = await getPushSubscriptionStatus();
+      if (!status.publicKey) throw new Error('El servidor todavía no tiene configuradas las claves VAPID.');
+      const permission = await Notification.requestPermission();
+      setPushPermission(permission);
+      if (permission !== 'granted') throw new Error('Se necesita permiso del navegador para mostrar notificaciones.');
+      const registration = await registerPwaServiceWorker();
+      if (!registration) throw new Error('El service worker solo está disponible en la versión publicada de SCA.');
+      const previous = await registration.pushManager.getSubscription();
+      if (previous) await previous.unsubscribe();
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(status.publicKey),
+      });
+      await savePushSubscription(toPushPayload(subscription));
+      setServerSubscribed(true);
+      setDeviceSubscribed(true);
+      setVapidConfigured(true);
+      setFeedback('Notificaciones activadas en este dispositivo.');
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : 'No se pudieron activar las notificaciones.');
+      await syncPushState();
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  async function disableNotifications() {
+    setBusyAction('disable');
+    setFeedback('');
+    try {
+      const registration = pushSupported ? await navigator.serviceWorker.getRegistration('/') : null;
+      const subscription = await registration?.pushManager.getSubscription();
+      if (subscription) await subscription.unsubscribe();
+      await removePushSubscription();
+      setServerSubscribed(false);
+      setDeviceSubscribed(false);
+      setFeedback('Notificaciones desactivadas para esta cuenta.');
+    } catch (error) {
+      setFeedback(message(error, 'No se pudieron desactivar las notificaciones.'));
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  async function testNotifications() {
+    setBusyAction('test');
+    setFeedback('');
+    try {
+      await sendPushTest();
+      setFeedback('Notificación de prueba enviada.');
+    } catch (error) {
+      setFeedback(message(error, 'No se pudo enviar la notificación de prueba.'));
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  return <div className="two-column pwa-settings-grid">
+    <section className="panel pwa-setting-card">
+      <Heading number="01" title="Aplicación SCA" detail="Acceso rápido desde este dispositivo." />
+      <State active={install.status === 'installed' || install.status === 'ready'} title={installCopy.title} detail={installCopy.detail} />
+      <div className="pwa-actions">
+        <button className="button" type="button" disabled={!install.canInstall || busyAction !== null} onClick={installApplication}>{busyAction === 'install' ? 'Abriendo…' : install.status === 'installed' ? 'Aplicación instalada' : 'Instalar aplicación'}</button>
+      </div>
+      <p className="muted-copy">Al instalarla, SCA aparecerá junto a tus otras aplicaciones y podrá abrirse sin la barra del navegador.</p>
+    </section>
+    <section className="panel pwa-setting-card">
+      <Heading number="02" title="Notificaciones" detail="Avisos asociados a tu cuenta y este dispositivo." />
+      <State active={notificationsActive} title={notificationTitle} detail={!vapidConfigured ? 'El administrador debe configurar las claves VAPID del servidor.' : notificationsActive ? 'Este navegador puede recibir avisos incluso con SCA cerrada.' : 'Activá los avisos para recibir novedades importantes.'} />
+      <div className="pwa-actions">
+        {!notificationsActive && <button className="button" type="button" disabled={!pushSupported || pushPermission === 'denied' || !vapidConfigured || busyAction !== null} onClick={enableNotifications}>{busyAction === 'enable' ? 'Activando…' : 'Activar notificaciones'}</button>}
+        {notificationsActive && <button className="button secondary" type="button" disabled={busyAction !== null} onClick={testNotifications}>{busyAction === 'test' ? 'Enviando…' : 'Enviar prueba'}</button>}
+        {(notificationsActive || serverSubscribed) && <button className="button danger" type="button" disabled={busyAction !== null} onClick={disableNotifications}>{busyAction === 'disable' ? 'Desactivando…' : 'Desactivar'}</button>}
+      </div>
+      {pushPermission === 'denied' && <p className="muted-copy">Los avisos están bloqueados. Habilitalos desde la configuración del sitio en tu navegador.</p>}
+      {feedback && <p className="pwa-feedback" role="status">{feedback}</p>}
+    </section>
+  </div>;
+}
 function Activity({ entries }: { entries: string[] }) { return <section className="panel"><Heading number="01" title="Actividad reciente" detail="Movimientos registrados para esta cuenta." />{entries.length === 0 ? <Empty title="Aún no hay movimientos" detail="La actividad de tu cuenta aparecerá aquí." /> : entries.map((entry, index) => <p className="history-row" key={`${entry}-${index}`}>{entry}</p>)}</section>; }
 function State({ active, title, detail }: { active: boolean; title: string; detail?: string }) { return <div className={`connection-state ${active ? 'connected' : ''}`}><i /><div><strong>{title}</strong>{detail && <span>{detail}</span>}</div></div>; }
 function Empty({ title, detail }: { title: string; detail: string }) { return <div className="empty-state"><h3>{title}</h3><p>{detail}</p></div>; }
