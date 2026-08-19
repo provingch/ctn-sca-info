@@ -154,6 +154,74 @@ public class PlanillaProcesoWorkbookBuilder {
 
     private void populateSheet(XSSFSheet sheet, PlanillaSheetData data) {
         StageLayout layout = layoutFor(data.planilla());
+        // Read authoritative texts and styles from the original template sheet
+        XSSFSheet templateSheet = (XSSFSheet) sheet.getWorkbook().getSheet(layout.templateSheetName());
+        Row templateHeaderRow = templateSheet == null ? null : templateSheet.getRow(MONTH_HEADER_ROW);
+        // Find the anchor column for the final-columns block (Total General)
+        Integer templateTotalGeneralCol = null;
+        if (templateHeaderRow != null) {
+            short last = templateHeaderRow.getLastCellNum();
+            for (int c = 0; c < last; c++) {
+                Cell tc = templateHeaderRow.getCell(c);
+                if (tc != null && tc.getCellType() == CellType.STRING) {
+                    String v = tc.getStringCellValue();
+                    if (v != null && v.trim().equalsIgnoreCase("Total General")) {
+                        templateTotalGeneralCol = c;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Build ordered list of final-column definitions (text + template cell) starting at templateTotalGeneralCol
+        java.util.List<String> finalColumnLabels = new java.util.ArrayList<>();
+        java.util.List<Cell> finalColumnTemplateCells = new java.util.ArrayList<>();
+        if (templateHeaderRow != null && templateTotalGeneralCol != null) {
+            int last = templateHeaderRow.getLastCellNum();
+            for (int c = templateTotalGeneralCol; c < last; c++) {
+                Cell tc = templateHeaderRow.getCell(c);
+                if (tc != null && tc.getCellType() == CellType.STRING) {
+                    String v = tc.getStringCellValue();
+                    if (v != null && !v.trim().isBlank()) {
+                        finalColumnLabels.add(v.trim());
+                        finalColumnTemplateCells.add(tc);
+                    }
+                }
+            }
+        }
+
+        // Find a template cell for the "Subtotal" label to reuse style/text if available
+        Cell subtotalTemplateCell = null;
+        if (templateHeaderRow != null) {
+            short last = templateHeaderRow.getLastCellNum();
+            for (int c = 0; c < last; c++) {
+                Cell tc = templateHeaderRow.getCell(c);
+                if (tc != null && tc.getCellType() == CellType.STRING) {
+                    String v = tc.getStringCellValue();
+                    if (v != null && v.toLowerCase().contains("subtotal")) {
+                        subtotalTemplateCell = tc;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Find template cell for signature label (e.g. "Firma del Docente")
+        Cell signatureTemplateCell = null;
+        if (templateSheet != null) {
+            for (Row r : templateSheet) {
+                for (Cell c : r) {
+                    if (c != null && c.getCellType() == CellType.STRING) {
+                        String v = c.getStringCellValue();
+                        if (v != null && v.toLowerCase().contains("firma del docente")) {
+                            signatureTemplateCell = c;
+                            break;
+                        }
+                    }
+                }
+                if (signatureTemplateCell != null) break;
+            }
+        }
         List<Tarea> tareasEtapa = filterTasksByEtapa(data.tareas(), data.planilla().getEtapaIndex());
         int currentTotalPossiblePoints = totalPossiblePoints(tareasEtapa);
         data.planilla().computeGradeRanges(currentTotalPossiblePoints);
@@ -232,58 +300,78 @@ public class PlanillaProcesoWorkbookBuilder {
             return null;
         };
 
-        // total general
-        String totalLabel = readTemplateLabel.apply(layout.totalGeneralColumn());
-        if (totalLabel == null || totalLabel.isBlank()) {
-            totalLabel = "Total General";
-        }
-        setStringCell(getOrCreateCell(headerRow, computed.totalGeneralColumn()), totalLabel);
-        sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, computed.totalGeneralColumn(), computed.totalGeneralColumn()));
-
-        // current stage grade (label near total general in template)
-        String currentStageLabel = readTemplateLabel.apply(layout.currentStageGradeColumn());
-        if (currentStageLabel == null || currentStageLabel.isBlank()) {
-            currentStageLabel = data.planilla().getEtapaIndex() == 2 ? "Calificación Final 2ª Etapa" : "Calificación Final 1º Etapa";
-        }
-        setStringCell(getOrCreateCell(headerRow, computed.currentStageGradeColumn()), currentStageLabel);
-        sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, computed.currentStageGradeColumn(), computed.currentStageGradeColumn()));
-
-        // first stage / extra columns (only for etapa 2)
-        if (layout.firstStageGradeColumn() >= 0) {
-            String firstStageLabel = readTemplateLabel.apply(layout.firstStageGradeColumn());
-            if (firstStageLabel == null || firstStageLabel.isBlank()) {
-                firstStageLabel = "Calificación Final 1º Etapa";
+        // final columns: write labels and clone styles from template's row 6 entries (if found)
+        org.apache.poi.ss.usermodel.Workbook wb = sheet.getWorkbook();
+        if (!finalColumnLabels.isEmpty()) {
+            for (int i = 0; i < finalColumnLabels.size(); i++) {
+                int colIndex = computed.totalGeneralColumn + i;
+                String label = finalColumnLabels.get(i);
+                setStringCell(getOrCreateCell(headerRow, colIndex), label);
+                // clone style from template cell if available
+                if (i < finalColumnTemplateCells.size() && finalColumnTemplateCells.get(i) != null) {
+                    Cell tmpl = finalColumnTemplateCells.get(i);
+                    org.apache.poi.ss.usermodel.CellStyle newStyle = wb.createCellStyle();
+                    try {
+                        newStyle.cloneStyleFrom(tmpl.getCellStyle());
+                        getOrCreateCell(headerRow, colIndex).setCellStyle(newStyle);
+                    } catch (Exception ignore) {
+                        // ignore cloning issues and continue
+                    }
+                }
+                sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, colIndex, colIndex));
             }
-            setStringCell(getOrCreateCell(headerRow, computed.firstStageGradeColumn()), firstStageLabel);
-            sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, computed.firstStageGradeColumn(), computed.firstStageGradeColumn()));
-
-            String stageSumLabel = readTemplateLabel.apply(layout.stageSumColumn());
-            if (stageSumLabel == null || stageSumLabel.isBlank()) {
-                stageSumLabel = "Subtotal Etapa";
+        } else {
+            // fallback to previous behavior using template positions
+            String totalLabel = readTemplateLabel.apply(layout.totalGeneralColumn());
+            if (totalLabel == null || totalLabel.isBlank()) {
+                totalLabel = "Total General";
             }
-            setStringCell(getOrCreateCell(headerRow, computed.stageSumColumn()), stageSumLabel);
-            sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, computed.stageSumColumn(), computed.stageSumColumn()));
+            setStringCell(getOrCreateCell(headerRow, computed.totalGeneralColumn()), totalLabel);
+            sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, computed.totalGeneralColumn(), computed.totalGeneralColumn()));
 
-            String finalAvgLabel = readTemplateLabel.apply(layout.finalAverageColumn());
-            if (finalAvgLabel == null || finalAvgLabel.isBlank()) {
-                finalAvgLabel = "Promedio Final";
+            String currentStageLabel = readTemplateLabel.apply(layout.currentStageGradeColumn());
+            if (currentStageLabel == null || currentStageLabel.isBlank()) {
+                currentStageLabel = data.planilla().getEtapaIndex() == 2 ? "Calificación Final 2ª Etapa" : "Calificación Final 1º Etapa";
             }
-            setStringCell(getOrCreateCell(headerRow, computed.finalAverageColumn()), finalAvgLabel);
-            sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, computed.finalAverageColumn(), computed.finalAverageColumn()));
+            setStringCell(getOrCreateCell(headerRow, computed.currentStageGradeColumn()), currentStageLabel);
+            sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, computed.currentStageGradeColumn(), computed.currentStageGradeColumn()));
 
-            String compLabel = readTemplateLabel.apply(layout.complementaryColumn());
-            if (compLabel == null || compLabel.isBlank()) {
-                compLabel = "Complementaria";
-            }
-            setStringCell(getOrCreateCell(headerRow, computed.complementaryColumn()), compLabel);
-            sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, computed.complementaryColumn(), computed.complementaryColumn()));
+            if (layout.firstStageGradeColumn() >= 0) {
+                String firstStageLabel = readTemplateLabel.apply(layout.firstStageGradeColumn());
+                if (firstStageLabel == null || firstStageLabel.isBlank()) {
+                    firstStageLabel = "Calificación Final 1º Etapa";
+                }
+                setStringCell(getOrCreateCell(headerRow, computed.firstStageGradeColumn()), firstStageLabel);
+                sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, computed.firstStageGradeColumn(), computed.firstStageGradeColumn()));
 
-            String regLabel = readTemplateLabel.apply(layout.regularizationColumn());
-            if (regLabel == null || regLabel.isBlank()) {
-                regLabel = "Regularización";
+                String stageSumLabel = readTemplateLabel.apply(layout.stageSumColumn());
+                if (stageSumLabel == null || stageSumLabel.isBlank()) {
+                    stageSumLabel = "Subtotal Etapa";
+                }
+                setStringCell(getOrCreateCell(headerRow, computed.stageSumColumn()), stageSumLabel);
+                sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, computed.stageSumColumn(), computed.stageSumColumn()));
+
+                String finalAvgLabel = readTemplateLabel.apply(layout.finalAverageColumn());
+                if (finalAvgLabel == null || finalAvgLabel.isBlank()) {
+                    finalAvgLabel = "Promedio Final";
+                }
+                setStringCell(getOrCreateCell(headerRow, computed.finalAverageColumn()), finalAvgLabel);
+                sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, computed.finalAverageColumn(), computed.finalAverageColumn()));
+
+                String compLabel = readTemplateLabel.apply(layout.complementaryColumn());
+                if (compLabel == null || compLabel.isBlank()) {
+                    compLabel = "Complementaria";
+                }
+                setStringCell(getOrCreateCell(headerRow, computed.complementaryColumn()), compLabel);
+                sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, computed.complementaryColumn(), computed.complementaryColumn()));
+
+                String regLabel = readTemplateLabel.apply(layout.regularizationColumn());
+                if (regLabel == null || regLabel.isBlank()) {
+                    regLabel = "Regularización";
+                }
+                setStringCell(getOrCreateCell(headerRow, computed.regularizationColumn()), regLabel);
+                sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, computed.regularizationColumn(), computed.regularizationColumn()));
             }
-            setStringCell(getOrCreateCell(headerRow, computed.regularizationColumn()), regLabel);
-            sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, computed.regularizationColumn(), computed.regularizationColumn()));
         }
 
         fillStudentRows(sheet, data, taskColumnById, computed, monthBlocks);
