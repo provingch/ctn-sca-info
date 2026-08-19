@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import javax.imageio.ImageIO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellCopyPolicy;
 import org.apache.poi.ss.usermodel.CellType;
@@ -37,6 +39,8 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class PlanillaProcesoWorkbookBuilder {
+
+    private static final Logger log = LoggerFactory.getLogger(PlanillaProcesoWorkbookBuilder.class);
 
     private static final String TEMPLATE_RESOURCE = "templates/PLANTILLA_PLANILLA_PROCESO_CTN.xlsx";
     private static final String LEGEND_SHEET = "LEYENDA_PARA_DESARROLLO";
@@ -278,7 +282,7 @@ public class PlanillaProcesoWorkbookBuilder {
         // preserve from cleanColumnsAfter(). Place the signature in a fixed
         // early column (column index 1) to avoid landing beyond lastRealColumn.
         int lastStudentRow = FIRST_STUDENT_ROW + Math.max(0, data.rows() == null ? 0 : data.rows().size()) - 1;
-        int signatureRow = lastStudentRow + 2; // two rows below last student
+        int signatureRow = lastStudentRow + 3; // three rows below last student (extra margin)
 
         // Determine the last column that was actually written for this planilla
         // instance: if the layout declares first-stage columns (etapa 2) we
@@ -715,6 +719,13 @@ public class PlanillaProcesoWorkbookBuilder {
                 insertSignatureImage(sheet, topCell, data.firmaImagen());
                 imageInserted = true;
             } catch (Exception ex) {
+                // Log a warning with context so the failure can be diagnosed
+                try {
+                    String pid = data.planilla() != null ? String.valueOf(data.planilla().getId()) : "?";
+                    log.warn("No se pudo insertar la imagen de firma para planilla {}: {}", pid, ex.getMessage(), ex);
+                } catch (Exception ignore) {
+                    // swallow logging errors to avoid masking original exception
+                }
                 topCell.setCellValue("");
             }
         }
@@ -836,6 +847,13 @@ public class PlanillaProcesoWorkbookBuilder {
         int width = original.getWidth();
         int height = original.getHeight();
         BufferedImage processed = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        // More forgiving thresholds to avoid removing anti-aliased strokes.
+        final int ALPHA_THRESHOLD = 50; // allow semi-transparent pixels to stay
+        final int RGB_THRESHOLD = 235; // consider near-white as background
+
+        // Convert based on distance to white instead of strict per-channel checks
+        long nonTransparentCount = 0L;
+        long total = (long) width * (long) height;
 
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
@@ -845,14 +863,30 @@ public class PlanillaProcesoWorkbookBuilder {
                 int red = color.getRed();
                 int green = color.getGreen();
                 int blue = color.getBlue();
-                boolean isBackgroundLike = alpha < 230
-                        || (red > 240 && green > 240 && blue > 240);
-                if (isBackgroundLike) {
+
+                boolean isMostlyWhite = (red >= RGB_THRESHOLD && green >= RGB_THRESHOLD && blue >= RGB_THRESHOLD);
+                boolean lowAlpha = alpha <= ALPHA_THRESHOLD;
+
+                if (isMostlyWhite && lowAlpha) {
+                    // treat as transparent
+                    processed.setRGB(x, y, new Color(255, 255, 255, 0).getRGB());
+                } else if (isMostlyWhite && alpha <= 255) {
+                    // if near-white but fully opaque, still make transparent to remove paper background
                     processed.setRGB(x, y, new Color(255, 255, 255, 0).getRGB());
                 } else {
                     processed.setRGB(x, y, argb);
+                    if ((processed.getRGB(x, y) >>> 24) != 0) nonTransparentCount++;
                 }
             }
+        }
+
+        // If after background removal almost all pixels are transparent, consider the image invalid
+        double nonTransparentRatio = total == 0 ? 0.0 : ((double) nonTransparentCount) / (double) total;
+        if (nonTransparentRatio < 0.005) { // less than 0.5% pixels remain
+            log.warn("removeWhiteBackground produced an almost-empty image (nonTransparentRatio={}). Treating as empty.", nonTransparentRatio);
+            // return an empty transparent image
+            BufferedImage empty = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            return empty;
         }
 
         return processed;
