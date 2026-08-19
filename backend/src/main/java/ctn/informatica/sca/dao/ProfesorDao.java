@@ -107,7 +107,11 @@ public class ProfesorDao extends conexion {
             } else {
                 ps.setNull(1, Types.VARCHAR);
             }
-            ps.setString(2, accessToken);
+            if (accessToken != null) {
+                ps.setString(2, accessToken);
+            } else {
+                ps.setNull(2, Types.VARCHAR);
+            }
             if (refreshToken != null) {
                 ps.setString(3, refreshToken);
             } else {

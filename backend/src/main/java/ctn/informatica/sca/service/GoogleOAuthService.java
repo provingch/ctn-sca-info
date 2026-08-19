@@ -103,15 +103,20 @@ public class GoogleOAuthService {
                     .execute();
 
             String accessToken = tokenResponse.getAccessToken();
+            // Google may return null for refresh_token if the user already granted
+            // consent previously. Do NOT overwrite an existing refresh token with
+            // null — preserve the one stored in DB when absent.
             String refreshToken = tokenResponse.getRefreshToken();
             long expiresInSeconds = tokenResponse.getExpiresInSeconds() != null ? tokenResponse.getExpiresInSeconds() : 0L;
             long expiryEpochSeconds = (System.currentTimeMillis() / 1000) + expiresInSeconds;
 
             String googleEmail = fetchGoogleEmail(accessToken);
-            boolean updated = profesorDao.updateGoogleTokens(
+                String finalRefresh = refreshToken != null && !refreshToken.isBlank() ? refreshToken : profesor.getGcRefreshToken();
+
+                boolean updated = profesorDao.updateGoogleTokens(
                     profesor.getId(),
                     accessToken,
-                    refreshToken,
+                    finalRefresh,
                     expiryEpochSeconds,
                     googleEmail);
 
