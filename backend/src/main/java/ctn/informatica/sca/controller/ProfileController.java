@@ -468,6 +468,21 @@ public class ProfileController {
                     profesor.setFirmaImagen(raw);
                 }
             }
+            if (request.fotoPerfil() != null) {
+                String raw = request.fotoPerfil().trim();
+                if (raw.isEmpty()) {
+                    profesor.setFotoPerfil(null);
+                } else {
+                    int idx = raw.indexOf(',');
+                    String payload = idx >= 0 ? raw.substring(idx + 1) : raw;
+                    int approxBytes = Math.round((float) payload.length() * 3f / 4f);
+                    int maxBytes = 1_500_000; // reuse same limit for avatars
+                    if (approxBytes > maxBytes) {
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La foto de perfil es demasiado grande. Reduce el tamaño antes de guardar.");
+                    }
+                    profesor.setFotoPerfil(raw);
+                }
+            }
 
             if (!errors.isEmpty()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, String.join(" ", errors));
@@ -503,7 +518,8 @@ public class ProfileController {
                     profesor.getUsuario(),
                     profesor.getGoogleEmail(),
                     profesor.getGcAccessToken(),
-                    profesor.getFirmaImagen()
+                    profesor.getFirmaImagen(),
+                    profesor.getFotoPerfil()
             );
         }
         if (padre != null) {
@@ -519,10 +535,11 @@ public class ProfileController {
                     padre.getUsuario(),
                     null,
                     null,
+                    null,
                     null
             );
         }
-        return new ProfileOwnerDto(null, null, null, null, null, null, null, null, null, null, null, null);
+        return new ProfileOwnerDto(null, null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     private AsignacionDto toAsignacionDto(Asignacion asignacion) {

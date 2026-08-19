@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 import { changePassword, confirmTotp, disableTotp, getProfile, prepareTotp, saveProfile, type ProfileResponse, getGoogleAuthorizeUrl } from '../../api/profile';
 
 const SIGNATURE_PERSISTENCE_MAX_BYTES = 1_500_000;
+const PHOTO_PERSISTENCE_MAX_BYTES = 1_500_000;
 const SIGNATURE_MOBILE_MEDIA_QUERY = '(max-width: 680px), (max-height: 680px) and (pointer: coarse)';
 import { ApiError } from '../../api/client';
 import AppShell from '../../components/AppShell';
@@ -81,7 +82,7 @@ function Heading({ number, title, detail }: { number: string; title: string; det
 
 function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (text: string) => Promise<void>; setStatus: (value: string) => void }) {
   const owner = data.profileOwner;
-  const [form, setForm] = useState({ correo: owner.correo || '', telefono: owner.telefono || '', celular: owner.celular || '', usuario: owner.usuario || '', nombre: owner.nombre || '', apellido: owner.apellido || '', ci: owner.ci, nivel: null, firmaImagen: owner.firmaImagen ?? null });
+  const [form, setForm] = useState({ correo: owner.correo || '', telefono: owner.telefono || '', celular: owner.celular || '', usuario: owner.usuario || '', nombre: owner.nombre || '', apellido: owner.apellido || '', ci: owner.ci, nivel: null, firmaImagen: owner.firmaImagen ?? null, fotoPerfil: owner.fotoPerfil ?? null });
   const [signatureError, setSignatureError] = useState('');
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const isDrawingRef = useRef(false);
@@ -123,6 +124,76 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
         setSignatureError('No se pudo procesar la imagen. Intentá con otra imagen.');
       }
     })();
+  }
+
+  function normalizePhotoDataUrl(dataUrl: string): string | null {
+    if (!dataUrl || !dataUrl.startsWith('data:image/')) return null;
+    const matched = /^data:image\/(png|jpeg|jpg|webp);base64,/.exec(dataUrl);
+    if (!matched) return null;
+    const payload = dataUrl.substring(dataUrl.indexOf(',') + 1);
+    const decodedBytes = typeof window !== 'undefined' ? atob(payload).length : 0;
+    if (decodedBytes > PHOTO_PERSISTENCE_MAX_BYTES) {
+      setSignatureError('La foto es demasiado grande. Probá con una imagen más pequeña.');
+      return null;
+    }
+    setSignatureError('');
+    return dataUrl;
+  }
+
+  function handlePhotoUpload(file: File | null) {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setSignatureError('Solo se permiten imágenes para la foto de perfil.');
+      return;
+    }
+    void (async () => {
+      try {
+        const compressed = await compressAndCropImageFile(file, 600, 0.85);
+        if (!compressed) return;
+        const normalized = normalizePhotoDataUrl(compressed);
+        if (normalized) setForm({ ...form, fotoPerfil: normalized });
+      } catch (err) {
+        setSignatureError('No se pudo procesar la foto. Intentá con otra imagen.');
+      }
+    })();
+  }
+
+  async function compressAndCropImageFile(file: File, maxSide = 600, quality = 0.85): Promise<string | null> {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const side = Math.min(img.width, img.height);
+          const sx = Math.floor((img.width - side) / 2);
+          const sy = Math.floor((img.height - side) / 2);
+          const targetSide = Math.min(side, maxSide);
+          const canvas = document.createElement('canvas');
+          canvas.width = targetSide;
+          canvas.height = targetSide;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) { URL.revokeObjectURL(url); return resolve(null); }
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, sx, sy, side, side, 0, 0, targetSide, targetSide);
+          const dataUrl = canvas.toDataURL('image/jpeg', quality);
+          URL.revokeObjectURL(url);
+          const payload = dataUrl.substring(dataUrl.indexOf(',') + 1);
+          const approxBytes = Math.round((payload.length * 3) / 4);
+          if (approxBytes > PHOTO_PERSISTENCE_MAX_BYTES) {
+            setSignatureError('La foto es demasiado grande tras la compresión. Probá con una imagen más pequeña.');
+            return resolve(null);
+          }
+          setSignatureError('');
+          resolve(dataUrl);
+        } catch (ex) {
+          URL.revokeObjectURL(url);
+          reject(ex);
+        }
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Error al cargar la imagen')); };
+      img.src = url;
+    });
   }
 
   async function compressImageFile(file: File, maxWidth = 1000, quality = 0.85): Promise<string | null> {
@@ -300,6 +371,18 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
     <section className="panel form-grid"><Heading number="02" title="Contacto" detail="Canales para comunicaciones del colegio." /><label>Correo electrónico<input type="email" value={form.correo} onChange={(e) => setForm({ ...form, correo: e.target.value })} /></label><label>Teléfono<input inputMode="numeric" value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} /></label>{data.isStaffProfile && <label>Celular<input inputMode="numeric" value={form.celular} onChange={(e) => setForm({ ...form, celular: e.target.value })} /></label>}</section>
     <section className="panel form-grid"><Heading number="03" title="Cuenta" detail="Nombre utilizado para iniciar sesión." /><label>Usuario<input value={form.usuario} required onChange={(e) => setForm({ ...form, usuario: e.target.value })} /></label><div className="account-role"><span>Rol asignado</span><strong>{data.profileRoleLabel}</strong></div></section>
     {data.isProfessorProfile && <section className="panel form-grid"><Heading number="04" title="Firma del docente" detail="Se usa en la exportación y se limpia automáticamente si no hay dato." />
+      <div className="photo-section" style={{ gridColumn: '1 / -1' }}>
+        <Heading number="03" title="Foto de perfil" detail="Se mostrará en la barra de navegación." />
+        <div className="photo-preview-row">
+          <div className="photo-preview-circle" aria-hidden="true">
+            {form.fotoPerfil ? <img src={form.fotoPerfil} alt="Foto de perfil" /> : <span className="initials">{`${owner.nombre?.[0] || owner.usuario?.[0] || 'S'}${owner.apellido?.[0] || ''}`.toUpperCase()}</span>}
+          </div>
+          <div className="photo-actions">
+            <label className="button secondary upload-button"><input type="file" accept="image/*" onChange={(e) => handlePhotoUpload(e.target.files?.[0] ?? null)} />Subir foto</label>
+            <button className="button secondary" type="button" onClick={() => setForm({ ...form, fotoPerfil: null })}>Quitar foto</button>
+          </div>
+        </div>
+      </div>
       {!isSignatureMobile && <div className="signature-box">
         <canvas ref={canvasRef} onPointerDown={drawStart} onPointerMove={drawMove} onPointerUp={finishDrawing} onPointerCancel={finishDrawing} />
       </div>}
