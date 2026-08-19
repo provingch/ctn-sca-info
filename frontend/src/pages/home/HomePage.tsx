@@ -215,8 +215,13 @@ function PlanillasView({ data, syncingProp, setSyncingProp }: { data: HomeRespon
           if (cancelled) break;
           try {
             await syncClassroom(p.id);
-          } catch (_) {
-            // ignore per-planilla errors
+          } catch (err) {
+            // si el backend indica que faltan scopes, redirigir a autorización
+            if (err instanceof ApiError && err.status === 428) {
+              navigate('/google/authorize');
+              break;
+            }
+            // ignore otros errores por planilla
           }
         }
       } finally {
