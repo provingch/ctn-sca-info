@@ -383,7 +383,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
     overflow: hidden;
   }
   /* Compensate the extra top padding applied by .app-main so banner sits closer to header */
-  .profile-page { margin-top: -28px; }
+  .profile-page { margin-top: -14px; }
   .profile-identity {
     flex: 0 0 auto;
     margin-bottom: 22px;
