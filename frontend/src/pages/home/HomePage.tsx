@@ -24,7 +24,6 @@ export default function HomePage() {
   const [selectionLoading, setSelectionLoading] = useState(false);
   const [syncingAll, setSyncingAll] = useState(false);
   const { selectSpecialty, resetSpecialty } = useSpecialty();
-  const selectionComplete = Boolean(especialidadId && selectedNivel != null && selectedSeccion && cursoId);
 
   const hasEspecialidad = !!especialidadId;
   const hasCursoSeleccionado = !!cursoId;
