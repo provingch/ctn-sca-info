@@ -161,7 +161,7 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
           reject(ex);
         }
       };
-      img.onerror = (e) => {
+      img.onerror = () => {
         URL.revokeObjectURL(url);
         reject(new Error('Error al cargar la imagen'));
       };
