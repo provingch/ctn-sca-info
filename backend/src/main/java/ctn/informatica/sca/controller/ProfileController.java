@@ -361,23 +361,28 @@ public class ProfileController {
                 padre.setUsuario(request.usuario().trim());
                 padre.setCorreo(request.correo() == null ? null : request.correo().trim());
                 padre.setTelefono(request.telefono() == null ? null : request.telefono().trim());
-                if (request.nombre() != null && !request.nombre().trim().isEmpty()) {
+                String incomingNombrePadre = request.nombre() == null ? null : request.nombre().trim();
+                if (incomingNombrePadre != null && !incomingNombrePadre.isEmpty() && !incomingNombrePadre.equals(padre.getNombre())) {
                     if (canModifyField("nombre", user)) {
-                        padre.setNombre(request.nombre().trim());
+                        padre.setNombre(incomingNombrePadre);
                     } else {
                         errors.add("Solo el administrador puede modificar el nombre.");
                     }
                 }
-                if (request.apellido() != null && !request.apellido().trim().isEmpty()) {
+
+                String incomingApellidoPadre = request.apellido() == null ? null : request.apellido().trim();
+                if (incomingApellidoPadre != null && !incomingApellidoPadre.isEmpty() && !incomingApellidoPadre.equals(padre.getApellido())) {
                     if (canModifyField("apellido", user)) {
-                        padre.setApellido(request.apellido().trim());
+                        padre.setApellido(incomingApellidoPadre);
                     } else {
                         errors.add("Solo el administrador puede modificar el apellido.");
                     }
                 }
-                if (request.ci() != null) {
+
+                Integer incomingCiPadre = request.ci();
+                if (incomingCiPadre != null && (padre.getCi() == null || !incomingCiPadre.equals(padre.getCi()))) {
                     if (canModifyField("ci", user)) {
-                        padre.setCi(request.ci());
+                        padre.setCi(incomingCiPadre);
                     } else {
                         errors.add("Solo el administrador puede modificar la cédula.");
                     }
@@ -414,23 +419,28 @@ public class ProfileController {
             if (request.correo() != null) {
                 profesor.setCorreo(request.correo().trim());
             }
-            if (request.nombre() != null && !request.nombre().trim().isEmpty()) {
+            String incomingNombre = request.nombre() == null ? null : request.nombre().trim();
+            if (incomingNombre != null && !incomingNombre.isEmpty() && !incomingNombre.equals(profesor.getNombre())) {
                 if (canModifyField("nombre", user)) {
-                    profesor.setNombre(request.nombre().trim());
+                    profesor.setNombre(incomingNombre);
                 } else {
                     errors.add("Solo el administrador puede modificar el nombre.");
                 }
             }
-            if (request.apellido() != null && !request.apellido().trim().isEmpty()) {
+
+            String incomingApellido = request.apellido() == null ? null : request.apellido().trim();
+            if (incomingApellido != null && !incomingApellido.isEmpty() && !incomingApellido.equals(profesor.getApellido())) {
                 if (canModifyField("apellido", user)) {
-                    profesor.setApellido(request.apellido().trim());
+                    profesor.setApellido(incomingApellido);
                 } else {
                     errors.add("Solo el administrador puede modificar el apellido.");
                 }
             }
-            if (request.ci() != null) {
+
+            Integer incomingCi = request.ci();
+            if (incomingCi != null && (profesor.getCi() == null || !incomingCi.equals(profesor.getCi()))) {
                 if (canModifyField("ci", user)) {
-                    profesor.setCi(request.ci());
+                    profesor.setCi(incomingCi);
                 } else {
                     errors.add("Solo el administrador puede modificar la cédula.");
                 }
@@ -443,14 +453,51 @@ public class ProfileController {
                 }
             }
             if (request.firmaImagen() != null) {
-                profesor.setFirmaImagen(request.firmaImagen().trim().isEmpty() ? null : request.firmaImagen().trim());
+                String raw = request.firmaImagen().trim();
+                if (raw.isEmpty()) {
+                    profesor.setFirmaImagen(null);
+                } else {
+                    // Validate approximate size of base64 payload to avoid DB errors
+                    int idx = raw.indexOf(',');
+                    String payload = idx >= 0 ? raw.substring(idx + 1) : raw;
+                    int approxBytes = Math.round((float) payload.length() * 3f / 4f);
+                    int maxBytes = 1_500_000; // ~1.5MB
+                    if (approxBytes > maxBytes) {
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La imagen de firma es demasiado grande. Reduce el tamaño antes de guardar.");
+                    }
+                    profesor.setFirmaImagen(raw);
+                }
+            }
+            if (request.fotoPerfil() != null) {
+                String raw = request.fotoPerfil().trim();
+                if (raw.isEmpty()) {
+                    profesor.setFotoPerfil(null);
+                } else {
+                    int idx = raw.indexOf(',');
+                    String payload = idx >= 0 ? raw.substring(idx + 1) : raw;
+                    int approxBytes = Math.round((float) payload.length() * 3f / 4f);
+                    int maxBytes = 1_500_000; // reuse same limit for avatars
+                    if (approxBytes > maxBytes) {
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La foto de perfil es demasiado grande. Reduce el tamaño antes de guardar.");
+                    }
+                    profesor.setFotoPerfil(raw);
+                }
             }
 
             if (!errors.isEmpty()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, String.join(" ", errors));
             }
-            if (!profesorDao.update(profesor)) {
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudieron guardar los datos. Intente de nuevo más tarde.");
+            try {
+                if (!profesorDao.update(profesor)) {
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudieron guardar los datos. Intente de nuevo más tarde.");
+                }
+            } catch (RuntimeException ex) {
+                // Detect SQL data-too-long scenarios to return a 400 with a helpful message.
+                Throwable cause = ex.getCause();
+                if (cause != null && cause instanceof SQLException && cause.getMessage() != null && cause.getMessage().toLowerCase().contains("data too long")) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La imagen de firma es demasiado grande. Reduce el tamaño o sube una imagen más pequeña.", ex);
+                }
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al guardar los datos del perfil.", ex);
             }
         } catch (SQLException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al guardar el perfil.", ex);
@@ -471,7 +518,8 @@ public class ProfileController {
                     profesor.getUsuario(),
                     profesor.getGoogleEmail(),
                     profesor.getGcAccessToken(),
-                    profesor.getFirmaImagen()
+                    profesor.getFirmaImagen(),
+                    profesor.getFotoPerfil()
             );
         }
         if (padre != null) {
@@ -487,10 +535,11 @@ public class ProfileController {
                     padre.getUsuario(),
                     null,
                     null,
+                    null,
                     null
             );
         }
-        return new ProfileOwnerDto(null, null, null, null, null, null, null, null, null, null, null, null);
+        return new ProfileOwnerDto(null, null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     private AsignacionDto toAsignacionDto(Asignacion asignacion) {

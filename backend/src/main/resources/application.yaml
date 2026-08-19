@@ -1,6 +1,11 @@
 server:
   port: 8080
 
+  error:
+    include-stacktrace: never   # never include stacktrace in error response body
+    include-message: never     # never include exception message in response body
+    include-binding-errors: never
+
 spring:
   application:
     name: sca-backend

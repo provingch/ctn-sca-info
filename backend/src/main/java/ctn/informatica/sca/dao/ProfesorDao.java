@@ -43,6 +43,7 @@ public class ProfesorDao extends conexion {
         if (!rs.wasNull()) p.setGcTokenExpiry(expiry);
         p.setTotpSecret(rs.getString("totp_secret"));
         p.setFirmaImagen(rs.getString("firma_imagen"));
+        p.setFotoPerfil(rs.getString("foto_perfil"));
         return p;
     }
 
@@ -50,7 +51,7 @@ public class ProfesorDao extends conexion {
     public Profesor findById(int id) {
         final String sql = "SELECT id, nombre, apellido, usuario, contrasenia, nivel, "
                          + "ci, telefono, celular, correo, especialidad_id, google_email, "
-                         + "google_access_token, google_refresh_token, google_token_expiry, totp_secret, firma_imagen "
+                         + "google_access_token, google_refresh_token, google_token_expiry, totp_secret, firma_imagen, foto_perfil "
                          + "FROM profesor WHERE id = ?";
         try (Connection c = getCon();
              PreparedStatement ps = c.prepareStatement(sql)) {
@@ -70,7 +71,7 @@ public class ProfesorDao extends conexion {
     public Profesor findByGoogleEmail(String email) {
         final String sql = "SELECT id, nombre, apellido, usuario, contrasenia, nivel, "
                          + "ci, telefono, celular, correo, especialidad_id, google_email, "
-                         + "google_access_token, google_refresh_token, google_token_expiry, totp_secret, firma_imagen "
+                         + "google_access_token, google_refresh_token, google_token_expiry, totp_secret, firma_imagen, foto_perfil "
                          + "FROM profesor WHERE google_email = ? OR correo = ?";
         try (Connection c = getCon();
              PreparedStatement ps = c.prepareStatement(sql)) {
@@ -116,8 +117,10 @@ public class ProfesorDao extends conexion {
             ps.setInt(5, profesorId);
             return ps.executeUpdate() == 1;
         } catch (SQLException ex) {
+            // Do not swallow SQL exceptions: rethrow wrapped so controller can
+            // decide the HTTP response and logs contain the real DB error.
             ex.printStackTrace();
-            return false;
+            throw new RuntimeException(ex);
         }
     }
 
@@ -151,7 +154,7 @@ public class ProfesorDao extends conexion {
             return ps.executeUpdate() == 1;
         } catch (SQLException ex) {
             ex.printStackTrace();
-            return false;
+            throw new RuntimeException(ex);
         }
     }
 
@@ -160,7 +163,7 @@ public class ProfesorDao extends conexion {
         final String sql = "UPDATE profesor "
                          + "SET nombre = ?, apellido = ?, usuario = ?, "
                          + "    contrasenia = ?, nivel = ?, ci = ?, telefono = ?, "
-                         + "    celular = ?, correo = ?, especialidad_id = ?, firma_imagen = ? "
+                         + "    celular = ?, correo = ?, especialidad_id = ?, firma_imagen = ?, foto_perfil = ? "
                          + "WHERE id = ?";
         try (Connection c = getCon();
              PreparedStatement ps = c.prepareStatement(sql)) {
@@ -198,19 +201,24 @@ public class ProfesorDao extends conexion {
             } else {
                 ps.setNull(11, Types.VARCHAR);
             }
-            ps.setInt(12, p.getId());
+            if (p.getFotoPerfil() != null && !p.getFotoPerfil().isBlank()) {
+                ps.setString(12, p.getFotoPerfil());
+            } else {
+                ps.setNull(12, Types.VARCHAR);
+            }
+            ps.setInt(13, p.getId());
 
             return ps.executeUpdate() == 1;
         } catch (SQLException ex) {
             ex.printStackTrace();
-            return false;
+            throw new RuntimeException(ex);
         }
     }
 
     public java.util.List<Profesor> findAll() {
         final String sql = "SELECT id, nombre, apellido, usuario, contrasenia, nivel, "
                          + "ci, telefono, celular, correo, especialidad_id, google_email, "
-                         + "google_access_token, google_refresh_token, google_token_expiry, totp_secret, firma_imagen "
+                         + "google_access_token, google_refresh_token, google_token_expiry, totp_secret, firma_imagen, foto_perfil "
                          + "FROM profesor ORDER BY apellido, nombre";
         java.util.List<Profesor> out = new java.util.ArrayList<>();
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql);
@@ -252,7 +260,23 @@ public class ProfesorDao extends conexion {
             return ps.executeUpdate() == 1;
         } catch (SQLException ex) {
             ex.printStackTrace();
-            return false;
+            throw new RuntimeException(ex);
+        }
+    }
+
+    public boolean updateFotoPerfil(int profesorId, String fotoPerfil) {
+        final String sql = "UPDATE profesor SET foto_perfil = ? WHERE id = ?";
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
+            if (fotoPerfil != null && !fotoPerfil.isBlank()) {
+                ps.setString(1, fotoPerfil);
+            } else {
+                ps.setNull(1, Types.VARCHAR);
+            }
+            ps.setInt(2, profesorId);
+            return ps.executeUpdate() == 1;
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            throw new RuntimeException(ex);
         }
     }
 
