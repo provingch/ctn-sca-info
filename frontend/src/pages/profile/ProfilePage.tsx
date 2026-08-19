@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import QRCode from 'qrcode';
 import { changePassword, confirmTotp, disableTotp, getProfile, prepareTotp, saveProfile, type ProfileResponse, getGoogleAuthorizeUrl } from '../../api/profile';
 
@@ -19,23 +19,9 @@ export default function ProfilePage() {
   const [status, setStatus] = useState('');
   const [tab, setTab] = useState<ProfileTab>('profile');
   const profilePageRef = useRef<HTMLDivElement>(null);
-  const identityRef = useRef<HTMLElement>(null);
   const load = useCallback(async () => { try { setData(await getProfile()); } catch (error) { setStatus(message(error, 'Error al cargar el perfil.')); } }, []);
   useEffect(() => { void load(); }, [load]);
-  useLayoutEffect(() => {
-    const page = profilePageRef.current;
-    const identity = identityRef.current;
-    if (!page || !identity) return;
-
-    const updateIdentityHeight = () => {
-      page.style.setProperty('--profile-identity-height', `${Math.ceil(identity.getBoundingClientRect().height)}px`);
-    };
-
-    updateIdentityHeight();
-    const observer = new ResizeObserver(updateIdentityHeight);
-    observer.observe(identity);
-    return () => observer.disconnect();
-  }, [data]);
+  // ResizeObserver and dynamic --profile-identity-height removed: obsolete with fixed flex layout
 
   if (!data) return <AppShell><section className="panel">{status || 'Cargando…'}</section></AppShell>;
 
@@ -46,8 +32,8 @@ export default function ProfilePage() {
 
   return <AppShell subtitle={`Cuenta de ${owner.usuario || 'usuario'} · ${data.profileRoleLabel}`}>
     <div className="profile-page" ref={profilePageRef}>
-    <section className="profile-identity" ref={identityRef}>
-      <div className="avatar" aria-hidden="true">{initials}</div>
+    <section className="profile-identity">
+      <div className="avatar" aria-hidden="true">{owner.fotoPerfil ? <img src={owner.fotoPerfil} alt="Foto de perfil" /> : initials}</div>
       <div className="profile-identity-copy"><span className="badge">{data.profileRoleLabel}</span><h2>{owner.fullName?.trim() || owner.usuario || 'Usuario SCA'}</h2><strong>@{owner.usuario || 'sin-usuario'}</strong></div>
         {/* Perfil completion and access description removed from header */}
     </section>
