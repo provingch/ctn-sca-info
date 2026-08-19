@@ -12,6 +12,7 @@ public record ProfileOwnerDto(
         String usuario,
         String googleEmail,
         String gcAccessToken,
-        String firmaImagen
+        String firmaImagen,
+        String fotoPerfil
 ) {
 }

@@ -28,6 +28,7 @@ public class Profesor {
     private long gcTokenExpiry;
     private String totpSecret;
     private String firmaImagen;
+    private String fotoPerfil;
 
     // getters y setters
     public String getGoogleEmail() { return googleEmail; }
@@ -47,6 +48,9 @@ public class Profesor {
 
     public String getFirmaImagen() { return firmaImagen; }
     public void setFirmaImagen(String firmaImagen) { this.firmaImagen = firmaImagen; }
+
+    public String getFotoPerfil() { return fotoPerfil; }
+    public void setFotoPerfil(String fotoPerfil) { this.fotoPerfil = fotoPerfil; }
 
     public String getFullName() {
         String n = nombre == null ? "" : nombre;
