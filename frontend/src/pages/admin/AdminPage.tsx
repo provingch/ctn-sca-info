@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import AppShell from '../../components/AppShell';
-import { createAdminRecord, deleteAssignment, getAdminCatalog, deleteAdminRecord, getMateriaEspecialidades, wipeAllClassroomSync, wipePlanillaSyncImports, type AdminCatalog } from '../../api/admin';
+import { createAdminRecord, deleteAssignment, getAdminCatalog, deleteAdminRecord, getMateriaEspecialidades, wipeAllClassroomSync, wipePlanillaSyncImports, clearUserGoogleTokens, type AdminCatalog } from '../../api/admin';
 import { ApiError } from '../../api/client';
 import { useSpecialty } from '../../context/SpecialtyContext';
 import { normalizeSpecialty } from '../../theme/theme';
