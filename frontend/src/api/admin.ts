@@ -14,3 +14,4 @@ export const deleteAdminRecord = (section: string, id: number) => api.delete<voi
 export const getMateriaEspecialidades = (materiaId: number) => api.get<number[]>(`/api/admin/materias/${materiaId}/especialidades`);
 export const wipePlanillaSyncImports = (planillaId: number) => api.post<{ message: string; deletedGrades: number; deletedTasks: number; clearedGoogleCourseIds: number }>(`/api/admin/planillas/${planillaId}/sync/wipe`);
 export const wipeAllClassroomSync = () => api.post<{ message: string; deletedGrades: number; deletedTasks: number; clearedGoogleCourseIds: number }>(`/api/admin/sync/wipe-all`);
+export const clearUserGoogleTokens = (userId: number) => api.post<{ message: string }>(`/api/admin/usuarios/${userId}/google/clear`);

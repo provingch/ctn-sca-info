@@ -119,6 +119,16 @@ public class AdminController {
         } catch (ResponseStatusException ex) { throw ex; } catch (Exception ex) { throw failure("No se pudo eliminar el usuario", ex); }
     }
 
+    @PostMapping("/usuarios/{id}/google/clear")
+    public GoogleClearResponse clearUsuarioGoogleTokens(@PathVariable int id, Authentication auth) {
+        ApiAuth.requireUserId(auth);
+        try {
+            boolean updated = new ProfesorDao().updateGoogleTokens(id, null, null, 0L, null);
+            if (!updated) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado o no se pudo limpiar tokens");
+            return new GoogleClearResponse("Tokens de Google eliminados para el usuario " + id);
+        } catch (ResponseStatusException ex) { throw ex; } catch (Exception ex) { throw failure("No se pudo limpiar tokens de Google", ex); }
+    }
+
     @DeleteMapping("/ingresantes/{id}") @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteIngresante(@PathVariable int id, Authentication auth) {
         ApiAuth.requireUserId(auth);
@@ -176,4 +186,5 @@ public class AdminController {
     public record StudentInput(String nombre, String apellido, int cursoId, Integer ci, String correoEncargado, String correoEncargado2) {}
     public record WipeResponse(String message, int deletedGrades, int deletedTasks, int planillaId, int clearedGoogleCourseIds) {}
     public record GlobalWipeResponse(String message, int deletedGrades, int deletedTasks, int clearedGoogleCourseIds) {}
+    public record GoogleClearResponse(String message) {}
 }
