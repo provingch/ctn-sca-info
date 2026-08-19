@@ -88,6 +88,20 @@ export default function HomePage() {
 
   useEffect(() => { void load(); }, [load]);
 
+  useEffect(() => {
+    if (!especialidadId) {
+      setSelectedNivel(null);
+      setSelectedSeccion('');
+      return;
+    }
+    if (!cursoId && data?.selCurso) {
+      const nextNivel = Number(data.selCurso.curso);
+      const nextSeccion = data.selCurso.seccion;
+      setSelectedNivel(nextNivel);
+      setSelectedSeccion(nextSeccion);
+    }
+  }, [especialidadId, cursoId, data?.selCurso]);
+
   if (!view) return <AppShell title="Elegí cómo querés empezar"><div className="choice-grid"><button onClick={() => setSearch({ view: 'clase' })}><span>01</span><h2>Iniciar una clase</h2><p>Asistencia, rasgos e historial del curso.</p></button><button onClick={() => setSearch({ view: 'planillas' })}><span>02</span><h2>Gestionar planillas</h2><p>Tareas, puntajes y sincronización con Classroom.</p></button></div></AppShell>;
   if (!data) return <AppShell title="Panel SCA"><div className="panel">{error || 'Cargando…'}</div></AppShell>;
 
@@ -105,19 +119,7 @@ export default function HomePage() {
   const niveles = nivelesBase.sort((a, b) => a - b);
   const seccionesForNivel = (nivel: number) => Array.from(new Set(visibleCursos.filter((c) => Number(c.curso) === nivel).map((c) => c.seccion))).sort();
 
-  useEffect(() => {
-    if (!especialidadId) {
-      setSelectedNivel(null);
-      setSelectedSeccion('');
-      return;
-    }
-    if (!cursoId && data?.selCurso) {
-      const nextNivel = Number(data.selCurso.curso);
-      const nextSeccion = data.selCurso.seccion;
-      setSelectedNivel(nextNivel);
-      setSelectedSeccion(nextSeccion);
-    }
-  }, [especialidadId, cursoId, data?.selCurso]);
+  
 
   const params = (next: Record<string, string>) => setSearch({
     view,

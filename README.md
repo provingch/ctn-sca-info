@@ -85,6 +85,17 @@ La conexión (`conexion.java`) toma estos valores de variables de entorno (con d
 | `CTN_DB_USER` | `testadmin` |
 | `CTN_DB_PASSWORD` | *(vacío)* |
 
+### PWA y notificaciones push
+
+La instalación de la PWA funciona sin configuración adicional. Para habilitar las notificaciones Web Push, el servidor necesita un par VAPID:
+
+| Variable de entorno | Contenido |
+|---|---|
+| `CTN_VAPID_PUBLIC_KEY` | Clave pública VAPID en Base64 URL-safe |
+| `CTN_VAPID_PRIVATE_KEY` | Clave privada VAPID correspondiente |
+
+El script `deploy.sh` conserva estas claves en el archivo de entorno del servicio. Deben configurarse juntas; la clave privada nunca debe incorporarse al repositorio ni enviarse al frontend.
+
 ### Google OAuth / Classroom
 `AppConfig` carga `/WEB-INF/config.properties`, que **debe crearse manualmente** (no está versionado) con estas claves:
 

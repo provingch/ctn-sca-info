@@ -9,6 +9,7 @@ export interface AuthUser {
   displayName?: string;
   username?: string;
   initials?: string;
+  fotoPerfil?: string;
 }
 
 interface AuthContextValue {
@@ -64,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const displayName = owner.fullName?.trim() || owner.usuario?.trim() || 'Usuario SCA';
       const initials = `${owner.nombre?.trim()[0] || owner.usuario?.trim()[0] || 'S'}${owner.apellido?.trim()[0] || ''}`.toUpperCase();
       setUser((current) => current?.level === activeLevel
-        ? { ...current, displayName, username: owner.usuario?.trim() || undefined, initials }
+        ? { ...current, displayName, username: owner.usuario?.trim() || undefined, initials, fotoPerfil: owner.fotoPerfil ?? undefined }
         : current);
     } catch {
       // La sesión sigue siendo válida aunque el resumen del perfil no esté disponible.

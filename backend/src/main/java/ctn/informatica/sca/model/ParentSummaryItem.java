@@ -15,6 +15,8 @@ public class ParentSummaryItem {
     private Integer cursoId;
     private Integer planillaId;
     private String especialidadNombre;
+    private String etapa;
+    private String categoria;
     private int tareasCount;
     private Map<Integer, Integer> tareaPuntajes = new LinkedHashMap<>();
 
@@ -26,17 +28,10 @@ public class ParentSummaryItem {
         }
 
         porcentaje = (int) Math.round((puntos * 100.0) / totalPosible);
-        if (porcentaje < 70) {
-            nota = 1;
-        } else if (porcentaje < 80) {
-            nota = 2;
-        } else if (porcentaje < 90) {
-            nota = 3;
-        } else if (porcentaje < 95) {
-            nota = 4;
-        } else {
-            nota = 5;
-        }
+        Planilla planilla = new Planilla();
+        planilla.setCategoria(categoria);
+        planilla.computeGradeRanges(totalPosible);
+        nota = planilla.getNotaForSum(puntos);
     }
 
     public String getAlumnoNombre() { return alumnoNombre; }
@@ -61,6 +56,10 @@ public class ParentSummaryItem {
     public void setPlanillaId(Integer planillaId) { this.planillaId = planillaId; }
     public String getEspecialidadNombre() { return especialidadNombre; }
     public void setEspecialidadNombre(String especialidadNombre) { this.especialidadNombre = especialidadNombre; }
+    public String getEtapa() { return etapa; }
+    public void setEtapa(String etapa) { this.etapa = etapa; }
+    public String getCategoria() { return categoria; }
+    public void setCategoria(String categoria) { this.categoria = categoria; }
     public int getTareasCount() { return tareasCount; }
     public void setTareasCount(int tareasCount) { this.tareasCount = tareasCount; }
     public Map<Integer, Integer> getTareaPuntajes() { return tareaPuntajes; }

@@ -37,11 +37,12 @@ public class SecurityConfig {
                 // de React Router: el navegador las pide como GET normal en un F5 o
                 // acceso directo, y SpaForwardController las reenvía a index.html.
                 // Agregar acá cada ruta nueva de React a medida que se sume un Bloque.
-                .requestMatchers(HttpMethod.GET, "/", "/index.html", "/assets/**", "/favicon.svg", "/icons.svg").permitAll()
+                .requestMatchers(HttpMethod.GET, "/", "/index.html", "/assets/**", "/favicon.svg", "/icons.svg",
+                    "/icons/pwa/**", "/manifest.webmanifest", "/sw.js", "/offline.html").permitAll()
                 .requestMatchers(HttpMethod.GET, "/pdfs/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/login", "/home", "/inicio", "/profile", "/perfil",
                     "/evaluacion", "/admin", "/admin/**", "/padre", "/styleguide", "/privacidad", "/terminos",
-                    "/planilla/**", "/google/callback").permitAll()
+                    "/planilla/**", "/google/callback", "/offline").permitAll()
                 .requestMatchers("/api/planillas/**", "/api/tareas/**").hasRole("LEVEL_1")
                 .requestMatchers("/api/evaluacion/**").hasRole("LEVEL_2")
                 .requestMatchers("/api/admin/**").hasRole("LEVEL_3")

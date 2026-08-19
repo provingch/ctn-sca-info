@@ -56,7 +56,9 @@ public class PushSubscriptionController {
             Authentication authentication) {
         int userId = ApiAuth.requireUserId(authentication);
         String userType = resolveUserType(userId, authentication);
-        if (request == null || request.endpoint() == null || request.endpoint().isBlank()) {
+        if (request == null || request.endpoint() == null || request.endpoint().isBlank()
+                || request.p256dh() == null || request.p256dh().isBlank()
+                || request.auth() == null || request.auth().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Los datos de suscripción son requeridos.");
         }
         try {
