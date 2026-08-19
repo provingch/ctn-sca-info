@@ -361,23 +361,28 @@ public class ProfileController {
                 padre.setUsuario(request.usuario().trim());
                 padre.setCorreo(request.correo() == null ? null : request.correo().trim());
                 padre.setTelefono(request.telefono() == null ? null : request.telefono().trim());
-                if (request.nombre() != null && !request.nombre().trim().isEmpty()) {
+                String incomingNombrePadre = request.nombre() == null ? null : request.nombre().trim();
+                if (incomingNombrePadre != null && !incomingNombrePadre.isEmpty() && !incomingNombrePadre.equals(padre.getNombre())) {
                     if (canModifyField("nombre", user)) {
-                        padre.setNombre(request.nombre().trim());
+                        padre.setNombre(incomingNombrePadre);
                     } else {
                         errors.add("Solo el administrador puede modificar el nombre.");
                     }
                 }
-                if (request.apellido() != null && !request.apellido().trim().isEmpty()) {
+
+                String incomingApellidoPadre = request.apellido() == null ? null : request.apellido().trim();
+                if (incomingApellidoPadre != null && !incomingApellidoPadre.isEmpty() && !incomingApellidoPadre.equals(padre.getApellido())) {
                     if (canModifyField("apellido", user)) {
-                        padre.setApellido(request.apellido().trim());
+                        padre.setApellido(incomingApellidoPadre);
                     } else {
                         errors.add("Solo el administrador puede modificar el apellido.");
                     }
                 }
-                if (request.ci() != null) {
+
+                Integer incomingCiPadre = request.ci();
+                if (incomingCiPadre != null && (padre.getCi() == null || !incomingCiPadre.equals(padre.getCi()))) {
                     if (canModifyField("ci", user)) {
-                        padre.setCi(request.ci());
+                        padre.setCi(incomingCiPadre);
                     } else {
                         errors.add("Solo el administrador puede modificar la cédula.");
                     }
@@ -414,23 +419,28 @@ public class ProfileController {
             if (request.correo() != null) {
                 profesor.setCorreo(request.correo().trim());
             }
-            if (request.nombre() != null && !request.nombre().trim().isEmpty()) {
+            String incomingNombre = request.nombre() == null ? null : request.nombre().trim();
+            if (incomingNombre != null && !incomingNombre.isEmpty() && !incomingNombre.equals(profesor.getNombre())) {
                 if (canModifyField("nombre", user)) {
-                    profesor.setNombre(request.nombre().trim());
+                    profesor.setNombre(incomingNombre);
                 } else {
                     errors.add("Solo el administrador puede modificar el nombre.");
                 }
             }
-            if (request.apellido() != null && !request.apellido().trim().isEmpty()) {
+
+            String incomingApellido = request.apellido() == null ? null : request.apellido().trim();
+            if (incomingApellido != null && !incomingApellido.isEmpty() && !incomingApellido.equals(profesor.getApellido())) {
                 if (canModifyField("apellido", user)) {
-                    profesor.setApellido(request.apellido().trim());
+                    profesor.setApellido(incomingApellido);
                 } else {
                     errors.add("Solo el administrador puede modificar el apellido.");
                 }
             }
-            if (request.ci() != null) {
+
+            Integer incomingCi = request.ci();
+            if (incomingCi != null && (profesor.getCi() == null || !incomingCi.equals(profesor.getCi()))) {
                 if (canModifyField("ci", user)) {
-                    profesor.setCi(request.ci());
+                    profesor.setCi(incomingCi);
                 } else {
                     errors.add("Solo el administrador puede modificar la cédula.");
                 }
