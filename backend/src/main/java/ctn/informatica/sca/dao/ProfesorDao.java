@@ -116,8 +116,10 @@ public class ProfesorDao extends conexion {
             ps.setInt(5, profesorId);
             return ps.executeUpdate() == 1;
         } catch (SQLException ex) {
+            // Do not swallow SQL exceptions: rethrow wrapped so controller can
+            // decide the HTTP response and logs contain the real DB error.
             ex.printStackTrace();
-            return false;
+            throw new RuntimeException(ex);
         }
     }
 
@@ -151,7 +153,7 @@ public class ProfesorDao extends conexion {
             return ps.executeUpdate() == 1;
         } catch (SQLException ex) {
             ex.printStackTrace();
-            return false;
+            throw new RuntimeException(ex);
         }
     }
 
@@ -203,7 +205,7 @@ public class ProfesorDao extends conexion {
             return ps.executeUpdate() == 1;
         } catch (SQLException ex) {
             ex.printStackTrace();
-            return false;
+            throw new RuntimeException(ex);
         }
     }
 

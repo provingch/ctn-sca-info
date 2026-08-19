@@ -443,14 +443,36 @@ public class ProfileController {
                 }
             }
             if (request.firmaImagen() != null) {
-                profesor.setFirmaImagen(request.firmaImagen().trim().isEmpty() ? null : request.firmaImagen().trim());
+                String raw = request.firmaImagen().trim();
+                if (raw.isEmpty()) {
+                    profesor.setFirmaImagen(null);
+                } else {
+                    // Validate approximate size of base64 payload to avoid DB errors
+                    int idx = raw.indexOf(',');
+                    String payload = idx >= 0 ? raw.substring(idx + 1) : raw;
+                    int approxBytes = Math.round((float) payload.length() * 3f / 4f);
+                    int maxBytes = 1_500_000; // ~1.5MB
+                    if (approxBytes > maxBytes) {
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La imagen de firma es demasiado grande. Reduce el tamaño antes de guardar.");
+                    }
+                    profesor.setFirmaImagen(raw);
+                }
             }
 
             if (!errors.isEmpty()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, String.join(" ", errors));
             }
-            if (!profesorDao.update(profesor)) {
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudieron guardar los datos. Intente de nuevo más tarde.");
+            try {
+                if (!profesorDao.update(profesor)) {
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudieron guardar los datos. Intente de nuevo más tarde.");
+                }
+            } catch (RuntimeException ex) {
+                // Detect SQL data-too-long scenarios to return a 400 with a helpful message.
+                Throwable cause = ex.getCause();
+                if (cause != null && cause instanceof SQLException && cause.getMessage() != null && cause.getMessage().toLowerCase().contains("data too long")) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La imagen de firma es demasiado grande. Reduce el tamaño o sube una imagen más pequeña.", ex);
+                }
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al guardar los datos del perfil.", ex);
             }
         } catch (SQLException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al guardar el perfil.", ex);
