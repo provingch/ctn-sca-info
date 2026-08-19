@@ -279,7 +279,6 @@ public class PlanillaProcesoWorkbookBuilder {
         // early column (column index 1) to avoid landing beyond lastRealColumn.
         int lastStudentRow = FIRST_STUDENT_ROW + Math.max(0, data.rows() == null ? 0 : data.rows().size()) - 1;
         int signatureRow = lastStudentRow + 2; // two rows below last student
-        setTeacherSignature(sheet, data, signatureRow, 1);
 
         // Determine the last column that was actually written for this planilla
         // instance: if the layout declares first-stage columns (etapa 2) we
@@ -290,7 +289,10 @@ public class PlanillaProcesoWorkbookBuilder {
         int lastRealColumn = layout.firstStageGradeColumn() >= 0
             ? computed.regularizationColumn()
             : computed.currentStageGradeColumn();
-        cleanColumnsAfter(sheet, lastRealColumn, signatureRow);
+        int signatureColumn = 1;
+        setTeacherSignature(sheet, data, signatureRow, signatureColumn);
+
+        cleanColumnsAfter(sheet, lastRealColumn, signatureRow, signatureColumn);
     }
 
     private int monthBlockWidth(List<Tarea> tareasMes) {
@@ -699,25 +701,48 @@ public class PlanillaProcesoWorkbookBuilder {
         if (data == null) {
             return;
         }
-        Row row = getOrCreateRow(sheet, targetRowIndex);
-        Cell targetCell = getOrCreateCell(row, targetColumnIndex);
 
+        // Rows for the 3-line signature block
+        Row topRow = getOrCreateRow(sheet, targetRowIndex);
+        Row lineRow = getOrCreateRow(sheet, targetRowIndex + 1);
+        Row labelRow = getOrCreateRow(sheet, targetRowIndex + 2);
+
+        Cell topCell = getOrCreateCell(topRow, targetColumnIndex);
+
+        boolean imageInserted = false;
         if (data.firmaImagen() != null && !data.firmaImagen().isBlank()) {
             try {
-                insertSignatureImage(sheet, targetCell, data.firmaImagen());
-                return;
+                insertSignatureImage(sheet, topCell, data.firmaImagen());
+                imageInserted = true;
             } catch (Exception ex) {
-                // fallback to text
-                targetCell.setCellValue("");
+                topCell.setCellValue("");
             }
         }
 
-        if (data.profesorNombre() != null && !data.profesorNombre().isBlank()) {
-            targetCell.setCellValue(data.profesorNombre());
+        if (!imageInserted) {
+            if (data.profesorNombre() != null && !data.profesorNombre().isBlank()) {
+                topCell.setCellValue(data.profesorNombre());
+            }
         }
+
+        // Create a thin bottom border across several columns to act as signature line
+        org.apache.poi.ss.usermodel.Workbook wb = sheet.getWorkbook();
+        org.apache.poi.ss.usermodel.CellStyle lineStyle = wb.createCellStyle();
+        lineStyle.setBorderBottom(org.apache.poi.ss.usermodel.BorderStyle.THIN);
+
+        int spanStart = targetColumnIndex;
+        int spanEnd = targetColumnIndex + 4;
+        for (int c = spanStart; c <= spanEnd; c++) {
+            Cell cell = getOrCreateCell(lineRow, c);
+            cell.setCellStyle(lineStyle);
+        }
+
+        // Label beneath the line
+        Cell labelCell = getOrCreateCell(labelRow, targetColumnIndex);
+        labelCell.setCellValue("Firma del Docente");
     }
 
-    private void cleanColumnsAfter(Sheet sheet, int lastAllowedColumn, int firstRowToProtect) {
+    private void cleanColumnsAfter(Sheet sheet, int lastAllowedColumn, int firstRowToProtect, int signatureStartCol) {
         if (sheet == null) return;
 
         // Remove merged regions that are entirely to the right of lastAllowedColumn
@@ -740,12 +765,17 @@ public class PlanillaProcesoWorkbookBuilder {
         for (int r = 0; r <= lastRow; r++) {
             Row row = sheet.getRow(r);
             if (row == null) continue;
-            // Protect only the specific signature rows (signature row and the following
-            // row) from being blanked; allow cleaning of other rows below that.
-            if (r == firstRowToProtect || r == firstRowToProtect + 1) continue;
+            // For rows that are part of the signature block, only protect the
+            // specific signature columns; all other cells in those rows should
+            // still be cleared if they are to the right of lastAllowedColumn.
             short lastCellNum = row.getLastCellNum();
             if (lastCellNum <= 0) continue;
             for (int c = lastAllowedColumn + 1; c < lastCellNum; c++) {
+                // Skip clearing the small signature cell area (span of a few cols)
+                if ((r == firstRowToProtect || r == firstRowToProtect + 1 || r == firstRowToProtect + 2)
+                        && c >= signatureStartCol && c <= signatureStartCol + 4) {
+                    continue;
+                }
                 Cell cell = row.getCell(c);
                 if (cell == null) continue;
                 // remove formula/state/value
