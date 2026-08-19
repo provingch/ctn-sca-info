@@ -44,6 +44,20 @@ public final class GoogleClassroomUtils {
         Integer level = parseLevel(normalizedName);
         String courseSection = parseSection(normalizedName);
 
+        // If no letter section (A/B/C) found, try to extract a year from
+        // the course name or the provided room value and use it as section.
+        if (courseSection == null) {
+            Matcher yearInName = SINGLE_YEAR_PATTERN.matcher(courseName == null ? "" : courseName);
+            if (yearInName.find()) {
+                courseSection = yearInName.group(1);
+            } else if (room != null && !room.isBlank()) {
+                Matcher yearInRoom = SINGLE_YEAR_PATTERN.matcher(room);
+                if (yearInRoom.find()) {
+                    courseSection = yearInRoom.group(1);
+                }
+            }
+        }
+
         if (level == null || courseSection == null) {
             return Optional.empty();
         }
@@ -61,7 +75,10 @@ public final class GoogleClassroomUtils {
 
         int periodo = expectedPeriod;
 
-        String sala = stripLevelAndSection(normalizedName);
+        // Prefer the normalized room as specialty/hint when available; fall
+        // back to stripping level/section from the course name otherwise.
+        String salaCandidate = normalizeRoom(room);
+        String sala = (salaCandidate == null || salaCandidate.isBlank()) ? stripLevelAndSection(normalizedName) : salaCandidate;
         return Optional.of(new CourseKey(level, courseSection, sala, periodo));
     }
 
