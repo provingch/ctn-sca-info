@@ -215,9 +215,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .signature-modal-actions .button { width: 100%; min-width: 0; padding-inline: 10px; }
 
 @media (min-width: 901px) {
-  .profile-identity { position: sticky; top: 92px; z-index: 15; isolation: isolate; background: color-mix(in srgb, var(--paper) 96%, transparent); box-shadow: 0 14px 34px color-mix(in srgb, var(--ink) 13%, transparent); backdrop-filter: blur(18px); }
-  .profile-page { --profile-identity-height: 126px; }
-  .profile-menu { position: sticky; top: calc(92px + var(--profile-identity-height) + 22px); z-index: 10; max-height: calc(100vh - 132px - var(--profile-identity-height)); overflow-y: auto; overscroll-behavior: contain; background: color-mix(in srgb, var(--paper) 97%, transparent); box-shadow: 0 12px 28px color-mix(in srgb, var(--ink) 10%, transparent); backdrop-filter: blur(16px); scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+  /* Old sticky layout removed: replaced by fixed flex layout further below. */
 }
 
 .auth-page { min-height: 100vh; position: relative; display: grid; grid-template-columns: minmax(320px, 1fr) minmax(360px, 480px) minmax(96px, .25fr); align-items: center; justify-items: center; padding: 28px; gap: 28px; background: radial-gradient(circle at 10% 14%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 32rem), radial-gradient(circle at 88% 84%, rgba(117, 139, 180, .16), transparent 28rem), linear-gradient(145deg, #e5edf6, #f8fafc 54%, #dbe5f2); overflow-x: hidden; overflow-y: auto; }
@@ -374,6 +372,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 /* Profile page tweaks: reduce banner height and make left sidebar + banner fixed on desktop */
 .profile-identity { padding: 18px !important; }
 .avatar { width: 60px !important; height: 60px !important; flex: 0 0 60px !important; border-radius: 18px !important; font-size: 1.25rem !important; }
+.avatar img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; display: block; }
 .profile-identity-copy h2 { font-size: 1.2rem !important; }
 
 @media (min-width: 901px) {
