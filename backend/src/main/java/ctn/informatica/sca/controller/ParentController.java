@@ -49,7 +49,7 @@ public class ParentController {
                     for (ParentTaskGrade task : padreDao.findTaskGradesForAlumnoPlanilla(selected, item.getPlanillaId())) {
                         tasks.add(new TaskDto(task.getTareaId(), task.getTareaTitulo(), task.getFecha(), task.getPuntos(), task.getTotal(), task.getEstado()));
                     }
-                    subjects.add(new SubjectDto(item.getPlanillaId(), item.getMateriaId(), item.getMateriaNombre(), item.getPuntos(), item.getTotalPosible(), item.getPorcentaje(), item.getNota(), tasks));
+                    subjects.add(new SubjectDto(item.getPlanillaId(), item.getMateriaId(), item.getMateriaNombre(), item.getEtapa(), item.getPuntos(), item.getTotalPosible(), item.getPorcentaje(), item.getNota(), tasks));
                 }
             }
             return new ParentResponse(childDtos, selected > 0 ? selected : null, subjects);
@@ -66,6 +66,6 @@ public class ParentController {
 
     public record ParentResponse(List<ChildDto> hijos, Integer selectedAlumnoId, List<SubjectDto> materias) {}
     public record ChildDto(int id, String nombre, String apellido, String especialidad, int promedio) {}
-    public record SubjectDto(int planillaId, int materiaId, String materia, int puntos, int total, int porcentaje, int nota, List<TaskDto> tareas) {}
+    public record SubjectDto(int planillaId, int materiaId, String materia, String etapa, int puntos, int total, int porcentaje, int nota, List<TaskDto> tareas) {}
     public record TaskDto(int id, String titulo, LocalDate fecha, Integer puntos, int total, String estado) {}
 }

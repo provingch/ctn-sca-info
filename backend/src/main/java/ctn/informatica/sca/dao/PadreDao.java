@@ -112,7 +112,7 @@ public class PadreDao extends conexion {
 
     public List<ParentSummaryItem> findParentSummary(int padreId) throws SQLException {
         String sql = "SELECT a.id AS alumno_id, a.nombre AS alumno_nombre, a.apellido AS alumno_apellido, "
-                + "c.id AS curso_id, e.nombre AS especialidad_nombre, m.id AS materia_id, m.nombre AS materia_nombre, p.id AS planilla_id, "
+                + "c.id AS curso_id, e.nombre AS especialidad_nombre, m.id AS materia_id, m.nombre AS materia_nombre, p.id AS planilla_id, p.etapa, p.categoria, "
                 + "COALESCE(SUM(CASE WHEN puntaje.puntos IS NULL THEN 0 ELSE puntaje.puntos END), 0) AS puntos, "
                 + "COALESCE((SELECT SUM(t2.total) FROM tarea t2 WHERE t2.planilla_id = p.id), 0) AS total_posible, "
                 + "COUNT(DISTINCT t.id) AS tareas_count "
@@ -126,8 +126,8 @@ public class PadreDao extends conexion {
                 + "LEFT JOIN tarea t ON t.planilla_id = p.id "
                 + "LEFT JOIN puntaje ON puntaje.tarea_id = t.id AND puntaje.registro_id = r.id "
                 + "WHERE ap.padre_id = ? "
-                + "GROUP BY a.id, a.nombre, a.apellido, c.id, e.nombre, m.id, m.nombre, p.id "
-                + "ORDER BY e.nombre, a.apellido, a.nombre, m.nombre";
+                + "GROUP BY a.id, a.nombre, a.apellido, c.id, e.nombre, m.id, m.nombre, p.id, p.etapa, p.categoria "
+                + "ORDER BY e.nombre, a.apellido, a.nombre, p.etapa, m.nombre";
 
         Map<String, ParentSummaryItem> map = new LinkedHashMap<>();
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -145,6 +145,8 @@ public class PadreDao extends conexion {
                         item.setMateriaNombre(rs.getString("materia_nombre"));
                         item.setPlanillaId(rs.getInt("planilla_id"));
                         item.setEspecialidadNombre(rs.getString("especialidad_nombre"));
+                        item.setEtapa(rs.getString("etapa"));
+                        item.setCategoria(rs.getString("categoria"));
                         map.put(key, item);
                     }
                     item.setPuntos(rs.getInt("puntos"));
