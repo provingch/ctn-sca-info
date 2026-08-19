@@ -441,6 +441,24 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .avatar img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; display: block; }
 .profile-identity-copy h2 { font-size: 1.2rem !important; }
 
+/* Photo preview styles for profile page */
+.photo-section { display: block; }
+.photo-preview-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.photo-preview-circle {
+  width: 96px; height: 96px; flex: 0 0 96px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid; place-items: center;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: 1.6rem; font-weight: 900;
+  border: 1px solid var(--line);
+}
+.photo-preview-circle img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo-preview-circle .initials { display: block; }
+.photo-actions { display: flex; flex-direction: column; gap: 8px; }
+.photo-actions .button { width: auto; }
+
 @media (min-width: 901px) {
   .profile-page {
     display: flex;
