@@ -262,7 +262,25 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
       const img = new Image();
       img.onload = () => {
         context.clearRect(0, 0, width, height);
-        context.drawImage(img, 0, 0, width, height);
+        // Draw image preserving aspect ratio and center it to avoid stretching
+        const imgRatio = (img.width && img.height) ? (img.width / img.height) : 1;
+        const canvasRatio = width / height;
+        let dw = width;
+        let dh = height;
+        if (imgRatio > canvasRatio) {
+          // image is wider than canvas: fit by width
+          dw = width;
+          dh = Math.round(width / imgRatio);
+        } else {
+          // image is taller than canvas: fit by height
+          dh = height;
+          dw = Math.round(height * imgRatio);
+        }
+        const dx = Math.round((width - dw) / 2);
+        const dy = Math.round((height - dh) / 2);
+        context.fillStyle = '#ffffff';
+        context.fillRect(0, 0, width, height);
+        context.drawImage(img, 0, 0, img.width, img.height, dx, dy, dw, dh);
       };
       img.src = form.firmaImagen;
     }
