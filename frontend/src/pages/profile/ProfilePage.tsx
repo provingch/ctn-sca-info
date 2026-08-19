@@ -136,12 +136,12 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
   function handlePhotoUpload(file: File | null) {
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      setSignatureError('Solo se permiten imágenes para la foto de perfil.');
+      setPhotoError('Solo se permiten imágenes para la foto de perfil.');
       return;
     }
     const nameLower = (file.name || '').toLowerCase();
     if (file.type === 'image/heic' || file.type === 'image/heif' || nameLower.endsWith('.heic') || nameLower.endsWith('.heif')) {
-      setSignatureError('Ese formato (HEIC/HEIF) no es compatible. Exportá la foto como JPG o PNG.');
+      setPhotoError('Ese formato (HEIC/HEIF) no es compatible. Exportá la foto como JPG o PNG.');
       return;
     }
     void (async () => {
@@ -180,10 +180,10 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
           const payload = dataUrl.substring(dataUrl.indexOf(',') + 1);
           const approxBytes = Math.round((payload.length * 3) / 4);
           if (approxBytes > PHOTO_PERSISTENCE_MAX_BYTES) {
-            setSignatureError('La foto es demasiado grande tras la compresión. Probá con una imagen más pequeña.');
+            setPhotoError('La foto es demasiado grande tras la compresión. Probá con una imagen más pequeña.');
             return resolve(null);
           }
-          setSignatureError('');
+          setPhotoError('');
           resolve(dataUrl);
         } catch (ex) {
           URL.revokeObjectURL(url);
