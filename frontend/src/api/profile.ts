@@ -17,7 +17,7 @@ export interface ProfileOwnerDto {
 }
 
 export interface ProfileMateriaDto { id: number; nombre: string; categoria: string | null; }
-export interface ProfileAssignmentDto { id: number; materiaNombre: string; cursoDescripcion: string; }
+export interface ProfileAssignmentDto { id: number; materiaNombre: string; cursoDescripcion: string; especialidad?: string | null; cursoNivel?: number | null; cursoSeccion?: string | null; }
 export interface ProfileClassroomCourseDto { id: string; name: string; section: string | null; room: string | null; }
 
 export interface ProfileResponse {

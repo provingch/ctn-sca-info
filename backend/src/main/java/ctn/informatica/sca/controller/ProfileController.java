@@ -557,7 +557,14 @@ public class ProfileController {
     }
 
     private AsignacionDto toAsignacionDto(Asignacion asignacion) {
-        return new AsignacionDto(asignacion.getId(), asignacion.getMateriaNombre(), asignacion.getCursoDescripcion());
+        return new AsignacionDto(
+                asignacion.getId(),
+                asignacion.getMateriaNombre(),
+                asignacion.getCursoDescripcion(),
+                asignacion.getEspecialidad(),
+                asignacion.getCursoNivel(),
+                asignacion.getCursoSeccion()
+        );
     }
 
     private ProfileMateriaDto toProfileMateriaDto(Materia materia) {
