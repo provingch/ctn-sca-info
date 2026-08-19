@@ -173,32 +173,28 @@
           <div class="empty-state empty-state-card" style="text-align:left; margin-bottom:8px;">
             Marca ausentes en la lista. Los no marcados se guardan como presentes.
           </div>
-          <div class="table-responsive" style="margin-bottom:8px;">
-            <table class="table table-striped" id="tablaAsistencia">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Apellido(s) y nombre(s)</th>
-                  <th style="text-align:right; width:140px;">Estado (P/A)</th>
-                </tr>
-              </thead>
-              <tbody>
-                <c:forEach var="alumno" items="${rasgoAlumnosValidos}" varStatus="loop">
-                  <tr>
-                    <td>${loop.index + 1}</td>
-                    <td>
-                      <c:out value="${alumno.apellido}" />, <c:out value="${alumno.nombre}" />
-                    </td>
-                    <td style="text-align:right;">
-                      <label style="margin:0;display:flex;align-items:center;gap:6px;font-weight:500;justify-content:flex-end;">
-                        <input type="checkbox" name="alumnosAusentes" value="${alumno.id}" class="ausente-checkbox" />
-                        Ausente
-                      </label>
-                    </td>
-                  </tr>
-                </c:forEach>
-              </tbody>
-            </table>
+          <div class="class-attendance-panel" id="tablaAsistencia" role="table" aria-label="Planilla de asistencia">
+            <div class="class-attendance-title" role="row">
+              <span>Planilla de asistencia</span>
+              <small>Marcá únicamente a los alumnos ausentes</small>
+            </div>
+            <div class="class-attendance-row class-attendance-row--header" role="row">
+              <span role="columnheader">#</span>
+              <span role="columnheader">Alumno</span>
+              <span role="columnheader">Estado</span>
+            </div>
+            <c:forEach var="alumno" items="${rasgoAlumnosValidos}" varStatus="loop">
+              <div class="class-attendance-row" role="row">
+                <span class="class-attendance-index" role="cell">${loop.index + 1}</span>
+                <span class="class-attendance-student" role="cell">
+                  <c:out value="${alumno.apellido}" />, <c:out value="${alumno.nombre}" />
+                </span>
+                <label class="class-attendance-status" role="cell">
+                  <input type="checkbox" name="alumnosAusentes" value="${alumno.id}" class="ausente-checkbox" />
+                  <span>Ausente</span>
+                </label>
+              </div>
+            </c:forEach>
           </div>
         </div>
 
