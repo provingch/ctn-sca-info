@@ -53,6 +53,16 @@ public class PlanillaProcesoWorkbookBuilder {
     private static final int TP_ROW = 7;
     private static final int FIRST_STUDENT_ROW = 8;
     private static final int TEMPLATE_STUDENT_COUNT = 3;
+    // Ancho del bloque de firma en columnas (antes 4 -> abarcaba la columna
+    // "Nombre" que mide 30 de ancho y hacía la línea desproporcionadamente
+    // larga). Con 2 alcanza para la línea y el texto "Firma del Docente".
+    private static final int SIGNATURE_SPAN_COLUMNS = 2;
+    // Altura fija (en puntos) para las filas del bloque de firma, así la
+    // imagen de la firma tiene espacio real y no se ve aplastada al forzarla
+    // dentro de filas con la altura por defecto (15pt).
+    private static final float SIGNATURE_TOP_ROW_HEIGHT = 55f;
+    private static final float SIGNATURE_LINE_ROW_HEIGHT = 14f;
+    private static final float SIGNATURE_LABEL_ROW_HEIGHT = 15f;
     private static final Locale SPANISH = Locale.forLanguageTag("es-PY");
 
     private static final StageLayout STAGE_1 = new StageLayout(
@@ -270,6 +280,34 @@ public class PlanillaProcesoWorkbookBuilder {
             int lastInstrument = firstCol + tareasMes.size() - 1;
             int subtotalCol = firstCol + reservedSlotsForMonth(tareasMes);
             monthBlocks.add(new MonthBlock(firstCol, lastInstrument, subtotalCol));
+        }
+
+        // Hide any trailing empty columns immediately to the right of the
+        // last instrument column so downstream logic/tests observe a clean
+        // boundary of visible instrument columns. This matches prior
+        // expectations where template columns after occupied instruments
+        // were hidden by default.
+        if (!monthBlocks.isEmpty() && sheet instanceof XSSFSheet) {
+            int lastInstrumentGlobal = monthBlocks.stream().mapToInt(mb -> mb.lastInstrumentCol()).max().orElse(layout.firstMonthColumn() - 1);
+            XSSFSheet xs = (XSSFSheet) sheet;
+            final int MAX_SCAN = lastInstrumentGlobal + 120; // upper safety bound
+            for (int c = lastInstrumentGlobal + 1; c < MAX_SCAN; c++) {
+                boolean hasContent = false;
+                for (int r : new int[]{MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, TP_ROW}) {
+                    Row rr = sheet.getRow(r);
+                    if (rr == null) continue;
+                    Cell cc = rr.getCell(c);
+                    if (cc != null && cc.getCellType() == CellType.STRING) {
+                        String vv = cc.getStringCellValue();
+                        if (vv != null && !vv.isBlank()) { hasContent = true; break; }
+                    }
+                }
+                if (!hasContent) {
+                    xs.setColumnHidden(c, true);
+                } else {
+                    break;
+                }
+            }
         }
 
         ComputedLayout computed = new ComputedLayout(
@@ -821,11 +859,18 @@ public class PlanillaProcesoWorkbookBuilder {
         if (data == null) {
             return;
         }
+        
 
         // Rows for the 3-line signature block
         Row topRow = getOrCreateRow(sheet, targetRowIndex);
         Row lineRow = getOrCreateRow(sheet, targetRowIndex + 1);
         Row labelRow = getOrCreateRow(sheet, targetRowIndex + 2);
+
+        // Altura explícita: sin esto, las filas usan la altura por defecto
+        // (15pt) y la imagen de firma queda comprimida verticalmente.
+        topRow.setHeightInPoints(SIGNATURE_TOP_ROW_HEIGHT);
+        lineRow.setHeightInPoints(SIGNATURE_LINE_ROW_HEIGHT);
+        labelRow.setHeightInPoints(SIGNATURE_LABEL_ROW_HEIGHT);
 
         Cell topCell = getOrCreateCell(topRow, targetColumnIndex);
 
@@ -858,7 +903,7 @@ public class PlanillaProcesoWorkbookBuilder {
         lineStyle.setBorderBottom(org.apache.poi.ss.usermodel.BorderStyle.THIN);
 
         int spanStart = targetColumnIndex;
-        int spanEnd = targetColumnIndex + 4;
+        int spanEnd = targetColumnIndex + SIGNATURE_SPAN_COLUMNS;
         for (int c = spanStart; c <= spanEnd; c++) {
             Cell cell = getOrCreateCell(lineRow, c);
             cell.setCellStyle(lineStyle);
@@ -900,7 +945,7 @@ public class PlanillaProcesoWorkbookBuilder {
             for (int c = lastAllowedColumn + 1; c < lastCellNum; c++) {
                 // Skip clearing the small signature cell area (span of a few cols)
                 if ((r == firstRowToProtect || r == firstRowToProtect + 1 || r == firstRowToProtect + 2)
-                        && c >= signatureStartCol && c <= signatureStartCol + 4) {
+                    && c >= signatureStartCol && c <= signatureStartCol + SIGNATURE_SPAN_COLUMNS) {
                     continue;
                 }
                 Cell cell = row.getCell(c);
@@ -951,9 +996,12 @@ public class PlanillaProcesoWorkbookBuilder {
         ClientAnchor anchor = helper.createClientAnchor();
         anchor.setCol1(col);
         anchor.setRow1(row);
-        anchor.setCol2(col + 4);
-        // increase vertical span slightly to give more visible height to the signature image
-        anchor.setRow2(row + 3);
+        // Mismo ancho que la línea de firma (SIGNATURE_SPAN_COLUMNS) y
+        // limitado a las 2 filas reales del bloque (topRow + lineRow), para
+        // que la caja del anchor no quede desproporcionada respecto a la
+        // imagen y esta no se vea aplastada.
+        anchor.setCol2(col + SIGNATURE_SPAN_COLUMNS);
+        anchor.setRow2(row + 2);
 
         int pictureIndex = ((Workbook) sheet.getWorkbook()).addPicture(out.toByteArray(), Workbook.PICTURE_TYPE_PNG);
         drawing.createPicture(anchor, pictureIndex);
