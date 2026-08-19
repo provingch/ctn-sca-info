@@ -70,6 +70,57 @@
     padding: 5px 10px;
     margin-right: 8px;
   }
+  /* La planilla de asistencia usa la misma jerarquía visual que Gestionar planilla. */
+  .class-attendance-panel {
+    overflow: hidden;
+    margin-bottom: 8px;
+    border: 1px solid var(--line, var(--color-border));
+    border-radius: var(--radius, 12px);
+    background: var(--paper, var(--color-surface));
+    box-shadow: var(--shadow-sm, 0 8px 24px color-mix(in srgb, var(--accent) 10%, transparent));
+  }
+  .class-attendance-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 58px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line, var(--color-border));
+    background: color-mix(in srgb, var(--color-surface-alt, var(--color-surface)) 86%, var(--accent) 14%);
+    color: var(--accent-deep, var(--accent));
+    font-size: 1rem;
+    font-weight: 800;
+  }
+  .class-attendance-title small {
+    color: var(--color-text-muted);
+    font-size: .78rem;
+    font-weight: 600;
+  }
+  .class-attendance-row {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr) 142px;
+    align-items: center;
+    min-height: 54px;
+    border-bottom: 1px solid var(--line, var(--color-border));
+    transition: background-color .15s ease;
+  }
+  .class-attendance-row:last-child { border-bottom: 0; }
+  .class-attendance-row > * { min-width: 0; padding: 10px 14px; }
+  .class-attendance-row:not(.class-attendance-row--header):hover { background: var(--accent-soft, color-mix(in srgb, var(--accent) 10%, var(--color-surface))); }
+  .class-attendance-row--header {
+    min-height: 42px;
+    background: var(--accent-soft, color-mix(in srgb, var(--accent) 12%, var(--color-surface)));
+    color: var(--accent-deep, var(--accent));
+    font-size: .72rem;
+    font-weight: 850;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+  .class-attendance-index { color: var(--color-text-muted); font-family: var(--font-mono, monospace); font-size: .8rem; font-weight: 800; text-align: center; }
+  .class-attendance-student { overflow: hidden; color: var(--color-text); font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+  .class-attendance-status { display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; margin: 0; color: var(--color-text-muted); font-size: .85rem; font-weight: 700; cursor: pointer; }
+  .class-attendance-status input { width: 17px; height: 17px; margin: 0; accent-color: var(--accent); }
 
   #reportBox {
     border-color: color-mix(in srgb, var(--accent) 34%, var(--color-border));
@@ -98,5 +149,9 @@
     .inicio-hero-title {
       font-size: 1.32rem;
     }
+    .class-attendance-title { align-items: flex-start; flex-direction: column; gap: 3px; }
+    .class-attendance-row { grid-template-columns: 38px minmax(130px, 1fr) 96px; }
+    .class-attendance-row > * { padding: 10px 8px; }
+    .class-attendance-status { font-size: .78rem; }
   }
 </style>
