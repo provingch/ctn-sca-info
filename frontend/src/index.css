@@ -190,6 +190,14 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .two-column > .security-2fa-panel { align-self: start; display: flex; flex-direction: column; align-items: stretch; gap: 18px; }
 .security-2fa-panel > .panel-heading { margin-bottom: 2px; }
 .security-2fa-status .connection-state { min-height: 42px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; }
+.pwa-settings-grid { align-items: start; }
+.pwa-setting-card { display: grid; gap: 16px; margin: 0; }
+.pwa-setting-card > .panel-heading { margin-bottom: 0; }
+.pwa-setting-card .connection-state { min-height: 72px; border: 1px solid var(--line); }
+.pwa-actions { display: flex; flex-wrap: wrap; gap: 9px; }
+.pwa-actions .button { min-height: 42px; box-shadow: none; }
+.pwa-actions .button:disabled { cursor: not-allowed; opacity: .48; filter: saturate(.55); }
+.pwa-feedback { margin: 0; padding: 10px 12px; border-left: 3px solid var(--accent); border-radius: 6px; background: var(--bg-soft); color: var(--ink); font-size: .82rem; }
 .security-2fa-panel .security-2fa-action { align-self: flex-start; width: fit-content; min-width: 148px; min-height: 40px; height: auto; padding: 9px 16px; flex: 0 0 auto; }
 .signature-box, .signature-preview { overflow: hidden; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: #fff; }
 .signature-box { height: 150px; }
@@ -405,6 +413,8 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
   .profile-form-actions { grid-column: 1; }
   .signature-actions { display: grid; grid-template-columns: 1fr 1fr; }
   .signature-actions .button { width: 100%; }
+  .pwa-actions { display: grid; grid-template-columns: 1fr; }
+  .pwa-actions .button { width: 100%; }
   .summary-grid { gap: 10px; }
   .metric { padding: 16px; }
   .metric strong { font-size: 1.15rem; }

@@ -41,6 +41,7 @@ export interface ProfileResponse {
   totpEnabled: boolean;
   pendingTotpSecret: string | null;
   totpProvisioningUri: string | null;
+  pushPublicKey: string;
   pushEnabled: boolean;
 }
 
