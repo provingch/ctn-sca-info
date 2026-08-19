@@ -371,6 +371,46 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
   .app-footer .app-footer-inner { text-align: center; }
 }
 
+/* Profile page tweaks: reduce banner height and make left sidebar + banner fixed on desktop */
+.profile-identity { padding: 18px !important; }
+.avatar { width: 60px !important; height: 60px !important; flex: 0 0 60px !important; border-radius: 18px !important; font-size: 1.25rem !important; }
+.profile-identity-copy h2 { font-size: 1.2rem !important; }
+
+@media (min-width: 901px) {
+  .profile-page {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - var(--app-header-h) - var(--app-footer-h));
+    overflow: hidden;
+  }
+  .profile-identity {
+    flex: 0 0 auto;
+    margin-bottom: 22px;
+  }
+  .profile-workspace {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 22px;
+    align-items: start;
+    height: 100%;
+  }
+  .profile-menu {
+    align-self: start;
+    max-height: 100%;
+    overflow-y: auto;
+  }
+  .profile-content {
+    height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+    padding-right: 4px;
+  }
+}
+
 /* Escala de notas (Planilla) — mismos colores que Planilla.jsp legacy */
 .grade-ranges-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
 .grade-chip { display: inline-block; padding: 6px 8px; border-radius: 6px; color: #fff; font-weight: 800; font-size: .85rem; }

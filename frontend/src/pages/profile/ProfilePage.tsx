@@ -41,15 +41,15 @@ export default function ProfilePage() {
 
   const owner = data.profileOwner;
   const initials = `${owner.nombre?.[0] || owner.usuario?.[0] || 'S'}${owner.apellido?.[0] || ''}`.toUpperCase();
-  const completion = Math.round((Number(Boolean(owner.correo)) + Number(Boolean(owner.telefono)) + Number(Boolean(owner.usuario))) / 3 * 100);
+  // `completion` removed — progress UI was eliminated from the profile header
   const finish = async (text: string) => { setStatus(text); await Promise.all([load(), refreshUserIdentity()]); };
 
   return <AppShell subtitle={`Cuenta de ${owner.usuario || 'usuario'} · ${data.profileRoleLabel}`}>
     <div className="profile-page" ref={profilePageRef}>
     <section className="profile-identity" ref={identityRef}>
       <div className="avatar" aria-hidden="true">{initials}</div>
-      <div className="profile-identity-copy"><span className="badge">{data.profileRoleLabel}</span><h2>{owner.fullName?.trim() || owner.usuario || 'Usuario SCA'}</h2><strong>@{owner.usuario || 'sin-usuario'}</strong><p>{data.profileAccessDescription}</p></div>
-      <div className="profile-completion"><span>Perfil completado</span><strong>{completion}%</strong><div><i style={{ width: `${completion}%` }} /></div></div>
+      <div className="profile-identity-copy"><span className="badge">{data.profileRoleLabel}</span><h2>{owner.fullName?.trim() || owner.usuario || 'Usuario SCA'}</h2><strong>@{owner.usuario || 'sin-usuario'}</strong></div>
+        {/* Perfil completion and access description removed from header */}
     </section>
     <div className="profile-workspace">
       <aside className="profile-menu" aria-label="Secciones del perfil">
