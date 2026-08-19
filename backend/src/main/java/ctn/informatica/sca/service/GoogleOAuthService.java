@@ -44,6 +44,9 @@ public class GoogleOAuthService {
             String scopes = String.join(" ", new String[]{
                 "https://www.googleapis.com/auth/classroom.courses.readonly",
                 "https://www.googleapis.com/auth/classroom.rosters.readonly",
+                // coursework scopes required to list/import tareas
+                "https://www.googleapis.com/auth/classroom.coursework.me",
+                "https://www.googleapis.com/auth/classroom.coursework.students.readonly",
                 "openid",
                 "email",
                 "profile"

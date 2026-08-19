@@ -36,6 +36,18 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.io.InputStreamReader;
+import java.io.InputStream;
+import java.io.Reader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 public final class GoogleClassroomService {
 
@@ -84,6 +96,8 @@ public final class GoogleClassroomService {
      */
     private static HttpRequestInitializer buildCredential(Profesor profesor) throws IOException {
         ensureFreshAccessToken(profesor);
+        // Verificamos que el token incluya los scopes necesarios.
+        ensureTokenHasRequiredScopes(profesor);
 
         long nowSeconds = System.currentTimeMillis() / 1000;
         if (profesor.getGcTokenExpiry() > 0 && profesor.getGcTokenExpiry() <= nowSeconds) {
@@ -156,6 +170,51 @@ public final class GoogleClassroomService {
                 profesor.getGoogleEmail());
 
         System.out.println("[DEBUG] Access token de Classroom renovado para profesor id=" + profesor.getId());
+    }
+
+    /**
+     * Verifica que el access_token actual incluya los scopes necesarios para
+     * operar con coursework. Si faltan, lanza IOException con el mensaje
+     * "MISSING_REQUIRED_SCOPES".
+     */
+    private static void ensureTokenHasRequiredScopes(Profesor profesor) throws IOException {
+        if (profesor == null) return;
+        String accessToken = profesor.getGcAccessToken();
+        if (accessToken == null || accessToken.isBlank()) return;
+
+        String tokenInfoUrl = "https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=" + URLEncoder.encode(accessToken, StandardCharsets.UTF_8);
+        HttpURLConnection conn = null;
+        try {
+            URL url = new URL(tokenInfoUrl);
+            conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(3000);
+            conn.setReadTimeout(3000);
+            int code = conn.getResponseCode();
+            if (code != 200) {
+                // si el token no es válido, dejemos que el flujo normal trate la expiración/refresh
+                return;
+            }
+            try (InputStream in = conn.getInputStream(); Reader r = new InputStreamReader(in, StandardCharsets.UTF_8)) {
+                JsonObject obj = JsonParser.parseReader(r).getAsJsonObject();
+                String scopeStr = obj.has("scope") ? obj.get("scope").getAsString() : "";
+                Set<String> scopes = new HashSet<>(Arrays.asList(scopeStr.split(" ")));
+                List<String> required = Arrays.asList(
+                        "https://www.googleapis.com/auth/classroom.coursework.me",
+                        "https://www.googleapis.com/auth/classroom.coursework.students.readonly"
+                );
+                for (String req : required) {
+                    if (!scopes.contains(req)) {
+                        throw new IOException("MISSING_REQUIRED_SCOPES");
+                    }
+                }
+            }
+        } catch (IOException ex) {
+            // Propagar solo la señal de scopes faltantes; otros IO fallos no bloquean el uso normal
+            if (ex.getMessage() != null && ex.getMessage().contains("MISSING_REQUIRED_SCOPES")) throw ex;
+        } finally {
+            if (conn != null) conn.disconnect();
+        }
     }
 
     public static List<Course> listTeacherCourses(Profesor profesor) throws IOException {
