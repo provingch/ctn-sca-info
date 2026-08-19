@@ -70,6 +70,7 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
   const owner = data.profileOwner;
   const [form, setForm] = useState({ correo: owner.correo || '', telefono: owner.telefono || '', celular: owner.celular || '', usuario: owner.usuario || '', nombre: owner.nombre || '', apellido: owner.apellido || '', ci: owner.ci, nivel: null, firmaImagen: owner.firmaImagen ?? null, fotoPerfil: owner.fotoPerfil ?? null });
   const [signatureError, setSignatureError] = useState('');
+  const [photoError, setPhotoError] = useState('');
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const isDrawingRef = useRef(false);
   const signatureBeforeModalRef = useRef<string | null>(null);
@@ -125,10 +126,10 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
     const payload = dataUrl.substring(dataUrl.indexOf(',') + 1);
     const decodedBytes = typeof window !== 'undefined' ? atob(payload).length : 0;
     if (decodedBytes > PHOTO_PERSISTENCE_MAX_BYTES) {
-      setSignatureError('La foto es demasiado grande. Probá con una imagen más pequeña.');
+      setPhotoError('La foto es demasiado grande. Probá con una imagen más pequeña.');
       return null;
     }
-    setSignatureError('');
+    setPhotoError('');
     return dataUrl;
   }
 
@@ -151,7 +152,7 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
         if (normalized) setForm({ ...form, fotoPerfil: normalized });
       } catch (err) {
         console.error('Error al procesar foto de perfil:', err);
-        setSignatureError('No se pudo procesar la foto. Intentá con otra imagen.');
+        setPhotoError('No se pudo procesar la foto. Intentá con otra imagen.');
       }
     })();
   }
@@ -381,6 +382,8 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
               <button className="button secondary" type="button" onClick={() => setForm({ ...form, fotoPerfil: null })}>Quitar foto</button>
             </div>
           </div>
+          {!form.fotoPerfil && <p className="muted-copy">No tienes foto de perfil.</p>}
+          {photoError && <p className="muted-copy error-copy">{photoError}</p>}
         </div>
       </section>
       <section className="panel form-grid">
