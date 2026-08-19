@@ -201,15 +201,15 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .pwa-feedback { margin: 0; padding: 10px 12px; border-left: 3px solid var(--accent); border-radius: 6px; background: var(--bg-soft); color: var(--ink); font-size: .82rem; }
 .security-2fa-panel .security-2fa-action { align-self: flex-start; width: fit-content; min-width: 148px; min-height: 40px; height: auto; padding: 9px 16px; flex: 0 0 auto; }
 .signature-box, .signature-preview { overflow: hidden; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: #fff; }
-.signature-box { height: 150px; aspect-ratio: 3 / 1; }
-.signature-box canvas { width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: none; }
+.signature-box { width: 100%; max-width: 100%; min-width: 0; height: 150px; aspect-ratio: 3 / 1; box-sizing: border-box; }
+.signature-box canvas { width: 100%; max-width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: none; }
 .signature-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .signature-actions .button { width: auto; }
 .upload-button { position: relative; overflow: hidden; cursor: pointer; }
 .upload-button input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .signature-mobile-entry { display: grid; gap: 12px; }
-.signature-preview { height: 118px; display: grid; place-items: center; }
-.signature-preview img { width: 100%; height: 100%; display: block; object-fit: contain; }
+.signature-preview { width: 100%; max-width: 100%; min-width: 0; height: 118px; box-sizing: border-box; display: grid; place-items: center; }
+.signature-preview img { width: 100%; max-width: 100%; height: 100%; display: block; object-fit: contain; }
 .signature-preview span { color: var(--muted); font-size: .82rem; font-weight: 750; }
 .signature-open-button { width: 100%; }
 .signature-modal { position: fixed; inset: 0; z-index: 1000; display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; gap: 14px; padding: max(18px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); background: var(--bg); color: var(--ink); overscroll-behavior: none; }
