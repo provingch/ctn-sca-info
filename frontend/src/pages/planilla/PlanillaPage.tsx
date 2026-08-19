@@ -121,7 +121,14 @@ export default function PlanillaPage() {
         if (activePlanillaIdRef.current === planillaId) setStatus('');
       }, 4000);
     } catch (e) {
-      if (activePlanillaIdRef.current === planillaId) setStatus(e instanceof ApiError ? e.message : 'No se pudo sincronizar Classroom.');
+      if (activePlanillaIdRef.current === planillaId) {
+        if (e instanceof ApiError && e.status === 428) {
+          // redirigir a pantalla de autorización si faltan scopes
+          navigate('/google/authorize');
+          return;
+        }
+        setStatus(e instanceof ApiError ? e.message : 'No se pudo sincronizar Classroom.');
+      }
     } finally {
       if (activePlanillaIdRef.current === planillaId) setSyncingClassroom(false);
     }

@@ -7,6 +7,7 @@ import LoginPage from '../pages/auth/LoginPage';
 import HomePage from '../pages/home/HomePage';
 import ProfilePage from '../pages/profile/ProfilePage';
 import GoogleCallbackPage from '../pages/google/GoogleCallbackPage';
+import AuthorizeClassroomPage from '../pages/google/AuthorizeClassroomPage';
 import PlanillaPage from '../pages/planilla/PlanillaPage';
 import TareaPage from '../pages/planilla/TareaPage';
 import EvaluacionPage from '../pages/evaluacion/EvaluacionPage';
@@ -29,6 +30,7 @@ export default function AppRoutes() {
     <Route path="/profile" element={protect(<ProfilePage />, [1, 2, 3, 4])} />
     <Route path="/perfil" element={protect(<ProfilePage />, [1, 2, 3, 4])} />
     <Route path="/google/callback" element={protect(<GoogleCallbackPage />, [1, 2, 3, 4])} />
+    <Route path="/google/authorize" element={protect(<AuthorizeClassroomPage />, [1, 2, 3, 4])} />
     <Route path="/planilla/:planillaId" element={protect(<PlanillaPage />, [1])} />
     <Route path="/planilla/:planillaId/tarea" element={protect(<TareaPage />, [1])} />
     <Route path="/planilla/:planillaId/tarea/:tareaId" element={protect(<TareaPage />, [1])} />
