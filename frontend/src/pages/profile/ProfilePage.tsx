@@ -80,7 +80,15 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const haveSignature = Boolean(form.firmaImagen);
 
-  async function submit(event: FormEvent) { event.preventDefault(); try { await saveProfile(form); await done('Datos del perfil guardados.'); } catch (error) { setStatus(message(error, 'No se pudo guardar el perfil.')); } }
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    try {
+      await saveProfile({ ...form, firmaImagen: form.firmaImagen ?? '' });
+      await done('Datos del perfil guardados.');
+    } catch (error) {
+      setStatus(message(error, 'No se pudo guardar el perfil.'));
+    }
+  }
 
   function normalizeSignatureDataUrl(dataUrl: string): string | null {
     if (!dataUrl || !dataUrl.startsWith('data:image/')) return null;
