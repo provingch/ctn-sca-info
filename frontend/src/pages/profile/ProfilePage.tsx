@@ -112,12 +112,61 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
       setSignatureError('Solo se permiten imágenes para la firma.');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = normalizeSignatureDataUrl(String(reader.result || ''));
-      if (result) setForm({ ...form, firmaImagen: result });
-    };
-    reader.readAsDataURL(file);
+    // Compress and normalize image before storing to avoid large uploads.
+    void (async () => {
+      try {
+        const compressed = await compressImageFile(file, 1000, 0.85);
+        if (!compressed) return;
+        const normalized = normalizeSignatureDataUrl(compressed);
+        if (normalized) setForm({ ...form, firmaImagen: normalized });
+      } catch (err) {
+        setSignatureError('No se pudo procesar la imagen. Intentá con otra imagen.');
+      }
+    })();
+  }
+
+  async function compressImageFile(file: File, maxWidth = 1000, quality = 0.85): Promise<string | null> {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const ratio = img.width / img.height || 1;
+          const targetWidth = Math.min(img.width, maxWidth);
+          const targetHeight = Math.round(targetWidth / ratio);
+          const canvas = document.createElement('canvas');
+          canvas.width = targetWidth;
+          canvas.height = targetHeight;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            URL.revokeObjectURL(url);
+            return resolve(null);
+          }
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL('image/jpeg', quality);
+          URL.revokeObjectURL(url);
+          // Quick size check (base64 payload length -> approx bytes)
+          const payload = dataUrl.substring(dataUrl.indexOf(',') + 1);
+          const approxBytes = Math.round((payload.length * 3) / 4);
+          if (approxBytes > SIGNATURE_PERSISTENCE_MAX_BYTES) {
+            setSignatureError('La firma es demasiado grande tras la compresión. Probá con una imagen más pequeña.');
+            return resolve(null);
+          }
+          setSignatureError('');
+          resolve(dataUrl);
+        } catch (ex) {
+          URL.revokeObjectURL(url);
+          reject(ex);
+        }
+      };
+      img.onerror = (e) => {
+        URL.revokeObjectURL(url);
+        reject(new Error('Error al cargar la imagen'));
+      };
+      img.src = url;
+    });
   }
 
   const prepareCanvas = useCallback(() => {

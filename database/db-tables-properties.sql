@@ -54,7 +54,7 @@ CREATE TABLE profesor (
     google_token_expiry BIGINT NULL,
     materias_manual TEXT NULL,
     totp_secret VARCHAR(255) NULL,
-    firma_imagen TEXT NULL,
+    firma_imagen LONGTEXT NULL,
     especialidad_id INT NULL,
     nivel TINYINT NOT NULL,
     PRIMARY KEY (id),
