@@ -306,11 +306,22 @@ function AdminList({ section, data, reload, status }: { section: string; data: A
           <div key={user.id}>
             <strong>{user.apellido}, {user.nombre}</strong>
             <span>{user.usuario} · nivel {user.nivel}</span>
-            <button className="button danger" onClick={async () => {
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="button secondary" onClick={async () => {
+                try {
+                  await clearUserGoogleTokens(user.id);
+                  status('Tokens de Google limpiados para el usuario.');
+                  await reload();
+                } catch (err) {
+                  status(err instanceof ApiError ? err.message : 'No se pudo limpiar tokens de Google.');
+                }
+              }}>Limpiar tokens Google</button>
+              <button className="button danger" onClick={async () => {
               if (!window.confirm('¿Eliminar este usuario?')) return;
               try { await deleteAdminRecord('usuarios', user.id); status('Usuario eliminado.'); await reload(); }
               catch (error) { status(error instanceof ApiError ? error.message : 'No se pudo eliminar.'); }
-            }}>Eliminar</button>
+              }}>Eliminar</button>
+            </div>
           </div>
         ))}
       </div>
