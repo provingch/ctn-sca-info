@@ -45,6 +45,7 @@ public class PlanillaProcesoWorkbookBuilder {
     private static final String TEMPLATE_RESOURCE = "templates/PLANTILLA_PLANILLA_PROCESO_CTN.xlsx";
     private static final String LEGEND_SHEET = "LEYENDA_PARA_DESARROLLO";
     private static final int MONTH_BLOCK_COUNT = 5;
+    private static final int FIXED_TASK_COLUMNS_PER_MONTH = 5;
     private static final int INSTRUMENTS_PER_MONTH = 12;
     private static final int MONTH_BLOCK_WIDTH = 13;
     private static final int MONTH_HEADER_ROW = 5;
@@ -163,6 +164,17 @@ public class PlanillaProcesoWorkbookBuilder {
         }
 
         Map<Integer, Integer> taskColumnById = allocateTaskColumns(tareasPorMes, layout, data.planilla().getId());
+        // Ensure template has enough room to render reserved slots for months
+        int requiredRightmost = layout.firstMonthColumn();
+        for (Map.Entry<YearMonth, List<Tarea>> entry : tareasPorMes.entrySet()) {
+            List<Tarea> tareasMes = entry.getValue();
+            if (tareasMes == null || tareasMes.isEmpty()) continue;
+            requiredRightmost += reservedSlotsForMonth(tareasMes) + 1; // instruments + subtotal
+        }
+        requiredRightmost = requiredRightmost - 1;
+        if (layout.totalGeneralColumn() >= 0 && requiredRightmost >= layout.totalGeneralColumn()) {
+            throw new IllegalStateException("La plantilla oficial no tiene suficiente ancho para reservar " + FIXED_TASK_COLUMNS_PER_MONTH + " columnas por mes para " + tareasPorMes.size() + " meses. Amplía la plantilla antes de generar la planilla.");
+        }
         resizeStudentArea(sheet, data.rows().size());
         replaceCommonMarkers(sheet, data);
         fillMonthBlocks(sheet, tareasPorMes, taskColumnById, layout);
@@ -175,7 +187,7 @@ public class PlanillaProcesoWorkbookBuilder {
             Integer firstTaskId = tareasMes.get(0).getId();
             Integer firstCol = taskColumnById.get(firstTaskId);
             if (firstCol == null) continue;
-            int subtotalCol = firstCol + tareasMes.size();
+            int subtotalCol = firstCol + reservedSlotsForMonth(tareasMes);
             nextAvailable = Math.max(nextAvailable, subtotalCol + 1);
         }
 
@@ -188,7 +200,7 @@ public class PlanillaProcesoWorkbookBuilder {
             Integer firstCol = taskColumnById.get(firstTaskId);
             if (firstCol == null) continue;
             int lastInstrument = firstCol + tareasMes.size() - 1;
-            int subtotalCol = firstCol + tareasMes.size();
+            int subtotalCol = firstCol + reservedSlotsForMonth(tareasMes);
             monthBlocks.add(new MonthBlock(firstCol, lastInstrument, subtotalCol));
         }
 
@@ -293,7 +305,7 @@ public class PlanillaProcesoWorkbookBuilder {
         int lastRealColumn = layout.firstStageGradeColumn() >= 0
             ? computed.regularizationColumn()
             : computed.currentStageGradeColumn();
-        int signatureColumn = 1;
+        int signatureColumn = 0;
         setTeacherSignature(sheet, data, signatureRow, signatureColumn);
 
         cleanColumnsAfter(sheet, lastRealColumn, signatureRow, signatureColumn);
@@ -302,6 +314,11 @@ public class PlanillaProcesoWorkbookBuilder {
     private int monthBlockWidth(List<Tarea> tareasMes) {
         int actualTasks = tareasMes == null ? 0 : tareasMes.size();
         return Math.max(2, actualTasks + 2);
+    }
+
+    private int reservedSlotsForMonth(List<Tarea> tareasMes) {
+        int actual = tareasMes == null ? 0 : tareasMes.size();
+        return Math.max(FIXED_TASK_COLUMNS_PER_MONTH, actual);
     }
 
     private Map<YearMonth, List<Tarea>> groupTasksByMonth(List<Tarea> tareas) {
@@ -357,8 +374,8 @@ public class PlanillaProcesoWorkbookBuilder {
             for (int taskIndex = 0; taskIndex < tareasMes.size(); taskIndex++) {
                 mapping.put(tareasMes.get(taskIndex).getId(), nextColumn + taskIndex);
             }
-            // advance by number of instrument columns + 1 subtotal column
-            nextColumn += tareasMes.size() + 1;
+            // advance by reserved instrument columns (may be >= actual tasks) + 1 subtotal column
+            nextColumn += reservedSlotsForMonth(tareasMes) + 1;
         }
         return mapping;
     }
@@ -441,10 +458,21 @@ public class PlanillaProcesoWorkbookBuilder {
                 }
             }
 
+            // Fill remaining reserved slots (if any) with blank title/TP cells and set a minimal column width
+            int reserved = reservedSlotsForMonth(tareasMes);
+            for (int instrumentIndex = tareasMes.size(); instrumentIndex < reserved; instrumentIndex++) {
+                int colIndex = firstCol + instrumentIndex;
+                getOrCreateCell(titleRow, colIndex).setBlank();
+                getOrCreateCell(tpRow, colIndex).setBlank();
+                if (sheet instanceof XSSFSheet) {
+                    ((XSSFSheet) sheet).setColumnWidth(colIndex, 6 * 256);
+                }
+            }
+
             // Subtotal column immediately after instruments
-            int subtotalCol = firstCol + tareasMes.size();
+            int subtotalCol = firstCol + reservedSlotsForMonth(tareasMes);
             setStringCell(monthHeaderRow, firstCol, monthLabel);
-            int lastInstrumentCol = firstCol + tareasMes.size() - 1;
+            int lastInstrumentCol = firstCol + reservedSlotsForMonth(tareasMes) - 1;
             // merge month header across instrument columns if it spans 2+ cols
             if (lastInstrumentCol > firstCol) {
                 sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, MONTH_HEADER_ROW, firstCol, lastInstrumentCol));
@@ -833,10 +861,11 @@ public class PlanillaProcesoWorkbookBuilder {
         Drawing<?> drawing = sheet.createDrawingPatriarch();
         CreationHelper helper = sheet.getWorkbook().getCreationHelper();
         ClientAnchor anchor = helper.createClientAnchor();
-        anchor.setCol1(col + 1);
+        anchor.setCol1(col);
         anchor.setRow1(row);
         anchor.setCol2(col + 4);
-        anchor.setRow2(row + 2);
+        // increase vertical span slightly to give more visible height to the signature image
+        anchor.setRow2(row + 3);
 
         int pictureIndex = ((Workbook) sheet.getWorkbook()).addPicture(out.toByteArray(), Workbook.PICTURE_TYPE_PNG);
         drawing.createPicture(anchor, pictureIndex);
