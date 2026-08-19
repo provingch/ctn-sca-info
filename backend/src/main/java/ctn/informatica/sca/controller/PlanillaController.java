@@ -338,6 +338,10 @@ public class PlanillaController {
         } catch (SQLException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al sincronizar Classroom", ex);
         } catch (IOException ex) {
+            if (ex.getMessage() != null && ex.getMessage().contains("MISSING_REQUIRED_SCOPES")) {
+                // Indicar al frontend que el usuario debe reconectar su cuenta para conceder permisos adicionales
+                throw new ResponseStatusException(HttpStatus.PRECONDITION_REQUIRED, "Faltan permisos necesarios de Classroom: reconectar cuenta de Google con los permisos solicitados.");
+            }
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al sincronizar Classroom", ex);
         }
     }
