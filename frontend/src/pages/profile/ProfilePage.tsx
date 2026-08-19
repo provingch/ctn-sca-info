@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from 'react';
 import QRCode from 'qrcode';
-import { changePassword, confirmTotp, disableTotp, getProfile, prepareTotp, saveProfile, type ProfileResponse, getGoogleAuthorizeUrl } from '../../api/profile';
+import { changePassword, confirmTotp, disableTotp, disconnectGoogle, getProfile, prepareTotp, saveProfile, type ProfileResponse, getGoogleAuthorizeUrl } from '../../api/profile';
 
 const SIGNATURE_PERSISTENCE_MAX_BYTES = 1_500_000;
 const PHOTO_PERSISTENCE_MAX_BYTES = 1_500_000;
@@ -450,8 +450,21 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
             setStatus(err instanceof ApiError ? err.message : 'No se pudo iniciar el flujo de Google.');
           }
         }}>Conectar con Google</button>}
-        {data.googleClassroomConnected && <button className="button secondary" type="button" onClick={() => { /* Desconectar no implementado aquí */ }}>Desconectar</button>}
+        {data.googleClassroomConnected && <button className="button danger" type="button" onClick={async () => {
+          const confirmed = window.confirm('¿Desconectar Google Classroom? Se eliminarán los tokens y la asociación de esta cuenta. Las planillas locales no se borrarán.');
+          if (!confirmed) return;
+          try {
+            await disconnectGoogle();
+            await done('Google Classroom desconectado. Los tokens fueron eliminados.');
+          } catch (err) {
+            setStatus(message(err, 'No se pudo desconectar Google Classroom.'));
+          }
+        }}>Desconectar</button>}
       </div>
+      {data.googleClassroomConnected && data.googleClassroomCourses.length > 0 && <div className="classroom-course-list" aria-label="Cursos disponibles en Google Classroom">
+        <strong>Cursos disponibles</strong>
+        {data.googleClassroomCourses.map((course) => <div className="classroom-course-row" key={course.id}><span>{course.name}{course.section ? ` · ${course.section}` : ''}</span><small>{course.room || 'Sin aula informada'}</small></div>)}
+      </div>}
     </section>}
     <div className="profile-form-actions"><button className="button" type="submit">Guardar cambios</button></div>
   </form>;

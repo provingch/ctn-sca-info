@@ -77,6 +77,8 @@ export default function PlanillaPage() {
   const [resolvedCourse, setResolvedCourse] = useState<{ googleCourseId?: string | null; classroomCourseMapped?: boolean; courseName?: string | null; courseSection?: string | null; courseAlternateLink?: string | null; message?: string } | null>(null);
   const [switchingEtapa, setSwitchingEtapa] = useState(false);
   const [syncingClassroom, setSyncingClassroom] = useState(false);
+  const [lastClassroomSync, setLastClassroomSync] = useState<Date | null>(null);
+  const [syncSummary, setSyncSummary] = useState<{ created: number; updated: number } | null>(null);
   const [studentSearch, setStudentSearch] = useState('');
   const [studentSort, setStudentSort] = useState<{ key: StudentSortKey; direction: SortDirection } | null>(null);
   const [freezeStudents, setFreezeStudents] = useState(() => localStorage.getItem('planilla-freeze-students') !== 'false');
@@ -112,6 +114,8 @@ export default function PlanillaPage() {
       if (activePlanillaIdRef.current !== planillaId) return;
       applyPlanillaData(refreshed);
       setResolvedCourse({ googleCourseId: result.googleCourseId, classroomCourseMapped: result.classroomCourseMapped, courseName: result.courseName, courseSection: result.courseSection, courseAlternateLink: result.courseAlternateLink, message: result.message });
+      setLastClassroomSync(new Date());
+      setSyncSummary({ created: result.importedCourseworks, updated: result.importedGrades });
       setStatus(`${result.message || 'Sincronización completada.'} ${refreshed.tareas.length} ${refreshed.tareas.length === 1 ? 'tarea disponible' : 'tareas disponibles'}.`);
       if (automatic) setTimeout(() => {
         if (activePlanillaIdRef.current === planillaId) setStatus('');
@@ -224,6 +228,11 @@ export default function PlanillaPage() {
           }
         }}>Descargar</button>
       </div>
+      {lastClassroomSync && <p className="sync-meta" role="status">Última sincronización: {lastClassroomSync.toLocaleString('es-AR', { dateStyle: 'medium', timeStyle: 'short' })}</p>}
+      {syncSummary && <div className="sync-summary" aria-label="Resultado de la sincronización">
+        <span><strong>{syncSummary.created}</strong> tareas creadas</span>
+        <span><strong>{syncSummary.updated}</strong> calificaciones actualizadas</span>
+      </div>}
       {/* Mensaje informativo removido por solicitud de UX */}
       <section className="summary-grid">
         <article className="metric"><span>Curso</span><strong>{data.curso ? `${data.curso.nivel}° ${data.curso.seccion}` : '—'}</strong></article>
@@ -250,7 +259,7 @@ export default function PlanillaPage() {
               } catch (e) {
                 setStatus(e instanceof ApiError ? e.message : 'No se pudo guardar la asociación.');
               }
-            }}>Confirmar curso Classroom</button>
+            }}>Volver a vincular este curso</button>
             <button className="button secondary" onClick={() => setResolvedCourse(null)} style={{marginLeft:8}}>Ignorar</button>
           </div>
         </div>

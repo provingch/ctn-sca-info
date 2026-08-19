@@ -207,6 +207,20 @@ public class ProfileController {
         }
     }
 
+    @PostMapping("/google/disconnect")
+    @PreAuthorize("hasAnyRole('LEVEL_1','LEVEL_2','LEVEL_3')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void disconnectGoogle(Authentication authentication) {
+        User user = requireUser(authentication);
+        Profesor profesor = profesorDao.findById(user.getId());
+        if (profesor == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Solo los perfiles docentes pueden desconectar Google Classroom.");
+        }
+        if (!profesorDao.updateGoogleTokens(user.getId(), null, null, 0L, null)) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo desconectar Google Classroom.");
+        }
+    }
+
     @PostMapping("/prepare-totp")
     @PreAuthorize("hasAnyRole('LEVEL_1','LEVEL_2','LEVEL_3','LEVEL_4')")
     @ResponseStatus(HttpStatus.NO_CONTENT)

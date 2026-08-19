@@ -71,6 +71,10 @@ export function getGoogleAuthorizeUrl(): Promise<{ url: string }> {
   return apiRequest<{ url: string }>('/api/google/oauth/authorize-url', { method: 'GET' });
 }
 
+export function disconnectGoogle(): Promise<void> {
+  return apiRequest<void>('/api/profile/google/disconnect', { method: 'POST' });
+}
+
 export function completeGoogleCallback(payload: { code?: string; state?: string; error?: string }): Promise<{ status: string; message: string }> {
   return apiRequest<{ status: string; message: string }>('/api/google/oauth/callback', { method: 'POST', body: payload });
 }
