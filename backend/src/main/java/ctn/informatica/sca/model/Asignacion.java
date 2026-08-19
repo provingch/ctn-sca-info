@@ -14,6 +14,10 @@ public class Asignacion {
     private String profesorNombre;
     private String materiaNombre;
     private String cursoDescripcion;
+    // New explicit fields for UI: especialidad (nombre), nivel/promocion, seccion
+    private String especialidad;
+    private Integer cursoNivel; // promocion
+    private String cursoSeccion;
 
     public Asignacion() {}
 
@@ -44,5 +48,14 @@ public class Asignacion {
 
     public String getCursoDescripcion() { return cursoDescripcion; }
     public void setCursoDescripcion(String cursoDescripcion) { this.cursoDescripcion = cursoDescripcion; }
+
+    public String getEspecialidad() { return especialidad; }
+    public void setEspecialidad(String especialidad) { this.especialidad = especialidad; }
+
+    public Integer getCursoNivel() { return cursoNivel; }
+    public void setCursoNivel(Integer cursoNivel) { this.cursoNivel = cursoNivel; }
+
+    public String getCursoSeccion() { return cursoSeccion; }
+    public void setCursoSeccion(String cursoSeccion) { this.cursoSeccion = cursoSeccion; }
 
 }

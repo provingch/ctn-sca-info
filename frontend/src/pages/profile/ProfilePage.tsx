@@ -479,7 +479,20 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
 }
 
 function Subjects({ data }: { data: ProfileResponse }) {
-  return <div className="profile-section-stack"><section className="summary-grid"><article className="metric"><span>Especialidad</span><strong>{data.profesorEspecialidadNombre || 'Sin especialidad'}</strong></article><article className="metric"><span>Materias</span><strong>{data.teacherMaterias.length}</strong></article><article className="metric"><span>Asignaciones</span><strong>{data.misAsignaciones.length}</strong></article></section><section className="panel"><Heading number="01" title="Asignaciones de materias" detail="Materias y cursos vinculados a tu perfil." />{data.misAsignaciones.length === 0 ? <Empty title="Sin asignaciones" detail="Administración todavía no vinculó materias y cursos a este perfil." /> : <div className="profile-list"><div className="profile-list-header"><span>Materia</span><span>Curso</span></div>{data.misAsignaciones.map((item) => <div key={item.id}><strong>{item.materiaNombre}</strong><span>{item.cursoDescripcion}</span></div>)}</div>}</section>{data.teacherMaterias.length > 0 && <section className="panel"><h2>Materias asociadas</h2><div className="chip-list">{data.teacherMaterias.map((item) => <span key={item.id}>{item.nombre}<small>{item.categoria}</small></span>)}</div></section>}</div>;
+  return <div className="profile-section-stack">
+    <section className="summary-grid">
+      <article className="metric"><span>Asignaciones</span><strong>{data.misAsignaciones.length}</strong></article>
+    </section>
+    <section className="panel">
+      <Heading number="01" title="Asignaciones de materias" detail="Materias y cursos vinculados a tu perfil." />
+      {data.misAsignaciones.length === 0 ? <Empty title="Sin asignaciones" detail="Administración todavía no vinculó materias y cursos a este perfil." /> : (
+        <div className="profile-list">
+          <div className="profile-list-header"><span>Materia</span><span>Especialidad</span><span>Curso</span></div>
+          {data.misAsignaciones.map((item) => <div key={item.id}><strong>{item.materiaNombre}</strong><span>{item.especialidad || ''}</span><span>{(item.cursoNivel ?? '') + (item.cursoSeccion ? (' · ' + item.cursoSeccion) : '')}</span></div>)}
+        </div>
+      )}
+    </section>
+  </div>;
 }
 
 function TOTPSetupCard({ provisioningUri, secret, code, onCodeChange, onConfirm }: { provisioningUri: string | null; secret: string; code: string; onCodeChange: (value: string) => void; onConfirm: () => void }) {

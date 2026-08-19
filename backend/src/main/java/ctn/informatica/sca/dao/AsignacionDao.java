@@ -36,8 +36,14 @@ public class AsignacionDao extends conexion {
                 String profLast = rs.getString("profesor_apellido");
                 a.setProfesorNombre((profLast == null ? "" : profLast) + (profName == null ? "" : (profName.isBlank() ? "" : (" " + profName))));
                 a.setMateriaNombre(rs.getString("materia_nombre"));
-                String cursoDesc = rs.getString("especialidad") + " " + rs.getInt("promocion") + " " + rs.getString("seccion");
+                String especialidad = rs.getString("especialidad");
+                int promocion = rs.getInt("promocion");
+                String seccion = rs.getString("seccion");
+                String cursoDesc = (especialidad == null ? "" : especialidad) + (seccion == null || seccion.isBlank() ? "" : (" " + seccion));
                 a.setCursoDescripcion(cursoDesc);
+                a.setEspecialidad(especialidad);
+                a.setCursoNivel(promocion);
+                a.setCursoSeccion(seccion);
                 out.add(a);
             }
         }
@@ -76,8 +82,14 @@ public class AsignacionDao extends conexion {
                     a.setMateriaId(rs.getInt("materia_id"));
                     a.setCursoId(rs.getInt("curso_id"));
                     a.setMateriaNombre(rs.getString("materia_nombre"));
-                    String cursoDesc = rs.getString("especialidad") + " " + rs.getInt("promocion") + " " + rs.getString("seccion");
+                    String especialidad = rs.getString("especialidad");
+                    int promocion = rs.getInt("promocion");
+                    String seccion = rs.getString("seccion");
+                    String cursoDesc = (especialidad == null ? "" : especialidad) + (seccion == null || seccion.isBlank() ? "" : (" " + seccion));
                     a.setCursoDescripcion(cursoDesc);
+                    a.setEspecialidad(especialidad);
+                    a.setCursoNivel(promocion);
+                    a.setCursoSeccion(seccion);
                     out.add(a);
                 }
             }

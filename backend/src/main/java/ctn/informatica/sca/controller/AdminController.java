@@ -187,4 +187,20 @@ public class AdminController {
     public record WipeResponse(String message, int deletedGrades, int deletedTasks, int planillaId, int clearedGoogleCourseIds) {}
     public record GlobalWipeResponse(String message, int deletedGrades, int deletedTasks, int clearedGoogleCourseIds) {}
     public record GoogleClearResponse(String message) {}
+
+    public record GoogleTokenInfo(String googleEmail, boolean hasAccessToken, boolean hasRefreshToken, long tokenExpiry) {}
+
+    @GetMapping("/usuarios/{id}/google")
+    public GoogleTokenInfo getUsuarioGoogleTokens(@PathVariable int id, Authentication auth) {
+        ApiAuth.requireUserId(auth);
+        try {
+            ProfesorDao dao = new ProfesorDao();
+            ctn.informatica.sca.model.Profesor p = dao.findById(id);
+            if (p == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado");
+            boolean hasAccess = p.getGcAccessToken() != null && !p.getGcAccessToken().isBlank();
+            boolean hasRefresh = p.getGcRefreshToken() != null && !p.getGcRefreshToken().isBlank();
+            long expiry = p.getGcTokenExpiry();
+            return new GoogleTokenInfo(p.getGoogleEmail(), hasAccess, hasRefresh, expiry);
+        } catch (ResponseStatusException ex) { throw ex; } catch (Exception ex) { throw failure("No se pudo obtener info de tokens de Google", ex); }
+    }
 }
