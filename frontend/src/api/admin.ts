@@ -1,7 +1,7 @@
 import { api } from './client';
 export interface AdminCatalog {
   materias: Array<{ id: number; nombre: string; categoria: string }>;
-  usuarios: Array<{ id: number; nombre: string; apellido: string; usuario: string; nivel: number; correo: string | null; especialidadId: number | null }>;
+  usuarios: Array<{ id: number; nombre: string; apellido: string; usuario: string; nivel: number; correo: string | null }>;
   asignaciones: Array<{ id: number; profesorId: number; materiaId: number; cursoId: number; profesor: string; materia: string; curso: string }>;
   alumnos: Array<{ id: number; nombre: string; apellido: string; cursoId: number; ci: number | null; correoEncargado: string | null; correoEncargado2: string | null }>;
   cursos: Array<{ id: number; especialidad: string; nivel: number; seccion: string }>;

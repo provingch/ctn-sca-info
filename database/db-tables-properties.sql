@@ -56,13 +56,9 @@ CREATE TABLE usuario (
     totp_secret VARCHAR(255) NULL,
     firma_imagen LONGTEXT NULL,
     foto_perfil LONGTEXT NULL,
-    especialidad_id INT NULL,
     -- `nivel` es la única fuente de verdad para el rol del usuario
     nivel TINYINT NOT NULL DEFAULT 0,
-    PRIMARY KEY (id),
-    CONSTRAINT fk_usuario_especialidad FOREIGN KEY (especialidad_id)
-        REFERENCES especialidad (id)
-        ON UPDATE CASCADE ON DELETE SET NULL
+    PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE materia (

@@ -174,7 +174,6 @@ public class ProfileController {
                 misAsignaciones.stream().map(this::toAsignacionDto).collect(Collectors.toList()),
                 availableMaterias.stream().map(this::toProfileMateriaDto).collect(Collectors.toList()),
                 especialidades.stream().map(this::toEspecialidadDto).collect(Collectors.toList()),
-                resolveProfesorEspecialidadNombre(profesor),
                 manualTeacherSubjectsText,
                 Collections.emptyList(),
                 totpSecret != null && !totpSecret.isBlank(),
@@ -673,21 +672,6 @@ public class ProfileController {
             }
             return profesorDao.updateTotpSecret(profesor.getId(), totpSecret);
         }
-    }
-
-    private String resolveProfesorEspecialidadNombre(Profesor profesor) {
-        if (profesor == null || profesor.getEspecialidadId() == null) {
-            return "Sin especialidad";
-        }
-        try {
-            Especialidad especialidad = especialidadDao.findById(profesor.getEspecialidadId());
-            if (especialidad != null && especialidad.getNombre() != null && !especialidad.getNombre().isBlank()) {
-                return especialidad.getNombre();
-            }
-        } catch (Exception ex) {
-            // ignore
-        }
-        return "Sin especialidad";
     }
 
     private List<String> parseManualSubjects(String raw) {
