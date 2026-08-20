@@ -69,6 +69,21 @@ class AuthControllerTest {
     }
 
     @Test
+    void loginStillReturnsAccessTokenWhenRefreshCookiePersistenceFails() throws Exception {
+        LoginRequest login = new LoginRequest("usuario", "clave", false);
+        when(authService.login(login)).thenReturn(new LoginResponse(false, null, "access-token", 1));
+        when(jwtService.extractUserId("access-token")).thenReturn(7L);
+        when(refreshTokenService.issueToken(7, 1, null, "127.0.0.1")).thenThrow(new RuntimeException("DB unavailable"));
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        var result = controller.login(login, new MockHttpServletRequest(), response);
+
+        assertTrue(result.getStatusCode().is2xxSuccessful());
+        assertTrue(result.getBody() instanceof LoginResponse);
+        assertTrue(((LoginResponse) result.getBody()).accessToken().equals("access-token"));
+    }
+
+    @Test
     void refreshKeepsSessionCookieNonPersistent() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setCookies(new Cookie(RefreshTokenService.SESSION_COOKIE_NAME, "session-token"));

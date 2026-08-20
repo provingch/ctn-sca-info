@@ -128,8 +128,7 @@ public class AuthController {
                     persistent ? RefreshTokenService.SESSION_COOKIE_NAME : RefreshTokenService.COOKIE_NAME);
             setRefreshCookie(response, refreshToken, request.isSecure(), persistent);
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Could not persist the refresh token", e);
-            throw new IllegalStateException("No se pudo crear una sesión renovable", e);
+            LOGGER.log(Level.WARNING, "Login succeeded but refresh cookie could not be persisted. Returning access token without persistent session state.", e);
         }
     }
 
