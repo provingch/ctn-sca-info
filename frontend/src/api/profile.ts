@@ -29,6 +29,7 @@ export interface ProfileResponse {
   profileAccessDescription: string;
   showMateriasPanel: boolean;
   showGoogleClassroomPanel: boolean;
+  showSignaturePanel: boolean;
   showSecurityPanel: boolean;
   showActivityPanel: boolean;
   canEditAdminOnlyProfileFields: boolean;
@@ -36,7 +37,6 @@ export interface ProfileResponse {
   googleClassroomCourses: ProfileClassroomCourseDto[];
   teacherMaterias: ProfileMateriaDto[];
   misAsignaciones: ProfileAssignmentDto[];
-  profesorEspecialidadNombre: string;
   activityLog: string[];
   totpEnabled: boolean;
   pendingTotpSecret: string | null;

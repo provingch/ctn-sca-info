@@ -34,8 +34,6 @@ public class ProfesorDao extends conexion {
         if (!rs.wasNull()) p.setCelular(cel);
 
         p.setCorreo(rs.getString("correo"));
-        int especialidadId = rs.getInt("especialidad_id");
-        if (!rs.wasNull()) p.setEspecialidadId(especialidadId);
         p.setGoogleEmail(rs.getString("google_email"));
         p.setGcAccessToken(rs.getString("google_access_token"));
         p.setGcRefreshToken(rs.getString("google_refresh_token"));
@@ -50,9 +48,9 @@ public class ProfesorDao extends conexion {
     // ── findById ─────────────────────────────────────────────────────────────
     public Profesor findById(int id) {
         final String sql = "SELECT id, nombre, apellido, usuario, contrasenia, nivel, "
-                         + "ci, telefono, celular, correo, especialidad_id, google_email, "
+                         + "ci, telefono, celular, correo, google_email, "
                          + "google_access_token, google_refresh_token, google_token_expiry, totp_secret, firma_imagen, foto_perfil "
-                         + "FROM usuario WHERE rol <> 'padre' AND id = ?";
+                         + "FROM usuario WHERE nivel <> 4 AND id = ?";
         try (Connection c = getCon();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, id);
@@ -70,9 +68,9 @@ public class ProfesorDao extends conexion {
     // Ajusta el nombre de columna si en tu tabla se llama distinto.
     public Profesor findByGoogleEmail(String email) {
         final String sql = "SELECT id, nombre, apellido, usuario, contrasenia, nivel, "
-                         + "ci, telefono, celular, correo, especialidad_id, google_email, "
+                         + "ci, telefono, celular, correo, google_email, "
                          + "google_access_token, google_refresh_token, google_token_expiry, totp_secret, firma_imagen, foto_perfil "
-                         + "FROM usuario WHERE rol <> 'padre' AND (google_email = ? OR correo = ?)";
+                         + "FROM usuario WHERE nivel <> 4 AND (google_email = ? OR correo = ?)";
         try (Connection c = getCon();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setString(1, email);
@@ -99,7 +97,7 @@ public class ProfesorDao extends conexion {
                          + "    google_access_token = ?, "
                          + "    google_refresh_token = ?, "
                          + "    google_token_expiry  = ? "
-                         + "WHERE rol <> 'padre' AND id = ?";
+                         + "WHERE nivel <> 4 AND id = ?";
         try (Connection c = getCon();
              PreparedStatement ps = c.prepareStatement(sql)) {
             if (googleEmail != null) {
@@ -129,7 +127,7 @@ public class ProfesorDao extends conexion {
     }
 
     public String findManualSubjectsText(int profesorId) {
-        final String sql = "SELECT materias_manual FROM usuario WHERE rol <> 'padre' AND id = ?";
+        final String sql = "SELECT materias_manual FROM usuario WHERE nivel <> 4 AND id = ?";
         try (Connection c = getCon();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, profesorId);
@@ -146,7 +144,7 @@ public class ProfesorDao extends conexion {
     }
 
     public boolean updateManualSubjectsText(int profesorId, String materiasManual) {
-        final String sql = "UPDATE usuario SET materias_manual = ? WHERE rol <> 'padre' AND id = ?";
+        final String sql = "UPDATE usuario SET materias_manual = ? WHERE nivel <> 4 AND id = ?";
         try (Connection c = getCon();
              PreparedStatement ps = c.prepareStatement(sql)) {
             if (materiasManual != null && !materiasManual.trim().isEmpty()) {
@@ -167,8 +165,8 @@ public class ProfesorDao extends conexion {
         final String sql = "UPDATE usuario "
                          + "SET nombre = ?, apellido = ?, usuario = ?, "
                          + "    contrasenia = ?, nivel = ?, ci = ?, telefono = ?, "
-                         + "    celular = ?, correo = ?, especialidad_id = ?, firma_imagen = ?, foto_perfil = ? "
-                         + "WHERE rol <> 'padre' AND id = ?";
+                         + "    celular = ?, correo = ?, firma_imagen = ?, foto_perfil = ? "
+                         + "WHERE nivel <> 4 AND id = ?";
         try (Connection c = getCon();
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setString(1, p.getNombre());
@@ -198,19 +196,17 @@ public class ProfesorDao extends conexion {
             else                          ps.setNull(8, Types.INTEGER);
 
             ps.setString(9, p.getCorreo());
-            if (p.getEspecialidadId() != null) ps.setInt(10, p.getEspecialidadId());
-            else                                ps.setNull(10, Types.INTEGER);
             if (p.getFirmaImagen() != null && !p.getFirmaImagen().isBlank()) {
-                ps.setString(11, p.getFirmaImagen());
+                ps.setString(10, p.getFirmaImagen());
+            } else {
+                ps.setNull(10, Types.VARCHAR);
+            }
+            if (p.getFotoPerfil() != null && !p.getFotoPerfil().isBlank()) {
+                ps.setString(11, p.getFotoPerfil());
             } else {
                 ps.setNull(11, Types.VARCHAR);
             }
-            if (p.getFotoPerfil() != null && !p.getFotoPerfil().isBlank()) {
-                ps.setString(12, p.getFotoPerfil());
-            } else {
-                ps.setNull(12, Types.VARCHAR);
-            }
-            ps.setInt(13, p.getId());
+            ps.setInt(12, p.getId());
 
             return ps.executeUpdate() == 1;
         } catch (SQLException ex) {
@@ -221,9 +217,9 @@ public class ProfesorDao extends conexion {
 
     public java.util.List<Profesor> findAll() {
         final String sql = "SELECT id, nombre, apellido, usuario, contrasenia, nivel, "
-                         + "ci, telefono, celular, correo, especialidad_id, google_email, "
+                         + "ci, telefono, celular, correo, google_email, "
                          + "google_access_token, google_refresh_token, google_token_expiry, totp_secret, firma_imagen, foto_perfil "
-                         + "FROM usuario WHERE rol <> 'padre' ORDER BY apellido, nombre";
+                         + "FROM usuario WHERE nivel <> 4 ORDER BY apellido, nombre";
         java.util.List<Profesor> out = new java.util.ArrayList<>();
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -237,7 +233,7 @@ public class ProfesorDao extends conexion {
     }
 
     public boolean updateTotpSecret(int profesorId, String totpSecret) {
-        final String sql = "UPDATE usuario SET totp_secret = ? WHERE rol <> 'padre' AND id = ?";
+        final String sql = "UPDATE usuario SET totp_secret = ? WHERE nivel <> 4 AND id = ?";
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
             if (totpSecret != null && !totpSecret.isBlank()) {
                 ps.setString(1, totpSecret);
@@ -253,7 +249,7 @@ public class ProfesorDao extends conexion {
     }
 
     public boolean updateFirmaImagen(int profesorId, String firmaImagen) {
-        final String sql = "UPDATE usuario SET firma_imagen = ? WHERE rol <> 'padre' AND id = ?";
+        final String sql = "UPDATE usuario SET firma_imagen = ? WHERE nivel <> 4 AND id = ?";
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
             if (firmaImagen != null && !firmaImagen.isBlank()) {
                 ps.setString(1, firmaImagen);
@@ -269,7 +265,7 @@ public class ProfesorDao extends conexion {
     }
 
     public boolean updateFotoPerfil(int profesorId, String fotoPerfil) {
-        final String sql = "UPDATE usuario SET foto_perfil = ? WHERE rol <> 'padre' AND id = ?";
+        final String sql = "UPDATE usuario SET foto_perfil = ? WHERE nivel <> 4 AND id = ?";
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
             if (fotoPerfil != null && !fotoPerfil.isBlank()) {
                 ps.setString(1, fotoPerfil);
@@ -286,7 +282,7 @@ public class ProfesorDao extends conexion {
 
     public boolean existsByUsuario(String usuario) {
         if (usuario == null || usuario.trim().isEmpty()) return false;
-        final String sql = "SELECT 1 FROM usuario WHERE rol <> 'padre' AND usuario = ?";
+        final String sql = "SELECT 1 FROM usuario WHERE nivel <> 4 AND usuario = ?";
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setString(1, usuario.trim());
             try (ResultSet rs = ps.executeQuery()) {
@@ -300,7 +296,7 @@ public class ProfesorDao extends conexion {
 
     public boolean existsByUsuario(String usuario, int excludeId) {
         if (usuario == null || usuario.trim().isEmpty()) return false;
-        final String sql = "SELECT 1 FROM usuario WHERE rol <> 'padre' AND usuario = ? AND id != ?";
+        final String sql = "SELECT 1 FROM usuario WHERE nivel <> 4 AND usuario = ? AND id != ?";
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setString(1, usuario.trim());
             ps.setInt(2, excludeId);
@@ -314,8 +310,8 @@ public class ProfesorDao extends conexion {
     }
 
     public int create(Profesor p) {
-        final String sql = "INSERT INTO usuario (nombre, apellido, usuario, contrasenia, nivel, ci, telefono, celular, correo, especialidad_id, rol) "
-                         + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'profesor')";
+        final String sql = "INSERT INTO usuario (nombre, apellido, usuario, contrasenia, nivel, ci, telefono, celular, correo) "
+                         + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, p.getNombre());
             ps.setString(2, p.getApellido());
@@ -331,7 +327,6 @@ public class ProfesorDao extends conexion {
             if (p.getTelefono() != null) ps.setInt(7, p.getTelefono()); else ps.setNull(7, Types.INTEGER);
             if (p.getCelular() != null) ps.setInt(8, p.getCelular()); else ps.setNull(8, Types.INTEGER);
             ps.setString(9, p.getCorreo());
-            if (p.getEspecialidadId() != null) ps.setInt(10, p.getEspecialidadId()); else ps.setNull(10, Types.INTEGER);
 
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
@@ -346,7 +341,7 @@ public class ProfesorDao extends conexion {
     }
 
     public boolean updateNivel(int id, int nivel) {
-        final String sql = "UPDATE usuario SET nivel = ? WHERE rol <> 'padre' AND id = ?";
+        final String sql = "UPDATE usuario SET nivel = ? WHERE nivel <> 4 AND id = ?";
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, nivel);
             ps.setInt(2, id);
@@ -358,7 +353,7 @@ public class ProfesorDao extends conexion {
     }
 
     public boolean resetPassword(int id, String newPasswordPlainText) {
-        final String sql = "UPDATE usuario SET contrasenia = ? WHERE rol <> 'padre' AND id = ?";
+        final String sql = "UPDATE usuario SET contrasenia = ? WHERE nivel <> 4 AND id = ?";
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
             String plain = (newPasswordPlainText == null || newPasswordPlainText.trim().isEmpty())
                 ? "password" : newPasswordPlainText;
@@ -372,7 +367,7 @@ public class ProfesorDao extends conexion {
     }
 
     public int countByNivel(int nivel) {
-        final String sql = "SELECT COUNT(*) AS cnt FROM usuario WHERE rol <> 'padre' AND nivel = ?";
+        final String sql = "SELECT COUNT(*) AS cnt FROM usuario WHERE nivel <> 4 AND nivel = ?";
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, nivel);
             try (ResultSet rs = ps.executeQuery()) {
@@ -385,7 +380,7 @@ public class ProfesorDao extends conexion {
     }
 
     public boolean delete(int id) {
-        final String sql = "DELETE FROM usuario WHERE rol <> 'padre' AND id = ?";
+        final String sql = "DELETE FROM usuario WHERE nivel <> 4 AND id = ?";
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, id);
             return ps.executeUpdate() == 1;

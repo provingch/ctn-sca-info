@@ -265,6 +265,16 @@ public class MateriaDao extends conexion {
         return -1;
     }
 
+    public boolean update(int materiaId, String nombre, String categoria) throws SQLException {
+        String sql = "UPDATE materia SET nombre = ?, categoria = ? WHERE id = ?";
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, nombre == null ? "" : nombre.trim());
+            ps.setString(2, categoria == null ? "especifico" : categoria.trim().toLowerCase());
+            ps.setInt(3, materiaId);
+            return ps.executeUpdate() == 1;
+        }
+    }
+
     public boolean updateCategoria(int materiaId, String categoria) throws SQLException {
         String sql = "UPDATE materia SET categoria = ? WHERE id = ?";
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {

@@ -53,7 +53,7 @@ public class UserDao {
     }
 
     private User findProfessorUser(String username, String password) throws Exception {
-        String sql = "select * from usuario where (rol is null or rol <> 'padre') and (usuario = ? OR ci = ?)";
+        String sql = "select * from usuario where nivel <> 4 and (usuario = ? OR ci = ?)";
         try (Connection con = new conexion().getCon();
                 PreparedStatement stm = con.prepareStatement(sql)) {
 
@@ -100,7 +100,7 @@ public class UserDao {
     }
 
     private User findProfessorUserById(int id) throws Exception {
-        String sql = "select * from usuario where rol <> 'padre' and id = ?";
+        String sql = "select * from usuario where nivel <> 4 and id = ?";
         try (Connection con = new conexion().getCon();
                 PreparedStatement stm = con.prepareStatement(sql)) {
             stm.setInt(1, id);
@@ -116,7 +116,7 @@ public class UserDao {
     }
 
     private User findParentUser(String username, String password) throws Exception {
-        String sql = "select id, nombre, apellido, usuario, contrasenia, nivel from usuario where rol = 'padre' and (usuario = ? OR ci = ?)";
+        String sql = "select id, nombre, apellido, usuario, contrasenia, nivel from usuario where nivel = 4 and (usuario = ? OR ci = ?)";
         try (Connection con = new conexion().getCon();
                 PreparedStatement stm = con.prepareStatement(sql)) {
 
@@ -163,7 +163,7 @@ public class UserDao {
     }
 
     private User findParentUserById(int id) throws Exception {
-        String sql = "select id, nombre, apellido, usuario, contrasenia, nivel from usuario where rol = 'padre' and id = ?";
+        String sql = "select id, nombre, apellido, usuario, contrasenia, nivel from usuario where nivel = 4 and id = ?";
         try (Connection con = new conexion().getCon();
                 PreparedStatement stm = con.prepareStatement(sql)) {
             stm.setInt(1, id);
