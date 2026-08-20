@@ -139,3 +139,10 @@ INSERT INTO instrumento (id, nombre) VALUES
 -- ========================================
 -- Se remueve la insersion de alumnos para evitar conflictos con la
 -- autenticacion de Google, ya que los usuarios deben ser creados a traves del flujo de autenticacion.
+
+-- ========================================
+-- ADMINISTRADORES
+-- ========================================
+-- Solo deberia haber un admin para todo el sistema.
+insert into administrador (id, nombre, apellido, email, password) values
+(1, 'Administrador', 'CTN');
