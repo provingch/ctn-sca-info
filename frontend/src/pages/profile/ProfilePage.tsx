@@ -21,7 +21,23 @@ export default function ProfilePage() {
   const [status, setStatus] = useState('');
   const [tab, setTab] = useState<ProfileTab>('profile');
   const profilePageRef = useRef<HTMLDivElement>(null);
-  const load = useCallback(async () => { try { setData(await getProfile()); } catch (error) { setStatus(message(error, 'Error al cargar el perfil.')); } }, []);
+  const load = useCallback(async () => {
+    try {
+      const response = await getProfile();
+      if (!response?.profileOwner) {
+        throw new Error('La respuesta del perfil no contiene los datos de la cuenta.');
+      }
+      setData({
+        ...response,
+        googleClassroomCourses: response.googleClassroomCourses ?? [],
+        teacherMaterias: response.teacherMaterias ?? [],
+        misAsignaciones: response.misAsignaciones ?? [],
+        activityLog: response.activityLog ?? [],
+      });
+    } catch (error) {
+      setStatus(message(error, 'Error al cargar el perfil.'));
+    }
+  }, []);
   useEffect(() => { void load(); }, [load]);
   // ResizeObserver and dynamic --profile-identity-height removed: obsolete with fixed flex layout
 
