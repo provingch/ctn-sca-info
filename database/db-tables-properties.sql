@@ -38,17 +38,17 @@ CREATE TABLE alumno (
         ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
-CREATE TABLE profesor (
+CREATE TABLE usuario (
     id INT AUTO_INCREMENT,
-    nombre VARCHAR(45),
-    apellido VARCHAR(45),
+    nombre VARCHAR(45) DEFAULT NULL,
+    apellido VARCHAR(45) DEFAULT NULL,
     usuario VARCHAR(45) NOT NULL UNIQUE,
     contrasenia VARCHAR(255) DEFAULT 'password' NOT NULL,
-    ci int UNIQUE,
-    telefono int,
-    celular int,
-    correo VARCHAR(45),
-    google_email VARCHAR(255),
+    ci INT DEFAULT NULL,
+    telefono VARCHAR(45) DEFAULT NULL,
+    celular VARCHAR(45) DEFAULT NULL,
+    correo VARCHAR(255) DEFAULT NULL,
+    google_email VARCHAR(255) DEFAULT NULL,
     google_access_token TEXT NULL,
     google_refresh_token TEXT NULL,
     google_token_expiry BIGINT NULL,
@@ -57,12 +57,15 @@ CREATE TABLE profesor (
     firma_imagen LONGTEXT NULL,
     foto_perfil LONGTEXT NULL,
     especialidad_id INT NULL,
-    nivel TINYINT NOT NULL,
+    -- `nivel` mantiene la semántica previa de profesor; puede usarse junto con `rol` para autorización
+    nivel TINYINT NOT NULL DEFAULT 0,
+    -- `rol` o `tipo` discrimina entre perfiles (ej: 'profesor', 'padre', 'admin')
+    rol VARCHAR(30) NOT NULL DEFAULT 'profesor',
     PRIMARY KEY (id),
-    CONSTRAINT fk_profesor_especialidad FOREIGN KEY (especialidad_id)
+    CONSTRAINT fk_usuario_especialidad FOREIGN KEY (especialidad_id)
         REFERENCES especialidad (id)
         ON UPDATE CASCADE ON DELETE SET NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE materia (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -71,26 +74,26 @@ CREATE TABLE materia (
     UNIQUE KEY uq_materia_nombre (nombre)
 );
 
-CREATE TABLE profesor_materia (
-    profesor_id INT NOT NULL,
+CREATE TABLE usuario_materia (
+    usuario_id INT NOT NULL,
     materia_id INT NOT NULL,
-    PRIMARY KEY (profesor_id, materia_id),
-    CONSTRAINT fk_pm_profesor FOREIGN KEY (profesor_id)
-        REFERENCES profesor (id)
+    PRIMARY KEY (usuario_id, materia_id),
+    CONSTRAINT fk_um_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuario (id)
         ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_pm_materia FOREIGN KEY (materia_id)
+    CONSTRAINT fk_um_materia FOREIGN KEY (materia_id)
         REFERENCES materia (id)
         ON UPDATE CASCADE ON DELETE CASCADE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE asignacion (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    profesor_id INT NOT NULL,
+    usuario_id INT NOT NULL,
     materia_id INT NOT NULL,
     curso_id INT NOT NULL,
-    UNIQUE KEY uq_asignacion (profesor_id, materia_id, curso_id),
-    CONSTRAINT fk_asig_profesor FOREIGN KEY (profesor_id)
-        REFERENCES profesor (id) ON UPDATE CASCADE ON DELETE CASCADE,
+    UNIQUE KEY uq_asignacion (usuario_id, materia_id, curso_id),
+    CONSTRAINT fk_asig_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuario (id) ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT fk_asig_materia FOREIGN KEY (materia_id)
         REFERENCES materia (id) ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT fk_asig_curso FOREIGN KEY (curso_id)
@@ -117,7 +120,7 @@ CREATE TABLE planilla (
     materia_id INT NOT NULL,
     periodo SMALLINT UNSIGNED NOT NULL,
     etapa ENUM('primera', 'segunda') NOT NULL,
-    profesor_id INT NOT NULL,
+    usuario_id INT NOT NULL,
     google_course_id VARCHAR(255) NULL,
     PRIMARY KEY (id),
     UNIQUE (curso_id, materia_id, periodo, etapa),
@@ -127,8 +130,8 @@ CREATE TABLE planilla (
     FOREIGN KEY (materia_id)
         REFERENCES materia (id)
         ON UPDATE CASCADE ON DELETE RESTRICT,
-    FOREIGN KEY (profesor_id)
-        REFERENCES profesor (id)
+    FOREIGN KEY (usuario_id)
+        REFERENCES usuario (id)
         ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
@@ -182,45 +185,35 @@ CREATE TABLE puntaje (
         ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE TABLE padre (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `ci` int(11) NOT NULL,
-  `nombre` varchar(45) DEFAULT NULL,
-  `apellido` varchar(45) DEFAULT NULL,
-  `usuario` varchar(45) NOT NULL,
-  `contrasenia` varchar(255) NOT NULL,
-  `telefono` varchar(20) DEFAULT NULL,
-  `correo` varchar(45) DEFAULT NULL,
-  `totp_secret` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `usuario_UNIQUE` (`usuario`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+-- Nota: la tabla `padre` se ha consolidado dentro de `usuario`.
+-- Si necesita mantener datos históricos, migre los registros de `padre` a `usuario` antes de aplicar el DDL en producción.
 
 CREATE TABLE push_subscription (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  user_id INT NOT NULL,
-  user_type VARCHAR(20) NOT NULL DEFAULT 'profesor',
-  endpoint TEXT NOT NULL,
-  p256dh VARCHAR(255) NOT NULL,
-  auth VARCHAR(255) NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_push_endpoint (endpoint(255))
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    -- indicar el tipo/rol del usuario en el momento de la suscripción (ej: 'profesor','padre','admin')
+    user_type VARCHAR(20) NOT NULL DEFAULT 'usuario',
+    endpoint TEXT NOT NULL,
+    p256dh VARCHAR(255) NOT NULL,
+    auth VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_push_endpoint (endpoint(255))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE planilla_rasgo (
     id INT AUTO_INCREMENT PRIMARY KEY,
     curso_id INT NOT NULL,
-    profesor_id INT NOT NULL,
+    usuario_id INT NOT NULL,
     tema VARCHAR(150) NOT NULL,
     fecha_clase DATE NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     KEY idx_planilla_rasgo_curso (curso_id),
-    KEY idx_planilla_rasgo_profesor (profesor_id),
+    KEY idx_planilla_rasgo_usuario (usuario_id),
     CONSTRAINT fk_planilla_rasgo_curso FOREIGN KEY (curso_id)
         REFERENCES curso (id)
         ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_planilla_rasgo_profesor FOREIGN KEY (profesor_id)
-        REFERENCES profesor (id)
+    CONSTRAINT fk_planilla_rasgo_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuario (id)
         ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -245,14 +238,14 @@ CREATE TABLE rasgo_asistencia (
         ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Tabla de relación entre alumno y padre (faltaba en el DDL original)
-CREATE TABLE alumno_padre (
+-- Tabla de relación entre alumno y usuario (antes: alumno_padre)
+CREATE TABLE alumno_usuario (
     alumno_id INT NOT NULL,
-    padre_id INT NOT NULL,
+    usuario_id INT NOT NULL,
     parentesco VARCHAR(45) DEFAULT 'padre',
-    PRIMARY KEY (alumno_id, padre_id),
-    CONSTRAINT fk_ap_alumno FOREIGN KEY (alumno_id)
+    PRIMARY KEY (alumno_id, usuario_id),
+    CONSTRAINT fk_au_alumno FOREIGN KEY (alumno_id)
         REFERENCES alumno (id) ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_ap_padre FOREIGN KEY (padre_id)
-        REFERENCES padre (id) ON UPDATE CASCADE ON DELETE CASCADE
+    CONSTRAINT fk_au_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuario (id) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

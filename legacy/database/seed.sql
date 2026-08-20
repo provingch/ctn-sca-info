@@ -48,20 +48,20 @@ DELETE FROM instrumento;
 DELETE FROM planilla;
 DELETE FROM rasgo_asistencia;
 DELETE FROM planilla_rasgo;
-DELETE FROM profesor_materia;
+DELETE FROM usuario_materia;
 DELETE FROM materia_especialidad;
 DELETE FROM materia;
-DELETE FROM alumno_padre;
-DELETE FROM padre;
+DELETE FROM alumno_usuario;
+-- `padre` consolidado en `usuario`.
 DELETE FROM alumno;
 DELETE FROM curso;
-DELETE FROM profesor;
+DELETE FROM usuario;
 DELETE FROM especialidad;
 
 -- Reset AUTO_INCREMENT
 ALTER TABLE alumno AUTO_INCREMENT = 1;
-ALTER TABLE profesor AUTO_INCREMENT = 1;
-ALTER TABLE padre AUTO_INCREMENT = 1;
+ALTER TABLE usuario AUTO_INCREMENT = 1;
+-- eliminar referencia a padre AUTO_INCREMENT
 ALTER TABLE materia AUTO_INCREMENT = 1;
 ALTER TABLE planilla AUTO_INCREMENT = 1;
 ALTER TABLE tarea AUTO_INCREMENT = 1;

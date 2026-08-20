@@ -41,9 +41,9 @@ public class MateriaDao extends conexion {
     public List<Materia> listByProfesor(int profesorId) throws SQLException {
         String sql = "SELECT DISTINCT m.id, m.nombre, m.categoria "
                 + "FROM ( "
-                + "    SELECT pm.materia_id FROM profesor_materia pm WHERE pm.profesor_id = ? "
+                + "    SELECT um.materia_id FROM usuario_materia um WHERE um.usuario_id = ? "
                 + "    UNION "
-                + "    SELECT p.materia_id FROM planilla p WHERE p.profesor_id = ? "
+                + "    SELECT p.materia_id FROM planilla p WHERE p.usuario_id = ? "
                 + ") ids "
                 + "JOIN materia m ON m.id = ids.materia_id "
                 + "ORDER BY m.nombre";
@@ -76,11 +76,11 @@ public class MateriaDao extends conexion {
                 + "            SELECT DISTINCT c.especialidad_id "
                 + "            FROM planilla p "
                 + "            JOIN curso c ON p.curso_id = c.id "
-                + "            WHERE p.profesor_id = ? "
+                + "            WHERE p.usuario_id = ? "
                 + "        ) "
                 + "   ) "
                 + "   OR m.id IN ( "
-                + "        SELECT pm.materia_id FROM profesor_materia pm WHERE pm.profesor_id = ? "
+                + "        SELECT um.materia_id FROM usuario_materia um WHERE um.usuario_id = ? "
                 + "   ) "
                 + "ORDER BY m.nombre";
         List<Materia> out = new ArrayList<>();
@@ -97,7 +97,7 @@ public class MateriaDao extends conexion {
     }
 
     public boolean linkProfesorMateria(int profesorId, int materiaId) throws SQLException {
-        String sql = "INSERT IGNORE INTO profesor_materia (profesor_id, materia_id) VALUES (?, ?)";
+        String sql = "INSERT IGNORE INTO usuario_materia (usuario_id, materia_id) VALUES (?, ?)";
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, profesorId);
             ps.setInt(2, materiaId);
@@ -106,7 +106,7 @@ public class MateriaDao extends conexion {
     }
 
     public boolean unlinkProfesorMateria(int profesorId, int materiaId) throws SQLException {
-        String sql = "DELETE FROM profesor_materia WHERE profesor_id = ? AND materia_id = ?";
+        String sql = "DELETE FROM usuario_materia WHERE usuario_id = ? AND materia_id = ?";
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, profesorId);
             ps.setInt(2, materiaId);
@@ -117,9 +117,9 @@ public class MateriaDao extends conexion {
     public List<String> findNamesByProfesor(int profesorId) throws SQLException {
         String sql = "SELECT DISTINCT m.nombre "
                 + "FROM ( "
-                + "    SELECT pm.materia_id FROM profesor_materia pm WHERE pm.profesor_id = ? "
+                + "    SELECT um.materia_id FROM usuario_materia um WHERE um.usuario_id = ? "
                 + "    UNION "
-                + "    SELECT p.materia_id FROM planilla p WHERE p.profesor_id = ? "
+                + "    SELECT p.materia_id FROM planilla p WHERE p.usuario_id = ? "
                 + ") ids "
                 + "JOIN materia m ON m.id = ids.materia_id "
                 + "ORDER BY m.nombre";
@@ -161,7 +161,7 @@ public class MateriaDao extends conexion {
      * Count linked professors per materia for all materias. Returns a map materiaId->count.
      */
     public java.util.Map<Integer, Integer> countProfesoresForAll() throws SQLException {
-        String sql = "SELECT materia_id, COUNT(*) AS cnt FROM profesor_materia GROUP BY materia_id";
+        String sql = "SELECT materia_id, COUNT(*) AS cnt FROM usuario_materia GROUP BY materia_id";
         java.util.Map<Integer, Integer> out = new java.util.HashMap<>();
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
@@ -172,7 +172,7 @@ public class MateriaDao extends conexion {
     }
 
     public int countOtherProfesores(int materiaId, int excludingProfesorId) throws SQLException {
-        String sql = "SELECT COUNT(*) AS cnt FROM profesor_materia WHERE materia_id = ? AND profesor_id != ?";
+        String sql = "SELECT COUNT(*) AS cnt FROM usuario_materia WHERE materia_id = ? AND usuario_id != ?";
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, materiaId);
             ps.setInt(2, excludingProfesorId);
@@ -352,15 +352,15 @@ public class MateriaDao extends conexion {
                     updPlan.executeUpdate();
                 }
 
-                // 2) copy profesor_materia entries
-                try (PreparedStatement insPm = c.prepareStatement("INSERT IGNORE INTO profesor_materia (profesor_id, materia_id) SELECT profesor_id, ? FROM profesor_materia WHERE materia_id = ?")) {
+                // 2) copy usuario_materia entries
+                try (PreparedStatement insPm = c.prepareStatement("INSERT IGNORE INTO usuario_materia (usuario_id, materia_id) SELECT usuario_id, ? FROM usuario_materia WHERE materia_id = ?")) {
                     insPm.setInt(1, toMateriaId);
                     insPm.setInt(2, fromMateriaId);
                     insPm.executeUpdate();
                 }
 
-                // 3) delete old profesor_materia rows
-                try (PreparedStatement delPm = c.prepareStatement("DELETE FROM profesor_materia WHERE materia_id = ?")) {
+                // 3) delete old usuario_materia rows
+                try (PreparedStatement delPm = c.prepareStatement("DELETE FROM usuario_materia WHERE materia_id = ?")) {
                     delPm.setInt(1, fromMateriaId);
                     delPm.executeUpdate();
                 }
@@ -439,7 +439,7 @@ public class MateriaDao extends conexion {
         }
 
         try (Connection c = getCon()) {
-            try (PreparedStatement ps = c.prepareStatement("DELETE FROM profesor_materia WHERE materia_id = ?")) {
+            try (PreparedStatement ps = c.prepareStatement("DELETE FROM usuario_materia WHERE materia_id = ?")) {
                 ps.setInt(1, materiaId);
                 ps.executeUpdate();
             }

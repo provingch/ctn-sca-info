@@ -9,17 +9,16 @@ DELETE FROM planilla_rasgo;
 DELETE FROM profesor_materia;
 DELETE FROM materia_especialidad;
 DELETE FROM materia;
-DELETE FROM alumno_padre;
-DELETE FROM padre;
+DELETE FROM alumno_usuario;
+-- Nota: la tabla `padre` ha sido consolidada en `usuario`.
 DELETE FROM alumno;
 DELETE FROM curso;
-DELETE FROM profesor;
+DELETE FROM usuario;
 DELETE FROM especialidad;
 
 -- Reinicio de los contadores de AUTO_INCREMENT
 ALTER TABLE alumno AUTO_INCREMENT = 1;
-ALTER TABLE profesor AUTO_INCREMENT = 1;
-ALTER TABLE padre AUTO_INCREMENT = 1;
+ALTER TABLE usuario AUTO_INCREMENT = 1;
 ALTER TABLE materia AUTO_INCREMENT = 1;
 ALTER TABLE planilla AUTO_INCREMENT = 1;
 ALTER TABLE tarea AUTO_INCREMENT = 1;
@@ -144,5 +143,5 @@ INSERT INTO instrumento (id, nombre) VALUES
 -- ADMINISTRADORES
 -- ========================================
 -- Solo deberia haber un admin para todo el sistema.
-insert into administrador (id, nombre, apellido, email, password) values
-(1, 'Administrador', 'CTN');
+INSERT INTO usuario (nombre, apellido, usuario, rol) VALUES
+('Administrador', 'Principal', 'admin', 'admin');
