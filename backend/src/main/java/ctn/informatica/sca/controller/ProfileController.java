@@ -98,6 +98,7 @@ public class ProfileController {
         Profesor profesor = null;
         Padre padre = null;
         boolean isProfessorProfile = user.getLevel() == 1;
+        boolean showSignaturePanel = user.getLevel() == 1 || user.getLevel() == 2;
         boolean isStaffProfile = user.getLevel() >= 1 && user.getLevel() <= 3;
         boolean isParentProfile = user.getLevel() == 4;
 
@@ -165,6 +166,7 @@ public class ProfileController {
                 accessDescription(user),
                 isProfessorProfile,
                 isProfessorProfile,
+                showSignaturePanel,
                 true,
                 true,
                 canModifyField("nombre", user),
@@ -465,7 +467,9 @@ public class ProfileController {
                     errors.add("Solo el administrador puede modificar el nivel.");
                 }
             }
-            if (request.firmaImagen() != null) {
+            if (user.getLevel() == 3 && request.firmaImagen() != null) {
+                // Los administradores no gestionan la firma del docente/evaluador.
+            } else if (request.firmaImagen() != null) {
                 String raw = request.firmaImagen().trim();
                 if (raw.isEmpty()) {
                     profesor.setFirmaImagen(null);

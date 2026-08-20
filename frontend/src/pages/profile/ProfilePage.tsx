@@ -413,7 +413,7 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
     <section className="panel form-grid"><Heading number="01" title="Información personal" detail="Datos que identifican tu cuenta." /><label>Nombre<input value={form.nombre} disabled={!data.canEditAdminOnlyProfileFields} onChange={(e) => setForm({ ...form, nombre: e.target.value })} /></label><label>Apellido<input value={form.apellido} disabled={!data.canEditAdminOnlyProfileFields} onChange={(e) => setForm({ ...form, apellido: e.target.value })} /></label><label>Cédula<input value={form.ci ?? ''} disabled={!data.canEditAdminOnlyProfileFields} inputMode="numeric" onChange={(e) => setForm({ ...form, ci: e.target.value ? Number(e.target.value) : null })} /></label></section>
     <section className="panel form-grid"><Heading number="02" title="Contacto" detail="Canales para comunicaciones del colegio." /><label>Correo electrónico<input type="email" value={form.correo} onChange={(e) => setForm({ ...form, correo: e.target.value })} /></label><label>Teléfono<input inputMode="numeric" value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} /></label>{data.isStaffProfile && <label>Celular<input inputMode="numeric" value={form.celular} onChange={(e) => setForm({ ...form, celular: e.target.value })} /></label>}</section>
     <section className="panel form-grid"><Heading number="03" title="Cuenta" detail="Nombre utilizado para iniciar sesión." /><label>Usuario<input value={form.usuario} required onChange={(e) => setForm({ ...form, usuario: e.target.value })} /></label><div className="account-role"><span>Rol asignado</span><strong>{data.profileRoleLabel}</strong></div></section>
-    {data.isProfessorProfile && <>
+    {data.isProfessorProfile && (
       <section className="panel form-grid">
         <Heading number="04" title="Foto de perfil" detail="Se mostrará en la barra de navegación." />
         <div className="photo-section" style={{ gridColumn: '1 / -1' }}>
@@ -430,8 +430,10 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
           {photoError && <p className="muted-copy error-copy">{photoError}</p>}
         </div>
       </section>
+    )}
+    {data.showSignaturePanel && (
       <section className="panel form-grid">
-        <Heading number="05" title="Firma del docente" detail="Se usa en la exportación y se limpia automáticamente si no hay dato." />
+        <Heading number={data.isProfessorProfile ? '05' : '04'} title="Firma del docente" detail="Se usa en la exportación y se limpia automáticamente si no hay dato." />
         {!isSignatureMobile && <div className="signature-box">
           <canvas ref={canvasRef} onPointerDown={drawStart} onPointerMove={drawMove} onPointerUp={finishDrawing} onPointerCancel={finishDrawing} />
         </div>}
@@ -463,7 +465,7 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
           </div>
         </div>}
       </section>
-    </>}
+    )}
     {data.showGoogleClassroomPanel && <section className="panel form-grid"><Heading number={data.isProfessorProfile ? '05' : '04'} title="Google Classroom" detail="Vinculación académica del profesor." /><State active={data.googleClassroomConnected} title={data.googleClassroomConnected ? 'Cuenta conectada' : 'Sin conexión'} detail={data.profileOwner.googleEmail || 'Todavía no hay una cuenta de Google vinculada.'} />{data.googleClassroomCourses.length > 0 && <p className="muted-copy">{data.googleClassroomCourses.length} curso(s) compatible(s) disponibles.</p>}
       <div>
         {!data.googleClassroomConnected && <button className="button" type="button" onClick={async () => {
