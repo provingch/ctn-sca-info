@@ -224,7 +224,8 @@ function courseItems(data: AdminCatalog, allowedEspecialidadIds?: number[]) {
   return data.cursos.map((course) => ({ id: course.id, label: `${course.nivel}° ${course.seccion} · ${course.especialidad}` }));
 }
 
-function Specialties({ data, form, setForm, onChange, especialidadIds, setEspecialidadIds, categoria }: FormProps & { data: AdminCatalog; onChange: (value: string) => void; especialidadIds?: number[]; setEspecialidadIds?: (ids: number[]) => void; categoria?: string }) {
+function Specialties(props: FormProps & { data: AdminCatalog; onChange: (value: string) => void; especialidadIds?: number[]; setEspecialidadIds?: (ids: number[]) => void; categoria?: string }) {
+  const { data, onChange, especialidadIds, setEspecialidadIds, categoria } = props;
   // When used for materia creation (setEspecialidadIds provided):
   // - if categoria === 'especifico' -> allow only one specialty (single select)
   // - if categoria === 'comun' -> allow multi-selection (checkboxes)
@@ -327,17 +328,59 @@ function AdminList({ section, data, reload, status }: { section: string; data: A
   }
 
   if (section === 'ingresantes') {
+    const specialtyGroups = new Map<string, Map<string, { courseLabel: string; students: typeof data.alumnos }>>();
+
+    data.alumnos.forEach((student) => {
+      const course = data.cursos.find((item) => item.id === student.cursoId);
+      const specialty = course?.especialidad ?? 'Sin especialidad';
+      const courseKey = `${course?.nivel ?? 0}|${course?.seccion ?? 'Sin sección'}`;
+      const courseLabel = course ? `${course.nivel}° ${course.seccion}` : 'Curso sin asignar';
+
+      if (!specialtyGroups.has(specialty)) {
+        specialtyGroups.set(specialty, new Map());
+      }
+
+      const courseMap = specialtyGroups.get(specialty)!;
+      const existing = courseMap.get(courseKey) ?? { courseLabel, students: [] };
+      existing.students.push(student);
+      courseMap.set(courseKey, existing);
+    });
+
+    const orderedGroups = Array.from(specialtyGroups.entries())
+      .map(([specialty, courseMap]) => ({
+        specialty,
+        courses: Array.from(courseMap.values()).sort((a, b) => a.courseLabel.localeCompare(b.courseLabel)),
+      }))
+      .sort((a, b) => a.specialty.localeCompare(b.specialty));
+
     return (
-      <div className="admin-list">
-        {data.alumnos.map((student) => (
-          <div key={student.id}>
-            <strong>{student.apellido}, {student.nombre}</strong>
-            <span>{data.cursos.find((course) => course.id === student.cursoId)?.especialidad || 'Curso'} · CI {student.ci || '—'}</span>
-            <button className="button danger" onClick={async () => {
-              if (!window.confirm('¿Eliminar este ingresante?')) return;
-              try { await deleteAdminRecord('ingresantes', student.id); status('Ingresante eliminado.'); await reload(); }
-              catch (error) { status(error instanceof ApiError ? error.message : 'No se pudo eliminar.'); }
-            }}>Eliminar</button>
+      <div className="admin-list admin-ingresantes-groups" style={{ display: 'grid', gap: 16 }}>
+        {orderedGroups.length === 0 && <p className="muted-copy">No hay ingresantes cargados.</p>}
+        {orderedGroups.map(({ specialty, courses }) => (
+          <div key={specialty} style={{ border: '1px solid #d8dce6', borderRadius: 12, padding: 12, background: '#f8fafd' }}>
+            <h3 style={{ margin: '0 0 12px' }}>{specialty}</h3>
+            <div style={{ display: 'grid', gap: 12 }}>
+              {courses.map(({ courseLabel, students }) => (
+                <div key={`${specialty}-${courseLabel}`} style={{ borderLeft: '3px solid #4c73ff', paddingLeft: 10 }}>
+                  <h4 style={{ margin: '0 0 8px', fontSize: 15 }}>{courseLabel}</h4>
+                  <div style={{ display: 'grid', gap: 8 }}>
+                    {students.map((student) => (
+                      <div key={student.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '8px 10px', background: '#fff', borderRadius: 8 }}>
+                        <div>
+                          <strong>{student.apellido}, {student.nombre}</strong>
+                          <div style={{ fontSize: 12, color: '#4b5563' }}>CI {student.ci || '—'}</div>
+                        </div>
+                        <button className="button danger" onClick={async () => {
+                          if (!window.confirm('¿Eliminar este ingresante?')) return;
+                          try { await deleteAdminRecord('ingresantes', student.id); status('Ingresante eliminado.'); await reload(); }
+                          catch (error) { status(error instanceof ApiError ? error.message : 'No se pudo eliminar.'); }
+                        }}>Eliminar</button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         ))}
       </div>

@@ -29,6 +29,7 @@ export interface ProfileResponse {
   profileAccessDescription: string;
   showMateriasPanel: boolean;
   showGoogleClassroomPanel: boolean;
+  showSignaturePanel: boolean;
   showSecurityPanel: boolean;
   showActivityPanel: boolean;
   canEditAdminOnlyProfileFields: boolean;

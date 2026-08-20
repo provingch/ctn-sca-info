@@ -11,6 +11,7 @@ public record ProfileResponse(
         String profileAccessDescription,
         boolean showMateriasPanel,
         boolean showGoogleClassroomPanel,
+        boolean showSignaturePanel,
         boolean showSecurityPanel,
         boolean showActivityPanel,
         boolean canEditAdminOnlyProfileFields,

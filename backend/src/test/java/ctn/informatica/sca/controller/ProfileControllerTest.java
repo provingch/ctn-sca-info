@@ -168,4 +168,52 @@ class ProfileControllerTest {
         assertEquals("Perez", captor.getValue().getApellido());
         assertEquals("profesor@example.com", captor.getValue().getCorreo());
     }
+
+    @Test
+    void shouldExposeSignaturePanelForEvaluatorAndIgnoreAdminSignatureUpdate() throws Exception {
+        User evaluator = new User(22, "evaluador", "Evaluador Uno", 2);
+        Authentication evaluatorAuth = authentication(evaluator.getId(), evaluator.getLevel());
+        Profesor evaluatorProfesor = new Profesor();
+        evaluatorProfesor.setId(22);
+        evaluatorProfesor.setUsuario("evaluador");
+
+        when(userDao.findByIdAndLevel(22, 2)).thenReturn(evaluator);
+        when(profesorDao.findById(22)).thenReturn(evaluatorProfesor);
+        when(especialidadDao.findAll()).thenReturn(Collections.emptyList());
+        when(materiaDao.listByProfesor(22)).thenReturn(Collections.emptyList());
+        when(materiaDao.listAvailableForProfesor(22)).thenReturn(Collections.emptyList());
+        when(asignacionDao.findByProfesor(22)).thenReturn(Collections.emptyList());
+        when(profesorDao.findManualSubjectsText(22)).thenReturn("");
+
+        ProfileResponse evaluatorResponse = controller.getProfile(evaluatorAuth);
+        assertTrue(evaluatorResponse.showSignaturePanel());
+        assertFalse(evaluatorResponse.isProfessorProfile());
+
+        User admin = new User(33, "admin", "Admin Uno", 3);
+        Authentication adminAuth = authentication(admin.getId(), admin.getLevel());
+        Profesor adminProfesor = new Profesor();
+        adminProfesor.setId(33);
+        adminProfesor.setUsuario("admin");
+
+        when(userDao.findByIdAndLevel(33, 3)).thenReturn(admin);
+        when(profesorDao.findById(33)).thenReturn(adminProfesor);
+        when(profesorDao.update(any())).thenReturn(true);
+
+        controller.saveProfile(new SaveProfileRequest(
+                "admin@example.com",
+                null,
+                null,
+                "admin",
+                "Admin",
+                "Uno",
+                123,
+                3,
+                "data:image/png;base64,AAA",
+                null
+        ), adminAuth);
+
+        ArgumentCaptor<Profesor> captor = ArgumentCaptor.forClass(Profesor.class);
+        verify(profesorDao, atLeastOnce()).update(captor.capture());
+        assertNull(captor.getValue().getFirmaImagen());
+    }
 }
