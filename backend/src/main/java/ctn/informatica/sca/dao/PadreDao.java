@@ -20,7 +20,7 @@ import org.springframework.stereotype.Repository;
 public class PadreDao extends conexion {
 
     public Padre findById(int id) throws SQLException {
-        String sql = "SELECT id, ci, nombre, apellido, usuario, contrasenia, correo, telefono, totp_secret FROM usuario WHERE rol = 'padre' AND id = ?";
+        String sql = "SELECT id, ci, nombre, apellido, usuario, contrasenia, correo, telefono, totp_secret FROM usuario WHERE nivel = 4 AND id = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
@@ -43,7 +43,7 @@ public class PadreDao extends conexion {
     }
 
     public boolean update(Padre padre) throws SQLException {
-        String sql = "UPDATE usuario SET ci = ?, nombre = ?, apellido = ?, usuario = ?, contrasenia = ?, telefono = ?, correo = ?, totp_secret = ? WHERE rol = 'padre' AND id = ?";
+        String sql = "UPDATE usuario SET ci = ?, nombre = ?, apellido = ?, usuario = ?, contrasenia = ?, telefono = ?, correo = ?, totp_secret = ? WHERE nivel = 4 AND id = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
             if (padre.getCi() != null) {
                 ps.setInt(1, padre.getCi());
@@ -74,7 +74,7 @@ public class PadreDao extends conexion {
     }
 
     public boolean resetPassword(int id, String newPasswordPlainText) throws SQLException {
-        String sql = "UPDATE usuario SET contrasenia = ? WHERE rol = 'padre' AND id = ?";
+        String sql = "UPDATE usuario SET contrasenia = ? WHERE nivel = 4 AND id = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
             String plain = (newPasswordPlainText == null || newPasswordPlainText.trim().isEmpty())
                 ? "password" : newPasswordPlainText;
