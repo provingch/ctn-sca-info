@@ -31,7 +31,7 @@ export default function LoginPage() {
     setError(null);
     setSubmitting(true);
     try {
-      const res = await login(username, password, rememberMe);
+      const res = await login(username.trim(), password, rememberMe);
       if (res.requiere2fa && res.tempToken) {
         setTempToken(res.tempToken);
         setStep('twofactor');

@@ -25,11 +25,12 @@ public class UserDao {
 
     // Returns a User if credentials match, otherwise null
     public User findByUsernameAndPassword(String username, String password) throws Exception {
-        User professorUser = findProfessorUser(username, password);
+        String normalizedUsername = username == null ? "" : username.trim();
+        User professorUser = findProfessorUser(normalizedUsername, password);
         if (professorUser != null) {
             return professorUser;
         }
-        return findParentUser(username, password);
+        return findParentUser(normalizedUsername, password);
     }
 
     public User findById(int id) throws Exception {
@@ -52,7 +53,7 @@ public class UserDao {
     }
 
     private User findProfessorUser(String username, String password) throws Exception {
-        String sql = "select * from usuario where rol <> 'padre' and (usuario = ? OR ci = ?)";
+        String sql = "select * from usuario where (rol is null or rol <> 'padre') and (usuario = ? OR ci = ?)";
         try (Connection con = new conexion().getCon();
                 PreparedStatement stm = con.prepareStatement(sql)) {
 
