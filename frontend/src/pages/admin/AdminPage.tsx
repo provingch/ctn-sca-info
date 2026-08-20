@@ -132,7 +132,7 @@ function CreateForm({ section, data, submit }: { section: string; data: AdminCat
   function send(event: FormEvent) {
     event.preventDefault();
     if (section === 'materias') submit({ nombre: form.nombre, categoria: form.categoria, especialidadIds: especialidadIds });
-    if (section === 'usuarios') submit({ ...form, nivel: numeric('nivel'), especialidadId: numeric('especialidadId') });
+    if (section === 'usuarios') submit({ ...form, nivel: numeric('nivel') });
     if (section === 'asignaciones') submit({ profesorId: numeric('profesorId'), materiaId: numeric('materiaId'), cursoId: numeric('cursoId') });
     if (section === 'ingresantes') submit({ ...form, cursoId: numeric('cursoId'), ci: numeric('ci') });
   }
@@ -179,7 +179,6 @@ function CreateForm({ section, data, submit }: { section: string; data: AdminCat
             <AnimatedSelect ariaLabel="Nivel" value={form.nivel} onChange={(value) => setForm({ ...form, nivel: value })} options={[{ value: '1', label: 'Profesor' }, { value: '2', label: 'Evaluador' }, { value: '3', label: 'Administrador' }]} />
           </label>
           {field('correo', 'Correo', 'email')}
-          <Specialties data={data} form={form} setForm={setForm} onChange={specialtyChanged} />
         </>
       )}
 
@@ -271,8 +270,7 @@ function Specialties({ data, form, setForm, onChange, especialidadIds, setEspeci
     );
   }
 
-  // Default usage (e.g., user creation) -> single select
-  return <Select label="Especialidad" name="especialidadId" items={data.especialidades.map((specialty) => ({ id: specialty.id, label: specialty.nombre }))} form={form} setForm={setForm} optional onValueChange={onChange} />;
+  return null;
 }
 
 type FormProps = { form: Record<string, string>; setForm: (value: Record<string, string>) => void };

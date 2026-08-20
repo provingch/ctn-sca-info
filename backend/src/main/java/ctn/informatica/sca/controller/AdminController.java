@@ -51,7 +51,7 @@ public class AdminController {
         ApiAuth.requireUserId(authentication);
         try {
             List<MateriaItem> materias = new MateriaDao().listAll().stream().map(m -> new MateriaItem(m.getId(), m.getNombre(), m.getCategoria())).toList();
-            List<UserItem> usuarios = new ProfesorDao().findAll().stream().map(p -> new UserItem(p.getId(), p.getNombre(), p.getApellido(), p.getUsuario(), p.getNivel(), p.getCorreo(), p.getEspecialidadId())).toList();
+            List<UserItem> usuarios = new ProfesorDao().findAll().stream().map(p -> new UserItem(p.getId(), p.getNombre(), p.getApellido(), p.getUsuario(), p.getNivel(), p.getCorreo())).toList();
             List<AssignmentItem> asignaciones = new AsignacionDao().findAll().stream().map(a -> new AssignmentItem(a.getId(), a.getProfesorId(), a.getMateriaId(), a.getCursoId(), a.getProfesorNombre(), a.getMateriaNombre(), a.getCursoDescripcion())).toList();
             List<StudentItem> alumnos = new AlumnoDao().findAll().stream().map(a -> new StudentItem(a.getId(), a.getNombre(), a.getApellido(), a.getCursoId(), a.getCi(), a.getCorreoEncargado(), a.getCorreoEncargado2())).toList();
             List<CourseItem> cursos = new CursoDao().findAll().stream().map(c -> new CourseItem(c.getId(), c.getEspecialidad(), c.getNivel(), c.getSeccion())).toList();
@@ -83,7 +83,7 @@ public class AdminController {
     @PostMapping("/usuarios") @ResponseStatus(HttpStatus.CREATED)
     public void createUser(@RequestBody UserInput input, Authentication auth) {
         ApiAuth.requireUserId(auth); require(input != null && notBlank(input.nombre()) && notBlank(input.apellido()) && notBlank(input.usuario()), "Nombre, apellido y usuario son requeridos");
-        Profesor p = new Profesor(); p.setNombre(input.nombre().trim()); p.setApellido(input.apellido().trim()); p.setUsuario(input.usuario().trim()); p.setContrasenia(input.contrasenia()); p.setNivel(input.nivel()); p.setCorreo(input.correo()); p.setEspecialidadId(input.especialidadId());
+        Profesor p = new Profesor(); p.setNombre(input.nombre().trim()); p.setApellido(input.apellido().trim()); p.setUsuario(input.usuario().trim()); p.setContrasenia(input.contrasenia()); p.setNivel(input.nivel()); p.setCorreo(input.correo());
         if (new ProfesorDao().create(p) <= 0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo crear el usuario");
     }
 
@@ -175,13 +175,13 @@ public class AdminController {
 
     public record CatalogResponse(List<MateriaItem> materias, List<UserItem> usuarios, List<AssignmentItem> asignaciones, List<StudentItem> alumnos, List<CourseItem> cursos, List<SpecialtyItem> especialidades) {}
     public record MateriaItem(int id, String nombre, String categoria) {}
-    public record UserItem(int id, String nombre, String apellido, String usuario, int nivel, String correo, Integer especialidadId) {}
+    public record UserItem(int id, String nombre, String apellido, String usuario, int nivel, String correo) {}
     public record AssignmentItem(int id, int profesorId, int materiaId, int cursoId, String profesor, String materia, String curso) {}
     public record StudentItem(int id, String nombre, String apellido, int cursoId, Integer ci, String correoEncargado, String correoEncargado2) {}
     public record CourseItem(int id, String especialidad, int nivel, String seccion) {}
     public record SpecialtyItem(int id, String nombre) {}
     public record MateriaInput(String nombre, String categoria, List<Integer> especialidadIds) {}
-    public record UserInput(String nombre, String apellido, String usuario, String contrasenia, int nivel, String correo, Integer especialidadId) {}
+    public record UserInput(String nombre, String apellido, String usuario, String contrasenia, int nivel, String correo) {}
     public record AssignmentInput(int profesorId, int materiaId, int cursoId) {}
     public record StudentInput(String nombre, String apellido, int cursoId, Integer ci, String correoEncargado, String correoEncargado2) {}
     public record WipeResponse(String message, int deletedGrades, int deletedTasks, int planillaId, int clearedGoogleCourseIds) {}

@@ -36,7 +36,6 @@ export interface ProfileResponse {
   googleClassroomCourses: ProfileClassroomCourseDto[];
   teacherMaterias: ProfileMateriaDto[];
   misAsignaciones: ProfileAssignmentDto[];
-  profesorEspecialidadNombre: string;
   activityLog: string[];
   totpEnabled: boolean;
   pendingTotpSecret: string | null;

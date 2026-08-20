@@ -20,7 +20,6 @@ public record ProfileResponse(
         List<AsignacionDto> misAsignaciones,
         List<ProfileMateriaDto> availableMaterias,
         List<EspecialidadDto> especialidades,
-        String profesorEspecialidadNombre,
         String manualTeacherSubjectsText,
         List<String> activityLog,
         boolean totpEnabled,
