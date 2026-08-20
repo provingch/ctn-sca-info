@@ -6,11 +6,9 @@ DELETE FROM instrumento;
 DELETE FROM planilla;
 DELETE FROM rasgo_asistencia;
 DELETE FROM planilla_rasgo;
-DELETE FROM profesor_materia;
 DELETE FROM materia_especialidad;
 DELETE FROM materia;
 DELETE FROM alumno_usuario;
--- Nota: la tabla `padre` ha sido consolidada en `usuario`.
 DELETE FROM alumno;
 DELETE FROM curso;
 DELETE FROM usuario;
