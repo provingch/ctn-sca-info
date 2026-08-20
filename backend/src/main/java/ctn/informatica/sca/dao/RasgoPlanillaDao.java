@@ -41,7 +41,7 @@ public class RasgoPlanillaDao extends conexion {
     }
 
     static String buildPlanillaListSql(boolean includeFechaClase, boolean includeCreatedAt, boolean filterByProfesor) {
-        StringBuilder sql = new StringBuilder("SELECT id, curso_id, profesor_id, tema");
+        StringBuilder sql = new StringBuilder("SELECT id, curso_id, usuario_id AS profesor_id, tema");
         if (includeFechaClase) {
             sql.append(", fecha_clase");
         }
@@ -50,7 +50,7 @@ public class RasgoPlanillaDao extends conexion {
         }
         sql.append(" FROM planilla_rasgo WHERE");
         if (filterByProfesor) {
-            sql.append(" profesor_id = ? AND");
+            sql.append(" usuario_id = ? AND");
         }
         sql.append(" curso_id = ?");
         if (includeCreatedAt) {
@@ -85,7 +85,7 @@ public class RasgoPlanillaDao extends conexion {
             throw new SQLException("No hay alumnos elegibles para crear la planilla de rasgos");
         }
 
-        String insertPlanillaSql = "INSERT INTO planilla_rasgo (curso_id, profesor_id, tema, fecha_clase) VALUES (?, ?, ?, CURRENT_DATE())";
+        String insertPlanillaSql = "INSERT INTO planilla_rasgo (curso_id, usuario_id, tema, fecha_clase) VALUES (?, ?, ?, CURRENT_DATE())";
 
         try (Connection con = getCon()) {
             boolean[] supportsFaltaColumns = supportsColumns(con, "rasgo_asistencia", "falta_codigo", "falta_observacion");
@@ -191,7 +191,7 @@ public class RasgoPlanillaDao extends conexion {
     }
 
     public RasgoPlanilla findPlanillaById(int planillaId) throws SQLException {
-        String sql = "SELECT id, curso_id, profesor_id, tema, fecha_clase, created_at FROM planilla_rasgo WHERE id = ?";
+        String sql = "SELECT id, curso_id, usuario_id AS profesor_id, tema, fecha_clase, created_at FROM planilla_rasgo WHERE id = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, planillaId);
             try (ResultSet rs = ps.executeQuery()) {

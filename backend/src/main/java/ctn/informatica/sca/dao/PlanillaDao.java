@@ -38,11 +38,11 @@ public class PlanillaDao extends conexion {
 
     private Set<Integer> findAllowedMateriaIdsForProfesor(int profesorId) throws SQLException {
         String sql = "SELECT DISTINCT materia_id FROM ("
-                + "    SELECT p.materia_id FROM planilla p WHERE p.profesor_id = ? "
+                + "    SELECT p.materia_id FROM planilla p WHERE p.usuario_id = ? "
                 + "    UNION "
-                + "    SELECT pm.materia_id FROM profesor_materia pm WHERE pm.profesor_id = ? "
+                + "    SELECT um.materia_id FROM usuario_materia um WHERE um.usuario_id = ? "
                 + "    UNION "
-                + "    SELECT a.materia_id FROM asignacion a WHERE a.profesor_id = ?"
+                + "    SELECT a.materia_id FROM asignacion a WHERE a.usuario_id = ?"
                 + ") ids";
         Set<Integer> allowedMateriaIds = new HashSet<>();
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -69,12 +69,12 @@ public class PlanillaDao extends conexion {
             placeholders.add("?");
         }
 
-        String sql = "SELECT p.id, m.nombre AS nombre, curso_id, materia_id, periodo, etapa, profesor_id, p.google_course_id, COUNT(DISTINCT t.id) AS tareas_count "
+        String sql = "SELECT p.id, m.nombre AS nombre, curso_id, materia_id, periodo, etapa, p.usuario_id AS profesor_id, p.google_course_id, COUNT(DISTINCT t.id) AS tareas_count "
                 + "FROM planilla p "
                 + "JOIN materia m ON p.materia_id = m.id "
                 + "LEFT JOIN tarea t ON t.planilla_id = p.id "
-                + "WHERE curso_id = ? AND profesor_id = ? AND etapa = ? AND periodo = ? AND p.materia_id IN (" + String.join(", ", placeholders) + ") "
-                + "GROUP BY p.id, m.nombre, p.curso_id, p.materia_id, p.periodo, p.etapa, p.profesor_id, p.google_course_id";
+                + "WHERE curso_id = ? AND p.usuario_id = ? AND etapa = ? AND periodo = ? AND p.materia_id IN (" + String.join(", ", placeholders) + ") "
+                + "GROUP BY p.id, m.nombre, p.curso_id, p.materia_id, p.periodo, p.etapa, p.usuario_id, p.google_course_id";
         try (Connection con = getCon(); PreparedStatement stm = con.prepareStatement(sql)) {
             int index = 1;
             stm.setInt(index++, cursoId);
@@ -117,11 +117,11 @@ public class PlanillaDao extends conexion {
             placeholders.add("?");
         }
 
-        String sql = "SELECT p.id, m.nombre AS nombre, curso_id, materia_id, categoria, periodo, etapa, profesor_id "
+        String sql = "SELECT p.id, m.nombre AS nombre, curso_id, materia_id, categoria, periodo, etapa, p.usuario_id AS profesor_id "
                 + "FROM planilla p "
                 + "JOIN materia m ON p.materia_id = m.id "
-                + "WHERE profesor_id = ? AND etapa = ? AND periodo = ? AND p.materia_id IN (" + String.join(", ", placeholders) + ") "
-                + "GROUP BY p.id, m.nombre, p.curso_id, p.materia_id, p.periodo, p.etapa, p.profesor_id";
+                + "WHERE p.usuario_id = ? AND etapa = ? AND periodo = ? AND p.materia_id IN (" + String.join(", ", placeholders) + ") "
+                + "GROUP BY p.id, m.nombre, p.curso_id, p.materia_id, p.periodo, p.etapa, p.usuario_id";
         try (Connection con = getCon(); PreparedStatement stm = con.prepareStatement(sql)) {
             int index = 1;
             stm.setInt(index++, userId);
@@ -152,12 +152,12 @@ public class PlanillaDao extends conexion {
     public List<Materia> findMateriasSinPlanilla(int profesorId, int cursoId, int etapaIndex) throws SQLException {
         String sql = "SELECT DISTINCT m.id, m.nombre, m.categoria "
                 + "FROM materia m "
-                + "JOIN asignacion a ON a.materia_id = m.id AND a.profesor_id = ? "
+                + "JOIN asignacion a ON a.materia_id = m.id AND a.usuario_id = ? "
                 + "JOIN curso c ON c.id = a.curso_id "
                 + "WHERE c.id = ? "
                 + "AND m.id NOT IN ("
                 + "    SELECT p.materia_id FROM planilla p "
-                + "    WHERE p.curso_id = ? AND p.profesor_id = ? AND p.etapa = ? AND p.periodo = ?"
+                + "    WHERE p.curso_id = ? AND p.usuario_id = ? AND p.etapa = ? AND p.periodo = ?"
                 + ") "
                 + "ORDER BY m.nombre";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -213,7 +213,7 @@ public class PlanillaDao extends conexion {
      * de Google Classroom). Se genera al vuelo, sin pasos manuales de por medio.
      */
     public Planilla crear(int cursoId, int materiaId, int etapaIndex, int profesorId) throws SQLException {
-        String sql = "INSERT INTO planilla (curso_id, materia_id, periodo, etapa, profesor_id) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO planilla (curso_id, materia_id, periodo, etapa, usuario_id) VALUES (?, ?, ?, ?, ?)";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, cursoId);
             ps.setInt(2, materiaId);
@@ -245,11 +245,11 @@ public class PlanillaDao extends conexion {
     public List<String> findSubjectsByProfesor(int profesorId) throws SQLException {
         String sql = "SELECT DISTINCT m.nombre AS materia_nombre "
                 + "FROM ("
-                + "    SELECT p.materia_id FROM planilla p WHERE p.profesor_id = ? "
+                + "    SELECT p.materia_id FROM planilla p WHERE p.usuario_id = ? "
                 + "    UNION "
-                + "    SELECT pm.materia_id FROM profesor_materia pm WHERE pm.profesor_id = ? "
+                + "    SELECT um.materia_id FROM usuario_materia um WHERE um.usuario_id = ? "
                 + "    UNION "
-                + "    SELECT a.materia_id FROM asignacion a WHERE a.profesor_id = ?"
+                + "    SELECT a.materia_id FROM asignacion a WHERE a.usuario_id = ?"
                 + ") ids "
                 + "JOIN materia m ON m.id = ids.materia_id "
                 + "ORDER BY m.nombre";
@@ -273,9 +273,9 @@ public class PlanillaDao extends conexion {
     public List<Materia> findMateriasByProfesor(int profesorId) throws SQLException {
         String sql = "SELECT DISTINCT m.id, m.nombre, m.categoria "
                 + "FROM ("
-                + "    SELECT p.materia_id FROM planilla p WHERE p.profesor_id = ? "
+                + "    SELECT p.materia_id FROM planilla p WHERE p.usuario_id = ? "
                 + "    UNION "
-                + "    SELECT pm.materia_id FROM profesor_materia pm WHERE pm.profesor_id = ?"
+                + "    SELECT um.materia_id FROM usuario_materia um WHERE um.usuario_id = ?"
                 + ") ids "
                 + "JOIN materia m ON m.id = ids.materia_id "
                 + "ORDER BY m.nombre";

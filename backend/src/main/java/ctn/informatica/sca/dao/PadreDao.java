@@ -20,7 +20,7 @@ import org.springframework.stereotype.Repository;
 public class PadreDao extends conexion {
 
     public Padre findById(int id) throws SQLException {
-        String sql = "SELECT id, ci, nombre, apellido, usuario, contrasenia, correo, telefono, totp_secret FROM padre WHERE id = ?";
+        String sql = "SELECT id, ci, nombre, apellido, usuario, contrasenia, correo, telefono, totp_secret FROM usuario WHERE rol = 'padre' AND id = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
@@ -43,7 +43,7 @@ public class PadreDao extends conexion {
     }
 
     public boolean update(Padre padre) throws SQLException {
-        String sql = "UPDATE padre SET ci = ?, nombre = ?, apellido = ?, usuario = ?, contrasenia = ?, telefono = ?, correo = ?, totp_secret = ? WHERE id = ?";
+        String sql = "UPDATE usuario SET ci = ?, nombre = ?, apellido = ?, usuario = ?, contrasenia = ?, telefono = ?, correo = ?, totp_secret = ? WHERE rol = 'padre' AND id = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
             if (padre.getCi() != null) {
                 ps.setInt(1, padre.getCi());
@@ -74,7 +74,7 @@ public class PadreDao extends conexion {
     }
 
     public boolean resetPassword(int id, String newPasswordPlainText) throws SQLException {
-        String sql = "UPDATE padre SET contrasenia = ? WHERE id = ?";
+        String sql = "UPDATE usuario SET contrasenia = ? WHERE rol = 'padre' AND id = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
             String plain = (newPasswordPlainText == null || newPasswordPlainText.trim().isEmpty())
                 ? "password" : newPasswordPlainText;
@@ -86,11 +86,11 @@ public class PadreDao extends conexion {
 
     public List<Alumno> findChildrenByPadreId(int padreId) throws SQLException {
         String sql = "SELECT a.id, a.nombre, a.apellido, a.curso_id, e.nombre AS especialidad_nombre "
-                + "FROM alumno_padre ap "
+                + "FROM alumno_usuario ap "
                 + "JOIN alumno a ON a.id = ap.alumno_id "
                 + "JOIN curso c ON c.id = a.curso_id "
                 + "JOIN especialidad e ON e.id = c.especialidad_id "
-                + "WHERE ap.padre_id = ? "
+                + "WHERE ap.usuario_id = ? "
                 + "ORDER BY a.apellido, a.nombre";
         List<Alumno> alumnos = new ArrayList<>();
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -116,7 +116,7 @@ public class PadreDao extends conexion {
                 + "COALESCE(SUM(CASE WHEN puntaje.puntos IS NULL THEN 0 ELSE puntaje.puntos END), 0) AS puntos, "
                 + "COALESCE((SELECT SUM(t2.total) FROM tarea t2 WHERE t2.planilla_id = p.id), 0) AS total_posible, "
                 + "COUNT(DISTINCT t.id) AS tareas_count "
-                + "FROM alumno_padre ap "
+                + "FROM alumno_usuario ap "
                 + "JOIN alumno a ON a.id = ap.alumno_id "
                 + "JOIN curso c ON c.id = a.curso_id "
                 + "JOIN especialidad e ON e.id = c.especialidad_id "
@@ -125,7 +125,7 @@ public class PadreDao extends conexion {
                 + "LEFT JOIN registro r ON r.planilla_id = p.id AND r.alumno_id = a.id "
                 + "LEFT JOIN tarea t ON t.planilla_id = p.id "
                 + "LEFT JOIN puntaje ON puntaje.tarea_id = t.id AND puntaje.registro_id = r.id "
-                + "WHERE ap.padre_id = ? "
+                + "WHERE ap.usuario_id = ? "
                 + "GROUP BY a.id, a.nombre, a.apellido, c.id, e.nombre, m.id, m.nombre, p.id, p.etapa, p.categoria "
                 + "ORDER BY e.nombre, a.apellido, a.nombre, p.etapa, m.nombre";
 
