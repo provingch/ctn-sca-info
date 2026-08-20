@@ -4,8 +4,13 @@ const STORAGE_KEY = 'sca-theme';
 export const THEME_CHANGE_EVENT = 'sca-theme-change';
 
 export function getInitialTheme(): Theme {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved === 'light' || saved === 'dark') return saved;
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved === 'light' || saved === 'dark') return saved;
+  } catch {
+    // Algunos navegadores embebidos bloquean el acceso a localStorage.
+    // El tema no debe impedir que se pueda iniciar sesión.
+  }
   return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
@@ -16,7 +21,11 @@ export function applyTheme(theme: Theme): void {
 }
 
 export function persistTheme(theme: Theme): void {
-  localStorage.setItem(STORAGE_KEY, theme);
+  try {
+    localStorage.setItem(STORAGE_KEY, theme);
+  } catch {
+    // El cambio se aplica para la pestaña actual aunque no pueda persistirse.
+  }
   applyTheme(theme);
   window.dispatchEvent(new CustomEvent<Theme>(THEME_CHANGE_EVENT, { detail: theme }));
 }
