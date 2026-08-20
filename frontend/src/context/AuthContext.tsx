@@ -96,6 +96,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           resetSpecialty();
           setAccessToken(res.accessToken);
           setUser({ level: res.level });
+          // El refresh inicial puede seguir pendiente cuando el usuario envía el
+          // formulario. No debe ocultar una sesión que acabamos de validar.
+          setIsBootstrapping(false);
         }
         return res;
       },
@@ -106,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           resetSpecialty();
           setAccessToken(res.accessToken);
           setUser({ level: res.level });
+          setIsBootstrapping(false);
         }
         return res;
       },
