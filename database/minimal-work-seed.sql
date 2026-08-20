@@ -142,4 +142,11 @@ INSERT INTO instrumento (id, nombre) VALUES
 -- ========================================
 -- Solo deberia haber un admin para todo el sistema.
 INSERT INTO usuario (nombre, apellido, usuario, nivel) VALUES
-('Administrador', 'Principal', 'admin', 4);
+('Administrador', 'Principal', 'admin', 3);
+
+-- Notas
+-- Tipo de usuario (nivel):
+-- 1 = profesor
+-- 2 = evaluador
+-- 3 = admin
+-- 4 = padre
