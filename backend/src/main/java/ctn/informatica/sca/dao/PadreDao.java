@@ -19,8 +19,65 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class PadreDao extends conexion {
 
+    public List<Padre> findAll() throws SQLException {
+        String sql = "SELECT id, ci, nombre, apellido, usuario, contrasenia, correo, telefono, totp_secret "
+                + "FROM usuario WHERE nivel = 4 ORDER BY apellido, nombre";
+        List<Padre> padres = new ArrayList<>();
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                Padre padre = new Padre();
+                padre.setId(rs.getInt("id"));
+                padre.setCi(rs.getObject("ci") == null ? null : rs.getInt("ci"));
+                padre.setNombre(rs.getString("nombre"));
+                padre.setApellido(rs.getString("apellido"));
+                padre.setUsuario(rs.getString("usuario"));
+                padre.setContrasenia(rs.getString("contrasenia"));
+                padre.setCorreo(rs.getString("correo"));
+                padre.setTelefono(rs.getString("telefono"));
+                padre.setTotpSecret(rs.getString("totp_secret"));
+                padres.add(padre);
+            }
+        }
+        return padres;
+    }
+
+    public List<Padre> buscar(String query) throws SQLException {
+        if (query == null || query.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+        String term = query.trim();
+        String likeTerm = "%" + term.toLowerCase() + "%";
+        String sql = "SELECT id, ci, nombre, apellido, usuario, contrasenia, correo, telefono, totp_secret "
+                + "FROM usuario WHERE nivel = 4 AND "
+                + "(CAST(ci AS CHAR) = ? OR LOWER(nombre) LIKE ? OR LOWER(apellido) LIKE ? OR LOWER(usuario) LIKE ?) "
+                + "ORDER BY apellido, nombre LIMIT 20";
+        List<Padre> padres = new ArrayList<>();
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, term);
+            ps.setString(2, likeTerm);
+            ps.setString(3, likeTerm);
+            ps.setString(4, likeTerm);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Padre padre = new Padre();
+                    padre.setId(rs.getInt("id"));
+                    padre.setCi(rs.getObject("ci") == null ? null : rs.getInt("ci"));
+                    padre.setNombre(rs.getString("nombre"));
+                    padre.setApellido(rs.getString("apellido"));
+                    padre.setUsuario(rs.getString("usuario"));
+                    padre.setContrasenia(rs.getString("contrasenia"));
+                    padre.setCorreo(rs.getString("correo"));
+                    padre.setTelefono(rs.getString("telefono"));
+                    padre.setTotpSecret(rs.getString("totp_secret"));
+                    padres.add(padre);
+                }
+            }
+        }
+        return padres;
+    }
+
     public Padre findById(int id) throws SQLException {
-        String sql = "SELECT id, ci, nombre, apellido, usuario, contrasenia, correo, telefono, totp_secret FROM usuario WHERE rol = 'padre' AND id = ?";
+        String sql = "SELECT id, ci, nombre, apellido, usuario, contrasenia, correo, telefono, totp_secret FROM usuario WHERE nivel = 4 AND id = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
@@ -43,7 +100,7 @@ public class PadreDao extends conexion {
     }
 
     public boolean update(Padre padre) throws SQLException {
-        String sql = "UPDATE usuario SET ci = ?, nombre = ?, apellido = ?, usuario = ?, contrasenia = ?, telefono = ?, correo = ?, totp_secret = ? WHERE rol = 'padre' AND id = ?";
+        String sql = "UPDATE usuario SET ci = ?, nombre = ?, apellido = ?, usuario = ?, contrasenia = ?, telefono = ?, correo = ?, totp_secret = ? WHERE nivel = 4 AND id = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
             if (padre.getCi() != null) {
                 ps.setInt(1, padre.getCi());
@@ -74,7 +131,7 @@ public class PadreDao extends conexion {
     }
 
     public boolean resetPassword(int id, String newPasswordPlainText) throws SQLException {
-        String sql = "UPDATE usuario SET contrasenia = ? WHERE rol = 'padre' AND id = ?";
+        String sql = "UPDATE usuario SET contrasenia = ? WHERE nivel = 4 AND id = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
             String plain = (newPasswordPlainText == null || newPasswordPlainText.trim().isEmpty())
                 ? "password" : newPasswordPlainText;
@@ -108,6 +165,52 @@ public class PadreDao extends conexion {
             }
         }
         return alumnos;
+    }
+
+    public List<Padre> findPadresByAlumnoId(int alumnoId) throws SQLException {
+        String sql = "SELECT u.id, u.ci, u.nombre, u.apellido, u.usuario, u.contrasenia, u.correo, u.telefono, u.totp_secret "
+                + "FROM alumno_usuario ap "
+                + "JOIN usuario u ON u.id = ap.usuario_id "
+                + "WHERE ap.alumno_id = ? AND u.nivel = 4 "
+                + "ORDER BY u.apellido, u.nombre";
+        List<Padre> padres = new ArrayList<>();
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, alumnoId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Padre padre = new Padre();
+                    padre.setId(rs.getInt("id"));
+                    padre.setCi(rs.getObject("ci") == null ? null : rs.getInt("ci"));
+                    padre.setNombre(rs.getString("nombre"));
+                    padre.setApellido(rs.getString("apellido"));
+                    padre.setUsuario(rs.getString("usuario"));
+                    padre.setContrasenia(rs.getString("contrasenia"));
+                    padre.setCorreo(rs.getString("correo"));
+                    padre.setTelefono(rs.getString("telefono"));
+                    padre.setTotpSecret(rs.getString("totp_secret"));
+                    padres.add(padre);
+                }
+            }
+        }
+        return padres;
+    }
+
+    public boolean linkPadre(int alumnoId, int padreId) throws SQLException {
+        String sql = "INSERT IGNORE INTO alumno_usuario (alumno_id, usuario_id) VALUES (?, ?)";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, alumnoId);
+            ps.setInt(2, padreId);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    public boolean unlinkPadre(int alumnoId, int padreId) throws SQLException {
+        String sql = "DELETE FROM alumno_usuario WHERE alumno_id = ? AND usuario_id = ?";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, alumnoId);
+            ps.setInt(2, padreId);
+            return ps.executeUpdate() > 0;
+        }
     }
 
     public List<ParentSummaryItem> findParentSummary(int padreId) throws SQLException {

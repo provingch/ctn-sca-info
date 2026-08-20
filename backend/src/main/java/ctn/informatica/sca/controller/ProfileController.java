@@ -98,6 +98,7 @@ public class ProfileController {
         Profesor profesor = null;
         Padre padre = null;
         boolean isProfessorProfile = user.getLevel() == 1;
+        boolean showSignaturePanel = user.getLevel() == 1 || user.getLevel() == 2;
         boolean isStaffProfile = user.getLevel() >= 1 && user.getLevel() <= 3;
         boolean isParentProfile = user.getLevel() == 4;
 
@@ -165,6 +166,7 @@ public class ProfileController {
                 accessDescription(user),
                 isProfessorProfile,
                 isProfessorProfile,
+                showSignaturePanel,
                 true,
                 true,
                 canModifyField("nombre", user),
@@ -174,7 +176,6 @@ public class ProfileController {
                 misAsignaciones.stream().map(this::toAsignacionDto).collect(Collectors.toList()),
                 availableMaterias.stream().map(this::toProfileMateriaDto).collect(Collectors.toList()),
                 especialidades.stream().map(this::toEspecialidadDto).collect(Collectors.toList()),
-                resolveProfesorEspecialidadNombre(profesor),
                 manualTeacherSubjectsText,
                 Collections.emptyList(),
                 totpSecret != null && !totpSecret.isBlank(),
@@ -466,7 +467,9 @@ public class ProfileController {
                     errors.add("Solo el administrador puede modificar el nivel.");
                 }
             }
-            if (request.firmaImagen() != null) {
+            if (user.getLevel() == 3 && request.firmaImagen() != null) {
+                // Los administradores no gestionan la firma del docente/evaluador.
+            } else if (request.firmaImagen() != null) {
                 String raw = request.firmaImagen().trim();
                 if (raw.isEmpty()) {
                     profesor.setFirmaImagen(null);
@@ -673,21 +676,6 @@ public class ProfileController {
             }
             return profesorDao.updateTotpSecret(profesor.getId(), totpSecret);
         }
-    }
-
-    private String resolveProfesorEspecialidadNombre(Profesor profesor) {
-        if (profesor == null || profesor.getEspecialidadId() == null) {
-            return "Sin especialidad";
-        }
-        try {
-            Especialidad especialidad = especialidadDao.findById(profesor.getEspecialidadId());
-            if (especialidad != null && especialidad.getNombre() != null && !especialidad.getNombre().isBlank()) {
-                return especialidad.getNombre();
-            }
-        } catch (Exception ex) {
-            // ignore
-        }
-        return "Sin especialidad";
     }
 
     private List<String> parseManualSubjects(String raw) {
