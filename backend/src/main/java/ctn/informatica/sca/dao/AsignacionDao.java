@@ -50,6 +50,44 @@ public class AsignacionDao extends conexion {
         return out;
     }
 
+    public Asignacion findById(int id) throws SQLException {
+        String sql = "SELECT a.id, a.usuario_id AS profesor_id, a.materia_id, a.curso_id, "
+                + "u.nombre AS profesor_nombre, u.apellido AS profesor_apellido, "
+                + "m.nombre AS materia_nombre, e.nombre AS especialidad, c.promocion, c.seccion "
+                + "FROM asignacion a "
+                + "JOIN usuario u ON u.id = a.usuario_id "
+                + "JOIN materia m ON m.id = a.materia_id "
+                + "JOIN curso c ON c.id = a.curso_id "
+                + "JOIN especialidad e ON e.id = c.especialidad_id "
+                + "WHERE a.id = ?";
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                Asignacion a = new Asignacion();
+                a.setId(rs.getInt("id"));
+                a.setProfesorId(rs.getInt("profesor_id"));
+                a.setMateriaId(rs.getInt("materia_id"));
+                a.setCursoId(rs.getInt("curso_id"));
+                String profName = rs.getString("profesor_nombre");
+                String profLast = rs.getString("profesor_apellido");
+                a.setProfesorNombre((profLast == null ? "" : profLast) + (profName == null ? "" : (profName.isBlank() ? "" : (" " + profName))));
+                a.setMateriaNombre(rs.getString("materia_nombre"));
+                String especialidad = rs.getString("especialidad");
+                int promocion = rs.getInt("promocion");
+                String seccion = rs.getString("seccion");
+                String cursoDesc = (especialidad == null ? "" : especialidad) + (seccion == null || seccion.isBlank() ? "" : (" " + seccion));
+                a.setCursoDescripcion(cursoDesc);
+                a.setEspecialidad(especialidad);
+                a.setCursoNivel(promocion);
+                a.setCursoSeccion(seccion);
+                return a;
+            }
+        }
+    }
+
     public boolean existe(int profesorId, int materiaId, int cursoId) throws SQLException {
         String sql = "SELECT 1 FROM asignacion WHERE usuario_id = ? AND materia_id = ? AND curso_id = ?";
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
@@ -59,6 +97,16 @@ public class AsignacionDao extends conexion {
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
+        }
+    }
+
+    public boolean actualizar(int id, int materiaId, int cursoId) throws SQLException {
+        String sql = "UPDATE asignacion SET materia_id = ?, curso_id = ? WHERE id = ?";
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, materiaId);
+            ps.setInt(2, cursoId);
+            ps.setInt(3, id);
+            return ps.executeUpdate() == 1;
         }
     }
 
