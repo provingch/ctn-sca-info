@@ -8,6 +8,21 @@ import PasswordInput from '../../components/PasswordInput';
 import { applyTheme, getInitialTheme } from '../../theme/theme';
 
 type Step = 'credentials' | 'twofactor';
+type AuthFeedback = { message: string; locked: boolean };
+
+function authFeedback(error: unknown, fallback: string): AuthFeedback {
+  if (!(error instanceof ApiError)) return { message: fallback, locked: false };
+  const body = error.body;
+  if (body && typeof body === 'object' && 'code' in body && 'message' in body) {
+    const authBody = body as { code?: unknown; message?: unknown };
+    const locked = authBody.code === 'AUTH_LOCKED' || error.status === 429;
+    return {
+      message: typeof authBody.message === 'string' ? authBody.message : error.message,
+      locked,
+    };
+  }
+  return { message: error.message, locked: error.status === 429 };
+}
 
 export default function LoginPage() {
   const { login, verify2fa } = useAuth();
@@ -19,7 +34,7 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [tempToken, setTempToken] = useState<string | null>(null);
   const [code, setCode] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<AuthFeedback | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -39,7 +54,7 @@ export default function LoginPage() {
         navigate('/', { replace: true });
       }
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No se pudo iniciar sesión.');
+      setError(authFeedback(err, 'No se pudo iniciar sesión.'));
     } finally {
       setSubmitting(false);
     }
@@ -54,7 +69,7 @@ export default function LoginPage() {
       await verify2fa(tempToken, code, rememberMe);
       navigate('/', { replace: true });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Código inválido.');
+      setError(authFeedback(err, 'Código inválido.'));
     } finally {
       setSubmitting(false);
     }
@@ -78,7 +93,7 @@ export default function LoginPage() {
               required
             />
           </label>
-          {error && <p className="form-error">{error}</p>}
+          {error && <div className={`auth-feedback${error.locked ? ' is-locked' : ''}`} role="alert"><strong>{error.locked ? 'Acceso temporalmente pausado' : 'No pudimos verificar el código'}</strong><span>{error.message}</span></div>}
           <button type="submit" disabled={submitting}>
             {submitting ? 'Verificando…' : 'Verificar'}
           </button>
@@ -113,7 +128,7 @@ export default function LoginPage() {
           />
           Recordarme en este dispositivo
         </label>
-        {error && <p className="form-error">{error}</p>}
+        {error && <div className={`auth-feedback${error.locked ? ' is-locked' : ''}`} role="alert"><strong>{error.locked ? 'Acceso temporalmente pausado' : 'No se pudo iniciar sesión'}</strong><span>{error.message}</span></div>}
         <button type="submit" disabled={submitting}>
           {submitting ? 'Ingresando…' : 'Ingresar'}
         </button>

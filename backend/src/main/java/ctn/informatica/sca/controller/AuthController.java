@@ -4,6 +4,7 @@ import ctn.informatica.sca.dao.UserDao;
 import ctn.informatica.sca.dto.LoginRequest;
 import ctn.informatica.sca.dto.LoginResponse;
 import ctn.informatica.sca.dto.Verify2faRequest;
+import ctn.informatica.sca.dto.AuthErrorResponse;
 import ctn.informatica.sca.model.User;
 import ctn.informatica.sca.security.JwtService;
 import ctn.informatica.sca.service.AuthService;
@@ -45,11 +46,14 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest req, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         try {
-            LoginResponse response = authService.login(req);
+            LoginResponse response = authService.login(req, httpRequest.getRemoteAddr());
             issueRefreshCookie(req.rememberMe(), response.accessToken(), response.level(), httpRequest, httpResponse);
             return ResponseEntity.ok(response);
         } catch (AuthService.AuthException e) {
-            return ResponseEntity.status(401).body(e.getMessage());
+            ResponseEntity.BodyBuilder response = ResponseEntity.status(e.status());
+            if (e.status() == 429) response.header(HttpHeaders.RETRY_AFTER, String.valueOf(e.retryAfterSeconds()));
+            return response.body(new AuthErrorResponse(
+                e.status() == 429 ? "AUTH_LOCKED" : "AUTH_FAILED", e.getMessage(), e.retryAfterSeconds()));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error in /api/auth/login", e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo emitir token de sesión extendida", e);
@@ -59,11 +63,14 @@ public class AuthController {
     @PostMapping("/2fa/verify")
     public ResponseEntity<?> verify2fa(@RequestBody Verify2faRequest req, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         try {
-            LoginResponse response = authService.verify2fa(req);
+            LoginResponse response = authService.verify2fa(req, httpRequest.getRemoteAddr());
             issueRefreshCookie(req.rememberMe(), response.accessToken(), response.level(), httpRequest, httpResponse);
             return ResponseEntity.ok(response);
         } catch (AuthService.AuthException e) {
-            return ResponseEntity.status(401).body(e.getMessage());
+            ResponseEntity.BodyBuilder response = ResponseEntity.status(e.status());
+            if (e.status() == 429) response.header(HttpHeaders.RETRY_AFTER, String.valueOf(e.retryAfterSeconds()));
+            return response.body(new AuthErrorResponse(
+                e.status() == 429 ? "AUTH_LOCKED" : "AUTH_FAILED", e.getMessage(), e.retryAfterSeconds()));
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error in /api/auth/2fa/verify", e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo emitir token de sesión extendida", e);
