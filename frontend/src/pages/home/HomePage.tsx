@@ -27,8 +27,8 @@ export default function HomePage() {
 
   const hasEspecialidad = !!especialidadId;
   const hasCursoSeleccionado = !!cursoId;
-  const selectedCourseNivel = selectedNivel ?? (data?.selCurso ? Number(data.selCurso.curso) : null);
-  const hasSeccionSeleccionada = !!selectedSeccion || !!(data?.selCurso?.seccion && hasCursoSeleccionado);
+  const selectedCourseNivel = selectedNivel;
+  const hasSeccionSeleccionada = !!selectedSeccion;
 
   const setCourseSelection = (value: string | number) => {
     const nextNivel = Number(value) || null;
@@ -47,15 +47,6 @@ export default function HomePage() {
       setSelectionLoading(false);
     }
   }, [cursoId, etapa, view]);
-
-  useEffect(() => {
-    if (data?.selCurso && selectedNivel == null) {
-      setSelectedNivel(Number(data.selCurso.curso));
-    }
-    if (data?.selCurso && !selectedSeccion && data.selCurso.seccion) {
-      setSelectedSeccion(data.selCurso.seccion);
-    }
-  }, [data, selectedNivel, selectedSeccion]);
 
   useEffect(() => {
     // use admin catalog to ensure same especialidades list as admin panel
@@ -94,13 +85,7 @@ export default function HomePage() {
       setSelectedSeccion('');
       return;
     }
-    if (!cursoId && data?.selCurso) {
-      const nextNivel = Number(data.selCurso.curso);
-      const nextSeccion = data.selCurso.seccion;
-      setSelectedNivel(nextNivel);
-      setSelectedSeccion(nextSeccion);
-    }
-  }, [especialidadId, cursoId, data?.selCurso]);
+  }, [especialidadId]);
 
   if (!view) return <AppShell title="Elegí cómo querés empezar"><div className="choice-grid"><button onClick={() => setSearch({ view: 'clase' })}><span>01</span><h2>Iniciar una clase</h2><p>Asistencia, rasgos e historial del curso.</p></button><button onClick={() => setSearch({ view: 'planillas' })}><span>02</span><h2>Gestionar planillas</h2><p>Tareas, puntajes y sincronización con Classroom.</p></button></div></AppShell>;
   if (!data) return <AppShell title="Panel SCA"><div className="panel">{error || 'Cargando…'}</div></AppShell>;
@@ -125,14 +110,14 @@ export default function HomePage() {
     view,
     etapa: String(data.selEtapa),
     especialidadId: String(especialidadId || ''),
-    cursoId: String(cursoId || data.selCurso?.id || ''),
+    cursoId: String(cursoId || ''),
     ...next,
   });
 
   const courseOptions = niveles.map((n) => ({ value: n, label: `${n}°` }));
   const sectionOptions = (selectedCourseNivel != null ? seccionesForNivel(selectedCourseNivel) : []).map((s) => ({ value: s, label: String(s) }));
 
-  const showSelectionWait = view === 'clase' && (!hasEspecialidad || !hasCursoSeleccionado || !hasSeccionSeleccionada);
+  const showSelectionWait = !hasEspecialidad || !hasCursoSeleccionado || !hasSeccionSeleccionada;
 
   return <>
     <style>{`
@@ -187,14 +172,14 @@ export default function HomePage() {
           <AnimatedSelect ariaLabel="Sección" value={selectedSeccion ?? ''} onChange={(value) => {
           setSelectionLoading(true);
           setSelectedSeccion(value);
-          const nivel = selectedCourseNivel ?? (data.selCurso ? Number(data.selCurso.curso) : undefined);
+          const nivel = selectedCourseNivel ?? undefined;
           const seccion = String(value);
           const match = visibleCursos.find((c) => (nivel == null || Number(c.curso) === nivel) && c.seccion === seccion && (!selectedEspecialidad || c.especialidad === selectedEspecialidad.nombre));
           params({ cursoId: match ? String(match.id) : '' });
         }} disabled={!hasEspecialidad || selectedCourseNivel == null || visibleCursos.length === 0} placeholder="Seleccione la sección" options={[{ value: '', label: 'Seleccione la sección' }, ...sectionOptions]} />
       </label>
     </div>
-      {selectionLoading ? <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Cargando planilla…</h2><p>Esperá un momento mientras cargamos la planilla seleccionada.</p></section> : (view === 'clase' && showSelectionWait) ? <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Esperando selección</h2><p>Elegí una especialidad, un curso y una sección para continuar con la clase.</p></section> : (view === 'clase' ? <ClassView data={data} reload={load} /> : <PlanillasView data={data} syncingProp={syncingAll} setSyncingProp={setSyncingAll} />)}
+      {selectionLoading ? <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Cargando planilla…</h2><p>Esperá un momento mientras cargamos la planilla seleccionada.</p></section> : showSelectionWait ? <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Esperando selección</h2><p>Elegí una especialidad, un curso y una sección para continuar.</p></section> : (view === 'clase' ? <ClassView data={data} reload={load} /> : <PlanillasView data={data} syncingProp={syncingAll} setSyncingProp={setSyncingAll} />)}
     </AppShell>
   </>;
 }
