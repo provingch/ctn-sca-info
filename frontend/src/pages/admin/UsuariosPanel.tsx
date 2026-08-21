@@ -18,11 +18,11 @@ const USER_LEVELS = [
 export default function UsuariosPanel({ data, reload, status }: UsuariosPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [form, setForm] = useState({ nombre: '', apellido: '', ci: '', usuario: '', nivel: '1', correo: '', especialidadId: '' });
+  const [form, setForm] = useState({ nombre: '', apellido: '', ci: '', usuario: '', nivel: '1', correo: '' });
 
   const openCreate = () => {
     setEditingId(null);
-    setForm({ nombre: '', apellido: '', ci: '', usuario: '', nivel: '1', correo: '', especialidadId: '' });
+    setForm({ nombre: '', apellido: '', ci: '', usuario: '', nivel: '1', correo: '' });
     setIsOpen(true);
   };
 
@@ -35,7 +35,6 @@ export default function UsuariosPanel({ data, reload, status }: UsuariosPanelPro
       usuario: user.usuario,
       nivel: String(user.nivel),
       correo: user.correo ?? '',
-      especialidadId: user.especialidadId ? String(user.especialidadId) : '',
     });
     setIsOpen(true);
   };
@@ -49,7 +48,6 @@ export default function UsuariosPanel({ data, reload, status }: UsuariosPanelPro
       ci: form.ci ? Number(form.ci) : null,
       nivel: Number(form.nivel),
       correo: form.correo.trim() || null,
-      especialidadId: form.especialidadId ? Number(form.especialidadId) : null,
     };
 
     try {
@@ -107,7 +105,7 @@ export default function UsuariosPanel({ data, reload, status }: UsuariosPanelPro
                       {section.key !== 3 && (
                         <td>
                           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                            {user.nivel !== 4 && (
+                            {section.key !== 3 && (
                               <button type="button" className="button secondary" onClick={() => openEdit(user)}>Editar</button>
                             )}
                             {user.nivel !== 4 && (
@@ -121,7 +119,7 @@ export default function UsuariosPanel({ data, reload, status }: UsuariosPanelPro
                                 }
                               }}>Limpiar tokens Google</button>
                             )}
-                            {user.nivel !== 4 && user.nivel !== 3 && (
+                            {section.key !== 3 && (
                               <button type="button" className="button danger" onClick={async () => {
                                 if (!window.confirm('¿Eliminar este usuario?')) return;
                                 try {
@@ -182,15 +180,6 @@ export default function UsuariosPanel({ data, reload, status }: UsuariosPanelPro
             <label>
               Correo
               <input type="email" value={form.correo} onChange={(event) => setForm({ ...form, correo: event.target.value })} />
-            </label>
-            <label>
-              Especialidad
-              <select value={form.especialidadId} onChange={(event) => setForm({ ...form, especialidadId: event.target.value })}>
-                <option value="">Seleccione…</option>
-                {data.especialidades.map((specialty) => (
-                  <option key={specialty.id} value={specialty.id}>{specialty.nombre}</option>
-                ))}
-              </select>
             </label>
             <div className="signature-modal-actions">
               <button type="button" className="button secondary" onClick={() => setIsOpen(false)}>Cancelar</button>

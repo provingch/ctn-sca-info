@@ -130,6 +130,14 @@ public class PadreDao extends conexion {
         }
     }
 
+    public boolean delete(int id) throws SQLException {
+        String sql = "DELETE FROM usuario WHERE nivel = 4 AND id = ?";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            return ps.executeUpdate() == 1;
+        }
+    }
+
     public boolean resetPassword(int id, String newPasswordPlainText) throws SQLException {
         String sql = "UPDATE usuario SET contrasenia = ? WHERE nivel = 4 AND id = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
