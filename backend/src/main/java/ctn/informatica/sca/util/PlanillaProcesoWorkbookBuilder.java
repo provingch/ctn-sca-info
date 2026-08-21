@@ -48,6 +48,7 @@ public class PlanillaProcesoWorkbookBuilder {
     private static final int FIXED_TASK_COLUMNS_PER_MONTH = 5;
     private static final int INSTRUMENTS_PER_MONTH = 12;
     private static final int MONTH_BLOCK_WIDTH = 13;
+    private static final int INSTRUMENT_COLUMN_WIDTH_CHARS = 8;
     private static final int MONTH_HEADER_ROW = 5;
     private static final int INSTRUMENT_TITLE_ROW = 6;
     private static final int TP_ROW = 7;
@@ -574,14 +575,12 @@ public class PlanillaProcesoWorkbookBuilder {
                 setNumericCell(tpCell, tarea.getTotal());
                 taskColumnById.put(tarea.getId(), colIndex);
 
-                // set column width based on title length (clamped)
+                // fixed column width — font size scales down instead (see applyTitleFontSize)
                 if (sheet instanceof XSSFSheet) {
-                    int minChars = 4;
-                    int maxChars = 18;
-                    int titleLen = tarea.getTitulo() == null ? 0 : tarea.getTitulo().length();
-                    int desired = Math.max(minChars, Math.min(maxChars, (titleLen / 4) + 4));
-                    ((XSSFSheet) sheet).setColumnWidth(colIndex, desired * 256);
+                    ((XSSFSheet) sheet).setColumnWidth(colIndex, INSTRUMENT_COLUMN_WIDTH_CHARS * 256);
                 }
+                int titleLen = tarea.getTitulo() == null ? 0 : tarea.getTitulo().length();
+                applyTitleFontSize(sheet.getWorkbook(), titleCell, titleLen);
             }
 
             // Fill remaining reserved slots (if any) with blank title/TP cells and set a minimal column width
@@ -591,7 +590,7 @@ public class PlanillaProcesoWorkbookBuilder {
                 getOrCreateCell(titleRow, colIndex).setBlank();
                 getOrCreateCell(tpRow, colIndex).setBlank();
                 if (sheet instanceof XSSFSheet) {
-                    ((XSSFSheet) sheet).setColumnWidth(colIndex, 6 * 256);
+                    ((XSSFSheet) sheet).setColumnWidth(colIndex, INSTRUMENT_COLUMN_WIDTH_CHARS * 256);
                 }
             }
 
@@ -603,6 +602,8 @@ public class PlanillaProcesoWorkbookBuilder {
             if (lastInstrumentCol > firstCol) {
                 sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, MONTH_HEADER_ROW, firstCol, lastInstrumentCol));
             }
+            int monthBlockWidthChars = reservedSlotsForMonth(tareasMes) * INSTRUMENT_COLUMN_WIDTH_CHARS;
+            applyAdaptiveFontSizeToFitWidth(sheet.getWorkbook(), getOrCreateCell(monthHeaderRow, firstCol), monthLabel, monthBlockWidthChars);
             // set and merge subtotal header vertically (header -> title row)
             setStringCell(getOrCreateCell(monthHeaderRow, subtotalCol), "Subtotal");
             sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, subtotalCol, subtotalCol));
@@ -1078,6 +1079,74 @@ public class PlanillaProcesoWorkbookBuilder {
 
     private String stripOrdinalSuffix(String value) {
         return value == null ? "" : value.replace("º", "").replace("°", "");
+    }
+
+    /**
+     * Reduces the font size on the given cell as the title text grows longer,
+     * so long titles still fit visually now that column width is fixed.
+     * Clones the cell's current style so other formatting (rotation, borders,
+     * alignment) inherited from the template is preserved.
+     */
+    private void applyTitleFontSize(org.apache.poi.ss.usermodel.Workbook wb, Cell cell, int titleLen) {
+        int maxFontSize = 10;
+        int minFontSize = 7;
+        int shortThreshold = 12;   // titles at or under this length keep maxFontSize
+        int longThreshold = 40;    // titles at or over this length get minFontSize
+
+        int clampLen = Math.max(shortThreshold, Math.min(longThreshold, titleLen));
+        double ratio = (double) (clampLen - shortThreshold) / (longThreshold - shortThreshold);
+        int fontSize = (int) Math.round(maxFontSize - (maxFontSize - minFontSize) * ratio);
+
+        org.apache.poi.ss.usermodel.CellStyle existingStyle = cell.getCellStyle();
+        org.apache.poi.ss.usermodel.Font existingFont = wb.getFontAt(existingStyle.getFontIndexAsInt());
+
+        org.apache.poi.ss.usermodel.Font scaledFont = wb.createFont();
+        scaledFont.setFontName(existingFont.getFontName());
+        scaledFont.setBold(existingFont.getBold());
+        scaledFont.setItalic(existingFont.getItalic());
+        scaledFont.setColor(existingFont.getColor());
+        scaledFont.setFontHeightInPoints((short) fontSize);
+
+        org.apache.poi.ss.usermodel.CellStyle newStyle = wb.createCellStyle();
+        newStyle.cloneStyleFrom(existingStyle);
+        newStyle.setFont(scaledFont);
+        cell.setCellStyle(newStyle);
+    }
+
+    /**
+     * Shrinks the font on a cell so its text visually fits within the given
+     * available width (in Excel column-width "characters"), instead of relying
+     * on a fixed font size that may overflow narrower merged cells. Used for
+     * the month header label, whose merged width varies with the number of
+     * reserved instrument columns for that month.
+     */
+    private void applyAdaptiveFontSizeToFitWidth(org.apache.poi.ss.usermodel.Workbook wb, Cell cell, String text, int availableWidthChars) {
+        int baseFontSize = 11;
+        int minFontSize = 7;
+        int textLen = text == null ? 0 : text.length();
+        if (textLen <= 0 || availableWidthChars <= 0) return;
+
+        // Rough heuristic: one Excel column-width "char" unit approximates one
+        // default-size character. If the label is longer than the available
+        // width, shrink the font proportionally so it still fits.
+        double ratio = (double) availableWidthChars / textLen;
+        int fontSize = (int) Math.round(Math.min(baseFontSize, baseFontSize * ratio));
+        fontSize = Math.max(minFontSize, fontSize);
+
+        org.apache.poi.ss.usermodel.CellStyle existingStyle = cell.getCellStyle();
+        org.apache.poi.ss.usermodel.Font existingFont = wb.getFontAt(existingStyle.getFontIndexAsInt());
+
+        org.apache.poi.ss.usermodel.Font scaledFont = wb.createFont();
+        scaledFont.setFontName(existingFont.getFontName());
+        scaledFont.setBold(existingFont.getBold());
+        scaledFont.setItalic(existingFont.getItalic());
+        scaledFont.setColor(existingFont.getColor());
+        scaledFont.setFontHeightInPoints((short) fontSize);
+
+        org.apache.poi.ss.usermodel.CellStyle newStyle = wb.createCellStyle();
+        newStyle.cloneStyleFrom(existingStyle);
+        newStyle.setFont(scaledFont);
+        cell.setCellStyle(newStyle);
     }
 
     private record StageLayout(
