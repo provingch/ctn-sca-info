@@ -16,6 +16,7 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.junit.jupiter.api.Test;
 import java.io.FileOutputStream;
 
@@ -371,6 +372,51 @@ class PlanillaProcesoWorkbookBuilderTest {
                 }
             }
             assertTrue(foundBoundary, "Debe encontrarse una columna fija con contenido a la derecha");
+        }
+    }
+
+    @Test
+    void headerBannerResizesToTableWidthForNarrowPlanilla() throws IOException {
+        Planilla planilla = new Planilla(200, 1, 1, "comun", "Narrow", 2026, "primera", 7);
+        Tarea t1 = new Tarea(); t1.setId(9001); t1.setFecha(LocalDate.of(2026, 2, 5)); t1.setTitulo("S1"); t1.setTotal(5);
+        PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                planilla,
+                new ctn.informatica.sca.model.Curso(200, "Narrow", 2026, "A"),
+                "Narrow",
+                "Prof",
+                "Mañana",
+                List.of(t1),
+                List.of(new StudentRow()),
+                Map.of(),
+                null
+        );
+
+        try (XSSFWorkbook workbook = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(data, "NarrowTest")) {
+            org.apache.poi.ss.usermodel.Sheet sheet = workbook.getSheetAt(0);
+            Row headerRow = sheet.getRow(5); // MONTH_HEADER_ROW
+            int totalGeneralCol = -1;
+            for (int c = 0; c < 200; c++) {
+                Cell cell = headerRow.getCell(c);
+                if (cell != null && cell.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING) {
+                    String v = cell.getStringCellValue();
+                    if (v != null && v.toLowerCase().contains("total general")) {
+                        totalGeneralCol = c;
+                        break;
+                    }
+                }
+            }
+            // sanity
+            assertTrue(totalGeneralCol >= 0, "Debe encontrarse la columna Total General");
+
+            // compute rightmost merged column across header rows 0..4
+            int maxMerged = -1;
+            java.util.List<CellRangeAddress> merges = ((org.apache.poi.xssf.usermodel.XSSFSheet) sheet).getMergedRegions();
+            for (CellRangeAddress ca : merges) {
+                if (ca.getFirstRow() <= 4 && ca.getLastRow() >= 0) {
+                    maxMerged = Math.max(maxMerged, ca.getLastColumn());
+                }
+            }
+            assertTrue(maxMerged <= totalGeneralCol, "El encabezado no debe extenderse más allá de la última columna real de la tabla");
         }
     }
 }
