@@ -49,6 +49,7 @@ public class PlanillaProcesoWorkbookBuilder {
     private static final int INSTRUMENTS_PER_MONTH = 12;
     private static final int MONTH_BLOCK_WIDTH = 13;
     private static final int INSTRUMENT_COLUMN_WIDTH_CHARS = 8;
+    private static final int MIN_HEADER_COLUMNS = 15;
     private static final int MONTH_HEADER_ROW = 5;
     private static final int INSTRUMENT_TITLE_ROW = 6;
     private static final int TP_ROW = 7;
@@ -285,14 +286,22 @@ public class PlanillaProcesoWorkbookBuilder {
 
         // Hide any trailing empty columns immediately to the right of the
         // last instrument column so downstream logic/tests observe a clean
-        // boundary of visible instrument columns. This matches prior
-        // expectations where template columns after occupied instruments
-        // were hidden by default.
+        // boundary of visible instrument columns. Avoid hiding columns that
+        // belong to header merged regions so we don't cut header text prematurely.
         if (!monthBlocks.isEmpty() && sheet instanceof XSSFSheet) {
             int lastInstrumentGlobal = monthBlocks.stream().mapToInt(mb -> mb.lastInstrumentCol()).max().orElse(layout.firstMonthColumn() - 1);
             XSSFSheet xs = (XSSFSheet) sheet;
-            final int MAX_SCAN = lastInstrumentGlobal + 120; // upper safety bound
-            for (int c = lastInstrumentGlobal + 1; c < MAX_SCAN; c++) {
+            // compute the rightmost column used by any merged region that intersects the header rows
+            int lastHeaderMergeCol = layout.firstMonthColumn() - 1;
+            java.util.List<CellRangeAddress> merges = xs.getMergedRegions();
+            for (CellRangeAddress ca : merges) {
+                if (ca.getFirstRow() <= TP_ROW && ca.getLastRow() >= 0) {
+                    lastHeaderMergeCol = Math.max(lastHeaderMergeCol, ca.getLastColumn());
+                }
+            }
+            int startHide = Math.max(lastInstrumentGlobal, lastHeaderMergeCol) + 1;
+            final int MAX_SCAN = startHide + 120; // upper safety bound
+            for (int c = startHide; c < MAX_SCAN; c++) {
                 boolean hasContent = false;
                 for (int r : new int[]{MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, TP_ROW}) {
                     Row rr = sheet.getRow(r);
@@ -435,7 +444,98 @@ public class PlanillaProcesoWorkbookBuilder {
         int signatureColumn = 0;
         setTeacherSignature(sheet, data, signatureRow, signatureColumn);
 
+        if (sheet instanceof XSSFSheet) {
+            resizeHeaderBanner((XSSFSheet) sheet, layout, lastRealColumn);
+        }
+
         cleanColumnsAfter(sheet, lastRealColumn, signatureRow, signatureColumn);
+    }
+
+    /**
+     * Resize and re-merge the header banner and info blocks so they fit the
+     * actual table width (lastRealColumn). This prevents the fixed-template
+     * merges from leaving large empty areas or being cut by column-hiding.
+     */
+    private void resizeHeaderBanner(XSSFSheet sheet, StageLayout layout, int lastRealColumn) {
+        if (sheet == null || layout == null) return;
+        org.apache.poi.ss.usermodel.Workbook wb = sheet.getWorkbook();
+
+        int minCols = Math.max(MIN_HEADER_COLUMNS, layout.firstMonthColumn() + 10);
+        int targetLastCol = Math.max(lastRealColumn, minCols);
+
+        // Remove existing merges that occupy the header rows (0..4)
+        java.util.List<CellRangeAddress> merges = sheet.getMergedRegions();
+        for (int i = merges.size() - 1; i >= 0; i--) {
+            CellRangeAddress ca = merges.get(i);
+            if (ca.getFirstRow() <= 4 && ca.getLastRow() >= 0) {
+                sheet.removeMergedRegion(i);
+            }
+        }
+
+        // Re-merge title rows (0..2) from column 0 to targetLastCol and adapt font
+        for (int titleRow = 0; titleRow <= 2; titleRow++) {
+            sheet.addMergedRegion(new CellRangeAddress(titleRow, titleRow, 0, targetLastCol));
+            Cell c = getOrCreateCell(getOrCreateRow(sheet, titleRow), 0);
+            int availableChars = (targetLastCol - 0 + 1) * INSTRUMENT_COLUMN_WIDTH_CHARS;
+            applyAdaptiveFontSizeToFitWidth(wb, c, c.getCellType() == CellType.STRING ? c.getStringCellValue() : c.getStringCellValue(), availableChars);
+        }
+
+        // Recalculate and place specialty / course / year blocks on rows 3 and 4
+        // Fallback original template extents (C:N -> 2..13, C:R -> 2..17, T:V -> 19..21)
+        int specOrigEnd = 13;
+        int courseOrigEnd = 17;
+        int yearOrigStart = 19;
+        int yearOrigEnd = 21;
+
+        // Discover template merges for rows 3 and 4 to get original extents if present
+        java.util.List<CellRangeAddress> currentMerges = sheet.getMergedRegions();
+        for (CellRangeAddress ca : currentMerges) {
+            if (ca.getFirstRow() == 3) {
+                if (ca.getFirstColumn() >= 2) specOrigEnd = Math.max(specOrigEnd, ca.getLastColumn());
+            }
+            if (ca.getFirstRow() == 4) {
+                if (ca.getFirstColumn() >= 2 && ca.getLastColumn() <= 18) courseOrigEnd = Math.max(courseOrigEnd, ca.getLastColumn());
+                if (ca.getFirstColumn() >= yearOrigStart) { yearOrigStart = Math.min(yearOrigStart, ca.getFirstColumn()); yearOrigEnd = Math.max(yearOrigEnd, ca.getLastColumn()); }
+            }
+        }
+
+        int newSpecEnd = Math.min(specOrigEnd, targetLastCol);
+        int newCourseEnd = Math.min(courseOrigEnd, targetLastCol);
+
+        // If year area falls beyond targetLastCol, reposition it immediately after course block
+        int newYearStart = yearOrigStart;
+        int newYearEnd = Math.min(yearOrigEnd, targetLastCol);
+        if (newYearStart > targetLastCol) {
+            newYearStart = newCourseEnd + 1;
+            newYearStart = Math.min(newYearStart, targetLastCol);
+            int width = Math.max(4, yearOrigEnd - yearOrigStart + 1);
+            newYearEnd = Math.min(targetLastCol, newYearStart + width - 1);
+        }
+
+        // Apply merges for row 3 (Especialidad)
+        int specStart = 2;
+        if (newSpecEnd >= specStart) {
+            sheet.addMergedRegion(new CellRangeAddress(3, 3, specStart, newSpecEnd));
+            Cell sc = getOrCreateCell(getOrCreateRow(sheet, 3), specStart);
+            int avail = (newSpecEnd - specStart + 1) * INSTRUMENT_COLUMN_WIDTH_CHARS;
+            applyAdaptiveFontSizeToFitWidth(wb, sc, sc.getCellType() == CellType.STRING ? sc.getStringCellValue() : sc.getStringCellValue(), avail);
+        }
+
+        // Apply merges for row 4 (Curso/Turno/Seccion and Año)
+        int courseStart = 2;
+        if (newCourseEnd >= courseStart) {
+            sheet.addMergedRegion(new CellRangeAddress(4, 4, courseStart, newCourseEnd));
+            Cell cc = getOrCreateCell(getOrCreateRow(sheet, 4), courseStart);
+            int avail = (newCourseEnd - courseStart + 1) * INSTRUMENT_COLUMN_WIDTH_CHARS;
+            applyAdaptiveFontSizeToFitWidth(wb, cc, cc.getCellType() == CellType.STRING ? cc.getStringCellValue() : cc.getStringCellValue(), avail);
+        }
+
+        if (newYearEnd >= newYearStart) {
+            sheet.addMergedRegion(new CellRangeAddress(4, 4, newYearStart, newYearEnd));
+            Cell yc = getOrCreateCell(getOrCreateRow(sheet, 4), newYearStart);
+            int avail = (newYearEnd - newYearStart + 1) * INSTRUMENT_COLUMN_WIDTH_CHARS;
+            applyAdaptiveFontSizeToFitWidth(wb, yc, yc.getCellType() == CellType.STRING ? yc.getStringCellValue() : yc.getStringCellValue(), avail);
+        }
     }
 
     private int monthBlockWidth(List<Tarea> tareasMes) {
