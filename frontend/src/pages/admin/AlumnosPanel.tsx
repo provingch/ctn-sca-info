@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ApiError } from '../../api/client';
-import { createAdminRecord, deleteAdminRecord, updateAdminRecord, type AdminCatalog } from '../../api/admin';
+import { buscarPadres, createAdminRecord, deleteAdminRecord, getPadresDeAlumno, linkPadreAlumno, unlinkPadreAlumno, updateAdminRecord, type AdminCatalog, type PadreSummary } from '../../api/admin';
 
 interface AlumnosPanelProps {
   data: AdminCatalog;
@@ -17,6 +17,9 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
   const [selectedSeccion, setSelectedSeccion] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [padres, setPadres] = useState<PadreSummary[]>([]);
+  const [padresSearch, setPadresSearch] = useState('');
+  const [padresResults, setPadresResults] = useState<PadreSummary[]>([]);
   const [form, setForm] = useState({ nombre: '', apellido: '', ci: '', cursoId: '', correoEncargado: '', correoEncargado2: '' });
 
   const especialidades = data.especialidades;
@@ -42,10 +45,27 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
     setEditingId(null);
     const preselectedCourse = selectedCursoId ? String(selectedCursoId) : '';
     setForm({ nombre: '', apellido: '', ci: '', cursoId: preselectedCourse, correoEncargado: '', correoEncargado2: '' });
+    setPadres([]);
+    setPadresSearch('');
+    setPadresResults([]);
     setIsFormOpen(true);
   };
 
-  const openEdit = (student: AdminCatalog['alumnos'][number]) => {
+  const loadPadres = async (alumnoId: number | null) => {
+    if (!alumnoId) {
+      setPadres([]);
+      return;
+    }
+    try {
+      const response = await getPadresDeAlumno(alumnoId);
+      setPadres(response);
+    } catch (error) {
+      setPadres([]);
+      status(error instanceof ApiError ? error.message : 'No se pudo cargar los padres del alumno.');
+    }
+  };
+
+  const openEdit = async (student: AdminCatalog['alumnos'][number]) => {
     const course = data.cursos.find((item) => item.id === student.cursoId);
     setEditingId(student.id);
     setForm({
@@ -60,7 +80,11 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
     setSelectedCursoId(student.cursoId);
     setSelectedSeccion(course?.seccion ?? null);
     setStep('tabla');
+    setPadres([]);
+    setPadresSearch('');
+    setPadresResults([]);
     setIsFormOpen(true);
+    await loadPadres(student.id);
   };
 
   const submit = async (event: React.FormEvent) => {
@@ -121,6 +145,30 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
 
   const currentEspecialidad = especialidades.find((item) => item.id === selectedEspecialidadId)?.nombre ?? null;
   const currentCurso = data.cursos.find((item) => item.id === selectedCursoId) ?? null;
+
+  useEffect(() => {
+    if (!isFormOpen || !editingId) {
+      return;
+    }
+    void loadPadres(editingId);
+  }, [editingId, isFormOpen]);
+
+  useEffect(() => {
+    const query = padresSearch.trim();
+    if (!query) {
+      setPadresResults([]);
+      return;
+    }
+    const timeout = window.setTimeout(async () => {
+      try {
+        const result = await buscarPadres(query);
+        setPadresResults(result.filter((candidate) => !padres.some((parent) => parent.id === candidate.id)));
+      } catch (error) {
+        setPadresResults([]);
+      }
+    }, 250);
+    return () => window.clearTimeout(timeout);
+  }, [padresSearch, padres]);
 
   return (
     <>
@@ -216,7 +264,7 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
                         <td>{student.apellido}</td>
                         <td>{student.nombre}</td>
                         <td>{student.ci ?? '—'}</td>
-                        <td>—</td>
+                        <td>{padres.find((parent) => parent.id === student.id) ? 'Ver en editar' : 'Ver en editar'}</td>
                         <td>
                           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                             <button type="button" className="button secondary" onClick={() => openEdit(student)}>Editar</button>
@@ -289,7 +337,72 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
               <input type="email" value={form.correoEncargado2} onChange={(event) => setForm({ ...form, correoEncargado2: event.target.value })} />
             </label>
 
-            <div className="signature-modal-actions">
+            {!editingId ? (
+              <div style={{ gridColumn: '1 / -1', padding: '8px 0 0' }} className="muted-copy">Guardá el alumno primero para poder vincular padres.</div>
+            ) : (
+              <>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <h3 style={{ marginBottom: 8 }}>Padre/s</h3>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                    <input
+                      value={padresSearch}
+                      onChange={(event) => setPadresSearch(event.target.value)}
+                      placeholder="Buscar padre por nombre, apellido o usuario"
+                      style={{ flex: 1, minWidth: 220 }}
+                    />
+                  </div>
+                  {padresResults.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+                      {padresResults.map((parent) => (
+                        <div key={parent.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, border: '1px solid #d9dfe8', borderRadius: 8, padding: '6px 8px' }}>
+                          <span>{parent.nombre} {parent.apellido} · {parent.usuario} {parent.ci ? `· CI ${parent.ci}` : ''}</span>
+                          <button
+                            type="button"
+                            className="button secondary"
+                            onClick={async () => {
+                              try {
+                                await linkPadreAlumno(editingId, parent.id);
+                                status('Padre vinculado.');
+                                await loadPadres(editingId);
+                                setPadresSearch('');
+                              } catch (error) {
+                                status(error instanceof ApiError ? error.message : 'No se pudo vincular el padre.');
+                              }
+                            }}
+                          >Agregar</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {padres.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {padres.map((parent) => (
+                        <div key={parent.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, border: '1px solid #d9dfe8', borderRadius: 8, padding: '6px 8px' }}>
+                          <span>{parent.nombre} {parent.apellido} · {parent.usuario} {parent.ci ? `· CI ${parent.ci}` : ''}</span>
+                          <button
+                            type="button"
+                            className="button danger"
+                            onClick={async () => {
+                              try {
+                                await unlinkPadreAlumno(editingId, parent.id);
+                                status('Padre desvinculado.');
+                                await loadPadres(editingId);
+                              } catch (error) {
+                                status(error instanceof ApiError ? error.message : 'No se pudo desvincular el padre.');
+                              }
+                            }}
+                          >Quitar</button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="muted-copy">No hay padres vinculados.</p>
+                  )}
+                </div>
+              </>
+            )}
+
+            <div className="signature-modal-actions" style={{ gridColumn: '1 / -1' }}>
               <button type="button" className="button secondary" onClick={() => setIsFormOpen(false)}>Cancelar</button>
               <button type="submit" className="button" style={{ gridColumn: 'span 2' }}>{editingId ? 'Guardar cambios' : 'Crear alumno'}</button>
             </div>

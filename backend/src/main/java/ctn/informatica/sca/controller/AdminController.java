@@ -244,11 +244,16 @@ public class AdminController {
         ApiAuth.requireUserId(auth);
         try {
             ProfesorDao profesorDao = new ProfesorDao();
+            PadreDao padreDao = new PadreDao();
             Profesor existing = profesorDao.findById(id);
             if (existing != null && existing.getNivel() == 3) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Los administradores no pueden editarse ni eliminarse desde este panel");
             }
-            if (!profesorDao.delete(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado o no se pudo eliminar");
+            if (existing != null) {
+                if (!profesorDao.delete(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado o no se pudo eliminar");
+                return;
+            }
+            if (!padreDao.delete(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado o no se pudo eliminar");
         } catch (ResponseStatusException ex) { throw ex; } catch (Exception ex) { throw failure("No se pudo eliminar el usuario", ex); }
     }
 
@@ -372,21 +377,25 @@ public class AdminController {
     }
 
     @GetMapping("/padres/buscar")
-    public java.util.List<Padre> buscarPadres(@RequestParam String q, Authentication auth) {
+    public java.util.List<PadreSummary> buscarPadres(@RequestParam String q, Authentication auth) {
         ApiAuth.requireUserId(auth);
         try {
-            return new PadreDao().buscar(q);
+            return new PadreDao().buscar(q).stream()
+                .map(p -> new PadreSummary(p.getId(), p.getNombre(), p.getApellido(), p.getCi(), p.getUsuario()))
+                .toList();
         } catch (Exception ex) {
             throw failure("No se pudo buscar padres", ex);
         }
     }
 
     @GetMapping("/alumnos/{id}/padres")
-    public java.util.List<Padre> padresDelAlumno(@PathVariable int id, Authentication auth) {
+    public java.util.List<PadreSummary> padresDelAlumno(@PathVariable int id, Authentication auth) {
         ApiAuth.requireUserId(auth);
         try {
             if (new AlumnoDao().findById(id) == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Alumno no encontrado");
-            return new PadreDao().findPadresByAlumnoId(id);
+            return new PadreDao().findPadresByAlumnoId(id).stream()
+                .map(p -> new PadreSummary(p.getId(), p.getNombre(), p.getApellido(), p.getCi(), p.getUsuario()))
+                .toList();
         } catch (ResponseStatusException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -492,6 +501,7 @@ public class AdminController {
 
     public record CatalogResponse(List<MateriaItem> materias, List<UserItem> usuarios, List<AssignmentItem> asignaciones, List<StudentItem> alumnos, List<CourseItem> cursos, List<SpecialtyItem> especialidades) {}
     public record MateriaItem(int id, String nombre, String categoria, List<Integer> especialidadIds) {}
+    public record PadreSummary(int id, String nombre, String apellido, Integer ci, String usuario) {}
     public record UserItem(int id, String nombre, String apellido, String usuario, int nivel, String correo, Integer ci) {}
     public record AssignmentItem(int id, int profesorId, int materiaId, int cursoId, String profesor, String materia, String curso) {}
     public record StudentItem(int id, String nombre, String apellido, int cursoId, Integer ci, String correoEncargado, String correoEncargado2) {}

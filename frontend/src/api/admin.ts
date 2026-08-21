@@ -7,6 +7,14 @@ export interface MateriaItem {
   especialidadIds?: number[];
 }
 
+export interface PadreSummary {
+  id: number;
+  nombre: string;
+  apellido: string;
+  ci: number | null;
+  usuario: string;
+}
+
 export interface UserItem {
   id: number;
   nombre: string;
@@ -14,7 +22,6 @@ export interface UserItem {
   usuario: string;
   nivel: number;
   correo: string | null;
-  especialidadId: number | null;
   ci?: number | null;
 }
 
@@ -65,6 +72,10 @@ export const updateAdminRecord = (section: string, id: number, payload: unknown)
 export const deleteAssignment = (id: number) => api.delete<void>(`/api/admin/asignaciones/${id}`);
 export const deleteAdminRecord = (section: string, id: number) => api.delete<void>(`/api/admin/${section}/${id}`);
 export const getMateriaEspecialidades = (materiaId: number) => api.get<number[]>(`/api/admin/materias/${materiaId}/especialidades`);
+export const buscarPadres = (q: string) => api.get<PadreSummary[]>(`/api/admin/padres/buscar?q=${encodeURIComponent(q)}`);
+export const getPadresDeAlumno = (alumnoId: number) => api.get<PadreSummary[]>(`/api/admin/alumnos/${alumnoId}/padres`);
+export const linkPadreAlumno = (alumnoId: number, padreId: number) => api.post<void>(`/api/admin/alumnos/${alumnoId}/padres/${padreId}`, {});
+export const unlinkPadreAlumno = (alumnoId: number, padreId: number) => api.delete<void>(`/api/admin/alumnos/${alumnoId}/padres/${padreId}`);
 export const wipePlanillaSyncImports = (planillaId: number) => api.post<{ message: string; deletedGrades: number; deletedTasks: number; clearedGoogleCourseIds: number }>(`/api/admin/planillas/${planillaId}/sync/wipe`);
 export const wipeAllClassroomSync = () => api.post<{ message: string; deletedGrades: number; deletedTasks: number; clearedGoogleCourseIds: number }>(`/api/admin/sync/wipe-all`);
 export const clearUserGoogleTokens = (userId: number) => api.post<{ message: string }>(`/api/admin/usuarios/${userId}/google/clear`);
