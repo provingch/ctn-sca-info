@@ -399,13 +399,15 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
 
   function clearSignature() {
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    const context = canvas.getContext('2d');
-    if (!context) return;
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    context.fillStyle = '#ffffff';
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    setForm({ ...form, firmaImagen: null });
+    if (canvas) {
+      const context = canvas.getContext('2d');
+      if (context) {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.fillStyle = '#ffffff';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+    setForm((current) => ({ ...current, firmaImagen: null }));
     setSignatureError('');
   }
 
