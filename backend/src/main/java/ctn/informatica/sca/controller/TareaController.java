@@ -87,6 +87,9 @@ public class TareaController {
         try {
             Tarea existing = requireTarea(tareaId);
             requireOwnedPlanilla(existing.getPlanillaId(), userId);
+            if (existing.getGoogleCourseworkId() != null && !existing.getGoogleCourseworkId().isBlank()) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "La tarea viene de Google Classroom y no puede modificarse desde la planilla");
+            }
 
             existing.setInstrumentoId(request.instrumentoId());
             existing.setFecha(request.fecha());
@@ -109,6 +112,9 @@ public class TareaController {
         try {
             Tarea tarea = requireTarea(tareaId);
             requireOwnedPlanilla(tarea.getPlanillaId(), userId);
+            if (tarea.getGoogleCourseworkId() != null && !tarea.getGoogleCourseworkId().isBlank()) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "La tarea viene de Google Classroom y no puede eliminarse desde la planilla");
+            }
             new TareaDao().delete(tareaId);
             return ResponseEntity.noContent().build();
         } catch (SQLException ex) {

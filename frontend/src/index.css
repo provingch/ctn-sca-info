@@ -593,9 +593,15 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .planilla-grade-table tbody tr:hover > td { background: var(--accent-soft); }
 .planilla-row-number { color: var(--muted); font-size: .76rem; font-weight: 800; font-variant-numeric: tabular-nums; }
 .planilla-task-heading { min-width: 142px; max-width: 190px; }
-.planilla-task-heading > a { display: block; overflow: hidden; color: var(--accent-deep); text-overflow: ellipsis; white-space: nowrap; }
+.planilla-task-heading .planilla-task-link { display: block; overflow: hidden; color: var(--accent-deep); text-overflow: ellipsis; white-space: nowrap; }
+.planilla-task-heading .planilla-task-link.readonly { color: var(--ink); cursor: default; }
 .planilla-task-heading .planilla-task-number { display: block; margin-bottom: 5px; color: var(--muted); font-size: .68rem; letter-spacing: .08em; }
 .planilla-task-heading .planilla-task-edit { margin-top: 5px; color: var(--muted); font-size: .68rem; font-weight: 700; }
+.planilla-task-heading .planilla-task-classroom-badge { margin-top: 4px; }
+.classroom-badge { display: inline-flex; align-items: center; gap: 6px; width: fit-content; padding: 4px 8px; border: 1px solid rgba(220, 78, 48, 0.2); border-radius: 999px; background: rgba(234, 67, 53, 0.08); color: #b23b2f; font-size: .68rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.classroom-badge svg { width: 12px; height: 12px; fill: currentColor; }
+.classroom-link-row { display: flex; justify-content: flex-end; }
+.classroom-link-row a { color: var(--accent-deep); font-weight: 700; }
 .planilla-task-grade span { min-width: 46px; display: inline-flex; align-items: center; justify-content: center; padding: 7px 9px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-soft); color: var(--ink); font-weight: 800; font-variant-numeric: tabular-nums; }
 .planilla-grade-table .sortable-grade-heading { padding: 0; }
 .sortable-grade-heading button { min-width: 72px; min-height: 54px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 12px; border: 0; background: transparent; color: inherit; font-weight: 850; box-shadow: none; }
