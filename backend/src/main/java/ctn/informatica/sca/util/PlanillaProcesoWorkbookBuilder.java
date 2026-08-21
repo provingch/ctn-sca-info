@@ -472,6 +472,13 @@ public class PlanillaProcesoWorkbookBuilder {
             }
         }
 
+        // Restaurar la fusión fija de las etiquetas Disciplina/Profesor (A:B,
+        // filas 4 y 5 en la representación 1-based de Excel -> 3 y 4 0-based)
+        // El bucle anterior las borra junto con el resto de merges del header,
+        // por lo que debemos volver a crearlas aquí.
+        sheet.addMergedRegion(new CellRangeAddress(3, 3, 0, 1));
+        sheet.addMergedRegion(new CellRangeAddress(4, 4, 0, 1));
+
         // Re-merge title rows (0..2) from column 0 to targetLastCol and adapt font
         for (int titleRow = 0; titleRow <= 2; titleRow++) {
             sheet.addMergedRegion(new CellRangeAddress(titleRow, titleRow, 0, targetLastCol));
