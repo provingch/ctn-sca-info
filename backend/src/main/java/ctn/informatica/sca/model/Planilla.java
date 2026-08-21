@@ -107,37 +107,42 @@ public class Planilla{
         int rem = inclusiveCount % 4;
 
         int c2 = base, c3 = base, c4 = base, c5 = base;
-        // residue distribution per the doc:
+        // Reparto del resto empezando por la nota más alta: garantiza que la nota 5
+        // (y por lo tanto el puntaje máximo, ls) siempre tenga al menos 1 punto de
+        // rango disponible en cuanto haya algo para repartir, sin importar cuán
+        // chico sea el total de la planilla.
         switch (rem) {
             case 1:
-                c3 += 1;
+                c5 += 1;
                 break;
             case 2:
-                c3 += 1;
+                c5 += 1;
                 c4 += 1;
                 break;
             case 3:
-                c3 += 1;
+                c5 += 1;
                 c4 += 1;
-                c2 += 1;
+                c3 += 1;
                 break;
             default:
                 break;
         }
 
         int start = li;
-        int end2 = start + c2 - 1;           // end for grade 2
+        int end2 = start + c2 - 1;
         int start3 = end2 + 1;
-        int end3 = start3 + c3 - 1;         // end for grade 3
+        int end3 = start3 + c3 - 1;
         int start4 = end3 + 1;
-        int end4 = start4 + c4 - 1;         // end for grade 4
+        int end4 = start4 + c4 - 1;
         int start5 = end4 + 1;
-        int end5 = ls;                      // end for grade 5
+        int end5 = ls;
 
-        gradeRanges.put(2, new int[]{li, Math.max(li, end2)});
-        gradeRanges.put(3, new int[]{Math.max(start3, li), Math.max(start3, end3)});
-        gradeRanges.put(4, new int[]{Math.max(start4, li), Math.max(start4, end4)});
-        gradeRanges.put(5, new int[]{Math.max(start5, li), end5});
+        // Sin clamps Math.max: un bucket de tamaño 0 produce un rango vacío
+        // (start > end) a propósito, y getNotaForSum() ya lo ignora correctamente.
+        gradeRanges.put(2, new int[]{start, end2});
+        gradeRanges.put(3, new int[]{start3, end3});
+        gradeRanges.put(4, new int[]{start4, end4});
+        gradeRanges.put(5, new int[]{start5, end5});
     }
 
     @Override
