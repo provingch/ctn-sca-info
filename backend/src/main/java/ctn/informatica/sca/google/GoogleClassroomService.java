@@ -201,7 +201,7 @@ public final class GoogleClassroomService {
                 Set<String> scopes = new HashSet<>(Arrays.asList(scopeStr.split(" ")));
                 List<String> required = Arrays.asList(
                         "https://www.googleapis.com/auth/classroom.coursework.me",
-                        "https://www.googleapis.com/auth/classroom.coursework.students.readonly"
+                            "https://www.googleapis.com/auth/classroom.coursework.students"
                 );
                 for (String req : required) {
                     if (!scopes.contains(req)) {
