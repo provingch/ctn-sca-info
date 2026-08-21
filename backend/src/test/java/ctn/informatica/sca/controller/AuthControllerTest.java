@@ -40,7 +40,7 @@ class AuthControllerTest {
     @Test
     void loginWithoutRememberMeIssuesBrowserSessionCookie() throws Exception {
         LoginRequest login = new LoginRequest("usuario", "clave", false);
-        when(authService.login(login)).thenReturn(new LoginResponse(false, null, "access-token", 1));
+        when(authService.login(login, "127.0.0.1")).thenReturn(new LoginResponse(false, null, "access-token", 1));
         when(jwtService.extractUserId("access-token")).thenReturn(7L);
         when(refreshTokenService.issueToken(7, 1, null, "127.0.0.1")).thenReturn("session-token");
 
@@ -56,7 +56,7 @@ class AuthControllerTest {
     @Test
     void loginWithRememberMeIssuesPersistentCookie() throws Exception {
         LoginRequest login = new LoginRequest("usuario", "clave", true);
-        when(authService.login(login)).thenReturn(new LoginResponse(false, null, "access-token", 1));
+        when(authService.login(login, "127.0.0.1")).thenReturn(new LoginResponse(false, null, "access-token", 1));
         when(jwtService.extractUserId("access-token")).thenReturn(7L);
         when(refreshTokenService.issueToken(7, 1, null, "127.0.0.1")).thenReturn("remember-token");
 
@@ -71,7 +71,7 @@ class AuthControllerTest {
     @Test
     void loginStillReturnsAccessTokenWhenRefreshCookiePersistenceFails() throws Exception {
         LoginRequest login = new LoginRequest("usuario", "clave", false);
-        when(authService.login(login)).thenReturn(new LoginResponse(false, null, "access-token", 1));
+        when(authService.login(login, "127.0.0.1")).thenReturn(new LoginResponse(false, null, "access-token", 1));
         when(jwtService.extractUserId("access-token")).thenReturn(7L);
         when(refreshTokenService.issueToken(7, 1, null, "127.0.0.1")).thenThrow(new RuntimeException("DB unavailable"));
 
