@@ -515,7 +515,9 @@ public class PlanillaProcesoWorkbookBuilder {
         // Apply merges for row 3 (Especialidad)
         int specStart = 2;
         if (newSpecEnd >= specStart) {
-            sheet.addMergedRegion(new CellRangeAddress(3, 3, specStart, newSpecEnd));
+            if (newSpecEnd > specStart) {
+                sheet.addMergedRegion(new CellRangeAddress(3, 3, specStart, newSpecEnd));
+            }
             Cell sc = getOrCreateCell(getOrCreateRow(sheet, 3), specStart);
             int avail = (newSpecEnd - specStart + 1) * INSTRUMENT_COLUMN_WIDTH_CHARS;
             applyAdaptiveFontSizeToFitWidth(wb, sc, sc.getCellType() == CellType.STRING ? sc.getStringCellValue() : sc.getStringCellValue(), avail);
@@ -524,14 +526,18 @@ public class PlanillaProcesoWorkbookBuilder {
         // Apply merges for row 4 (Curso/Turno/Seccion and Año)
         int courseStart = 2;
         if (newCourseEnd >= courseStart) {
-            sheet.addMergedRegion(new CellRangeAddress(4, 4, courseStart, newCourseEnd));
+            if (newCourseEnd > courseStart) {
+                sheet.addMergedRegion(new CellRangeAddress(4, 4, courseStart, newCourseEnd));
+            }
             Cell cc = getOrCreateCell(getOrCreateRow(sheet, 4), courseStart);
             int avail = (newCourseEnd - courseStart + 1) * INSTRUMENT_COLUMN_WIDTH_CHARS;
             applyAdaptiveFontSizeToFitWidth(wb, cc, cc.getCellType() == CellType.STRING ? cc.getStringCellValue() : cc.getStringCellValue(), avail);
         }
 
         if (newYearEnd >= newYearStart) {
-            sheet.addMergedRegion(new CellRangeAddress(4, 4, newYearStart, newYearEnd));
+            if (newYearEnd > newYearStart) {
+                sheet.addMergedRegion(new CellRangeAddress(4, 4, newYearStart, newYearEnd));
+            }
             Cell yc = getOrCreateCell(getOrCreateRow(sheet, 4), newYearStart);
             int avail = (newYearEnd - newYearStart + 1) * INSTRUMENT_COLUMN_WIDTH_CHARS;
             applyAdaptiveFontSizeToFitWidth(wb, yc, yc.getCellType() == CellType.STRING ? yc.getStringCellValue() : yc.getStringCellValue(), avail);
