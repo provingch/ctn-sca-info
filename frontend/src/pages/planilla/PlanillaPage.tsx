@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import AppShell from '../../components/AppShell';
+import ClassroomBadge from '../../components/ClassroomBadge';
 import { getPlanilla, resolvePlanilla, syncClassroom, confirmClassroomMapping, type PlanillaDetail } from '../../api/academics';
 import { ApiError, apiDownload } from '../../api/client';
 
@@ -314,18 +315,28 @@ export default function PlanillaPage() {
             <tr>
               <th className="planilla-number-heading">#</th>
               <th className="planilla-student-heading">Alumno</th>
-              {data.tareas.map((task, taskIndex) => (
-                <th key={task.id} className="planilla-task-heading">
-                  <span className="planilla-task-number">T{taskIndex + 1}</span>
-                  {task.googleCourseworkUrl ? (
-                    <a href={task.googleCourseworkUrl} target="_blank" rel="noopener noreferrer">{task.titulo}</a>
-                  ) : (
-                    <Link to={`/planilla/${id}/tarea/${task.id}`}>{task.titulo}</Link>
-                  )}
-                  <small>TP: {task.total}{task.fechaInicio ? ` · ${formatShortDate(task.fechaInicio)}` : ''}</small>
-                  {task.googleCourseworkUrl && <Link className="planilla-task-edit" to={`/planilla/${id}/tarea/${task.id}`}>Editar</Link>}
-                </th>
-              ))}
+              {data.tareas.map((task, taskIndex) => {
+                const isClassroomTask = Boolean(task.googleCourseworkId);
+                return (
+                  <th key={task.id} className="planilla-task-heading">
+                    <span className="planilla-task-number">T{taskIndex + 1}</span>
+                    {isClassroomTask ? (
+                      <>
+                        {task.googleCourseworkUrl ? (
+                          <a className="planilla-task-link" href={task.googleCourseworkUrl} target="_blank" rel="noopener noreferrer">{task.titulo}</a>
+                        ) : (
+                          <span className="planilla-task-link readonly">{task.titulo}</span>
+                        )}
+                        <ClassroomBadge className="planilla-task-classroom-badge" label="Classroom" />
+                      </>
+                    ) : (
+                      <Link className="planilla-task-link" to={`/planilla/${id}/tarea/${task.id}`}>{task.titulo}</Link>
+                    )}
+                    <small>TP: {task.total}{task.fechaInicio ? ` · ${formatShortDate(task.fechaInicio)}` : ''}</small>
+                    {!isClassroomTask && <Link className="planilla-task-edit" to={`/planilla/${id}/tarea/${task.id}`}>Editar</Link>}
+                  </th>
+                );
+              })}
               {(['total', 'percentage', 'grade'] as const).map((key) => {
                 const label = key === 'total' ? 'Total' : key === 'percentage' ? '%' : 'Nota';
                 const activeDirection = studentSort?.key === key ? studentSort.direction : undefined;
