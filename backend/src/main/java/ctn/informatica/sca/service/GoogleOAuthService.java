@@ -46,7 +46,7 @@ public class GoogleOAuthService {
                 "https://www.googleapis.com/auth/classroom.rosters.readonly",
                 // coursework scopes required to list/import tareas
                 "https://www.googleapis.com/auth/classroom.coursework.me",
-                "https://www.googleapis.com/auth/classroom.coursework.students.readonly",
+                "https://www.googleapis.com/auth/classroom.coursework.students",
                 "openid",
                 "email",
                 "profile"
