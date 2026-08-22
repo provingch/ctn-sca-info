@@ -506,17 +506,22 @@ public class PlanillaProcesoWorkbookBuilder {
             }
         }
 
-        int newSpecEnd = Math.min(specOrigEnd, targetLastCol);
-        int newCourseEnd = Math.min(courseOrigEnd, targetLastCol);
+        String specialtyText = getCellText(getOrCreateCell(getOrCreateRow(sheet, 3), 2));
+        String courseText = getCellText(getOrCreateCell(getOrCreateRow(sheet, 4), 2));
+        int specialtyMinCols = computeMinimumColumnsForText(specialtyText, 2);
+        int courseMinCols = computeMinimumColumnsForText(courseText, 2);
+
+        int newSpecEnd = Math.max(targetLastCol, specialtyMinCols);
+        int newCourseEnd = Math.max(targetLastCol, courseMinCols);
 
         // If year area falls beyond targetLastCol, reposition it immediately after course block
         int newYearStart = yearOrigStart;
-        int newYearEnd = Math.min(yearOrigEnd, targetLastCol);
-        if (newYearStart > targetLastCol) {
+        int newYearEnd = Math.min(yearOrigEnd, newCourseEnd);
+        if (newYearStart > newCourseEnd) {
             newYearStart = newCourseEnd + 1;
-            newYearStart = Math.min(newYearStart, targetLastCol);
+            newYearStart = Math.min(newYearStart, newCourseEnd + 4);
             int width = Math.max(4, yearOrigEnd - yearOrigStart + 1);
-            newYearEnd = Math.min(targetLastCol, newYearStart + width - 1);
+            newYearEnd = Math.min(newCourseEnd, newYearStart + width - 1);
         }
 
         // Apply merges for row 3 (Especialidad)
@@ -527,7 +532,11 @@ public class PlanillaProcesoWorkbookBuilder {
             }
             Cell sc = getOrCreateCell(getOrCreateRow(sheet, 3), specStart);
             int avail = (newSpecEnd - specStart + 1) * INSTRUMENT_COLUMN_WIDTH_CHARS;
-            applyAdaptiveFontSizeToFitWidth(wb, sc, sc.getCellType() == CellType.STRING ? sc.getStringCellValue() : sc.getStringCellValue(), avail);
+            if (needsWrapForText(sc, avail, specialtyText)) {
+                applyWrappedTextStyle(wb, sc, specialtyText, avail, 3);
+            } else {
+                applyAdaptiveFontSizeToFitWidth(wb, sc, specialtyText, avail);
+            }
         }
 
         // Apply merges for row 4 (Curso/Turno/Seccion and Año)
@@ -538,7 +547,11 @@ public class PlanillaProcesoWorkbookBuilder {
             }
             Cell cc = getOrCreateCell(getOrCreateRow(sheet, 4), courseStart);
             int avail = (newCourseEnd - courseStart + 1) * INSTRUMENT_COLUMN_WIDTH_CHARS;
-            applyAdaptiveFontSizeToFitWidth(wb, cc, cc.getCellType() == CellType.STRING ? cc.getStringCellValue() : cc.getStringCellValue(), avail);
+            if (needsWrapForText(cc, avail, courseText)) {
+                applyWrappedTextStyle(wb, cc, courseText, avail, 4);
+            } else {
+                applyAdaptiveFontSizeToFitWidth(wb, cc, courseText, avail);
+            }
         }
 
         if (newYearEnd >= newYearStart) {
@@ -547,7 +560,12 @@ public class PlanillaProcesoWorkbookBuilder {
             }
             Cell yc = getOrCreateCell(getOrCreateRow(sheet, 4), newYearStart);
             int avail = (newYearEnd - newYearStart + 1) * INSTRUMENT_COLUMN_WIDTH_CHARS;
-            applyAdaptiveFontSizeToFitWidth(wb, yc, yc.getCellType() == CellType.STRING ? yc.getStringCellValue() : yc.getStringCellValue(), avail);
+            String yearText = getCellText(yc);
+            if (needsWrapForText(yc, avail, yearText)) {
+                applyWrappedTextStyle(wb, yc, yearText, avail, 4);
+            } else {
+                applyAdaptiveFontSizeToFitWidth(wb, yc, yearText, avail);
+            }
         }
     }
 
@@ -709,14 +727,17 @@ public class PlanillaProcesoWorkbookBuilder {
 
             // Subtotal column immediately after instruments
             int subtotalCol = firstCol + reservedSlotsForMonth(tareasMes);
-            setStringCell(monthHeaderRow, firstCol, monthLabel);
+            Cell monthCell = getOrCreateCell(monthHeaderRow, firstCol);
+            setStringCell(monthCell, monthLabel);
+            monthCell.getCellStyle().setRotation((short) 0);
             int lastInstrumentCol = firstCol + reservedSlotsForMonth(tareasMes) - 1;
             // merge month header across instrument columns if it spans 2+ cols
             if (lastInstrumentCol > firstCol) {
                 sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, MONTH_HEADER_ROW, firstCol, lastInstrumentCol));
             }
             int monthBlockWidthChars = reservedSlotsForMonth(tareasMes) * INSTRUMENT_COLUMN_WIDTH_CHARS;
-            applyAdaptiveFontSizeToFitWidth(sheet.getWorkbook(), getOrCreateCell(monthHeaderRow, firstCol), monthLabel, monthBlockWidthChars);
+            applyAdaptiveFontSizeToFitWidth(sheet.getWorkbook(), monthCell, monthLabel, monthBlockWidthChars);
+            monthCell.getCellStyle().setRotation((short) 0);
             // set and merge subtotal header vertically (header -> title row)
             setStringCell(getOrCreateCell(monthHeaderRow, subtotalCol), "Subtotal");
             sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, subtotalCol, subtotalCol));
@@ -1223,6 +1244,7 @@ public class PlanillaProcesoWorkbookBuilder {
         org.apache.poi.ss.usermodel.CellStyle newStyle = wb.createCellStyle();
         newStyle.cloneStyleFrom(existingStyle);
         newStyle.setFont(scaledFont);
+        newStyle.setRotation((short) 0);
         cell.setCellStyle(newStyle);
     }
 
@@ -1233,6 +1255,43 @@ public class PlanillaProcesoWorkbookBuilder {
      * the month header label, whose merged width varies with the number of
      * reserved instrument columns for that month.
      */
+    private int computeMinimumColumnsForText(String text, int marginColumns) {
+        if (text == null || text.isBlank()) {
+            return Math.max(4, marginColumns + 1);
+        }
+        int characters = text.trim().length();
+        int required = (int) Math.ceil((double) characters / INSTRUMENT_COLUMN_WIDTH_CHARS) + marginColumns;
+        return Math.max(4, required);
+    }
+
+    private boolean needsWrapForText(Cell cell, int availableWidthChars, String text) {
+        if (cell == null || availableWidthChars <= 0) return false;
+        if (text == null || text.isBlank()) return false;
+        return text.trim().length() > availableWidthChars;
+    }
+
+    private void applyWrappedTextStyle(org.apache.poi.ss.usermodel.Workbook wb, Cell cell, String text, int availableWidthChars, int rowIndex) {
+        org.apache.poi.ss.usermodel.CellStyle existingStyle = cell.getCellStyle();
+        org.apache.poi.ss.usermodel.CellStyle newStyle = wb.createCellStyle();
+        newStyle.cloneStyleFrom(existingStyle);
+        newStyle.setWrapText(true);
+        newStyle.setRotation((short) 0);
+        cell.setCellStyle(newStyle);
+        Row row = cell.getRow();
+        if (row != null) {
+            int lines = Math.max(1, (int) Math.ceil((text == null ? 0 : text.trim().length()) / (double) Math.max(1, availableWidthChars / 2)));
+            row.setHeightInPoints(Math.max(row.getHeightInPoints(), 16f + (lines * 12f)));
+        }
+    }
+
+    private String getCellText(Cell cell) {
+        if (cell == null) return "";
+        if (cell.getCellType() == CellType.STRING) {
+            return cell.getStringCellValue() == null ? "" : cell.getStringCellValue();
+        }
+        return cell.toString();
+    }
+
     private void applyAdaptiveFontSizeToFitWidth(org.apache.poi.ss.usermodel.Workbook wb, Cell cell, String text, int availableWidthChars) {
         int baseFontSize = 11;
         int minFontSize = 7;
@@ -1259,6 +1318,7 @@ public class PlanillaProcesoWorkbookBuilder {
         org.apache.poi.ss.usermodel.CellStyle newStyle = wb.createCellStyle();
         newStyle.cloneStyleFrom(existingStyle);
         newStyle.setFont(scaledFont);
+        newStyle.setRotation((short) 0);
         cell.setCellStyle(newStyle);
     }
 
