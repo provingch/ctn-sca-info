@@ -495,6 +495,25 @@ class PlanillaProcesoWorkbookBuilderTest {
             assertNotNull(titleCell, "Debe existir la celda del instrumento Repaso");
             assertEquals("Repaso", titleCell.getStringCellValue(), "Debe renderizar el título del instrumento");
             assertEquals(0, titleCell.getCellStyle().getRotation(), "El texto del instrumento debe mantenerse horizontal");
+
+            String expectedYearLabel = "Año: " + planilla.getPeriodo();
+            Cell yearCell = null;
+            for (Row row : sheet) {
+                for (Cell cell : row) {
+                    if (cell != null && cell.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING) {
+                        String value = cell.getStringCellValue();
+                        if (value != null && value.contains("Año: ") && value.contains(String.valueOf(planilla.getPeriodo()))) {
+                            yearCell = cell;
+                            break;
+                        }
+                    }
+                }
+                if (yearCell != null) {
+                    break;
+                }
+            }
+            assertNotNull(yearCell, "Debe existir la celda de Año: " + planilla.getPeriodo() + " en la planilla angosta");
+            assertEquals(expectedYearLabel, yearCell.getStringCellValue(), "La celda de Año debe conservar el período de la planilla");
         }
     }
 }

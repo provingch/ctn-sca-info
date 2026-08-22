@@ -446,6 +446,14 @@ public class PlanillaProcesoWorkbookBuilder {
 
         if (sheet instanceof XSSFSheet) {
             resizeHeaderBanner((XSSFSheet) sheet, layout, lastRealColumn);
+            java.util.List<CellRangeAddress> dynamicHeaderMerges = ((XSSFSheet) sheet).getMergedRegions();
+            int protectedHeaderRightEdge = lastRealColumn;
+            for (CellRangeAddress ca : dynamicHeaderMerges) {
+                if (ca.getFirstRow() <= 4 && ca.getLastRow() >= 0) {
+                    protectedHeaderRightEdge = Math.max(protectedHeaderRightEdge, ca.getLastColumn());
+                }
+            }
+            lastRealColumn = Math.max(lastRealColumn, protectedHeaderRightEdge);
         }
 
         cleanColumnsAfter(sheet, lastRealColumn, signatureRow, signatureColumn);
@@ -519,9 +527,8 @@ public class PlanillaProcesoWorkbookBuilder {
         int newYearEnd = Math.min(yearOrigEnd, newCourseEnd);
         if (newYearStart > newCourseEnd) {
             newYearStart = newCourseEnd + 1;
-            newYearStart = Math.min(newYearStart, newCourseEnd + 4);
             int width = Math.max(4, yearOrigEnd - yearOrigStart + 1);
-            newYearEnd = Math.min(newCourseEnd, newYearStart + width - 1);
+            newYearEnd = newYearStart + width - 1;
         }
 
         // Apply merges for row 3 (Especialidad)
@@ -559,8 +566,13 @@ public class PlanillaProcesoWorkbookBuilder {
                 sheet.addMergedRegion(new CellRangeAddress(4, 4, newYearStart, newYearEnd));
             }
             Cell yc = getOrCreateCell(getOrCreateRow(sheet, 4), newYearStart);
+            Cell originalYearCell = getOrCreateCell(getOrCreateRow(sheet, 4), yearOrigStart);
+            String yearText = getCellText(originalYearCell);
+            if (yearText == null || yearText.isBlank()) {
+                yearText = getCellText(yc);
+            }
+            setStringCell(yc, yearText);
             int avail = (newYearEnd - newYearStart + 1) * INSTRUMENT_COLUMN_WIDTH_CHARS;
-            String yearText = getCellText(yc);
             if (needsWrapForText(yc, avail, yearText)) {
                 applyWrappedTextStyle(wb, yc, yearText, avail, 4);
             } else {
