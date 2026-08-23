@@ -44,6 +44,7 @@ public class SecurityConfig {
                     "/evaluacion", "/admin", "/admin/**", "/padre", "/styleguide", "/privacidad", "/terminos",
                     "/planilla/**", "/google/callback", "/offline").permitAll()
                 .requestMatchers("/api/planillas/**", "/api/tareas/**").hasRole("LEVEL_1")
+                .requestMatchers("/api/evaluacion/especialidades").hasAnyRole("LEVEL_1", "LEVEL_2")
                 .requestMatchers("/api/evaluacion/**").hasRole("LEVEL_2")
                 .requestMatchers("/api/admin/**").hasRole("LEVEL_3")
                 .requestMatchers("/api/padre/**").hasRole("LEVEL_4")

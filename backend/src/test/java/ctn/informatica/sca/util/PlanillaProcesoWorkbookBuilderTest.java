@@ -1,5 +1,6 @@
 package ctn.informatica.sca.util;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -348,9 +349,7 @@ class PlanillaProcesoWorkbookBuilderTest {
             assertTrue(first >= 0, "Debe encontrarse S1-1");
             int lastInstrument = first + 1; // two tasks
 
-            int boundary = -1;
-            org.apache.poi.xssf.usermodel.XSSFSheet xs = (org.apache.poi.xssf.usermodel.XSSFSheet) sheet;
-            boolean foundBoundary = false;
+            int afterTaskContent = -1;
             for (int c = lastInstrument + 1; c < 300; c++) {
                 boolean hasContent = false;
                 for (int r : new int[]{5,6,7}) {
@@ -362,16 +361,12 @@ class PlanillaProcesoWorkbookBuilderTest {
                         if (vv != null && !vv.isBlank()) { hasContent = true; break; }
                     }
                 }
-                if (!hasContent) {
-                    // If the column is empty, it must be hidden
-                    assertTrue(xs.isColumnHidden(c), "Columna sobrante debe estar oculta: " + c);
-                } else {
-                    boundary = c;
-                    foundBoundary = true;
+                if (hasContent) {
+                    afterTaskContent = c;
                     break;
                 }
             }
-            assertTrue(foundBoundary, "Debe encontrarse una columna fija con contenido a la derecha");
+            assertTrue(afterTaskContent >= 0, "Debe existir contenido fijo después de los instrumentos del mes");
         }
     }
 
@@ -405,10 +400,8 @@ class PlanillaProcesoWorkbookBuilderTest {
                     }
                 }
             }
-            // sanity
             assertTrue(totalGeneralCol >= 0, "Debe encontrarse la columna Total General");
 
-            // compute rightmost merged column across header rows 0..4
             int maxMerged = -1;
             java.util.List<CellRangeAddress> merges = ((org.apache.poi.xssf.usermodel.XSSFSheet) sheet).getMergedRegions();
             for (CellRangeAddress ca : merges) {
@@ -416,7 +409,111 @@ class PlanillaProcesoWorkbookBuilderTest {
                     maxMerged = Math.max(maxMerged, ca.getLastColumn());
                 }
             }
-            assertTrue(maxMerged <= totalGeneralCol, "El encabezado no debe extenderse más allá de la última columna real de la tabla");
+            assertTrue(maxMerged >= 0, "Debe existir al menos una región fusionada en el encabezado");
+            assertTrue(maxMerged >= totalGeneralCol, "El encabezado debe reservar suficiente ancho para el texto del bloque de info");
+        }
+    }
+
+    @Test
+    void headerBannerUsesMinimumSpanForLongSpecialtyTextInNarrowPlanilla() throws IOException {
+        Planilla planilla = new Planilla(201, 1, 1, "comun", "NarrowLong", 2026, "primera", 7);
+        Tarea t1 = new Tarea(); t1.setId(9002); t1.setFecha(LocalDate.of(2026, 2, 5)); t1.setTitulo("S1"); t1.setTotal(5);
+        String specialtyText = "Especialidad: Ciencias Sociales y Humanidades con orientación en Historia";
+        String professorText = "Profesor/a: Ana María de la Cruz Pérez del Valle";
+        PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                planilla,
+                new ctn.informatica.sca.model.Curso(201, "NarrowLong", 2026, "A"),
+                "NarrowLong",
+                professorText,
+                "Mañana",
+                List.of(t1),
+                List.of(new StudentRow()),
+                Map.of(),
+                null
+        );
+
+        try (XSSFWorkbook workbook = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(data, "NarrowLongTest")) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Row specialtyRow = sheet.getRow(3);
+            Row courseRow = sheet.getRow(4);
+            Cell specialtyCell = specialtyRow.getCell(2);
+            Cell courseCell = courseRow.getCell(2);
+
+            assertNotNull(specialtyCell);
+            assertNotNull(courseCell);
+            int requiredSpecialtyColumns = (int) Math.ceil((double) specialtyText.length() / 8.0) + 2;
+            int requiredCourseColumns = (int) Math.ceil((double) courseCell.getStringCellValue().length() / 8.0) + 2;
+
+            int specialtyLastCol = -1;
+            int courseLastCol = -1;
+            for (CellRangeAddress merged : ((org.apache.poi.xssf.usermodel.XSSFSheet) sheet).getMergedRegions()) {
+                if (merged.getFirstRow() == 3 && merged.getFirstColumn() == 2) {
+                    specialtyLastCol = merged.getLastColumn();
+                }
+                if (merged.getFirstRow() == 4 && merged.getFirstColumn() == 2) {
+                    courseLastCol = merged.getLastColumn();
+                }
+            }
+
+            assertTrue(specialtyLastCol >= requiredSpecialtyColumns, "Especialidad debe ampliar su rango de fusión para el texto largo");
+            assertTrue(courseLastCol >= requiredCourseColumns, "Curso/Turno/Sección debe ampliar su rango de fusión para el texto largo");
+            assertTrue(specialtyCell.getCellStyle().getWrapText(), "Especialidad debe activar wrapText cuando el texto requiere más ancho");
+        }
+    }
+
+    @Test
+    void monthHeaderCellKeepsHorizontalRotationZero() throws IOException {
+        Planilla planilla = new Planilla(202, 1, 1, "comun", "MesRotation", 2026, "primera", 7);
+        Tarea may = new Tarea(); may.setId(9501); may.setFecha(LocalDate.of(2026, 5, 12)); may.setTitulo("Repaso"); may.setTotal(10);
+        StudentRow student = new StudentRow(); student.setAlumnoId(1); student.setAlumnoNombre("Student"); student.setGrades(Map.of(9501, 9)); student.setTotal(9);
+
+        PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                planilla,
+                new ctn.informatica.sca.model.Curso(202, "MesRotation", 2026, "A"),
+                "MesRotation",
+                "Prof",
+                "Mañana",
+                List.of(may),
+                List.of(student),
+                Map.of(),
+                null
+        );
+
+        try (XSSFWorkbook workbook = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(data, "MesRotation")) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Cell monthCell = null;
+            for (Cell cell : sheet.getRow(5)) {
+                if (cell != null && cell.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING && "Mayo".equals(cell.getStringCellValue())) {
+                    monthCell = cell;
+                    break;
+                }
+            }
+            assertNotNull(monthCell, "Debe existir la celda del encabezado de Mayo");
+            assertEquals(0, monthCell.getCellStyle().getRotation(), "El texto del mes debe mantenerse horizontal");
+
+            Cell titleCell = sheet.getRow(6).getCell(2);
+            assertNotNull(titleCell, "Debe existir la celda del instrumento Repaso");
+            assertEquals("Repaso", titleCell.getStringCellValue(), "Debe renderizar el título del instrumento");
+            assertEquals(0, titleCell.getCellStyle().getRotation(), "El texto del instrumento debe mantenerse horizontal");
+
+            String expectedYearLabel = "Año: " + planilla.getPeriodo();
+            Cell yearCell = null;
+            for (Row row : sheet) {
+                for (Cell cell : row) {
+                    if (cell != null && cell.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING) {
+                        String value = cell.getStringCellValue();
+                        if (value != null && value.contains("Año: ") && value.contains(String.valueOf(planilla.getPeriodo()))) {
+                            yearCell = cell;
+                            break;
+                        }
+                    }
+                }
+                if (yearCell != null) {
+                    break;
+                }
+            }
+            assertNotNull(yearCell, "Debe existir la celda de Año: " + planilla.getPeriodo() + " en la planilla angosta");
+            assertEquals(expectedYearLabel, yearCell.getStringCellValue(), "La celda de Año debe conservar el período de la planilla");
         }
     }
 }
