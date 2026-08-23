@@ -157,13 +157,11 @@ public class RasgoPlanillaDao extends conexion {
             for (Alumno alumno : alumnos) {
                 List<String> codigos = codigosPorAlumno.get(alumno.getId());
                 if (codigos == null) continue;
-                for (String codigo : codigos) {
-                    if (codigo != null && codigo.trim().toUpperCase().matches("N[1-8]")) {
-                        ps.setString(1, codigo.trim().toUpperCase());
-                        ps.setInt(2, planillaId);
-                        ps.setInt(3, alumno.getId());
-                        ps.addBatch();
-                    }
+                for (String codigo : validarCodigos(codigos)) {
+                    ps.setString(1, codigo);
+                    ps.setInt(2, planillaId);
+                    ps.setInt(3, alumno.getId());
+                    ps.addBatch();
                 }
             }
             ps.executeBatch();
@@ -312,14 +310,7 @@ public class RasgoPlanillaDao extends conexion {
     }
 
     public void reemplazarCodigos(int asistenciaId, List<String> codigos) throws SQLException {
-        Set<String> validos = new HashSet<>();
-        if (codigos != null) {
-            for (String codigo : codigos) {
-                if (codigo != null && codigo.trim().toUpperCase().matches("N[1-8]")) {
-                    validos.add(codigo.trim().toUpperCase());
-                }
-            }
-        }
+        Set<String> validos = validarCodigos(codigos);
         try (Connection con = getCon()) {
             con.setAutoCommit(false);
             try (PreparedStatement delete = con.prepareStatement("DELETE FROM rasgo_asistencia_codigo WHERE rasgo_asistencia_id = ?")) {
@@ -341,6 +332,18 @@ public class RasgoPlanillaDao extends conexion {
                 con.setAutoCommit(true);
             }
         }
+    }
+
+    static Set<String> validarCodigos(List<String> codigos) {
+        Set<String> validos = new HashSet<>();
+        if (codigos == null) return validos;
+        for (String codigo : codigos) {
+            if (codigo == null || !codigo.trim().toUpperCase().matches("N[1-8]")) {
+                throw new IllegalArgumentException("Código de rasgo inválido: " + codigo);
+            }
+            validos.add(codigo.trim().toUpperCase());
+        }
+        return validos;
     }
 
     private List<String> listarCodigos(Connection con, int asistenciaId) throws SQLException {

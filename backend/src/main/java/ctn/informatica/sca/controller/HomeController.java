@@ -337,6 +337,8 @@ public class HomeController {
         String temaPersistido = composeTemaConContexto(request.instrumentoId() == null ? 0 : request.instrumentoId(), request.turno(), tema);
         try {
             rasgoPlanillaDao.crearPlanillaRasgo(cursoId, user.getId(), temaPersistido, elegibles, ausentes, request.codigosPorAlumno());
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         } catch (SQLException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo crear la planilla de rasgos", ex);
         }
@@ -382,6 +384,8 @@ public class HomeController {
             rasgoPlanillaDao.reemplazarCodigos(request.asistenciaId(), request.codigos());
         } catch (ResponseStatusException ex) {
             throw ex;
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         } catch (SQLException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudieron guardar los códigos", ex);
         }
