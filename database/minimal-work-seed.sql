@@ -4,6 +4,7 @@ DELETE FROM registro;
 DELETE FROM tarea;
 DELETE FROM instrumento;
 DELETE FROM planilla;
+DELETE FROM rasgo_asistencia_codigo;
 DELETE FROM rasgo_asistencia;
 DELETE FROM planilla_rasgo;
 DELETE FROM materia_especialidad;
@@ -23,6 +24,7 @@ ALTER TABLE tarea AUTO_INCREMENT = 1;
 ALTER TABLE registro AUTO_INCREMENT = 1;
 ALTER TABLE planilla_rasgo AUTO_INCREMENT = 1;
 ALTER TABLE rasgo_asistencia AUTO_INCREMENT = 1;
+ALTER TABLE rasgo_asistencia_codigo AUTO_INCREMENT = 1;
 
 -- ========================================
 -- ESPECIALIDADES

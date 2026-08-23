@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { createClass, getHome, type HomeResponse } from '../../api/home';
+import { createClass, getHome, updateRasgoCodigos, type HomeResponse } from '../../api/home';
 import { ApiError } from '../../api/client';
 import AppShell from '../../components/AppShell';
 import { getEspecialidades, resolvePlanilla, syncClassroom, type Especialidad } from '../../api/academics';
@@ -9,6 +9,16 @@ import AnimatedSelect from '../../components/AnimatedSelect';
 import { useSpecialty } from '../../context/SpecialtyContext';
 
 const HORARIOS_CATEDRA = ['7:00', '7:35', '8:10', '8:45', '9:40', '10:15', '10:50', '11:25', '13:00', '13:35', '14:10', '14:45', '15:20', '16:15', '16:50', '17:25'];
+const RASGO_CODIGOS = [
+  ['N1', 'Sale del aula sin autorización'],
+  ['N2', 'No realiza la tarea asignada en clase'],
+  ['N3', 'No dispone de los materiales necesarios'],
+  ['N4', 'No presenta las tareas asignadas para la casa'],
+  ['N5', 'Utiliza vocabulario indebido en clase'],
+  ['N6', 'Charla mucho en clase'],
+  ['N7', 'No utiliza el uniforme establecido'],
+  ['N8', 'Ausente en clase, presente en la Institución'],
+] as const;
 
 export default function HomePage() {
   const [search, setSearch] = useSearchParams();
@@ -228,6 +238,26 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
   const [cantidadHoras, setCantidadHoras] = useState('');
   const [modalidad, setModalidad] = useState('Presencial');
   const [observaciones, setObservaciones] = useState('');
+  const [codigosPorAlumno, setCodigosPorAlumno] = useState<Record<number, string[]>>({});
+  const [showCodeHelp, setShowCodeHelp] = useState(false);
+
+  useEffect(() => {
+    const initial: Record<number, string[]> = {};
+    for (const asistencia of data.rasgoAsistencias) initial[asistencia.alumnoId] = asistencia.codigos ?? [];
+    setCodigosPorAlumno(initial);
+  }, [data.rasgoAsistencias]);
+
+  async function changeCodigos(alumnoId: number, codigos: string[]) {
+    setCodigosPorAlumno((current) => ({ ...current, [alumnoId]: codigos }));
+    const asistencia = data.rasgoAsistencias.find((item) => item.alumnoId === alumnoId);
+    if (asistencia) {
+      try {
+        await updateRasgoCodigos(asistencia.id, codigos);
+      } catch (err) {
+        setStatus(err instanceof ApiError ? err.message : 'No se pudieron guardar los códigos.');
+      }
+    }
+  }
 
   const handleCantidadHorasInput = (value: string) => {
     const sanitized = value.replace(/\D/g, '').slice(0, 2);
@@ -244,7 +274,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
     e.preventDefault();
     if (!data.selCurso) return;
     try {
-      await createClass({ cursoId: data.selCurso.id, etapa: data.selEtapa, instrumentoId, turno: 'turno', tema, alumnosAusentes: ausentes });
+      await createClass({ cursoId: data.selCurso.id, etapa: data.selEtapa, instrumentoId, turno: 'turno', tema, alumnosAusentes: ausentes, codigosPorAlumno });
       setStatus('Clase registrada.');
       setTema('');
       setDisciplina('');
@@ -253,6 +283,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
       setModalidad('Presencial');
       setInstrumentoId(0);
       setAusentes([]);
+      setCodigosPorAlumno({});
       setObservaciones('');
       await reload();
     } catch (err) {
@@ -356,19 +387,35 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
                 {data.rasgoAlumnosValidos.map((alumno, idx) => (
                   <tr key={alumno.id}>
                     <td>{idx + 1}</td>
-                    <td>{alumno.apellido}, {alumno.nombre}</td>
+                    <td>
+                      <div>{alumno.apellido}, {alumno.nombre}</div>
+                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
+                        {(codigosPorAlumno[alumno.id] ?? []).map((codigo) => <span className="student-pill" key={codigo}>{codigo}</span>)}
+                      </div>
+                    </td>
                     <td style={{ textAlign: 'right' }}>
                       <label style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
                         <input className="ausente-checkbox" type="checkbox" value={String(alumno.id)} checked={ausentes.includes(alumno.id)} onChange={(e) => setAusentes((v) => e.target.checked ? [...v, alumno.id] : v.filter((id) => id !== alumno.id))} />
                         Ausente
                       </label>
+                      <select multiple size={2} aria-label={`Códigos de ${alumno.nombre} ${alumno.apellido}`} value={codigosPorAlumno[alumno.id] ?? []} onChange={(e) => void changeCodigos(alumno.id, Array.from(e.target.selectedOptions, (option) => option.value))} style={{ display: 'block', width: 88, marginTop: 6, fontSize: 12 }}>
+                        {RASGO_CODIGOS.map(([codigo]) => <option key={codigo} value={codigo}>{codigo}</option>)}
+                      </select>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          <button type="button" className="button secondary" onClick={() => setShowCodeHelp(true)}>¿Qué significa cada código?</button>
         </div>
+
+        {showCodeHelp && <div role="dialog" aria-modal="true" aria-label="Significado de códigos" style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'grid', placeItems: 'center', padding: 20, background: 'rgba(0, 0, 0, .55)' }} onClick={() => setShowCodeHelp(false)}>
+          <section className="panel" style={{ width: 'min(620px, 100%)', maxHeight: '80vh', overflow: 'auto' }} onClick={(e) => e.stopPropagation()}>
+            <div className="class-card-head"><h3>Significado de códigos</h3><button type="button" className="button secondary" onClick={() => setShowCodeHelp(false)}>Cerrar</button></div>
+            <table className="table table-striped"><thead><tr><th>Código</th><th>Significado</th></tr></thead><tbody>{RASGO_CODIGOS.map(([codigo, significado]) => <tr key={codigo}><td><strong>{codigo}</strong></td><td>{significado}</td></tr>)}</tbody></table>
+          </section>
+        </div>}
 
         <div className="class-card">
           <h3>Reportes de asistencia</h3>

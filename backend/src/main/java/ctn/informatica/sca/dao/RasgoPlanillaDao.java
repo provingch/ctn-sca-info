@@ -11,8 +11,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
 
 @Repository
 public class RasgoPlanillaDao extends conexion {
@@ -77,10 +80,14 @@ public class RasgoPlanillaDao extends conexion {
     }
 
     public int crearPlanillaRasgo(int cursoId, int profesorId, String tema, List<Alumno> alumnos) throws SQLException {
-        return crearPlanillaRasgo(cursoId, profesorId, tema, alumnos, java.util.Collections.emptySet());
+        return crearPlanillaRasgo(cursoId, profesorId, tema, alumnos, java.util.Collections.emptySet(), Collections.emptyMap());
     }
 
     public int crearPlanillaRasgo(int cursoId, int profesorId, String tema, List<Alumno> alumnos, Set<Integer> alumnosAusentes) throws SQLException {
+        return crearPlanillaRasgo(cursoId, profesorId, tema, alumnos, alumnosAusentes, Collections.emptyMap());
+    }
+
+    public int crearPlanillaRasgo(int cursoId, int profesorId, String tema, List<Alumno> alumnos, Set<Integer> alumnosAusentes, Map<Integer, List<String>> codigosPorAlumno) throws SQLException {
         if (alumnos == null || alumnos.isEmpty()) {
             throw new SQLException("No hay alumnos elegibles para crear la planilla de rasgos");
         }
@@ -129,6 +136,8 @@ public class RasgoPlanillaDao extends conexion {
                     ps.executeBatch();
                 }
 
+                guardarCodigosDeAlumnos(con, planillaId, alumnos, codigosPorAlumno);
+
                 con.commit();
                 return planillaId;
             } catch (SQLException ex) {
@@ -137,6 +146,27 @@ public class RasgoPlanillaDao extends conexion {
             } finally {
                 con.setAutoCommit(originalAutoCommit);
             }
+        }
+    }
+
+    private void guardarCodigosDeAlumnos(Connection con, int planillaId, List<Alumno> alumnos, Map<Integer, List<String>> codigosPorAlumno) throws SQLException {
+        if (codigosPorAlumno == null || codigosPorAlumno.isEmpty()) return;
+        String sql = "INSERT IGNORE INTO rasgo_asistencia_codigo (rasgo_asistencia_id, codigo) "
+                + "SELECT ra.id, ? FROM rasgo_asistencia ra WHERE ra.planilla_rasgo_id = ? AND ra.alumno_id = ?";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            for (Alumno alumno : alumnos) {
+                List<String> codigos = codigosPorAlumno.get(alumno.getId());
+                if (codigos == null) continue;
+                for (String codigo : codigos) {
+                    if (codigo != null && codigo.trim().toUpperCase().matches("N[1-8]")) {
+                        ps.setString(1, codigo.trim().toUpperCase());
+                        ps.setInt(2, planillaId);
+                        ps.setInt(3, alumno.getId());
+                        ps.addBatch();
+                    }
+                }
+            }
+            ps.executeBatch();
         }
     }
 
@@ -205,7 +235,7 @@ public class RasgoPlanillaDao extends conexion {
 
     public List<RasgoAsistencia> listarAsistencias(int planillaRasgoId) throws SQLException {
         String sql = "SELECT ra.id, ra.planilla_rasgo_id, ra.alumno_id, ra.alumno_nombre, ra.alumno_apellido, ra.alumno_email, "
-                + "ra.estado, ra.responded_at, pr.tema "
+                + "ra.estado, ra.falta_codigo, ra.falta_observacion, ra.responded_at, pr.tema "
                 + "FROM rasgo_asistencia ra "
                 + "INNER JOIN planilla_rasgo pr ON pr.id = ra.planilla_rasgo_id "
                 + "WHERE ra.planilla_rasgo_id = ? ORDER BY ra.alumno_apellido, ra.alumno_nombre";
@@ -214,7 +244,9 @@ public class RasgoPlanillaDao extends conexion {
             ps.setInt(1, planillaRasgoId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    asistencias.add(fromAsistenciaResultSet(rs));
+                    RasgoAsistencia asistencia = fromAsistenciaResultSet(rs);
+                    asistencia.setCodigos(listarCodigos(con, asistencia.getId()));
+                    asistencias.add(asistencia);
                 }
             }
         }
@@ -277,6 +309,49 @@ public class RasgoPlanillaDao extends conexion {
                 return ps.executeUpdate() == 1;
             }
         }
+    }
+
+    public void reemplazarCodigos(int asistenciaId, List<String> codigos) throws SQLException {
+        Set<String> validos = new HashSet<>();
+        if (codigos != null) {
+            for (String codigo : codigos) {
+                if (codigo != null && codigo.trim().toUpperCase().matches("N[1-8]")) {
+                    validos.add(codigo.trim().toUpperCase());
+                }
+            }
+        }
+        try (Connection con = getCon()) {
+            con.setAutoCommit(false);
+            try (PreparedStatement delete = con.prepareStatement("DELETE FROM rasgo_asistencia_codigo WHERE rasgo_asistencia_id = ?")) {
+                delete.setInt(1, asistenciaId);
+                delete.executeUpdate();
+                try (PreparedStatement insert = con.prepareStatement("INSERT INTO rasgo_asistencia_codigo (rasgo_asistencia_id, codigo) VALUES (?, ?)")) {
+                    for (String codigo : validos) {
+                        insert.setInt(1, asistenciaId);
+                        insert.setString(2, codigo);
+                        insert.addBatch();
+                    }
+                    insert.executeBatch();
+                }
+                con.commit();
+            } catch (SQLException ex) {
+                con.rollback();
+                throw ex;
+            } finally {
+                con.setAutoCommit(true);
+            }
+        }
+    }
+
+    private List<String> listarCodigos(Connection con, int asistenciaId) throws SQLException {
+        List<String> codigos = new ArrayList<>();
+        try (PreparedStatement ps = con.prepareStatement("SELECT codigo FROM rasgo_asistencia_codigo WHERE rasgo_asistencia_id = ? ORDER BY codigo")) {
+            ps.setInt(1, asistenciaId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) codigos.add(rs.getString("codigo"));
+            }
+        }
+        return codigos;
     }
 
     private RasgoPlanilla fromPlanillaResultSet(ResultSet rs) throws SQLException {
