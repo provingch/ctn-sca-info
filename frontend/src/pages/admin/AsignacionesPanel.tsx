@@ -13,7 +13,7 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState({ materiaId: '', cursoIds: [] as number[] });
-  const [horarioPopup, setHorarioPopup] = useState<{ assignmentId: number; slots: HorarioSlotItem[]; catalog: HoraCatedraItem[]; diaSemana: number; horaCatedraId: string; sala: string } | null>(null);
+  const [horarioPopup, setHorarioPopup] = useState<{ assignmentId: number; slots: HorarioSlotItem[]; catalog: HoraCatedraItem[]; diaSemana: number; horaCatedraId: string; hastaHoraCatedraId?: string; sala: string } | null>(null);
 
   const profesores = useMemo(() => data.usuarios.filter((user) => user.nivel === 1), [data.usuarios]);
   const profesorAsignaciones = useMemo(
@@ -86,6 +86,7 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
         catalog,
         diaSemana: 1,
         horaCatedraId: String(catalog[0]?.id ?? ''),
+        hastaHoraCatedraId: String(catalog[0]?.id ?? ''),
         sala: '',
       });
     } catch (error) {
@@ -111,15 +112,38 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
       return;
     }
 
+    const desdeId = Number(horarioPopup.horaCatedraId);
+    const hastaId = Number(horarioPopup.hastaHoraCatedraId || horarioPopup.horaCatedraId);
+
+    // Find positions in catalog
+    const idxDesde = horarioPopup.catalog.findIndex((it) => it.id === desdeId);
+    const idxHasta = horarioPopup.catalog.findIndex((it) => it.id === hastaId);
+    if (idxDesde === -1 || idxHasta === -1) {
+      status('Catálogo de horas no válido.');
+      return;
+    }
+
+    const slice = horarioPopup.catalog.slice(Math.min(idxDesde, idxHasta), Math.max(idxDesde, idxHasta) + 1);
+
     try {
-      await createHorarioSlot(horarioPopup.assignmentId, {
-        diaSemana: horarioPopup.diaSemana,
-        horaCatedraId: Number(horarioPopup.horaCatedraId),
-        sala: horarioPopup.sala.trim() || undefined,
-      });
-      status('Horario agregado.');
+      for (const item of slice) {
+        try {
+          await createHorarioSlot(horarioPopup.assignmentId, {
+            diaSemana: horarioPopup.diaSemana,
+            horaCatedraId: Number(item.id),
+            sala: horarioPopup.sala.trim() || undefined,
+          });
+        } catch (err) {
+          if (err instanceof ApiError && err.status === 409) {
+            status(`Conflicto al crear hora ${item.numero}: ${err.message}`);
+            break;
+          }
+          throw err;
+        }
+      }
+      status('Horario(s) agregado(s).');
       await loadHorario(horarioPopup.assignmentId);
-      setHorarioPopup((current) => current ? { ...current, sala: '', horaCatedraId: String(current.catalog[0]?.id ?? '') } : current);
+      setHorarioPopup((current) => current ? { ...current, sala: '', horaCatedraId: String(current.catalog[0]?.id ?? ''), hastaHoraCatedraId: String(current.catalog[0]?.id ?? '') } : current);
     } catch (error) {
       status(error instanceof ApiError ? error.message : 'No se pudo guardar el horario.');
     }
@@ -141,7 +165,7 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
       void (async () => {
         try {
           const catalog = await getHoraCatedraCatalog();
-          setHorarioPopup((current) => current ? { ...current, catalog, horaCatedraId: String(current.horaCatedraId || catalog[0]?.id || '') } : current);
+          setHorarioPopup((current) => current ? { ...current, catalog, horaCatedraId: String(current.horaCatedraId || catalog[0]?.id || ''), hastaHoraCatedraId: String(current.hastaHoraCatedraId || current.horaCatedraId || catalog[0]?.id || '') } : current);
         } catch (error) {
           status(error instanceof ApiError ? error.message : 'No se pudo obtener el catálogo de horas.');
         }
@@ -317,10 +341,20 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
             </label>
 
             <label>
-              Hora cátedra
-              <select value={horarioPopup.horaCatedraId} onChange={(event) => setHorarioPopup({ ...horarioPopup, horaCatedraId: event.target.value })}>
+              Desde
+              <select value={horarioPopup.horaCatedraId} onChange={(event) => setHorarioPopup({ ...horarioPopup, horaCatedraId: event.target.value, hastaHoraCatedraId: event.target.value })}>
                 <option value="">Seleccione…</option>
                 {horarioPopup.catalog.map((item) => (
+                  <option key={item.id} value={item.id}>{item.numero} · {item.etiqueta || '—'} · {item.horaInicio}-{item.horaFin}</option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              Hasta
+              <select value={horarioPopup.hastaHoraCatedraId || ''} onChange={(event) => setHorarioPopup({ ...horarioPopup, hastaHoraCatedraId: event.target.value })}>
+                <option value="">Seleccione…</option>
+                {horarioPopup.catalog.filter((it) => Number(it.id) >= Number(horarioPopup.horaCatedraId || 0)).map((item) => (
                   <option key={item.id} value={item.id}>{item.numero} · {item.etiqueta || '—'} · {item.horaInicio}-{item.horaFin}</option>
                 ))}
               </select>
