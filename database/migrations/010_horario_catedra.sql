@@ -5,7 +5,7 @@
 
 START TRANSACTION;
 
-CREATE TABLE hora_catedra (
+CREATE TABLE IF NOT EXISTS hora_catedra (
     id INT AUTO_INCREMENT,
     numero SMALLINT UNSIGNED NOT NULL,
     etiqueta VARCHAR(20) NULL,
@@ -15,7 +15,7 @@ CREATE TABLE hora_catedra (
     UNIQUE KEY uq_hora_catedra_numero (numero)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE horario_slot (
+CREATE TABLE IF NOT EXISTS horario_slot (
     id INT AUTO_INCREMENT,
     asignacion_id INT NOT NULL,
     usuario_id INT NOT NULL,
@@ -39,7 +39,7 @@ CREATE TABLE horario_slot (
 -- Seed inicial del catálogo, en base al horario impreso de referencia
 -- (turno mañana = 1-8, turno T.O. = 9-16). AJUSTAR horarios reales de
 -- la tarde si difieren — estos son los observados en el ejemplo.
-INSERT INTO hora_catedra (numero, etiqueta, hora_inicio, hora_fin) VALUES
+INSERT IGNORE INTO hora_catedra (numero, etiqueta, hora_inicio, hora_fin) VALUES
 (1,  'M', '07:00', '07:35'),
 (2,  'M', '07:35', '08:10'),
 (3,  'M', '08:10', '08:45'),
