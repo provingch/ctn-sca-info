@@ -57,6 +57,8 @@ export interface SpecialtyItem {
   nombre: string;
 }
 
+import { apiDownload } from './client';
+
 export interface HoraCatedraItem {
   id: number;
   numero: number;
@@ -99,6 +101,7 @@ export const getHoraCatedraCatalog = () => api.get<HoraCatedraItem[]>('/api/admi
 export const getHorarioByAsignacion = (asignacionId: number) => api.get<HorarioSlotItem[]>(`/api/admin/horario/asignaciones/${asignacionId}`);
 export const createHorarioSlot = (asignacionId: number, payload: { diaSemana: number; horaCatedraId: number; sala?: string }) => api.post<HorarioSlotItem>(`/api/admin/horario/asignaciones/${asignacionId}/slots`, payload);
 export const deleteHorarioSlot = (id: number) => api.delete<void>(`/api/admin/horario/slots/${id}`);
+export const downloadHorarioCurso = (cursoId: number) => apiDownload(`/api/admin/horario/export?cursoId=${cursoId}`, `horario-curso-${cursoId}.xlsx`);
 export const buscarPadres = (q: string) => api.get<PadreSummary[]>(`/api/admin/padres/buscar?q=${encodeURIComponent(q)}`);
 export const getPadresDeAlumno = (alumnoId: number) => api.get<PadreSummary[]>(`/api/admin/alumnos/${alumnoId}/padres`);
 export const linkPadreAlumno = (alumnoId: number, padreId: number) => api.post<void>(`/api/admin/alumnos/${alumnoId}/padres/${padreId}`, {});

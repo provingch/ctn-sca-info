@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { createAdminRecord, createHorarioSlot, deleteAssignment, deleteHorarioSlot, getHoraCatedraCatalog, getHorarioByAsignacion, updateAdminRecord, type AdminCatalog, type HoraCatedraItem, type HorarioSlotItem } from '../../api/admin';
+import { createAdminRecord, createHorarioSlot, deleteAssignment, deleteHorarioSlot, downloadHorarioCurso, getHoraCatedraCatalog, getHorarioByAsignacion, updateAdminRecord, type AdminCatalog, type HoraCatedraItem, type HorarioSlotItem } from '../../api/admin';
 import { ApiError } from '../../api/client';
 
 interface AsignacionesPanelProps {
@@ -180,9 +180,12 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
 
   return (
     <>
-      <div className="toolbar">
-        <button type="button" className="button secondary" onClick={() => setSelectedProfesorId(null)}>← Volver a profesores</button>
-        <button type="button" className="button" onClick={openCreate}>Crear asignación</button>
+      <div className="toolbar" style={{ justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button type="button" className="button secondary" onClick={() => setSelectedProfesorId(null)}>← Volver a profesores</button>
+          <button type="button" className="button" onClick={openCreate}>Crear asignación</button>
+        </div>
+        <a href="/plantillas/plan-curricular-plantilla.xlsx" download className="button secondary">Descargar plantilla de plan curricular</a>
       </div>
 
       <h2>Asignaciones de {selectedProfesor?.apellido}, {selectedProfesor?.nombre}</h2>
@@ -214,6 +217,13 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
                       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                         <button type="button" className="button secondary" onClick={() => openEdit(assignment)}>Editar</button>
                         <button type="button" className="button secondary" onClick={() => void openHorario(assignment.id)}>Horario</button>
+                        <button type="button" className="button secondary" onClick={async () => {
+                          try {
+                            await downloadHorarioCurso(assignment.cursoId);
+                          } catch (error) {
+                            status(error instanceof ApiError ? error.message : 'No se pudo descargar el horario del curso.');
+                          }
+                        }}>Descargar horario del curso</button>
                         <button type="button" className="button danger" onClick={async () => {
                           if (!window.confirm('¿Eliminar esta asignación?')) return;
                           try {
