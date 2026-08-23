@@ -232,11 +232,6 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
   const [modalidad, setModalidad] = useState('Presencial');
   const [observaciones, setObservaciones] = useState('');
 
-  const handleHorarioInput = (value: string) => {
-    const sanitized = value.replace(/[^\d:-]/g, '').slice(0, 11);
-    setHorario(sanitized);
-  };
-
   const handleCantidadHorasInput = (value: string) => {
     const sanitized = value.replace(/\D/g, '').slice(0, 2);
     setCantidadHoras(sanitized);
@@ -290,7 +285,12 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
           <div className="class-grid">
             <div className="class-field">
               <label htmlFor="horarioClase">Horario</label>
-              <input id="horarioClase" placeholder="Ej: 07:00-09:20" value={horario} onChange={(e) => handleHorarioInput(e.target.value)} inputMode="numeric" maxLength={11} pattern="^\\d{2}:\\d{2}-\\d{2}:\\d{2}$" />
+              <select id="horarioClase" value={horario} onChange={(e) => setHorario(e.target.value)}>
+                <option value="">Seleccione el horario</option>
+                {['7:00', '7:35', '8:10', '8:45', '9:40', '10:15', '10:50', '11:25', '13:00', '13:35', '14:10', '14:45', '15:20', '16:15', '16:50', '17:25'].map((hora) => (
+                  <option key={hora} value={hora}>{hora}</option>
+                ))}
+              </select>
             </div>
             <div className="class-field">
               <label htmlFor="cantidadHoras">Cant. horas cátedra</label>
