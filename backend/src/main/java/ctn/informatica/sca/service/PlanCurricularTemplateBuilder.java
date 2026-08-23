@@ -1,6 +1,8 @@
 package ctn.informatica.sca.service;
 
 import ctn.informatica.sca.dao.AsignacionDao;
+import ctn.informatica.sca.dao.HorarioSlotDao;
+import ctn.informatica.sca.model.HorarioSlot;
 import ctn.informatica.sca.model.Asignacion;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -19,6 +21,9 @@ public class PlanCurricularTemplateBuilder {
     @Autowired
     private AsignacionDao asignacionDao;
 
+    @Autowired
+    private HorarioSlotDao horarioSlotDao;
+
     public byte[] buildForAsignacion(int asignacionId) throws Exception {
         Asignacion a = asignacionDao.findById(asignacionId);
         if (a == null) throw new IllegalArgumentException("Asignación no encontrada");
@@ -31,6 +36,29 @@ public class PlanCurricularTemplateBuilder {
             String seccion = a.getCursoSeccion() == null ? "" : a.getCursoSeccion();
             String especialidad = a.getEspecialidad() == null ? "" : a.getEspecialidad();
             String turno = "";
+            try {
+                java.util.List<HorarioSlot> slots = horarioSlotDao.findByAsignacion(asignacionId);
+                if (slots == null || slots.isEmpty()) {
+                    turno = "sin horario cargado";
+                } else {
+                    boolean hasMorning = false;
+                    boolean hasAfternoon = false;
+                    for (HorarioSlot s : slots) {
+                        String hi = s.getHoraInicio();
+                        if (hi == null || hi.isBlank()) continue;
+                        String[] parts = hi.split(":");
+                        int hour = 0;
+                        try { hour = Integer.parseInt(parts[0]); } catch (Exception e) { }
+                        if (hour < 12) hasMorning = true; else hasAfternoon = true;
+                    }
+                    if (hasMorning && hasAfternoon) turno = "Mañana y Tarde";
+                    else if (hasMorning) turno = "Mañana";
+                    else if (hasAfternoon) turno = "Tarde";
+                    else turno = "sin horario cargado";
+                }
+            } catch (Exception e) {
+                turno = "";
+            }
 
             String[] sheets = new String[]{"Marzo","Abril","Mayo","Junio"};
             for (String shName : sheets) {
