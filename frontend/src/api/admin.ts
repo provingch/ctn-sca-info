@@ -57,6 +57,29 @@ export interface SpecialtyItem {
   nombre: string;
 }
 
+export interface HoraCatedraItem {
+  id: number;
+  numero: number;
+  etiqueta: string | null;
+  horaInicio: string;
+  horaFin: string;
+}
+
+export interface HorarioSlotItem {
+  id: number;
+  asignacionId: number;
+  diaSemana: number;
+  horaCatedraId: number;
+  horaCatedraNumero: number;
+  horaCatedraEtiqueta: string | null;
+  horaInicio: string;
+  horaFin: string;
+  sala: string | null;
+  materiaNombre: string | null;
+  cursoDescripcion: string | null;
+  profesorNombre: string | null;
+}
+
 export interface AdminCatalog {
   materias: MateriaItem[];
   usuarios: UserItem[];
@@ -72,6 +95,10 @@ export const updateAdminRecord = (section: string, id: number, payload: unknown)
 export const deleteAssignment = (id: number) => api.delete<void>(`/api/admin/asignaciones/${id}`);
 export const deleteAdminRecord = (section: string, id: number) => api.delete<void>(`/api/admin/${section}/${id}`);
 export const getMateriaEspecialidades = (materiaId: number) => api.get<number[]>(`/api/admin/materias/${materiaId}/especialidades`);
+export const getHoraCatedraCatalog = () => api.get<HoraCatedraItem[]>('/api/admin/horario/catalogo');
+export const getHorarioByAsignacion = (asignacionId: number) => api.get<HorarioSlotItem[]>(`/api/admin/horario/asignaciones/${asignacionId}`);
+export const createHorarioSlot = (asignacionId: number, payload: { diaSemana: number; horaCatedraId: number; sala?: string }) => api.post<HorarioSlotItem>(`/api/admin/horario/asignaciones/${asignacionId}/slots`, payload);
+export const deleteHorarioSlot = (id: number) => api.delete<void>(`/api/admin/horario/slots/${id}`);
 export const buscarPadres = (q: string) => api.get<PadreSummary[]>(`/api/admin/padres/buscar?q=${encodeURIComponent(q)}`);
 export const getPadresDeAlumno = (alumnoId: number) => api.get<PadreSummary[]>(`/api/admin/alumnos/${alumnoId}/padres`);
 export const linkPadreAlumno = (alumnoId: number, padreId: number) => api.post<void>(`/api/admin/alumnos/${alumnoId}/padres/${padreId}`, {});
