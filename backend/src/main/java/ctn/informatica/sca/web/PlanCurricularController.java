@@ -8,12 +8,16 @@ import java.io.IOException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.security.core.context.SecurityContextHolder;
+import ctn.informatica.sca.service.PlanCurricularTemplateBuilder;
 
 @RestController
 @RequestMapping("/api/plan-curricular")
@@ -27,6 +31,9 @@ public class PlanCurricularController {
 
     @Autowired
     private AsignacionDao asignacionDao;
+
+    @Autowired
+    private PlanCurricularTemplateBuilder templateBuilder;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> upload(@RequestParam("asignacionId") int asignacionId, @RequestParam("file") MultipartFile file) throws Exception {
@@ -51,6 +58,28 @@ public class PlanCurricularController {
         byte[] content = file.getBytes();
         int id = dao.saveOrReplace(asignacionId, dto.etapa, dto.anio, file.getOriginalFilename(), content, dto.temas);
         return ResponseEntity.ok().body("Saved plan id:" + id);
+    }
+
+    @GetMapping("/plantilla")
+    public ResponseEntity<byte[]> plantilla(@RequestParam("asignacionId") int asignacionId) throws Exception {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        long userId = principal instanceof Long ? (Long) principal : Long.parseLong(principal.toString());
+        var asignacion = asignacionDao.findById(asignacionId);
+        if (asignacion == null) return ResponseEntity.notFound().build();
+        if (asignacion.getProfesorId() != (int)userId) return ResponseEntity.status(403).build();
+        byte[] data = templateBuilder.buildForAsignacion(asignacionId);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        headers.setContentDispositionFormData("attachment", "plan-curricular-plantilla.xlsx");
+        return ResponseEntity.ok().headers(headers).body(data);
+    }
+
+    @GetMapping("/asignaciones-disponibles")
+    public ResponseEntity<?> asignacionesDisponibles(@RequestParam("cursoId") int cursoId) throws Exception {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        long userId = principal instanceof Long ? (Long) principal : Long.parseLong(principal.toString());
+        var list = asignacionDao.findByProfesorAndCurso((int)userId, cursoId);
+        return ResponseEntity.ok(list);
     }
 
     @PostMapping("/{id}/aprobar")

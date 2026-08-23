@@ -231,6 +231,8 @@ function PlanillasView({ data, syncingProp, setSyncingProp }: { data: HomeRespon
 
 function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise<void> }) {
   const [tema, setTema] = useState('');
+  const [asignacionesDisponibles, setAsignacionesDisponibles] = useState<Array<{ id: number; materiaId: number; materiaNombre?: string }>>([]);
+  const [selectedAsignacionId, setSelectedAsignacionId] = useState<number | null>(null);
   const [disciplina, setDisciplina] = useState('');
   const [instrumentoId, setInstrumentoId] = useState(0);
   const [ausentes, setAusentes] = useState<number[]>([]);
@@ -247,6 +249,23 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
     for (const asistencia of data.rasgoAsistencias) initial[asistencia.alumnoId] = asistencia.codigos ?? [];
     setCodigosPorAlumno(initial);
   }, [data.rasgoAsistencias]);
+
+  useEffect(() => {
+    // when course selection changes, fetch available assignments for this professor
+    if (!data.selCurso) { setAsignacionesDisponibles([]); setSelectedAsignacionId(null); return; }
+    (async () => {
+      try {
+        const list = await import('../../api/planCurricular').then((m) => m.getAsignacionesDisponibles(data.selCurso!.id));
+        setAsignacionesDisponibles(list as any);
+        if ((list as any).length === 1) setSelectedAsignacionId((list as any)[0].id);
+        else setSelectedAsignacionId(null);
+      } catch (err) {
+        // ignore: leave list empty
+        setAsignacionesDisponibles([]);
+        setSelectedAsignacionId(null);
+      }
+    })();
+  }, [data.selCurso]);
 
   async function changeCodigos(alumnoId: number, codigos: string[]) {
     setCodigosPorAlumno((current) => ({ ...current, [alumnoId]: codigos }));
@@ -364,6 +383,29 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
               <textarea id="observacionesGenerales" rows={3} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Cualquier eventualidad general de la clase..." style={{ resize: 'none' }} />
             </div>
           </div>
+        </div>
+
+        <div className="class-card">
+          <h3>Plantilla de plan curricular</h3>
+          <p>Descargá la plantilla ya completada con los datos de tu asignación para completar los temas por mes.</p>
+          {asignacionesDisponibles.length === 0 ? <p>No hay asignaciones disponibles para este curso.</p> : (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              {asignacionesDisponibles.length > 1 && (
+                <select value={selectedAsignacionId ?? ''} onChange={(e) => setSelectedAsignacionId(Number(e.target.value))}>
+                  <option value="">Seleccione asignación…</option>
+                  {asignacionesDisponibles.map((a) => <option key={a.id} value={a.id}>{a.materiaNombre ?? `Asignación ${a.id}`}</option>)}
+                </select>
+              )}
+              <button type="button" className="button" disabled={!selectedAsignacionId} onClick={async () => {
+                if (!selectedAsignacionId) return;
+                try {
+                  await import('../../api/planCurricular').then((m) => m.downloadPlantilla(selectedAsignacionId));
+                } catch (err) {
+                  setStatus(err instanceof ApiError ? err.message : 'No se pudo descargar la plantilla.');
+                }
+              }}>Descargar plantilla de mi plan curricular</button>
+            </div>
+          )}
         </div>
 
         <div className="class-card">

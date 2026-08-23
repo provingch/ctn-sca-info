@@ -145,6 +145,42 @@ public class AsignacionDao extends conexion {
         return out;
     }
 
+    public List<Asignacion> findByProfesorAndCurso(int profesorId, int cursoId) throws SQLException {
+        String sql = "SELECT a.id, a.usuario_id AS profesor_id, a.materia_id, a.curso_id, "
+                + "m.nombre AS materia_nombre, e.nombre AS especialidad, c.promocion, c.seccion "
+                + "FROM asignacion a "
+                + "JOIN materia m ON m.id = a.materia_id "
+                + "JOIN curso c ON c.id = a.curso_id "
+                + "JOIN especialidad e ON e.id = c.especialidad_id "
+                + "WHERE a.usuario_id = ? AND a.curso_id = ? "
+                + "ORDER BY m.nombre, e.nombre";
+        List<Asignacion> out = new ArrayList<>();
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, profesorId);
+            ps.setInt(2, cursoId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Asignacion a = new Asignacion();
+                    a.setId(rs.getInt("id"));
+                    a.setProfesorId(rs.getInt("profesor_id"));
+                    a.setMateriaId(rs.getInt("materia_id"));
+                    a.setCursoId(rs.getInt("curso_id"));
+                    a.setMateriaNombre(rs.getString("materia_nombre"));
+                    String especialidad = rs.getString("especialidad");
+                    int promocion = rs.getInt("promocion");
+                    String seccion = rs.getString("seccion");
+                    String cursoDesc = (especialidad == null ? "" : especialidad) + (seccion == null || seccion.isBlank() ? "" : (" " + seccion));
+                    a.setCursoDescripcion(cursoDesc);
+                    a.setEspecialidad(especialidad);
+                    a.setCursoNivel(promocion);
+                    a.setCursoSeccion(seccion);
+                    out.add(a);
+                }
+            }
+        }
+        return out;
+    }
+
     public int crear(int profesorId, int materiaId, int cursoId) throws SQLException {
         if (existe(profesorId, materiaId, cursoId)) return -1;
         String sql = "INSERT INTO asignacion (usuario_id, materia_id, curso_id) VALUES (?, ?, ?)";
