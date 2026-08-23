@@ -185,7 +185,6 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
           <button type="button" className="button secondary" onClick={() => setSelectedProfesorId(null)}>← Volver a profesores</button>
           <button type="button" className="button" onClick={openCreate}>Crear asignación</button>
         </div>
-        <a href="/plantillas/plan-curricular-plantilla.xlsx" download className="button secondary">Descargar plantilla de plan curricular</a>
       </div>
 
       <h2>Asignaciones de {selectedProfesor?.apellido}, {selectedProfesor?.nombre}</h2>
