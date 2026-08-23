@@ -1,17 +1,24 @@
 package ctn.informatica.sca.controller;
 
 import ctn.informatica.sca.dao.AsignacionDao;
+import ctn.informatica.sca.dao.CursoDao;
 import ctn.informatica.sca.dao.HoraCatedraDao;
 import ctn.informatica.sca.dao.HorarioSlotDao;
 import ctn.informatica.sca.dto.CreateHorarioSlotRequest;
 import ctn.informatica.sca.dto.HoraCatedraDto;
 import ctn.informatica.sca.dto.HorarioSlotDto;
 import ctn.informatica.sca.model.Asignacion;
+import ctn.informatica.sca.model.Curso;
 import ctn.informatica.sca.model.HoraCatedra;
 import ctn.informatica.sca.model.HorarioSlot;
+import ctn.informatica.sca.util.HorarioWorkbookBuilder;
+import jakarta.servlet.http.HttpServletResponse;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.time.LocalTime;
 import java.util.List;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -20,6 +27,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
@@ -142,6 +150,29 @@ public class HorarioController {
         }
     }
 
+    @GetMapping("/export")
+    public void export(@RequestParam int cursoId, Authentication auth, HttpServletResponse response) {
+        ApiAuth.requireUserId(auth);
+        try {
+            Curso curso = new CursoDao().findById(cursoId);
+            if (curso == null) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Curso no encontrado");
+            }
+            List<HoraCatedra> horas = new HoraCatedraDao().findAll();
+            List<HorarioSlot> slots = new HorarioSlotDao().findByCurso(cursoId);
+            String base = "Horario_" + sanitize(curso.getEspecialidad()) + "_" + curso.getNivel() + curso.getSeccion();
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + URLEncoder.encode(base + ".xlsx", StandardCharsets.UTF_8).replace("+", "%20"));
+            try (XSSFWorkbook workbook = new HorarioWorkbookBuilder().build(curso, horas, slots)) {
+                workbook.write(response.getOutputStream());
+            }
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo generar el horario del curso", ex);
+        }
+    }
+
     private HoraCatedraDto toHoraCatedraDto(HoraCatedra hora) {
         return new HoraCatedraDto(
                 hora.getId(),
@@ -191,5 +222,12 @@ public class HorarioController {
 
     private ResponseStatusException failure(String message, Exception ex) {
         return new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, ex);
+    }
+
+    private String sanitize(String text) {
+        if (text == null || text.isBlank()) {
+            return "curso";
+        }
+        return text.replaceAll("[^A-Za-z0-9_-]", "_");
     }
 }
