@@ -10,14 +10,15 @@ import { useSpecialty } from '../../context/SpecialtyContext';
 
 const HORARIOS_CATEDRA = ['7:00', '7:35', '8:10', '8:45', '9:40', '10:15', '10:50', '11:25', '13:00', '13:35', '14:10', '14:45', '15:20', '16:15', '16:50', '17:25'];
 const RASGO_CODIGOS = [
-  ['N1', 'Sale del aula sin autorización'],
-  ['N2', 'No realiza la tarea asignada en clase'],
-  ['N3', 'No dispone de los materiales necesarios'],
-  ['N4', 'No presenta las tareas asignadas para la casa'],
-  ['N5', 'Utiliza vocabulario indebido en clase'],
-  ['N6', 'Charla mucho en clase'],
-  ['N7', 'No utiliza el uniforme establecido'],
-  ['N8', 'Ausente en clase, presente en la Institución'],
+  ['N1', 'Llegada tardia a clase'],
+  ['N2', 'Sale de clase sin autorización'],
+  ['N3', 'No realiza la tarea asignada en clase'],
+  ['N4', 'No dispone de los materiales necesarios'],
+  ['N5', 'No presenta la tarea las tareas asignadas para la casa'],
+  ['N6', 'Utiliza vocabulario indebido en clase'],
+  ['N7', 'Charla mucho en clase'],
+  ['N8', 'No utiliza el uniforme establecido'],
+  ['N9', 'Ausente en clase, presente en la institución'],
 ] as const;
 
 export default function HomePage() {
