@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -31,5 +32,13 @@ public class ApiExceptionHandler {
         log.warn("Request rejected: {} - {}", status, reason != null ? reason : "");
         ApiError body = new ApiError(status.value(), status.getReasonPhrase(), reason != null ? reason : status.getReasonPhrase());
         return ResponseEntity.status(status).body(body);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiError> handleNoResourceFound(NoResourceFoundException ex) {
+        String path = ex.getResourcePath();
+        log.warn("Static resource not found: {}", path);
+        ApiError body = new ApiError(HttpStatus.NOT_FOUND.value(), "Not Found", "Recurso no encontrado");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
     }
 }
