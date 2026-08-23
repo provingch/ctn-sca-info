@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 public class DatabaseMigrationInitializer implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DatabaseMigrationInitializer.class);
-        private static final Map<String, String> LEGACY_VERSIONS = Map.of(
+    private static final Map<String, String> LEGACY_VERSIONS = Map.of(
             "00X_sync_rol_nivel.sql", "001_sync_rol_nivel.sql",
             "00Y_drop_rol_usuario.sql", "002_drop_rol_usuario.sql",
             "00Z_drop_especialidad_usuario.sql", "003_drop_especialidad_usuario.sql",
