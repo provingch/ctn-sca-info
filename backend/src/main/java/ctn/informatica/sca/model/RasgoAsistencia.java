@@ -1,6 +1,7 @@
 package ctn.informatica.sca.model;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 public class RasgoAsistencia {
 
@@ -15,6 +16,7 @@ public class RasgoAsistencia {
     private String faltaObservacion;
     private Timestamp respondedAt;
     private String tema;
+    private List<String> codigos = List.of();
 
     public int getId() {
         return id;
@@ -104,6 +106,14 @@ public class RasgoAsistencia {
         this.tema = tema;
     }
 
+    public List<String> getCodigos() {
+        return codigos;
+    }
+
+    public void setCodigos(List<String> codigos) {
+        this.codigos = codigos == null ? List.of() : codigos;
+    }
+
     public String getAlumnoNombreCompleto() {
         String nombre = alumnoNombre == null ? "" : alumnoNombre.trim();
         String apellido = alumnoApellido == null ? "" : alumnoApellido.trim();
@@ -121,18 +131,14 @@ public class RasgoAsistencia {
             return "Sin código asignado";
         }
         return switch (faltaCodigo) {
-            case "V" -> "Presencia en clase";
-            case "P" -> "Presencia en clase";
-            case "A" -> "Ausencia en clase";
-            case "N1" -> "Llegada tardía a clase";
-            case "N2" -> "Sale del aula sin autorización";
-            case "N3" -> "No realiza la tarea asignada en clase";
-            case "N4" -> "No dispone de los materiales necesarios";
-            case "N5" -> "No presenta las tareas asignadas para la casa";
-            case "N6" -> "Utiliza vocabulario indebido en clase";
-            case "N7" -> "Charla mucho en clase";
-            case "N8" -> "No utiliza el uniforme establecido";
-            case "N9" -> "Ausente en clase, presente en la Institución";
+            case "N1" -> "Sale del aula sin autorización";
+            case "N2" -> "No realiza la tarea asignada en clase";
+            case "N3" -> "No dispone de los materiales necesarios";
+            case "N4" -> "No presenta las tareas asignadas para la casa";
+            case "N5" -> "Utiliza vocabulario indebido en clase";
+            case "N6" -> "Charla mucho en clase";
+            case "N7" -> "No utiliza el uniforme establecido";
+            case "N8" -> "Ausente en clase, presente en la Institución";
             default -> "Sin código asignado";
         };
     }
