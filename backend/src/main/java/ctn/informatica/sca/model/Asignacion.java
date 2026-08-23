@@ -18,6 +18,9 @@ public class Asignacion {
     private String especialidad;
     private Integer cursoNivel; // promocion
     private String cursoSeccion;
+    
+    // Estado del plan curricular para esta asignación
+    private String estadoPlan; // PENDIENTE, APROBADO, RECHAZADO, NO_CARGADO
 
     public Asignacion() {}
 
@@ -57,5 +60,8 @@ public class Asignacion {
 
     public String getCursoSeccion() { return cursoSeccion; }
     public void setCursoSeccion(String cursoSeccion) { this.cursoSeccion = cursoSeccion; }
+
+    public String getEstadoPlan() { return estadoPlan; }
+    public void setEstadoPlan(String estadoPlan) { this.estadoPlan = estadoPlan; }
 
 }

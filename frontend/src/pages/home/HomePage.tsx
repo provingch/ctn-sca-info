@@ -7,6 +7,7 @@ import { getEspecialidades, resolvePlanilla, syncClassroom, type Especialidad } 
 import { useNavigate } from 'react-router-dom';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import { useSpecialty } from '../../context/SpecialtyContext';
+import PlanCurricularView from './PlanCurricularView';
 
 const HORARIOS_CATEDRA = ['7:00', '7:35', '8:10', '8:45', '9:40', '10:15', '10:50', '11:25', '13:00', '13:35', '14:10', '14:45', '15:20', '16:15', '16:50', '17:25'];
 const RASGO_CODIGOS = [
@@ -52,7 +53,8 @@ export default function HomePage() {
 
   const load = useCallback(async () => {
     try {
-      setData(await getHome({ cursoId: cursoId || undefined, etapa, view: view === 'clase' ? 'clase' : 'planillas' }));
+      const homeView = view === 'catedra' && search.get('subview') === 'clase' ? 'clase' : 'planillas';
+      setData(await getHome({ cursoId: cursoId || undefined, etapa, view: homeView }));
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Error al cargar el inicio.');
     } finally {
@@ -98,7 +100,7 @@ export default function HomePage() {
     }
   }, [especialidadId]);
 
-  if (!view) return <AppShell title="Elegí cómo querés empezar"><div className="choice-grid"><button onClick={() => setSearch({ view: 'clase' })}><span>01</span><h2>Iniciar una clase</h2><p>Asistencia, rasgos e historial del curso.</p></button><button onClick={() => setSearch({ view: 'planillas' })}><span>02</span><h2>Gestionar planillas</h2><p>Tareas, puntajes y sincronización con Classroom.</p></button></div></AppShell>;
+  if (!view) return <AppShell title="Elegí cómo querés empezar"><div className="choice-grid"><button onClick={() => setSearch({ view: 'catedra' })}><span>01</span><h2>Libro de Cátedra</h2><p>Plan curricular e inicio de clases.</p></button><button onClick={() => setSearch({ view: 'planillas' })}><span>02</span><h2>Gestionar planillas</h2><p>Tareas, puntajes y sincronización con Classroom.</p></button></div></AppShell>;
   if (!data) return <AppShell title="Panel SCA"><div className="panel">{error || 'Cargando…'}</div></AppShell>;
 
   const visibleCursos = selectedEspecialidad
@@ -187,7 +189,22 @@ export default function HomePage() {
         }} disabled={!hasEspecialidad || selectedCourseNivel == null || visibleCursos.length === 0} placeholder="Seleccione la sección" options={[{ value: '', label: 'Seleccione la sección' }, ...sectionOptions]} />
       </label>
     </div>
-      {selectionLoading ? <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Cargando planilla…</h2><p>Esperá un momento mientras cargamos la planilla seleccionada.</p></section> : showSelectionWait ? <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Esperando selección</h2><p>Elegí una especialidad, un curso y una sección para continuar.</p></section> : (view === 'clase' ? <ClassView data={data} reload={load} /> : <PlanillasView data={data} syncingProp={syncingAll} setSyncingProp={setSyncingAll} />)}
+      {selectionLoading ? <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Cargando planilla…</h2><p>Esperá un momento mientras cargamos la planilla seleccionada.</p></section> : showSelectionWait ? <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Esperando selección</h2><p>Elegí una especialidad, un curso y una sección para continuar.</p></section> : (
+        view === 'catedra' ? (
+          !search.get('subview') ? (
+            <div className="choice-grid">
+              <button onClick={() => params({ subview: 'clase' })}><span>01</span><h2>Iniciar clase</h2><p>Asistencia, rasgos e historial del curso.</p></button>
+              <button onClick={() => params({ subview: 'plan-curricular' })}><span>02</span><h2>Plan curricular</h2><p>Cargá y revisá tu plan curricular anual.</p></button>
+            </div>
+          ) : search.get('subview') === 'plan-curricular' ? (
+            <PlanCurricularView data={data} reload={load} />
+          ) : (
+            <ClassView data={data} reload={load} />
+          )
+        ) : (
+          <PlanillasView data={data} syncingProp={syncingAll} setSyncingProp={setSyncingAll} />
+        )
+      )}
     </AppShell>
   </>;
 }

@@ -5,9 +5,11 @@ import { ApiError } from '../../api/client';
 import { useSpecialty } from '../../context/SpecialtyContext';
 import { normalizeSpecialty } from '../../theme/theme';
 import AnimatedSelect from '../../components/AnimatedSelect';
+import ReviewPlanesView from './ReviewPlanesView';
 
 export default function EvaluacionPage() {
   const specialty = useSpecialty();
+  const [view, setView] = useState<'menu' | 'planillas' | 'planes'>('menu');
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [cursos, setCursos] = useState<CursoEvaluacion[]>([]);
   const [especialidadId, setEspecialidadId] = useState(specialty.id ?? 0);
@@ -50,7 +52,24 @@ export default function EvaluacionPage() {
     else specialty.resetSpecialty();
   }
 
+  if (view === 'menu') {
+    return <AppShell title="Panel de Evaluación">
+      <div className="choice-grid">
+        <button onClick={() => setView('planillas')}><span>01</span><h2>Descargar planillas</h2><p>Exportá planillas completadas de los cursos.</p></button>
+        <button onClick={() => setView('planes')}><span>02</span><h2>Revisar plan curricular</h2><p>Aprobá o rechazá planes de profesores.</p></button>
+      </div>
+    </AppShell>;
+  }
+
+  if (view === 'planes') {
+    return <AppShell title="Revisar Planes Curriculares">
+      <button className="button secondary" onClick={() => setView('menu')} style={{ marginBottom: 16 }}>← Volver</button>
+      <ReviewPlanesView />
+    </AppShell>;
+  }
+
   return <AppShell title="Descargar planillas">
+    <button className="button secondary" onClick={() => setView('menu')} style={{ marginBottom: 16 }}>← Volver</button>
     <section className="panel form-grid evaluation-filters">
       <p className="lead">Elegí la especialidad, el curso, la sección y el período académico para generar sus planillas.</p>
       {status && <div className="notice error" role="alert">{status}</div>}
