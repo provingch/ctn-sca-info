@@ -26,6 +26,17 @@ public class SchemaMigrationDao extends conexion {
         }
     }
 
+    public void renameVersion(String oldVersion, String newVersion) throws SQLException {
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(
+                "UPDATE schema_migrations SET version = ? WHERE version = ? "
+                        + "AND NOT EXISTS (SELECT 1 FROM schema_migrations WHERE version = ?)")) {
+            ps.setString(1, newVersion);
+            ps.setString(2, oldVersion);
+            ps.setString(3, newVersion);
+            ps.executeUpdate();
+        }
+    }
+
     public void executeAndRecord(String version, String sql) throws SQLException {
         try (Connection con = getCon()) {
             boolean oldAutoCommit = con.getAutoCommit();
