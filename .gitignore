@@ -22,6 +22,9 @@ nginx/*.local
 /backend/src/main/resources/static/index-*.js
 /backend/src/main/resources/static/index-*.css
 
+# Generated frontend static copied into backend resources: avoid tracking whole plantillas dir
+/backend/src/main/resources/static/plantillas/
+
 # Frontend build output
 /frontend/dist/
 
