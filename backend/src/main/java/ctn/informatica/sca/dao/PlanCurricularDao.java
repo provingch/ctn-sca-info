@@ -1,12 +1,14 @@
 package ctn.informatica.sca.dao;
 
 import ctn.informatica.sca.clases.conexion;
+import ctn.informatica.sca.dto.PlanCurricularDto;
 import ctn.informatica.sca.dto.TemaPlanDto;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Repository;
 
@@ -91,6 +93,183 @@ public class PlanCurricularDao extends conexion {
     public void rechazar(int id, int evaluadorId, String observaciones) throws SQLException {
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("UPDATE plan_curricular SET estado='RECHAZADO', evaluador_id = ?, fecha_revision = CURRENT_TIMESTAMP, observaciones_evaluador = ? WHERE id = ?")) {
             ps.setInt(1, evaluadorId); ps.setString(2, observaciones); ps.setInt(3, id); ps.executeUpdate();
+        }
+    }
+
+    public PlanCurricularDto findByAsignacion(int asignacionId, String etapa, int anio) throws SQLException {
+        String sql = "SELECT p.id, p.estado, p.archivo_nombre, p.fecha_subida, p.fecha_revision, p.observaciones_evaluador, " +
+                "t.id AS tema_id, t.mes, t.orden_mes, t.bloque, t.capacidades, t.temas_contenidos, t.actividades, " +
+                "t.instrumentos_evaluacion, t.indicador_conceptual, t.indicador_procedimental, t.indicador_actitudinal " +
+                "FROM plan_curricular p " +
+                "LEFT JOIN tema_plan_curricular t ON t.plan_curricular_id = p.id " +
+                "WHERE p.asignacion_id = ? AND p.etapa = ? AND p.anio_lectivo = ? " +
+                "ORDER BY t.orden_mes ASC";
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, asignacionId);
+            ps.setString(2, etapa);
+            ps.setInt(3, anio);
+            try (ResultSet rs = ps.executeQuery()) {
+                PlanCurricularDto dto = null;
+                List<TemaPlanDto> temas = new ArrayList<>();
+                while (rs.next()) {
+                    if (dto == null) {
+                        dto = new PlanCurricularDto();
+                        dto.id = rs.getInt("id");
+                        dto.estado = rs.getString("estado");
+                        dto.archivoNombre = rs.getString("archivo_nombre");
+                        dto.fechaSubida = rs.getString("fecha_subida");
+                        dto.fechaRevision = rs.getString("fecha_revision");
+                        dto.observacionesEvaluador = rs.getString("observaciones_evaluador");
+                        dto.etapa = etapa;
+                        dto.anio = anio;
+                    }
+                    Integer temaId = rs.getObject("tema_id", Integer.class);
+                    if (temaId != null) {
+                        TemaPlanDto t = new TemaPlanDto();
+                        t.mes = rs.getString("mes");
+                        t.ordenMes = rs.getInt("orden_mes");
+                        t.bloque = rs.getInt("bloque");
+                        t.capacidades = rs.getString("capacidades");
+                        t.temasContenidos = rs.getString("temas_contenidos");
+                        t.actividades = rs.getString("actividades");
+                        t.instrumentos = rs.getString("instrumentos_evaluacion");
+                        t.indicadorConceptual = rs.getString("indicador_conceptual");
+                        t.indicadorProcedimental = rs.getString("indicador_procedimental");
+                        t.indicadorActitudinal = rs.getString("indicador_actitudinal");
+                        temas.add(t);
+                    }
+                }
+                if (dto != null) {
+                    dto.temas = temas;
+                }
+                return dto;
+            }
+        }
+    }
+
+    public List<PlanCurricularDto> findPendientes() throws SQLException {
+        String sql = "SELECT p.id, p.estado, p.archivo_nombre, p.fecha_subida, p.fecha_revision, p.observaciones_evaluador, " +
+                "a.id AS asignacion_id, m.nombre AS materia_nombre, u.apellido AS profesor_apellido, u.nombre AS profesor_nombre, " +
+                "c.promocion, c.seccion, e.nombre AS especialidad " +
+                "FROM plan_curricular p " +
+                "JOIN asignacion a ON a.id = p.asignacion_id " +
+                "JOIN materia m ON m.id = a.materia_id " +
+                "JOIN usuario u ON u.id = a.usuario_id " +
+                "JOIN curso c ON c.id = a.curso_id " +
+                "JOIN especialidad e ON e.id = c.especialidad_id " +
+                "WHERE p.estado = 'PENDIENTE' " +
+                "ORDER BY p.fecha_subida ASC";
+        List<PlanCurricularDto> result = new ArrayList<>();
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                PlanCurricularDto dto = new PlanCurricularDto();
+                dto.id = rs.getInt("id");
+                dto.estado = rs.getString("estado");
+                dto.archivoNombre = rs.getString("archivo_nombre");
+                dto.fechaSubida = rs.getString("fecha_subida");
+                dto.materiaNombre = (Integer) rs.getObject("materia_nombre");
+                String profApellido = rs.getString("profesor_apellido");
+                String profNombre = rs.getString("profesor_nombre");
+                String profNombreCompleto = (profApellido == null ? "" : profApellido) + 
+                        (profNombre == null ? "" : (profNombre.isBlank() ? "" : (" " + profNombre)));
+                dto.profesorNombre = (Integer) rs.getObject("profesor_nombre");
+                String especialidad = rs.getString("especialidad");
+                String seccion = rs.getString("seccion");
+                String cursoDesc = (especialidad == null ? "" : especialidad) + 
+                        (seccion == null || seccion.isBlank() ? "" : (" " + seccion));
+                dto.cursoDescripcion = (Integer) rs.getObject("curso_descripcion");
+                dto.especialidad = especialidad;
+                result.add(dto);
+            }
+        }
+        return result;
+    }
+
+    public PlanCurricularDto findById(int id) throws SQLException {
+        String sql = "SELECT p.id, p.estado, p.archivo_nombre, p.fecha_subida, p.fecha_revision, p.observaciones_evaluador, " +
+                "p.etapa, p.anio_lectivo, a.id AS asignacion_id, " +
+                "m.nombre AS materia_nombre, u.apellido AS profesor_apellido, u.nombre AS profesor_nombre, " +
+                "c.promocion, c.seccion, e.nombre AS especialidad, " +
+                "t.id AS tema_id, t.mes, t.orden_mes, t.bloque, t.capacidades, t.temas_contenidos, t.actividades, " +
+                "t.instrumentos_evaluacion, t.indicador_conceptual, t.indicador_procedimental, t.indicador_actitudinal " +
+                "FROM plan_curricular p " +
+                "JOIN asignacion a ON a.id = p.asignacion_id " +
+                "JOIN materia m ON m.id = a.materia_id " +
+                "JOIN usuario u ON u.id = a.usuario_id " +
+                "JOIN curso c ON c.id = a.curso_id " +
+                "JOIN especialidad e ON e.id = c.especialidad_id " +
+                "LEFT JOIN tema_plan_curricular t ON t.plan_curricular_id = p.id " +
+                "WHERE p.id = ? " +
+                "ORDER BY t.orden_mes ASC";
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                PlanCurricularDto dto = null;
+                List<TemaPlanDto> temas = new ArrayList<>();
+                while (rs.next()) {
+                    if (dto == null) {
+                        dto = new PlanCurricularDto();
+                        dto.id = rs.getInt("id");
+                        dto.estado = rs.getString("estado");
+                        dto.archivoNombre = rs.getString("archivo_nombre");
+                        dto.fechaSubida = rs.getString("fecha_subida");
+                        dto.fechaRevision = rs.getString("fecha_revision");
+                        dto.observacionesEvaluador = rs.getString("observaciones_evaluador");
+                        dto.etapa = rs.getString("etapa");
+                        dto.anio = rs.getInt("anio_lectivo");
+                        String profApellido = rs.getString("profesor_apellido");
+                        String profNombre = rs.getString("profesor_nombre");
+                        dto.profesorNombre = (Integer) rs.getObject("profesor_nombre");
+                        String especialidad = rs.getString("especialidad");
+                        String seccion = rs.getString("seccion");
+                        dto.especialidad = especialidad;
+                        dto.cursoDescripcion = (Integer) rs.getObject("promocion");
+                        dto.materiaNombre = (Integer) rs.getObject("materia_nombre");
+                    }
+                    Integer temaId = rs.getObject("tema_id", Integer.class);
+                    if (temaId != null) {
+                        TemaPlanDto t = new TemaPlanDto();
+                        t.mes = rs.getString("mes");
+                        t.ordenMes = rs.getInt("orden_mes");
+                        t.bloque = rs.getInt("bloque");
+                        t.capacidades = rs.getString("capacidades");
+                        t.temasContenidos = rs.getString("temas_contenidos");
+                        t.actividades = rs.getString("actividades");
+                        t.instrumentos = rs.getString("instrumentos_evaluacion");
+                        t.indicadorConceptual = rs.getString("indicador_conceptual");
+                        t.indicadorProcedimental = rs.getString("indicador_procedimental");
+                        t.indicadorActitudinal = rs.getString("indicador_actitudinal");
+                        temas.add(t);
+                    }
+                }
+                if (dto != null) {
+                    dto.temas = temas;
+                }
+                return dto;
+            }
+        }
+    }
+
+    public byte[] getArchivoOriginal(int id) throws SQLException {
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("SELECT archivo_contenido FROM plan_curricular WHERE id = ?")) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getBytes("archivo_contenido");
+                }
+                return null;
+            }
+        }
+    }
+
+    public boolean existeAprobado(int asignacionId, String etapa, int anio) throws SQLException {
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("SELECT 1 FROM plan_curricular WHERE asignacion_id = ? AND etapa = ? AND anio_lectivo = ? AND estado = 'APROBADO'")) {
+            ps.setInt(1, asignacionId);
+            ps.setString(2, etapa);
+            ps.setInt(3, anio);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
         }
     }
 }

@@ -8,6 +8,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -146,18 +147,27 @@ public class AsignacionDao extends conexion {
     }
 
     public List<Asignacion> findByProfesorAndCurso(int profesorId, int cursoId) throws SQLException {
+        // Resolver etapa actual para consultar el estado del plan
+        int currentYear = LocalDate.now().getYear();
+        LocalDate transition = LocalDate.of(currentYear, 7, 15);
+        int currentEtapa = LocalDate.now().isBefore(transition) ? 1 : 2;
+        
         String sql = "SELECT a.id, a.usuario_id AS profesor_id, a.materia_id, a.curso_id, "
-                + "m.nombre AS materia_nombre, e.nombre AS especialidad, c.promocion, c.seccion "
+                + "m.nombre AS materia_nombre, e.nombre AS especialidad, c.promocion, c.seccion, "
+                + "COALESCE(p.estado, 'NO_CARGADO') AS plan_estado "
                 + "FROM asignacion a "
                 + "JOIN materia m ON m.id = a.materia_id "
                 + "JOIN curso c ON c.id = a.curso_id "
                 + "JOIN especialidad e ON e.id = c.especialidad_id "
+                + "LEFT JOIN plan_curricular p ON p.asignacion_id = a.id AND p.etapa = ? AND p.anio_lectivo = ? "
                 + "WHERE a.usuario_id = ? AND a.curso_id = ? "
                 + "ORDER BY m.nombre, e.nombre";
         List<Asignacion> out = new ArrayList<>();
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setInt(1, profesorId);
-            ps.setInt(2, cursoId);
+            ps.setInt(1, currentEtapa);
+            ps.setInt(2, currentYear);
+            ps.setInt(3, profesorId);
+            ps.setInt(4, cursoId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Asignacion a = new Asignacion();
@@ -174,6 +184,7 @@ public class AsignacionDao extends conexion {
                     a.setEspecialidad(especialidad);
                     a.setCursoNivel(promocion);
                     a.setCursoSeccion(seccion);
+                    a.setEstadoPlan(rs.getString("plan_estado"));
                     out.add(a);
                 }
             }
