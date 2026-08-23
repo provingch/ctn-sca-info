@@ -43,8 +43,9 @@ public class SchemaMigrationDao extends conexion {
             con.setAutoCommit(false);
             try {
                 try (Statement statement = con.createStatement()) {
-                    for (String command : sql.split(";")) {
-                        String trimmed = command.replaceAll("(?m)^\\s*--.*(?:\\R|$)", "").trim();
+                    String sqlNoComments = sql.replaceAll("(?m)^\\s*--.*$", "");
+                    for (String command : sqlNoComments.split(";")) {
+                        String trimmed = command.trim();
                         if (!trimmed.isEmpty()) statement.execute(trimmed);
                     }
                 }
