@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { createAdminRecord, deleteAssignment, updateAdminRecord, type AdminCatalog } from '../../api/admin';
+import { useEffect, useMemo, useState } from 'react';
+import { createAdminRecord, createHorarioSlot, deleteAssignment, deleteHorarioSlot, getHoraCatedraCatalog, getHorarioByAsignacion, updateAdminRecord, type AdminCatalog, type HoraCatedraItem, type HorarioSlotItem } from '../../api/admin';
 import { ApiError } from '../../api/client';
 
 interface AsignacionesPanelProps {
@@ -13,6 +13,7 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState({ materiaId: '', cursoIds: [] as number[] });
+  const [horarioPopup, setHorarioPopup] = useState<{ assignmentId: number; slots: HorarioSlotItem[]; catalog: HoraCatedraItem[]; diaSemana: number; horaCatedraId: string; sala: string } | null>(null);
 
   const profesores = useMemo(() => data.usuarios.filter((user) => user.nivel === 1), [data.usuarios]);
   const profesorAsignaciones = useMemo(
@@ -72,6 +73,81 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
       status(error instanceof ApiError ? error.message : 'No se pudo guardar la asignación.');
     }
   };
+
+  const openHorario = async (assignmentId: number) => {
+    try {
+      const [catalog, slots] = await Promise.all([
+        getHoraCatedraCatalog(),
+        getHorarioByAsignacion(assignmentId),
+      ]);
+      setHorarioPopup({
+        assignmentId,
+        slots,
+        catalog,
+        diaSemana: 1,
+        horaCatedraId: String(catalog[0]?.id ?? ''),
+        sala: '',
+      });
+    } catch (error) {
+      status(error instanceof ApiError ? error.message : 'No se pudo cargar el horario.');
+    }
+  };
+
+  const loadHorario = async (assignmentId: number) => {
+    try {
+      const slots = await getHorarioByAsignacion(assignmentId);
+      setHorarioPopup((current) => current && current.assignmentId === assignmentId
+        ? { ...current, slots }
+        : current);
+    } catch (error) {
+      status(error instanceof ApiError ? error.message : 'No se pudo recargar el horario.');
+    }
+  };
+
+  const submitHorario = async () => {
+    if (!horarioPopup) return;
+    if (!horarioPopup.horaCatedraId) {
+      status('Debes elegir una hora cátedra.');
+      return;
+    }
+
+    try {
+      await createHorarioSlot(horarioPopup.assignmentId, {
+        diaSemana: horarioPopup.diaSemana,
+        horaCatedraId: Number(horarioPopup.horaCatedraId),
+        sala: horarioPopup.sala.trim() || undefined,
+      });
+      status('Horario agregado.');
+      await loadHorario(horarioPopup.assignmentId);
+      setHorarioPopup((current) => current ? { ...current, sala: '', horaCatedraId: String(current.catalog[0]?.id ?? '') } : current);
+    } catch (error) {
+      status(error instanceof ApiError ? error.message : 'No se pudo guardar el horario.');
+    }
+  };
+
+  const removeHorarioSlot = async (slotId: number) => {
+    if (!horarioPopup) return;
+    try {
+      await deleteHorarioSlot(slotId);
+      status('Slot removido.');
+      await loadHorario(horarioPopup.assignmentId);
+    } catch (error) {
+      status(error instanceof ApiError ? error.message : 'No se pudo quitar el slot.');
+    }
+  };
+
+  useEffect(() => {
+    if (horarioPopup && !horarioPopup.catalog.length) {
+      void (async () => {
+        try {
+          const catalog = await getHoraCatedraCatalog();
+          setHorarioPopup((current) => current ? { ...current, catalog, horaCatedraId: String(current.horaCatedraId || catalog[0]?.id || '') } : current);
+        } catch (error) {
+          status(error instanceof ApiError ? error.message : 'No se pudo obtener el catálogo de horas.');
+        }
+      })();
+    }
+  }, [horarioPopup, status]);
 
   if (!selectedProfesorId) {
     return (
@@ -137,6 +213,7 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
                     <td>
                       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                         <button type="button" className="button secondary" onClick={() => openEdit(assignment)}>Editar</button>
+                        <button type="button" className="button secondary" onClick={() => void openHorario(assignment.id)}>Horario</button>
                         <button type="button" className="button danger" onClick={async () => {
                           if (!window.confirm('¿Eliminar esta asignación?')) return;
                           try {
@@ -207,6 +284,68 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
               <button type="submit" className="button" style={{ gridColumn: 'span 2' }}>{editingId ? 'Guardar cambios' : 'Crear asignación'}</button>
             </div>
           </form>
+        </div>
+      )}
+
+      {horarioPopup && (
+        <div className="signature-modal" role="dialog" aria-modal="true" aria-labelledby="horario-panel-title" style={{ display: 'grid', maxWidth: 700 }}>
+          <div className="signature-modal-header">
+            <div>
+              <span>Horario</span>
+              <h2 id="horario-panel-title">Asignación #{horarioPopup.assignmentId}</h2>
+            </div>
+            <button type="button" className="signature-modal-close" aria-label="Cerrar horario" onClick={() => setHorarioPopup(null)}>×</button>
+          </div>
+
+          <div className="form-grid" style={{ alignContent: 'start' }}>
+            <label>
+              Día
+              <select value={horarioPopup.diaSemana} onChange={(event) => setHorarioPopup({ ...horarioPopup, diaSemana: Number(event.target.value) })}>
+                {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'].map((label, index) => (
+                  <option key={label} value={index + 1}>{label}</option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              Hora cátedra
+              <select value={horarioPopup.horaCatedraId} onChange={(event) => setHorarioPopup({ ...horarioPopup, horaCatedraId: event.target.value })}>
+                <option value="">Seleccione…</option>
+                {horarioPopup.catalog.map((item) => (
+                  <option key={item.id} value={item.id}>{item.numero} · {item.etiqueta || '—'} · {item.horaInicio}-{item.horaFin}</option>
+                ))}
+              </select>
+            </label>
+
+            <label style={{ gridColumn: 'span 2' }}>
+              Sala (opcional)
+              <input type="text" value={horarioPopup.sala} onChange={(event) => setHorarioPopup({ ...horarioPopup, sala: event.target.value })} placeholder="Ej.: A-101" />
+            </label>
+
+            <div className="signature-modal-actions" style={{ gridColumn: 'span 2' }}>
+              <button type="button" className="button secondary" onClick={() => setHorarioPopup(null)}>Cancelar</button>
+              <button type="button" className="button" onClick={() => void submitHorario()}>Agregar</button>
+            </div>
+          </div>
+
+          <div style={{ marginTop: 20 }}>
+            <h3>Slots cargados</h3>
+            {horarioPopup.slots.length === 0 ? (
+              <p>No hay slots cargados para esta asignación.</p>
+            ) : (
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 8 }}>
+                {horarioPopup.slots.map((slot) => (
+                  <li key={slot.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', border: '1px solid #ddd', padding: 8, borderRadius: 6 }}>
+                    <span>
+                      {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][slot.diaSemana - 1]} · {slot.horaCatedraNumero} · {slot.horaInicio}-{slot.horaFin}
+                      {slot.sala ? ` · ${slot.sala}` : ''}
+                    </span>
+                    <button type="button" className="button danger" onClick={() => void removeHorarioSlot(slot.id)}>Quitar</button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       )}
     </>

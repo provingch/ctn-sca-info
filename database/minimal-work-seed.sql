@@ -6,6 +6,8 @@ DELETE FROM instrumento;
 DELETE FROM planilla;
 DELETE FROM rasgo_asistencia;
 DELETE FROM planilla_rasgo;
+DELETE FROM horario_slot;
+DELETE FROM hora_catedra;
 DELETE FROM materia_especialidad;
 DELETE FROM materia;
 DELETE FROM alumno_usuario;
@@ -18,11 +20,34 @@ DELETE FROM especialidad;
 ALTER TABLE alumno AUTO_INCREMENT = 1;
 ALTER TABLE usuario AUTO_INCREMENT = 1;
 ALTER TABLE materia AUTO_INCREMENT = 1;
+ALTER TABLE hora_catedra AUTO_INCREMENT = 1;
+ALTER TABLE horario_slot AUTO_INCREMENT = 1;
 ALTER TABLE planilla AUTO_INCREMENT = 1;
 ALTER TABLE tarea AUTO_INCREMENT = 1;
 ALTER TABLE registro AUTO_INCREMENT = 1;
 ALTER TABLE planilla_rasgo AUTO_INCREMENT = 1;
 ALTER TABLE rasgo_asistencia AUTO_INCREMENT = 1;
+
+-- ========================================
+-- HORAS CÁTEDRA
+-- ========================================
+INSERT INTO hora_catedra (numero, etiqueta, hora_inicio, hora_fin) VALUES
+(1, 'M', '07:00', '07:35'),
+(2, 'M', '07:35', '08:10'),
+(3, 'M', '08:10', '08:45'),
+(4, 'M', '08:45', '09:20'),
+(5, 'M', '09:40', '10:15'),
+(6, 'M', '10:15', '10:50'),
+(7, 'M', '10:50', '11:25'),
+(8, 'M', '11:25', '12:00'),
+(9, 'T', '13:00', '13:35'),
+(10, 'T', '13:35', '14:10'),
+(11, 'T', '14:10', '14:45'),
+(12, 'T', '14:45', '15:20'),
+(13, 'T', '15:40', '16:15'),
+(14, 'T', '16:15', '16:50'),
+(15, 'T', '16:50', '17:25'),
+(16, 'T', '17:25', '18:00');
 
 -- ========================================
 -- ESPECIALIDADES

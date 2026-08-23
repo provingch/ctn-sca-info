@@ -94,6 +94,37 @@ CREATE TABLE asignacion (
         REFERENCES curso (id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
+CREATE TABLE hora_catedra (
+    id INT AUTO_INCREMENT,
+    numero SMALLINT UNSIGNED NOT NULL,
+    etiqueta VARCHAR(20) NULL,
+    hora_inicio TIME NOT NULL,
+    hora_fin TIME NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_hora_catedra_numero (numero)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE horario_slot (
+    id INT AUTO_INCREMENT,
+    asignacion_id INT NOT NULL,
+    usuario_id INT NOT NULL,
+    curso_id INT NOT NULL,
+    dia_semana TINYINT UNSIGNED NOT NULL COMMENT '1=Lunes ... 6=Sabado',
+    hora_catedra_id INT NOT NULL,
+    sala VARCHAR(45) NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_horario_profesor (dia_semana, hora_catedra_id, usuario_id),
+    UNIQUE KEY uq_horario_curso (dia_semana, hora_catedra_id, curso_id),
+    CONSTRAINT fk_horario_slot_asignacion FOREIGN KEY (asignacion_id)
+        REFERENCES asignacion (id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_horario_slot_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuario (id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_horario_slot_curso FOREIGN KEY (curso_id)
+        REFERENCES curso (id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_horario_slot_hora_catedra FOREIGN KEY (hora_catedra_id)
+        REFERENCES hora_catedra (id) ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 -- Relación N:M: una materia 'comun' puede pertenecer a varias especialidades,
 -- una 'especifico' típicamente a una sola.
 CREATE TABLE materia_especialidad (
