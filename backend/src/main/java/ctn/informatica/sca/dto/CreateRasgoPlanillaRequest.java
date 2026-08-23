@@ -1,6 +1,7 @@
 package ctn.informatica.sca.dto;
 
 import java.util.List;
+import java.util.Map;
 
 public record CreateRasgoPlanillaRequest(
         Integer cursoId,
@@ -8,6 +9,7 @@ public record CreateRasgoPlanillaRequest(
         Integer instrumentoId,
         String turno,
         String tema,
-        List<Integer> alumnosAusentes
+        List<Integer> alumnosAusentes,
+        Map<Integer, List<String>> codigosPorAlumno
 ) {
 }
