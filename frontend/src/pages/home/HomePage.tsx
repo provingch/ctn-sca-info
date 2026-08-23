@@ -248,7 +248,7 @@ function PlanillasView({ data, syncingProp, setSyncingProp }: { data: HomeRespon
 
 function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise<void> }) {
   const [tema, setTema] = useState('');
-  const [asignacionesDisponibles, setAsignacionesDisponibles] = useState<Array<{ id: number; materiaId: number; materiaNombre?: string }>>([]);
+  const [asignacionesDisponibles, setAsignacionesDisponibles] = useState<Array<{ id: number; materiaId: number; materiaNombre?: string; estadoPlan?: string }>>([]);
   const [selectedAsignacionId, setSelectedAsignacionId] = useState<number | null>(null);
   const [disciplina, setDisciplina] = useState('');
   const [instrumentoId, setInstrumentoId] = useState(0);
@@ -301,6 +301,27 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
     setCantidadHoras(sanitized);
   };
 
+  // Derivar estado del plan curricular actual
+  const asignacionActual = asignacionesDisponibles.find((a) => a.id === selectedAsignacionId)
+    ?? (asignacionesDisponibles.length === 1 ? asignacionesDisponibles[0] : undefined);
+  const estadoPlanActual = asignacionActual?.estadoPlan;
+  const planAprobado = estadoPlanActual === 'APROBADO';
+  const puedeIniciarClase = asignacionesDisponibles.length > 0 && planAprobado;
+
+  // Mensaje a mostrar cuando el plan no está aprobado
+  let mensajeBloqueo = '';
+  if (asignacionesDisponibles.length === 0) {
+    mensajeBloqueo = 'No hay asignaciones disponibles para este curso.';
+  } else if (asignacionesDisponibles.length > 1 && !selectedAsignacionId) {
+    mensajeBloqueo = 'Elegí primero tu asignación.';
+  } else if (estadoPlanActual === 'NO_CARGADO' || !estadoPlanActual) {
+    mensajeBloqueo = 'Necesitás cargar y que se apruebe tu plan curricular para poder iniciar clases de esta asignación.';
+  } else if (estadoPlanActual === 'PENDIENTE') {
+    mensajeBloqueo = 'Tu plan curricular está en revisión. Vas a poder iniciar clases cuando se apruebe.';
+  } else if (estadoPlanActual === 'RECHAZADO') {
+    mensajeBloqueo = 'Tu plan curricular fue rechazado. Corregilo y volvé a subirlo desde Plan curricular.';
+  }
+
   const indiceInicio = HORARIOS_CATEDRA.indexOf(horario);
   const horasCatedra = Number(cantidadHoras);
   const horarioFinal = indiceInicio >= 0 && horasCatedra > 0
@@ -309,7 +330,10 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
 
   async function create(e: FormEvent) {
     e.preventDefault();
-    if (!data.selCurso) return;
+    if (!data.selCurso || !puedeIniciarClase) {
+      setStatus(mensajeBloqueo || 'No puedes iniciar clases en este momento.');
+      return;
+    }
     try {
       await createClass({ cursoId: data.selCurso.id, etapa: data.selEtapa, instrumentoId, turno: 'turno', tema, alumnosAusentes: ausentes, codigosPorAlumno });
       setStatus('Clase registrada.');
@@ -342,6 +366,25 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
 
   return (
     <div className="two-column">
+      {!puedeIniciarClase && mensajeBloqueo && (
+        <div className="panel" style={{ gridColumn: '1 / -1', marginBottom: 0 }}>
+          <div className="notice error" style={{ marginBottom: 12 }}>
+            <p style={{ margin: 0 }}>{mensajeBloqueo}</p>
+          </div>
+          {(estadoPlanActual === 'NO_CARGADO' || estadoPlanActual === 'PENDIENTE' || estadoPlanActual === 'RECHAZADO') && (
+            <button
+              type="button"
+              className="button secondary"
+              onClick={() => {
+                const params = new URLSearchParams({ view: 'catedra', subview: 'plan-curricular' });
+                window.location.hash = `?${params.toString()}`;
+              }}
+            >
+              Ir a cargar/revisar Plan curricular
+            </button>
+          )}
+        </div>
+      )}
       <form className="panel" onSubmit={create} style={{ display: 'grid', gap: 12, gridColumn: '1 / -1' }}>
         <input type="hidden" name="action" value="create-rasgo-planilla" />
         <input type="hidden" name="cursoId" value={data.selCurso ? String(data.selCurso.id) : ''} id="formCursoId" />
@@ -492,7 +535,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
         </div>
 
         <div className="class-card" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-          <button type="submit" className="button">Guardar inicio de clase</button>
+          <button type="submit" className="button" disabled={!puedeIniciarClase}>Guardar inicio de clase</button>
           <button type="button" className="button secondary" onClick={() => {
             const payload = {
               cursoId: data.selCurso ? Number(data.selCurso.id) : 0,
