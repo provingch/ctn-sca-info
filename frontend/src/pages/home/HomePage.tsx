@@ -3,8 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { createClass, getHome, type HomeResponse } from '../../api/home';
 import { ApiError } from '../../api/client';
 import AppShell from '../../components/AppShell';
-import { resolvePlanilla, syncClassroom, type Especialidad } from '../../api/academics';
-import { getAdminCatalog } from '../../api/admin';
+import { getEspecialidades, resolvePlanilla, syncClassroom, type Especialidad } from '../../api/academics';
 import { useNavigate } from 'react-router-dom';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import { useSpecialty } from '../../context/SpecialtyContext';
@@ -49,8 +48,7 @@ export default function HomePage() {
   }, [cursoId, etapa, view]);
 
   useEffect(() => {
-    // use admin catalog to ensure same especialidades list as admin panel
-    void getAdminCatalog().then((cat) => setEspecialidades(cat.especialidades)).catch(() => setEspecialidades([]));
+    void getEspecialidades().then(setEspecialidades).catch(() => setEspecialidades([]));
   }, []);
 
   // If admin catalog doesn't provide especialidades (e.g. network/auth),
