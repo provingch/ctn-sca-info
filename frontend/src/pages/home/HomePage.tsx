@@ -8,6 +8,8 @@ import { useNavigate } from 'react-router-dom';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import { useSpecialty } from '../../context/SpecialtyContext';
 
+const HORARIOS_CATEDRA = ['7:00', '7:35', '8:10', '8:45', '9:40', '10:15', '10:50', '11:25', '13:00', '13:35', '14:10', '14:45', '15:20', '16:15', '16:50', '17:25'];
+
 export default function HomePage() {
   const [search, setSearch] = useSearchParams();
   const [data, setData] = useState<HomeResponse | null>(null);
@@ -232,6 +234,12 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
     setCantidadHoras(sanitized);
   };
 
+  const indiceInicio = HORARIOS_CATEDRA.indexOf(horario);
+  const horasCatedra = Number(cantidadHoras);
+  const horarioFinal = indiceInicio >= 0 && horasCatedra > 0
+    ? HORARIOS_CATEDRA[indiceInicio + horasCatedra] ?? ''
+    : '';
+
   async function create(e: FormEvent) {
     e.preventDefault();
     if (!data.selCurso) return;
@@ -279,13 +287,22 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
           </div>
           <div className="class-grid">
             <div className="class-field">
-              <label htmlFor="horarioClase">Horario</label>
-              <select id="horarioClase" value={horario} onChange={(e) => setHorario(e.target.value)}>
-                <option value="">Seleccione el horario</option>
-                {['7:00', '7:35', '8:10', '8:45', '9:40', '10:15', '10:50', '11:25', '13:00', '13:35', '14:10', '14:45', '15:20', '16:15', '16:50', '17:25'].map((hora) => (
-                  <option key={hora} value={hora}>{hora}</option>
-                ))}
-              </select>
+              <label>Horario</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
+                <div className="class-field">
+                  <label htmlFor="horarioClase">Inicio de clase</label>
+                  <select id="horarioClase" value={horario} onChange={(e) => setHorario(e.target.value)}>
+                    <option value="">Seleccione el horario</option>
+                    {HORARIOS_CATEDRA.map((hora) => (
+                      <option key={hora} value={hora}>{hora}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="class-field">
+                  <label htmlFor="horarioFinalClase">Final de la clase</label>
+                  <input id="horarioFinalClase" value={horarioFinal} placeholder="Se calcula automáticamente" readOnly />
+                </div>
+              </div>
             </div>
             <div className="class-field">
               <label htmlFor="cantidadHoras">Cant. horas cátedra</label>
@@ -375,6 +392,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
               instrumentoId: instrumentoId,
               tema,
               horarioClase: horario,
+              horarioFinalClase: horarioFinal,
               cantidadHoras,
               modalidad,
               observaciones,
