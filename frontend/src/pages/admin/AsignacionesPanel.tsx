@@ -126,6 +126,7 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
     const slice = horarioPopup.catalog.slice(Math.min(idxDesde, idxHasta), Math.max(idxDesde, idxHasta) + 1);
 
     try {
+      let hadConflict = false;
       for (const item of slice) {
         try {
           await createHorarioSlot(horarioPopup.assignmentId, {
@@ -135,13 +136,18 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
           });
         } catch (err) {
           if (err instanceof ApiError && err.status === 409) {
+            hadConflict = true;
             status(`Conflicto al crear hora ${item.numero}: ${err.message}`);
             break;
           }
           throw err;
         }
       }
-      status('Horario(s) agregado(s).');
+
+      if (!hadConflict) {
+        status('Horario(s) agregado(s).');
+      }
+
       await loadHorario(horarioPopup.assignmentId);
       setHorarioPopup((current) => current ? { ...current, sala: '', horaCatedraId: String(current.catalog[0]?.id ?? ''), hastaHoraCatedraId: String(current.catalog[0]?.id ?? '') } : current);
     } catch (error) {
