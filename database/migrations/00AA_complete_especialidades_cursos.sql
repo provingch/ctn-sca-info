@@ -9,8 +9,8 @@ FROM (
     UNION ALL SELECT 3, 'Electrónica'
     UNION ALL SELECT 4, 'Electromecánica'
     UNION ALL SELECT 5, 'Informática'
-    UNION ALL SELECT 6, 'Mecanica General'
-    UNION ALL SELECT 7, 'Mecanica Automotriz'
+    UNION ALL SELECT 6, 'Mecánica General'
+    UNION ALL SELECT 7, 'Mecánica Automotriz'
     UNION ALL SELECT 8, 'Química Industrial'
 ) ids
 WHERE NOT EXISTS (
@@ -32,3 +32,10 @@ JOIN (
     SELECT 'A' AS seccion
     UNION ALL SELECT 'B'
 ) secciones;
+
+-- Construcciones Civiles, Electrónica y Química Industrial mantienen
+-- las secciones A, B y C en los tres cursos.
+INSERT IGNORE INTO curso (especialidad_id, promocion, seccion)
+SELECT e.id, 2028, 'C'
+FROM especialidad e
+WHERE e.id IN (1, 3, 8);
