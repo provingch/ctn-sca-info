@@ -263,6 +263,20 @@ CREATE TABLE rasgo_asistencia (
         ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+CREATE TABLE rasgo_asistencia_codigo (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    rasgo_asistencia_id INT NOT NULL,
+    codigo VARCHAR(2) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_rasgo_asistencia_codigo (rasgo_asistencia_id, codigo),
+    KEY idx_rasgo_asistencia_codigo (rasgo_asistencia_id),
+    CONSTRAINT fk_rasgo_asistencia_codigo_asistencia
+        FOREIGN KEY (rasgo_asistencia_id) REFERENCES rasgo_asistencia (id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT chk_rasgo_asistencia_codigo
+        CHECK (codigo IN ('N1', 'N2', 'N3', 'N4', 'N5', 'N6', 'N7', 'N8'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 -- Tabla de relación entre alumno y usuario (antes: alumno_padre)
 CREATE TABLE alumno_usuario (
     alumno_id INT NOT NULL,

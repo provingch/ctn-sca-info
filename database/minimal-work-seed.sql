@@ -4,6 +4,7 @@ DELETE FROM registro;
 DELETE FROM tarea;
 DELETE FROM instrumento;
 DELETE FROM planilla;
+DELETE FROM rasgo_asistencia_codigo;
 DELETE FROM rasgo_asistencia;
 DELETE FROM planilla_rasgo;
 DELETE FROM horario_slot;
@@ -27,6 +28,7 @@ ALTER TABLE tarea AUTO_INCREMENT = 1;
 ALTER TABLE registro AUTO_INCREMENT = 1;
 ALTER TABLE planilla_rasgo AUTO_INCREMENT = 1;
 ALTER TABLE rasgo_asistencia AUTO_INCREMENT = 1;
+ALTER TABLE rasgo_asistencia_codigo AUTO_INCREMENT = 1;
 
 -- ========================================
 -- HORAS CÁTEDRA
@@ -125,7 +127,26 @@ INSERT INTO curso (id, especialidad_id, promocion, seccion) VALUES
 (54, 8, 2026, 'C'),
 (55, 8, 2025, 'A'),
 (56, 8, 2025, 'B'),
-(57, 8, 2025, 'C');
+(57, 8, 2025, 'C'),
+(58, 1, 2028, 'A'),
+(59, 1, 2028, 'B'),
+(60, 2, 2028, 'A'),
+(61, 2, 2028, 'B'),
+(62, 3, 2028, 'A'),
+(63, 3, 2028, 'B'),
+(64, 4, 2028, 'A'),
+(65, 4, 2028, 'B'),
+(66, 5, 2028, 'A'),
+(67, 5, 2028, 'B'),
+(68, 6, 2028, 'A'),
+(69, 6, 2028, 'B'),
+(70, 7, 2028, 'A'),
+(71, 7, 2028, 'B'),
+(72, 8, 2028, 'A'),
+(73, 8, 2028, 'B'),
+(74, 1, 2028, 'C'),
+(75, 3, 2028, 'C'),
+(76, 8, 2028, 'C');
 
 -- ========================================
 -- PROFESORES

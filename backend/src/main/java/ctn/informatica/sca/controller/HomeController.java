@@ -20,6 +20,7 @@ import ctn.informatica.sca.dto.PlanillaDto;
 import ctn.informatica.sca.dto.RasgoAsistenciaDto;
 import ctn.informatica.sca.dto.RasgoPlanillaDto;
 import ctn.informatica.sca.dto.SubmitRasgoAsistenciaRequest;
+import ctn.informatica.sca.dto.UpdateRasgoCodigosRequest;
 import ctn.informatica.sca.google.GoogleClassroomService;
 import ctn.informatica.sca.model.Alumno;
 import ctn.informatica.sca.model.Curso;
@@ -335,7 +336,9 @@ public class HomeController {
 
         String temaPersistido = composeTemaConContexto(request.instrumentoId() == null ? 0 : request.instrumentoId(), request.turno(), tema);
         try {
-            rasgoPlanillaDao.crearPlanillaRasgo(cursoId, user.getId(), temaPersistido, elegibles, ausentes);
+            rasgoPlanillaDao.crearPlanillaRasgo(cursoId, user.getId(), temaPersistido, elegibles, ausentes, request.codigosPorAlumno());
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         } catch (SQLException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo crear la planilla de rasgos", ex);
         }
@@ -356,6 +359,35 @@ public class HomeController {
             rasgoPlanillaDao.registrarRespuesta(request.asistenciaId(), estado);
         } catch (SQLException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo registrar la asistencia", ex);
+        }
+    }
+
+    @PostMapping("/update-rasgo-codigos")
+    @PreAuthorize("hasRole('LEVEL_1')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updateRasgoCodigos(
+            @RequestBody UpdateRasgoCodigosRequest request,
+            Authentication authentication) {
+        User user = requireUser(authentication);
+        if (request == null || request.asistenciaId() == null || request.asistenciaId() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El id de asistencia es requerido.");
+        }
+        try {
+            RasgoAsistencia asistencia = rasgoPlanillaDao.findAsistenciaById(request.asistenciaId());
+            if (asistencia == null) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Asistencia no encontrada");
+            }
+            RasgoPlanilla planilla = rasgoPlanillaDao.findPlanillaById(asistencia.getPlanillaRasgoId());
+            if (planilla == null || planilla.getProfesorId() != user.getId()) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes acceso a esta clase");
+            }
+            rasgoPlanillaDao.reemplazarCodigos(request.asistenciaId(), request.codigos());
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        } catch (SQLException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudieron guardar los códigos", ex);
         }
     }
 
@@ -432,7 +464,7 @@ public class HomeController {
     }
 
     private RasgoAsistenciaDto toRasgoAsistenciaDto(RasgoAsistencia asistencia) {
-        return new RasgoAsistenciaDto(asistencia.getId(), asistencia.getAlumnoNombreCompleto(), asistencia.getEstado(), asistencia.getFaltaCodigo(), asistencia.getFaltaObservacion());
+        return new RasgoAsistenciaDto(asistencia.getId(), asistencia.getAlumnoId(), asistencia.getAlumnoNombreCompleto(), asistencia.getEstado(), asistencia.getFaltaCodigo(), asistencia.getFaltaObservacion(), asistencia.getCodigos());
     }
 
     private AlumnoDto toAlumnoDto(Alumno alumno) {
