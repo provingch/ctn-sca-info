@@ -10,14 +10,15 @@ import { useSpecialty } from '../../context/SpecialtyContext';
 
 const HORARIOS_CATEDRA = ['7:00', '7:35', '8:10', '8:45', '9:40', '10:15', '10:50', '11:25', '13:00', '13:35', '14:10', '14:45', '15:20', '16:15', '16:50', '17:25'];
 const RASGO_CODIGOS = [
-  ['N1', 'Sale del aula sin autorización'],
-  ['N2', 'No realiza la tarea asignada en clase'],
-  ['N3', 'No dispone de los materiales necesarios'],
-  ['N4', 'No presenta las tareas asignadas para la casa'],
-  ['N5', 'Utiliza vocabulario indebido en clase'],
-  ['N6', 'Charla mucho en clase'],
-  ['N7', 'No utiliza el uniforme establecido'],
-  ['N8', 'Ausente en clase, presente en la Institución'],
+  ['N1', 'Llegada tardía a clase'],
+  ['N2', 'Sale del aula sin autorización'],
+  ['N3', 'No realiza la tarea asignada en clase'],
+  ['N4', 'No dispone de los materiales necesarios'],
+  ['N5', 'No presenta las tareas asignadas para la casa'],
+  ['N6', 'Utiliza vocabulario indebido en clase'],
+  ['N7', 'Charla mucho en clase'],
+  ['N8', 'No utiliza el uniforme establecido'],
+  ['N9', 'Ausente en clase, presente en la institución'],
 ] as const;
 
 export default function HomePage() {
@@ -373,7 +374,11 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
             <span className="student-pill">Incompletos: <strong>{data.rasgoAlumnosInvalidos.length}</strong></span>
           </div>
           <div className="empty-state empty-state-card" style={{ textAlign: 'left', marginBottom: 8 }}>
-            Marca ausentes en la lista. Los no marcados se guardan como presentes.
+            <p>Marca ausentes en la lista. Los no marcados se guardan como presentes.</p>
+            <p>En el apartado de Anotación conductual seleccione si es debido:</p>
+            <ul style={{ margin: 0, paddingLeft: '1.25rem' }}>
+              {RASGO_CODIGOS.map(([codigo, significado]) => <li key={codigo}><strong>{codigo}:</strong> {significado}.</li>)}
+            </ul>
           </div>
           <div className="table-responsive" style={{ marginBottom: 8 }}>
             <table className="table table-striped" id="tablaAsistencia">
