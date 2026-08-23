@@ -10,14 +10,15 @@ import { useSpecialty } from '../../context/SpecialtyContext';
 
 const HORARIOS_CATEDRA = ['7:00', '7:35', '8:10', '8:45', '9:40', '10:15', '10:50', '11:25', '13:00', '13:35', '14:10', '14:45', '15:20', '16:15', '16:50', '17:25'];
 const RASGO_CODIGOS = [
-  ['N1', 'Sale del aula sin autorización'],
-  ['N2', 'No realiza la tarea asignada en clase'],
-  ['N3', 'No dispone de los materiales necesarios'],
-  ['N4', 'No presenta las tareas asignadas para la casa'],
-  ['N5', 'Utiliza vocabulario indebido en clase'],
-  ['N6', 'Charla mucho en clase'],
-  ['N7', 'No utiliza el uniforme establecido'],
-  ['N8', 'Ausente en clase, presente en la Institución'],
+  ['N1', 'Llegada tardia a clase'],
+  ['N2', 'Sale de clase sin autorización'],
+  ['N3', 'No realiza la tarea asignada en clase'],
+  ['N4', 'No dispone de los materiales necesarios'],
+  ['N5', 'No presenta la tarea las tareas asignadas para la casa'],
+  ['N6', 'Utiliza vocabulario indebido en clase'],
+  ['N7', 'Charla mucho en clase'],
+  ['N8', 'No utiliza el uniforme establecido'],
+  ['N9', 'Ausente en clase, presente en la institución'],
 ] as const;
 
 export default function HomePage() {
@@ -299,7 +300,6 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
     setModalidad('Presencial');
     setInstrumentoId(0);
     setAusentes([]);
-    setCodigosPorAlumno({});
     setObservaciones('');
     setStatus('');
   }
@@ -382,7 +382,6 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
                   <th>#</th>
                   <th>Apellido(s) y nombre(s)</th>
                   <th style={{ textAlign: 'right', width: 140 }}>Estado (P/A)</th>
-                  <th style={{ width: 190 }}>Anotaciones conductuales</th>
                 </tr>
               </thead>
               <tbody>
@@ -400,10 +399,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
                         <input className="ausente-checkbox" type="checkbox" value={String(alumno.id)} checked={ausentes.includes(alumno.id)} onChange={(e) => setAusentes((v) => e.target.checked ? [...v, alumno.id] : v.filter((id) => id !== alumno.id))} />
                         Ausente
                       </label>
-                    </td>
-                    <td>
-                      <select aria-label={`Anotación conductual de ${alumno.nombre} ${alumno.apellido}`} value={codigosPorAlumno[alumno.id]?.[0] ?? ''} onChange={(e) => void changeCodigos(alumno.id, e.target.value ? [e.target.value] : [])} style={{ width: '100%' }}>
-                        <option value="">Seleccione</option>
+                      <select multiple size={2} aria-label={`Códigos de ${alumno.nombre} ${alumno.apellido}`} value={codigosPorAlumno[alumno.id] ?? []} onChange={(e) => void changeCodigos(alumno.id, Array.from(e.target.selectedOptions, (option) => option.value))} style={{ display: 'block', width: 88, marginTop: 6, fontSize: 12 }}>
                         {RASGO_CODIGOS.map(([codigo]) => <option key={codigo} value={codigo}>{codigo}</option>)}
                       </select>
                     </td>
