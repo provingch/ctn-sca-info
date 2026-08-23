@@ -96,9 +96,6 @@ export default function HomePage() {
 
   // derive unique niveles and secciones for selectors
   const nivelesBase = Array.from(new Set(visibleCursos.map((c) => Number(c.curso)).filter((n) => !isNaN(n) && n > 0)));
-  if (nivelesBase.length > 0 && !nivelesBase.includes(1)) {
-    nivelesBase.push(1);
-  }
   const niveles = nivelesBase.sort((a, b) => a - b);
   const seccionesForNivel = (nivel: number) => Array.from(new Set(visibleCursos.filter((c) => Number(c.curso) === nivel).map((c) => c.seccion))).sort();
 
