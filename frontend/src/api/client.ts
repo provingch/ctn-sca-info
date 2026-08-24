@@ -67,9 +67,10 @@ async function parseBody(response: Response): Promise<unknown> {
 
 async function rawRequest(path: string, options: RequestOptions = {}): Promise<Response> {
   const { body, headers, ...rest } = options;
+  const isFormData = body instanceof FormData;
 
   const finalHeaders: HeadersInit = {
-    ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+    ...(body !== undefined && !isFormData ? { 'Content-Type': 'application/json' } : {}),
     ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     ...headers,
   };
@@ -79,7 +80,7 @@ async function rawRequest(path: string, options: RequestOptions = {}): Promise<R
     headers: finalHeaders,
     // same-origin: necesario para que la cookie SCA_REMEMBER viaje en /auth/refresh y /auth/logout
     credentials: 'same-origin',
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body: isFormData ? (body as FormData) : body !== undefined ? JSON.stringify(body) : undefined,
   });
 }
 
