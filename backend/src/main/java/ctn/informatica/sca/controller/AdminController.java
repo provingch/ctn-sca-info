@@ -110,6 +110,11 @@ public class AdminController {
             String categoria = normalizeCategoria(input.categoria());
             int id = new MateriaDao().create(input.nombre().trim(), categoria);
             if (input.especialidadIds() != null) new MateriaDao().replaceEspecialidades(id, input.especialidadIds());
+            try {
+                new ctn.informatica.sca.service.ActivityLogService().registrar(ApiAuth.requireUserId(auth), "Creó materia " + input.nombre().trim());
+            } catch (Exception ignored) {
+                // No bloquear la creación si falla el historial.
+            }
         }
         catch (Exception ex) { throw failure("No se pudo crear la materia", ex); }
     }
@@ -149,6 +154,11 @@ public class AdminController {
             }
             Profesor p = new Profesor(); p.setNombre(input.nombre().trim()); p.setApellido(input.apellido().trim()); p.setUsuario(input.usuario().trim()); p.setContrasenia(defaultPassword); p.setNivel(input.nivel()); p.setCorreo(input.correo()); p.setCi(input.ci()); p.setTelefono(input.telefono() == null || input.telefono().isBlank() ? null : Integer.parseInt(input.telefono()));
             if (new ProfesorDao().create(p) <= 0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo crear el usuario");
+            try {
+                new ctn.informatica.sca.service.ActivityLogService().registrar(ApiAuth.requireUserId(auth), "Creó usuario " + input.nombre().trim() + " " + input.apellido().trim() + " (nivel " + input.nivel() + ")");
+            } catch (Exception ignored) {
+                // No bloquear la creación si falla el historial.
+            }
         } catch (ResponseStatusException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -227,6 +237,11 @@ public class AdminController {
         ApiAuth.requireUserId(auth);
         try {
             if (!new AsignacionDao().eliminar(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Asignación no encontrada");
+            try {
+                new ctn.informatica.sca.service.ActivityLogService().registrar(ApiAuth.requireUserId(auth), "Eliminó asignación #" + id);
+            } catch (Exception ignored) {
+                // No bloquear la eliminación si falla el historial.
+            }
         } catch (ResponseStatusException ex) { throw ex; } catch (Exception ex) { throw failure("No se pudo eliminar la asignación", ex); }
     }
 
@@ -236,6 +251,11 @@ public class AdminController {
         try {
             boolean deleted = new MateriaDao().delete(id);
             if (!deleted) throw new ResponseStatusException(HttpStatus.CONFLICT, "No se pudo eliminar: la materia está referenciada por planillas o no existe");
+            try {
+                new ctn.informatica.sca.service.ActivityLogService().registrar(ApiAuth.requireUserId(auth), "Eliminó materia #" + id);
+            } catch (Exception ignored) {
+                // No bloquear la eliminación si falla el historial.
+            }
         } catch (ResponseStatusException ex) { throw ex; } catch (Exception ex) { throw failure("No se pudo eliminar la materia", ex); }
     }
 
@@ -251,9 +271,19 @@ public class AdminController {
             }
             if (existing != null) {
                 if (!profesorDao.delete(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado o no se pudo eliminar");
+                try {
+                    new ctn.informatica.sca.service.ActivityLogService().registrar(ApiAuth.requireUserId(auth), "Eliminó usuario #" + id);
+                } catch (Exception ignored) {
+                    // No bloquear la eliminación si falla el historial.
+                }
                 return;
             }
             if (!padreDao.delete(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado o no se pudo eliminar");
+            try {
+                new ctn.informatica.sca.service.ActivityLogService().registrar(ApiAuth.requireUserId(auth), "Eliminó usuario #" + id);
+            } catch (Exception ignored) {
+                // No bloquear la eliminación si falla el historial.
+            }
         } catch (ResponseStatusException ex) { throw ex; } catch (Exception ex) { throw failure("No se pudo eliminar el usuario", ex); }
     }
 
@@ -333,6 +363,11 @@ public class AdminController {
         ApiAuth.requireUserId(auth);
         try {
             if (!new AlumnoDao().delete(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Alumno no encontrado o no se pudo eliminar");
+            try {
+                new ctn.informatica.sca.service.ActivityLogService().registrar(ApiAuth.requireUserId(auth), "Eliminó alumno #" + id);
+            } catch (Exception ignored) {
+                // No bloquear la eliminación si falla el historial.
+            }
         } catch (ResponseStatusException ex) { throw ex; } catch (Exception ex) { throw failure("No se pudo eliminar el alumno", ex); }
     }
 

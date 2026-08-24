@@ -31,6 +31,7 @@ import ctn.informatica.sca.dto.AsignacionDto;
 import ctn.informatica.sca.dto.EspecialidadDto;
 import ctn.informatica.sca.dto.SaveProfileRequest;
 import ctn.informatica.sca.dto.SelectUiSpecialtyRequest;
+import ctn.informatica.sca.service.ActivityLogService;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -66,9 +67,10 @@ public class ProfileController {
     private final ProfesorDao profesorDao;
     private final PushSubscriptionDao pushSubscriptionDao;
     private final UserDao userDao;
+    private final ActivityLogService activityLogService;
 
     public ProfileController() {
-        this(new AsignacionDao(), new CursoDao(), new EspecialidadDao(), new MateriaDao(), new PadreDao(), new ProfesorDao(), new PushSubscriptionDao(), new UserDao());
+        this(new AsignacionDao(), new CursoDao(), new EspecialidadDao(), new MateriaDao(), new PadreDao(), new ProfesorDao(), new PushSubscriptionDao(), new UserDao(), new ActivityLogService());
     }
 
     @Autowired
@@ -80,7 +82,8 @@ public class ProfileController {
             PadreDao padreDao,
             ProfesorDao profesorDao,
             PushSubscriptionDao pushSubscriptionDao,
-            UserDao userDao) {
+            UserDao userDao,
+            ActivityLogService activityLogService) {
         this.asignacionDao = asignacionDao;
         this.cursoDao = cursoDao;
         this.especialidadDao = especialidadDao;
@@ -89,6 +92,18 @@ public class ProfileController {
         this.profesorDao = profesorDao;
         this.pushSubscriptionDao = pushSubscriptionDao;
         this.userDao = userDao;
+        this.activityLogService = activityLogService;
+    }
+
+    private List<String> readActivityLog(int userId) {
+        if (activityLogService == null) {
+            return Collections.emptyList();
+        }
+        try {
+            return activityLogService.leerUltimas(userId, 50);
+        } catch (Exception ex) {
+            return Collections.emptyList();
+        }
     }
 
     @GetMapping
@@ -177,7 +192,7 @@ public class ProfileController {
                 availableMaterias.stream().map(this::toProfileMateriaDto).collect(Collectors.toList()),
                 especialidades.stream().map(this::toEspecialidadDto).collect(Collectors.toList()),
                 manualTeacherSubjectsText,
-                Collections.emptyList(),
+                readActivityLog(user.getId()),
                 totpSecret != null && !totpSecret.isBlank(),
                 pendingTotpSecret,
                 pendingTotpSecret == null || pendingTotpSecret.isBlank() ? null
@@ -408,6 +423,13 @@ public class ProfileController {
                 if (!padreDao.update(padre)) {
                     throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudieron guardar los datos. Intente de nuevo más tarde.");
                 }
+                try {
+                    if (activityLogService != null) {
+                        activityLogService.registrar(user.getId(), "Actualizó datos de perfil");
+                    }
+                } catch (Exception ex) {
+                    // No bloquear la operación si falla el registro del historial.
+                }
                 return;
             }
 
@@ -507,6 +529,13 @@ public class ProfileController {
             try {
                 if (!profesorDao.update(profesor)) {
                     throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudieron guardar los datos. Intente de nuevo más tarde.");
+                }
+                try {
+                    if (activityLogService != null) {
+                        activityLogService.registrar(user.getId(), "Actualizó datos de perfil");
+                    }
+                } catch (Exception ex) {
+                    // No bloquear la operación si falla el registro del historial.
                 }
             } catch (RuntimeException ex) {
                 // Detect SQL data-too-long scenarios to return a 400 with a helpful message.

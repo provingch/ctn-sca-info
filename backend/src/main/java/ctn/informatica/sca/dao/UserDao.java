@@ -7,6 +7,7 @@ package ctn.informatica.sca.dao;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 
 import org.springframework.stereotype.Repository;
 
@@ -50,6 +51,28 @@ public class UserDao {
             return user;
         }
         return null;
+    }
+
+    public String findActivityLogPathById(int userId) throws SQLException {
+        String sql = "SELECT activity_log_path FROM usuario WHERE id = ?";
+        try (Connection con = new conexion().getCon(); PreparedStatement stm = con.prepareStatement(sql)) {
+            stm.setInt(1, userId);
+            try (ResultSet rs = stm.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("activity_log_path");
+                }
+            }
+        }
+        return null;
+    }
+
+    public boolean updateActivityLogPath(int userId, String path) throws SQLException {
+        String sql = "UPDATE usuario SET activity_log_path = ? WHERE id = ?";
+        try (Connection con = new conexion().getCon(); PreparedStatement stm = con.prepareStatement(sql)) {
+            stm.setString(1, path);
+            stm.setInt(2, userId);
+            return stm.executeUpdate() > 0;
+        }
     }
 
     private User findProfessorUser(String username, String password) throws Exception {

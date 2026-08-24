@@ -68,6 +68,16 @@ public class HorarioController {
         }
     }
 
+    @GetMapping("/resumen")
+    public List<ctn.informatica.sca.dto.HorarioResumenCursoDto> resumen(Authentication auth) {
+        ApiAuth.requireUserId(auth);
+        try {
+            return new HorarioSlotDao().resumenPorCurso();
+        } catch (Exception ex) {
+            throw failure("No se pudo cargar el resumen de horarios por curso", ex);
+        }
+    }
+
     @GetMapping("/asignaciones/{asignacionId}")
     public List<HorarioSlotDto> listSlots(@PathVariable int asignacionId, Authentication auth) {
         ApiAuth.requireUserId(auth);

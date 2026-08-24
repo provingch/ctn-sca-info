@@ -9,6 +9,8 @@ import ctn.informatica.sca.dao.RegistroDao;
 import ctn.informatica.sca.dao.StudentRowDao;
 import ctn.informatica.sca.dao.TareaDao;
 import ctn.informatica.sca.google.ClassroomSyncOrchestrator;
+import ctn.informatica.sca.dao.ClassroomSyncLogDao;
+import ctn.informatica.sca.service.ActivityLogService;
 import ctn.informatica.sca.google.GoogleClassroomService;
 import ctn.informatica.sca.model.Curso;
 import ctn.informatica.sca.model.Materia;
@@ -51,19 +53,32 @@ public class PlanillaController {
     private final PlanillaDao planillaDao;
     private final ProfesorDao profesorDao;
     private final ClassroomSyncOrchestrator classroomSyncOrchestrator;
+    private final ClassroomSyncLogDao classroomSyncLogDao;
+    private final ActivityLogService activityLogService;
 
     public PlanillaController() {
-        this(new PlanillaDao(), new ProfesorDao(), new ClassroomSyncOrchestrator());
+        this(new PlanillaDao(), new ProfesorDao(), new ClassroomSyncOrchestrator(), new ClassroomSyncLogDao(), null);
+    }
+
+    public PlanillaController(
+            PlanillaDao planillaDao,
+            ProfesorDao profesorDao,
+            ClassroomSyncOrchestrator classroomSyncOrchestrator) {
+        this(planillaDao, profesorDao, classroomSyncOrchestrator, new ClassroomSyncLogDao(), null);
     }
 
     @Autowired
     public PlanillaController(
             PlanillaDao planillaDao,
             ProfesorDao profesorDao,
-            ClassroomSyncOrchestrator classroomSyncOrchestrator) {
+            ClassroomSyncOrchestrator classroomSyncOrchestrator,
+            ClassroomSyncLogDao classroomSyncLogDao,
+            ActivityLogService activityLogService) {
         this.planillaDao = planillaDao;
         this.profesorDao = profesorDao;
         this.classroomSyncOrchestrator = classroomSyncOrchestrator;
+        this.classroomSyncLogDao = classroomSyncLogDao;
+        this.activityLogService = activityLogService;
     }
 
     @GetMapping("/{planillaId}")
@@ -324,6 +339,23 @@ public class PlanillaController {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Profesor no encontrado");
             }
                 ClassroomSyncOrchestrator.ClassroomSyncResult result = classroomSyncOrchestrator.syncPlanillaWithClassroom(profesor, planilla);
+                // try to persist a sync log (non-blocking)
+                try {
+                    if (classroomSyncLogDao != null) {
+                        classroomSyncLogDao.insert(planilla.getId(), userId, result.importedCourseworks(), result.importedGrades());
+                    }
+                } catch (Exception e) {
+                    // log and continue
+                    System.err.println("Warning: could not persist classroom sync log: " + e.getMessage());
+                }
+                try {
+                    if (activityLogService != null) {
+                        activityLogService.registrar(userId, "Sincronizó Classroom — planilla: " + planilla.getId());
+                    }
+                } catch (Exception e) {
+                    System.err.println("Warning: could not write activity log for Classroom sync: " + e.getMessage());
+                }
+
                 return new ClassroomSyncResponse(
                     planilla.getId(),
                     result.googleCourseId(),
