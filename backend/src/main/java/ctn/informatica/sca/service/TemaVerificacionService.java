@@ -16,11 +16,13 @@ public class TemaVerificacionService extends conexion {
 
     public VerificacionResultado verificar(int asignacionId, String temaIngresado) throws SQLException {
         int anio = AcademicPeriod.current();
-        // 1. resolver plan aprobado vigente para la asignacion y año actual
+        int etapa = AcademicPeriod.currentEtapa();
+        // 1. resolver plan aprobado vigente para la asignacion, etapa y año actual
         Integer planId = null;
-        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("SELECT id FROM plan_curricular WHERE asignacion_id = ? AND estado = 'APROBADO' AND anio_lectivo = ? ORDER BY fecha_revision DESC LIMIT 1")) {
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("SELECT id FROM plan_curricular WHERE asignacion_id = ? AND etapa = ? AND estado = 'APROBADO' AND anio_lectivo = ? ORDER BY fecha_revision DESC LIMIT 1")) {
             ps.setInt(1, asignacionId);
-            ps.setInt(2, anio);
+            ps.setInt(2, etapa);
+            ps.setInt(3, anio);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) planId = rs.getInt("id");
             }

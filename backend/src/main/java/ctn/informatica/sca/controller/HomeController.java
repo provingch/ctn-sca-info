@@ -350,7 +350,7 @@ public class HomeController {
             // Si se indicó asignacionId, intentamos verificar el tema contra el plan curricular.
             if (request.asignacionId() != null) {
                 try {
-                    VerificacionResultado resultado = temaVerificacionService.verificar(request.asignacionId(), temaPersistido);
+                    VerificacionResultado resultado = temaVerificacionService.verificar(request.asignacionId(), tema);
                     rasgoPlanillaDao.actualizarVerificacionPlanilla(planillaId, resultado.estado(), resultado.temaPlanCurricularId());
                     if ("OK".equalsIgnoreCase(resultado.estado()) && resultado.temaPlanCurricularId() != null) {
                         try {
