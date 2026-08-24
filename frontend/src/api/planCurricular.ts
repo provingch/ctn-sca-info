@@ -51,7 +51,7 @@ export function downloadPlantilla(asignacionId: number) {
   return apiDownload(`/api/plan-curricular/plantilla?asignacionId=${asignacionId}`, 'plan-curricular-plantilla.xlsx');
 }
 
-export function getMiPlan(asignacionId: number, etapa: string, anio: number): Promise<PlanCurricularEstado> {
+export function getMiPlan(asignacionId: number, etapa: string, anio: number): Promise<PlanCurricularEstado | undefined> {
   return apiRequest<PlanCurricularEstado>(`/api/plan-curricular/mi-plan?asignacionId=${asignacionId}&etapa=${etapa}&anio=${anio}`);
 }
 

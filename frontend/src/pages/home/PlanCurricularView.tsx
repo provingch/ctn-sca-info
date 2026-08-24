@@ -62,7 +62,7 @@ export default function PlanCurricularView({ data, reload }: { data: HomeRespons
         const currentEtapa = new Date() < transition ? '1' : '2';
         
         const result = await planCurricularApi.getMiPlan(selectedAsignacionId, currentEtapa, currentYear);
-        setPlan(result);
+        setPlan(result ?? null);
         setStatus('');
       } catch (err) {
         if (err instanceof ApiError && err.status === 204) {
@@ -144,7 +144,7 @@ export default function PlanCurricularView({ data, reload }: { data: HomeRespons
                 <div style={{ marginBottom: 16 }}>
                   {loading ? (
                     <p>Cargando plan...</p>
-                  ) : plan === null ? (
+                  ) : !plan ? (
                     <>
                       <p style={{ marginBottom: 12, color: '#666' }}>
                         Aún no has subido un plan curricular para esta asignación.
