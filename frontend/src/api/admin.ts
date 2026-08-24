@@ -82,6 +82,25 @@ export interface HorarioSlotItem {
   profesorNombre: string | null;
 }
 
+export interface HorarioResumenCursoItem {
+  cursoId: number;
+  especialidad: string;
+  cursoDescripcion: string;
+  cantidadSlotsCargados: number;
+}
+
+export interface MigracionEstadoItem {
+  version: string;
+  appliedAt: string | null;
+}
+
+export interface SistemaEstadoResponse {
+  dbConectada: boolean;
+  migraciones: MigracionEstadoItem[];
+  ultimaSyncClassroom: string | null;
+  espacioLogsBytes: number;
+}
+
 export interface AdminCatalog {
   materias: MateriaItem[];
   usuarios: UserItem[];
@@ -102,6 +121,8 @@ export const getHorarioByAsignacion = (asignacionId: number) => api.get<HorarioS
 export const createHorarioSlot = (asignacionId: number, payload: { diaSemana: number; horaCatedraId: number; sala?: string }) => api.post<HorarioSlotItem>(`/api/admin/horario/asignaciones/${asignacionId}/slots`, payload);
 export const deleteHorarioSlot = (id: number) => api.delete<void>(`/api/admin/horario/slots/${id}`);
 export const downloadHorarioCurso = (cursoId: number) => apiDownload(`/api/admin/horario/export?cursoId=${cursoId}`, `horario-curso-${cursoId}.xlsx`);
+export const getHorarioResumen = () => api.get<HorarioResumenCursoItem[]>('/api/admin/horario/resumen');
+export const getSistemaEstado = () => api.get<SistemaEstadoResponse>('/api/admin/sistema-estado');
 export const buscarPadres = (q: string) => api.get<PadreSummary[]>(`/api/admin/padres/buscar?q=${encodeURIComponent(q)}`);
 export const getPadresDeAlumno = (alumnoId: number) => api.get<PadreSummary[]>(`/api/admin/alumnos/${alumnoId}/padres`);
 export const linkPadreAlumno = (alumnoId: number, padreId: number) => api.post<void>(`/api/admin/alumnos/${alumnoId}/padres/${padreId}`, {});

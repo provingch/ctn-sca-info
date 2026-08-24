@@ -32,10 +32,6 @@ function formatShortDate(value: string | null | undefined) {
   return new Intl.DateTimeFormat('es-PY', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${value}T00:00:00Z`));
 }
 
-function stageDateDescription(stageIndex: number) {
-  return stageIndex === 2 ? 'Desde el 15 de julio' : 'Hasta el 14 de julio';
-}
-
 function StageCombobox({ value, disabled, onChange }: { value: number; disabled: boolean; onChange: (value: number) => void }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -219,40 +215,43 @@ export default function PlanillaPage() {
   const onePointCeiling = gr['2'] ? gr['2'].minInclusive - 1 : null;
 
   return (
-    <AppShell title={data.planilla.materiaNombre} subtitle={data.curso ? `${data.curso.nivel}° ${data.curso.seccion} · ${data.planilla.etapa}` : data.planilla.etapa} specialty={data.curso?.especialidad}>
+    <AppShell specialty={data.curso?.especialidad}>
       <div className="planilla-page">
-      <div className="toolbar">
-        <Link className="button secondary" to="/home">← Volver</Link>
-        <div className="inline-filter">
-          <span>Etapa</span>
-          <StageCombobox value={data.planilla.etapaIndex} disabled={switchingEtapa} onChange={changeEtapa} />
+      <section className="planilla-legacy-hero">
+        <header className="planilla-hero-header">
+          <div>
+            <span className="badge">Profesor · {data.curso?.especialidad || 'Planilla'}</span>
+            <h1>{data.planilla.materiaNombre}</h1>
+            <p>{data.curso ? `${data.curso.nivel}° ${data.curso.seccion}` : 'Curso'} · {data.planilla.etapa}</p>
+          </div>
+          <div className="planilla-hero-actions">
+            <Link className="button secondary" to="/home">← Volver</Link>
+            <button className="button" type="button" onClick={async () => {
+              try {
+                await apiDownload(`/api/planillas/${id}/export`, `planilla-${id}.xlsx`);
+              } catch (e) {
+                setStatus(e instanceof ApiError ? e.message : 'Error en la descarga');
+              }
+            }}>Descargar</button>
+          </div>
+        </header>
+        <div className="planilla-legacy-toolbar">
+          <div className="inline-filter">
+            <span>Etapa</span>
+            <StageCombobox value={data.planilla.etapaIndex} disabled={switchingEtapa} onChange={changeEtapa} />
+          </div>
+          <p className="planilla-date-range"><strong>Desde:</strong> {formatShortDate(data.planilla.planillaDesde)} <strong>Hasta:</strong> {formatShortDate(data.planilla.planillaHasta)}</p>
+          <div className="planilla-toolbar-actions">
+            <button className="button secondary" type="button" disabled={syncingClassroom} onClick={() => void performClassroomSync(id)}>{syncingClassroom ? 'Sincronizando…' : 'Sincronizar Classroom'}</button>
+            <Link className="button" to={`/planilla/${id}/tarea`}>Agregar tarea</Link>
+          </div>
         </div>
-        <button className="button secondary" type="button" disabled={syncingClassroom} onClick={() => void performClassroomSync(id)}>
-          {syncingClassroom ? 'Sincronizando…' : 'Sincronizar Classroom'}
-        </button>
-        <Link className="button" to={`/planilla/${id}/tarea`}>Agregar tarea</Link>
-        {/* Habilitamos la descarga individual usando fetch+blob para incluir Authorization */}
-        <button className="button" onClick={async () => {
-          try {
-            await apiDownload(`/api/planillas/${id}/export`, `planilla-${id}.xlsx`);
-          } catch (e) {
-            setStatus(e instanceof ApiError ? e.message : 'Error en la descarga');
-          }
-        }}>Descargar</button>
-      </div>
+      </section>
       {lastClassroomSync && <p className="sync-meta" role="status">Última sincronización: {lastClassroomSync.toLocaleString('es-AR', { dateStyle: 'medium', timeStyle: 'short' })}</p>}
       {syncSummary && <div className="sync-summary" aria-label="Resultado de la sincronización">
         <span><strong>{syncSummary.created}</strong> tareas creadas</span>
         <span><strong>{syncSummary.updated}</strong> calificaciones actualizadas</span>
       </div>}
-      {/* Mensaje informativo removido por solicitud de UX */}
-      <section className="summary-grid">
-        <article className="metric"><span>Curso</span><strong>{data.curso ? `${data.curso.nivel}° ${data.curso.seccion}` : '—'}</strong></article>
-        <article className="metric"><span>Etapa</span><strong>{data.planilla.etapa}</strong><small>{stageDateDescription(data.planilla.etapaIndex)}</small></article>
-        <article className="metric"><span>Fechas de tareas</span><strong>{formatShortDate(data.planilla.planillaDesde)} – {formatShortDate(data.planilla.planillaHasta)}</strong></article>
-        <article className="metric"><span>Total</span><strong>{data.planilla.totalPossiblePoints} pts</strong></article>
-        <article className="metric"><span>Exigencia</span><strong>{data.planilla.exigenciaPorcentaje}%</strong></article>
-      </section>
       {resolvedCourse && resolvedCourse.classroomCourseMapped && resolvedCourse.googleCourseId && data.planilla.googleCourseId !== resolvedCourse.googleCourseId && (
         <div className="notice">
           <div>
@@ -276,16 +275,21 @@ export default function PlanillaPage() {
           </div>
         </div>
       )}
-      {Object.keys(gr).length > 0 && (
-        <section className="grade-ranges-bar" aria-label="Escala de notas">
+      <section className="planilla-info-bar" aria-label="Escala y opciones de la planilla">
+        <div className="planilla-scale-summary"><span>TP <strong>{data.planilla.totalPossiblePoints} pts</strong></span><span>Exigencia <strong>{data.planilla.exigenciaPorcentaje}%</strong></span></div>
+        {Object.keys(gr).length > 0 && <div className="grade-ranges-bar" aria-label="Escala de notas">
           {GRADE_KEYS_DESC.map((key) => gr[key] && (
             <GradeChip key={key} grade={Number(key)} title={`Desde ${gr[key].minInclusive} hasta ${gr[key].maxInclusive}`} label={<><strong>{key}</strong>{gr[key].minInclusive}-{gr[key].maxInclusive}</>} />
           ))}
           {onePointCeiling !== null && (
             <GradeChip grade={1} title={`${onePointCeiling} puntos o menos`} label={<><strong>1</strong>{onePointCeiling} o menos</>} />
           )}
-        </section>
-      )}
+        </div>}
+        <label className="planilla-freeze-toggle">
+          <input type="checkbox" checked={freezeStudents} onChange={(event) => toggleFreezeStudents(event.target.checked)} />
+          Inmovilizar alumnos
+        </label>
+      </section>
       {status && <div className="notice">{status}</div>}
       <section className="planilla-student-tools" role="search" aria-label="Buscar alumnos en la planilla">
         <label className="planilla-student-search">
@@ -293,10 +297,6 @@ export default function PlanillaPage() {
           <input type="search" value={studentSearch} onChange={(event) => setStudentSearch(event.target.value)} placeholder="Nombre del alumno…" autoComplete="off" spellCheck={false} />
         </label>
         <div className="planilla-student-tool-actions">
-          <label className="planilla-freeze-toggle">
-            <input type="checkbox" checked={freezeStudents} onChange={(event) => toggleFreezeStudents(event.target.checked)} />
-            Fijar alumnos
-          </label>
           <span className="planilla-student-count" aria-live="polite">
             {visibleRows.length === computedRows.length
               ? `${computedRows.length} ${computedRows.length === 1 ? 'alumno' : 'alumnos'}`

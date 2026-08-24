@@ -696,5 +696,5 @@ function AppStatus({ data }: { data: ProfileResponse }) {
     </section>
   </div>;
 }
-function Activity({ entries }: { entries: string[] }) { return <section className="panel"><SectionHeading number="01" title="Actividad reciente" detail="Movimientos registrados para esta cuenta." />{entries.length === 0 ? <ContentState compact title="Aún no hay movimientos" detail="La actividad de tu cuenta aparecerá aquí." /> : entries.map((entry, index) => <p className="history-row" key={`${entry}-${index}`}>{entry}</p>)}</section>; }
+function Activity({ entries }: { entries: string[] }) { return <section className="panel"><SectionHeading number="01" title="Actividad reciente" detail="Movimientos registrados para esta cuenta." />{entries.length === 0 ? <ContentState compact title="Aún no hay movimientos" detail="La actividad de tu cuenta aparecerá aquí." /> : <div className="profile-history-list" aria-label="Registro de actividad">{entries.map((entry, index) => <p className="history-row" key={`${entry}-${index}`}>{entry}</p>)}</div>}</section>; }
 function setStatusWithFallback(error: unknown, done: (text: string) => Promise<void>, fallback: string) { void done(message(error, fallback)); }

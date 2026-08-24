@@ -11,12 +11,16 @@ import MateriasPanel from './MateriasPanel';
 import UsuariosPanel from './UsuariosPanel';
 import AsignacionesPanel from './AsignacionesPanel';
 import AlumnosPanel from './AlumnosPanel';
+import HorariosPanel from './HorariosPanel';
+import SistemaEstadoPanel from './SistemaEstadoPanel';
 
 const modules = [
   { path: '/admin/materias', key: 'materias', title: 'Materias', detail: 'Catálogo, categorías y especialidades' },
   { path: '/admin/usuarios', key: 'usuarios', title: 'Usuarios', detail: 'Altas, roles y datos de acceso' },
   { path: '/admin/asignaciones', key: 'asignaciones', title: 'Asignaciones', detail: 'Profesor, materia y curso' },
   { path: '/admin/alumnos', key: 'alumnos', title: 'Alumnos', detail: 'Carga de estudiantes y gestión por sección' },
+  { path: '/admin/horarios', key: 'horarios', title: 'Horarios', detail: 'Vista y descarga de horarios por especialidad' },
+  { path: '/admin/sistema', key: 'sistema', title: 'Estado del sistema', detail: 'Salud de base de datos, migraciones y sincronización' },
 ];
 
 export default function AdminPage() {
@@ -43,9 +47,15 @@ export default function AdminPage() {
     <AdminToolbar data={data} showBack={Boolean(selected)} />
     {status && <div className="notice" role="status">{status}</div>}
     {!selected ? (
-      <div className="card-grid">
-        {modules.map((module) => <Link className="nav-card" to={module.path} key={module.path}><span>Gestionar</span><h2>{module.title}</h2><p>{module.detail}</p><strong>Abrir →</strong></Link>)}
-        <Link className="nav-card" to="/styleguide"><span>Referencia interna</span><h2>Sistema de diseño</h2><p>Componentes, estados y reglas visuales compartidas.</p><strong>Consultar →</strong></Link>
+      <div className="admin-dashboard-sections">
+        <section aria-labelledby="admin-management-title">
+          <header className="admin-dashboard-heading"><span>Administración</span><h2 id="admin-management-title">Gestión del sistema</h2></header>
+          <div className="card-grid">{modules.map((module) => <Link className="nav-card" to={module.path} key={module.path}><span>Gestionar</span><h2>{module.title}</h2><p>{module.detail}</p><strong>Abrir →</strong></Link>)}</div>
+        </section>
+        <section className="admin-reference-section" aria-labelledby="admin-reference-title">
+          <header className="admin-dashboard-heading"><span>Referencia</span><h2 id="admin-reference-title">Herramientas internas</h2></header>
+          <div className="card-grid"><Link className="nav-card" to="/styleguide"><span>Referencia interna</span><h2>Sistema de diseño</h2><p>Componentes, estados y reglas visuales compartidas.</p><strong>Consultar →</strong></Link></div>
+        </section>
       </div>
     ) : (
       <AdminModule module={selected} data={data} reload={load} status={setStatus} />
@@ -78,5 +88,7 @@ function AdminModule({ module, data, reload, status }: {
   if (module.key === 'materias') return <MateriasPanel data={data} reload={reload} status={status} />;
   if (module.key === 'usuarios') return <UsuariosPanel data={data} reload={reload} status={status} />;
   if (module.key === 'asignaciones') return <AsignacionesPanel data={data} reload={reload} status={status} />;
-  return <AlumnosPanel data={data} reload={reload} status={status} />;
+  if (module.key === 'alumnos') return <AlumnosPanel data={data} reload={reload} status={status} />;
+  if (module.key === 'horarios') return <HorariosPanel status={status} />;
+  return <SistemaEstadoPanel />;
 }

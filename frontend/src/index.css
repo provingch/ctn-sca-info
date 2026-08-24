@@ -601,6 +601,26 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 }
 
 /* Escala de notas (Planilla) — mismos colores que Planilla.jsp legacy */
+.profile-history-list { max-height: min(520px, 60vh); overflow-y: auto; padding-right: 6px; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+.profile-history-list .history-row:last-child { border-bottom: 0; }
+.admin-dashboard-sections, .admin-summary-groups, .system-status-layout { display: grid; gap: 22px; }
+.admin-dashboard-heading { margin-bottom: 12px; }
+.admin-dashboard-heading span, .admin-summary-heading span, .system-status-grid article > span { color: var(--accent-deep); font-size: .7rem; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
+.admin-dashboard-heading h2, .admin-summary-heading h2 { margin: 4px 0 0; font-size: 1.15rem; }
+.admin-reference-section .card-grid { max-width: 420px; }
+.admin-summary-section { margin: 0; padding: 20px 24px; }
+.admin-summary-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.admin-summary-heading > strong { color: var(--muted); font-size: .8rem; }
+.system-status-toolbar { justify-content: space-between; margin-bottom: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
+.system-status-toolbar p { margin: 0; color: var(--muted); }
+.system-status-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.system-status-grid .panel { display: grid; align-content: start; gap: 10px; margin: 0; padding: 20px; }
+.system-status-grid article > strong { font-size: 1.35rem; }
+.system-status-grid article > small { color: var(--muted); }
+.system-db-card.is-disconnected .connection-state { color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, var(--paper)); }
+.system-db-card.is-disconnected .connection-state i { background: var(--danger); }
+.system-migrations-panel { margin: 0; }
+.system-migrations-list em { padding: 5px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-deep); font-size: .68rem; font-style: normal; font-weight: 800; }
 .grade-ranges-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
 .grade-chip { display: inline-block; padding: 6px 8px; border-radius: 6px; color: #fff; font-weight: 800; font-size: .85rem; }
 .grade-chip strong { margin-right: 6px; }
@@ -611,7 +631,16 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .grade-chip--1 { background: #ef4444; } /* rojo */
 
 .planilla-page { width: 100%; min-width: 0; max-width: 100%; overflow-x: clip; }
-.planilla-page > .toolbar { min-width: 0; }
+.planilla-legacy-hero { margin-bottom: 18px; overflow: visible; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: var(--radius); background: var(--paper); box-shadow: var(--shadow-sm); }
+.planilla-hero-header { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 18px; }
+.planilla-hero-header h1 { margin: 10px 0 3px; font-size: clamp(1.45rem, 3vw, 2.2rem); }
+.planilla-hero-header p { margin: 0; color: var(--muted); }
+.planilla-hero-actions, .planilla-toolbar-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
+.planilla-legacy-toolbar { position: relative; display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 13px 18px; border-top: 1px solid var(--line); background: var(--bg-soft); }
+.planilla-legacy-toolbar .inline-filter { min-width: 0; margin-left: 0; }
+.planilla-date-range { margin: 0; color: var(--muted); font-size: .82rem; }
+.planilla-date-range strong { color: var(--ink); }
+.planilla-toolbar-actions { margin-left: auto; }
 .planilla-page .inline-filter { position: relative; }
 .planilla-page .inline-filter > span { color: var(--ink); font-size: .88rem; font-weight: 700; }
 .stage-combobox { position: relative; z-index: 12; min-width: 210px; font-weight: 700; }
@@ -626,7 +655,13 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .stage-combobox-options > button { width: 100%; min-height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border: 0; border-radius: 7px; background: transparent; color: var(--ink); text-align: left; box-shadow: none; }
 .stage-combobox-options > button:hover, .stage-combobox-options > button[aria-selected="true"] { background: var(--accent-soft); color: var(--accent-deep); }
 .stage-combobox-options > button i { font-style: normal; font-weight: 900; }
-.planilla-student-tools { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin: 18px 0 12px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); box-shadow: var(--shadow-sm); }
+.planilla-info-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 14px 0; padding: 13px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); box-shadow: var(--shadow-sm); }
+.planilla-scale-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.planilla-scale-summary > span { padding: 6px 9px; border-radius: 7px; background: var(--bg-soft); color: var(--muted); font-size: .76rem; }
+.planilla-scale-summary strong { margin-left: 4px; color: var(--ink); }
+.planilla-info-bar .grade-ranges-bar { margin: 0; }
+.planilla-info-bar .planilla-freeze-toggle { margin-left: auto; }
+.planilla-student-tools { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin: 14px 0 12px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); box-shadow: var(--shadow-sm); }
 .planilla-student-search { width: min(100%, 420px); margin: 0; color: var(--ink); font-size: .78rem; font-weight: 800; }
 .planilla-student-search input[type="search"] { min-height: 42px; border-color: color-mix(in srgb, var(--accent) 18%, var(--line)); box-shadow: none; transition: border-color .18s ease, box-shadow .18s ease; }
 .planilla-student-search input[type="search"]:hover { border-color: color-mix(in srgb, var(--accent) 38%, var(--line)); }
@@ -636,22 +671,23 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .planilla-freeze-toggle input { width: auto; margin: 0; accent-color: var(--accent); }
 .planilla-student-count { display: inline-flex; align-items: center; justify-content: center; min-height: 34px; padding: 7px 12px; border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--line)); border-radius: 999px; background: var(--accent-soft); color: var(--accent-deep); font-size: .76rem; font-weight: 850; white-space: nowrap; }
 .planilla-table-panel { width: 100%; min-width: 0; max-width: 100%; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); box-shadow: var(--shadow-sm); }
-.planilla-table-heading { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 14px 18px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--paper-raised) 90%, var(--accent-soft)); }
+.planilla-table-heading { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 14px 18px; border-bottom: 1px solid var(--line); border-left: 4px solid var(--accent); background: var(--paper); }
 .planilla-table-heading > div > span { color: var(--accent-deep); font-size: .68rem; font-weight: 900; letter-spacing: .11em; text-transform: uppercase; }
 .planilla-table-heading h2 { margin: 3px 0 0; font-size: 1.05rem; }
 .planilla-table-heading > small { color: var(--muted); font-weight: 700; white-space: nowrap; }
 .planilla-origin-summary { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .planilla-grade-table-wrap { width: 100%; min-width: 0; max-width: 100%; max-height: clamp(360px, 66vh, 720px); overflow: auto; border: 0; border-radius: 0; box-shadow: none; overscroll-behavior: contain; scrollbar-gutter: stable; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; }
 .planilla-grade-table { width: max-content; min-width: 100%; }
+.planilla-grade-table thead th { background: var(--bg-soft); color: var(--ink); }
 .planilla-grade-table thead th { position: sticky; top: 0; z-index: 3; box-shadow: inset 0 -1px var(--line); }
 .planilla-grade-table th:first-child { min-width: 50px; width: 50px; text-align: center; }
 .planilla-grade-table .planilla-student-heading,
 .planilla-grade-table .planilla-student-name { min-width: 230px; max-width: 280px; text-align: left; }
 .planilla-grade-table-wrap.freeze-students .planilla-row-number { position: sticky; left: 0; z-index: 4; background: var(--paper); }
-.planilla-grade-table-wrap.freeze-students .planilla-number-heading { z-index: 6; background: var(--accent-soft); }
+.planilla-grade-table-wrap.freeze-students .planilla-number-heading { z-index: 6; background: var(--bg-soft); }
 .planilla-grade-table-wrap.freeze-students .planilla-student-heading,
 .planilla-grade-table-wrap.freeze-students .planilla-student-name { position: sticky; left: 50px; z-index: 4; background: var(--paper); box-shadow: 1px 0 var(--line); }
-.planilla-grade-table-wrap.freeze-students .planilla-student-heading { z-index: 6; background: var(--accent-soft); }
+.planilla-grade-table-wrap.freeze-students .planilla-student-heading { z-index: 6; background: var(--bg-soft); }
 .planilla-grade-table tbody tr:hover > th,
 .planilla-grade-table tbody tr:hover > td { background: var(--accent-soft); }
 .planilla-row-number { color: var(--muted); font-size: .76rem; font-weight: 800; font-variant-numeric: tabular-nums; }
@@ -661,7 +697,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .planilla-task-heading .planilla-task-number { display: block; margin-bottom: 5px; color: var(--muted); font-size: .68rem; letter-spacing: .08em; }
 .planilla-task-heading .planilla-task-edit { margin-top: 5px; color: var(--muted); font-size: .68rem; font-weight: 700; }
 .planilla-task-heading .planilla-task-classroom-badge { margin-top: 4px; }
-.classroom-badge { display: inline-flex; align-items: center; gap: 6px; width: fit-content; padding: 4px 8px; border: 1px solid rgba(220, 78, 48, 0.2); border-radius: 999px; background: rgba(234, 67, 53, 0.08); color: #b23b2f; font-size: .68rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.classroom-badge { display: inline-flex; align-items: center; gap: 6px; width: fit-content; padding: 4px 8px; border: 1px solid color-mix(in srgb, var(--success) 30%, var(--line)); border-radius: 999px; background: color-mix(in srgb, var(--success) 10%, var(--paper)); color: var(--success); font-size: .68rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
 .classroom-badge svg { width: 12px; height: 12px; fill: currentColor; }
 .origin-badge { display: inline-flex; align-items: center; gap: 6px; width: fit-content; padding: 4px 8px; border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--line)); border-radius: 999px; background: var(--accent-soft); color: var(--accent-deep); font-size: .68rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
 .classroom-link-row { display: flex; justify-content: flex-end; }
@@ -686,11 +722,17 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .planilla-grade-table .planilla-student-empty { padding: 36px 20px; color: var(--muted); font-weight: 700; text-align: center; }
 
 @media (max-width: 680px) {
-  .planilla-page > .toolbar { align-items: stretch; flex-direction: column; }
-  .planilla-page > .toolbar > .button, .planilla-page > .toolbar > button { width: 100%; }
+  .system-status-grid { grid-template-columns: 1fr; }
+  .system-status-toolbar, .admin-summary-heading { align-items: stretch; flex-direction: column; }
+  .admin-summary-section { padding: 17px; }
+  .planilla-hero-header, .planilla-legacy-toolbar { align-items: stretch; flex-direction: column; }
+  .planilla-hero-actions, .planilla-toolbar-actions { display: grid; grid-template-columns: 1fr 1fr; margin-left: 0; }
+  .planilla-hero-actions .button, .planilla-toolbar-actions .button { width: 100%; }
   .planilla-page .inline-filter { width: 100%; min-width: 0; }
   .stage-combobox { width: 100%; min-width: 0; }
-  .stage-combobox-options { position: static; margin-top: -1px; }
+  .stage-combobox-options { position: absolute; margin-top: 0; }
+  .planilla-info-bar { align-items: stretch; flex-direction: column; padding: 13px; }
+  .planilla-info-bar .planilla-freeze-toggle { width: fit-content; margin-left: 0; }
   .grade-ranges-bar { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; overscroll-behavior-inline: contain; scrollbar-width: thin; }
   .grade-ranges-bar .grade-chip { flex: 0 0 auto; }
   .planilla-student-tools { align-items: stretch; flex-direction: column; padding: 13px; }
