@@ -50,6 +50,8 @@ import ctn.informatica.sca.util.PlanillaProcesoWorkbookBuilder;
 @RequestMapping("/api/planillas")
 public class PlanillaController {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(PlanillaController.class);
+
     private final PlanillaDao planillaDao;
     private final ProfesorDao profesorDao;
     private final ClassroomSyncOrchestrator classroomSyncOrchestrator;
@@ -346,14 +348,14 @@ public class PlanillaController {
                     }
                 } catch (Exception e) {
                     // log and continue
-                    System.err.println("Warning: could not persist classroom sync log: " + e.getMessage());
+                    log.warn("Could not persist classroom sync log: {}", e.getMessage());
                 }
                 try {
                     if (activityLogService != null) {
                         activityLogService.registrar(userId, "Sincronizó Classroom — planilla: " + planilla.getId());
                     }
                 } catch (Exception e) {
-                    System.err.println("Warning: could not write activity log for Classroom sync: " + e.getMessage());
+                    log.warn("No se pudo registrar actividad para usuario {}: {}", userId, e.getMessage());
                 }
 
                 return new ClassroomSyncResponse(

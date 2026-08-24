@@ -8,6 +8,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.stereotype.Repository;
 
@@ -32,6 +34,22 @@ public class UserDao {
             return professorUser;
         }
         return findParentUser(normalizedUsername, password);
+    }
+
+    public List<User> findAllByLevel(int level) throws Exception {
+        String sql = "select * from usuario where nivel = ?";
+        List<User> out = new ArrayList<>();
+        try (Connection con = new conexion().getCon(); PreparedStatement stm = con.prepareStatement(sql)) {
+            stm.setInt(1, level);
+            try (ResultSet rs = stm.executeQuery()) {
+                while (rs.next()) {
+                    out.add(mapUser(rs));
+                }
+            }
+        } catch (SQLException ex) {
+            throw new Exception("DB connection/query error", ex);
+        }
+        return out;
     }
 
     public User findById(int id) throws Exception {

@@ -1,179 +1,100 @@
+
 # SCA — Sistema de Carpetas Académicas
 
-Sistema de informes académicos del **Colegio Técnico Nacional (CTN)**: gestiona especialidades, cursos, materias, planillas de evaluación y notas, con integración a **Google Classroom**, portal para padres/encargados y soporte de **PWA** (instalable en el celular).
+Sistema de gestión académica del **Colegio Técnico Nacional (CTN)**: administra especialidades, cursos, materias, horarios, planillas de evaluación y notas, plan curricular con aprobación y verificación de tema por clase, con integración a **Google Classroom**, portal para padres/encargados, notificaciones push y soporte de **PWA** (instalable en el celular).
 
 - Inicio del desarrollo: 18/06/2026
-- Propuesta aceptada: 29/06/2026
-- Versión actual: **2.0.0** (27/07/2026) — ver [`CHANGELOG.md`](./CHANGELOG.md) para el historial completo.
+- Migración a Spring Boot + React: completada
+- **Versión actual: 1.0.0** (24/08/2026) — primera versión estable de la nueva base. Ver [`CHANGELOG.md`](./CHANGELOG.md) para el historial completo (incluye el historial previo del sistema legado JSP, ya retirado).
 
 ## Roles del sistema
 
-| Rol | Qué puede hacer |
-|---|---|
-| **Profesor** | Gestiona su perfil, sus materias, sus planillas de evaluación y notas; conecta su cuenta de Google Classroom para importar tareas y calificaciones. |
-| **Administrador** | Gestiona usuarios, materias y asignaciones de profesor–materia–curso desde paneles dedicados (`Admin.jsp`, `AdminUsuarios.jsp`, `AdminMaterias.jsp`, `AdminAsignaciones.jsp`). |
-| **Padre / Encargado** | Consulta el resumen académico y las notas de su hijo/a vinculado (`Parent.jsp`). |
-| **Usuario de integración** (uno por especialidad, ej. `informatica-itg`, `electricidad-itg`) | Corrige manualmente los correos de Google de los alumnos de su especialidad antes de sincronizar con Classroom. |
+| Rol                         | Nivel | Qué puede hacer                                                                                                                                                                                                                                                                |
+| --------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Profesor**          | 1     | Gestiona su perfil, sus materias y asignaciones, carga y aprueba su horario, sube su plan curricular, inicia clases (bloqueado sin plan aprobado) y gestiona sus planillas de evaluación y notas; conecta su cuenta de Google Classroom para importar tareas y calificaciones. |
+| **Evaluador**         | 2     | Descarga planillas para revisión, aprueba o rechaza (con observaciones) los planes curriculares de los profesores, y revisa los casos dudosos de verificación de tema por clase.                                                                                              |
+| **Administrador**     | 3     | Gestiona usuarios, materias, asignaciones, alumnos y horarios desde un panel único con 7 bloques; ve el estado técnico del sistema. Es el único rol inmutable (no editable/eliminable desde la UI).                                                                          |
+| **Padre / Encargado** | 4     | Consulta el resumen académico y las notas de su hijo/a vinculado.                                                                                                                                                                                                              |
 
 ## Funcionalidades principales
 
-- **Autenticación**: login con usuario/contraseña (hash BCrypt, con compatibilidad hacia registros antiguos en texto plano), **2FA con TOTP**, sesión "recordarme" y filtro de autenticación (`AuthFilter`).
-- **Perfil de profesor**: datos personales, configuración de seguridad, estado de conexión con Google, panel de actividad reciente.
-- **Materias y asignaciones**: alta/edición/eliminación de materias por especialidad, vínculo profesor–materia–curso.
-- **Planillas y evaluación**: registro de tareas/instrumentos de evaluación por curso, período (1º/2º) y sección, carga de notas por alumno (`registro`, `puntaje`).
-- **Exportación a Excel**: exportación de planillas individuales o masivas por especialidad/curso/sección/período (Apache POI).
-- **Integración con Google Classroom**:
-  - Login OAuth2 y vinculación/desvinculación de cuenta de Google.
-  - Detección de cursos de Classroom por nivel + sección (convención de nombres, ver `flowcharts/README.md`).
-  - Sincronización manual de tareas y notas desde la planilla.
-  - Vinculación de alumnos locales con estudiantes de Classroom por correo/nombre, con corrección manual vía el rol de integración.
-- **Portal de padres**: resumen y notas del alumno vinculado.
-- **Notificaciones push** (Web Push/VAPID) y **PWA instalable** (manifest, service worker, iconos).
-- **Manuales de usuario en PDF** por rol: administrador, evaluador, padres y profesor (`src/main/webapp/pdfs/`).
+- **Autenticación**: login con usuario/contraseña (BCrypt), **2FA con TOTP**, JWT con refresh token, login con Google OAuth2.
+- **Perfil**: datos personales, foto, firma (solo profesor/evaluador), configuración de seguridad, estado de conexión con Google, notificaciones push, panel de actividad reciente (leído desde el registro de actividad en `.txt` por usuario).
+- **Libro de Cátedra**:
+  - **Horario**: carga por hora cátedra con detección de conflictos por profesor y por curso; exportación por curso.
+  - **Plan curricular**: plantilla descargable pre-rellenada por asignación, carga y validación automática contra la asignación, aprobación/rechazo por evaluación con observaciones, vista de temas aprobados.
+  - **Iniciar clase**: bloqueado hasta tener un plan curricular aprobado para la etapa vigente; verificación automática (no bloqueante) del tema ingresado contra el próximo tema pendiente del plan, con bandeja de casos dudosos para evaluación.
+- **Materias y asignaciones**: alta/edición/eliminación de materias (comunes o específicas por especialidad), vínculo profesor–materia–curso.
+- **Planillas y evaluación**: registro de tareas/instrumentos por curso, período y sección, carga de notas por alumno, distinción visual y de permisos entre tareas locales y tareas importadas de Classroom.
+- **Exportación a Excel**: exportación de planillas individuales o masivas por especialidad/curso/sección/período (Apache POI), con encabezado dinámico adaptado al ancho real de la tabla.
+- **Integración con Google Classroom**: login/vinculación OAuth2, detección de cursos por nivel+sección, sincronización de tareas y notas, vinculación de alumnos por correo/nombre.
+- **Portal de padres**: resumen y notas del alumno vinculado, con visibilidad controlada por rol.
+- **Panel de Administración** (7 bloques): Materias, Usuarios, Asignaciones, Alumnos (navegación especialidad → curso → sección), Horarios, Estado del sistema, Sistema de diseño.
+- **Notificaciones push** (Web Push/VAPID): pruebas desde el perfil, y notificaciones sobre el flujo de plan curricular (aprobación/rechazo para el profesor, nuevo plan subido para evaluación).
+- **PWA instalable**: manifest, service worker, iconos, funcionamiento offline básico.
+
+## Roadmap / próximos pasos
+
+- **Administrador por especialidad**: rol de administrador con alcance limitado a su propia especialidad (sus alumnos, materias y asignaciones), dejando el rol de administrador actual como administrador global. En diseño — ver `prompt-backend-v1.md` / `prompt-frontend-v1.md`.
 
 ## Stack tecnológico
 
-| Componente | Detalle |
-|---|---|
-| Lenguaje / plataforma | Java 17, Jakarta EE 11 (Servlets + JSP) |
-| Build | Maven (`pom.xml`), plugin `tomcat10-maven-plugin` (puerto 8080) |
-| Base de datos | MySQL (`mysql-connector-j`) |
-| Vistas | JSP + JSTL, CSS propio (`ctn-theme.css`) + Flat UI / Bootstrap como base |
-| Seguridad | `jbcrypt` (hash de contraseñas), `bouncycastle` + TOTP (2FA) |
-| Reportes | Apache POI (`poi-ooxml`) para exportar Excel |
-| Notificaciones | `web-push` (VAPID) |
-| Integraciones Google | `google-api-client`, `google-api-services-classroom`, `google-api-services-oauth2`, OAuth2 |
-| Testing | JUnit 5 (Jupiter) |
-| IDE | NetBeans (`nb-configuration.xml`, `nbactions.xml`) |
+| Componente            | Backend                                                                                  | Frontend                     |
+| --------------------- | ---------------------------------------------------------------------------------------- | ---------------------------- |
+| Lenguaje / plataforma | Java 17, Spring Boot 4                                                                   | TypeScript, React 19         |
+| Build                 | Maven (`mvnw`)                                                                         | Vite                         |
+| Base de datos         | MySQL (`mysql-connector-j`)                                                            | — (consumida vía API REST) |
+| Seguridad             | Spring Security, JWT,`jbcrypt`, `bouncycastle` + TOTP (2FA)                          | —                           |
+| Reportes              | Apache POI (`poi-ooxml`)                                                               | —                           |
+| Notificaciones        | `web-push` (VAPID)                                                                     | Service Worker (`sw.js`)   |
+| Integraciones Google  | `google-api-client`, `google-api-services-classroom`, `google-api-services-oauth2` | —                           |
+| Testing               | JUnit 5 (Jupiter)                                                                        | —                           |
 
 ## Estructura del proyecto
 
 ```
 ctn-sca-info/
+├── backend/                        # Spring Boot (paquete ctn.informatica.sca)
+│   └── src/main/java/ctn/informatica/sca/
+│       ├── web/ · controller/       # Controladores REST
+│       ├── service/                 # Lógica de negocio (parsers, plantillas, verificación de tema, logs)
+│       ├── dao/                     # Acceso a datos (JDBC)
+│       ├── dto/ · model/            # DTOs y modelos
+│       ├── security/ · config/      # JWT, autenticación, configuración
+│       └── util/                    # Utilidades (AcademicPeriod, PasswordUtil, TotpUtils, PushNotificationService, ...)
+├── frontend/                        # React + Vite + TypeScript
+│   └── src/
+│       ├── pages/                   # Home (Libro de Cátedra, Planillas), Admin, Evaluación, Perfil, Parent
+│       ├── api/                     # Cliente HTTP y llamadas por dominio
+│       └── components/              # Componentes compartidos
+├── legacy/                          # Servlets/JSP original — en retiro, mantenido solo como referencia
 ├── database/
-│   ├── db-tables-properties.sql   # Esquema completo (DDL) de la BD ctndb
-│   └── seed.sql                    # Datos de ejemplo (especialidades, cursos, etc.)
-├── flowcharts/
-│   ├── README.md                   # Manual de integración con Google Classroom
-│   └── classroom_integration_architecture.png
-├── src/
-│   ├── main/java/ctn/informatica/sca/
-│   │   ├── config/       # AppConfig, StartupListener
-│   │   ├── clases/       # conexion.java (JDBC)
-│   │   ├── dao/          # DAOs por entidad (Alumno, Curso, Profesor, Planilla, Tarea, ...)
-│   │   ├── model/        # Modelos (Alumno, Curso, Materia, Profesor, Tarea, User, ...)
-│   │   ├── filter/       # AuthFilter, DateFilter
-│   │   ├── google/       # GoogleClassroomService / SyncService / Utils
-│   │   ├── servlets/     # Servlets (Home, Login, Profile, Planilla, Admin*, Parent, Google*, ...)
-│   │   └── util/         # PasswordUtil, TotpUtils, PushNotificationService, ...
-│   ├── main/webapp/      # JSPs, assets estáticos, manifest.json, sw.js, manuales PDF
-│   └── test/java/...     # Pruebas unitarias (DAOs, servlets, utilidades)
-├── pom.xml
+│   ├── db-tables-properties.sql     # Esquema completo (DDL) de la BD ctndb — instalación limpia
+│   ├── migrations/                  # Migraciones incrementales, solo para bases ya desplegadas en producción
+│   └── minimal-work-seed.sql        # Seed mínimo de datos de ejemplo
 ├── CHANGELOG.md
-└── LICENSE                # GPL-3.0
+└── LICENSE                          # GPL-3.0
 ```
 
 ## Configuración
 
 ### Base de datos
-La conexión (`conexion.java`) toma estos valores de variables de entorno (con defaults locales si no están definidas):
 
-| Variable de entorno | Default |
-|---|---|
-| `CTN_DB_HOST` | `localhost:3306` |
-| `CTN_DB_NAME` | `ctndb` |
-| `CTN_DB_USER` | `testadmin` |
-| `CTN_DB_PASSWORD` | *(vacío)* |
+Para una instalación nueva, ejecutar `database/db-tables-properties.sql` (esquema completo y actualizado). Las migraciones en `database/migrations/` solo se aplican sobre una base **ya existente en producción** para llevarla al día; no son necesarias en una instalación limpia.
+
+### Variables de entorno (backend)
+
+| Variable                                                                  | Uso                                                                                                 |
+| ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `JWT_SECRET`                                                            | Firma de tokens JWT                                                                                 |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` / `GOOGLE_REDIRECT_URI` | OAuth2 con Google Classroom                                                                         |
+| `SCA_ACTIVITY_LOGS_DIR`                                                 | Directorio donde se guardan los`.txt` de actividad por usuario (default `./data/activity-logs`) |
 
 ### PWA y notificaciones push
 
-La instalación de la PWA funciona sin configuración adicional. Para habilitar las notificaciones Web Push, el servidor necesita un par VAPID:
+La instalación de la PWA funciona sin configuración adicional. Para notificaciones Web Push el servidor necesita un par de claves VAPID configuradas en el backend.
 
-| Variable de entorno | Contenido |
-|---|---|
-| `CTN_VAPID_PUBLIC_KEY` | Clave pública VAPID en Base64 URL-safe |
-| `CTN_VAPID_PRIVATE_KEY` | Clave privada VAPID correspondiente |
+## Despliegue
 
-El script `deploy.sh` conserva estas claves en el archivo de entorno del servicio. Deben configurarse juntas; la clave privada nunca debe incorporarse al repositorio ni enviarse al frontend.
-
-### Google OAuth / Classroom
-`AppConfig` carga `/WEB-INF/config.properties`, que **debe crearse manualmente** (no está versionado) con estas claves:
-
-```properties
-google.client.id=TU_CLIENT_ID
-google.client.secret=TU_CLIENT_SECRET
-google.redirect.uri=http://localhost:8080/GoogleCallbackServlet
-```
-
-Se obtienen creando credenciales OAuth 2.0 en Google Cloud Console con la **Google Classroom API** habilitada.
-
-## Instalación y ejecución
-
-### Requisitos
-- JDK 17
-- Maven
-- MySQL 8+
-- Un servidor compatible con Jakarta EE 11 / Servlet 6.0 (el proyecto trae embebido Tomcat 10 vía plugin de Maven)
-
-### Pasos
-
-1. Clonar el repositorio:
-   ```bash
-   git clone https://github.com/provingch/ctn-sca-info.git
-   cd ctn-sca-info
-   ```
-
-2. Crear la base de datos y cargar el esquema:
-   ```bash
-   mysql -u root -p < database/db-tables-properties.sql
-   mysql -u root -p ctndb < database/seed.sql   # opcional: datos de ejemplo
-   ```
-
-3. Crear `src/main/webapp/WEB-INF/config.properties` con las credenciales de Google (ver sección anterior).
-
-4. Definir las variables de entorno de conexión a la base de datos si difieren de los defaults locales.
-
-5. Compilar y levantar con el plugin de Tomcat embebido:
-   ```bash
-   mvn tomcat10:run
-   ```
-   La app queda disponible en `http://localhost:8080/`.
-
-   Alternativamente, generar el `.war` y desplegarlo en un Tomcat 10 externo:
-   ```bash
-   mvn clean package
-   # copiar target/*.war al directorio webapps/ de Tomcat
-   ```
-
-### Tests
-
-```bash
-cd backend
-./mvnw test
-
-cd ../frontend
-npm ci
-npm test
-npm run lint -- --deny-warnings
-npm run build
-```
-
-Las pruebas de horarios que requieren MySQL se ejecutan cuando la base de integración está disponible; en un entorno sin esas credenciales se informan como omitidas. La automatización de GitHub ejecuta las comprobaciones de frontend y backend en cada pull request y cada cambio a `main`.
-
-### Diseño compartido
-
-Los componentes reutilizables viven en `frontend/src/components/ui`. La referencia visual está disponible para administradores en `/styleguide` e incluye tokens, botones, formularios, notas y estados comunes. Los estilos deben reutilizar las variables de `frontend/src/index.css` y verificarse en tema claro, oscuro y mobile.
-
-## Documentación adicional
-
-- **Historial de cambios**: [`CHANGELOG.md`](./CHANGELOG.md)
-- **Manuales de usuario en PDF** (dentro de la app, `/pdfs/`): administrador, evaluador, padres, profesor
-
-## Licencia
-
-[GPL-3.0](./LICENSE)
-
-## Autores
-
-- [@provingch](https://github.com/provingch)
-- [@Sh1b0](https://github.com/Sh1b0)
+- Backend: servicio systemd `sca-backend.service` (jar en `/opt/ctn-sca-info/backend/sca-backend.jar`).
+- Frontend: build estático (`npm run build`) servido junto al backend o vía proxy.

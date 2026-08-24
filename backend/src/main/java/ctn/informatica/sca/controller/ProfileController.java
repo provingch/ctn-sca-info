@@ -57,6 +57,8 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api/profile")
 public class ProfileController {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ProfileController.class);
+
     private static final Map<Integer, String> pendingTotpSecrets = new ConcurrentHashMap<>();
 
     private final AsignacionDao asignacionDao;
@@ -428,7 +430,7 @@ public class ProfileController {
                         activityLogService.registrar(user.getId(), "Actualizó datos de perfil");
                     }
                 } catch (Exception ex) {
-                    // No bloquear la operación si falla el registro del historial.
+                    log.warn("No se pudo registrar actividad para usuario {}: {}", user.getId(), ex.getMessage());
                 }
                 return;
             }
@@ -535,7 +537,7 @@ public class ProfileController {
                         activityLogService.registrar(user.getId(), "Actualizó datos de perfil");
                     }
                 } catch (Exception ex) {
-                    // No bloquear la operación si falla el registro del historial.
+                    log.warn("No se pudo registrar actividad para usuario {}: {}", user.getId(), ex.getMessage());
                 }
             } catch (RuntimeException ex) {
                 // Detect SQL data-too-long scenarios to return a 400 with a helpful message.

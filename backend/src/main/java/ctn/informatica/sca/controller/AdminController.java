@@ -18,6 +18,9 @@ import ctn.informatica.sca.model.Materia;
 import ctn.informatica.sca.model.Padre;
 import ctn.informatica.sca.model.Profesor;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import ctn.informatica.sca.service.ActivityLogService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -35,20 +38,32 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
+    private static final Logger log = LoggerFactory.getLogger(AdminController.class);
     private final TareaDao tareaDao;
     private final GradeDao gradeDao;
     private final PlanillaDao planillaDao;
+    private final ActivityLogService activityLogService;
 
     public AdminController() {
         this.tareaDao = new TareaDao();
         this.gradeDao = new GradeDao();
         this.planillaDao = new PlanillaDao();
+        this.activityLogService = new ActivityLogService();
     }
 
     AdminController(TareaDao tareaDao, GradeDao gradeDao, PlanillaDao planillaDao) {
         this.tareaDao = tareaDao;
         this.gradeDao = gradeDao;
         this.planillaDao = planillaDao;
+        this.activityLogService = new ActivityLogService();
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public AdminController(TareaDao tareaDao, GradeDao gradeDao, PlanillaDao planillaDao, ActivityLogService activityLogService) {
+        this.tareaDao = tareaDao;
+        this.gradeDao = gradeDao;
+        this.planillaDao = planillaDao;
+        this.activityLogService = activityLogService == null ? new ActivityLogService() : activityLogService;
     }
     @GetMapping
     public CatalogResponse catalog(Authentication authentication) {
@@ -111,9 +126,9 @@ public class AdminController {
             int id = new MateriaDao().create(input.nombre().trim(), categoria);
             if (input.especialidadIds() != null) new MateriaDao().replaceEspecialidades(id, input.especialidadIds());
             try {
-                new ctn.informatica.sca.service.ActivityLogService().registrar(ApiAuth.requireUserId(auth), "Creó materia " + input.nombre().trim());
-            } catch (Exception ignored) {
-                // No bloquear la creación si falla el historial.
+                activityLogService.registrar(ApiAuth.requireUserId(auth), "Creó materia " + input.nombre().trim());
+            } catch (Exception ex) {
+                log.warn("No se pudo registrar actividad para usuario {}: {}", ApiAuth.requireUserId(auth), ex.getMessage());
             }
         }
         catch (Exception ex) { throw failure("No se pudo crear la materia", ex); }
@@ -154,11 +169,11 @@ public class AdminController {
             }
             Profesor p = new Profesor(); p.setNombre(input.nombre().trim()); p.setApellido(input.apellido().trim()); p.setUsuario(input.usuario().trim()); p.setContrasenia(defaultPassword); p.setNivel(input.nivel()); p.setCorreo(input.correo()); p.setCi(input.ci()); p.setTelefono(input.telefono() == null || input.telefono().isBlank() ? null : Integer.parseInt(input.telefono()));
             if (new ProfesorDao().create(p) <= 0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo crear el usuario");
-            try {
-                new ctn.informatica.sca.service.ActivityLogService().registrar(ApiAuth.requireUserId(auth), "Creó usuario " + input.nombre().trim() + " " + input.apellido().trim() + " (nivel " + input.nivel() + ")");
-            } catch (Exception ignored) {
-                // No bloquear la creación si falla el historial.
-            }
+                try {
+                    activityLogService.registrar(ApiAuth.requireUserId(auth), "Creó usuario " + input.nombre().trim() + " " + input.apellido().trim() + " (nivel " + input.nivel() + ")");
+                } catch (Exception ex) {
+                    log.warn("No se pudo registrar actividad para usuario {}: {}", ApiAuth.requireUserId(auth), ex.getMessage());
+                }
         } catch (ResponseStatusException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -238,9 +253,9 @@ public class AdminController {
         try {
             if (!new AsignacionDao().eliminar(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Asignación no encontrada");
             try {
-                new ctn.informatica.sca.service.ActivityLogService().registrar(ApiAuth.requireUserId(auth), "Eliminó asignación #" + id);
-            } catch (Exception ignored) {
-                // No bloquear la eliminación si falla el historial.
+                activityLogService.registrar(ApiAuth.requireUserId(auth), "Eliminó asignación #" + id);
+            } catch (Exception ex) {
+                log.warn("No se pudo registrar actividad para usuario {}: {}", ApiAuth.requireUserId(auth), ex.getMessage());
             }
         } catch (ResponseStatusException ex) { throw ex; } catch (Exception ex) { throw failure("No se pudo eliminar la asignación", ex); }
     }
@@ -252,9 +267,9 @@ public class AdminController {
             boolean deleted = new MateriaDao().delete(id);
             if (!deleted) throw new ResponseStatusException(HttpStatus.CONFLICT, "No se pudo eliminar: la materia está referenciada por planillas o no existe");
             try {
-                new ctn.informatica.sca.service.ActivityLogService().registrar(ApiAuth.requireUserId(auth), "Eliminó materia #" + id);
-            } catch (Exception ignored) {
-                // No bloquear la eliminación si falla el historial.
+                activityLogService.registrar(ApiAuth.requireUserId(auth), "Eliminó materia #" + id);
+            } catch (Exception ex) {
+                log.warn("No se pudo registrar actividad para usuario {}: {}", ApiAuth.requireUserId(auth), ex.getMessage());
             }
         } catch (ResponseStatusException ex) { throw ex; } catch (Exception ex) { throw failure("No se pudo eliminar la materia", ex); }
     }
@@ -271,19 +286,19 @@ public class AdminController {
             }
             if (existing != null) {
                 if (!profesorDao.delete(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado o no se pudo eliminar");
-                try {
-                    new ctn.informatica.sca.service.ActivityLogService().registrar(ApiAuth.requireUserId(auth), "Eliminó usuario #" + id);
-                } catch (Exception ignored) {
-                    // No bloquear la eliminación si falla el historial.
-                }
+                    try {
+                        activityLogService.registrar(ApiAuth.requireUserId(auth), "Eliminó usuario #" + id);
+                    } catch (Exception ex) {
+                        log.warn("No se pudo registrar actividad para usuario {}: {}", ApiAuth.requireUserId(auth), ex.getMessage());
+                    }
                 return;
             }
             if (!padreDao.delete(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado o no se pudo eliminar");
-            try {
-                new ctn.informatica.sca.service.ActivityLogService().registrar(ApiAuth.requireUserId(auth), "Eliminó usuario #" + id);
-            } catch (Exception ignored) {
-                // No bloquear la eliminación si falla el historial.
-            }
+                try {
+                    activityLogService.registrar(ApiAuth.requireUserId(auth), "Eliminó usuario #" + id);
+                } catch (Exception ex) {
+                    log.warn("No se pudo registrar actividad para usuario {}: {}", ApiAuth.requireUserId(auth), ex.getMessage());
+                }
         } catch (ResponseStatusException ex) { throw ex; } catch (Exception ex) { throw failure("No se pudo eliminar el usuario", ex); }
     }
 
@@ -364,9 +379,9 @@ public class AdminController {
         try {
             if (!new AlumnoDao().delete(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Alumno no encontrado o no se pudo eliminar");
             try {
-                new ctn.informatica.sca.service.ActivityLogService().registrar(ApiAuth.requireUserId(auth), "Eliminó alumno #" + id);
-            } catch (Exception ignored) {
-                // No bloquear la eliminación si falla el historial.
+                activityLogService.registrar(ApiAuth.requireUserId(auth), "Eliminó alumno #" + id);
+            } catch (Exception ex) {
+                log.warn("No se pudo registrar actividad para usuario {}: {}", ApiAuth.requireUserId(auth), ex.getMessage());
             }
         } catch (ResponseStatusException ex) { throw ex; } catch (Exception ex) { throw failure("No se pudo eliminar el alumno", ex); }
     }
@@ -543,7 +558,7 @@ public class AdminController {
     public record CourseItem(int id, String especialidad, int nivel, String seccion) {}
     public record SpecialtyItem(int id, String nombre) {}
     public record MateriaInput(String nombre, String categoria, List<Integer> especialidadIds) {}
-    public record UserInput(String nombre, String apellido, String usuario, String contrasenia, int nivel, String correo, Integer ci, String telefono) {}
+    public record UserInput(String nombre, String apellido, String usuario, String contrasenia, int nivel, String correo, Integer ci, String telefono, Integer especialidadId) {}
     public record AssignmentInput(int profesorId, int materiaId, int cursoId) {}
     public record BatchAssignmentInput(int profesorId, int materiaId, List<Integer> cursoIds) {}
     public record BatchAssignmentResponse(int creadas, int yaExistian) {}

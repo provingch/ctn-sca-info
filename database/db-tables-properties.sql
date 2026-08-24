@@ -58,6 +58,8 @@ CREATE TABLE usuario (
     foto_perfil LONGTEXT NULL,
     -- `nivel` es la única fuente de verdad para el rol del usuario
     nivel TINYINT NOT NULL DEFAULT 0,
+    activity_log_path VARCHAR(255) NULL,
+    especialidad_id INT NULL,
     PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -242,6 +244,32 @@ CREATE TABLE planilla_rasgo (
         ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+CREATE TABLE plan_curricular (
+    id INT AUTO_INCREMENT,
+    asignacion_id INT NOT NULL,
+    etapa VARCHAR(10) NOT NULL,
+    anio_lectivo SMALLINT UNSIGNED NOT NULL,
+    archivo_nombre VARCHAR(255) NOT NULL,
+    archivo_contenido LONGBLOB NOT NULL,
+    estado ENUM('PENDIENTE','APROBADO','RECHAZADO') NOT NULL DEFAULT 'PENDIENTE',
+    fecha_subida TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha_revision TIMESTAMP NULL,
+    evaluador_id INT NULL,
+    observaciones_evaluador TEXT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_plan_curricular_asignacion_etapa_anio (asignacion_id, etapa, anio_lectivo),
+    CONSTRAINT fk_plan_curricular_asignacion FOREIGN KEY (asignacion_id)
+        REFERENCES asignacion (id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_plan_curricular_evaluador FOREIGN KEY (evaluador_id)
+        REFERENCES usuario (id) ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Add columns to planilla_rasgo for plan curricular linkage and estado_verificacion_tema
+ALTER TABLE planilla_rasgo
+    ADD COLUMN asignacion_id INT NULL,
+    ADD COLUMN estado_verificacion_tema ENUM('OK','DUDOSO','NO_COINCIDE','SIN_PLAN') NOT NULL DEFAULT 'SIN_PLAN',
+    ADD COLUMN tema_plan_curricular_id INT NULL;
+
 CREATE TABLE rasgo_asistencia (
     id INT AUTO_INCREMENT PRIMARY KEY,
     planilla_rasgo_id INT NOT NULL,
@@ -286,5 +314,54 @@ CREATE TABLE alumno_usuario (
     CONSTRAINT fk_au_alumno FOREIGN KEY (alumno_id)
         REFERENCES alumno (id) ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT fk_au_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuario (id) ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- tema_plan_curricular depends on plan_curricular; we'll create it after plan_curricular
+
+CREATE TABLE tema_plan_curricular (
+    id INT AUTO_INCREMENT,
+    plan_curricular_id INT NOT NULL,
+    mes VARCHAR(20) NOT NULL,
+    orden_mes TINYINT UNSIGNED NOT NULL,
+    bloque TINYINT UNSIGNED NOT NULL,
+    capacidades TEXT NULL,
+    temas_contenidos TEXT NOT NULL,
+    actividades TEXT NULL,
+    instrumentos_evaluacion TEXT NULL,
+    indicador_conceptual TEXT NULL,
+    indicador_procedimental TEXT NULL,
+    indicador_actitudinal TEXT NULL,
+    estado_cobertura ENUM('PENDIENTE','CUBIERTO') NOT NULL DEFAULT 'PENDIENTE',
+    fecha_cobertura TIMESTAMP NULL,
+    planilla_rasgo_id INT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_tema_plan_orden (plan_curricular_id, orden_mes, bloque),
+    CONSTRAINT fk_tema_plan_curricular FOREIGN KEY (plan_curricular_id)
+        REFERENCES plan_curricular (id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_tema_plan_planilla_rasgo FOREIGN KEY (planilla_rasgo_id)
+        REFERENCES planilla_rasgo (id) ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Now add foreign key from planilla_rasgo to tema_plan_curricular (added after creation to avoid FK ordering issues)
+ALTER TABLE planilla_rasgo
+    ADD CONSTRAINT fk_planilla_rasgo_tema FOREIGN KEY (tema_plan_curricular_id)
+        REFERENCES tema_plan_curricular (id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+-- classroom_sync_log
+CREATE TABLE classroom_sync_log (
+    id BIGINT AUTO_INCREMENT,
+    planilla_id INT NOT NULL,
+    usuario_id INT NOT NULL,
+    tareas_creadas INT NOT NULL DEFAULT 0,
+    calificaciones_actualizadas INT NOT NULL DEFAULT 0,
+    synced_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_classroom_sync_log_planilla_id (planilla_id),
+    KEY idx_classroom_sync_log_usuario_id (usuario_id),
+    KEY idx_classroom_sync_log_synced_at (synced_at),
+    CONSTRAINT fk_classroom_sync_log_planilla FOREIGN KEY (planilla_id)
+        REFERENCES planilla (id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_classroom_sync_log_usuario FOREIGN KEY (usuario_id)
         REFERENCES usuario (id) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
