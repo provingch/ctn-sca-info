@@ -19,6 +19,7 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.beans.factory.annotation.Autowired;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,6 +43,7 @@ public class AuthController {
         this(authService, jwtService, refreshTokenService, userDao, null);
     }
 
+    @Autowired
     public AuthController(
             AuthService authService,
             JwtService jwtService,
