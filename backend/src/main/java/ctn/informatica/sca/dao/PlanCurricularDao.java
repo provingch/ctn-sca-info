@@ -90,6 +90,18 @@ public class PlanCurricularDao extends conexion {
         }
     }
 
+    public Integer findProfesorIdByPlanId(int planId) throws SQLException {
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("SELECT a.usuario_id AS profesor_id FROM plan_curricular p JOIN asignacion a ON a.id = p.asignacion_id WHERE p.id = ?")) {
+            ps.setInt(1, planId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("profesor_id");
+                }
+            }
+        }
+        return null;
+    }
+
     public void rechazar(int id, int evaluadorId, String observaciones) throws SQLException {
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("UPDATE plan_curricular SET estado='RECHAZADO', evaluador_id = ?, fecha_revision = CURRENT_TIMESTAMP, observaciones_evaluador = ? WHERE id = ?")) {
             ps.setInt(1, evaluadorId); ps.setString(2, observaciones); ps.setInt(3, id); ps.executeUpdate();

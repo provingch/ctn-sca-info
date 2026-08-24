@@ -24,8 +24,8 @@ public class ActivityLogService {
     private static final Logger log = LoggerFactory.getLogger(ActivityLogService.class);
     private static final DateTimeFormatter LINE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    @Value("${sca.activity-logs.dir:./data/activity-logs}")
-    private String baseDir = "./data/activity-logs";
+    @Value("${sca.activity-logs.dir:/var/lib/ctn/activity-logs}")
+    private String baseDir = "/var/lib/ctn/activity-logs";
 
     private final UserDao userDao;
 

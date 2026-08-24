@@ -6,7 +6,7 @@ import ctn.informatica.sca.model.HorarioSlot;
 import ctn.informatica.sca.model.Asignacion;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.time.Year;
+import ctn.informatica.sca.util.AcademicPeriod;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -29,7 +29,7 @@ public class PlanCurricularTemplateBuilder {
         if (a == null) throw new IllegalArgumentException("Asignación no encontrada");
 
         try (InputStream in = getClass().getResourceAsStream("/plan-curricular-plantilla.xlsx"); Workbook wb = WorkbookFactory.create(in); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            String title = String.format("PLAN DE DESARROLLO CURRICULAR ETAPA:_%s_%d", "1°", Year.now().getValue());
+            String title = String.format("PLAN DE DESARROLLO CURRICULAR ETAPA:_%s_%d", AcademicPeriod.currentEtapa() + "°", AcademicPeriod.current());
             String disciplina = a.getMateriaNombre() == null ? "" : a.getMateriaNombre();
             String docente = a.getProfesorNombre() == null ? "" : a.getProfesorNombre();
             String curso = a.getCursoDescripcion() == null ? "" : a.getCursoDescripcion();

@@ -64,6 +64,8 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api/home")
 public class HomeController {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(HomeController.class);
+
     private static final String VIEW_CLASE = "clase";
     private static final String VIEW_PLANILLAS = "planillas";
 
@@ -363,8 +365,8 @@ public class HomeController {
                 if (activityLogService != null) {
                     activityLogService.registrar(user.getId(), "Registró clase — " + cursoLabel + " — tema: " + tema);
                 }
-            } catch (Exception ignored) {
-                // No bloquear la creación de la clase si falla el registro del historial.
+            } catch (Exception ex) {
+                log.warn("No se pudo registrar actividad para usuario {}: {}", user.getId(), ex.getMessage());
             }
 
             // Si se indicó asignacionId, intentamos verificar el tema contra el plan curricular.

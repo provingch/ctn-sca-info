@@ -22,11 +22,18 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.security.core.context.SecurityContextHolder;
 import ctn.informatica.sca.model.User;
 import ctn.informatica.sca.service.ActivityLogService;
+import ctn.informatica.sca.util.PushNotificationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.sql.SQLException;
+import java.util.stream.Collectors;
 import ctn.informatica.sca.service.PlanCurricularTemplateBuilder;
 
 @RestController
 @RequestMapping("/api/plan-curricular")
 public class PlanCurricularController {
+
+    private static final Logger log = LoggerFactory.getLogger(PlanCurricularController.class);
 
     @Autowired
     private PlanCurricularParser parser;
@@ -85,8 +92,30 @@ public class PlanCurricularController {
             if (activityLogService != null) {
                 activityLogService.registrar((int) getCurrentUserId(), "Subió plan curricular para asignación " + asignacionId + " (etapa " + dto.etapa + ", año " + dto.anio + ")");
             }
-        } catch (Exception ignored) {
-            // No bloquear la carga si falla el registro del historial.
+        } catch (Exception ex) {
+            log.warn("No se pudo registrar actividad para usuario {}: {}", getCurrentUserId(), ex.getMessage());
+        }
+
+        // Notify evaluators (level 2) and admins (level 3)
+        try {
+            var evaluadores = userDao.findAllByLevel(2);
+            var admins = userDao.findAllByLevel(3);
+            var targets = new java.util.ArrayList<ctn.informatica.sca.model.User>();
+            if (evaluadores != null) targets.addAll(evaluadores);
+            if (admins != null) targets.addAll(admins);
+            String notifierLabel = (asignacion.getProfesorNombre() != null && !asignacion.getProfesorNombre().isBlank()) ? asignacion.getProfesorNombre() : (dto.disciplina == null ? "Profesor" : dto.disciplina);
+            for (ctn.informatica.sca.model.User u : targets) {
+                if (u == null) continue;
+                try {
+                    PushNotificationService.sendToUser(u.getId(), "profesor", "Nuevo plan curricular para revisar", notifierLabel + " subió un plan curricular", "/evaluacion");
+                } catch (SQLException sqe) {
+                    log.warn("No se pudo enviar push a usuario {}: {}", u.getId(), sqe.getMessage());
+                } catch (Exception e) {
+                    log.warn("Error enviando notificación a usuario {}: {}", u.getId(), e.getMessage());
+                }
+            }
+        } catch (Exception ex) {
+            log.warn("No se pudo resolver lista de evaluadores/admins para notificación: {}", ex.getMessage());
         }
         return ResponseEntity.ok().body("Saved plan id:" + id);
     }
@@ -210,8 +239,24 @@ public class PlanCurricularController {
                 String label = plan != null && plan.disciplina != null ? plan.disciplina : "plan curricular";
                 activityLogService.registrar((int) getCurrentUserId(), "Aprobó " + label);
             }
-        } catch (Exception ignored) {
-            // No bloquear la aprobación si falla el registro del historial.
+        } catch (Exception ex) {
+            log.warn("No se pudo registrar actividad para usuario {}: {}", getCurrentUserId(), ex.getMessage());
+        }
+
+        // Notify the profesor owner that their plan was approved
+        try {
+            Integer profesorId = dao.findProfesorIdByPlanId(id);
+            if (profesorId != null) {
+                try {
+                    PushNotificationService.sendToUser(profesorId, "profesor", "Tu plan curricular fue aprobado", "Tu plan curricular fue aprobado", "/catedra");
+                } catch (SQLException sqe) {
+                    log.warn("No se pudo enviar notificación de aprobación al profesor {}: {}", profesorId, sqe.getMessage());
+                } catch (Exception e) {
+                    log.warn("Error enviando notificación de aprobación al profesor {}: {}", profesorId, e.getMessage());
+                }
+            }
+        } catch (Exception ex) {
+            log.warn("No se pudo resolver profesor para el plan {}: {}", id, ex.getMessage());
         }
         return ResponseEntity.ok().build();
     }
@@ -231,8 +276,25 @@ public class PlanCurricularController {
                 String label = plan != null && plan.disciplina != null ? plan.disciplina : "plan curricular";
                 activityLogService.registrar((int) getCurrentUserId(), "Rechazó " + label + " — " + observaciones);
             }
-        } catch (Exception ignored) {
-            // No bloquear el rechazo si falla el registro del historial.
+        } catch (Exception ex) {
+            log.warn("No se pudo registrar actividad para usuario {}: {}", getCurrentUserId(), ex.getMessage());
+        }
+
+        // Notify profesor owner that their plan was rejected, include truncated observations
+        try {
+            Integer profesorId = dao.findProfesorIdByPlanId(id);
+            if (profesorId != null) {
+                String body = observaciones == null ? "" : (observaciones.length() > 120 ? observaciones.substring(0, 120) + "..." : observaciones);
+                try {
+                    PushNotificationService.sendToUser(profesorId, "profesor", "Tu plan curricular fue rechazado", body, "/catedra");
+                } catch (SQLException sqe) {
+                    log.warn("No se pudo enviar notificación de rechazo al profesor {}: {}", profesorId, sqe.getMessage());
+                } catch (Exception e) {
+                    log.warn("Error enviando notificación de rechazo al profesor {}: {}", profesorId, e.getMessage());
+                }
+            }
+        } catch (Exception ex) {
+            log.warn("No se pudo resolver profesor para el plan {}: {}", id, ex.getMessage());
         }
         return ResponseEntity.ok().build();
     }
