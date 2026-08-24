@@ -3,6 +3,7 @@ package ctn.informatica.sca.dao;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -15,7 +16,15 @@ public class HorarioSlotDaoTest {
 
     @BeforeEach
     public void setUp() throws SQLException {
-        try (Connection c = new HorarioSlotDao().getCon(); PreparedStatement ps = c.prepareStatement(
+        Connection testConnection;
+        try {
+            testConnection = new HorarioSlotDao().getCon();
+        } catch (SQLException exception) {
+            assumeTrue(false, () -> "Requiere la base MySQL de integración: " + exception.getMessage());
+            return;
+        }
+
+        try (Connection c = testConnection; PreparedStatement ps = c.prepareStatement(
                 "DELETE FROM horario_slot; DELETE FROM asignacion; DELETE FROM materia; DELETE FROM curso; DELETE FROM usuario; DELETE FROM especialidad; DELETE FROM hora_catedra;")) {
             ps.executeUpdate();
         }

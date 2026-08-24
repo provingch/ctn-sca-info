@@ -2,6 +2,8 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import AppShell from '../../components/AppShell';
 import ClassroomBadge from '../../components/ClassroomBadge';
+import GradeChip from '../../components/ui/GradeChip';
+import ContentState from '../../components/ui/ContentState';
 import { getPlanilla, resolvePlanilla, syncClassroom, confirmClassroomMapping, type PlanillaDetail } from '../../api/academics';
 import { ApiError, apiDownload } from '../../api/client';
 
@@ -133,7 +135,7 @@ export default function PlanillaPage() {
     } finally {
       if (activePlanillaIdRef.current === planillaId) setSyncingClassroom(false);
     }
-  }, [applyPlanillaData]);
+  }, [applyPlanillaData, navigate]);
 
   // Se sincroniza una vez por cada planilla/etapa visitada. Un ref booleano
   // impedía sincronizar la segunda etapa al navegar sin desmontar la página.
@@ -207,7 +209,7 @@ export default function PlanillaPage() {
     });
   }
 
-  if (!data) return <AppShell title="Planilla"><div className="panel">{status || 'Cargando…'}</div></AppShell>;
+  if (!data) return <AppShell title="Planilla"><ContentState tone={status ? 'error' : 'loading'} title={status || 'Cargando planilla…'} detail={status ? 'Volvé al inicio o recargá la página para intentarlo nuevamente.' : 'Estamos preparando alumnos, tareas y calificaciones.'} /></AppShell>;
 
   const gr = data.gradeRanges;
   const classroomTaskCount = data.tareas.filter((task) => Boolean(task.googleCourseworkId?.trim())).length;
@@ -277,14 +279,10 @@ export default function PlanillaPage() {
       {Object.keys(gr).length > 0 && (
         <section className="grade-ranges-bar" aria-label="Escala de notas">
           {GRADE_KEYS_DESC.map((key) => gr[key] && (
-            <span key={key} className={`grade-chip grade-chip--${key}`} title={`Desde ${gr[key].minInclusive} hasta ${gr[key].maxInclusive}`}>
-              <strong>{key}</strong>{gr[key].minInclusive}-{gr[key].maxInclusive}
-            </span>
+            <GradeChip key={key} grade={Number(key)} title={`Desde ${gr[key].minInclusive} hasta ${gr[key].maxInclusive}`} label={<><strong>{key}</strong>{gr[key].minInclusive}-{gr[key].maxInclusive}</>} />
           ))}
           {onePointCeiling !== null && (
-            <span className="grade-chip grade-chip--1" title={`${onePointCeiling} puntos o menos`}>
-              <strong>1</strong>{onePointCeiling} o menos
-            </span>
+            <GradeChip grade={1} title={`${onePointCeiling} puntos o menos`} label={<><strong>1</strong>{onePointCeiling} o menos</>} />
           )}
         </section>
       )}
@@ -371,7 +369,7 @@ export default function PlanillaPage() {
               })}
               <td className="student-total-cell">{total}<small>de {data.planilla.totalPossiblePoints}</small></td>
               <td className="student-percentage-cell">{percentage}%</td>
-              <td><span className={`grade-chip grade-chip--${Math.min(5, Math.max(1, row.nota))} student-grade-pill`} aria-label={`Nota ${row.nota}`}>{row.nota}</span></td>
+              <td><GradeChip grade={row.nota} className="student-grade-pill" /></td>
             </tr>)}
             {visibleRows.length === 0 && <tr><td className="planilla-student-empty" colSpan={data.tareas.length + 5}>No se encontraron alumnos con ese nombre.</td></tr>}
           </tbody>

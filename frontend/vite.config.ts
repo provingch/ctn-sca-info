@@ -1,9 +1,17 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/test/setup.ts',
+    css: true,
+    maxWorkers: 1,
+    fileParallelism: false,
+  },
   server: {
     // Dev server: proxea /api al backend Spring Boot local para poder
     // desarrollar sin tener que rebuildear el jar en cada cambio.

@@ -39,7 +39,7 @@ export default function PlanCurricularView({ data, reload }: { data: HomeRespons
           setSelectedAsignacionId(null);
           setPlan(null);
         }
-      } catch (err) {
+      } catch {
         setAsignacionesDisponibles([]);
         setSelectedAsignacionId(null);
         setPlan(null);

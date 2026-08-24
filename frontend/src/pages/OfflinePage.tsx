@@ -1,28 +1,28 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function OfflinePage() {
   const navigate = useNavigate();
   const [status, setStatus] = useState('Sin conexión. Volvé cuando tengas red o pulsa Reintentar.');
 
-  async function tryRestore() {
+  const tryRestore = useCallback(async () => {
     setStatus('Comprobando sesión...');
     try {
       const res = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include', headers: { 'Accept': 'application/json' } });
       if (res.ok) { navigate('/home'); return; }
       if (res.status === 401) { navigate('/login'); return; }
       setStatus('Conexión disponible pero no se pudo restaurar la sesión.');
-    } catch (e) {
+    } catch {
       setStatus('Sin conexión. Reintentando cuando vuelva la red...');
     }
-  }
+  }, [navigate]);
 
   useEffect(() => {
     const onOnline = () => { void tryRestore(); };
     window.addEventListener('online', onOnline);
     if (navigator.onLine) setTimeout(() => { void tryRestore(); }, 500);
     return () => window.removeEventListener('online', onOnline);
-  }, []);
+  }, [tryRestore]);
 
   return (
     <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 24, background: '#f3f6fb' }}>

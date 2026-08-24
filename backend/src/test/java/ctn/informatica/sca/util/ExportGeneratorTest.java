@@ -104,6 +104,11 @@ public class ExportGeneratorTest {
 
             // For etapa 1, the last real column is the computed currentStageGradeColumn
             int lastRealColumn = nextAvailable + 1; // currentStageGradeColumn
+            for (org.apache.poi.ss.util.CellRangeAddress region : sheet.getMergedRegions()) {
+                if (region.getFirstRow() <= 4 && region.getLastRow() >= 0) {
+                    lastRealColumn = Math.max(lastRealColumn, region.getLastColumn());
+                }
+            }
 
             int lastRow = sheet.getLastRowNum();
             for (int r = 0; r <= lastRow; r++) {
@@ -190,6 +195,11 @@ public class ExportGeneratorTest {
             XSSFWorkbook checkWb2 = new XSSFWorkbook(in2);
             XSSFSheet sheet2 = checkWb2.getSheet("Planilla-Prueba-2");
             assertNotNull(sheet2, "Sheet Planilla-Prueba-2 should exist");
+            for (org.apache.poi.ss.util.CellRangeAddress region : sheet2.getMergedRegions()) {
+                if (region.getFirstRow() <= 4 && region.getLastRow() >= 0) {
+                    regularizationColumn2 = Math.max(regularizationColumn2, region.getLastColumn());
+                }
+            }
             int lastRow2 = sheet2.getLastRowNum();
             for (int r = 0; r <= lastRow2; r++) {
                 org.apache.poi.ss.usermodel.Row row = sheet2.getRow(r);
