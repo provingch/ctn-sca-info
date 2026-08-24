@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ApiError } from '../../api/client';
 import { buscarPadres, createAdminRecord, deleteAdminRecord, getPadresDeAlumno, linkPadreAlumno, unlinkPadreAlumno, updateAdminRecord, type AdminCatalog, type PadreSummary } from '../../api/admin';
+import { normalizeSpecialty } from '../../theme/theme';
 
 interface AlumnosPanelProps {
   data: AdminCatalog;
@@ -177,7 +178,7 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
           {especialidades.map((specialty) => {
             const totals = data.alumnos.filter((student) => data.cursos.find((course) => course.id === student.cursoId)?.especialidad === specialty.nombre).length;
             return (
-              <button type="button" key={specialty.id} className="nav-card" onClick={() => goToCursos(specialty.id)}>
+              <button type="button" key={specialty.id} className="nav-card" data-specialty={normalizeSpecialty(specialty.nombre)} onClick={() => goToCursos(specialty.id)}>
                 <span>Especialidad</span>
                 <h2>{specialty.nombre}</h2>
                 <p>{totals} alumnos</p>

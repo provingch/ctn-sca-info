@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from '../context/AuthContext';
 import { SpecialtyProvider } from '../context/SpecialtyContext';
 import { ProtectedRoute } from './ProtectedRoute';
@@ -40,7 +40,7 @@ export default function AppRoutes() {
     <Route path="/admin/usuarios" element={protect(<AdminPage />, [3])} />
     <Route path="/admin/asignaciones" element={protect(<AdminPage />, [3])} />
     <Route path="/admin/alumnos" element={protect(<AdminPage />, [3])} />
-    <Route path="/admin/ingresantes" element={protect(<AdminPage />, [3])} />
+    <Route path="/admin/ingresantes" element={protect(<Navigate to="/admin/alumnos" replace />, [3])} />
     <Route path="/padre" element={protect(<ParentPage />, [4])} />
     <Route path="/styleguide" element={protect(<StyleguidePage />, [3])} />
     <Route path="/offline" element={<OfflinePage />} />
