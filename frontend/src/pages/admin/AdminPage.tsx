@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import AppShell from '../../components/AppShell';
 import AnimatedSelect from '../../components/AnimatedSelect';
-import { getAdminCatalog, wipeAllClassroomSync, wipePlanillaSyncImports, type AdminCatalog } from '../../api/admin';
+import { getAdminCatalog, type AdminCatalog } from '../../api/admin';
 import { ApiError } from '../../api/client';
 import { useSpecialty } from '../../context/SpecialtyContext';
 import { normalizeSpecialty } from '../../theme/theme';
@@ -16,7 +16,6 @@ const modules = [
   { path: '/admin/usuarios', key: 'usuarios', title: 'Usuarios', detail: 'Altas, roles y datos de acceso' },
   { path: '/admin/asignaciones', key: 'asignaciones', title: 'Asignaciones', detail: 'Profesor, materia y curso' },
   { path: '/admin/alumnos', key: 'alumnos', title: 'Alumnos', detail: 'Carga de estudiantes y gestión por sección' },
-  { path: '/admin/ingresantes', key: 'alumnos', title: 'Alumnos', detail: 'Carga de estudiantes y gestión por sección' },
 ];
 
 export default function AdminPage() {
@@ -24,9 +23,6 @@ export default function AdminPage() {
   const selected = modules.find((module) => module.path === location.pathname) ?? null;
   const [data, setData] = useState<AdminCatalog | null>(null);
   const [status, setStatus] = useState('');
-  const [wipeId, setWipeId] = useState('');
-  const [wiping, setWiping] = useState(false);
-  const [wipeResult, setWipeResult] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -51,48 +47,6 @@ export default function AdminPage() {
       <AdminModule module={selected} data={data} reload={load} status={setStatus} />
     )}
 
-    <section className="panel">
-      <h2>Wipe: importaciones Classroom</h2>
-      <p>Ingresa el ID de la planilla para borrar tareas y notas importadas desde Classroom.</p>
-      <label>
-        Planilla ID
-        <input type="number" value={wipeId} onChange={(event) => setWipeId(event.target.value)} />
-      </label>
-      <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-        <button className="button danger" disabled={wiping || !wipeId} onClick={async () => {
-          if (!wipeId) return;
-          if (!window.confirm('¿Confirmas borrar todas las tareas y notas importadas desde Classroom para la planilla ' + wipeId + '? Esta acción no se puede deshacer.')) return;
-          try {
-            setWiping(true);
-            setWipeResult(null);
-            const res = await wipePlanillaSyncImports(Number(wipeId));
-            setWipeResult(res.message + ' (tareas borradas: ' + (res.deletedTasks ?? 0) + ', notas borradas: ' + (res.deletedGrades ?? 0) + ', curso cacheado limpiado: ' + (res.clearedGoogleCourseIds ?? 0) + ')');
-            await load();
-          } catch (error) {
-            setWipeResult(error instanceof ApiError ? error.message : 'Error al ejecutar wipe');
-          } finally {
-            setWiping(false);
-          }
-        }}>Wipe planilla</button>
-        <button className="button danger" disabled={wiping} onClick={async () => {
-          if (!window.confirm('¿Confirmas borrar TODO el cache de sincronización de Classroom? Esto elimina tareas, notas y asociaciones de curso de todas las planillas.')) return;
-          try {
-            setWiping(true);
-            setWipeResult(null);
-            const res = await wipeAllClassroomSync();
-            setWipeResult(res.message + ' (tareas borradas: ' + (res.deletedTasks ?? 0) + ', notas borradas: ' + (res.deletedGrades ?? 0) + ', cursos cacheados limpiados: ' + (res.clearedGoogleCourseIds ?? 0) + ')');
-            await load();
-          } catch (error) {
-            setWipeResult(error instanceof ApiError ? error.message : 'Error al ejecutar wipe global');
-          } finally {
-            setWiping(false);
-          }
-        }}>Wipe global Classroom</button>
-        <button className="button" onClick={() => { setWipeId(''); setWipeResult(null); }}>Limpiar</button>
-      </div>
-      {wiping && <div className="notice">Ejecutando wipe…</div>}
-      {wipeResult && <div className="notice">{wipeResult}</div>}
-    </section>
   </AppShell>;
 }
 

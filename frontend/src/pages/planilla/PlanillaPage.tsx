@@ -210,6 +210,8 @@ export default function PlanillaPage() {
   if (!data) return <AppShell title="Planilla"><div className="panel">{status || 'Cargando…'}</div></AppShell>;
 
   const gr = data.gradeRanges;
+  const classroomTaskCount = data.tareas.filter((task) => Boolean(task.googleCourseworkId?.trim())).length;
+  const localTaskCount = data.tareas.length - classroomTaskCount;
   // Piso de "1": todo lo que caiga por debajo del mínimo de "2" (igual que
   // en Planilla.jsp: "${gradeRanges['2'][0] - 1} o menos").
   const onePointCeiling = gr['2'] ? gr['2'].minInclusive - 1 : null;
@@ -306,7 +308,16 @@ export default function PlanillaPage() {
       </section>
       <section className="planilla-table-panel" aria-labelledby="planilla-table-title">
         <header className="planilla-table-heading">
-          <div><span>Tareas</span><h2 id="planilla-table-title">{data.planilla.materiaNombre}</h2></div>
+          <div>
+            <span>Tareas</span>
+            <h2 id="planilla-table-title">{data.planilla.materiaNombre}</h2>
+            {data.tareas.length > 0 && (
+              <div className="planilla-origin-summary" aria-label="Origen de las tareas">
+                {classroomTaskCount > 0 && <ClassroomBadge label={`${classroomTaskCount} de Classroom`} />}
+                {localTaskCount > 0 && <span className="origin-badge">{localTaskCount} {localTaskCount === 1 ? 'local' : 'locales'}</span>}
+              </div>
+            )}
+          </div>
           <small>{data.tareas.length} {data.tareas.length === 1 ? 'tarea' : 'tareas'} en esta etapa</small>
         </header>
       <div className={`table-wrap planilla-grade-table-wrap${freezeStudents ? ' freeze-students' : ''}`}>
@@ -316,7 +327,7 @@ export default function PlanillaPage() {
               <th className="planilla-number-heading">#</th>
               <th className="planilla-student-heading">Alumno</th>
               {data.tareas.map((task, taskIndex) => {
-                const isClassroomTask = Boolean(task.googleCourseworkId);
+                const isClassroomTask = Boolean(task.googleCourseworkId?.trim());
                 return (
                   <th key={task.id} className="planilla-task-heading">
                     <span className="planilla-task-number">T{taskIndex + 1}</span>

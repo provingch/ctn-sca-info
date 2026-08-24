@@ -8,6 +8,37 @@ interface AsignacionesPanelProps {
   status: (message: string) => void;
 }
 
+interface HorarioStepperProps {
+  label: string;
+  item?: HoraCatedraItem;
+  canDecrease: boolean;
+  canIncrease: boolean;
+  onDecrease: () => void;
+  onIncrease: () => void;
+}
+
+function HorarioStepper({ label, item, canDecrease, canIncrease, onDecrease, onIncrease }: HorarioStepperProps) {
+  return (
+    <div className="horario-stepper-field">
+      <span className="horario-stepper-label">{label}</span>
+      <div className="horario-stepper">
+        <div className="horario-stepper-value" aria-live="polite">
+          <strong>{item?.horaInicio || '—'}</strong>
+          <small>Fin {item?.horaFin || '—'}</small>
+        </div>
+        <div className="horario-stepper-actions">
+          <button type="button" className="button secondary" aria-label={`Avanzar hora de ${label.toLowerCase()} 35 minutos`} disabled={!canIncrease} onClick={onIncrease}>
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 12.5 5-5 5 5" /></svg>
+          </button>
+          <button type="button" className="button secondary" aria-label={`Retroceder hora de ${label.toLowerCase()} 35 minutos`} disabled={!canDecrease} onClick={onDecrease}>
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7.5 5 5 5-5" /></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AsignacionesPanel({ data, reload, status }: AsignacionesPanelProps) {
   const [selectedProfesorId, setSelectedProfesorId] = useState<number | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -80,13 +111,14 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
         getHoraCatedraCatalog(),
         getHorarioByAsignacion(assignmentId),
       ]);
+      const sortedCatalog = [...catalog].sort((first, second) => first.numero - second.numero);
       setHorarioPopup({
         assignmentId,
         slots,
-        catalog,
+        catalog: sortedCatalog,
         diaSemana: 1,
-        horaCatedraId: String(catalog[0]?.id ?? ''),
-        hastaHoraCatedraId: String(catalog[0]?.id ?? ''),
+        horaCatedraId: String(sortedCatalog[0]?.id ?? ''),
+        hastaHoraCatedraId: String(sortedCatalog[0]?.id ?? ''),
         sala: '',
       });
     } catch (error) {
@@ -171,13 +203,42 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
       void (async () => {
         try {
           const catalog = await getHoraCatedraCatalog();
-          setHorarioPopup((current) => current ? { ...current, catalog, horaCatedraId: String(current.horaCatedraId || catalog[0]?.id || ''), hastaHoraCatedraId: String(current.hastaHoraCatedraId || current.horaCatedraId || catalog[0]?.id || '') } : current);
+          const sortedCatalog = [...catalog].sort((first, second) => first.numero - second.numero);
+          setHorarioPopup((current) => current ? { ...current, catalog: sortedCatalog, horaCatedraId: String(current.horaCatedraId || sortedCatalog[0]?.id || ''), hastaHoraCatedraId: String(current.hastaHoraCatedraId || current.horaCatedraId || sortedCatalog[0]?.id || '') } : current);
         } catch (error) {
           status(error instanceof ApiError ? error.message : 'No se pudo obtener el catálogo de horas.');
         }
       })();
     }
   }, [horarioPopup, status]);
+
+  const horarioDesdeIndex = horarioPopup
+    ? horarioPopup.catalog.findIndex((item) => String(item.id) === horarioPopup.horaCatedraId)
+    : -1;
+  const horarioHastaIndex = horarioPopup
+    ? horarioPopup.catalog.findIndex((item) => String(item.id) === (horarioPopup.hastaHoraCatedraId || horarioPopup.horaCatedraId))
+    : -1;
+
+  const moveHorarioBoundary = (boundary: 'desde' | 'hasta', delta: -1 | 1) => {
+    setHorarioPopup((current) => {
+      if (!current || current.catalog.length === 0) return current;
+      const desdeIndex = Math.max(0, current.catalog.findIndex((item) => String(item.id) === current.horaCatedraId));
+      const hastaIndex = Math.max(desdeIndex, current.catalog.findIndex((item) => String(item.id) === (current.hastaHoraCatedraId || current.horaCatedraId)));
+
+      if (boundary === 'desde') {
+        const nextDesdeIndex = Math.min(current.catalog.length - 1, Math.max(0, desdeIndex + delta));
+        const nextHastaIndex = Math.max(hastaIndex, nextDesdeIndex);
+        return {
+          ...current,
+          horaCatedraId: String(current.catalog[nextDesdeIndex].id),
+          hastaHoraCatedraId: String(current.catalog[nextHastaIndex].id),
+        };
+      }
+
+      const nextHastaIndex = Math.min(current.catalog.length - 1, Math.max(desdeIndex, hastaIndex + delta));
+      return { ...current, hastaHoraCatedraId: String(current.catalog[nextHastaIndex].id) };
+    });
+  };
 
   if (!selectedProfesorId) {
     return (
@@ -346,25 +407,23 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
               </select>
             </label>
 
-            <label>
-              Desde
-              <select value={horarioPopup.horaCatedraId} onChange={(event) => setHorarioPopup({ ...horarioPopup, horaCatedraId: event.target.value, hastaHoraCatedraId: event.target.value })}>
-                <option value="">Seleccione…</option>
-                {horarioPopup.catalog.map((item) => (
-                  <option key={item.id} value={item.id}>{item.numero} · {item.etiqueta || '—'} · {item.horaInicio}-{item.horaFin}</option>
-                ))}
-              </select>
-            </label>
+            <HorarioStepper
+              label="Desde"
+              item={horarioPopup.catalog[horarioDesdeIndex]}
+              canDecrease={horarioDesdeIndex > 0}
+              canIncrease={horarioDesdeIndex >= 0 && horarioDesdeIndex < horarioPopup.catalog.length - 1}
+              onDecrease={() => moveHorarioBoundary('desde', -1)}
+              onIncrease={() => moveHorarioBoundary('desde', 1)}
+            />
 
-            <label>
-              Hasta
-              <select value={horarioPopup.hastaHoraCatedraId || ''} onChange={(event) => setHorarioPopup({ ...horarioPopup, hastaHoraCatedraId: event.target.value })}>
-                <option value="">Seleccione…</option>
-                {horarioPopup.catalog.filter((it) => Number(it.id) >= Number(horarioPopup.horaCatedraId || 0)).map((item) => (
-                  <option key={item.id} value={item.id}>{item.numero} · {item.etiqueta || '—'} · {item.horaInicio}-{item.horaFin}</option>
-                ))}
-              </select>
-            </label>
+            <HorarioStepper
+              label="Hasta"
+              item={horarioPopup.catalog[horarioHastaIndex]}
+              canDecrease={horarioHastaIndex > horarioDesdeIndex}
+              canIncrease={horarioHastaIndex >= 0 && horarioHastaIndex < horarioPopup.catalog.length - 1}
+              onDecrease={() => moveHorarioBoundary('hasta', -1)}
+              onIncrease={() => moveHorarioBoundary('hasta', 1)}
+            />
 
             <label style={{ gridColumn: 'span 2' }}>
               Sala (opcional)
