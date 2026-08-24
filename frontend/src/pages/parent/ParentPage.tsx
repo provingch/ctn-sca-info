@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import AppShell from '../../components/AppShell';
+import GradeChip from '../../components/ui/GradeChip';
+import ContentState from '../../components/ui/ContentState';
 import { getParentSummary, type ParentResponse, type ParentStage, type ParentSubject, type ParentTaskStatus } from '../../api/parent';
 import { ApiError } from '../../api/client';
 import { normalizeSpecialty } from '../../theme/theme';
@@ -53,7 +55,7 @@ export default function ParentPage() {
   }, [data, selectedPlanillaId, stage]);
 
   if (!data) {
-    return <AppShell title="Notas de mis hijos"><section className="panel">{error || 'Cargando…'}</section></AppShell>;
+    return <AppShell title="Notas de mis hijos"><ContentState tone={error ? 'error' : 'loading'} title={error || 'Cargando calificaciones…'} detail={error ? 'Recargá la página para volver a intentarlo.' : 'Estamos reuniendo las materias y tareas publicadas.'} /></AppShell>;
   }
 
   const selectedChild = data.hijos.find((child) => child.id === data.selectedAlumnoId);
@@ -116,7 +118,7 @@ export default function ParentPage() {
           </section>
           {selectedSubject && <SubjectDetail subject={selectedSubject} />}
           <details className="panel parent-calculation-note"><summary>¿Cómo se calcula el promedio?</summary><p>El porcentaje de cada materia se obtiene dividiendo los puntos logrados entre los puntos posibles de las tareas publicadas. El promedio general combina los puntos de todas las materias disponibles.</p></details>
-        </> : <section className="panel empty-state"><h2>Sin calificaciones en {stageLabel(stage).toLowerCase()}</h2><p>Todavía no hay materias ni tareas publicadas para este alumno en la etapa seleccionada.</p></section>}
+        </> : <ContentState title={`Sin calificaciones en ${stageLabel(stage).toLowerCase()}`} detail="Todavía no hay materias ni tareas publicadas para este alumno en la etapa seleccionada." />}
       </div>
     </AppShell>
   );
@@ -125,7 +127,7 @@ export default function ParentPage() {
 function SubjectCard({ subject, selected, onSelect }: { subject: ParentSubject; selected: boolean; onSelect: () => void }) {
   const pending = subject.tareas.filter((task) => task.estado !== 'CALIFICADA').length;
   return <button type="button" className={`parent-subject-card${selected ? ' selected' : ''}`} aria-pressed={selected} onClick={onSelect}>
-    <header><div><span>Materia</span><h3>{subject.materia}</h3></div><span className={`grade-chip grade-chip--${Math.min(5, Math.max(1, subject.nota))} parent-subject-grade`}>Nota {subject.nota}</span></header>
+    <header><div><span>Materia</span><h3>{subject.materia}</h3></div><GradeChip grade={subject.nota} label={`Nota ${subject.nota}`} className="parent-subject-grade" /></header>
     <div className="parent-subject-average"><strong>{subject.porcentaje}%</strong><span>Promedio de la materia</span></div>
     <div className="parent-subject-progress" aria-label={`${subject.porcentaje}%`}><i style={{ width: `${Math.min(100, Math.max(0, subject.porcentaje))}%` }} /></div>
     <footer><span>{subject.puntos} de {subject.total} puntos</span><span>{subject.tareas.length} tareas{pending > 0 ? ` · ${pending} por revisar` : ''}</span></footer>
@@ -137,7 +139,7 @@ function SubjectDetail({ subject }: { subject: ParentSubject }) {
   return <section className="panel parent-subject-detail" aria-labelledby="parent-subject-detail-title">
     <header className="parent-subject-detail-header">
       <div><span>Detalle de tareas</span><h2 id="parent-subject-detail-title">{subject.materia}</h2><p>{stageLabel(subject.etapa)} · {subject.porcentaje}% de promedio</p></div>
-      <span className={`grade-chip grade-chip--${Math.min(5, Math.max(1, subject.nota))} parent-detail-grade`}>{subject.nota}</span>
+      <GradeChip grade={subject.nota} className="parent-detail-grade" />
     </header>
     {subject.tareas.length > 0 ? <div className="parent-task-list">
       {subject.tareas.map((task, index) => <article className={`parent-task-row ${task.estado.toLowerCase().replaceAll('_', '-')}`} key={task.id}>
@@ -145,7 +147,7 @@ function SubjectDetail({ subject }: { subject: ParentSubject }) {
         <div className="parent-task-copy"><strong>{task.titulo}</strong><small>{formatDate(task.fecha)}</small></div>
         <TaskResult estado={task.estado} puntos={task.puntos} total={task.total} />
       </article>)}
-    </div> : <div className="empty-state parent-task-empty"><h3>Sin tareas publicadas</h3><p>Esta materia todavía no tiene actividades disponibles.</p></div>}
+    </div> : <ContentState compact className="parent-task-empty" title="Sin tareas publicadas" detail="Esta materia todavía no tiene actividades disponibles." />}
   </section>;
 }
 

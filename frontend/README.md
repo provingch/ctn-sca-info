@@ -1,32 +1,25 @@
-# React + TypeScript + Vite
+# Frontend SCA
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Aplicación React + TypeScript construida con Vite.
 
-Currently, two official plugins are available:
+## Comandos
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm ci
+npm run dev
+npm test
+npm run lint -- --deny-warnings
+npm run build
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+`npm test` ejecuta Vitest y Testing Library en modo no interactivo. Para desarrollar una prueba mientras cambia el código, usar `npm run test:watch`.
+
+## Componentes compartidos
+
+- `src/components/ui/ContentState.tsx`: carga, error y ausencia de datos.
+- `src/components/ui/ConnectionState.tsx`: conexiones y capacidades activas/inactivas.
+- `src/components/ui/GradeChip.tsx`: notas con la escala visual institucional.
+- `src/components/ui/SectionHeading.tsx`: encabezados numerados de panel.
+- `src/components/AnimatedSelect.tsx`: combobox accesible y responsive.
+
+La ruta protegida `/styleguide` funciona como catálogo vivo. Reutilizar los tokens de `src/index.css`; no agregar colores aislados cuando ya existe una variable semántica.

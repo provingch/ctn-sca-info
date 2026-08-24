@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import AppShell from '../../components/AppShell';
 import AnimatedSelect from '../../components/AnimatedSelect';
+import ContentState from '../../components/ui/ContentState';
 import { getAdminCatalog, type AdminCatalog } from '../../api/admin';
 import { ApiError } from '../../api/client';
 import { useSpecialty } from '../../context/SpecialtyContext';
@@ -35,14 +36,17 @@ export default function AdminPage() {
   useEffect(() => { void load(); }, [load]);
 
   if (!data) {
-    return <AppShell title={selected?.title || 'Panel general'}><section className="panel">{status || 'Cargando…'}</section></AppShell>;
+    return <AppShell title={selected?.title || 'Panel general'}><ContentState tone={status ? 'error' : 'loading'} title={status || 'Cargando administración…'} detail={status ? 'Recargá la página para volver a intentarlo.' : 'Estamos preparando el catálogo del sistema.'} /></AppShell>;
   }
 
   return <AppShell title={selected?.title || 'Panel general'}>
     <AdminToolbar data={data} showBack={Boolean(selected)} />
     {status && <div className="notice" role="status">{status}</div>}
     {!selected ? (
-      <div className="card-grid">{modules.map((module) => <Link className="nav-card" to={module.path} key={module.path}><span>Gestionar</span><h2>{module.title}</h2><p>{module.detail}</p><strong>Abrir →</strong></Link>)}</div>
+      <div className="card-grid">
+        {modules.map((module) => <Link className="nav-card" to={module.path} key={module.path}><span>Gestionar</span><h2>{module.title}</h2><p>{module.detail}</p><strong>Abrir →</strong></Link>)}
+        <Link className="nav-card" to="/styleguide"><span>Referencia interna</span><h2>Sistema de diseño</h2><p>Componentes, estados y reglas visuales compartidas.</p><strong>Consultar →</strong></Link>
+      </div>
     ) : (
       <AdminModule module={selected} data={data} reload={load} status={setStatus} />
     )}

@@ -8,6 +8,9 @@ const SIGNATURE_MOBILE_MEDIA_QUERY = '(max-width: 680px), (max-height: 680px) an
 import { ApiError } from '../../api/client';
 import AppShell from '../../components/AppShell';
 import PasswordInput from '../../components/PasswordInput';
+import ConnectionState from '../../components/ui/ConnectionState';
+import ContentState from '../../components/ui/ContentState';
+import SectionHeading from '../../components/ui/SectionHeading';
 import { useAuth } from '../../context/AuthContext';
 import { getPushSubscriptionStatus, removePushSubscription, savePushSubscription, sendPushTest, toPushPayload, urlBase64ToUint8Array } from '../../api/push';
 import { getPwaInstallSnapshot, promptPwaInstall, registerPwaServiceWorker, subscribePwaInstall } from '../../pwa/pwa';
@@ -41,7 +44,7 @@ export default function ProfilePage() {
   useEffect(() => { void load(); }, [load]);
   // ResizeObserver and dynamic --profile-identity-height removed: obsolete with fixed flex layout
 
-  if (!data) return <AppShell><section className="panel">{status || 'Cargando…'}</section></AppShell>;
+  if (!data) return <AppShell><ContentState tone={status ? 'error' : 'loading'} title={status || 'Cargando perfil…'} detail={status ? 'Recargá la página para volver a intentarlo.' : 'Estamos preparando los datos de tu cuenta.'} /></AppShell>;
 
   const owner = data.profileOwner;
   const initials = `${owner.nombre?.[0] || owner.usuario?.[0] || 'S'}${owner.apellido?.[0] || ''}`.toUpperCase();
@@ -78,10 +81,6 @@ export default function ProfilePage() {
 
 function Tab({ active, onClick, title, detail }: { active: boolean; onClick: () => void; title: string; detail: string }) {
   return <button type="button" className={active ? 'active' : ''} onClick={onClick}><strong>{title}</strong><small>{detail}</small></button>;
-}
-
-function Heading({ number, title, detail }: { number: string; title: string; detail: string }) {
-  return <header className="panel-heading"><span>{number}</span><div><h2>{title}</h2><p>{detail}</p></div></header>;
 }
 
 function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (text: string) => Promise<void>; setStatus: (value: string) => void }) {
@@ -412,12 +411,12 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
   }
 
   return <form className="profile-card-grid" onSubmit={submit}>
-    <section className="panel form-grid"><Heading number="01" title="Información personal" detail="Datos que identifican tu cuenta." /><label>Nombre<input value={form.nombre} disabled={!data.canEditAdminOnlyProfileFields} onChange={(e) => setForm({ ...form, nombre: e.target.value })} /></label><label>Apellido<input value={form.apellido} disabled={!data.canEditAdminOnlyProfileFields} onChange={(e) => setForm({ ...form, apellido: e.target.value })} /></label><label>Cédula<input value={form.ci ?? ''} disabled={!data.canEditAdminOnlyProfileFields} inputMode="numeric" onChange={(e) => setForm({ ...form, ci: e.target.value ? Number(e.target.value) : null })} /></label></section>
-    <section className="panel form-grid"><Heading number="02" title="Contacto" detail="Canales para comunicaciones del colegio." /><label>Correo electrónico<input type="email" value={form.correo} onChange={(e) => setForm({ ...form, correo: e.target.value })} /></label><label>Teléfono<input inputMode="numeric" value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} /></label>{data.isStaffProfile && <label>Celular<input inputMode="numeric" value={form.celular} onChange={(e) => setForm({ ...form, celular: e.target.value })} /></label>}</section>
-    <section className="panel form-grid"><Heading number="03" title="Cuenta" detail="Nombre utilizado para iniciar sesión." /><label>Usuario<input value={form.usuario} required onChange={(e) => setForm({ ...form, usuario: e.target.value })} /></label><div className="account-role"><span>Rol asignado</span><strong>{data.profileRoleLabel}</strong></div></section>
+    <section className="panel form-grid"><SectionHeading number="01" title="Información personal" detail="Datos que identifican tu cuenta." /><label>Nombre<input value={form.nombre} disabled={!data.canEditAdminOnlyProfileFields} onChange={(e) => setForm({ ...form, nombre: e.target.value })} /></label><label>Apellido<input value={form.apellido} disabled={!data.canEditAdminOnlyProfileFields} onChange={(e) => setForm({ ...form, apellido: e.target.value })} /></label><label>Cédula<input value={form.ci ?? ''} disabled={!data.canEditAdminOnlyProfileFields} inputMode="numeric" onChange={(e) => setForm({ ...form, ci: e.target.value ? Number(e.target.value) : null })} /></label></section>
+    <section className="panel form-grid"><SectionHeading number="02" title="Contacto" detail="Canales para comunicaciones del colegio." /><label>Correo electrónico<input type="email" value={form.correo} onChange={(e) => setForm({ ...form, correo: e.target.value })} /></label><label>Teléfono<input inputMode="numeric" value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} /></label>{data.isStaffProfile && <label>Celular<input inputMode="numeric" value={form.celular} onChange={(e) => setForm({ ...form, celular: e.target.value })} /></label>}</section>
+    <section className="panel form-grid"><SectionHeading number="03" title="Cuenta" detail="Nombre utilizado para iniciar sesión." /><label>Usuario<input value={form.usuario} required onChange={(e) => setForm({ ...form, usuario: e.target.value })} /></label><div className="account-role"><span>Rol asignado</span><strong>{data.profileRoleLabel}</strong></div></section>
     {data.isProfessorProfile && (
       <section className="panel form-grid">
-        <Heading number="04" title="Foto de perfil" detail="Se mostrará en la barra de navegación." />
+        <SectionHeading number="04" title="Foto de perfil" detail="Se mostrará en la barra de navegación." />
         <div className="photo-section" style={{ gridColumn: '1 / -1' }}>
           <div className="photo-preview-row">
             <div className="photo-preview-circle" aria-hidden="true">
@@ -435,7 +434,7 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
     )}
     {data.showSignaturePanel && (
       <section className="panel form-grid">
-        <Heading number={data.isProfessorProfile ? '05' : '04'} title="Firma del docente" detail="Se usa en la exportación y se limpia automáticamente si no hay dato." />
+        <SectionHeading number={data.isProfessorProfile ? '05' : '04'} title="Firma del docente" detail="Se usa en la exportación y se limpia automáticamente si no hay dato." />
         {!isSignatureMobile && <div className="signature-box">
           <canvas ref={canvasRef} onPointerDown={drawStart} onPointerMove={drawMove} onPointerUp={finishDrawing} onPointerCancel={finishDrawing} />
         </div>}
@@ -468,7 +467,7 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
         </div>}
       </section>
     )}
-    {data.showGoogleClassroomPanel && <section className="panel form-grid"><Heading number={data.isProfessorProfile ? '05' : '04'} title="Google Classroom" detail="Vinculación académica del profesor." /><State active={data.googleClassroomConnected} title={data.googleClassroomConnected ? 'Cuenta conectada' : 'Sin conexión'} detail={data.profileOwner.googleEmail || 'Todavía no hay una cuenta de Google vinculada.'} />{data.googleClassroomCourses.length > 0 && <p className="muted-copy">{data.googleClassroomCourses.length} curso(s) compatible(s) disponibles.</p>}
+    {data.showGoogleClassroomPanel && <section className="panel form-grid"><SectionHeading number={data.isProfessorProfile ? '05' : '04'} title="Google Classroom" detail="Vinculación académica del profesor." /><ConnectionState active={data.googleClassroomConnected} title={data.googleClassroomConnected ? 'Cuenta conectada' : 'Sin conexión'} detail={data.profileOwner.googleEmail || 'Todavía no hay una cuenta de Google vinculada.'} />{data.googleClassroomCourses.length > 0 && <p className="muted-copy">{data.googleClassroomCourses.length} curso(s) compatible(s) disponibles.</p>}
       <div>
         {!data.googleClassroomConnected && <button className="button" type="button" onClick={async () => {
           try {
@@ -504,8 +503,8 @@ function Subjects({ data }: { data: ProfileResponse }) {
       <article className="metric"><span>Asignaciones</span><strong>{data.misAsignaciones.length}</strong></article>
     </section>
     <section className="panel">
-      <Heading number="01" title="Asignaciones de materias" detail="Materias y cursos vinculados a tu perfil." />
-      {data.misAsignaciones.length === 0 ? <Empty title="Sin asignaciones" detail="Administración todavía no vinculó materias y cursos a este perfil." /> : (
+      <SectionHeading number="01" title="Asignaciones de materias" detail="Materias y cursos vinculados a tu perfil." />
+      {data.misAsignaciones.length === 0 ? <ContentState compact title="Sin asignaciones" detail="Administración todavía no vinculó materias y cursos a este perfil." /> : (
         <div className="profile-list">
           <div className="profile-list-header"><span>Materia</span><span>Especialidad</span><span>Curso</span></div>
           {data.misAsignaciones.map((item) => <div key={item.id}><strong>{item.materiaNombre}</strong><span>{item.especialidad || ''}</span><span>{(item.cursoNivel ?? '') + (item.cursoSeccion ? (' · ' + item.cursoSeccion) : '')}</span></div>)}
@@ -555,7 +554,7 @@ function Security({ data, done }: { data: ProfileResponse; done: (text: string) 
   async function start2fa() { try { await prepareTotp(); await done('Clave de configuración generada.'); } catch (error) { setStatusWithFallback(error, done, 'No se pudo preparar 2FA.'); } }
   async function verify2fa() { try { await confirmTotp(code); await done('Verificación en dos pasos activada.'); } catch (error) { setStatusWithFallback(error, done, 'Código inválido.'); } }
   async function turnOff() { try { await disableTotp(); await done('Verificación en dos pasos desactivada.'); } catch (error) { setStatusWithFallback(error, done, 'No se pudo desactivar 2FA.'); } }
-  return <div className="two-column"><form className="panel form-grid" onSubmit={password}><Heading number="01" title="Cambiar contraseña" detail="Usá al menos seis caracteres." /><label>Contraseña actual<PasswordInput required value={passwords.currentPassword} onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })} /></label><label>Nueva contraseña<PasswordInput required minLength={6} value={passwords.newPassword} onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })} /></label><label>Confirmar nueva contraseña<PasswordInput required value={passwords.confirmPassword} onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })} /></label><button className="button">Actualizar contraseña</button></form><section className="panel form-grid security-2fa-panel"><Heading number="02" title="Verificación en dos pasos" detail="Protegé el acceso con tu app autenticadora." /><div className="security-2fa-status"><State active={data.totpEnabled} title={data.totpEnabled ? 'Activa' : 'Inactiva'} /></div>{data.pendingTotpSecret && <TOTPSetupCard provisioningUri={data.totpProvisioningUri} secret={data.pendingTotpSecret} code={code} onCodeChange={setCode} onConfirm={verify2fa} />}{data.totpEnabled ? <button className="button danger security-2fa-action" type="button" onClick={turnOff}>Desactivar 2FA</button> : !data.pendingTotpSecret && <button className="button secondary security-2fa-action" type="button" onClick={start2fa}>Configurar 2FA</button>}</section></div>;
+  return <div className="two-column"><form className="panel form-grid" onSubmit={password}><SectionHeading number="01" title="Cambiar contraseña" detail="Usá al menos seis caracteres." /><label>Contraseña actual<PasswordInput required value={passwords.currentPassword} onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })} /></label><label>Nueva contraseña<PasswordInput required minLength={6} value={passwords.newPassword} onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })} /></label><label>Confirmar nueva contraseña<PasswordInput required value={passwords.confirmPassword} onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })} /></label><button className="button">Actualizar contraseña</button></form><section className="panel form-grid security-2fa-panel"><SectionHeading number="02" title="Verificación en dos pasos" detail="Protegé el acceso con tu app autenticadora." /><div className="security-2fa-status"><ConnectionState active={data.totpEnabled} title={data.totpEnabled ? 'Activa' : 'Inactiva'} /></div>{data.pendingTotpSecret && <TOTPSetupCard provisioningUri={data.totpProvisioningUri} secret={data.pendingTotpSecret} code={code} onCodeChange={setCode} onConfirm={verify2fa} />}{data.totpEnabled ? <button className="button danger security-2fa-action" type="button" onClick={turnOff}>Desactivar 2FA</button> : !data.pendingTotpSecret && <button className="button secondary security-2fa-action" type="button" onClick={start2fa}>Configurar 2FA</button>}</section></div>;
 }
 
 function AppStatus({ data }: { data: ProfileResponse }) {
@@ -677,16 +676,16 @@ function AppStatus({ data }: { data: ProfileResponse }) {
 
   return <div className="two-column pwa-settings-grid">
     <section className="panel pwa-setting-card">
-      <Heading number="01" title="Aplicación SCA" detail="Acceso rápido desde este dispositivo." />
-      <State active={install.status === 'installed' || install.status === 'ready'} title={installCopy.title} detail={installCopy.detail} />
+      <SectionHeading number="01" title="Aplicación SCA" detail="Acceso rápido desde este dispositivo." />
+      <ConnectionState active={install.status === 'installed' || install.status === 'ready'} title={installCopy.title} detail={installCopy.detail} />
       <div className="pwa-actions">
         <button className="button" type="button" disabled={!install.canInstall || busyAction !== null} onClick={installApplication}>{busyAction === 'install' ? 'Abriendo…' : install.status === 'installed' ? 'Aplicación instalada' : 'Instalar aplicación'}</button>
       </div>
       <p className="muted-copy">Al instalarla, SCA aparecerá junto a tus otras aplicaciones y podrá abrirse sin la barra del navegador.</p>
     </section>
     <section className="panel pwa-setting-card">
-      <Heading number="02" title="Notificaciones" detail="Avisos asociados a tu cuenta y este dispositivo." />
-      <State active={notificationsActive} title={notificationTitle} detail={!vapidConfigured ? 'El administrador debe configurar las claves VAPID del servidor.' : notificationsActive ? 'Este navegador puede recibir avisos incluso con SCA cerrada.' : 'Activá los avisos para recibir novedades importantes.'} />
+      <SectionHeading number="02" title="Notificaciones" detail="Avisos asociados a tu cuenta y este dispositivo." />
+      <ConnectionState active={notificationsActive} title={notificationTitle} detail={!vapidConfigured ? 'El administrador debe configurar las claves VAPID del servidor.' : notificationsActive ? 'Este navegador puede recibir avisos incluso con SCA cerrada.' : 'Activá los avisos para recibir novedades importantes.'} />
       <div className="pwa-actions">
         {!notificationsActive && <button className="button" type="button" disabled={!pushSupported || pushPermission === 'denied' || !vapidConfigured || busyAction !== null} onClick={enableNotifications}>{busyAction === 'enable' ? 'Activando…' : 'Activar notificaciones'}</button>}
         {notificationsActive && <button className="button secondary" type="button" disabled={busyAction !== null} onClick={testNotifications}>{busyAction === 'test' ? 'Enviando…' : 'Enviar prueba'}</button>}
@@ -697,7 +696,5 @@ function AppStatus({ data }: { data: ProfileResponse }) {
     </section>
   </div>;
 }
-function Activity({ entries }: { entries: string[] }) { return <section className="panel"><Heading number="01" title="Actividad reciente" detail="Movimientos registrados para esta cuenta." />{entries.length === 0 ? <Empty title="Aún no hay movimientos" detail="La actividad de tu cuenta aparecerá aquí." /> : entries.map((entry, index) => <p className="history-row" key={`${entry}-${index}`}>{entry}</p>)}</section>; }
-function State({ active, title, detail }: { active: boolean; title: string; detail?: string }) { return <div className={`connection-state ${active ? 'connected' : ''}`}><i /><div><strong>{title}</strong>{detail && <span>{detail}</span>}</div></div>; }
-function Empty({ title, detail }: { title: string; detail: string }) { return <div className="empty-state"><h3>{title}</h3><p>{detail}</p></div>; }
+function Activity({ entries }: { entries: string[] }) { return <section className="panel"><SectionHeading number="01" title="Actividad reciente" detail="Movimientos registrados para esta cuenta." />{entries.length === 0 ? <ContentState compact title="Aún no hay movimientos" detail="La actividad de tu cuenta aparecerá aquí." /> : entries.map((entry, index) => <p className="history-row" key={`${entry}-${index}`}>{entry}</p>)}</section>; }
 function setStatusWithFallback(error: unknown, done: (text: string) => Promise<void>, fallback: string) { void done(message(error, fallback)); }

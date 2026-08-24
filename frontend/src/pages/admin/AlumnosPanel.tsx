@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError } from '../../api/client';
 import { buscarPadres, createAdminRecord, deleteAdminRecord, getPadresDeAlumno, linkPadreAlumno, unlinkPadreAlumno, updateAdminRecord, type AdminCatalog, type PadreSummary } from '../../api/admin';
 import { normalizeSpecialty } from '../../theme/theme';
@@ -52,7 +52,7 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
     setIsFormOpen(true);
   };
 
-  const loadPadres = async (alumnoId: number | null) => {
+  const loadPadres = useCallback(async (alumnoId: number | null) => {
     if (!alumnoId) {
       setPadres([]);
       return;
@@ -64,7 +64,7 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
       setPadres([]);
       status(error instanceof ApiError ? error.message : 'No se pudo cargar los padres del alumno.');
     }
-  };
+  }, [status]);
 
   const openEdit = async (student: AdminCatalog['alumnos'][number]) => {
     const course = data.cursos.find((item) => item.id === student.cursoId);
@@ -152,7 +152,7 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
       return;
     }
     void loadPadres(editingId);
-  }, [editingId, isFormOpen]);
+  }, [editingId, isFormOpen, loadPadres]);
 
   useEffect(() => {
     const query = padresSearch.trim();
@@ -164,7 +164,7 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
       try {
         const result = await buscarPadres(query);
         setPadresResults(result.filter((candidate) => !padres.some((parent) => parent.id === candidate.id)));
-      } catch (error) {
+      } catch {
         setPadresResults([]);
       }
     }, 250);

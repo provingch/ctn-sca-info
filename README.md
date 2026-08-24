@@ -148,8 +148,21 @@ Se obtienen creando credenciales OAuth 2.0 en Google Cloud Console con la **Goog
 ### Tests
 
 ```bash
-mvn test
+cd backend
+./mvnw test
+
+cd ../frontend
+npm ci
+npm test
+npm run lint -- --deny-warnings
+npm run build
 ```
+
+Las pruebas de horarios que requieren MySQL se ejecutan cuando la base de integración está disponible; en un entorno sin esas credenciales se informan como omitidas. La automatización de GitHub ejecuta las comprobaciones de frontend y backend en cada pull request y cada cambio a `main`.
+
+### Diseño compartido
+
+Los componentes reutilizables viven en `frontend/src/components/ui`. La referencia visual está disponible para administradores en `/styleguide` e incluye tokens, botones, formularios, notas y estados comunes. Los estilos deben reutilizar las variables de `frontend/src/index.css` y verificarse en tema claro, oscuro y mobile.
 
 ## Documentación adicional
 

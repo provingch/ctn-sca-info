@@ -150,7 +150,7 @@ class PlanillaProcesoWorkbookBuilderTest {
         );
 
         try (XSSFWorkbook workbook = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(data, "Test")) {
-            String path = "/tmp/test_planilla_dinamico.xlsx";
+            String path = "target/test_planilla_dinamico.xlsx";
             try (FileOutputStream fos = new FileOutputStream(path)) {
                 workbook.write(fos);
                 System.out.println("\n=== WORKBOOK GENERATED ===");

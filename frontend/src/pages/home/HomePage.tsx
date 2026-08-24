@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { createClass, getHome, updateRasgoCodigos, type HomeResponse } from '../../api/home';
 import { ApiError } from '../../api/client';
 import AppShell from '../../components/AppShell';
+import ContentState from '../../components/ui/ContentState';
 import { getEspecialidades, resolvePlanilla, syncClassroom, type Especialidad } from '../../api/academics';
 import { useNavigate } from 'react-router-dom';
 import AnimatedSelect from '../../components/AnimatedSelect';
@@ -28,6 +29,7 @@ export default function HomePage() {
   const [error, setError] = useState('');
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const view = search.get('view') || '';
+  const subview = search.get('subview') || '';
   const cursoId = Number(search.get('cursoId') || 0);
   const etapa = Number(search.get('etapa') || 1);
   const especialidadId = Number(search.get('especialidadId') || 0);
@@ -53,14 +55,14 @@ export default function HomePage() {
 
   const load = useCallback(async () => {
     try {
-      const homeView = view === 'catedra' && search.get('subview') === 'clase' ? 'clase' : 'planillas';
+      const homeView = view === 'catedra' && subview === 'clase' ? 'clase' : 'planillas';
       setData(await getHome({ cursoId: cursoId || undefined, etapa, view: homeView }));
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Error al cargar el inicio.');
     } finally {
       setSelectionLoading(false);
     }
-  }, [cursoId, etapa, view]);
+  }, [cursoId, etapa, subview, view]);
 
   useEffect(() => {
     void getEspecialidades().then(setEspecialidades).catch(() => setEspecialidades([]));
@@ -101,7 +103,7 @@ export default function HomePage() {
   }, [especialidadId]);
 
   if (!view) return <AppShell title="Elegí cómo querés empezar"><div className="choice-grid"><button onClick={() => setSearch({ view: 'catedra' })}><span>01</span><h2>Libro de Cátedra</h2><p>Plan curricular e inicio de clases.</p></button><button onClick={() => setSearch({ view: 'planillas' })}><span>02</span><h2>Gestionar planillas</h2><p>Tareas, puntajes y sincronización con Classroom.</p></button></div></AppShell>;
-  if (!data) return <AppShell title="Panel SCA"><div className="panel">{error || 'Cargando…'}</div></AppShell>;
+  if (!data) return <AppShell title="Panel SCA"><ContentState tone={error ? 'error' : 'loading'} title={error || 'Cargando inicio…'} detail={error ? 'Recargá la página para volver a intentarlo.' : 'Estamos preparando tus cursos y planillas.'} /></AppShell>;
 
   const visibleCursos = selectedEspecialidad
     ? data.cursos.filter((curso) => curso.especialidad === selectedEspecialidad.nombre)
@@ -239,7 +241,7 @@ function PlanillasView({ data, syncingProp, setSyncingProp }: { data: HomeRespon
       }
     })();
     return () => { cancelled = true; setSyncingProp?.(false); };
-  }, [data.googleClassroomConnected, data.planillas, setSyncingProp]);
+  }, [data.googleClassroomConnected, data.planillas, navigate, setSyncingProp]);
 
   const syncing = syncingProp ?? false;
 
@@ -276,7 +278,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
         setAsignacionesDisponibles(list as any);
         if ((list as any).length === 1) setSelectedAsignacionId((list as any)[0].id);
         else setSelectedAsignacionId(null);
-      } catch (err) {
+      } catch {
         // ignore: leave list empty
         setAsignacionesDisponibles([]);
         setSelectedAsignacionId(null);
