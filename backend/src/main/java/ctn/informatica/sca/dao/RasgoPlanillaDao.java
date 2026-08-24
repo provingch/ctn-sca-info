@@ -149,6 +149,87 @@ public class RasgoPlanillaDao extends conexion {
         }
     }
 
+    // Nueva sobrecarga: permite persistir asignacion_id si se conoce
+    public int crearPlanillaRasgo(int cursoId, int profesorId, String tema, List<Alumno> alumnos, Set<Integer> alumnosAusentes, Map<Integer, List<String>> codigosPorAlumno, Integer asignacionId) throws SQLException {
+        if (alumnos == null || alumnos.isEmpty()) {
+            throw new SQLException("No hay alumnos elegibles para crear la planilla de rasgos");
+        }
+
+        String insertPlanillaSql;
+        if (asignacionId != null) {
+            insertPlanillaSql = "INSERT INTO planilla_rasgo (curso_id, usuario_id, asignacion_id, tema, fecha_clase) VALUES (?, ?, ?, ?, CURRENT_DATE())";
+        } else {
+            insertPlanillaSql = "INSERT INTO planilla_rasgo (curso_id, usuario_id, tema, fecha_clase) VALUES (?, ?, ?, CURRENT_DATE())";
+        }
+
+        try (Connection con = getCon()) {
+            boolean[] supportsFaltaColumns = supportsColumns(con, "rasgo_asistencia", "falta_codigo", "falta_observacion");
+            String insertAsistenciaSql = buildInsertAsistenciaSql(supportsFaltaColumns[0], supportsFaltaColumns[1]);
+            boolean originalAutoCommit = con.getAutoCommit();
+            con.setAutoCommit(false);
+            try {
+                int planillaId;
+                try (PreparedStatement ps = con.prepareStatement(insertPlanillaSql, Statement.RETURN_GENERATED_KEYS)) {
+                    ps.setInt(1, cursoId);
+                    ps.setInt(2, profesorId);
+                    if (asignacionId != null) {
+                        ps.setInt(3, asignacionId);
+                        ps.setString(4, tema);
+                    } else {
+                        ps.setString(3, tema);
+                    }
+                    ps.executeUpdate();
+                    try (ResultSet keys = ps.getGeneratedKeys()) {
+                        if (!keys.next()) throw new SQLException("No se pudo generar la planilla de rasgos");
+                        planillaId = keys.getInt(1);
+                    }
+                }
+
+                try (PreparedStatement ps = con.prepareStatement(insertAsistenciaSql)) {
+                    for (Alumno alumno : alumnos) {
+                        String estado = alumnosAusentes != null && alumnosAusentes.contains(alumno.getId())
+                                ? "ausente" : "presente";
+                        ps.setInt(1, planillaId);
+                        ps.setInt(2, alumno.getId());
+                        ps.setString(3, alumno.getNombre());
+                        ps.setString(4, alumno.getApellido());
+                        String alumnoEmail = alumno.getGoogleEmail();
+                        ps.setString(5, alumnoEmail == null || alumnoEmail.isBlank() ? "" : alumnoEmail);
+                        ps.setString(6, estado);
+                        if (supportsFaltaColumns[0]) {
+                            ps.setString(7, null);
+                        }
+                        if (supportsFaltaColumns[1]) {
+                            ps.setString(supportsFaltaColumns[0] ? 8 : 7, null);
+                        }
+                        ps.addBatch();
+                    }
+                    ps.executeBatch();
+                }
+
+                guardarCodigosDeAlumnos(con, planillaId, alumnos, codigosPorAlumno);
+
+                con.commit();
+                return planillaId;
+            } catch (SQLException ex) {
+                con.rollback();
+                throw ex;
+            } finally {
+                con.setAutoCommit(originalAutoCommit);
+            }
+        }
+    }
+
+    public void actualizarVerificacionPlanilla(int planillaRasgoId, String estado, Integer temaPlanId) throws SQLException {
+        String sql = "UPDATE planilla_rasgo SET estado_verificacion_tema = ? , tema_plan_curricular_id = ? WHERE id = ?";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, estado);
+            if (temaPlanId == null) ps.setNull(2, java.sql.Types.INTEGER); else ps.setInt(2, temaPlanId);
+            ps.setInt(3, planillaRasgoId);
+            ps.executeUpdate();
+        }
+    }
+
     private void guardarCodigosDeAlumnos(Connection con, int planillaId, List<Alumno> alumnos, Map<Integer, List<String>> codigosPorAlumno) throws SQLException {
         if (codigosPorAlumno == null || codigosPorAlumno.isEmpty()) return;
         String sql = "INSERT IGNORE INTO rasgo_asistencia_codigo (rasgo_asistencia_id, codigo) "
@@ -229,6 +310,45 @@ public class RasgoPlanillaDao extends conexion {
             }
         }
         return null;
+    }
+
+    public Integer findTemaPlanIdByPlanillaId(int planillaId) throws SQLException {
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement("SELECT tema_plan_curricular_id FROM planilla_rasgo WHERE id = ?")) {
+            ps.setInt(1, planillaId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getObject("tema_plan_curricular_id", Integer.class);
+                }
+            }
+        }
+        return null;
+    }
+
+    public java.util.List<ctn.informatica.sca.dto.VerificacionDudosaDto> listarVerificacionesDudosas() throws SQLException {
+        String sql = "SELECT pr.id AS planilla_id, pr.curso_id, pr.asignacion_id, m.nombre AS materia_nombre, CONCAT(u.apellido, ' ', u.nombre) AS profesor_nombre, pr.tema AS tema_ingresado, t.id AS tema_plan_id, t.temas_contenidos AS tema_esperado, pr.fecha_clase " +
+                "FROM planilla_rasgo pr " +
+                "LEFT JOIN asignacion a ON a.id = pr.asignacion_id " +
+                "LEFT JOIN materia m ON m.id = a.materia_id " +
+                "LEFT JOIN usuario u ON u.id = pr.usuario_id " +
+                "LEFT JOIN tema_plan_curricular t ON t.id = pr.tema_plan_curricular_id " +
+                "WHERE pr.estado_verificacion_tema = 'DUDOSO' " +
+                "ORDER BY pr.created_at DESC";
+        java.util.List<ctn.informatica.sca.dto.VerificacionDudosaDto> result = new java.util.ArrayList<>();
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                int planillaId = rs.getInt("planilla_id");
+                int cursoId = rs.getInt("curso_id");
+                Integer asignacionId = rs.getObject("asignacion_id", Integer.class);
+                String materiaNombre = rs.getString("materia_nombre");
+                String profesorNombre = rs.getString("profesor_nombre");
+                String temaIngresado = rs.getString("tema_ingresado");
+                Integer temaPlanId = rs.getObject("tema_plan_id", Integer.class);
+                String temaEsperado = rs.getString("tema_esperado");
+                String fechaClase = rs.getString("fecha_clase");
+                result.add(new ctn.informatica.sca.dto.VerificacionDudosaDto(planillaId, cursoId, asignacionId, materiaNombre, profesorNombre, temaIngresado, temaPlanId, temaEsperado, fechaClase));
+            }
+        }
+        return result;
     }
 
     public List<RasgoAsistencia> listarAsistencias(int planillaRasgoId) throws SQLException {

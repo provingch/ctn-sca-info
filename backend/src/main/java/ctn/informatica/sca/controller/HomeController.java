@@ -7,6 +7,7 @@ import ctn.informatica.sca.dao.MateriaDao;
 import ctn.informatica.sca.dao.PlanillaDao;
 import ctn.informatica.sca.dao.ProfesorDao;
 import ctn.informatica.sca.dao.RasgoPlanillaDao;
+import ctn.informatica.sca.dao.PlanCurricularDao;
 import ctn.informatica.sca.dao.UserDao;
 import ctn.informatica.sca.dto.AssignFaltaCodigoRequest;
 import ctn.informatica.sca.dto.AlumnoDto;
@@ -31,6 +32,8 @@ import ctn.informatica.sca.model.RasgoAsistencia;
 import ctn.informatica.sca.model.RasgoPlanilla;
 import ctn.informatica.sca.model.User;
 import ctn.informatica.sca.util.ScaUiContext;
+import ctn.informatica.sca.service.TemaVerificacionService;
+import ctn.informatica.sca.service.VerificacionResultado;
 import com.google.api.services.classroom.model.Course;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -69,11 +72,13 @@ public class HomeController {
     private final MateriaDao materiaDao;
     private final AlumnoDao alumnoDao;
     private final RasgoPlanillaDao rasgoPlanillaDao;
+    private final PlanCurricularDao planCurricularDao;
+    private final TemaVerificacionService temaVerificacionService;
     private final InstrumentoDao instrumentoDao;
     private final UserDao userDao;
 
     public HomeController() {
-        this(new CursoDao(), new ProfesorDao(), new PlanillaDao(), new MateriaDao(), new AlumnoDao(), new RasgoPlanillaDao(), new InstrumentoDao(), new UserDao());
+        this(new CursoDao(), new ProfesorDao(), new PlanillaDao(), new MateriaDao(), new AlumnoDao(), new RasgoPlanillaDao(), new InstrumentoDao(), new UserDao(), new PlanCurricularDao(), new TemaVerificacionService());
     }
 
     @Autowired
@@ -85,13 +90,17 @@ public class HomeController {
             AlumnoDao alumnoDao,
             RasgoPlanillaDao rasgoPlanillaDao,
             InstrumentoDao instrumentoDao,
-            UserDao userDao) {
+            UserDao userDao,
+            PlanCurricularDao planCurricularDao,
+            TemaVerificacionService temaVerificacionService) {
         this.cursoDao = cursoDao;
         this.profesorDao = profesorDao;
         this.planillaDao = planillaDao;
         this.materiaDao = materiaDao;
         this.alumnoDao = alumnoDao;
         this.rasgoPlanillaDao = rasgoPlanillaDao;
+        this.planCurricularDao = planCurricularDao;
+        this.temaVerificacionService = temaVerificacionService;
         this.instrumentoDao = instrumentoDao;
         this.userDao = userDao;
     }
@@ -336,7 +345,26 @@ public class HomeController {
 
         String temaPersistido = composeTemaConContexto(request.instrumentoId() == null ? 0 : request.instrumentoId(), request.turno(), tema);
         try {
-            rasgoPlanillaDao.crearPlanillaRasgo(cursoId, user.getId(), temaPersistido, elegibles, ausentes, request.codigosPorAlumno());
+            int planillaId = rasgoPlanillaDao.crearPlanillaRasgo(cursoId, user.getId(), temaPersistido, elegibles, ausentes, request.codigosPorAlumno(), request.asignacionId());
+
+            // Si se indicó asignacionId, intentamos verificar el tema contra el plan curricular.
+            if (request.asignacionId() != null) {
+                try {
+                    VerificacionResultado resultado = temaVerificacionService.verificar(request.asignacionId(), temaPersistido);
+                    rasgoPlanillaDao.actualizarVerificacionPlanilla(planillaId, resultado.estado(), resultado.temaPlanCurricularId());
+                    if ("OK".equalsIgnoreCase(resultado.estado()) && resultado.temaPlanCurricularId() != null) {
+                        try {
+                            planCurricularDao.marcarCubierto(resultado.temaPlanCurricularId(), planillaId);
+                        } catch (SQLException ex) {
+                            // No bloquear la creación de la planilla si el marcado falla; loguear y continuar
+                            System.err.println("Error marcando tema como cubierto: " + ex.getMessage());
+                        }
+                    }
+                } catch (Exception ex) {
+                    // No bloquear la creación de la planilla si la verificación falla; loguear y continuar
+                    System.err.println("Error verificando tema contra plan curricular: " + ex.getMessage());
+                }
+            }
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         } catch (SQLException ex) {
