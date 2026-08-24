@@ -147,11 +147,9 @@ public class AsignacionDao extends conexion {
     }
 
     public List<Asignacion> findByProfesorAndCurso(int profesorId, int cursoId) throws SQLException {
-        // Resolver etapa actual para consultar el estado del plan
         int currentYear = LocalDate.now().getYear();
-        LocalDate transition = LocalDate.of(currentYear, 7, 15);
-        int currentEtapa = LocalDate.now().isBefore(transition) ? 1 : 2;
-        
+        int currentEtapa = ctn.informatica.sca.util.AcademicPeriod.currentEtapa();
+
         String sql = "SELECT a.id, a.usuario_id AS profesor_id, a.materia_id, a.curso_id, "
                 + "m.nombre AS materia_nombre, e.nombre AS especialidad, c.promocion, c.seccion, "
                 + "COALESCE(p.estado, 'NO_CARGADO') AS plan_estado "
