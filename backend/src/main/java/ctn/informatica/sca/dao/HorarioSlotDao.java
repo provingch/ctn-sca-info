@@ -136,6 +136,29 @@ public class HorarioSlotDao extends conexion {
         return out;
     }
 
+    public List<ctn.informatica.sca.dto.HorarioResumenCursoDto> resumenPorCurso() throws SQLException {
+        String sql = "SELECT c.id AS curso_id, e.nombre AS especialidad, "
+                + "CONCAT(COALESCE(e.nombre, ''), CASE WHEN c.seccion IS NULL OR c.seccion = '' THEN '' ELSE CONCAT(' ', c.seccion) END) AS curso_descripcion, "
+                + "COUNT(hs.id) AS cantidad_slots_cargados "
+                + "FROM curso c "
+                + "JOIN especialidad e ON e.id = c.especialidad_id "
+                + "LEFT JOIN asignacion a ON a.curso_id = c.id "
+                + "LEFT JOIN horario_slot hs ON hs.asignacion_id = a.id "
+                + "GROUP BY c.id, e.nombre, c.seccion "
+                + "ORDER BY e.nombre, c.seccion, c.id";
+        List<ctn.informatica.sca.dto.HorarioResumenCursoDto> out = new ArrayList<>();
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                out.add(new ctn.informatica.sca.dto.HorarioResumenCursoDto(
+                        rs.getInt("curso_id"),
+                        rs.getString("especialidad"),
+                        rs.getString("curso_descripcion"),
+                        rs.getInt("cantidad_slots_cargados")));
+            }
+        }
+        return out;
+    }
+
     public List<HorarioSlot> findByCurso(int cursoId) throws SQLException {
         String sql = "SELECT hs.id, hs.asignacion_id, hs.usuario_id, hs.curso_id, hs.dia_semana, hs.hora_catedra_id, hs.sala, "
                 + "m.nombre AS materia_nombre, e.nombre AS especialidad, c.promocion, c.seccion, "

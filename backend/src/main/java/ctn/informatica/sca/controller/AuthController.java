@@ -7,6 +7,7 @@ import ctn.informatica.sca.dto.Verify2faRequest;
 import ctn.informatica.sca.dto.AuthErrorResponse;
 import ctn.informatica.sca.model.User;
 import ctn.informatica.sca.security.JwtService;
+import ctn.informatica.sca.service.ActivityLogService;
 import ctn.informatica.sca.service.AuthService;
 import ctn.informatica.sca.service.RefreshTokenService;
 import jakarta.servlet.http.Cookie;
@@ -31,16 +32,27 @@ public class AuthController {
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
     private final UserDao userDao;
+    private final ActivityLogService activityLogService;
 
     public AuthController(
             AuthService authService,
             JwtService jwtService,
             RefreshTokenService refreshTokenService,
             UserDao userDao) {
+        this(authService, jwtService, refreshTokenService, userDao, null);
+    }
+
+    public AuthController(
+            AuthService authService,
+            JwtService jwtService,
+            RefreshTokenService refreshTokenService,
+            UserDao userDao,
+            ActivityLogService activityLogService) {
         this.authService = authService;
         this.jwtService = jwtService;
         this.refreshTokenService = refreshTokenService;
         this.userDao = userDao;
+        this.activityLogService = activityLogService;
     }
 
     @PostMapping("/login")
@@ -48,6 +60,14 @@ public class AuthController {
         try {
             LoginResponse response = authService.login(req, httpRequest.getRemoteAddr());
             issueRefreshCookie(req.rememberMe(), response.accessToken(), response.level(), httpRequest, httpResponse);
+            try {
+                if (activityLogService != null && response != null && response.accessToken() != null && !response.accessToken().isBlank()) {
+                    int userId = jwtService.extractUserId(response.accessToken()).intValue();
+                    activityLogService.registrar(userId, "Inició sesión");
+                }
+            } catch (Exception ignored) {
+                // No bloquear el login si falla el registro del historial.
+            }
             return ResponseEntity.ok(response);
         } catch (AuthService.AuthException e) {
             ResponseEntity.BodyBuilder response = ResponseEntity.status(e.status());
@@ -65,6 +85,14 @@ public class AuthController {
         try {
             LoginResponse response = authService.verify2fa(req, httpRequest.getRemoteAddr());
             issueRefreshCookie(req.rememberMe(), response.accessToken(), response.level(), httpRequest, httpResponse);
+            try {
+                if (activityLogService != null && response != null && response.accessToken() != null && !response.accessToken().isBlank()) {
+                    int userId = jwtService.extractUserId(response.accessToken()).intValue();
+                    activityLogService.registrar(userId, "Inició sesión");
+                }
+            } catch (Exception ignored) {
+                // No bloquear el login si falla el registro del historial.
+            }
             return ResponseEntity.ok(response);
         } catch (AuthService.AuthException e) {
             ResponseEntity.BodyBuilder response = ResponseEntity.status(e.status());

@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.security.core.context.SecurityContextHolder;
 import ctn.informatica.sca.model.User;
+import ctn.informatica.sca.service.ActivityLogService;
 import ctn.informatica.sca.service.PlanCurricularTemplateBuilder;
 
 @RestController
@@ -44,6 +45,9 @@ public class PlanCurricularController {
 
     @Autowired
     private PlanCurricularTemplateBuilder templateBuilder;
+
+    @Autowired
+    private ActivityLogService activityLogService;
 
     private long getCurrentUserId() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -77,6 +81,13 @@ public class PlanCurricularController {
         // save
         byte[] content = file.getBytes();
         int id = dao.saveOrReplace(asignacionId, dto.etapa, dto.anio, file.getOriginalFilename(), content, dto.temas);
+        try {
+            if (activityLogService != null) {
+                activityLogService.registrar((int) getCurrentUserId(), "Subió plan curricular para asignación " + asignacionId + " (etapa " + dto.etapa + ", año " + dto.anio + ")");
+            }
+        } catch (Exception ignored) {
+            // No bloquear la carga si falla el registro del historial.
+        }
         return ResponseEntity.ok().body("Saved plan id:" + id);
     }
 
@@ -193,6 +204,15 @@ public class PlanCurricularController {
         if (user.getLevel() < 2) return ResponseEntity.status(403).build();
         
         dao.aprobar(id, (int) getCurrentUserId());
+        try {
+            if (activityLogService != null) {
+                var plan = dao.findById(id);
+                String label = plan != null && plan.disciplina != null ? plan.disciplina : "plan curricular";
+                activityLogService.registrar((int) getCurrentUserId(), "Aprobó " + label);
+            }
+        } catch (Exception ignored) {
+            // No bloquear la aprobación si falla el registro del historial.
+        }
         return ResponseEntity.ok().build();
     }
 
@@ -205,6 +225,15 @@ public class PlanCurricularController {
         
         if (observaciones == null || observaciones.isBlank()) return ResponseEntity.badRequest().body("Observaciones requeridas");
         dao.rechazar(id, (int) getCurrentUserId(), observaciones);
+        try {
+            if (activityLogService != null) {
+                var plan = dao.findById(id);
+                String label = plan != null && plan.disciplina != null ? plan.disciplina : "plan curricular";
+                activityLogService.registrar((int) getCurrentUserId(), "Rechazó " + label + " — " + observaciones);
+            }
+        } catch (Exception ignored) {
+            // No bloquear el rechazo si falla el registro del historial.
+        }
         return ResponseEntity.ok().build();
     }
 }

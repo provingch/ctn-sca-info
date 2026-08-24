@@ -32,6 +32,7 @@ import ctn.informatica.sca.model.RasgoAsistencia;
 import ctn.informatica.sca.model.RasgoPlanilla;
 import ctn.informatica.sca.model.User;
 import ctn.informatica.sca.util.ScaUiContext;
+import ctn.informatica.sca.service.ActivityLogService;
 import ctn.informatica.sca.service.TemaVerificacionService;
 import ctn.informatica.sca.service.VerificacionResultado;
 import com.google.api.services.classroom.model.Course;
@@ -76,9 +77,10 @@ public class HomeController {
     private final TemaVerificacionService temaVerificacionService;
     private final InstrumentoDao instrumentoDao;
     private final UserDao userDao;
+    private final ActivityLogService activityLogService;
 
     public HomeController() {
-        this(new CursoDao(), new ProfesorDao(), new PlanillaDao(), new MateriaDao(), new AlumnoDao(), new RasgoPlanillaDao(), new InstrumentoDao(), new UserDao(), new PlanCurricularDao(), new TemaVerificacionService());
+        this(new CursoDao(), new ProfesorDao(), new PlanillaDao(), new MateriaDao(), new AlumnoDao(), new RasgoPlanillaDao(), new InstrumentoDao(), new UserDao(), new PlanCurricularDao(), new TemaVerificacionService(), new ActivityLogService());
     }
 
     @Autowired
@@ -92,7 +94,8 @@ public class HomeController {
             InstrumentoDao instrumentoDao,
             UserDao userDao,
             PlanCurricularDao planCurricularDao,
-            TemaVerificacionService temaVerificacionService) {
+            TemaVerificacionService temaVerificacionService,
+            ActivityLogService activityLogService) {
         this.cursoDao = cursoDao;
         this.profesorDao = profesorDao;
         this.planillaDao = planillaDao;
@@ -103,6 +106,7 @@ public class HomeController {
         this.temaVerificacionService = temaVerificacionService;
         this.instrumentoDao = instrumentoDao;
         this.userDao = userDao;
+        this.activityLogService = activityLogService;
     }
 
     @GetMapping
@@ -346,6 +350,22 @@ public class HomeController {
         String temaPersistido = composeTemaConContexto(request.instrumentoId() == null ? 0 : request.instrumentoId(), request.turno(), tema);
         try {
             int planillaId = rasgoPlanillaDao.crearPlanillaRasgo(cursoId, user.getId(), temaPersistido, elegibles, ausentes, request.codigosPorAlumno(), request.asignacionId());
+            String cursoLabel = "curso " + cursoId;
+            try {
+                Curso curso = cursoDao.findById(cursoId);
+                if (curso != null) {
+                    cursoLabel = curso.getEspecialidad() + " " + curso.getSeccion();
+                }
+            } catch (Exception ignored) {
+                // fallback silencioso
+            }
+            try {
+                if (activityLogService != null) {
+                    activityLogService.registrar(user.getId(), "Registró clase — " + cursoLabel + " — tema: " + tema);
+                }
+            } catch (Exception ignored) {
+                // No bloquear la creación de la clase si falla el registro del historial.
+            }
 
             // Si se indicó asignacionId, intentamos verificar el tema contra el plan curricular.
             if (request.asignacionId() != null) {

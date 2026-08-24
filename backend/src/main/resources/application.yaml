@@ -24,3 +24,5 @@ google:
 sca:
   demo-data:
     enabled: ${SCA_LOAD_DEMO_DATA:false}
+  activity-logs:
+    dir: ${SCA_ACTIVITY_LOGS_DIR:./data/activity-logs}

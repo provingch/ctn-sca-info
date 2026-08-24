@@ -11,6 +11,19 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class SchemaMigrationDao extends conexion {
 
+    public record AppliedMigration(String version, java.sql.Timestamp appliedAt) {
+    }
+
+    public boolean dbConectada() {
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement("SELECT 1")) {
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException ex) {
+            return false;
+        }
+    }
+
     public void ensureSchema() throws SQLException {
         try (Connection con = getCon(); Statement statement = con.createStatement()) {
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS schema_migrations (version VARCHAR(255) PRIMARY KEY, applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
@@ -35,6 +48,17 @@ public class SchemaMigrationDao extends conexion {
             ps.setString(3, newVersion);
             ps.executeUpdate();
         }
+    }
+
+    public java.util.List<AppliedMigration> listApplied() throws SQLException {
+        String sql = "SELECT version, applied_at FROM schema_migrations ORDER BY applied_at DESC";
+        java.util.List<AppliedMigration> migrations = new java.util.ArrayList<>();
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                migrations.add(new AppliedMigration(rs.getString("version"), rs.getTimestamp("applied_at")));
+            }
+        }
+        return migrations;
     }
 
     public void executeAndRecord(String version, String sql) throws SQLException {
