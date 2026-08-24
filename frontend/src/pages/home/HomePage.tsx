@@ -484,6 +484,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
                   <th>#</th>
                   <th>Apellido(s) y nombre(s)</th>
                   <th style={{ textAlign: 'right', width: 140 }}>Estado (P/A)</th>
+                  <th style={{ width: 190 }}>Rasgos conductuales</th>
                 </tr>
               </thead>
               <tbody>
@@ -501,7 +502,10 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
                         <input className="ausente-checkbox" type="checkbox" value={String(alumno.id)} checked={ausentes.includes(alumno.id)} onChange={(e) => setAusentes((v) => e.target.checked ? [...v, alumno.id] : v.filter((id) => id !== alumno.id))} />
                         Ausente
                       </label>
-                      <select multiple size={2} aria-label={`Códigos de ${alumno.nombre} ${alumno.apellido}`} value={codigosPorAlumno[alumno.id] ?? []} onChange={(e) => void changeCodigos(alumno.id, Array.from(e.target.selectedOptions, (option) => option.value))} style={{ display: 'block', width: 88, marginTop: 6, fontSize: 12 }}>
+                    </td>
+                    <td>
+                      <select aria-label={`Rasgo conductual de ${alumno.nombre} ${alumno.apellido}`} value={codigosPorAlumno[alumno.id]?.[0] ?? ''} onChange={(e) => void changeCodigos(alumno.id, e.target.value ? [e.target.value] : [])} style={{ width: '100%' }}>
+                        <option value="">seleccione</option>
                         {RASGO_CODIGOS.map(([codigo]) => <option key={codigo} value={codigo}>{codigo}</option>)}
                       </select>
                     </td>
