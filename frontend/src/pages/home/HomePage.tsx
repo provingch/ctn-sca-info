@@ -335,7 +335,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
       return;
     }
     try {
-      await createClass({ cursoId: data.selCurso.id, etapa: data.selEtapa, instrumentoId, turno: 'turno', tema, alumnosAusentes: ausentes, codigosPorAlumno });
+      await createClass({ cursoId: data.selCurso.id, asignacionId: selectedAsignacionId ?? asignacionActual?.id ?? null, etapa: data.selEtapa, instrumentoId, turno: 'turno', tema, alumnosAusentes: ausentes, codigosPorAlumno });
       setStatus('Clase registrada.');
       setTema('');
       setDisciplina('');

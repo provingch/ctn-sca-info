@@ -2,6 +2,7 @@ package ctn.informatica.sca.web;
 
 import ctn.informatica.sca.dao.AsignacionDao;
 import ctn.informatica.sca.dao.PlanCurricularDao;
+import ctn.informatica.sca.dao.RasgoPlanillaDao;
 import ctn.informatica.sca.dao.UserDao;
 import ctn.informatica.sca.dto.PlanCurricularDto;
 import ctn.informatica.sca.service.PlanCurricularParser;
@@ -31,6 +32,9 @@ public class PlanCurricularController {
 
     @Autowired
     private PlanCurricularDao dao;
+
+    @Autowired
+    private RasgoPlanillaDao rasgoPlanillaDao;
 
     @Autowired
     private AsignacionDao asignacionDao;
@@ -119,6 +123,38 @@ public class PlanCurricularController {
         
         List<PlanCurricularDto> plans = dao.findPendientes();
         return ResponseEntity.ok(plans);
+    }
+
+    @GetMapping("/verificaciones-dudosas")
+    public ResponseEntity<?> verificacionesDudosas() throws Exception {
+        User user = getCurrentUser();
+        if (user == null) return ResponseEntity.status(401).build();
+        if (user.getLevel() < 2) return ResponseEntity.status(403).build();
+        var list = rasgoPlanillaDao.listarVerificacionesDudosas();
+        return ResponseEntity.ok(list);
+    }
+
+    @PostMapping("/verificacion/{planillaRasgoId}/confirmar")
+    public ResponseEntity<?> confirmarVerificacion(@PathVariable int planillaRasgoId) throws Exception {
+        User user = getCurrentUser();
+        if (user == null) return ResponseEntity.status(401).build();
+        if (user.getLevel() < 2) return ResponseEntity.status(403).build();
+        Integer temaPlanId = rasgoPlanillaDao.findTemaPlanIdByPlanillaId(planillaRasgoId);
+        // marcar cubierto si hay tema candidato
+        if (temaPlanId != null) dao.marcarCubierto(temaPlanId, planillaRasgoId);
+        rasgoPlanillaDao.actualizarVerificacionPlanilla(planillaRasgoId, "OK", temaPlanId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/verificacion/{planillaRasgoId}/descartar")
+    public ResponseEntity<?> descartarVerificacion(@PathVariable int planillaRasgoId) throws Exception {
+        User user = getCurrentUser();
+        if (user == null) return ResponseEntity.status(401).build();
+        if (user.getLevel() < 2) return ResponseEntity.status(403).build();
+        Integer temaPlanId = rasgoPlanillaDao.findTemaPlanIdByPlanillaId(planillaRasgoId);
+        // no tocar tema_plan_curricular (permanece PENDIENTE)
+        rasgoPlanillaDao.actualizarVerificacionPlanilla(planillaRasgoId, "NO_COINCIDE", temaPlanId);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/{id}")

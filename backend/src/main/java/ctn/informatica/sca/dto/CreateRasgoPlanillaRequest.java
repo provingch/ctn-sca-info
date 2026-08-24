@@ -5,6 +5,7 @@ import java.util.Map;
 
 public record CreateRasgoPlanillaRequest(
         Integer cursoId,
+        Integer asignacionId,
         Integer etapa,
         Integer instrumentoId,
         String turno,

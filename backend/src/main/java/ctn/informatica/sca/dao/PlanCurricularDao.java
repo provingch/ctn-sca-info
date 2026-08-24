@@ -272,4 +272,12 @@ public class PlanCurricularDao extends conexion {
             }
         }
     }
+
+    public void marcarCubierto(int temaId, int planillaRasgoId) throws SQLException {
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("UPDATE tema_plan_curricular SET estado_cobertura = 'CUBIERTO', fecha_cobertura = CURRENT_TIMESTAMP, planilla_rasgo_id = ? WHERE id = ?")) {
+            ps.setInt(1, planillaRasgoId);
+            ps.setInt(2, temaId);
+            ps.executeUpdate();
+        }
+    }
 }
