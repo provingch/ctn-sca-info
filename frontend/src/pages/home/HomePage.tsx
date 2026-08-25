@@ -249,6 +249,7 @@ function PlanillasView({ data, syncingProp, setSyncingProp }: { data: HomeRespon
 }
 
 function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise<void> }) {
+  const [, setSearch] = useSearchParams();
   const [tema, setTema] = useState('');
   const [asignacionesDisponibles, setAsignacionesDisponibles] = useState<Array<{ id: number; materiaId: number; materiaNombre?: string; estadoPlan?: string }>>([]);
   const [selectedAsignacionId, setSelectedAsignacionId] = useState<number | null>(null);
@@ -377,10 +378,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
             <button
               type="button"
               className="button secondary"
-              onClick={() => {
-                const params = new URLSearchParams({ view: 'catedra', subview: 'plan-curricular' });
-                window.location.hash = `?${params.toString()}`;
-              }}
+              onClick={() => setSearch({ view: 'catedra', subview: 'plan-curricular' })}
             >
               Ir a cargar/revisar Plan curricular
             </button>

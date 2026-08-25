@@ -608,6 +608,10 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .admin-dashboard-heading span, .admin-summary-heading span, .system-status-grid article > span { color: var(--accent-deep); font-size: .7rem; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
 .admin-dashboard-heading h2, .admin-summary-heading h2 { margin: 4px 0 0; font-size: 1.15rem; }
 .admin-reference-section .card-grid { max-width: 420px; }
+.admin-scope-badge, .admin-single-specialty { display: grid; gap: 2px; padding: 9px 12px; border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--line)); border-radius: var(--radius-sm); background: var(--accent-soft); color: var(--accent-deep); }
+.admin-scope-badge { margin-left: auto; }
+.admin-scope-badge small, .admin-single-specialty small { color: var(--muted); font-size: .68rem; font-weight: 750; letter-spacing: .05em; text-transform: uppercase; }
+.field-help { color: var(--muted); font-size: .74rem; font-weight: 500; line-height: 1.4; }
 .admin-summary-section { margin: 0; padding: 20px 24px; }
 .admin-summary-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
 .admin-summary-heading > strong { color: var(--muted); font-size: .8rem; }

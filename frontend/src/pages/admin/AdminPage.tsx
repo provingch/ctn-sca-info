@@ -19,8 +19,8 @@ const modules = [
   { path: '/admin/usuarios', key: 'usuarios', title: 'Usuarios', detail: 'Altas, roles y datos de acceso' },
   { path: '/admin/asignaciones', key: 'asignaciones', title: 'Asignaciones', detail: 'Profesor, materia y curso' },
   { path: '/admin/alumnos', key: 'alumnos', title: 'Alumnos', detail: 'Carga de estudiantes y gestión por sección' },
-  { path: '/admin/horarios', key: 'horarios', title: 'Horarios', detail: 'Vista y descarga de horarios por especialidad' },
-  { path: '/admin/sistema', key: 'sistema', title: 'Estado del sistema', detail: 'Salud de base de datos, migraciones y sincronización' },
+  { path: '/admin/horarios', key: 'horarios', title: 'Horarios', detail: 'Vista y descarga de horarios por especialidad', globalOnly: true },
+  { path: '/admin/sistema', key: 'sistema', title: 'Estado del sistema', detail: 'Salud de base de datos, migraciones y sincronización', globalOnly: true },
 ];
 
 export default function AdminPage() {
@@ -43,19 +43,26 @@ export default function AdminPage() {
     return <AppShell title={selected?.title || 'Panel general'}><ContentState tone={status ? 'error' : 'loading'} title={status || 'Cargando administración…'} detail={status ? 'Recargá la página para volver a intentarlo.' : 'Estamos preparando el catálogo del sistema.'} /></AppShell>;
   }
 
-  return <AppShell title={selected?.title || 'Panel general'}>
-    <AdminToolbar data={data} showBack={Boolean(selected)} />
+  const isScopedAdmin = data.especialidadId != null;
+  const visibleModules = modules.filter((module) => !isScopedAdmin || !('globalOnly' in module && module.globalOnly));
+  const selectedIsRestricted = Boolean(selected && isScopedAdmin && 'globalOnly' in selected && selected.globalOnly);
+  const scopeName = data.especialidadNombre ?? data.especialidades.find((item) => item.id === data.especialidadId)?.nombre ?? null;
+
+  return <AppShell title={selected?.title || 'Panel general'} subtitle={scopeName ? `Administración de ${scopeName}` : 'Administración global del sistema'} specialty={scopeName}>
+    <AdminToolbar data={data} showBack={Boolean(selected)} scopeName={scopeName} />
     {status && <div className="notice" role="status">{status}</div>}
-    {!selected ? (
+    {selectedIsRestricted ? (
+      <ContentState tone="error" title="Módulo reservado al administrador global" detail="Tu cuenta administra una especialidad y no tiene acceso a esta herramienta del sistema." actions={<Link className="button" to="/admin">Volver al panel</Link>} />
+    ) : !selected ? (
       <div className="admin-dashboard-sections">
         <section aria-labelledby="admin-management-title">
           <header className="admin-dashboard-heading"><span>Administración</span><h2 id="admin-management-title">Gestión del sistema</h2></header>
-          <div className="card-grid">{modules.map((module) => <Link className="nav-card" to={module.path} key={module.path}><span>Gestionar</span><h2>{module.title}</h2><p>{module.detail}</p><strong>Abrir →</strong></Link>)}</div>
+          <div className="card-grid">{visibleModules.map((module) => <Link className="nav-card" to={module.path} key={module.path}><span>Gestionar</span><h2>{module.title}</h2><p>{module.detail}</p><strong>Abrir →</strong></Link>)}</div>
         </section>
-        <section className="admin-reference-section" aria-labelledby="admin-reference-title">
+        {!isScopedAdmin && <section className="admin-reference-section" aria-labelledby="admin-reference-title">
           <header className="admin-dashboard-heading"><span>Referencia</span><h2 id="admin-reference-title">Herramientas internas</h2></header>
           <div className="card-grid"><Link className="nav-card" to="/styleguide"><span>Referencia interna</span><h2>Sistema de diseño</h2><p>Componentes, estados y reglas visuales compartidas.</p><strong>Consultar →</strong></Link></div>
-        </section>
+        </section>}
       </div>
     ) : (
       <AdminModule module={selected} data={data} reload={load} status={setStatus} />
@@ -64,7 +71,7 @@ export default function AdminPage() {
   </AppShell>;
 }
 
-function AdminToolbar({ data, showBack }: { data: AdminCatalog; showBack: boolean }) {
+function AdminToolbar({ data, showBack, scopeName }: { data: AdminCatalog; showBack: boolean; scopeName: string | null }) {
   const { id, name, selectSpecialty, resetSpecialty } = useSpecialty();
   const selectedId = id ?? data.especialidades.find((item) => normalizeSpecialty(item.nombre) === normalizeSpecialty(name))?.id ?? 0;
 
@@ -76,9 +83,10 @@ function AdminToolbar({ data, showBack }: { data: AdminCatalog; showBack: boolea
 
   return <div className="toolbar filters admin-toolbar">
     {showBack && <Link className="button secondary" to="/admin">← Panel general</Link>}
-    <label className="inline-filter">Paleta del sistema
+    {scopeName && <span className="admin-scope-badge"><small>Especialidad gestionada</small><strong>{scopeName}</strong></span>}
+    {!scopeName && data.especialidades.length > 1 && <label className="inline-filter">Paleta del sistema
       <AnimatedSelect ariaLabel="Paleta del sistema" value={selectedId} onChange={(value) => changePalette(Number(value))} options={[{ value: 0, label: 'Institucional (predeterminada)' }, ...data.especialidades.map((specialty) => ({ value: specialty.id, label: specialty.nombre }))]} />
-    </label>
+    </label>}
   </div>;
 }
 
@@ -86,7 +94,7 @@ function AdminModule({ module, data, reload, status }: {
   module: (typeof modules)[number]; data: AdminCatalog; reload: () => Promise<void>; status: (message: string) => void;
 }) {
   if (module.key === 'materias') return <MateriasPanel data={data} reload={reload} status={status} />;
-  if (module.key === 'usuarios') return <UsuariosPanel data={data} reload={reload} status={status} />;
+  if (module.key === 'usuarios') return <UsuariosPanel data={data} reload={reload} status={status} isGlobalAdmin={data.especialidadId == null} />;
   if (module.key === 'asignaciones') return <AsignacionesPanel data={data} reload={reload} status={status} />;
   if (module.key === 'alumnos') return <AlumnosPanel data={data} reload={reload} status={status} />;
   if (module.key === 'horarios') return <HorariosPanel status={status} />;
