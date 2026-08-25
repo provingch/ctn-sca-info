@@ -75,13 +75,28 @@ public class AdminController {
             Integer actingSpecialtyId = getSpecialtyAdminIdForUser(ApiAuth.requireUserId(authentication));
 
             List<Materia> materiasDb = materiaDao.listAll();
+            if (actingSpecialtyId != null) {
+                materiasDb = materiasDb.stream().filter(m -> canAccessMateria(actingSpecialtyId, m.getId())).toList();
+            }
             List<MateriaItem> materias = new java.util.ArrayList<>();
+            java.util.Map<Integer, String> especialidadNombreById = new EspecialidadDao().findAll().stream()
+                .collect(java.util.stream.Collectors.toMap(Especialidad::getId, Especialidad::getNombre, (current, replacement) -> current));
             for (Materia m : materiasDb) {
                 materias.add(new MateriaItem(m.getId(), m.getNombre(), m.getCategoria(), materiaDao.listEspecialidadIdsForMateria(m.getId())));
             }
             List<UserItem> usuarios = new java.util.ArrayList<>();
             List<Profesor> profesoresDb = actingSpecialtyId == null ? profesorDao.findAll() : profesorDao.findByEspecialidadId(actingSpecialtyId);
-            usuarios.addAll(profesoresDb.stream().map(p -> new UserItem(p.getId(), p.getNombre(), p.getApellido(), p.getUsuario(), p.getNivel(), p.getCorreo(), p.getCi())).toList());
+            usuarios.addAll(profesoresDb.stream().map(p -> new UserItem(
+                p.getId(),
+                p.getNombre(),
+                p.getApellido(),
+                p.getUsuario(),
+                p.getNivel(),
+                p.getCorreo(),
+                p.getCi(),
+                p.getEspecialidadId(),
+                p.getEspecialidadId() == null ? null : especialidadNombreById.get(p.getEspecialidadId())
+            )).toList());
             if (actingSpecialtyId == null) {
                 usuarios.addAll(padreDao.findAll().stream().map(p -> new UserItem(p.getId(), p.getNombre(), p.getApellido(), p.getUsuario(), 4, p.getCorreo(), p.getCi())).toList());
             }
@@ -90,8 +105,16 @@ public class AdminController {
                 if (byApellido != 0) return byApellido;
                 return Integer.compare(a.id(), b.id());
             });
-            List<AssignmentItem> asignaciones = new AsignacionDao().findAll().stream().map(a -> new AssignmentItem(a.getId(), a.getProfesorId(), a.getMateriaId(), a.getCursoId(), a.getProfesorNombre(), a.getMateriaNombre(), a.getCursoDescripcion())).toList();
-            List<StudentItem> alumnos = new AlumnoDao().findAll().stream().map(a -> new StudentItem(a.getId(), a.getNombre(), a.getApellido(), a.getCursoId(), a.getCi(), a.getCorreoEncargado(), a.getCorreoEncargado2())).toList();
+            List<Asignacion> asignacionesDb = new AsignacionDao().findAll();
+            if (actingSpecialtyId != null) {
+                asignacionesDb = asignacionesDb.stream().filter(a -> canAccessAsignacion(actingSpecialtyId, a.getCursoId())).toList();
+            }
+            List<AssignmentItem> asignaciones = asignacionesDb.stream().map(a -> new AssignmentItem(a.getId(), a.getProfesorId(), a.getMateriaId(), a.getCursoId(), a.getProfesorNombre(), a.getMateriaNombre(), a.getCursoDescripcion())).toList();
+            List<Alumno> alumnosDb = new AlumnoDao().findAll();
+            if (actingSpecialtyId != null) {
+                alumnosDb = alumnosDb.stream().filter(a -> canAccessAlumno(actingSpecialtyId, a.getCursoId())).toList();
+            }
+            List<StudentItem> alumnos = alumnosDb.stream().map(a -> new StudentItem(a.getId(), a.getNombre(), a.getApellido(), a.getCursoId(), a.getCi(), a.getCorreoEncargado(), a.getCorreoEncargado2())).toList();
             List<CourseItem> cursos = new CursoDao().findAll().stream().map(c -> new CourseItem(c.getId(), c.getEspecialidad(), c.getNivel(), c.getSeccion())).toList();
             List<SpecialtyItem> especialidades = new EspecialidadDao().findAll().stream().map(e -> new SpecialtyItem(e.getId(), e.getNombre())).toList();
             return new CatalogResponse(materias, usuarios, asignaciones, alumnos, cursos, especialidades);
@@ -106,9 +129,13 @@ public class AdminController {
         require(input != null && notBlank(input.nombre()), "El nombre es requerido");
         validateMateriaEspecialidades(input);
         try {
+            Integer actingSpecialtyId = getSpecialtyAdminIdForUser(ApiAuth.requireUserId(auth));
             MateriaDao materiaDao = new MateriaDao();
             if (materiaDao.findById(id) == null) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Materia no encontrada");
+            }
+            if (actingSpecialtyId != null && !canAccessMateria(actingSpecialtyId, id)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes modificar materias fuera de tu especialidad");
             }
             String categoria = normalizeCategoria(input.categoria());
             if (!materiaDao.update(id, input.nombre().trim(), categoria)) {
@@ -127,6 +154,10 @@ public class AdminController {
         ApiAuth.requireUserId(auth); require(input != null && notBlank(input.nombre()), "El nombre es requerido");
         validateMateriaEspecialidades(input);
         try {
+            Integer actingSpecialtyId = getSpecialtyAdminIdForUser(ApiAuth.requireUserId(auth));
+            if (actingSpecialtyId != null && input.especialidadIds() != null && !input.especialidadIds().isEmpty() && !input.especialidadIds().contains(actingSpecialtyId)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes crear materias fuera de tu especialidad");
+            }
             String categoria = normalizeCategoria(input.categoria());
             int id = new MateriaDao().create(input.nombre().trim(), categoria);
             if (input.especialidadIds() != null) new MateriaDao().replaceEspecialidades(id, input.especialidadIds());
@@ -136,6 +167,7 @@ public class AdminController {
                 log.warn("No se pudo registrar actividad para usuario {}: {}", ApiAuth.requireUserId(auth), ex.getMessage());
             }
         }
+        catch (ResponseStatusException ex) { throw ex; }
         catch (Exception ex) { throw failure("No se pudo crear la materia", ex); }
     }
 
@@ -265,7 +297,13 @@ public class AdminController {
     @PostMapping("/asignaciones") @ResponseStatus(HttpStatus.CREATED)
     public void createAssignment(@RequestBody AssignmentInput input, Authentication auth) {
         ApiAuth.requireUserId(auth); require(input != null && input.profesorId() > 0 && input.materiaId() > 0 && input.cursoId() > 0, "Profesor, materia y curso son requeridos");
-        try { if (new AsignacionDao().crear(input.profesorId(), input.materiaId(), input.cursoId()) <= 0) throw new ResponseStatusException(HttpStatus.CONFLICT, "La asignación ya existe"); }
+        try {
+            Integer actingSpecialtyId = getSpecialtyAdminIdForUser(ApiAuth.requireUserId(auth));
+            if (actingSpecialtyId != null && !canAccessAsignacion(actingSpecialtyId, input.cursoId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes crear asignaciones fuera de tu especialidad");
+            }
+            if (new AsignacionDao().crear(input.profesorId(), input.materiaId(), input.cursoId()) <= 0) throw new ResponseStatusException(HttpStatus.CONFLICT, "La asignación ya existe");
+        }
         catch (ResponseStatusException ex) { throw ex; } catch (Exception ex) { throw failure("No se pudo crear la asignación", ex); }
     }
 
@@ -273,6 +311,12 @@ public class AdminController {
     public void deleteAssignment(@PathVariable int id, Authentication auth) {
         ApiAuth.requireUserId(auth);
         try {
+            Integer actingSpecialtyId = getSpecialtyAdminIdForUser(ApiAuth.requireUserId(auth));
+            Asignacion existente = new AsignacionDao().findById(id);
+            if (existente == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Asignación no encontrada");
+            if (actingSpecialtyId != null && !canAccessAsignacion(actingSpecialtyId, existente.getCursoId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes eliminar asignaciones fuera de tu especialidad");
+            }
             if (!new AsignacionDao().eliminar(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Asignación no encontrada");
             try {
                 activityLogService.registrar(ApiAuth.requireUserId(auth), "Eliminó asignación #" + id);
@@ -286,6 +330,10 @@ public class AdminController {
     public void deleteMateria(@PathVariable int id, Authentication auth) {
         ApiAuth.requireUserId(auth);
         try {
+            Integer actingSpecialtyId = getSpecialtyAdminIdForUser(ApiAuth.requireUserId(auth));
+            if (actingSpecialtyId != null && !canAccessMateria(actingSpecialtyId, id)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes eliminar materias fuera de tu especialidad");
+            }
             boolean deleted = new MateriaDao().delete(id);
             if (!deleted) throw new ResponseStatusException(HttpStatus.CONFLICT, "No se pudo eliminar: la materia está referenciada por planillas o no existe");
             try {
@@ -371,9 +419,16 @@ public class AdminController {
         ApiAuth.requireUserId(auth);
         require(input != null && input.materiaId() > 0 && input.cursoId() > 0, "Materia y curso son requeridos");
         try {
+            Integer actingSpecialtyId = getSpecialtyAdminIdForUser(ApiAuth.requireUserId(auth));
             AsignacionDao dao = new AsignacionDao();
             Asignacion existente = dao.findById(id);
             if (existente == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Asignación no encontrada");
+            if (actingSpecialtyId != null && !canAccessAsignacion(actingSpecialtyId, existente.getCursoId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes editar asignaciones fuera de tu especialidad");
+            }
+            if (actingSpecialtyId != null && !canAccessAsignacion(actingSpecialtyId, input.cursoId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes mover asignaciones a cursos fuera de tu especialidad");
+            }
             if (dao.existe(existente.getProfesorId(), input.materiaId(), input.cursoId())) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "La asignación ya existe");
             }
@@ -401,6 +456,12 @@ public class AdminController {
     public void deleteAlumno(@PathVariable int id, Authentication auth) {
         ApiAuth.requireUserId(auth);
         try {
+            Integer actingSpecialtyId = getSpecialtyAdminIdForUser(ApiAuth.requireUserId(auth));
+            Alumno alumno = new AlumnoDao().findById(id);
+            if (alumno == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Alumno no encontrado o no se pudo eliminar");
+            if (actingSpecialtyId != null && !canAccessAlumno(actingSpecialtyId, alumno.getCursoId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes eliminar alumnos fuera de tu especialidad");
+            }
             if (!new AlumnoDao().delete(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Alumno no encontrado o no se pudo eliminar");
             try {
                 activityLogService.registrar(ApiAuth.requireUserId(auth), "Eliminó alumno #" + id);
@@ -420,9 +481,17 @@ public class AdminController {
         ApiAuth.requireUserId(auth);
         require(input != null && notBlank(input.nombre()) && notBlank(input.apellido()) && input.cursoId() > 0, "Nombre, apellido y curso son requeridos");
         try {
+            Integer actingSpecialtyId = getSpecialtyAdminIdForUser(ApiAuth.requireUserId(auth));
             AlumnoDao alumnoDao = new AlumnoDao();
-            if (alumnoDao.findById(id) == null) {
+            Alumno existing = alumnoDao.findById(id);
+            if (existing == null) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Alumno no encontrado");
+            }
+            if (actingSpecialtyId != null && !canAccessAlumno(actingSpecialtyId, existing.getCursoId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes editar alumnos fuera de tu especialidad");
+            }
+            if (actingSpecialtyId != null && !canAccessAlumno(actingSpecialtyId, input.cursoId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes mover alumnos a cursos fuera de tu especialidad");
             }
             if (!alumnoDao.update(id, input.nombre().trim(), input.apellido().trim(), input.cursoId(), input.ci(), input.correoEncargado(), input.correoEncargado2())) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Alumno no encontrado");
@@ -442,7 +511,13 @@ public class AdminController {
     @PostMapping("/alumnos") @ResponseStatus(HttpStatus.CREATED)
     public void createStudent(@RequestBody StudentInput input, Authentication auth) {
         ApiAuth.requireUserId(auth); require(input != null && notBlank(input.nombre()) && notBlank(input.apellido()) && input.cursoId() > 0, "Nombre, apellido y curso son requeridos");
-        try { new AlumnoDao().create(input.nombre().trim(), input.apellido().trim(), input.cursoId(), input.ci(), input.correoEncargado(), input.correoEncargado2()); } catch (Exception ex) { throw failure("No se pudo crear el alumno", ex); }
+        try {
+            Integer actingSpecialtyId = getSpecialtyAdminIdForUser(ApiAuth.requireUserId(auth));
+            if (actingSpecialtyId != null && !canAccessAlumno(actingSpecialtyId, input.cursoId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes crear alumnos fuera de tu especialidad");
+            }
+            new AlumnoDao().create(input.nombre().trim(), input.apellido().trim(), input.cursoId(), input.ci(), input.correoEncargado(), input.correoEncargado2());
+        } catch (ResponseStatusException ex) { throw ex; } catch (Exception ex) { throw failure("No se pudo crear el alumno", ex); }
     }
 
     @PostMapping("/ingresantes") @ResponseStatus(HttpStatus.CREATED)
@@ -552,6 +627,9 @@ public class AdminController {
 
     static void validateAdminMutationAccess(Integer actingSpecialtyId, Integer targetSpecialtyId, int targetLevel) {
         if (actingSpecialtyId == null) {
+            if (targetLevel == 3 && targetSpecialtyId == null) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El administrador global no puede editar ni eliminar a otro administrador global");
+            }
             return;
         }
         if (targetLevel == 3) {
@@ -569,6 +647,51 @@ public class AdminController {
             return null;
         }
         return professor.getEspecialidadId();
+    }
+
+    private boolean canAccessMateria(Integer actingSpecialtyId, int materiaId) {
+        if (actingSpecialtyId == null) return true;
+        try {
+            List<Integer> especialidades = new MateriaDao().listEspecialidadIdsForMateria(materiaId);
+            return especialidades == null || especialidades.isEmpty() || especialidades.contains(actingSpecialtyId);
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo validar el alcance por especialidad de la materia", ex);
+        }
+    }
+
+    private boolean canAccessAsignacion(Integer actingSpecialtyId, int cursoId) {
+        if (actingSpecialtyId == null) return true;
+        try {
+            Integer cursoEspecialidadId = getEspecialidadIdForCurso(cursoId);
+            return cursoEspecialidadId != null && cursoEspecialidadId.equals(actingSpecialtyId);
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo validar el alcance por especialidad de la asignación", ex);
+        }
+    }
+
+    private boolean canAccessAlumno(Integer actingSpecialtyId, int cursoId) {
+        if (actingSpecialtyId == null) return true;
+        try {
+            Integer cursoEspecialidadId = getEspecialidadIdForCurso(cursoId);
+            return cursoEspecialidadId != null && cursoEspecialidadId.equals(actingSpecialtyId);
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo validar el alcance por especialidad del alumno", ex);
+        }
+    }
+
+    private Integer getEspecialidadIdForCurso(int cursoId) {
+        try (java.sql.Connection con = new CursoDao().getCon(); java.sql.PreparedStatement ps = con.prepareStatement("SELECT especialidad_id FROM curso WHERE id = ?")) {
+            ps.setInt(1, cursoId);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    int value = rs.getInt("especialidad_id");
+                    return rs.wasNull() ? null : value;
+                }
+                return null;
+            }
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     private Integer normalizeAdminEspecialidadId(int level, Integer especialidadId) {
@@ -621,7 +744,11 @@ public class AdminController {
     public record CatalogResponse(List<MateriaItem> materias, List<UserItem> usuarios, List<AssignmentItem> asignaciones, List<StudentItem> alumnos, List<CourseItem> cursos, List<SpecialtyItem> especialidades) {}
     public record MateriaItem(int id, String nombre, String categoria, List<Integer> especialidadIds) {}
     public record PadreSummary(int id, String nombre, String apellido, Integer ci, String usuario) {}
-    public record UserItem(int id, String nombre, String apellido, String usuario, int nivel, String correo, Integer ci) {}
+    public record UserItem(int id, String nombre, String apellido, String usuario, int nivel, String correo, Integer ci, Integer especialidadId, String especialidadNombre) {
+        public UserItem(int id, String nombre, String apellido, String usuario, int nivel, String correo, Integer ci) {
+            this(id, nombre, apellido, usuario, nivel, correo, ci, null, null);
+        }
+    }
     public record AssignmentItem(int id, int profesorId, int materiaId, int cursoId, String profesor, String materia, String curso) {}
     public record StudentItem(int id, String nombre, String apellido, int cursoId, Integer ci, String correoEncargado, String correoEncargado2) {}
     public record CourseItem(int id, String especialidad, int nivel, String seccion) {}
