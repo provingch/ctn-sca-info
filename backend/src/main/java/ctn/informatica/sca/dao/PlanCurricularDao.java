@@ -1,8 +1,5 @@
 package ctn.informatica.sca.dao;
 
-import ctn.informatica.sca.clases.conexion;
-import ctn.informatica.sca.dto.PlanCurricularDto;
-import ctn.informatica.sca.dto.TemaPlanDto;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -10,7 +7,12 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.springframework.stereotype.Repository;
+
+import ctn.informatica.sca.clases.conexion;
+import ctn.informatica.sca.dto.PlanCurricularDto;
+import ctn.informatica.sca.dto.TemaPlanDto;
 
 @Repository
 public class PlanCurricularDao extends conexion {
@@ -179,17 +181,17 @@ public class PlanCurricularDao extends conexion {
                 dto.estado = rs.getString("estado");
                 dto.archivoNombre = rs.getString("archivo_nombre");
                 dto.fechaSubida = rs.getString("fecha_subida");
-                dto.materiaNombre = (Integer) rs.getObject("materia_nombre");
+                dto.materiaNombre = rs.getString("materia_nombre");
                 String profApellido = rs.getString("profesor_apellido");
                 String profNombre = rs.getString("profesor_nombre");
                 String profNombreCompleto = (profApellido == null ? "" : profApellido) + 
                         (profNombre == null ? "" : (profNombre.isBlank() ? "" : (" " + profNombre)));
-                dto.profesorNombre = (Integer) rs.getObject("profesor_nombre");
+                dto.profesorNombre = profNombreCompleto;
                 String especialidad = rs.getString("especialidad");
                 String seccion = rs.getString("seccion");
                 String cursoDesc = (especialidad == null ? "" : especialidad) + 
                         (seccion == null || seccion.isBlank() ? "" : (" " + seccion));
-                dto.cursoDescripcion = (Integer) rs.getObject("curso_descripcion");
+                dto.cursoDescripcion = cursoDesc;
                 dto.especialidad = especialidad;
                 result.add(dto);
             }
@@ -231,12 +233,14 @@ public class PlanCurricularDao extends conexion {
                         dto.anio = rs.getInt("anio_lectivo");
                         String profApellido = rs.getString("profesor_apellido");
                         String profNombre = rs.getString("profesor_nombre");
-                        dto.profesorNombre = (Integer) rs.getObject("profesor_nombre");
+                        dto.profesorNombre = (profApellido == null ? "" : profApellido) +
+                            (profNombre == null ? "" : (profNombre.isBlank() ? "" : (" " + profNombre)));
                         String especialidad = rs.getString("especialidad");
                         String seccion = rs.getString("seccion");
                         dto.especialidad = especialidad;
-                        dto.cursoDescripcion = (Integer) rs.getObject("promocion");
-                        dto.materiaNombre = (Integer) rs.getObject("materia_nombre");
+                        dto.cursoDescripcion = (especialidad == null ? "" : especialidad) +
+                            (seccion == null || seccion.isBlank() ? "" : (" " + seccion));
+                        dto.materiaNombre = rs.getString("materia_nombre");
                     }
                     Integer temaId = rs.getObject("tema_id", Integer.class);
                     if (temaId != null) {
