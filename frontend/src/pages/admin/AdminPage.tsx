@@ -13,6 +13,7 @@ import UsuariosPanel from './UsuariosPanel';
 import AsignacionesPanel from './AsignacionesPanel';
 import AlumnosPanel from './AlumnosPanel';
 import HorariosPanel from './HorariosPanel';
+import SpecialtyIcon from '../../components/SpecialtyIcon';
 import SistemaEstadoPanel from './SistemaEstadoPanel';
 
 const modules = [
@@ -93,7 +94,7 @@ function AdminToolbar({ data, showBack, scopeName }: { data: AdminCatalog; showB
 
   return <div className="toolbar filters admin-toolbar">
     {showBack && <Link className="button secondary" to="/admin">← Panel general</Link>}
-    {scopeName && <span className="admin-scope-badge"><small>Especialidad gestionada</small><strong>{scopeName}</strong></span>}
+    {scopeName && <span className="admin-scope-badge"><small>Especialidad gestionada</small><strong className="specialty-card-title"><SpecialtyIcon name={scopeName} />{scopeName}</strong></span>}
     {!scopeName && data.especialidades.length > 1 && <label className="inline-filter">Paleta del sistema
       <AnimatedSelect ariaLabel="Paleta del sistema" value={selectedId} onChange={(value) => changePalette(Number(value))} options={[{ value: 0, label: 'Institucional (predeterminada)' }, ...data.especialidades.map((specialty) => ({ value: specialty.id, label: specialty.nombre }))]} />
     </label>}

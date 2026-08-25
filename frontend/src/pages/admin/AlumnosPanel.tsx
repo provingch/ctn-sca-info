@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError } from '../../api/client';
 import { buscarPadres, createAdminRecord, deleteAdminRecord, getPadresDeAlumno, linkPadreAlumno, unlinkPadreAlumno, updateAdminRecord, type AdminCatalog, type PadreSummary } from '../../api/admin';
 import { normalizeSpecialty } from '../../theme/theme';
+import SpecialtyIcon from '../../components/SpecialtyIcon';
 
 interface AlumnosPanelProps {
   data: AdminCatalog;
@@ -14,7 +15,7 @@ type ViewStep = 'especialidades' | 'cursos' | 'secciones' | 'tabla';
 export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps) {
   const [step, setStep] = useState<ViewStep>('especialidades');
   const [selectedEspecialidadId, setSelectedEspecialidadId] = useState<number | null>(null);
-  const [selectedCursoId, setSelectedCursoId] = useState<number | null>(null);
+  const [selectedNivel, setSelectedNivel] = useState<number | null>(null);
   const [selectedSeccion, setSelectedSeccion] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -35,16 +36,16 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
   }, [data.cursos, especialidades]);
 
   const rows = useMemo(() => {
-    if (selectedEspecialidadId === null || selectedCursoId === null || selectedSeccion === null) return [];
+    if (selectedEspecialidadId === null || selectedNivel === null || selectedSeccion === null) return [];
     return data.alumnos.filter((student) => {
       const course = data.cursos.find((item) => item.id === student.cursoId);
-      return course && course.especialidad === especialidades.find((e) => e.id === selectedEspecialidadId)?.nombre && course.id === selectedCursoId && course.seccion === selectedSeccion;
+      return course && course.especialidad === especialidades.find((e) => e.id === selectedEspecialidadId)?.nombre && course.nivel === selectedNivel && course.seccion === selectedSeccion;
     });
-  }, [data.alumnos, data.cursos, especialidades, selectedCursoId, selectedEspecialidadId, selectedSeccion]);
+  }, [data.alumnos, data.cursos, especialidades, selectedNivel, selectedEspecialidadId, selectedSeccion]);
 
   const openCreate = () => {
     setEditingId(null);
-    const preselectedCourse = selectedCursoId ? String(selectedCursoId) : '';
+    const preselectedCourse = currentCurso ? String(currentCurso.id) : '';
     setForm({ nombre: '', apellido: '', ci: '', cursoId: preselectedCourse, correoEncargado: '', correoEncargado2: '' });
     setPadres([]);
     setPadresSearch('');
@@ -78,7 +79,7 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
       correoEncargado2: student.correoEncargado2 ?? '',
     });
     setSelectedEspecialidadId(especialidades.find((specialty) => specialty.nombre === course?.especialidad)?.id ?? null);
-    setSelectedCursoId(student.cursoId);
+    setSelectedNivel(course?.nivel ?? null);
     setSelectedSeccion(course?.seccion ?? null);
     setStep('tabla');
     setPadres([]);
@@ -94,7 +95,7 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
       nombre: form.nombre.trim(),
       apellido: form.apellido.trim(),
       ci: form.ci ? Number(form.ci) : null,
-      cursoId: Number(form.cursoId || selectedCursoId || 0),
+      cursoId: Number(form.cursoId || currentCurso?.id || 0),
       correoEncargado: form.correoEncargado.trim() || null,
       correoEncargado2: form.correoEncargado2.trim() || null,
     };
@@ -122,19 +123,19 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
   const goToEspecialidades = () => {
     setStep('especialidades');
     setSelectedEspecialidadId(null);
-    setSelectedCursoId(null);
+    setSelectedNivel(null);
     setSelectedSeccion(null);
   };
 
   const goToCursos = (specialtyId: number) => {
     setSelectedEspecialidadId(specialtyId);
-    setSelectedCursoId(null);
+    setSelectedNivel(null);
     setSelectedSeccion(null);
     setStep('cursos');
   };
 
-  const goToSecciones = (cursoId: number) => {
-    setSelectedCursoId(cursoId);
+  const goToSecciones = (nivel: number) => {
+    setSelectedNivel(nivel);
     setSelectedSeccion(null);
     setStep('secciones');
   };
@@ -145,7 +146,7 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
   };
 
   const currentEspecialidad = especialidades.find((item) => item.id === selectedEspecialidadId)?.nombre ?? null;
-  const currentCurso = data.cursos.find((item) => item.id === selectedCursoId) ?? null;
+  const currentCurso = data.cursos.find((item) => item.especialidad === currentEspecialidad && item.nivel === selectedNivel && item.seccion === selectedSeccion) ?? null;
 
   useEffect(() => {
     if (!isFormOpen || !editingId) {
@@ -180,7 +181,7 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
             return (
               <button type="button" key={specialty.id} className="nav-card" data-specialty={normalizeSpecialty(specialty.nombre)} onClick={() => goToCursos(specialty.id)}>
                 <span>Especialidad</span>
-                <h2>{specialty.nombre}</h2>
+                <h2 className="specialty-card-title"><SpecialtyIcon name={specialty.nombre} />{specialty.nombre}</h2>
                 <p>{totals} alumnos</p>
                 <strong>Ver cursos →</strong>
               </button>
@@ -195,12 +196,13 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
             <button type="button" className="button secondary" onClick={goToEspecialidades}>← Volver a especialidades</button>
           </div>
           <div className="card-grid">
-            {(cursosByEspecialidad.get(selectedEspecialidadId ?? -1) ?? []).map((course) => {
-              const totals = data.alumnos.filter((student) => student.cursoId === course.id).length;
+            {Array.from(new Set((cursosByEspecialidad.get(selectedEspecialidadId ?? -1) ?? []).map((course) => course.nivel))).sort((a, b) => b - a).map((nivel) => {
+              const courses = (cursosByEspecialidad.get(selectedEspecialidadId ?? -1) ?? []).filter((course) => course.nivel === nivel);
+              const totals = data.alumnos.filter((student) => courses.some((course) => course.id === student.cursoId)).length;
               return (
-                <button type="button" key={course.id} className="nav-card" onClick={() => goToSecciones(course.id)}>
-                  <span>{course.nivel}°</span>
-                  <h2>{course.seccion}</h2>
+                <button type="button" key={nivel} className="nav-card" onClick={() => goToSecciones(nivel)}>
+                  <span>Curso</span>
+                  <h2>{nivel}°</h2>
                   <p>{totals} alumnos</p>
                   <strong>Ver secciones →</strong>
                 </button>
@@ -217,10 +219,10 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
             <button type="button" className="button secondary" onClick={goToEspecialidades}>Inicio</button>
           </div>
           <div className="card-grid">
-            {Array.from(new Set((data.cursos.filter((course) => course.id === selectedCursoId).map((course) => course.seccion)))).map((section) => {
+            {Array.from(new Set((data.cursos.filter((course) => course.especialidad === currentEspecialidad && course.nivel === selectedNivel).map((course) => course.seccion)))).map((section) => {
               const totals = data.alumnos.filter((student) => {
                 const course = data.cursos.find((item) => item.id === student.cursoId);
-                return course && course.id === selectedCursoId && course.seccion === section;
+                return course && course.especialidad === currentEspecialidad && course.nivel === selectedNivel && course.seccion === section;
               }).length;
               return (
                 <button type="button" key={section} className="nav-card" onClick={() => goToTabla(section)}>
@@ -313,10 +315,10 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
               Cédula
               <input value={form.ci} onChange={(event) => setForm({ ...form, ci: event.target.value })} />
             </label>
-            {selectedCursoId ? (
+            {currentCurso ? (
               <label>
                 Curso
-                <input value={data.cursos.find((course) => course.id === selectedCursoId)?.nivel + '° ' + data.cursos.find((course) => course.id === selectedCursoId)?.seccion + ' · ' + data.cursos.find((course) => course.id === selectedCursoId)?.especialidad || ''} readOnly />
+                <input value={`${currentCurso.nivel}° ${currentCurso.seccion} · ${currentCurso.especialidad}`} readOnly />
               </label>
             ) : (
               <label>

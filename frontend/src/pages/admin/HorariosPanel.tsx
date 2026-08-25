@@ -3,6 +3,7 @@ import { ApiError } from '../../api/client';
 import { downloadHorarioCurso, getHorarioResumen, type HorarioResumenCursoItem } from '../../api/admin';
 import ContentState from '../../components/ui/ContentState';
 import { groupSchedulesBySpecialty } from './adminFormatters';
+import SpecialtyIcon from '../../components/SpecialtyIcon';
 
 export default function HorariosPanel({ status }: { status: (message: string) => void }) {
   const [items, setItems] = useState<HorarioResumenCursoItem[] | null>(null);
@@ -31,7 +32,7 @@ export default function HorariosPanel({ status }: { status: (message: string) =>
 
   return <div className="admin-summary-groups">
     {groups.map((group) => <section className="panel admin-summary-section" key={group.specialty}>
-      <header className="admin-summary-heading"><div><span>Especialidad</span><h2>{group.specialty}</h2></div><strong>{group.courses.length} {group.courses.length === 1 ? 'curso' : 'cursos'}</strong></header>
+      <header className="admin-summary-heading"><div><span>Especialidad</span><h2 className="specialty-card-title"><SpecialtyIcon name={group.specialty} />{group.specialty}</h2></div><strong>{group.courses.length} {group.courses.length === 1 ? 'curso' : 'cursos'}</strong></header>
       <div className="admin-list">
         {group.courses.map((course) => <div key={course.cursoId}>
           <span><strong>{course.cursoDescripcion}</strong><small>{course.cantidadSlotsCargados} {course.cantidadSlotsCargados === 1 ? 'bloque cargado' : 'bloques cargados'}</small></span>
