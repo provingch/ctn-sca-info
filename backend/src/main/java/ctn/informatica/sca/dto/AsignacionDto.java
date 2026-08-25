@@ -6,6 +6,9 @@ public record AsignacionDto(
         String cursoDescripcion,
         String especialidad,
         Integer cursoNivel,
-        String cursoSeccion
+        String cursoSeccion,
+        Integer especialidadId,
+        String cursoOrdinal,
+        String estadoPlan
 ) {
 }

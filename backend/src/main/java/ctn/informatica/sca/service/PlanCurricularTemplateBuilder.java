@@ -32,7 +32,7 @@ public class PlanCurricularTemplateBuilder {
             String title = String.format("PLAN DE DESARROLLO CURRICULAR ETAPA:_%s_%d", AcademicPeriod.currentEtapa() + "°", AcademicPeriod.current());
             String disciplina = a.getMateriaNombre() == null ? "" : a.getMateriaNombre();
             String docente = a.getProfesorNombre() == null ? "" : a.getProfesorNombre();
-            String curso = a.getCursoDescripcion() == null ? "" : a.getCursoDescripcion();
+            String curso = a.getCursoOrdinal() == null ? "" : a.getCursoOrdinal();
             String seccion = a.getCursoSeccion() == null ? "" : a.getCursoSeccion();
             String especialidad = a.getEspecialidad() == null ? "" : a.getEspecialidad();
             String turno = "";

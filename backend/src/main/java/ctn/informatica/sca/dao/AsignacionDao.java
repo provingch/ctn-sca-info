@@ -3,6 +3,7 @@ package ctn.informatica.sca.dao;
 import org.springframework.stereotype.Repository;
 import ctn.informatica.sca.clases.conexion;
 import ctn.informatica.sca.model.Asignacion;
+import ctn.informatica.sca.model.Curso;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -18,7 +19,7 @@ public class AsignacionDao extends conexion {
     public List<Asignacion> findAll() throws SQLException {
         String sql = "SELECT a.id, a.usuario_id AS profesor_id, a.materia_id, a.curso_id, "
                 + "u.nombre AS profesor_nombre, u.apellido AS profesor_apellido, "
-                + "m.nombre AS materia_nombre, e.nombre AS especialidad, c.promocion, c.seccion "
+                + "m.nombre AS materia_nombre, e.id AS especialidad_id, e.nombre AS especialidad, c.promocion, c.seccion "
                 + "FROM asignacion a "
                 + "JOIN usuario u ON u.id = a.usuario_id "
                 + "JOIN materia m ON m.id = a.materia_id "
@@ -42,9 +43,7 @@ public class AsignacionDao extends conexion {
                 String seccion = rs.getString("seccion");
                 String cursoDesc = (especialidad == null ? "" : especialidad) + (seccion == null || seccion.isBlank() ? "" : (" " + seccion));
                 a.setCursoDescripcion(cursoDesc);
-                a.setEspecialidad(especialidad);
-                a.setCursoNivel(promocion);
-                a.setCursoSeccion(seccion);
+                setCourseFields(a, rs.getInt("especialidad_id"), especialidad, promocion, seccion);
                 out.add(a);
             }
         }
@@ -54,7 +53,7 @@ public class AsignacionDao extends conexion {
     public Asignacion findById(int id) throws SQLException {
         String sql = "SELECT a.id, a.usuario_id AS profesor_id, a.materia_id, a.curso_id, "
                 + "u.nombre AS profesor_nombre, u.apellido AS profesor_apellido, "
-                + "m.nombre AS materia_nombre, e.nombre AS especialidad, c.promocion, c.seccion "
+                + "m.nombre AS materia_nombre, e.id AS especialidad_id, e.nombre AS especialidad, c.promocion, c.seccion "
                 + "FROM asignacion a "
                 + "JOIN usuario u ON u.id = a.usuario_id "
                 + "JOIN materia m ON m.id = a.materia_id "
@@ -81,9 +80,7 @@ public class AsignacionDao extends conexion {
                 String seccion = rs.getString("seccion");
                 String cursoDesc = (especialidad == null ? "" : especialidad) + (seccion == null || seccion.isBlank() ? "" : (" " + seccion));
                 a.setCursoDescripcion(cursoDesc);
-                a.setEspecialidad(especialidad);
-                a.setCursoNivel(promocion);
-                a.setCursoSeccion(seccion);
+                setCourseFields(a, rs.getInt("especialidad_id"), especialidad, promocion, seccion);
                 return a;
             }
         }
@@ -113,16 +110,20 @@ public class AsignacionDao extends conexion {
 
     public List<Asignacion> findByProfesor(int profesorId) throws SQLException {
         String sql = "SELECT a.id, a.usuario_id AS profesor_id, a.materia_id, a.curso_id, "
-                + "m.nombre AS materia_nombre, e.nombre AS especialidad, c.promocion, c.seccion "
+                + "m.nombre AS materia_nombre, e.id AS especialidad_id, e.nombre AS especialidad, c.promocion, c.seccion, "
+                + "COALESCE(p.estado, 'NO_CARGADO') AS plan_estado "
                 + "FROM asignacion a "
                 + "JOIN materia m ON m.id = a.materia_id "
                 + "JOIN curso c ON c.id = a.curso_id "
                 + "JOIN especialidad e ON e.id = c.especialidad_id "
+                + "LEFT JOIN plan_curricular p ON p.asignacion_id = a.id AND p.etapa = ? AND p.anio_lectivo = ? "
                 + "WHERE a.usuario_id = ? "
                 + "ORDER BY m.nombre, e.nombre, c.promocion, c.seccion";
         List<Asignacion> out = new ArrayList<>();
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setInt(1, profesorId);
+            ps.setInt(1, ctn.informatica.sca.util.AcademicPeriod.currentEtapa());
+            ps.setInt(2, LocalDate.now().getYear());
+            ps.setInt(3, profesorId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Asignacion a = new Asignacion();
@@ -136,9 +137,8 @@ public class AsignacionDao extends conexion {
                     String seccion = rs.getString("seccion");
                     String cursoDesc = (especialidad == null ? "" : especialidad) + (seccion == null || seccion.isBlank() ? "" : (" " + seccion));
                     a.setCursoDescripcion(cursoDesc);
-                    a.setEspecialidad(especialidad);
-                    a.setCursoNivel(promocion);
-                    a.setCursoSeccion(seccion);
+                    setCourseFields(a, rs.getInt("especialidad_id"), especialidad, promocion, seccion);
+                    a.setEstadoPlan(rs.getString("plan_estado"));
                     out.add(a);
                 }
             }
@@ -151,7 +151,7 @@ public class AsignacionDao extends conexion {
         int currentEtapa = ctn.informatica.sca.util.AcademicPeriod.currentEtapa();
 
         String sql = "SELECT a.id, a.usuario_id AS profesor_id, a.materia_id, a.curso_id, "
-                + "m.nombre AS materia_nombre, e.nombre AS especialidad, c.promocion, c.seccion, "
+                + "m.nombre AS materia_nombre, e.id AS especialidad_id, e.nombre AS especialidad, c.promocion, c.seccion, "
                 + "COALESCE(p.estado, 'NO_CARGADO') AS plan_estado "
                 + "FROM asignacion a "
                 + "JOIN materia m ON m.id = a.materia_id "
@@ -179,9 +179,7 @@ public class AsignacionDao extends conexion {
                     String seccion = rs.getString("seccion");
                     String cursoDesc = (especialidad == null ? "" : especialidad) + (seccion == null || seccion.isBlank() ? "" : (" " + seccion));
                     a.setCursoDescripcion(cursoDesc);
-                    a.setEspecialidad(especialidad);
-                    a.setCursoNivel(promocion);
-                    a.setCursoSeccion(seccion);
+                    setCourseFields(a, rs.getInt("especialidad_id"), especialidad, promocion, seccion);
                     a.setEstadoPlan(rs.getString("plan_estado"));
                     out.add(a);
                 }
@@ -211,6 +209,15 @@ public class AsignacionDao extends conexion {
             ps.setInt(1, id);
             return ps.executeUpdate() > 0;
         }
+    }
+
+    private void setCourseFields(Asignacion asignacion, int especialidadId, String especialidad,
+            int promocion, String seccion) {
+        asignacion.setEspecialidadId(especialidadId);
+        asignacion.setEspecialidad(especialidad);
+        asignacion.setCursoNivel(promocion);
+        asignacion.setCursoOrdinal(new Curso(asignacion.getCursoId(), especialidad, promocion, seccion).getCursoOrdinal());
+        asignacion.setCursoSeccion(seccion);
     }
 
 }

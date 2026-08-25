@@ -25,4 +25,10 @@ public class PlanCurricularDto {
     public String materiaNombre;
     public String profesorNombre;
     public String cursoDescripcion;
+
+    // Campos de historial de planes
+    public Integer asignacionId;
+    public Integer especialidadId;
+    public String especialidadNombre;
+    public String cursoOrdinal;
 }

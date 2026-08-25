@@ -599,7 +599,10 @@ public class ProfileController {
                 asignacion.getCursoDescripcion(),
                 asignacion.getEspecialidad(),
                 asignacion.getCursoNivel(),
-                asignacion.getCursoSeccion()
+                asignacion.getCursoSeccion(),
+                asignacion.getEspecialidadId(),
+                asignacion.getCursoOrdinal(),
+                asignacion.getEstadoPlan()
         );
     }
 

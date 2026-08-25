@@ -6,7 +6,6 @@ import ctn.informatica.sca.dao.RasgoPlanillaDao;
 import ctn.informatica.sca.dao.UserDao;
 import ctn.informatica.sca.dto.PlanCurricularDto;
 import ctn.informatica.sca.service.PlanCurricularParser;
-import java.io.IOException;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -67,23 +66,47 @@ public class PlanCurricularController {
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> upload(@RequestParam("asignacionId") int asignacionId, @RequestParam("file") MultipartFile file) throws Exception {
+    public ResponseEntity<?> upload(@RequestParam(value = "asignacionId", required = false) Integer asignacionId,
+            @RequestParam("file") MultipartFile file) throws Exception {
         if (file == null || file.isEmpty()) return ResponseEntity.badRequest().body("Archivo requerido");
+        int profesorId = (int) getCurrentUserId();
         PlanCurricularDto dto;
         try {
             dto = parser.parse(file.getInputStream());
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest().body(ex.getMessage());
         }
+        var asignacion = asignacionId == null ? null : asignacionDao.findById(asignacionId);
+        if (asignacionId != null) {
+            if (asignacion == null) return ResponseEntity.badRequest().body("Asignación inexistente");
+            if (asignacion.getProfesorId() != profesorId) return ResponseEntity.status(403).build();
+        }
+        if (asignacionId == null) {
+                List<ctn.informatica.sca.model.Asignacion> candidatas = findMatchingAssignments(dto,
+                    asignacionDao.findByProfesor(profesorId));
+            if (candidatas.isEmpty()) {
+                return ResponseEntity.badRequest().body("No se encontró ninguna asignación tuya que coincida con Materia/Especialidad/Curso/Sección de este archivo. Verificá que hayas usado la plantilla descargada para la asignación correcta.");
+            }
+            if (candidatas.size() > 1) {
+                String opciones = candidatas.stream()
+                        .map(a -> a.getId() + " - " + a.getMateriaNombre() + " / " + a.getEspecialidad()
+                                + " / " + a.getCursoOrdinal() + " " + a.getCursoSeccion())
+                        .collect(Collectors.joining("; "));
+                return ResponseEntity.badRequest().body("Se encontraron varias asignaciones compatibles. Elegí una manualmente: " + opciones);
+            }
+            asignacion = candidatas.get(0);
+            asignacionId = asignacion.getId();
+        }
+        if (asignacion == null) return ResponseEntity.badRequest().body("No se pudo resolver la asignación");
         // validate header matches asignacion
-        var asignacion = asignacionDao.findById(asignacionId);
-        if (asignacion == null) return ResponseEntity.badRequest().body("Asignación inexistente");
-        if (dto.disciplina != null && !dto.disciplina.equalsIgnoreCase(asignacion.getMateriaNombre()))
+        if (dto.disciplina != null && !sameValue(dto.disciplina, asignacion.getMateriaNombre()))
             return ResponseEntity.badRequest().body("Disciplina no coincide con la asignación");
-        if (dto.especialidad != null && asignacion.getEspecialidad() != null && !dto.especialidad.equalsIgnoreCase(asignacion.getEspecialidad()))
+        if (dto.especialidad != null && asignacion.getEspecialidad() != null && !sameValue(dto.especialidad, asignacion.getEspecialidad()))
             return ResponseEntity.badRequest().body("Especialidad no coincide con la asignación");
-        if (dto.seccion != null && asignacion.getCursoSeccion() != null && !dto.seccion.equalsIgnoreCase(asignacion.getCursoSeccion()))
+        if (dto.seccion != null && asignacion.getCursoSeccion() != null && !sameValue(dto.seccion, asignacion.getCursoSeccion()))
             return ResponseEntity.badRequest().body("Sección no coincide con la asignación");
+        if (dto.curso != null && !sameValue(dto.curso, asignacion.getCursoOrdinal()))
+            return ResponseEntity.badRequest().body("Curso no coincide con la asignación");
 
         // save
         byte[] content = file.getBytes();
@@ -154,6 +177,22 @@ public class PlanCurricularController {
         return ResponseEntity.ok(list);
     }
 
+    @GetMapping("/mis-asignaciones")
+    public ResponseEntity<?> misAsignaciones() throws Exception {
+        User user = getCurrentUser();
+        if (user == null) return ResponseEntity.status(401).build();
+        if (user.getLevel() != 1) return ResponseEntity.status(403).build();
+        return ResponseEntity.ok(asignacionDao.findByProfesor((int) getCurrentUserId()));
+    }
+
+    @GetMapping("/mios")
+    public ResponseEntity<?> misPlanes() throws Exception {
+        User user = getCurrentUser();
+        if (user == null) return ResponseEntity.status(401).build();
+        if (user.getLevel() != 1) return ResponseEntity.status(403).build();
+        return ResponseEntity.ok(dao.findAllByProfesor((int) getCurrentUserId()));
+    }
+
     @GetMapping("/pendientes")
     public ResponseEntity<?> pendientes() throws Exception {
         User user = getCurrentUser();
@@ -201,8 +240,10 @@ public class PlanCurricularController {
     public ResponseEntity<?> getPlanDetalle(@PathVariable int id) throws Exception {
         User user = getCurrentUser();
         if (user == null) return ResponseEntity.status(401).build();
-        // Only levels 2 (evaluador) and 3 (admin) can access this
-        if (user.getLevel() < 2) return ResponseEntity.status(403).build();
+        Integer ownerId = dao.findProfesorIdByPlanId(id);
+        if (user.getLevel() < 2 && (ownerId == null || ownerId != (int) getCurrentUserId())) {
+            return ResponseEntity.status(403).build();
+        }
         
         var plan = dao.findById(id);
         if (plan == null) return ResponseEntity.notFound().build();
@@ -213,8 +254,10 @@ public class PlanCurricularController {
     public ResponseEntity<byte[]> descargarDocumento(@PathVariable int id) throws Exception {
         User user = getCurrentUser();
         if (user == null) return ResponseEntity.status(401).build();
-        // Only levels 2 (evaluador) and 3 (admin) can access this
-        if (user.getLevel() < 2) return ResponseEntity.status(403).build();
+        Integer ownerId = dao.findProfesorIdByPlanId(id);
+        if (user.getLevel() < 2 && (ownerId == null || ownerId != (int) getCurrentUserId())) {
+            return ResponseEntity.status(403).build();
+        }
         
         byte[] content = dao.getArchivoOriginal(id);
         if (content == null) return ResponseEntity.notFound().build();
@@ -297,5 +340,23 @@ public class PlanCurricularController {
             log.warn("No se pudo resolver profesor para el plan {}: {}", id, ex.getMessage());
         }
         return ResponseEntity.ok().build();
+    }
+
+    private boolean sameValue(String left, String right) {
+        return left != null && right != null && left.trim().equalsIgnoreCase(right.trim());
+    }
+
+    static List<ctn.informatica.sca.model.Asignacion> findMatchingAssignments(PlanCurricularDto dto,
+            List<ctn.informatica.sca.model.Asignacion> asignaciones) {
+        return asignaciones.stream()
+                .filter(a -> sameValueStatic(dto.disciplina, a.getMateriaNombre()))
+                .filter(a -> sameValueStatic(dto.especialidad, a.getEspecialidad()))
+                .filter(a -> sameValueStatic(dto.seccion, a.getCursoSeccion()))
+                .filter(a -> sameValueStatic(dto.curso, a.getCursoOrdinal()))
+                .toList();
+    }
+
+    private static boolean sameValueStatic(String left, String right) {
+        return left != null && right != null && left.trim().equalsIgnoreCase(right.trim());
     }
 }
