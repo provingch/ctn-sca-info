@@ -1,9 +1,5 @@
 package ctn.informatica.sca.dao;
 
-import org.springframework.stereotype.Repository;
-import ctn.informatica.sca.clases.conexion;
-import ctn.informatica.sca.model.Asignacion;
-import ctn.informatica.sca.model.Curso;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -12,6 +8,12 @@ import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.springframework.stereotype.Repository;
+
+import ctn.informatica.sca.clases.conexion;
+import ctn.informatica.sca.model.Asignacion;
+import ctn.informatica.sca.model.Curso;
 
 @Repository
 public class AsignacionDao extends conexion {

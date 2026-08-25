@@ -199,7 +199,7 @@ export default function HomePage() {
               <button onClick={() => params({ subview: 'plan-curricular' })}><span>02</span><h2>Plan curricular</h2><p>Cargá y revisá tu plan curricular anual.</p></button>
             </div>
           ) : search.get('subview') === 'plan-curricular' ? (
-            <PlanCurricularView data={data} reload={load} />
+            <PlanCurricularView />
           ) : (
             <ClassView data={data} reload={load} />
           )

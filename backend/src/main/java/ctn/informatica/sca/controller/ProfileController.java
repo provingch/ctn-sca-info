@@ -1,46 +1,14 @@
 package ctn.informatica.sca.controller;
 
-import ctn.informatica.sca.dao.AsignacionDao;
-import ctn.informatica.sca.dao.CursoDao;
-import ctn.informatica.sca.dao.EspecialidadDao;
-import ctn.informatica.sca.dao.MateriaDao;
-import ctn.informatica.sca.dao.PadreDao;
-import ctn.informatica.sca.dao.ProfesorDao;
-import ctn.informatica.sca.dao.PushSubscriptionDao;
-import ctn.informatica.sca.dao.UserDao;
-import ctn.informatica.sca.google.GoogleClassroomService;
-import ctn.informatica.sca.model.Asignacion;
-import ctn.informatica.sca.model.Especialidad;
-import ctn.informatica.sca.model.Materia;
-import ctn.informatica.sca.model.Padre;
-import ctn.informatica.sca.model.Profesor;
-import ctn.informatica.sca.model.User;
-import ctn.informatica.sca.util.PasswordUtil;
-import ctn.informatica.sca.util.RememberMeTokenStore;
-import ctn.informatica.sca.util.ScaUiContext;
-import ctn.informatica.sca.util.TotpUtils;
-import ctn.informatica.sca.util.PushNotificationService;
-import com.google.api.services.classroom.model.Course;
-import ctn.informatica.sca.dto.ChangePasswordRequest;
-import ctn.informatica.sca.dto.ConfirmTotpRequest;
-import ctn.informatica.sca.dto.ProfileGoogleClassroomCourseDto;
-import ctn.informatica.sca.dto.ProfileMateriaDto;
-import ctn.informatica.sca.dto.ProfileOwnerDto;
-import ctn.informatica.sca.dto.ProfileResponse;
-import ctn.informatica.sca.dto.AsignacionDto;
-import ctn.informatica.sca.dto.EspecialidadDto;
-import ctn.informatica.sca.dto.SaveProfileRequest;
-import ctn.informatica.sca.dto.SelectUiSpecialtyRequest;
-import ctn.informatica.sca.service.ActivityLogService;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -52,6 +20,40 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+
+import com.google.api.services.classroom.model.Course;
+
+import ctn.informatica.sca.dao.AsignacionDao;
+import ctn.informatica.sca.dao.CursoDao;
+import ctn.informatica.sca.dao.EspecialidadDao;
+import ctn.informatica.sca.dao.MateriaDao;
+import ctn.informatica.sca.dao.PadreDao;
+import ctn.informatica.sca.dao.ProfesorDao;
+import ctn.informatica.sca.dao.PushSubscriptionDao;
+import ctn.informatica.sca.dao.UserDao;
+import ctn.informatica.sca.dto.AsignacionDto;
+import ctn.informatica.sca.dto.ChangePasswordRequest;
+import ctn.informatica.sca.dto.ConfirmTotpRequest;
+import ctn.informatica.sca.dto.EspecialidadDto;
+import ctn.informatica.sca.dto.ProfileGoogleClassroomCourseDto;
+import ctn.informatica.sca.dto.ProfileMateriaDto;
+import ctn.informatica.sca.dto.ProfileOwnerDto;
+import ctn.informatica.sca.dto.ProfileResponse;
+import ctn.informatica.sca.dto.SaveProfileRequest;
+import ctn.informatica.sca.dto.SelectUiSpecialtyRequest;
+import ctn.informatica.sca.google.GoogleClassroomService;
+import ctn.informatica.sca.model.Asignacion;
+import ctn.informatica.sca.model.Especialidad;
+import ctn.informatica.sca.model.Materia;
+import ctn.informatica.sca.model.Padre;
+import ctn.informatica.sca.model.Profesor;
+import ctn.informatica.sca.model.User;
+import ctn.informatica.sca.service.ActivityLogService;
+import ctn.informatica.sca.util.PasswordUtil;
+import ctn.informatica.sca.util.PushNotificationService;
+import ctn.informatica.sca.util.RememberMeTokenStore;
+import ctn.informatica.sca.util.ScaUiContext;
+import ctn.informatica.sca.util.TotpUtils;
 
 @RestController
 @RequestMapping("/api/profile")

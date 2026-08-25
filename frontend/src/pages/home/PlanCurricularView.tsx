@@ -1,429 +1,131 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError } from '../../api/client';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import * as planCurricularApi from '../../api/planCurricular';
-import type { HomeResponse } from '../../api/home';
 
-interface AsignacionOption {
-  id: number;
-  materiaId: number;
-  materiaNombre?: string;
-  estadoPlan?: 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' | 'NO_CARGADO';
+type AssignmentGroup = { id: number; nombre: string; asignaciones: planCurricularApi.AsignacionCompleta[] };
+
+function unique<T>(items: T[], key: (item: T) => string | number): T[] {
+  return Array.from(new Map(items.map((item) => [key(item), item])).values());
 }
 
-function RefreshIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 6v5h-5" />
-      <path d="M4 18v-5h5" />
-      <path d="M6.1 9a7 7 0 0 1 11.6-2.6L20 9" />
-      <path d="m4 15 2.3 2.6A7 7 0 0 0 17.9 15" />
-    </svg>
-  );
+function errorMessage(error: unknown, fallback: string) {
+  return error instanceof ApiError ? error.message : fallback;
 }
 
-function UploadedFile({ name }: { name?: string }) {
-  return (
-    <p style={{ margin: '8px 0 0', color: 'var(--muted)', fontSize: '0.9rem' }}>
-      Archivo subido: <strong style={{ color: 'var(--ink)' }}>{name || 'Nombre no disponible'}</strong>
-    </p>
-  );
+function EstadoBadge({ estado }: { estado: string }) {
+  const color = estado === 'APROBADO' ? 'success' : estado === 'RECHAZADO' ? 'danger' : 'warning';
+  return <span style={{ padding: '2px 10px', borderRadius: 999, fontSize: '0.8rem', fontWeight: 700, background: `color-mix(in srgb, var(--${color}) 15%, var(--paper))`, color: `var(--${color})`, border: `1px solid color-mix(in srgb, var(--${color}) 45%, var(--line))` }}>{estado}</span>;
 }
 
-export default function PlanCurricularView({ data, reload }: { data: HomeResponse; reload: () => Promise<void> }) {
-  const [asignacionesDisponibles, setAsignacionesDisponibles] = useState<AsignacionOption[]>([]);
-  const [selectedAsignacionId, setSelectedAsignacionId] = useState<number | null>(null);
+function PlanDetalleModal({ id, onClose }: { id: number; onClose: () => void }) {
   const [plan, setPlan] = useState<planCurricularApi.PlanCurricularEstado | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [status, setStatus] = useState('');
-  const [planError, setPlanError] = useState('');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isReplacingPending, setIsReplacingPending] = useState(false);
+  const [error, setError] = useState('');
 
-  // Cargar asignaciones disponibles cuando cambia el curso
   useEffect(() => {
-    if (!data.selCurso) {
-      setAsignacionesDisponibles([]);
-      setSelectedAsignacionId(null);
-      setPlan(null);
-      setPlanError('');
-      setIsReplacingPending(false);
-      return;
-    }
+    void planCurricularApi.getPlanDetalle(id).then(setPlan).catch((err) => setError(errorMessage(err, 'No se pudo cargar el detalle del plan.')));
+  }, [id]);
 
-    (async () => {
-      try {
-        const list = await planCurricularApi.getAsignacionesDisponibles(data.selCurso!.id);
-        setAsignacionesDisponibles(list);
-        if (list.length === 1) {
-          setSelectedAsignacionId(list[0].id);
-        } else {
-          setSelectedAsignacionId(null);
-          setPlan(null);
-          setPlanError('');
-          setIsReplacingPending(false);
-        }
-      } catch {
-        setAsignacionesDisponibles([]);
-        setSelectedAsignacionId(null);
-        setPlan(null);
-        setPlanError('');
-        setIsReplacingPending(false);
-      }
-    })();
-  }, [data.selCurso]);
+  return <div role="dialog" aria-modal="true" aria-label="Detalle del plan curricular" style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'grid', placeItems: 'center', padding: 20, background: 'rgba(0, 0, 0, .55)' }} onClick={onClose}>
+    <section className="panel" style={{ width: 'min(1000px, 100%)', maxHeight: '85vh', overflow: 'auto', margin: 0 }} onClick={(event) => event.stopPropagation()}>
+      <div className="class-card-head"><h3>Detalle del plan curricular</h3><button type="button" className="button secondary" onClick={onClose}>Cerrar</button></div>
+      {error ? <div className="notice error">{error}</div> : !plan ? <p>Cargando detalle…</p> : <>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', margin: '16px 0' }}><EstadoBadge estado={plan.estado} /><span>{plan.archivoNombre}</span><button type="button" className="button secondary" onClick={() => void planCurricularApi.descargarDocumentoOriginal(id)}>Descargar archivo original</button></div>
+        {plan.observacionesEvaluador && <div style={{ marginBottom: 16, padding: 14, borderLeft: '4px solid var(--danger)', background: 'color-mix(in srgb, var(--danger) 8%, var(--paper-raised))' }}><strong>Observaciones del evaluador</strong><p style={{ margin: '6px 0 0' }}>{plan.observacionesEvaluador}</p></div>}
+        {plan.temas?.length ? <div className="table-responsive"><table className="table table-striped"><thead><tr><th>Mes</th><th>Tema / Contenido</th><th>Capacidades</th><th>Actividades</th></tr></thead><tbody>{plan.temas.map((tema, index) => <tr key={index}><td>{tema.mes}</td><td>{tema.temasContenidos}</td><td>{tema.capacidades || '—'}</td><td>{tema.actividades || '—'}</td></tr>)}</tbody></table></div> : <p>No hay temas parseados para este plan.</p>}
+      </>}
+    </section>
+  </div>;
+}
 
-  const loadCurrentPlan = useCallback(async () => {
-    if (!selectedAsignacionId || !data.selCurso) {
-      setPlan(null);
-      setPlanError('');
-      return;
-    }
+function DescargarPlantillaSection({ group }: { group: AssignmentGroup }) {
+  const [curso, setCurso] = useState('');
+  const [seccion, setSeccion] = useState('');
+  const [materiaId, setMateriaId] = useState('');
+  const [error, setError] = useState('');
+  const cursos = unique(group.asignaciones, (item) => item.cursoOrdinal);
+  const secciones = curso ? unique(group.asignaciones.filter((item) => item.cursoOrdinal === curso), (item) => item.seccion) : [];
+  const materias = curso && seccion ? group.asignaciones.filter((item) => item.cursoOrdinal === curso && item.seccion === seccion) : [];
+  const asignacion = materias.find((item) => item.materiaId === Number(materiaId));
 
-    setLoading(true);
-    setPlanError('');
-    try {
-      const currentYear = new Date().getFullYear();
-      const transition = new Date(currentYear, 6, 15); // 15 de julio
-      const currentEtapa = new Date() < transition ? '1' : '2';
-
-      const result = await planCurricularApi.getMiPlan(selectedAsignacionId, currentEtapa, currentYear);
-      setPlan(result ?? null);
-      setIsReplacingPending(false);
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 204) {
-        setPlan(null);
-      } else {
-        setPlanError(err instanceof ApiError ? err.message : 'No se pudo cargar el estado del plan.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedAsignacionId, data.selCurso]);
-
-  // Cargar plan cuando cambia la asignación seleccionada
-  useEffect(() => {
-    void loadCurrentPlan();
-  }, [loadCurrentPlan]);
-
-  async function handleDownloadPlantilla(e: FormEvent) {
-    e.preventDefault();
-    if (!selectedAsignacionId) return;
-    try {
-      setStatus('Descargando plantilla...');
-      await planCurricularApi.downloadPlantilla(selectedAsignacionId);
-      setStatus('');
-    } catch (err) {
-      setStatus(err instanceof ApiError ? err.message : 'No se pudo descargar la plantilla.');
-    }
+  async function download() {
+    if (!asignacion) return;
+    setError('');
+    try { await planCurricularApi.downloadPlantilla(asignacion.id); } catch (err) { setError(errorMessage(err, 'No se pudo descargar la plantilla.')); }
   }
 
-  async function handleUploadPlan(e: FormEvent) {
-    e.preventDefault();
-    if (!selectedFile || !selectedAsignacionId) return;
-
-    setUploading(true);
-    try {
-      setStatus('Subiendo plan curricular...');
-      const result = await planCurricularApi.uploadPlanCurricular(selectedAsignacionId, selectedFile);
-      setStatus('Plan curricular subido correctamente.');
-      const uploadedFilename = selectedFile.name;
-      setSelectedFile(null);
-      setPlan({ id: result.id, estado: 'PENDIENTE', archivoNombre: uploadedFilename, fechaSubida: new Date().toISOString() });
-      setPlanError('');
-      setIsReplacingPending(false);
-      await reload();
-    } catch (err) {
-      setStatus(err instanceof ApiError ? err.message : 'No se pudo subir el plan curricular.');
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  return (
-    <div className="two-column">
-      <div className="panel" style={{ display: 'grid', gap: 12, gridColumn: '1 / -1' }}>
-        <div className="class-card">
-          <div className="class-card-head">
-            <h3>Plan Curricular</h3>
-          </div>
-
-          {/* Selector de asignación */}
-          {asignacionesDisponibles.length === 0 ? (
-            <p>No hay asignaciones disponibles para este curso.</p>
-          ) : (
-            <>
-              {asignacionesDisponibles.length > 1 && (
-                <div style={{ marginBottom: 16 }}>
-                  <label htmlFor="asignacionSelect">Seleccione la asignación:</label>
-                  <AnimatedSelect
-                    ariaLabel="Asignación"
-                    value={selectedAsignacionId || ''}
-                    onChange={(value) => setSelectedAsignacionId(Number(value))}
-                    options={[
-                      { value: '', label: 'Seleccione una asignación' },
-                      ...asignacionesDisponibles.map((a) => ({
-                        value: a.id,
-                        label: a.materiaNombre ?? `Asignación ${a.id}`,
-                      })),
-                    ]}
-                  />
-                </div>
-              )}
-
-              {/* Mostrar estado del plan */}
-              {selectedAsignacionId && (
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-                    <button
-                      type="button"
-                      className="button secondary"
-                      onClick={() => void loadCurrentPlan()}
-                      disabled={loading}
-                      aria-label="Actualizar estado del plan curricular"
-                      style={{ gap: 8 }}
-                    >
-                      <RefreshIcon />
-                      {loading ? 'Actualizando...' : 'Actualizar estado'}
-                    </button>
-                  </div>
-
-                  {loading ? (
-                    <div className="content-state content-state--compact" role="status" aria-live="polite">
-                      <div className="content-state-icon"><i /></div>
-                      <div className="content-state-copy">
-                        <h2>Consultando el estado del plan</h2>
-                        <p>Estamos buscando la revisión más reciente de esta asignación.</p>
-                      </div>
-                    </div>
-                  ) : planError ? (
-                    <div className="content-state content-state--compact content-state--error" role="alert">
-                      <div className="content-state-icon">!</div>
-                      <div className="content-state-copy">
-                        <h2>No pudimos consultar el plan</h2>
-                        <p>{planError}</p>
-                      </div>
-                      <div className="content-state-actions">
-                        <button type="button" className="button secondary" onClick={() => void loadCurrentPlan()}>
-                          Reintentar
-                        </button>
-                      </div>
-                    </div>
-                  ) : !plan || plan.estado === 'NO_CARGADO' ? (
-                    <>
-                      <p style={{ marginBottom: 12, color: 'var(--muted)' }}>
-                        Aún no has subido un plan curricular para esta asignación.
-                      </p>
-                      <div style={{ marginBottom: 12 }}>
-                        <button
-                          type="button"
-                          className="button secondary"
-                          onClick={handleDownloadPlantilla}
-                        >
-                          Descargar plantilla
-                        </button>
-                      </div>
-
-                      {/* Formulario de upload */}
-                      <form onSubmit={handleUploadPlan} style={{ display: 'grid', gap: 12 }}>
-                        <div>
-                          <label htmlFor="fileInput">Seleccionar archivo completado:</label>
-                          <input
-                            id="fileInput"
-                            type="file"
-                            accept=".xlsx"
-                            onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
-                            required
-                            style={{ marginTop: 8, width: '100%' }}
-                          />
-                        </div>
-                        <button type="submit" className="button" disabled={!selectedFile || uploading}>
-                          {uploading ? 'Subiendo...' : 'Subir plan curricular'}
-                        </button>
-                      </form>
-                    </>
-                  ) : plan.estado === 'PENDIENTE' ? (
-                    <>
-                      <div
-                        style={{
-                          padding: 16,
-                          background: 'color-mix(in srgb, var(--warning) 10%, var(--paper))',
-                          border: '1px solid color-mix(in srgb, var(--warning) 45%, var(--line))',
-                          borderRadius: 'var(--radius-sm)',
-                          marginBottom: 12,
-                        }}
-                      >
-                        <p style={{ margin: 0 }}>
-                          <strong>Tu plan está en revisión</strong>
-                        </p>
-                        <p style={{ margin: '8px 0 0', color: 'var(--ink)', lineHeight: 1.55 }}>
-                          La carga se completó correctamente. Un evaluador revisará tu plan. Te notificaremos cuando haya una respuesta.
-                        </p>
-                        <UploadedFile name={plan.archivoNombre} />
-                        <p style={{ margin: '5px 0 0', fontSize: '0.85rem', color: 'var(--muted)' }}>
-                          Subido: {plan.fechaSubida ? new Date(plan.fechaSubida).toLocaleDateString('es-AR') : 'N/A'}
-                        </p>
-                      </div>
-                      {!isReplacingPending ? (
-                        <button
-                          type="button"
-                          className="button secondary"
-                          onClick={() => {
-                            const confirmed = window.confirm('¿Querés preparar un plan de reemplazo? El plan que está en revisión no se perderá: seguirá vigente hasta que selecciones y subas un archivo nuevo.');
-                            if (!confirmed) return;
-                            setSelectedFile(null);
-                            setIsReplacingPending(true);
-                          }}
-                        >
-                          Subir nuevo plan
-                        </button>
-                      ) : (
-                        <div style={{ display: 'grid', gap: 12, paddingTop: 4 }}>
-                          <div className="notice" style={{ margin: 0 }}>
-                            El plan actual sigue en revisión. Solo se reemplazará cuando confirmes la subida del nuevo archivo.
-                          </div>
-                          <form onSubmit={handleUploadPlan} style={{ display: 'grid', gap: 12 }}>
-                            <label htmlFor="fileInputReemplazo">Seleccionar nuevo archivo completado:</label>
-                            <input
-                              id="fileInputReemplazo"
-                              type="file"
-                              accept=".xlsx"
-                              onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
-                              required
-                            />
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                              <button type="button" className="button secondary" onClick={() => { setSelectedFile(null); setIsReplacingPending(false); }}>
-                                Cancelar
-                              </button>
-                              <button type="submit" className="button" disabled={!selectedFile || uploading}>
-                                {uploading ? 'Subiendo...' : 'Confirmar reemplazo'}
-                              </button>
-                            </div>
-                          </form>
-                        </div>
-                      )}
-                    </>
-                  ) : plan.estado === 'APROBADO' ? (
-                    <>
-                      <div
-                        style={{
-                          padding: 16,
-                          background: 'color-mix(in srgb, var(--success) 10%, var(--paper))',
-                          border: '1px solid color-mix(in srgb, var(--success) 45%, var(--line))',
-                          borderRadius: 'var(--radius-sm)',
-                          marginBottom: 12,
-                        }}
-                      >
-                        <p style={{ margin: 0 }}>
-                          <strong>✓ Tu plan ha sido aprobado</strong>
-                        </p>
-                        <UploadedFile name={plan.archivoNombre} />
-                        <p style={{ margin: '5px 0 0', fontSize: '0.85rem', color: 'var(--muted)' }}>
-                          Aprobado: {plan.fechaRevision ? new Date(plan.fechaRevision).toLocaleDateString('es-AR') : 'N/A'}
-                        </p>
-                      </div>
-
-                      {/* Tabla de temas */}
-                      {plan.temas && plan.temas.length > 0 && (
-                        <div style={{ marginBottom: 16 }}>
-                          <h4 style={{ marginTop: 0 }}>Temas del plan curricular</h4>
-                          <div className="table-responsive">
-                            <table className="table table-striped" style={{ fontSize: '0.9rem' }}>
-                              <thead>
-                                <tr>
-                                  <th>Mes</th>
-                                  <th>Tema/Contenido</th>
-                                  <th>Capacidades</th>
-                                  <th>Actividades</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {plan.temas.map((tema, idx) => (
-                                  <tr key={idx}>
-                                    <td>{tema.mes}</td>
-                                    <td>{tema.temasContenidos}</td>
-                                    <td>{tema.capacidades || '—'}</td>
-                                    <td>{tema.actividades || '—'}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  ) : plan.estado === 'RECHAZADO' ? (
-                    <>
-                      <div
-                        style={{
-                          padding: 16,
-                          background: 'color-mix(in srgb, var(--danger) 9%, var(--paper))',
-                          border: '1px solid color-mix(in srgb, var(--danger) 45%, var(--line))',
-                          borderRadius: 'var(--radius-sm)',
-                          marginBottom: 12,
-                        }}
-                      >
-                        <p style={{ margin: 0 }}>
-                          <strong>Tu plan ha sido rechazado</strong>
-                        </p>
-                        <UploadedFile name={plan.archivoNombre} />
-                        {plan.observacionesEvaluador && (
-                          <div style={{ marginTop: 14, padding: 14, borderLeft: '4px solid var(--danger)', borderRadius: '0 var(--radius-sm) var(--radius-sm) 0', background: 'color-mix(in srgb, var(--danger) 8%, var(--paper-raised))' }}>
-                            <strong style={{ display: 'block', marginBottom: 6, color: 'var(--danger)', fontSize: '0.8rem', letterSpacing: '.04em', textTransform: 'uppercase' }}>
-                              Observaciones del evaluador
-                            </strong>
-                            <p style={{ margin: 0, color: 'var(--ink)', fontSize: '1.05rem', fontWeight: 650, lineHeight: 1.55 }}>
-                              {plan.observacionesEvaluador}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      <div style={{ marginBottom: 12 }}>
-                        <button
-                          type="button"
-                          className="button secondary"
-                          onClick={handleDownloadPlantilla}
-                        >
-                          Descargar plantilla
-                        </button>
-                      </div>
-
-                      {/* Formulario de re-upload */}
-                      <form onSubmit={handleUploadPlan} style={{ display: 'grid', gap: 12 }}>
-                        <div>
-                          <label htmlFor="fileInputRechazado">Subir plan corregido:</label>
-                          <input
-                            id="fileInputRechazado"
-                            type="file"
-                            accept=".xlsx"
-                            onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
-                            required
-                            style={{ marginTop: 8, width: '100%' }}
-                          />
-                        </div>
-                        <button type="submit" className="button" disabled={!selectedFile || uploading}>
-                          {uploading ? 'Subiendo...' : 'Subir plan corregido'}
-                        </button>
-                      </form>
-                    </>
-                  ) : null}
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
-        {status && (
-          <div
-            className={`notice ${status.includes('error') || status.includes('No se pudo') ? 'error' : ''}`}
-            style={{ marginBottom: 12 }}
-          >
-            {status}
-          </div>
-        )}
-      </div>
+  return <section className="class-card" style={{ marginTop: 12 }}>
+    <h3 style={{ margin: 0, fontSize: '1.15rem' }}>Descargar plantilla</h3>
+    <div className="class-grid">
+      <div className="class-field"><label>Curso</label><AnimatedSelect ariaLabel={`Curso de ${group.nombre}`} value={curso} onChange={(value) => { setCurso(value); setSeccion(''); setMateriaId(''); }} options={[{ value: '', label: 'Seleccione curso' }, ...cursos.map((item) => ({ value: item.cursoOrdinal, label: item.cursoOrdinal }))]} /></div>
+      <div className="class-field"><label>Sección</label><AnimatedSelect ariaLabel={`Sección de ${group.nombre}`} value={seccion} disabled={!curso} onChange={(value) => { setSeccion(value); setMateriaId(''); }} options={[{ value: '', label: 'Seleccione sección' }, ...secciones.map((item) => ({ value: item.seccion, label: item.seccion }))]} /></div>
+      <div className="class-field"><label>Materia</label><AnimatedSelect ariaLabel={`Materia de ${group.nombre}`} value={materiaId} disabled={!seccion} onChange={setMateriaId} options={[{ value: '', label: 'Seleccione materia' }, ...materias.map((item) => ({ value: item.materiaId, label: item.materiaNombre }))]} /></div>
+      <div className="class-field" style={{ justifyContent: 'end' }}><button type="button" className="button" disabled={!asignacion} onClick={() => void download()}>Descargar plantilla</button></div>
     </div>
-  );
+    {asignacion?.estadoPlan === 'APROBADO' && <div className="notice" style={{ margin: 0, background: 'color-mix(in srgb, var(--success) 10%, var(--paper))', borderColor: 'color-mix(in srgb, var(--success) 45%, var(--line))' }}>Esta asignación ya cuenta con un plan aprobado. Podés descargar nuevamente su plantilla si lo necesitás.</div>}
+    {error && <div className="notice error">{error}</div>}
+  </section>;
+}
+
+export default function PlanCurricularView() {
+  const [asignaciones, setAsignaciones] = useState<planCurricularApi.AsignacionCompleta[] | null>(null);
+  const [planes, setPlanes] = useState<planCurricularApi.PlanHistorialItem[] | null>(null);
+  const [errorAsignaciones, setErrorAsignaciones] = useState('');
+  const [errorPlanes, setErrorPlanes] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState('');
+  const [uploadError, setUploadError] = useState('');
+  const [candidatas, setCandidatas] = useState<planCurricularApi.AsignacionCandidata[]>([]);
+  const [candidataId, setCandidataId] = useState('');
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [detalleId, setDetalleId] = useState<number | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const loadPlanes = useCallback(async () => {
+    setErrorPlanes('');
+    try { setPlanes(await planCurricularApi.getMisPlanes()); } catch (err) { setErrorPlanes(errorMessage(err, 'No se pudo cargar el historial de entregas.')); }
+  }, []);
+
+  const loadAsignaciones = useCallback(async () => {
+    setErrorAsignaciones('');
+    try { setAsignaciones(await planCurricularApi.getMisAsignaciones()); } catch (err) { setErrorAsignaciones(errorMessage(err, 'No se pudieron cargar tus asignaciones.')); }
+  }, []);
+
+  useEffect(() => { void loadAsignaciones(); void loadPlanes(); }, [loadAsignaciones, loadPlanes]);
+
+  const groups = asignaciones ? Array.from(asignaciones.reduce((map, assignment) => {
+    const id = assignment.especialidadId;
+    const current = map.get(id) ?? { id, nombre: assignment.especialidadNombre, asignaciones: [] };
+    current.asignaciones.push(assignment);
+    map.set(id, current);
+    return map;
+  }, new Map<number, AssignmentGroup>()).values()) : [];
+
+  async function upload(file: File, asignacionId?: number) {
+    setUploading(true); setUploadError(''); setUploadMessage('');
+    try {
+      const result = await planCurricularApi.subirPlanAutoDetectado(file, asignacionId);
+      setUploadMessage(result?.materiaNombre ? `Plan subido para ${result.especialidadNombre} · ${result.cursoOrdinal} ${result.seccion} · ${result.materiaNombre}.` : 'Plan curricular subido correctamente.');
+      setSelectedFile(null); setPendingFile(null); setCandidatas([]); setCandidataId('');
+      if (fileRef.current) fileRef.current.value = '';
+      await Promise.all([loadPlanes(), loadAsignaciones()]);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 400 && typeof err.body === 'object' && err.body !== null && 'candidatas' in err.body && Array.isArray((err.body as planCurricularApi.MultiplesCoincidenciasError).candidatas)) {
+        setCandidatas((err.body as planCurricularApi.MultiplesCoincidenciasError).candidatas);
+        setPendingFile(file);
+      } else setUploadError(errorMessage(err, 'No se pudo subir el plan curricular.'));
+    } finally { setUploading(false); }
+  }
+
+  return <div className="two-column">
+    <div className="panel" style={{ display: 'grid', gap: 18, gridColumn: '1 / -1' }}>
+      <div className="class-card"><div className="class-card-head"><h3>Plan curricular</h3></div><p style={{ margin: 0, color: 'var(--muted)' }}>Descargá la plantilla de una de tus asignaciones, completala y subila para su revisión.</p></div>
+      <section className="class-card"><h3 style={{ margin: 0 }}>Plantillas por asignación</h3>{errorAsignaciones ? <div className="notice error">{errorAsignaciones} <button type="button" className="button secondary" onClick={() => void loadAsignaciones()}>Reintentar</button></div> : asignaciones === null ? <p>Cargando asignaciones…</p> : groups.length === 0 ? <p>No tenés asignaciones disponibles.</p> : groups.map((group) => <div key={group.id}><h4 style={{ margin: '14px 0 0' }}>{groups.length > 1 ? group.nombre : 'Mis asignaciones'}</h4><DescargarPlantillaSection group={group} /></div>)}</section>
+      <section className="class-card"><h3 style={{ margin: 0 }}>Subir plan</h3><p style={{ margin: 0, color: 'var(--muted)' }}>El sistema identifica automáticamente la asignación a partir de la plantilla.</p><input ref={fileRef} type="file" accept=".xlsx" disabled={uploading} onChange={(event) => { setSelectedFile(event.target.files?.[0] ?? null); setUploadError(''); setUploadMessage(''); }} /><button type="button" className="button" disabled={!selectedFile || uploading} onClick={() => selectedFile && void upload(selectedFile)}>{uploading ? 'Subiendo…' : 'Subir plan curricular'}</button>{uploadMessage && <div className="notice">{uploadMessage}</div>}{uploadError && <div className="notice error">{uploadError}</div>}
+        {candidatas.length > 0 && pendingFile && <div className="notice"><p>Se encontraron varias asignaciones compatibles. Elegí la correcta para continuar.</p><AnimatedSelect ariaLabel="Asignación compatible" value={candidataId} onChange={setCandidataId} options={[{ value: '', label: 'Seleccione una asignación' }, ...candidatas.map((candidate) => ({ value: candidate.id, label: candidate.descripcion }))]} /><button type="button" className="button" disabled={!candidataId || uploading} onClick={() => void upload(pendingFile, Number(candidataId))}>Confirmar asignación</button></div>}</section>
+      <section className="class-card"><div className="class-card-head"><h3>Entregas realizadas</h3><button type="button" className="button secondary" onClick={() => void loadPlanes()}>Actualizar</button></div>{errorPlanes ? <div className="notice error">{errorPlanes}</div> : planes === null ? <p>Cargando entregas…</p> : planes.length === 0 ? <p>Aún no registraste entregas.</p> : <div className="table-responsive"><table className="table table-striped"><thead><tr><th>Materia</th><th>Especialidad</th><th>Curso</th><th>Archivo</th><th>Etapa / año</th><th>Estado</th><th>Subido</th></tr></thead><tbody>{planes.map((plan) => <tr key={plan.id} onClick={() => setDetalleId(plan.id)} style={{ cursor: 'pointer' }} tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter') setDetalleId(plan.id); }}><td>{plan.materiaNombre}</td><td>{plan.especialidadNombre}</td><td>{plan.cursoOrdinal} {plan.seccion}</td><td>{plan.archivoNombre}</td><td>{plan.etapa} / {plan.anio}</td><td><EstadoBadge estado={plan.estado} /></td><td>{new Date(plan.fechaSubida).toLocaleDateString('es-AR')}</td></tr>)}</tbody></table></div>}</section>
+    </div>
+    {detalleId !== null && <PlanDetalleModal id={detalleId} onClose={() => setDetalleId(null)} />}
+  </div>;
 }
