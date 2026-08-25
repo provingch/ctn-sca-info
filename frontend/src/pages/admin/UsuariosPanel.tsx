@@ -23,6 +23,12 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
 
+  const specialtyLabel = (user: AdminCatalog['usuarios'][number]) => {
+    if (!Object.hasOwn(user, 'especialidadId')) return 'No informado por el backend';
+    if (user.especialidadId == null) return 'Global';
+    return user.especialidadNombre ?? data.especialidades.find((specialty) => specialty.id === user.especialidadId)?.nombre ?? `Especialidad #${user.especialidadId}`;
+  };
+
   const openCreate = () => {
     setEditingId(null);
     setForm(EMPTY_FORM);
@@ -108,7 +114,7 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
                       <td>{user.apellido}</td>
                       <td>{user.ci ?? '—'}</td>
                       <td>{user.usuario}</td>
-                      {section.key === 3 && <td>{user.especialidadNombre ?? data.especialidades.find((specialty) => specialty.id === user.especialidadId)?.nombre ?? 'Global'}</td>}
+                      {section.key === 3 && <td>{specialtyLabel(user)}</td>}
                       {(section.key !== 3 || isGlobalAdmin) && (
                         <td>
                           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>

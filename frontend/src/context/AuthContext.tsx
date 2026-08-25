@@ -3,6 +3,7 @@ import * as authApi from '../api/auth';
 import { getProfile } from '../api/profile';
 import { setAccessToken, setOnAuthExpired } from '../api/client';
 import { useSpecialty } from './SpecialtyContext';
+import { resolveIdentitySpecialty } from './authIdentity';
 
 export interface AuthUser {
   level: number;
@@ -10,12 +11,17 @@ export interface AuthUser {
   username?: string;
   initials?: string;
   fotoPerfil?: string;
+  especialidadId?: number | null;
+  especialidadNombre?: string | null;
 }
+
+type IdentityStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 interface AuthContextValue {
   user: AuthUser | null;
   /** true mientras se intenta hidratar la sesión al montar la app (vía /auth/refresh) */
   isBootstrapping: boolean;
+  identityStatus: IdentityStatus;
   login: (username: string, password: string, rememberMe: boolean) => Promise<authApi.LoginResponse>;
   verify2fa: (tempToken: string, code: string, rememberMe: boolean) => Promise<authApi.LoginResponse>;
   logout: () => Promise<void>;
@@ -28,6 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { resetSpecialty } = useSpecialty();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
+  const [identityStatus, setIdentityStatus] = useState<IdentityStatus>('idle');
 
   // Al montar: no hay access token en memoria todavía (se perdió en el reload).
   // El backend emite una cookie httpOnly de renovación: SCA_SESSION durante la
@@ -59,16 +66,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshUserIdentity = useCallback(async () => {
     const activeLevel = user?.level;
     if (!activeLevel) return;
+    setIdentityStatus('loading');
     try {
       const profile = await getProfile();
       const owner = profile.profileOwner;
       const displayName = owner.fullName?.trim() || owner.usuario?.trim() || 'Usuario SCA';
       const initials = `${owner.nombre?.trim()[0] || owner.usuario?.trim()[0] || 'S'}${owner.apellido?.trim()[0] || ''}`.toUpperCase();
+      const specialty = resolveIdentitySpecialty(activeLevel, owner, profile.especialidades);
       setUser((current) => current?.level === activeLevel
-        ? { ...current, displayName, username: owner.usuario?.trim() || undefined, initials, fotoPerfil: owner.fotoPerfil ?? undefined }
+        ? { ...current, displayName, username: owner.usuario?.trim() || undefined, initials, fotoPerfil: owner.fotoPerfil ?? undefined, especialidadId: specialty.id, especialidadNombre: specialty.name }
         : current);
+      setIdentityStatus('ready');
     } catch {
-      // La sesión sigue siendo válida aunque el resumen del perfil no esté disponible.
+      setIdentityStatus('error');
     }
   }, [user?.level]);
 
@@ -81,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setOnAuthExpired(() => {
       setUser(null);
+      setIdentityStatus('idle');
     });
     return () => setOnAuthExpired(null);
   }, []);
@@ -89,8 +100,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       isBootstrapping,
+      identityStatus,
       async login(username, password, rememberMe) {
         setUser(null);
+        setIdentityStatus('idle');
         const res = await authApi.login({ username, password, rememberMe });
         if (!res.requiere2fa && res.accessToken && res.level !== null) {
           resetSpecialty();
@@ -104,6 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       async verify2fa(tempToken, code, rememberMe) {
         setUser(null);
+        setIdentityStatus('idle');
         const res = await authApi.verify2fa({ tempToken, code, rememberMe });
         if (res.accessToken && res.level !== null) {
           resetSpecialty();
@@ -119,12 +133,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } finally {
           setAccessToken(null);
           setUser(null);
+          setIdentityStatus('idle');
           resetSpecialty();
         }
       },
       refreshUserIdentity,
     }),
-    [user, isBootstrapping, resetSpecialty, refreshUserIdentity],
+    [user, isBootstrapping, identityStatus, resetSpecialty, refreshUserIdentity],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

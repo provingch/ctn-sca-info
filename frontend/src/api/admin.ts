@@ -1,4 +1,4 @@
-import { api } from './client';
+import { api, apiDownload, ApiError } from './client';
 
 export interface MateriaItem {
   id: number;
@@ -59,8 +59,6 @@ export interface SpecialtyItem {
   nombre: string;
 }
 
-import { apiDownload } from './client';
-
 export interface HoraCatedraItem {
   id: number;
   numero: number;
@@ -110,28 +108,41 @@ export interface AdminCatalog {
   alumnos: StudentItem[];
   cursos: CourseItem[];
   especialidades: SpecialtyItem[];
-  /** Null o ausente identifica al administrador global. */
-  especialidadId?: number | null;
-  especialidadNombre?: string | null;
 }
 
-export const getAdminCatalog = () => api.get<AdminCatalog>('/api/admin');
-export const createAdminRecord = (section: string, payload: unknown) => api.post<void>(`/api/admin/${section}`, payload);
-export const updateAdminRecord = (section: string, id: number, payload: unknown) => api.put<void>(`/api/admin/${section}/${id}`, payload);
-export const deleteAssignment = (id: number) => api.delete<void>(`/api/admin/asignaciones/${id}`);
-export const deleteAdminRecord = (section: string, id: number) => api.delete<void>(`/api/admin/${section}/${id}`);
-export const getMateriaEspecialidades = (materiaId: number) => api.get<number[]>(`/api/admin/materias/${materiaId}/especialidades`);
-export const getHoraCatedraCatalog = () => api.get<HoraCatedraItem[]>('/api/admin/horario/catalogo');
-export const getHorarioByAsignacion = (asignacionId: number) => api.get<HorarioSlotItem[]>(`/api/admin/horario/asignaciones/${asignacionId}`);
-export const createHorarioSlot = (asignacionId: number, payload: { diaSemana: number; horaCatedraId: number; sala?: string }) => api.post<HorarioSlotItem>(`/api/admin/horario/asignaciones/${asignacionId}/slots`, payload);
-export const deleteHorarioSlot = (id: number) => api.delete<void>(`/api/admin/horario/slots/${id}`);
-export const downloadHorarioCurso = (cursoId: number) => apiDownload(`/api/admin/horario/export?cursoId=${cursoId}`, `horario-curso-${cursoId}.xlsx`);
-export const getHorarioResumen = () => api.get<HorarioResumenCursoItem[]>('/api/admin/horario/resumen');
-export const getSistemaEstado = () => api.get<SistemaEstadoResponse>('/api/admin/sistema-estado');
-export const buscarPadres = (q: string) => api.get<PadreSummary[]>(`/api/admin/padres/buscar?q=${encodeURIComponent(q)}`);
-export const getPadresDeAlumno = (alumnoId: number) => api.get<PadreSummary[]>(`/api/admin/alumnos/${alumnoId}/padres`);
-export const linkPadreAlumno = (alumnoId: number, padreId: number) => api.post<void>(`/api/admin/alumnos/${alumnoId}/padres/${padreId}`, {});
-export const unlinkPadreAlumno = (alumnoId: number, padreId: number) => api.delete<void>(`/api/admin/alumnos/${alumnoId}/padres/${padreId}`);
-export const wipePlanillaSyncImports = (planillaId: number) => api.post<{ message: string; deletedGrades: number; deletedTasks: number; clearedGoogleCourseIds: number }>(`/api/admin/planillas/${planillaId}/sync/wipe`);
-export const wipeAllClassroomSync = () => api.post<{ message: string; deletedGrades: number; deletedTasks: number; clearedGoogleCourseIds: number }>(`/api/admin/sync/wipe-all`);
-export const clearUserGoogleTokens = (userId: number) => api.post<{ message: string }>(`/api/admin/usuarios/${userId}/google/clear`);
+export const ADMIN_FORBIDDEN_MESSAGE = 'No tenés permiso para gestionar este recurso.';
+
+export function normalizeAdminError(error: unknown) {
+  return error instanceof ApiError && error.status === 403
+    ? new ApiError(403, ADMIN_FORBIDDEN_MESSAGE, error.body)
+    : error;
+}
+
+async function adminRequest<T>(request: () => Promise<T>): Promise<T> {
+  try {
+    return await request();
+  } catch (error) {
+    throw normalizeAdminError(error);
+  }
+}
+
+export const getAdminCatalog = () => adminRequest(() => api.get<AdminCatalog>('/api/admin'));
+export const createAdminRecord = (section: string, payload: unknown) => adminRequest(() => api.post<void>(`/api/admin/${section}`, payload));
+export const updateAdminRecord = (section: string, id: number, payload: unknown) => adminRequest(() => api.put<void>(`/api/admin/${section}/${id}`, payload));
+export const deleteAssignment = (id: number) => adminRequest(() => api.delete<void>(`/api/admin/asignaciones/${id}`));
+export const deleteAdminRecord = (section: string, id: number) => adminRequest(() => api.delete<void>(`/api/admin/${section}/${id}`));
+export const getMateriaEspecialidades = (materiaId: number) => adminRequest(() => api.get<number[]>(`/api/admin/materias/${materiaId}/especialidades`));
+export const getHoraCatedraCatalog = () => adminRequest(() => api.get<HoraCatedraItem[]>('/api/admin/horario/catalogo'));
+export const getHorarioByAsignacion = (asignacionId: number) => adminRequest(() => api.get<HorarioSlotItem[]>(`/api/admin/horario/asignaciones/${asignacionId}`));
+export const createHorarioSlot = (asignacionId: number, payload: { diaSemana: number; horaCatedraId: number; sala?: string }) => adminRequest(() => api.post<HorarioSlotItem>(`/api/admin/horario/asignaciones/${asignacionId}/slots`, payload));
+export const deleteHorarioSlot = (id: number) => adminRequest(() => api.delete<void>(`/api/admin/horario/slots/${id}`));
+export const downloadHorarioCurso = (cursoId: number) => adminRequest(() => apiDownload(`/api/admin/horario/export?cursoId=${cursoId}`, `horario-curso-${cursoId}.xlsx`));
+export const getHorarioResumen = () => adminRequest(() => api.get<HorarioResumenCursoItem[]>('/api/admin/horario/resumen'));
+export const getSistemaEstado = () => adminRequest(() => api.get<SistemaEstadoResponse>('/api/admin/sistema-estado'));
+export const buscarPadres = (q: string) => adminRequest(() => api.get<PadreSummary[]>(`/api/admin/padres/buscar?q=${encodeURIComponent(q)}`));
+export const getPadresDeAlumno = (alumnoId: number) => adminRequest(() => api.get<PadreSummary[]>(`/api/admin/alumnos/${alumnoId}/padres`));
+export const linkPadreAlumno = (alumnoId: number, padreId: number) => adminRequest(() => api.post<void>(`/api/admin/alumnos/${alumnoId}/padres/${padreId}`, {}));
+export const unlinkPadreAlumno = (alumnoId: number, padreId: number) => adminRequest(() => api.delete<void>(`/api/admin/alumnos/${alumnoId}/padres/${padreId}`));
+export const wipePlanillaSyncImports = (planillaId: number) => adminRequest(() => api.post<{ message: string; deletedGrades: number; deletedTasks: number; clearedGoogleCourseIds: number }>(`/api/admin/planillas/${planillaId}/sync/wipe`));
+export const wipeAllClassroomSync = () => adminRequest(() => api.post<{ message: string; deletedGrades: number; deletedTasks: number; clearedGoogleCourseIds: number }>(`/api/admin/sync/wipe-all`));
+export const clearUserGoogleTokens = (userId: number) => adminRequest(() => api.post<{ message: string }>(`/api/admin/usuarios/${userId}/google/clear`));

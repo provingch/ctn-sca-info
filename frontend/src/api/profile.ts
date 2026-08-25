@@ -10,6 +10,7 @@ export interface ProfileOwnerDto {
   telefono: string | null;
   celular: string | null;
   usuario: string | null;
+  especialidadId: number | null;
   googleEmail: string | null;
   gcAccessToken: string | null;
   firmaImagen: string | null;
@@ -19,6 +20,7 @@ export interface ProfileOwnerDto {
 export interface ProfileMateriaDto { id: number; nombre: string; categoria: string | null; }
 export interface ProfileAssignmentDto { id: number; materiaNombre: string; cursoDescripcion: string; especialidad?: string | null; cursoNivel?: number | null; cursoSeccion?: string | null; }
 export interface ProfileClassroomCourseDto { id: string; name: string; section: string | null; room: string | null; }
+export interface ProfileSpecialtyDto { id: number; nombre: string; }
 
 export interface ProfileResponse {
   profileOwner: ProfileOwnerDto;
@@ -37,6 +39,7 @@ export interface ProfileResponse {
   googleClassroomCourses: ProfileClassroomCourseDto[];
   teacherMaterias: ProfileMateriaDto[];
   misAsignaciones: ProfileAssignmentDto[];
+  especialidades: ProfileSpecialtyDto[];
   activityLog: string[];
   totpEnabled: boolean;
   pendingTotpSecret: string | null;
