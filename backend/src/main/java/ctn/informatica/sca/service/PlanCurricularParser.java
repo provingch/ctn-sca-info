@@ -1,12 +1,11 @@
 package ctn.informatica.sca.service;
 
-import ctn.informatica.sca.dto.PlanCurricularDto;
-import ctn.informatica.sca.dto.TemaPlanDto;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -14,9 +13,14 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.stereotype.Service;
 
+import ctn.informatica.sca.dto.PlanCurricularDto;
+import ctn.informatica.sca.dto.TemaPlanDto;
+
 @Service
 public class PlanCurricularParser {
 
+    private static final String ETAPA_PARSE_ERROR =
+            "No se pudo interpretar la etapa/año del plan. Descargá la plantilla actual y volvé a completarla.";
     private static final Map<String,Integer> MES_ORDEN = new HashMap<>();
     static {
         MES_ORDEN.put("Marzo", 1);
@@ -34,15 +38,9 @@ public class PlanCurricularParser {
             PlanCurricularDto out = new PlanCurricularDto();
             // read header from first sheet (Marzo)
             Sheet marzo = wb.getSheet("Marzo");
-            out.etapa = getCellString(marzo, 4, 1); // B5 -> row 4 col 1
-            // parse etapa/anio with pattern ETAPA:_X_YYYY
-            if (out.etapa != null && out.etapa.contains("ETAPA:")) {
-                String s = out.etapa;
-                String after = s.substring(s.indexOf("ETAPA:")+6).trim();
-                String[] parts = after.split("_");
-                if (parts.length >= 2) out.etapa = parts[0];
-                try { out.anio = Integer.parseInt(parts[parts.length-1]); } catch (Exception e) { out.anio = 0; }
-            }
+            EtapaAnio etapaAnio = parseEtapaAnio(getCellString(marzo, 4, 1)); // B5 -> row 4 col 1
+            out.etapa = etapaAnio.etapa();
+            out.anio = etapaAnio.anio();
             out.disciplina = extractAfterColon(getCellString(marzo,6,1));
             out.turno = extractAfterColon(getCellString(marzo,8,18));
             out.curso = extractAfterColon(getCellString(marzo,8,1));
@@ -77,6 +75,40 @@ public class PlanCurricularParser {
             if (temas.isEmpty()) throw new IllegalArgumentException("El plan no contiene temas en ninguna hoja");
             return out;
         }
+    }
+
+    static EtapaAnio parseEtapaAnio(String tituloCelda) {
+        if (tituloCelda == null) {
+            throw new IllegalArgumentException(ETAPA_PARSE_ERROR);
+        }
+
+        int etapaIndex = tituloCelda.indexOf("ETAPA:");
+        if (etapaIndex < 0) {
+            throw new IllegalArgumentException(ETAPA_PARSE_ERROR);
+        }
+
+        String after = tituloCelda.substring(etapaIndex + "ETAPA:".length()).trim();
+        after = after.replaceAll("^_+", "").replaceAll("_+$", "");
+        String[] parts = after.split("_");
+        if (parts.length < 2) {
+            throw new IllegalArgumentException(ETAPA_PARSE_ERROR);
+        }
+
+        String etapa = parts[0].trim().replaceAll("[^0-9]", "");
+        int anio;
+        try {
+            anio = Integer.parseInt(parts[parts.length - 1].trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(ETAPA_PARSE_ERROR, e);
+        }
+
+        if (!("1".equals(etapa) || "2".equals(etapa)) || anio == 0) {
+            throw new IllegalArgumentException(ETAPA_PARSE_ERROR);
+        }
+        return new EtapaAnio(etapa, anio);
+    }
+
+    record EtapaAnio(String etapa, int anio) {
     }
 
     private String getCellString(Sheet sh, int rowIndex, int colIndex) {
