@@ -13,6 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.HashSet;
 
 /**
  *
@@ -121,5 +122,42 @@ public class CursoDao extends conexion {
             }
         }
         return cursos;
+    }
+
+    public Set<String> listDistinctSeccionesForEspecialidad(int especialidadId) throws SQLException {
+        Set<String> secciones = new HashSet<>();
+        String sql = "SELECT DISTINCT seccion FROM curso WHERE especialidad_id = ?";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, especialidadId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String s = rs.getString("seccion");
+                    if (s != null && !s.isBlank()) secciones.add(s.trim());
+                }
+            }
+        }
+        return secciones;
+    }
+
+    public boolean existsCurso(int especialidadId, int promocion, String seccion) throws SQLException {
+        String sql = "SELECT 1 FROM curso WHERE especialidad_id = ? AND promocion = ? AND seccion = ? LIMIT 1";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, especialidadId);
+            ps.setInt(2, promocion);
+            ps.setString(3, seccion);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    public boolean createCursoIfNotExists(int especialidadId, int promocion, String seccion) throws SQLException {
+        String sql = "INSERT IGNORE INTO curso (especialidad_id, promocion, seccion) VALUES (?, ?, ?)";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, especialidadId);
+            ps.setInt(2, promocion);
+            ps.setString(3, seccion == null ? "" : seccion);
+            return ps.executeUpdate() > 0;
+        }
     }
 }

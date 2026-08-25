@@ -778,4 +778,20 @@ public class AdminController {
             return new GoogleTokenInfo(p.getGoogleEmail(), hasAccess, hasRefresh, expiry);
         } catch (ResponseStatusException ex) { throw ex; } catch (Exception ex) { throw failure("No se pudo obtener info de tokens de Google", ex); }
     }
+
+    @PostMapping("/cursos/sincronizar")
+    public CursosSyncResponse sincronizarCursos(Authentication auth) {
+        ApiAuth.requireUserId(auth);
+        try {
+            Integer actingSpecialtyId = getSpecialtyAdminIdForUser(ApiAuth.requireUserId(auth));
+            ctn.informatica.sca.service.CursoProvisioningService svc = new ctn.informatica.sca.service.CursoProvisioningService();
+            ctn.informatica.sca.service.CursoProvisioningService.ProvisioningResult r = svc.ensureCursosForPeriod(actingSpecialtyId);
+            java.util.List<CreatedCourseDTO> created = r.created().stream().map(c -> new CreatedCourseDTO(c.especialidadId(), c.especialidadNombre(), c.promocion(), c.seccion())).toList();
+            java.util.List<SpecialtyItem> omitted = r.omitted().stream().map(e -> new SpecialtyItem(e.getId(), e.getNombre())).toList();
+            return new CursosSyncResponse(created.size(), created, omitted);
+        } catch (ResponseStatusException ex) { throw ex; } catch (Exception ex) { throw failure("No se pudo sincronizar cursos", ex); }
+    }
+
+    public record CreatedCourseDTO(int especialidadId, String especialidadNombre, int promocion, String seccion) {}
+    public record CursosSyncResponse(int createdCount, List<CreatedCourseDTO> created, List<SpecialtyItem> omittedSpecialties) {}
 }
