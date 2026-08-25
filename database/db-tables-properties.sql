@@ -60,7 +60,10 @@ CREATE TABLE usuario (
     nivel TINYINT NOT NULL DEFAULT 0,
     activity_log_path VARCHAR(255) NULL,
     especialidad_id INT NULL,
-    PRIMARY KEY (id)
+    PRIMARY KEY (id),
+    CONSTRAINT fk_usuario_especialidad FOREIGN KEY (especialidad_id)
+        REFERENCES especialidad (id)
+        ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE materia (
