@@ -137,23 +137,36 @@ public class HorarioSlotDao extends conexion {
     }
 
     public List<ctn.informatica.sca.dto.HorarioResumenCursoDto> resumenPorCurso() throws SQLException {
-        String sql = "SELECT c.id AS curso_id, e.nombre AS especialidad, "
-                + "CONCAT(c.nivel, '°', CASE WHEN c.seccion IS NULL OR c.seccion = '' THEN '' ELSE CONCAT(' ', c.seccion) END) AS curso_descripcion, "
+        String sql = "SELECT c.id AS curso_id, e.nombre AS especialidad, c.promocion AS promocion, c.seccion AS seccion, "
                 + "COUNT(hs.id) AS cantidad_slots_cargados "
                 + "FROM curso c "
                 + "JOIN especialidad e ON e.id = c.especialidad_id "
                 + "LEFT JOIN asignacion a ON a.curso_id = c.id "
                 + "LEFT JOIN horario_slot hs ON hs.asignacion_id = a.id "
-                + "GROUP BY c.id, e.nombre, c.nivel, c.seccion "
-                + "ORDER BY e.nombre, c.nivel DESC, c.seccion, c.id";
+                + "GROUP BY c.id, e.nombre, c.promocion, c.seccion "
+                + "ORDER BY e.nombre, c.promocion DESC, c.seccion, c.id";
         List<ctn.informatica.sca.dto.HorarioResumenCursoDto> out = new ArrayList<>();
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            int period = ctn.informatica.sca.util.AcademicPeriod.current();
             while (rs.next()) {
+                int cursoId = rs.getInt("curso_id");
+                String especialidad = rs.getString("especialidad");
+                int promocion = rs.getInt("promocion");
+                String seccion = rs.getString("seccion");
+                int cantidad = rs.getInt("cantidad_slots_cargados");
+
+                int nivel = period - promocion + 3;
+                if (nivel < 1) nivel = 1;
+                if (nivel > 3) nivel = 3;
+
+                String cursoDescripcion = nivel + "°" + (seccion == null || seccion.isBlank() ? "" : (" " + seccion));
+
                 out.add(new ctn.informatica.sca.dto.HorarioResumenCursoDto(
-                        rs.getInt("curso_id"),
-                        rs.getString("especialidad"),
-                        rs.getString("curso_descripcion"),
-                        rs.getInt("cantidad_slots_cargados")));
+                        cursoId,
+                        especialidad,
+                        cursoDescripcion,
+                        cantidad,
+                        nivel));
             }
         }
         return out;
