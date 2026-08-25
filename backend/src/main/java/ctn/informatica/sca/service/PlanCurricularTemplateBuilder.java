@@ -1,19 +1,21 @@
 package ctn.informatica.sca.service;
 
-import ctn.informatica.sca.dao.AsignacionDao;
-import ctn.informatica.sca.dao.HorarioSlotDao;
-import ctn.informatica.sca.model.HorarioSlot;
-import ctn.informatica.sca.model.Asignacion;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import ctn.informatica.sca.util.AcademicPeriod;
+
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
-import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import ctn.informatica.sca.dao.AsignacionDao;
+import ctn.informatica.sca.dao.HorarioSlotDao;
+import ctn.informatica.sca.model.Asignacion;
+import ctn.informatica.sca.model.HorarioSlot;
+import ctn.informatica.sca.util.AcademicPeriod;
 
 @Service
 public class PlanCurricularTemplateBuilder {

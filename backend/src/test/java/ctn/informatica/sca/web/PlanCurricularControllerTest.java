@@ -1,11 +1,12 @@
 package ctn.informatica.sca.web;
 
-import ctn.informatica.sca.dto.PlanCurricularDto;
-import ctn.informatica.sca.model.Asignacion;
 import java.util.List;
-import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
+
+import ctn.informatica.sca.dto.PlanCurricularDto;
+import ctn.informatica.sca.model.Asignacion;
 
 public class PlanCurricularControllerTest {
 

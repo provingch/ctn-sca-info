@@ -43,8 +43,72 @@ export interface PlanPendienteResumen {
   especialidad?: string;
 }
 
+export interface AsignacionCompleta {
+  id: number;
+  materiaId: number;
+  materiaNombre: string;
+  especialidadId: number;
+  especialidadNombre: string;
+  cursoId: number;
+  cursoOrdinal: string;
+  seccion: string;
+  estadoPlan: 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' | 'NO_CARGADO';
+}
+
+export interface PlanHistorialItem {
+  id: number;
+  estado: 'PENDIENTE' | 'APROBADO' | 'RECHAZADO';
+  archivoNombre: string;
+  fechaSubida: string;
+  fechaRevision?: string;
+  observacionesEvaluador?: string;
+  etapa: string;
+  anio: number;
+  materiaNombre: string;
+  especialidadId: number;
+  especialidadNombre: string;
+  cursoOrdinal: string;
+  seccion: string;
+  asignacionId: number;
+}
+
+export interface AsignacionCandidata {
+  id: number;
+  descripcion: string;
+}
+
+export interface MultiplesCoincidenciasError {
+  mensaje: string;
+  candidatas: AsignacionCandidata[];
+}
+
 export function getAsignacionesDisponibles(cursoId: number) {
   return apiRequest<AsignacionOption[]>(`/api/plan-curricular/asignaciones-disponibles?cursoId=${cursoId}`);
+}
+
+export function getMisAsignaciones(): Promise<AsignacionCompleta[]> {
+  return apiRequest<AsignacionCompleta[]>('/api/plan-curricular/mis-asignaciones');
+}
+
+export function getMisPlanes(): Promise<PlanHistorialItem[]> {
+  return apiRequest<PlanHistorialItem[]>('/api/plan-curricular/mios');
+}
+
+export function subirPlanAutoDetectado(file: File, asignacionId?: number): Promise<{
+  id: number;
+  especialidadNombre: string;
+  cursoOrdinal: string;
+  seccion: string;
+  materiaNombre: string;
+}> {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (asignacionId !== undefined) formData.append('asignacionId', asignacionId.toString());
+  return apiRequest<{ id: number; especialidadNombre: string; cursoOrdinal: string; seccion: string; materiaNombre: string } | string>('/api/plan-curricular', { method: 'POST', body: formData }).then((result) => {
+    if (typeof result !== 'string') return result;
+    const id = Number(/\d+/.exec(result)?.[0] ?? 0);
+    return { id, especialidadNombre: '', cursoOrdinal: '', seccion: '', materiaNombre: '' };
+  });
 }
 
 export function downloadPlantilla(asignacionId: number) {
