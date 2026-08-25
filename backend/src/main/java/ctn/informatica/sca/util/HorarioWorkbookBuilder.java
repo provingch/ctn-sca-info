@@ -22,6 +22,11 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.util.IOUtils;
+import org.apache.poi.ss.usermodel.ClientAnchor;
+import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.Drawing;
+import java.io.InputStream;
 
 /**
  * Genera el horario de un curso en dos bloques (Mañana y T.O. / turno
@@ -66,7 +71,7 @@ public class HorarioWorkbookBuilder {
         }
 
         int rowIndex = 0;
-        rowIndex = writeTitle(sheet, styles, curso, lastCol, rowIndex);
+        rowIndex = writeTitle(sheet, styles, curso, lastCol, rowIndex, workbook, sheet);
         rowIndex++;
 
         rowIndex = writeBloque(sheet, styles, "MAÑANA", manana, slotsPorHoraCatedra, dayCount, lastCol, rowIndex);
@@ -82,7 +87,7 @@ public class HorarioWorkbookBuilder {
         return workbook;
     }
 
-    private int writeTitle(Sheet sheet, Styles styles, Curso curso, int lastCol, int rowIndex) {
+    private int writeTitle(Sheet sheet, Styles styles, Curso curso, int lastCol, int rowIndex, XSSFWorkbook workbook, Sheet workbookSheet) {
         Row titleRow = sheet.createRow(rowIndex++);
         Cell titleCell = titleRow.createCell(0);
         titleCell.setCellValue("HORARIO DE CLASES" + (curso == null ? "" : " " + curso.getPeriod()));
@@ -96,6 +101,25 @@ public class HorarioWorkbookBuilder {
         subtitleCell.setCellValue(subtitle);
         subtitleCell.setCellStyle(styles.subtitle);
         sheet.addMergedRegion(new CellRangeAddress(subtitleRow.getRowNum(), subtitleRow.getRowNum(), 0, lastCol));
+
+        // Intentional: try to load institutional logo from backend resources
+        try (InputStream is = HorarioWorkbookBuilder.class.getResourceAsStream("/static/logo-institucional.png")) {
+            if (is != null) {
+                byte[] bytes = IOUtils.toByteArray(is);
+                int pictureIdx = workbook.addPicture(bytes, XSSFWorkbook.PICTURE_TYPE_PNG);
+                CreationHelper helper = workbook.getCreationHelper();
+                Drawing<?> drawing = workbookSheet.createDrawingPatriarch();
+                ClientAnchor anchor = helper.createClientAnchor();
+                // place the logo at column 0, row 0 with an offset
+                anchor.setCol1(0);
+                anchor.setRow1(titleRow.getRowNum());
+                anchor.setCol2(0);
+                anchor.setRow2(titleRow.getRowNum() + 1);
+                drawing.createPicture(anchor, pictureIdx);
+            }
+        } catch (Exception ignored) {
+            // If logo not found or insertion fails, continue without failing the whole export
+        }
 
         return rowIndex;
     }

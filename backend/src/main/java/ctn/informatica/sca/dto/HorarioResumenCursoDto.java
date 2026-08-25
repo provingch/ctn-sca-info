@@ -4,6 +4,7 @@ public record HorarioResumenCursoDto(
         int cursoId,
         String especialidad,
         String cursoDescripcion,
-        int cantidadSlotsCargados
+        int cantidadSlotsCargados,
+        int nivel
 ) {
 }
