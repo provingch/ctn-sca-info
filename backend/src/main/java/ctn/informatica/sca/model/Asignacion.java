@@ -16,7 +16,9 @@ public class Asignacion {
     private String cursoDescripcion;
     // New explicit fields for UI: especialidad (nombre), nivel/promocion, seccion
     private String especialidad;
+    private Integer especialidadId;
     private Integer cursoNivel; // promocion
+    private String cursoOrdinal;
     private String cursoSeccion;
     
     // Estado del plan curricular para esta asignación
@@ -55,11 +57,21 @@ public class Asignacion {
     public String getEspecialidad() { return especialidad; }
     public void setEspecialidad(String especialidad) { this.especialidad = especialidad; }
 
+    public String getEspecialidadNombre() { return especialidad; }
+
+    public Integer getEspecialidadId() { return especialidadId; }
+    public void setEspecialidadId(Integer especialidadId) { this.especialidadId = especialidadId; }
+
     public Integer getCursoNivel() { return cursoNivel; }
     public void setCursoNivel(Integer cursoNivel) { this.cursoNivel = cursoNivel; }
 
+    public String getCursoOrdinal() { return cursoOrdinal; }
+    public void setCursoOrdinal(String cursoOrdinal) { this.cursoOrdinal = cursoOrdinal; }
+
     public String getCursoSeccion() { return cursoSeccion; }
     public void setCursoSeccion(String cursoSeccion) { this.cursoSeccion = cursoSeccion; }
+
+    public String getSeccion() { return cursoSeccion; }
 
     public String getEstadoPlan() { return estadoPlan; }
     public void setEstadoPlan(String estadoPlan) { this.estadoPlan = estadoPlan; }

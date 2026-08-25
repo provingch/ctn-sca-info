@@ -1,5 +1,15 @@
 package ctn.informatica.sca.service;
 
+import java.util.List;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
+
 import ctn.informatica.sca.dao.CursoDao;
 import ctn.informatica.sca.dao.EspecialidadDao;
 import ctn.informatica.sca.dao.ProfesorDao;
@@ -7,15 +17,6 @@ import ctn.informatica.sca.model.Especialidad;
 import ctn.informatica.sca.model.Profesor;
 import ctn.informatica.sca.util.AcademicPeriod;
 import ctn.informatica.sca.util.PushNotificationService;
-import java.util.List;
-import java.util.Set;
-import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.when;
 
 public class CursoProvisioningServiceTest {
 

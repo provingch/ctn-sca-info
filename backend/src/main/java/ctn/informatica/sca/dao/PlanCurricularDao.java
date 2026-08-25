@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 import ctn.informatica.sca.clases.conexion;
 import ctn.informatica.sca.dto.PlanCurricularDto;
 import ctn.informatica.sca.dto.TemaPlanDto;
+import ctn.informatica.sca.model.Curso;
 
 @Repository
 public class PlanCurricularDao extends conexion {
@@ -276,6 +277,44 @@ public class PlanCurricularDao extends conexion {
                 return null;
             }
         }
+    }
+
+    public List<PlanCurricularDto> findAllByProfesor(int profesorId) throws SQLException {
+        String sql = "SELECT p.id, p.estado, p.archivo_nombre, p.fecha_subida, p.fecha_revision, p.observaciones_evaluador, "
+                + "p.etapa, p.anio_lectivo, a.id AS asignacion_id, c.id AS curso_id, m.nombre AS materia_nombre, "
+                + "e.id AS especialidad_id, e.nombre AS especialidad, c.promocion, c.seccion "
+                + "FROM plan_curricular p "
+                + "JOIN asignacion a ON a.id = p.asignacion_id "
+                + "JOIN materia m ON m.id = a.materia_id "
+                + "JOIN curso c ON c.id = a.curso_id "
+                + "JOIN especialidad e ON e.id = c.especialidad_id "
+                + "WHERE a.usuario_id = ? ORDER BY p.fecha_subida DESC";
+        List<PlanCurricularDto> result = new ArrayList<>();
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, profesorId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    PlanCurricularDto dto = new PlanCurricularDto();
+                    dto.id = rs.getInt("id");
+                    dto.estado = rs.getString("estado");
+                    dto.archivoNombre = rs.getString("archivo_nombre");
+                    dto.fechaSubida = rs.getString("fecha_subida");
+                    dto.fechaRevision = rs.getString("fecha_revision");
+                    dto.observacionesEvaluador = rs.getString("observaciones_evaluador");
+                    dto.etapa = rs.getString("etapa");
+                    dto.anio = rs.getInt("anio_lectivo");
+                    dto.asignacionId = rs.getInt("asignacion_id");
+                    dto.materiaNombre = rs.getString("materia_nombre");
+                    dto.especialidadId = rs.getInt("especialidad_id");
+                    dto.especialidadNombre = rs.getString("especialidad");
+                    dto.seccion = rs.getString("seccion");
+                    dto.cursoOrdinal = new Curso(rs.getInt("curso_id"), dto.especialidadNombre,
+                            rs.getInt("promocion"), dto.seccion).getCursoOrdinal();
+                    result.add(dto);
+                }
+            }
+        }
+        return result;
     }
 
     public boolean existeAprobado(int asignacionId, String etapa, int anio) throws SQLException {
