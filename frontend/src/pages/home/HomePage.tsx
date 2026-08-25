@@ -262,6 +262,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
   const [modalidad, setModalidad] = useState('Presencial');
   const [observaciones, setObservaciones] = useState('');
   const [codigosPorAlumno, setCodigosPorAlumno] = useState<Record<number, string[]>>({});
+  const [selectorRasgosAbierto, setSelectorRasgosAbierto] = useState<number | null>(null);
   const [showCodeHelp, setShowCodeHelp] = useState(false);
 
   useEffect(() => {
@@ -297,6 +298,14 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
         setStatus(err instanceof ApiError ? err.message : 'No se pudieron guardar los códigos.');
       }
     }
+  }
+
+  function toggleCodigo(alumnoId: number, codigo: string) {
+    const codigosActuales = codigosPorAlumno[alumnoId] ?? [];
+    const codigosActualizados = codigosActuales.includes(codigo)
+      ? codigosActuales.filter((item) => item !== codigo)
+      : [...codigosActuales, codigo];
+    void changeCodigos(alumnoId, codigosActualizados);
   }
 
   const handleCantidadHorasInput = (value: string) => {
@@ -503,11 +512,21 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
                         Ausente
                       </label>
                     </td>
-                    <td>
-                      <select aria-label={`Rasgo conductual de ${alumno.nombre} ${alumno.apellido}`} value={codigosPorAlumno[alumno.id]?.[0] ?? ''} onChange={(e) => void changeCodigos(alumno.id, e.target.value ? [e.target.value] : [])} style={{ width: '100%' }}>
-                        <option value="">seleccione</option>
-                        {RASGO_CODIGOS.map(([codigo]) => <option key={codigo} value={codigo}>{codigo}</option>)}
-                      </select>
+                    <td className="rasgos-conductuales-cell">
+                      <button type="button" className="rasgos-conductuales-trigger" aria-expanded={selectorRasgosAbierto === alumno.id} onClick={() => setSelectorRasgosAbierto((actual) => actual === alumno.id ? null : alumno.id)}>
+                        <span>{(codigosPorAlumno[alumno.id] ?? []).join(', ') || 'seleccione'}</span>
+                        <span aria-hidden="true">▾</span>
+                      </button>
+                      {selectorRasgosAbierto === alumno.id && (
+                        <div className="rasgos-conductuales-menu" role="group" aria-label={`Rasgos conductuales de ${alumno.nombre} ${alumno.apellido}`}>
+                          {RASGO_CODIGOS.map(([codigo]) => (
+                            <label key={codigo} className="rasgos-conductuales-option">
+                              <input type="checkbox" checked={(codigosPorAlumno[alumno.id] ?? []).includes(codigo)} onChange={() => toggleCodigo(alumno.id, codigo)} />
+                              {codigo}
+                            </label>
+                          ))}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
