@@ -2,7 +2,10 @@ package ctn.informatica.sca.service;
 
 import ctn.informatica.sca.dao.CursoDao;
 import ctn.informatica.sca.dao.EspecialidadDao;
+import ctn.informatica.sca.dao.ProfesorDao;
 import ctn.informatica.sca.model.Especialidad;
+import ctn.informatica.sca.model.Profesor;
+import ctn.informatica.sca.util.PushNotificationService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -17,15 +20,22 @@ public class CursoProvisioningService {
 
     private final CursoDao cursoDao;
     private final EspecialidadDao especialidadDao;
+    private final ProfesorDao profesorDao;
 
     public CursoProvisioningService() {
         this.cursoDao = new CursoDao();
         this.especialidadDao = new EspecialidadDao();
+        this.profesorDao = new ProfesorDao();
     }
 
     public CursoProvisioningService(CursoDao cursoDao, EspecialidadDao especialidadDao) {
+        this(cursoDao, especialidadDao, new ProfesorDao());
+    }
+
+    public CursoProvisioningService(CursoDao cursoDao, EspecialidadDao especialidadDao, ProfesorDao profesorDao) {
         this.cursoDao = cursoDao;
         this.especialidadDao = especialidadDao;
+        this.profesorDao = profesorDao;
     }
 
     public record CreatedCourse(int especialidadId, String especialidadNombre, int promocion, String seccion) {}
@@ -48,12 +58,26 @@ public class CursoProvisioningService {
                 omitted.add(e);
                 continue;
             }
+            int createdBeforeEspecialidad = created.size();
             for (String s : secciones) {
                 if (s == null) continue;
                 if (!cursoDao.existsCurso(e.getId(), target, s)) {
                     boolean inserted = cursoDao.createCursoIfNotExists(e.getId(), target, s);
                     if (inserted) {
                         created.add(new CreatedCourse(e.getId(), e.getNombre(), target, s));
+                    }
+                }
+            }
+            if (created.size() > createdBeforeEspecialidad) {
+                for (Profesor admin : profesorDao.findByEspecialidadId(e.getId())) {
+                    if (admin.getNivel() == 3) {
+                        PushNotificationService.sendToUser(
+                                admin.getId(),
+                                "profesor",
+                                "Curso 1er año creado",
+                                "Ya se creó el curso de " + e.getNombre() + " para " + target
+                                        + " — cargá los ingresantes cuando tengas la lista.",
+                                "/admin/alumnos");
                     }
                 }
             }
