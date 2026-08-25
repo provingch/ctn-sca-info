@@ -71,11 +71,27 @@ public class HorarioController {
     @GetMapping("/resumen")
     public List<ctn.informatica.sca.dto.HorarioResumenCursoDto> resumen(Authentication auth) {
         ApiAuth.requireUserId(auth);
+        Integer actingSpecialtyId = resolveCurrentSpecialtyAdminId(auth);
+        if (actingSpecialtyId != null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Los administradores por especialidad no tienen acceso a este resumen global");
+        }
         try {
             return new HorarioSlotDao().resumenPorCurso();
         } catch (Exception ex) {
             throw failure("No se pudo cargar el resumen de horarios por curso", ex);
         }
+    }
+
+    private Integer resolveCurrentSpecialtyAdminId(Authentication auth) {
+        if (auth == null || auth.getPrincipal() == null) {
+            return null;
+        }
+        int userId = ApiAuth.requireUserId(auth);
+        var profesor = new ctn.informatica.sca.dao.ProfesorDao().findById(userId);
+        if (profesor != null && profesor.getNivel() == 3) {
+            return profesor.getEspecialidadId();
+        }
+        return null;
     }
 
     @GetMapping("/asignaciones/{asignacionId}")

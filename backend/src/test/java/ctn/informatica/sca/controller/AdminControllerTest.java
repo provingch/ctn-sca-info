@@ -5,6 +5,7 @@ import ctn.informatica.sca.dao.PlanillaDao;
 import ctn.informatica.sca.dao.TareaDao;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.server.ResponseStatusException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -66,5 +67,22 @@ public class AdminControllerTest {
         verify(gradeDao).deleteImportedGradesForAllPlans();
         verify(tareaDao).deleteImportedTasks(null);
         verify(planillaDao).clearClassroomCourseIds();
+    }
+
+    @Test
+    public void globalAdminCanCreateSpecialtyAdmin() {
+        assertDoesNotThrow(() -> AdminController.validateAdminRoleAssignment(null, 3, 7));
+        assertDoesNotThrow(() -> AdminController.validateAdminMutationAccess(null, 7, 3));
+    }
+
+    @Test
+    public void specialtyAdminCannotCreateOrEditOtherAdmin() {
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> AdminController.validateAdminRoleAssignment(7, 3, 5));
+        assertEquals(403, ex.getStatusCode().value());
+
+        ResponseStatusException editEx = assertThrows(ResponseStatusException.class,
+                () -> AdminController.validateAdminMutationAccess(7, 5, 3));
+        assertEquals(403, editEx.getStatusCode().value());
     }
 }

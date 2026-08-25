@@ -10,6 +10,7 @@ public record ProfileOwnerDto(
         String telefono,
         String celular,
         String usuario,
+        Integer especialidadId,
         String googleEmail,
         String gcAccessToken,
         String firmaImagen,

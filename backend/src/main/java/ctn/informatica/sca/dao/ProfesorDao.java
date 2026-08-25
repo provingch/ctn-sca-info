@@ -34,6 +34,8 @@ public class ProfesorDao extends conexion {
         if (!rs.wasNull()) p.setCelular(cel);
 
         p.setCorreo(rs.getString("correo"));
+        int especialidadId = rs.getInt("especialidad_id");
+        if (!rs.wasNull()) p.setEspecialidadId(especialidadId);
         p.setGoogleEmail(rs.getString("google_email"));
         p.setGcAccessToken(rs.getString("google_access_token"));
         p.setGcRefreshToken(rs.getString("google_refresh_token"));
@@ -48,7 +50,7 @@ public class ProfesorDao extends conexion {
     // ── findById ─────────────────────────────────────────────────────────────
     public Profesor findById(int id) {
         final String sql = "SELECT id, nombre, apellido, usuario, contrasenia, nivel, "
-                         + "ci, telefono, celular, correo, google_email, "
+                         + "ci, telefono, celular, correo, especialidad_id, google_email, "
                          + "google_access_token, google_refresh_token, google_token_expiry, totp_secret, firma_imagen, foto_perfil "
                          + "FROM usuario WHERE nivel <> 4 AND id = ?";
         try (Connection c = getCon();
@@ -68,7 +70,7 @@ public class ProfesorDao extends conexion {
     // Ajusta el nombre de columna si en tu tabla se llama distinto.
     public Profesor findByGoogleEmail(String email) {
         final String sql = "SELECT id, nombre, apellido, usuario, contrasenia, nivel, "
-                         + "ci, telefono, celular, correo, google_email, "
+                         + "ci, telefono, celular, correo, especialidad_id, google_email, "
                          + "google_access_token, google_refresh_token, google_token_expiry, totp_secret, firma_imagen, foto_perfil "
                          + "FROM usuario WHERE nivel <> 4 AND (google_email = ? OR correo = ?)";
         try (Connection c = getCon();
@@ -165,7 +167,7 @@ public class ProfesorDao extends conexion {
         final String sql = "UPDATE usuario "
                          + "SET nombre = ?, apellido = ?, usuario = ?, "
                          + "    contrasenia = ?, nivel = ?, ci = ?, telefono = ?, "
-                         + "    celular = ?, correo = ?, firma_imagen = ?, foto_perfil = ? "
+                         + "    celular = ?, correo = ?, especialidad_id = ?, firma_imagen = ?, foto_perfil = ? "
                          + "WHERE nivel <> 4 AND id = ?";
         try (Connection c = getCon();
              PreparedStatement ps = c.prepareStatement(sql)) {
@@ -196,17 +198,22 @@ public class ProfesorDao extends conexion {
             else                          ps.setNull(8, Types.INTEGER);
 
             ps.setString(9, p.getCorreo());
-            if (p.getFirmaImagen() != null && !p.getFirmaImagen().isBlank()) {
-                ps.setString(10, p.getFirmaImagen());
+            if (p.getEspecialidadId() != null) {
+                ps.setInt(10, p.getEspecialidadId());
             } else {
-                ps.setNull(10, Types.VARCHAR);
+                ps.setNull(10, Types.INTEGER);
             }
-            if (p.getFotoPerfil() != null && !p.getFotoPerfil().isBlank()) {
-                ps.setString(11, p.getFotoPerfil());
+            if (p.getFirmaImagen() != null && !p.getFirmaImagen().isBlank()) {
+                ps.setString(11, p.getFirmaImagen());
             } else {
                 ps.setNull(11, Types.VARCHAR);
             }
-            ps.setInt(12, p.getId());
+            if (p.getFotoPerfil() != null && !p.getFotoPerfil().isBlank()) {
+                ps.setString(12, p.getFotoPerfil());
+            } else {
+                ps.setNull(12, Types.VARCHAR);
+            }
+            ps.setInt(13, p.getId());
 
             return ps.executeUpdate() == 1;
         } catch (SQLException ex) {
@@ -217,7 +224,7 @@ public class ProfesorDao extends conexion {
 
     public java.util.List<Profesor> findAll() {
         final String sql = "SELECT id, nombre, apellido, usuario, contrasenia, nivel, "
-                         + "ci, telefono, celular, correo, google_email, "
+                         + "ci, telefono, celular, correo, especialidad_id, google_email, "
                          + "google_access_token, google_refresh_token, google_token_expiry, totp_secret, firma_imagen, foto_perfil "
                          + "FROM usuario WHERE nivel <> 4 ORDER BY apellido, nombre";
         java.util.List<Profesor> out = new java.util.ArrayList<>();
@@ -231,7 +238,24 @@ public class ProfesorDao extends conexion {
         }
         return out;
     }
-
+    public java.util.List<Profesor> findByEspecialidadId(int especialidadId) {
+        final String sql = "SELECT id, nombre, apellido, usuario, contrasenia, nivel, "
+                         + "ci, telefono, celular, correo, especialidad_id, google_email, "
+                         + "google_access_token, google_refresh_token, google_token_expiry, totp_secret, firma_imagen, foto_perfil "
+                         + "FROM usuario WHERE nivel <> 4 AND especialidad_id = ? ORDER BY apellido, nombre";
+        java.util.List<Profesor> out = new java.util.ArrayList<>();
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, especialidadId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    out.add(map(rs));
+                }
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return out;
+    }
     public boolean updateTotpSecret(int profesorId, String totpSecret) {
         final String sql = "UPDATE usuario SET totp_secret = ? WHERE nivel <> 4 AND id = ?";
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
@@ -310,8 +334,8 @@ public class ProfesorDao extends conexion {
     }
 
     public int create(Profesor p) {
-        final String sql = "INSERT INTO usuario (nombre, apellido, usuario, contrasenia, nivel, ci, telefono, celular, correo) "
-                         + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        final String sql = "INSERT INTO usuario (nombre, apellido, usuario, contrasenia, nivel, ci, telefono, celular, correo, especialidad_id) "
+                         + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, p.getNombre());
             ps.setString(2, p.getApellido());
@@ -327,6 +351,7 @@ public class ProfesorDao extends conexion {
             if (p.getTelefono() != null) ps.setInt(7, p.getTelefono()); else ps.setNull(7, Types.INTEGER);
             if (p.getCelular() != null) ps.setInt(8, p.getCelular()); else ps.setNull(8, Types.INTEGER);
             ps.setString(9, p.getCorreo());
+            if (p.getEspecialidadId() != null) ps.setInt(10, p.getEspecialidadId()); else ps.setNull(10, Types.INTEGER);
 
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {

@@ -72,14 +72,19 @@ public class AdminController {
             MateriaDao materiaDao = new MateriaDao();
             ProfesorDao profesorDao = new ProfesorDao();
             PadreDao padreDao = new PadreDao();
+            Integer actingSpecialtyId = getSpecialtyAdminIdForUser(ApiAuth.requireUserId(authentication));
+
             List<Materia> materiasDb = materiaDao.listAll();
             List<MateriaItem> materias = new java.util.ArrayList<>();
             for (Materia m : materiasDb) {
                 materias.add(new MateriaItem(m.getId(), m.getNombre(), m.getCategoria(), materiaDao.listEspecialidadIdsForMateria(m.getId())));
             }
             List<UserItem> usuarios = new java.util.ArrayList<>();
-            usuarios.addAll(profesorDao.findAll().stream().map(p -> new UserItem(p.getId(), p.getNombre(), p.getApellido(), p.getUsuario(), p.getNivel(), p.getCorreo(), p.getCi())).toList());
-            usuarios.addAll(padreDao.findAll().stream().map(p -> new UserItem(p.getId(), p.getNombre(), p.getApellido(), p.getUsuario(), 4, p.getCorreo(), p.getCi())).toList());
+            List<Profesor> profesoresDb = actingSpecialtyId == null ? profesorDao.findAll() : profesorDao.findByEspecialidadId(actingSpecialtyId);
+            usuarios.addAll(profesoresDb.stream().map(p -> new UserItem(p.getId(), p.getNombre(), p.getApellido(), p.getUsuario(), p.getNivel(), p.getCorreo(), p.getCi())).toList());
+            if (actingSpecialtyId == null) {
+                usuarios.addAll(padreDao.findAll().stream().map(p -> new UserItem(p.getId(), p.getNombre(), p.getApellido(), p.getUsuario(), 4, p.getCorreo(), p.getCi())).toList());
+            }
             usuarios.sort((a, b) -> {
                 int byApellido = String.valueOf(a.apellido()).compareToIgnoreCase(String.valueOf(b.apellido()));
                 if (byApellido != 0) return byApellido;
@@ -147,6 +152,7 @@ public class AdminController {
     @PostMapping("/usuarios") @ResponseStatus(HttpStatus.CREATED)
     public void createUser(@RequestBody UserInput input, Authentication auth) {
         ApiAuth.requireUserId(auth); require(input != null && notBlank(input.nombre()) && notBlank(input.apellido()) && notBlank(input.usuario()) && input.ci() != null, "Nombre, apellido, usuario y cédula son requeridos");
+        int actingUserId = ApiAuth.requireUserId(auth);
         try {
             String defaultPassword = input.contrasenia() == null || input.contrasenia().isBlank() ? "password" : input.contrasenia();
             if (input.nivel() == 4) {
@@ -167,12 +173,23 @@ public class AdminController {
                 }
                 return;
             }
-            Profesor p = new Profesor(); p.setNombre(input.nombre().trim()); p.setApellido(input.apellido().trim()); p.setUsuario(input.usuario().trim()); p.setContrasenia(defaultPassword); p.setNivel(input.nivel()); p.setCorreo(input.correo()); p.setCi(input.ci()); p.setTelefono(input.telefono() == null || input.telefono().isBlank() ? null : Integer.parseInt(input.telefono()));
+            validateAdminRoleAssignment(getSpecialtyAdminIdForUser(actingUserId), input.nivel(), input.especialidadId());
+
+            Profesor p = new Profesor();
+            p.setNombre(input.nombre().trim());
+            p.setApellido(input.apellido().trim());
+            p.setUsuario(input.usuario().trim());
+            p.setContrasenia(defaultPassword);
+            p.setNivel(input.nivel());
+            p.setCorreo(input.correo());
+            p.setCi(input.ci());
+            p.setTelefono(input.telefono() == null || input.telefono().isBlank() ? null : Integer.parseInt(input.telefono()));
+            p.setEspecialidadId(normalizeAdminEspecialidadId(input.nivel(), input.especialidadId()));
             if (new ProfesorDao().create(p) <= 0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo crear el usuario");
                 try {
-                    activityLogService.registrar(ApiAuth.requireUserId(auth), "Creó usuario " + input.nombre().trim() + " " + input.apellido().trim() + " (nivel " + input.nivel() + ")");
+                    activityLogService.registrar(actingUserId, "Creó usuario " + input.nombre().trim() + " " + input.apellido().trim() + " (nivel " + input.nivel() + ")");
                 } catch (Exception ex) {
-                    log.warn("No se pudo registrar actividad para usuario {}: {}", ApiAuth.requireUserId(auth), ex.getMessage());
+                    log.warn("No se pudo registrar actividad para usuario {}: {}", actingUserId, ex.getMessage());
                 }
         } catch (ResponseStatusException ex) {
             throw ex;
@@ -185,6 +202,7 @@ public class AdminController {
     public void updateUser(@PathVariable int id, @RequestBody UserInput input, Authentication auth) {
         ApiAuth.requireUserId(auth);
         require(input != null && notBlank(input.nombre()) && notBlank(input.apellido()) && notBlank(input.usuario()) && input.ci() != null, "Nombre, apellido, usuario y cédula son requeridos");
+        int actingUserId = ApiAuth.requireUserId(auth);
         try {
             ProfesorDao profesorDao = new ProfesorDao();
             PadreDao padreDao = new PadreDao();
@@ -200,6 +218,9 @@ public class AdminController {
             if (nivel == 3) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Los administradores no pueden editarse ni eliminarse desde este panel");
             }
+            final Integer actingSpecialtyId = getSpecialtyAdminIdForUser(actingUserId);
+            final Integer targetSpecialtyId = targetProfesor != null ? targetProfesor.getEspecialidadId() : null;
+            validateAdminMutationAccess(actingSpecialtyId, targetSpecialtyId, nivel);
             if (nivel == 4) {
                 Padre existing = padreDao.findById(id);
                 if (existing == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Padre no encontrado");
@@ -232,6 +253,7 @@ public class AdminController {
             updated.setFirmaImagen(existing.getFirmaImagen());
             updated.setFotoPerfil(existing.getFotoPerfil());
             updated.setTotpSecret(existing.getTotpSecret());
+            updated.setEspecialidadId(normalizeAdminEspecialidadId(existing.getNivel(), input.especialidadId()));
             if (!profesorDao.update(updated)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado");
         } catch (ResponseStatusException ex) {
             throw ex;
@@ -277,6 +299,7 @@ public class AdminController {
     @DeleteMapping("/usuarios/{id}") @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteUsuario(@PathVariable int id, Authentication auth) {
         ApiAuth.requireUserId(auth);
+        int actingUserId = ApiAuth.requireUserId(auth);
         try {
             ProfesorDao profesorDao = new ProfesorDao();
             PadreDao padreDao = new PadreDao();
@@ -284,20 +307,21 @@ public class AdminController {
             if (existing != null && existing.getNivel() == 3) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Los administradores no pueden editarse ni eliminarse desde este panel");
             }
+            validateAdminMutationAccess(getSpecialtyAdminIdForUser(actingUserId), existing == null ? null : existing.getEspecialidadId(), existing == null ? 4 : existing.getNivel());
             if (existing != null) {
                 if (!profesorDao.delete(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado o no se pudo eliminar");
                     try {
-                        activityLogService.registrar(ApiAuth.requireUserId(auth), "Eliminó usuario #" + id);
+                        activityLogService.registrar(actingUserId, "Eliminó usuario #" + id);
                     } catch (Exception ex) {
-                        log.warn("No se pudo registrar actividad para usuario {}: {}", ApiAuth.requireUserId(auth), ex.getMessage());
+                        log.warn("No se pudo registrar actividad para usuario {}: {}", actingUserId, ex.getMessage());
                     }
                 return;
             }
             if (!padreDao.delete(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado o no se pudo eliminar");
                 try {
-                    activityLogService.registrar(ApiAuth.requireUserId(auth), "Eliminó usuario #" + id);
+                    activityLogService.registrar(actingUserId, "Eliminó usuario #" + id);
                 } catch (Exception ex) {
-                    log.warn("No se pudo registrar actividad para usuario {}: {}", ApiAuth.requireUserId(auth), ex.getMessage());
+                    log.warn("No se pudo registrar actividad para usuario {}: {}", actingUserId, ex.getMessage());
                 }
         } catch (ResponseStatusException ex) { throw ex; } catch (Exception ex) { throw failure("No se pudo eliminar el usuario", ex); }
     }
@@ -507,6 +531,51 @@ public class AdminController {
         } catch (Exception ex) {
             throw failure("No se pudo realizar wipe global de sincronización", ex);
         }
+    }
+
+    static void validateAdminRoleAssignment(Integer actingSpecialtyId, int targetLevel, Integer targetSpecialtyId) {
+        if (actingSpecialtyId == null) {
+            return;
+        }
+        if (targetLevel == 3) {
+            if (targetSpecialtyId == null || !targetSpecialtyId.equals(actingSpecialtyId)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Un administrador por especialidad solo puede crear administradores de su misma especialidad");
+            }
+            return;
+        }
+        if (targetLevel == 1 || targetLevel == 2 || targetLevel == 4) {
+            if (targetSpecialtyId != null && !targetSpecialtyId.equals(actingSpecialtyId)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Un administrador por especialidad solo puede asignar usuarios de su misma especialidad");
+            }
+        }
+    }
+
+    static void validateAdminMutationAccess(Integer actingSpecialtyId, Integer targetSpecialtyId, int targetLevel) {
+        if (actingSpecialtyId == null) {
+            return;
+        }
+        if (targetLevel == 3) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Un administrador por especialidad no puede editar ni eliminar a otros administradores");
+        }
+        if (targetSpecialtyId != null && !targetSpecialtyId.equals(actingSpecialtyId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes modificar usuarios fuera de tu especialidad");
+        }
+    }
+
+    private Integer getSpecialtyAdminIdForUser(int userId) {
+        ProfesorDao profesorDao = new ProfesorDao();
+        Profesor professor = profesorDao.findById(userId);
+        if (professor == null || professor.getNivel() != 3) {
+            return null;
+        }
+        return professor.getEspecialidadId();
+    }
+
+    private Integer normalizeAdminEspecialidadId(int level, Integer especialidadId) {
+        if (level != 3) {
+            return null;
+        }
+        return especialidadId;
     }
 
     private void require(boolean condition, String message) { if (!condition) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message); }

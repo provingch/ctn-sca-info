@@ -564,6 +564,7 @@ public class ProfileController {
                     profesor.getTelefono() == null ? null : String.valueOf(profesor.getTelefono()),
                     profesor.getCelular() == null ? null : String.valueOf(profesor.getCelular()),
                     profesor.getUsuario(),
+                    profesor.getEspecialidadId(),
                     profesor.getGoogleEmail(),
                     profesor.getGcAccessToken(),
                     profesor.getFirmaImagen(),
@@ -584,10 +585,11 @@ public class ProfileController {
                     null,
                     null,
                     null,
+                    null,
                     null
             );
         }
-        return new ProfileOwnerDto(null, null, null, null, null, null, null, null, null, null, null, null, null);
+        return new ProfileOwnerDto(null, null, null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     private AsignacionDto toAsignacionDto(Asignacion asignacion) {
