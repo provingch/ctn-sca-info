@@ -22,7 +22,7 @@ public class PlanCurricularDto {
     public String observacionesEvaluador;
     
     // Campos adicionales para findPendientes
-    public Integer materiaNombre;
-    public Integer profesorNombre;
-    public Integer cursoDescripcion;
+    public String materiaNombre;
+    public String profesorNombre;
+    public String cursoDescripcion;
 }
