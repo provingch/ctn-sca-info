@@ -10,7 +10,7 @@ import AnimatedSelect from '../../components/AnimatedSelect';
 import { useSpecialty } from '../../context/SpecialtyContext';
 import PlanCurricularView from './PlanCurricularView';
 
-const HORARIOS_CATEDRA = ['7:00', '7:35', '8:10', '8:45', '9:40', '10:15', '10:50', '11:25', '13:00', '13:35', '14:10', '14:45', '15:20', '16:15', '16:50', '17:25'];
+const HORARIOS_CATEDRA = ['7:00', '7:35', '8:10', '8:45', '9:40', '10:15', '10:50', '11:25', '13:00', '13:35', '14:10', '14:45', '15:40', '16:15', '16:50', '17:25'];
 const RASGO_CODIGOS = [
   ['N1', 'Llegada tardia a clase'],
   ['N2', 'Sale de clase sin autorización'],
