@@ -23,6 +23,8 @@ export interface UserItem {
   nivel: number;
   correo: string | null;
   ci?: number | null;
+  especialidadId?: number | null;
+  especialidadNombre?: string | null;
 }
 
 export interface AssignmentItem {
@@ -108,6 +110,9 @@ export interface AdminCatalog {
   alumnos: StudentItem[];
   cursos: CourseItem[];
   especialidades: SpecialtyItem[];
+  /** Null o ausente identifica al administrador global. */
+  especialidadId?: number | null;
+  especialidadNombre?: string | null;
 }
 
 export const getAdminCatalog = () => api.get<AdminCatalog>('/api/admin');

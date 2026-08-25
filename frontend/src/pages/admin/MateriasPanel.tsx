@@ -12,10 +12,11 @@ export default function MateriasPanel({ data, reload, status }: MateriasPanelPro
   const [isOpen, setIsOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState({ nombre: '', categoria: 'comun', especialidadIds: [] as number[] });
+  const onlySpecialty = data.especialidades.length === 1 ? data.especialidades[0] : null;
 
   const openCreate = () => {
     setEditingId(null);
-    setForm({ nombre: '', categoria: 'comun', especialidadIds: [] });
+    setForm({ nombre: '', categoria: 'comun', especialidadIds: onlySpecialty ? [onlySpecialty.id] : [] });
     setIsOpen(true);
   };
 
@@ -29,7 +30,7 @@ export default function MateriasPanel({ data, reload, status }: MateriasPanelPro
       }
     }
     setEditingId(item.id);
-    setForm({ nombre: item.nombre, categoria: item.categoria ?? 'comun', especialidadIds });
+    setForm({ nombre: item.nombre, categoria: item.categoria ?? 'comun', especialidadIds: onlySpecialty ? [onlySpecialty.id] : especialidadIds });
     setIsOpen(true);
   };
 
@@ -131,7 +132,9 @@ export default function MateriasPanel({ data, reload, status }: MateriasPanelPro
               </select>
             </label>
 
-            {form.categoria === 'especifico' ? (
+            {onlySpecialty ? (
+              <div className="admin-single-specialty"><small>Especialidad</small><strong>{onlySpecialty.nombre}</strong></div>
+            ) : form.categoria === 'especifico' ? (
               <label>
                 Especialidad
                 <select value={form.especialidadIds[0] ?? ''} onChange={(event) => setForm({ ...form, especialidadIds: event.target.value ? [Number(event.target.value)] : [] })}>

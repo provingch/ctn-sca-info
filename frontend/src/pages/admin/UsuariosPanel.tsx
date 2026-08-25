@@ -6,6 +6,7 @@ interface UsuariosPanelProps {
   data: AdminCatalog;
   reload: () => Promise<void>;
   status: (message: string) => void;
+  isGlobalAdmin: boolean;
 }
 
 const USER_LEVELS = [
@@ -15,14 +16,16 @@ const USER_LEVELS = [
   { value: 4, label: 'Padre' },
 ];
 
-export default function UsuariosPanel({ data, reload, status }: UsuariosPanelProps) {
+const EMPTY_FORM = { nombre: '', apellido: '', ci: '', usuario: '', nivel: '1', correo: '', especialidadId: '' };
+
+export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: UsuariosPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [form, setForm] = useState({ nombre: '', apellido: '', ci: '', usuario: '', nivel: '1', correo: '' });
+  const [form, setForm] = useState(EMPTY_FORM);
 
   const openCreate = () => {
     setEditingId(null);
-    setForm({ nombre: '', apellido: '', ci: '', usuario: '', nivel: '1', correo: '' });
+    setForm(EMPTY_FORM);
     setIsOpen(true);
   };
 
@@ -35,6 +38,7 @@ export default function UsuariosPanel({ data, reload, status }: UsuariosPanelPro
       usuario: user.usuario,
       nivel: String(user.nivel),
       correo: user.correo ?? '',
+      especialidadId: user.especialidadId == null ? '' : String(user.especialidadId),
     });
     setIsOpen(true);
   };
@@ -48,6 +52,7 @@ export default function UsuariosPanel({ data, reload, status }: UsuariosPanelPro
       ci: form.ci ? Number(form.ci) : null,
       nivel: Number(form.nivel),
       correo: form.correo.trim() || null,
+      especialidadId: Number(form.nivel) === 3 && form.especialidadId ? Number(form.especialidadId) : null,
     };
 
     try {
@@ -92,7 +97,8 @@ export default function UsuariosPanel({ data, reload, status }: UsuariosPanelPro
                     <th>Apellido</th>
                     <th>Cédula</th>
                     <th>Usuario</th>
-                    {section.key !== 3 && <th>Acciones</th>}
+                    {section.key === 3 && <th>Especialidad</th>}
+                    {(section.key !== 3 || isGlobalAdmin) && <th>Acciones</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -102,12 +108,11 @@ export default function UsuariosPanel({ data, reload, status }: UsuariosPanelPro
                       <td>{user.apellido}</td>
                       <td>{user.ci ?? '—'}</td>
                       <td>{user.usuario}</td>
-                      {section.key !== 3 && (
+                      {section.key === 3 && <td>{user.especialidadNombre ?? data.especialidades.find((specialty) => specialty.id === user.especialidadId)?.nombre ?? 'Global'}</td>}
+                      {(section.key !== 3 || isGlobalAdmin) && (
                         <td>
                           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                            {section.key !== 3 && (
-                              <button type="button" className="button secondary" onClick={() => openEdit(user)}>Editar</button>
-                            )}
+                            <button type="button" className="button secondary" onClick={() => openEdit(user)}>Editar</button>
                             {user.nivel !== 4 && (
                               <button type="button" className="button secondary" onClick={async () => {
                                 try {
@@ -119,8 +124,7 @@ export default function UsuariosPanel({ data, reload, status }: UsuariosPanelPro
                                 }
                               }}>Limpiar tokens Google</button>
                             )}
-                            {section.key !== 3 && (
-                              <button type="button" className="button danger" onClick={async () => {
+                            <button type="button" className="button danger" onClick={async () => {
                                 if (!window.confirm('¿Eliminar este usuario?')) return;
                                 try {
                                   await deleteAdminRecord('usuarios', user.id);
@@ -130,7 +134,6 @@ export default function UsuariosPanel({ data, reload, status }: UsuariosPanelPro
                                   status(error instanceof ApiError ? error.message : 'No se pudo eliminar el usuario.');
                                 }
                               }}>Eliminar</button>
-                            )}
                           </div>
                         </td>
                       )}
@@ -171,12 +174,20 @@ export default function UsuariosPanel({ data, reload, status }: UsuariosPanelPro
             </label>
             <label>
               Rol
-              <select value={form.nivel} onChange={(event) => setForm({ ...form, nivel: event.target.value })}>
-                {USER_LEVELS.filter((level) => level.value !== 3).map((level) => (
+              <select value={form.nivel} onChange={(event) => setForm({ ...form, nivel: event.target.value, especialidadId: event.target.value === '3' ? form.especialidadId : '' })}>
+                {USER_LEVELS.filter((level) => isGlobalAdmin || level.value !== 3).map((level) => (
                   <option key={level.value} value={level.value}>{level.label}</option>
                 ))}
               </select>
             </label>
+            {isGlobalAdmin && form.nivel === '3' && <label>
+              Especialidad
+              <select value={form.especialidadId} onChange={(event) => setForm({ ...form, especialidadId: event.target.value })}>
+                <option value="">Administrador global</option>
+                {data.especialidades.map((specialty) => <option key={specialty.id} value={specialty.id}>{specialty.nombre}</option>)}
+              </select>
+              <small className="field-help">Dejá vacío para crear un administrador global con acceso a todo.</small>
+            </label>}
             <label>
               Correo
               <input type="email" value={form.correo} onChange={(event) => setForm({ ...form, correo: event.target.value })} />
