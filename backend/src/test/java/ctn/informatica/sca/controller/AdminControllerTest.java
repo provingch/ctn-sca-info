@@ -76,6 +76,15 @@ public class AdminControllerTest {
     }
 
     @Test
+    public void globalAdminCanEditSpecialtyAdminButNotGlobalAdmin() {
+        assertDoesNotThrow(() -> AdminController.validateAdminMutationAccess(null, 7, 3));
+
+        ResponseStatusException globalAdminEx = assertThrows(ResponseStatusException.class,
+                () -> AdminController.validateAdminMutationAccess(null, null, 3));
+        assertEquals(403, globalAdminEx.getStatusCode().value());
+    }
+
+    @Test
     public void specialtyAdminCannotCreateOrEditOtherAdmin() {
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> AdminController.validateAdminRoleAssignment(7, 3, 5));
@@ -84,5 +93,9 @@ public class AdminControllerTest {
         ResponseStatusException editEx = assertThrows(ResponseStatusException.class,
                 () -> AdminController.validateAdminMutationAccess(7, 5, 3));
         assertEquals(403, editEx.getStatusCode().value());
+
+        ResponseStatusException selfEditEx = assertThrows(ResponseStatusException.class,
+                () -> AdminController.validateAdminMutationAccess(7, 7, 3));
+        assertEquals(403, selfEditEx.getStatusCode().value());
     }
 }
