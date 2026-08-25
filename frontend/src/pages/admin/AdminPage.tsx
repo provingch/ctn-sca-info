@@ -7,6 +7,7 @@ import { getAdminCatalog, type AdminCatalog } from '../../api/admin';
 import { ApiError } from '../../api/client';
 import { useSpecialty } from '../../context/SpecialtyContext';
 import { normalizeSpecialty } from '../../theme/theme';
+import { useAuth } from '../../context/AuthContext';
 import MateriasPanel from './MateriasPanel';
 import UsuariosPanel from './UsuariosPanel';
 import AsignacionesPanel from './AsignacionesPanel';
@@ -25,6 +26,7 @@ const modules = [
 
 export default function AdminPage() {
   const location = useLocation();
+  const { user, identityStatus, refreshUserIdentity } = useAuth();
   const selected = modules.find((module) => module.path === location.pathname) ?? null;
   const [data, setData] = useState<AdminCatalog | null>(null);
   const [status, setStatus] = useState('');
@@ -43,10 +45,18 @@ export default function AdminPage() {
     return <AppShell title={selected?.title || 'Panel general'}><ContentState tone={status ? 'error' : 'loading'} title={status || 'Cargando administración…'} detail={status ? 'Recargá la página para volver a intentarlo.' : 'Estamos preparando el catálogo del sistema.'} /></AppShell>;
   }
 
-  const isScopedAdmin = data.especialidadId != null;
+  if (identityStatus === 'idle' || identityStatus === 'loading') {
+    return <AppShell title={selected?.title || 'Panel general'}><ContentState tone="loading" title="Verificando alcance administrativo…" detail="Estamos consultando la especialidad asociada a tu cuenta." /></AppShell>;
+  }
+
+  if (identityStatus === 'error' || user?.especialidadId === undefined) {
+    return <AppShell title={selected?.title || 'Panel general'}><ContentState tone="error" title="No se pudo determinar tu alcance administrativo" detail="El perfil no informó especialidadId. No se habilitó acceso global por defecto para proteger los datos del sistema." actions={<button className="button" type="button" onClick={() => void refreshUserIdentity()}>Reintentar</button>} /></AppShell>;
+  }
+
+  const isScopedAdmin = user.especialidadId !== null;
   const visibleModules = modules.filter((module) => !isScopedAdmin || !('globalOnly' in module && module.globalOnly));
   const selectedIsRestricted = Boolean(selected && isScopedAdmin && 'globalOnly' in selected && selected.globalOnly);
-  const scopeName = data.especialidadNombre ?? data.especialidades.find((item) => item.id === data.especialidadId)?.nombre ?? null;
+  const scopeName = user.especialidadNombre ?? data.especialidades.find((item) => item.id === user.especialidadId)?.nombre ?? (user.especialidadId === null ? null : `Especialidad #${user.especialidadId}`);
 
   return <AppShell title={selected?.title || 'Panel general'} subtitle={scopeName ? `Administración de ${scopeName}` : 'Administración global del sistema'} specialty={scopeName}>
     <AdminToolbar data={data} showBack={Boolean(selected)} scopeName={scopeName} />
@@ -65,7 +75,7 @@ export default function AdminPage() {
         </section>}
       </div>
     ) : (
-      <AdminModule module={selected} data={data} reload={load} status={setStatus} />
+      <AdminModule module={selected} data={data} reload={load} status={setStatus} isGlobalAdmin={!isScopedAdmin} />
     )}
 
   </AppShell>;
@@ -90,11 +100,11 @@ function AdminToolbar({ data, showBack, scopeName }: { data: AdminCatalog; showB
   </div>;
 }
 
-function AdminModule({ module, data, reload, status }: {
-  module: (typeof modules)[number]; data: AdminCatalog; reload: () => Promise<void>; status: (message: string) => void;
+function AdminModule({ module, data, reload, status, isGlobalAdmin }: {
+  module: (typeof modules)[number]; data: AdminCatalog; reload: () => Promise<void>; status: (message: string) => void; isGlobalAdmin: boolean;
 }) {
   if (module.key === 'materias') return <MateriasPanel data={data} reload={reload} status={status} />;
-  if (module.key === 'usuarios') return <UsuariosPanel data={data} reload={reload} status={status} isGlobalAdmin={data.especialidadId == null} />;
+  if (module.key === 'usuarios') return <UsuariosPanel data={data} reload={reload} status={status} isGlobalAdmin={isGlobalAdmin} />;
   if (module.key === 'asignaciones') return <AsignacionesPanel data={data} reload={reload} status={status} />;
   if (module.key === 'alumnos') return <AlumnosPanel data={data} reload={reload} status={status} />;
   if (module.key === 'horarios') return <HorariosPanel status={status} />;
