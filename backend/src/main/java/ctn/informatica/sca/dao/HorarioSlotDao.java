@@ -138,14 +138,14 @@ public class HorarioSlotDao extends conexion {
 
     public List<ctn.informatica.sca.dto.HorarioResumenCursoDto> resumenPorCurso() throws SQLException {
         String sql = "SELECT c.id AS curso_id, e.nombre AS especialidad, "
-                + "CONCAT(COALESCE(e.nombre, ''), CASE WHEN c.seccion IS NULL OR c.seccion = '' THEN '' ELSE CONCAT(' ', c.seccion) END) AS curso_descripcion, "
+                + "CONCAT(c.nivel, '°', CASE WHEN c.seccion IS NULL OR c.seccion = '' THEN '' ELSE CONCAT(' ', c.seccion) END) AS curso_descripcion, "
                 + "COUNT(hs.id) AS cantidad_slots_cargados "
                 + "FROM curso c "
                 + "JOIN especialidad e ON e.id = c.especialidad_id "
                 + "LEFT JOIN asignacion a ON a.curso_id = c.id "
                 + "LEFT JOIN horario_slot hs ON hs.asignacion_id = a.id "
-                + "GROUP BY c.id, e.nombre, c.seccion "
-                + "ORDER BY e.nombre, c.seccion, c.id";
+                + "GROUP BY c.id, e.nombre, c.nivel, c.seccion "
+                + "ORDER BY e.nombre, c.nivel DESC, c.seccion, c.id";
         List<ctn.informatica.sca.dto.HorarioResumenCursoDto> out = new ArrayList<>();
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
