@@ -13,6 +13,8 @@ interface PlanPendiente {
   especialidad?: string;
 }
 
+type StatusTone = 'info' | 'success' | 'error';
+
 export default function ReviewPlanesView() {
   const [planes, setPlanes] = useState<PlanPendiente[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,6 +23,7 @@ export default function ReviewPlanesView() {
   const [loadingDetalle, setLoadingDetalle] = useState(false);
   const [observaciones, setObservaciones] = useState('');
   const [status, setStatus] = useState('');
+  const [statusTone, setStatusTone] = useState<StatusTone>('info');
   const [procesing, setProcessing] = useState(false);
 
   // Cargar lista de planes pendientes
@@ -31,8 +34,10 @@ export default function ReviewPlanesView() {
         const result = await planCurricularApi.getPendientes();
         setPlanes(result);
         setStatus('');
+        setStatusTone('info');
       } catch (err) {
         setStatus(err instanceof ApiError ? err.message : 'No se pudieron cargar los planes.');
+        setStatusTone('error');
         setPlanes([]);
       } finally {
         setLoading(false);
@@ -55,6 +60,7 @@ export default function ReviewPlanesView() {
         setSelectedPlan(plan);
       } catch (err) {
         setStatus(err instanceof ApiError ? err.message : 'No se pudo cargar el detalle del plan.');
+        setStatusTone('error');
         setSelectedPlan(null);
       } finally {
         setLoadingDetalle(false);
@@ -69,22 +75,27 @@ export default function ReviewPlanesView() {
       await planCurricularApi.descargarDocumentoOriginal(selectedPlanId);
     } catch (err) {
       setStatus(err instanceof ApiError ? err.message : 'No se pudo descargar el documento.');
+      setStatusTone('error');
     }
   }
 
   async function handleAprobar(e: FormEvent) {
     e.preventDefault();
     if (!selectedPlanId) return;
+    const confirmed = window.confirm('¿Aprobar este plan curricular? La decisión se notificará al profesor.');
+    if (!confirmed) return;
     setProcessing(true);
     try {
       await planCurricularApi.aprobarPlan(selectedPlanId);
       setStatus('Plan aprobado correctamente.');
-      setPlanes(planes.filter((p) => p.id !== selectedPlanId));
+      setStatusTone('success');
+      setPlanes((current) => current.filter((p) => p.id !== selectedPlanId));
       setSelectedPlanId(null);
       setSelectedPlan(null);
       setObservaciones('');
     } catch (err) {
       setStatus(err instanceof ApiError ? err.message : 'No se pudo aprobar el plan.');
+      setStatusTone('error');
     } finally {
       setProcessing(false);
     }
@@ -94,18 +105,21 @@ export default function ReviewPlanesView() {
     e.preventDefault();
     if (!selectedPlanId || !observaciones.trim()) {
       setStatus('Las observaciones son requeridas para rechazar.');
+      setStatusTone('error');
       return;
     }
     setProcessing(true);
     try {
       await planCurricularApi.rechazarPlan(selectedPlanId, observaciones);
       setStatus('Plan rechazado correctamente.');
-      setPlanes(planes.filter((p) => p.id !== selectedPlanId));
+      setStatusTone('success');
+      setPlanes((current) => current.filter((p) => p.id !== selectedPlanId));
       setSelectedPlanId(null);
       setSelectedPlan(null);
       setObservaciones('');
     } catch (err) {
       setStatus(err instanceof ApiError ? err.message : 'No se pudo rechazar el plan.');
+      setStatusTone('error');
     } finally {
       setProcessing(false);
     }
@@ -115,7 +129,7 @@ export default function ReviewPlanesView() {
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 20 }}>
       {/* Panel izquierdo: lista de planes */}
       <div className="panel">
-        <h3>Planes pendientes de revisión</h3>
+        <h3>Planes pendientes de revisión ({planes.length})</h3>
         {loading ? (
           <p>Cargando planes...</p>
         ) : planes.length === 0 ? (
@@ -125,7 +139,12 @@ export default function ReviewPlanesView() {
             {planes.map((plan) => (
               <button
                 key={plan.id}
-                onClick={() => setSelectedPlanId(plan.id)}
+                type="button"
+                onClick={() => {
+                  setSelectedPlanId(plan.id);
+                  setStatus('');
+                  setStatusTone('info');
+                }}
                 style={{
                   padding: 12,
                   background: selectedPlanId === plan.id ? '#e0e7ff' : '#f9fafb',
@@ -142,6 +161,12 @@ export default function ReviewPlanesView() {
                 </div>
                 <div style={{ fontSize: '0.85rem', color: '#999', marginTop: 2 }}>
                   {plan.cursoDescripcion}
+                  {plan.especialidad && (
+                    <>
+                      <br />
+                      <span style={{ color: 'var(--accent-deep)', fontWeight: 750 }}>{plan.especialidad}</span>
+                    </>
+                  )}
                   <br />
                   {new Date(plan.fechaSubida).toLocaleDateString('es-AR')}
                 </div>
@@ -242,8 +267,9 @@ export default function ReviewPlanesView() {
 
         {status && (
           <div
-            className={`notice ${status.includes('error') || status.includes('No se pudo') ? 'error' : ''}`}
+            className={`notice ${statusTone}`}
             style={{ marginTop: 12 }}
+            role={statusTone === 'error' ? 'alert' : 'status'}
           >
             {status}
           </div>
