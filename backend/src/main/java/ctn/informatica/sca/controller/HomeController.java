@@ -199,10 +199,19 @@ public class HomeController {
             }
 
             try {
-                List<ctn.informatica.sca.model.Materia> materias = planillaDao.findMateriasSinPlanilla(user.getId(), selectedCurso.getId(), selectedEtapa);
-                materiasDetectadas = materias.stream()
-                        .map(m -> new HomeMateriaDto(m.getId(), m.getNombre(), m.getCategoria()))
-                        .collect(Collectors.toList());
+                Integer especialidadId = cursoDao.findEspecialidadId(selectedCurso.getId());
+                Integer cursoBaseId = null;
+                if (especialidadId != null) {
+                    cursoBaseId = new ctn.informatica.sca.dao.CursoBaseDao().findId(especialidadId, selectedCurso.getNivel(), selectedCurso.getSeccion());
+                }
+                if (cursoBaseId != null) {
+                    List<ctn.informatica.sca.model.Materia> materias = planillaDao.findMateriasSinPlanilla(user.getId(), selectedCurso.getId(), cursoBaseId, selectedEtapa);
+                    materiasDetectadas = materias.stream()
+                            .map(m -> new HomeMateriaDto(m.getId(), m.getNombre(), m.getCategoria()))
+                            .collect(Collectors.toList());
+                } else {
+                    materiasDetectadas = Collections.emptyList();
+                }
             } catch (SQLException ex) {
                 materiasDetectadas = Collections.emptyList();
             }

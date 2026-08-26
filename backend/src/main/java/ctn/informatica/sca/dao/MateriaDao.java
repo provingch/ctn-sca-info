@@ -65,8 +65,8 @@ public class MateriaDao extends conexion {
                 + "   OR m.id IN ( "
                 + "        SELECT DISTINCT me.materia_id "
                 + "        FROM asignacion a "
-                + "        JOIN curso c ON c.id = a.curso_id "
-                + "        JOIN materia_especialidad me ON me.especialidad_id = c.especialidad_id "
+                + "        JOIN curso_base cb ON cb.id = a.curso_base_id "
+                + "        JOIN materia_especialidad me ON me.especialidad_id = cb.especialidad_id "
                 + "        WHERE a.usuario_id = ? "
                 + "   ) "
                 + "   OR m.id IN ( "
@@ -295,10 +295,10 @@ public class MateriaDao extends conexion {
                 + "WHERE p.materia_id = ? AND EXISTS ("
                 + "  SELECT 1 FROM planilla q WHERE q.materia_id = ? AND q.curso_id = p.curso_id AND q.periodo = p.periodo AND q.etapa = p.etapa"
                 + ")";
-        String asignacionConflictSql = "SELECT a.id, a.usuario_id, a.curso_id "
+        String asignacionConflictSql = "SELECT a.id, a.usuario_id, a.curso_base_id "
                 + "FROM asignacion a "
                 + "WHERE a.materia_id = ? AND EXISTS ("
-                + "  SELECT 1 FROM asignacion q WHERE q.materia_id = ? AND q.usuario_id = a.usuario_id AND q.curso_id = a.curso_id"
+                + "  SELECT 1 FROM asignacion q WHERE q.materia_id = ? AND q.usuario_id = a.usuario_id AND q.curso_base_id = a.curso_base_id"
                 + ")";
 
         try (Connection c = getCon()) {
@@ -339,7 +339,7 @@ public class MateriaDao extends conexion {
                             }
                             conflicts.append("asignacion#").append(rs.getInt("id"))
                                     .append("(profesor=").append(rs.getInt("usuario_id"))
-                                    .append(" curso=").append(rs.getInt("curso_id"))
+                                    .append(" curso_base=").append(rs.getInt("curso_base_id"))
                                     .append(")");
                         }
                         if (conflicts.length() > 0) {
@@ -424,10 +424,10 @@ public class MateriaDao extends conexion {
                 }
             }
         }
-        String asignacionConflictSql = "SELECT a.id, a.usuario_id, a.curso_id "
+        String asignacionConflictSql = "SELECT a.id, a.usuario_id, a.curso_base_id "
                 + "FROM asignacion a "
                 + "WHERE a.materia_id = ? AND EXISTS ("
-                + "  SELECT 1 FROM asignacion q WHERE q.materia_id = ? AND q.usuario_id = a.usuario_id AND q.curso_id = a.curso_id"
+                + "  SELECT 1 FROM asignacion q WHERE q.materia_id = ? AND q.usuario_id = a.usuario_id AND q.curso_base_id = a.curso_base_id"
                 + ")";
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(asignacionConflictSql)) {
             ps.setInt(1, fromMateriaId);
@@ -435,7 +435,7 @@ public class MateriaDao extends conexion {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     conflicts.add("asignacion#" + rs.getInt("id") + " (profesor=" + rs.getInt("usuario_id")
-                            + " curso=" + rs.getInt("curso_id") + ")");
+                            + " curso_base=" + rs.getInt("curso_base_id") + ")");
                 }
             }
         }
