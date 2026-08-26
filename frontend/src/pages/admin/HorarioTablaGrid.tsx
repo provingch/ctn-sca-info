@@ -32,6 +32,7 @@ export default function HorarioTablaGrid({ hours, renderCell, groupKey, classNam
   return (
     <div className={`table-wrap ${wrapClassName ?? ''}`.trim()}>
       <table className={`grade-table ${className ?? ''}`.trim()}>
+        <caption className="visually-hidden">Horario semanal por hora cátedra</caption>
         <thead>
           <tr>
             <th>Hora</th>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { clearUserGoogleTokens, createAdminRecord, deleteAdminRecord, updateAdminRecord, type AdminCatalog } from '../../api/admin';
 import { ApiError } from '../../api/client';
 import AnimatedSelect from '../../components/AnimatedSelect';
+import useAccessibleDialog from '../../hooks/useAccessibleDialog';
 
 interface UsuariosPanelProps {
   data: AdminCatalog;
@@ -21,6 +22,7 @@ const EMPTY_FORM = { nombre: '', apellido: '', ci: '', usuario: '', nivel: '1', 
 
 export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: UsuariosPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const formDialogRef = useAccessibleDialog(isOpen, () => setIsOpen(false));
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
 
@@ -98,6 +100,7 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
           ) : (
             <div className="table-wrap">
               <table className="grade-table" style={{ minWidth: 760 }}>
+                <caption className="visually-hidden">Usuarios registrados</caption>
                 <thead>
                   <tr>
                     <th>Nombre</th>
@@ -154,13 +157,13 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
       ))}
 
       {isOpen && (
-        <div className="signature-modal" role="dialog" aria-modal="true" aria-labelledby="usuario-form-title" style={{ display: 'grid' }}>
+        <div ref={formDialogRef} className="signature-modal" role="dialog" aria-modal="true" aria-labelledby="usuario-form-title" tabIndex={-1} style={{ display: 'grid' }}>
           <div className="signature-modal-header">
             <div>
               <span>Usuarios</span>
               <h2 id="usuario-form-title">{editingId ? 'Editar usuario' : 'Crear usuario'}</h2>
             </div>
-            <button type="button" className="signature-modal-close" aria-label="Cerrar formulario" onClick={() => setIsOpen(false)}>×</button>
+            <button type="button" className="signature-modal-close" aria-label="Cerrar formulario" data-dialog-initial-focus onClick={() => setIsOpen(false)}>×</button>
           </div>
           <form className="form-grid" onSubmit={submit} style={{ alignContent: 'start' }}>
             <label>

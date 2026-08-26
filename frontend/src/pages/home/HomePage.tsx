@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import { useSpecialty } from '../../context/SpecialtyContext';
 import PlanCurricularView from './PlanCurricularView';
+import useAccessibleDialog from '../../hooks/useAccessibleDialog';
 
 const HORARIOS_CATEDRA = ['7:00', '7:35', '8:10', '8:45', '9:40', '10:15', '10:50', '11:25', '13:00', '13:35', '14:10', '14:45', '15:40', '16:15', '16:50', '17:25'];
 const RASGO_CODIGOS = [
@@ -102,7 +103,7 @@ export default function HomePage() {
     }
   }, [especialidadId]);
 
-  if (!view) return <AppShell title="Elegí cómo querés empezar"><div className="choice-grid"><button onClick={() => setSearch({ view: 'catedra' })}><span>01</span><h2>Libro de Cátedra</h2><p>Plan curricular e inicio de clases.</p></button><button onClick={() => setSearch({ view: 'planillas' })}><span>02</span><h2>Gestionar planillas</h2><p>Tareas, puntajes y sincronización con Classroom.</p></button></div></AppShell>;
+  if (!view) return <AppShell title="Elegí cómo querés empezar"><div className="choice-grid"><button type="button" onClick={() => setSearch({ view: 'catedra' })}><span>01</span><h2>Libro de Cátedra</h2><p>Plan curricular e inicio de clases.</p></button><button type="button" onClick={() => setSearch({ view: 'planillas' })}><span>02</span><h2>Gestionar planillas</h2><p>Tareas, puntajes y sincronización con Classroom.</p></button></div></AppShell>;
   if (!data) return <AppShell title="Panel SCA"><ContentState tone={error ? 'error' : 'loading'} title={error || 'Cargando inicio…'} detail={error ? 'Recargá la página para volver a intentarlo.' : 'Estamos preparando tus cursos y planillas.'} /></AppShell>;
 
   const visibleCursos = selectedEspecialidad
@@ -162,7 +163,7 @@ export default function HomePage() {
       .idle-dot:nth-child(2) { animation-delay: 0.15s; }
       .idle-dot:nth-child(3) { animation-delay: 0.3s; }
     `}</style>
-    <AppShell title="Panel SCA del curso" specialty={selectedEspecialidad?.nombre ?? null}><div className="toolbar filters"><button className="button secondary" onClick={() => setSearch({})}>← Inicio</button>
+    <AppShell title="Panel SCA del curso" specialty={selectedEspecialidad?.nombre ?? null}><div className="toolbar filters"><button type="button" className="button secondary" onClick={() => setSearch({})}>← Inicio</button>
       {showSelector && <>
         <label className="inline-filter">Especialidad
           <AnimatedSelect ariaLabel="Especialidad" value={especialidadId || ''} onChange={(value) => {
@@ -198,8 +199,8 @@ export default function HomePage() {
       {view === 'catedra' ? (
         !subview ? (
           <div className="choice-grid">
-            <button onClick={() => params({ subview: 'clase' })}><span>01</span><h2>Iniciar clase</h2><p>Asistencia, rasgos e historial del curso.</p></button>
-            <button onClick={() => params({ subview: 'plan-curricular' })}><span>02</span><h2>Plan curricular</h2><p>Cargá y revisá tu plan curricular anual.</p></button>
+            <button type="button" onClick={() => params({ subview: 'clase' })}><span>01</span><h2>Iniciar clase</h2><p>Asistencia, rasgos e historial del curso.</p></button>
+            <button type="button" onClick={() => params({ subview: 'plan-curricular' })}><span>02</span><h2>Plan curricular</h2><p>Cargá y revisá tu plan curricular anual.</p></button>
           </div>
         ) : subview === 'plan-curricular' ? (
           <PlanCurricularView />
@@ -255,7 +256,7 @@ function PlanillasView({ data, syncingProp, setSyncingProp }: { data: HomeRespon
 
   const syncing = syncingProp ?? false;
 
-  return <><section className="summary-grid"><article className="metric"><span>Curso</span><strong>{data.selCurso?.curso}° {data.selCurso?.seccion}</strong></article><article className="metric"><span>Planillas</span><strong>{data.planillas.length}</strong></article><article className="metric"><span>Classroom</span><strong>{syncing ? 'Sincronizando…' : (data.googleClassroomConnected ? 'Conectado' : 'Sin conexión')}</strong></article></section><div className="card-grid">{data.planillas.map((p) => <Link className="nav-card" key={p.id} to={`/planilla/${p.id}`}><span>{p.periodo}</span><h2>{p.nombre}</h2><p>{p.tareasCount} tareas registradas</p><strong>Abrir planilla →</strong></Link>)}{data.materiasDetectadas.filter((m) => !existingMateriaIds.has(m.id)).map((m) => <button className="nav-card add-card" key={m.id} onClick={() => openMateria(m.id)}><span>{m.categoria}</span><h2>{m.nombre}</h2><p>Crear la planilla para esta etapa.</p><strong>Crear y abrir →</strong></button>)}{data.planillas.length === 0 && data.materiasDetectadas.length === 0 && <section className="panel empty-state"><h2>Sin materias asignadas</h2><p>Consultá con administración para asociar materias al curso.</p></section>}</div></>;
+  return <><section className="summary-grid"><article className="metric"><span>Curso</span><strong>{data.selCurso?.curso}° {data.selCurso?.seccion}</strong></article><article className="metric"><span>Planillas</span><strong>{data.planillas.length}</strong></article><article className="metric"><span>Classroom</span><strong>{syncing ? 'Sincronizando…' : (data.googleClassroomConnected ? 'Conectado' : 'Sin conexión')}</strong></article></section><div className="card-grid">{data.planillas.map((p) => <Link className="nav-card" key={p.id} to={`/planilla/${p.id}`}><span>{p.periodo}</span><h2>{p.nombre}</h2><p>{p.tareasCount} tareas registradas</p><strong>Abrir planilla →</strong></Link>)}{data.materiasDetectadas.filter((m) => !existingMateriaIds.has(m.id)).map((m) => <button type="button" className="nav-card add-card" key={m.id} onClick={() => openMateria(m.id)}><span>{m.categoria}</span><h2>{m.nombre}</h2><p>Crear la planilla para esta etapa.</p><strong>Crear y abrir →</strong></button>)}{data.planillas.length === 0 && data.materiasDetectadas.length === 0 && <section className="panel empty-state"><h2>Sin materias asignadas</h2><p>Consultá con administración para asociar materias al curso.</p></section>}</div></>;
 }
 
 function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise<void> }) {
@@ -274,6 +275,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
   const [codigosPorAlumno, setCodigosPorAlumno] = useState<Record<number, string[]>>({});
   const [selectorRasgosAbierto, setSelectorRasgosAbierto] = useState<number | null>(null);
   const [showCodeHelp, setShowCodeHelp] = useState(false);
+  const codeHelpDialogRef = useAccessibleDialog(showCodeHelp, () => setShowCodeHelp(false));
 
   useEffect(() => {
     const initial: Record<number, string[]> = {};
@@ -487,6 +489,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
           </div>
           <div className="table-responsive" style={{ marginBottom: 8 }}>
             <table className="table table-striped" id="tablaAsistencia">
+              <caption className="visually-hidden">Asistencia y rasgos conductuales de alumnos</caption>
               <thead>
                 <tr>
                   <th>#</th>
@@ -512,7 +515,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
                       </label>
                     </td>
                     <td className="rasgos-conductuales-cell">
-                      <button type="button" className="rasgos-conductuales-trigger" aria-expanded={selectorRasgosAbierto === alumno.id} onClick={() => setSelectorRasgosAbierto((actual) => actual === alumno.id ? null : alumno.id)}>
+                      <button type="button" className="rasgos-conductuales-trigger" aria-label={`Editar rasgos conductuales de ${alumno.nombre} ${alumno.apellido}`} aria-expanded={selectorRasgosAbierto === alumno.id} onClick={() => setSelectorRasgosAbierto((actual) => actual === alumno.id ? null : alumno.id)}>
                         <span>{(codigosPorAlumno[alumno.id] ?? []).join(', ') || 'seleccione'}</span>
                         <span aria-hidden="true">▾</span>
                       </button>
@@ -535,10 +538,10 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
           <button type="button" className="button secondary" onClick={() => setShowCodeHelp(true)}>¿Qué significa cada código?</button>
         </div>
 
-        {showCodeHelp && <div role="dialog" aria-modal="true" aria-label="Significado de códigos" style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'grid', placeItems: 'center', padding: 20, background: 'rgba(0, 0, 0, .55)' }} onClick={() => setShowCodeHelp(false)}>
+        {showCodeHelp && <div ref={codeHelpDialogRef} role="dialog" aria-modal="true" aria-labelledby="code-help-title" tabIndex={-1} style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'grid', placeItems: 'center', padding: 20, background: 'rgba(0, 0, 0, .55)' }} onClick={() => setShowCodeHelp(false)}>
           <section className="panel" style={{ width: 'min(620px, 100%)', maxHeight: '80vh', overflow: 'auto' }} onClick={(e) => e.stopPropagation()}>
-            <div className="class-card-head"><h3>Significado de códigos</h3><button type="button" className="button secondary" onClick={() => setShowCodeHelp(false)}>Cerrar</button></div>
-            <table className="table table-striped"><thead><tr><th>Código</th><th>Significado</th></tr></thead><tbody>{RASGO_CODIGOS.map(([codigo, significado]) => <tr key={codigo}><td><strong>{codigo}</strong></td><td>{significado}</td></tr>)}</tbody></table>
+            <div className="class-card-head"><h3 id="code-help-title">Significado de códigos</h3><button type="button" className="button secondary" data-dialog-initial-focus onClick={() => setShowCodeHelp(false)}>Cerrar</button></div>
+            <table className="table table-striped"><caption className="visually-hidden">Códigos de rasgos conductuales</caption><thead><tr><th>Código</th><th>Significado</th></tr></thead><tbody>{RASGO_CODIGOS.map(([codigo, significado]) => <tr key={codigo}><td><strong>{codigo}</strong></td><td>{significado}</td></tr>)}</tbody></table>
           </section>
         </div>}
 

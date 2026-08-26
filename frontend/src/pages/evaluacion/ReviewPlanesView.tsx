@@ -205,6 +205,7 @@ export default function ReviewPlanesView() {
                 <h4 style={{ marginTop: 0 }}>Temas por mes</h4>
                 <div className="table-responsive">
                   <table className="table table-striped" style={{ fontSize: '0.85rem' }}>
+                    <caption className="visually-hidden">Temas del plan curricular por mes</caption>
                     <thead>
                       <tr>
                         <th style={{ width: '15%' }}>Mes</th>

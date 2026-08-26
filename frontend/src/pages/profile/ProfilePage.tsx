@@ -16,6 +16,7 @@ import SectionHeading from '../../components/ui/SectionHeading';
 import { useAuth } from '../../context/AuthContext';
 import { getPushSubscriptionStatus, removePushSubscription, savePushSubscription, sendPushTest, toPushPayload, urlBase64ToUint8Array } from '../../api/push';
 import { getPwaInstallSnapshot, promptPwaInstall, registerPwaServiceWorker, subscribePwaInstall } from '../../pwa/pwa';
+import useAccessibleDialog from '../../hooks/useAccessibleDialog';
 import { normalizeSpecialty } from '../../theme/theme';
 
 type ProfileTab = 'profile' | 'security' | 'subjects' | 'app' | 'activity';
@@ -139,6 +140,7 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
   const signatureBeforeModalRef = useRef<string | null>(null);
   const [isSignatureMobile, setIsSignatureMobile] = useState(() => window.matchMedia(SIGNATURE_MOBILE_MEDIA_QUERY).matches);
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
+  const signatureDialogRef = useAccessibleDialog(isSignatureModalOpen, () => closeSignatureModal(false));
   const haveSignature = Boolean(form.firmaImagen);
 
   async function submit(event: FormEvent) {
@@ -496,10 +498,10 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
         </div>
         {signatureError && <p className="muted-copy error-copy">{signatureError}</p>}
         {haveSignature && <p className="muted-copy">Se usará la firma en la exportación; si no existe, se mostrará tu nombre.</p>}
-        {isSignatureMobile && isSignatureModalOpen && <div className="signature-modal" role="dialog" aria-modal="true" aria-labelledby="signature-modal-title">
+        {isSignatureMobile && isSignatureModalOpen && <div ref={signatureDialogRef} className="signature-modal" role="dialog" aria-modal="true" aria-labelledby="signature-modal-title" tabIndex={-1}>
           <div className="signature-modal-header">
             <div><span>Firma del docente</span><h2 id="signature-modal-title">Firmá dentro del recuadro</h2></div>
-            <button className="signature-modal-close" type="button" aria-label="Cancelar y cerrar" onClick={() => closeSignatureModal(false)}>×</button>
+            <button className="signature-modal-close" type="button" aria-label="Cancelar y cerrar" data-dialog-initial-focus onClick={() => closeSignatureModal(false)}>×</button>
           </div>
           <div className="signature-modal-canvas">
             <canvas ref={canvasRef} onPointerDown={drawStart} onPointerMove={drawMove} onPointerUp={finishDrawing} onPointerCancel={finishDrawing} />

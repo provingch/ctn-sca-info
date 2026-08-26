@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { createAdminRecord, deleteAdminRecord, getMateriaEspecialidades, updateAdminRecord, type AdminCatalog } from '../../api/admin';
 import { ApiError } from '../../api/client';
 import AnimatedSelect from '../../components/AnimatedSelect';
+import useAccessibleDialog from '../../hooks/useAccessibleDialog';
 
 interface MateriasPanelProps {
   data: AdminCatalog;
@@ -11,6 +12,7 @@ interface MateriasPanelProps {
 
 export default function MateriasPanel({ data, reload, status }: MateriasPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const formDialogRef = useAccessibleDialog(isOpen, () => setIsOpen(false));
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState({ nombre: '', categoria: 'comun', especialidadIds: [] as number[] });
   const onlySpecialty = data.especialidades.length === 1 ? data.especialidades[0] : null;
@@ -72,6 +74,7 @@ export default function MateriasPanel({ data, reload, status }: MateriasPanelPro
 
       <div className="table-wrap">
         <table className="grade-table" style={{ minWidth: 720 }}>
+          <caption className="visually-hidden">Materias registradas</caption>
           <thead>
             <tr>
               <th>Nombre</th>
@@ -112,13 +115,13 @@ export default function MateriasPanel({ data, reload, status }: MateriasPanelPro
       </div>
 
       {isOpen && (
-        <div className="signature-modal" role="dialog" aria-modal="true" aria-labelledby="materia-form-title" style={{ display: 'grid' }}>
+        <div ref={formDialogRef} className="signature-modal" role="dialog" aria-modal="true" aria-labelledby="materia-form-title" tabIndex={-1} style={{ display: 'grid' }}>
           <div className="signature-modal-header">
             <div>
               <span>Materias</span>
               <h2 id="materia-form-title">{editingId ? 'Editar materia' : 'Crear materia'}</h2>
             </div>
-            <button type="button" className="signature-modal-close" aria-label="Cerrar formulario" onClick={() => setIsOpen(false)}>×</button>
+            <button type="button" className="signature-modal-close" aria-label="Cerrar formulario" data-dialog-initial-focus onClick={() => setIsOpen(false)}>×</button>
           </div>
           <form className="form-grid" onSubmit={submit} style={{ alignContent: 'start' }}>
             <label>

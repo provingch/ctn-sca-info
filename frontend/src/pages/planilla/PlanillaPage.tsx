@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import AppShell from '../../components/AppShell';
 import ClassroomBadge from '../../components/ClassroomBadge';
 import GradeChip from '../../components/ui/GradeChip';
 import ContentState from '../../components/ui/ContentState';
+import AnimatedSelect from '../../components/AnimatedSelect';
 import { getPlanilla, resolvePlanilla, syncClassroom, confirmClassroomMapping, type PlanillaDetail } from '../../api/academics';
 import { ApiError, apiDownload } from '../../api/client';
 
@@ -33,38 +34,14 @@ function formatShortDate(value: string | null | undefined) {
 }
 
 function StageCombobox({ value, disabled, onChange }: { value: number; disabled: boolean; onChange: (value: number) => void }) {
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const listboxId = useId();
-  const stages = [{ value: 1, label: 'Primera etapa' }, { value: 2, label: 'Segunda etapa' }];
-  const selected = stages.find((stage) => stage.value === value) ?? stages[0];
-
-  useEffect(() => {
-    if (!open) return;
-    const closeOnOutsidePointer = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
-    };
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('pointerdown', closeOnOutsidePointer);
-    document.addEventListener('keydown', closeOnEscape);
-    return () => {
-      document.removeEventListener('pointerdown', closeOnOutsidePointer);
-      document.removeEventListener('keydown', closeOnEscape);
-    };
-  }, [open]);
-
-  return <div ref={rootRef} className={`stage-combobox${open ? ' open' : ''}`}>
-    <button type="button" role="combobox" aria-label="Etapa" aria-controls={listboxId} aria-expanded={open} aria-haspopup="listbox" disabled={disabled} onClick={() => setOpen((current) => !current)}>
-      <span>{selected.label}</span><i aria-hidden="true" />
-    </button>
-    {open && <div id={listboxId} className="stage-combobox-options" role="listbox" aria-label="Etapa">
-      {stages.map((stage) => <button key={stage.value} type="button" role="option" aria-selected={stage.value === value} onClick={() => { setOpen(false); if (stage.value !== value) onChange(stage.value); }}>
-        <span>{stage.label}</span>{stage.value === value && <i aria-hidden="true">✓</i>}
-      </button>)}
-    </div>}
-  </div>;
+  return <AnimatedSelect
+    className="stage-combobox"
+    ariaLabel="Etapa"
+    value={value}
+    disabled={disabled}
+    onChange={(nextValue) => onChange(Number(nextValue))}
+    options={[{ value: 1, label: 'Primera etapa' }, { value: 2, label: 'Segunda etapa' }]}
+  />;
 }
 
 export default function PlanillaPage() {
@@ -257,10 +234,10 @@ export default function PlanillaPage() {
           <div>
             Se encontró un curso de Classroom posiblemente correspondiente:
             <div style={{marginTop:6}}><strong>{resolvedCourse.courseName ?? resolvedCourse.googleCourseId}</strong> {resolvedCourse.courseSection && <span>· {resolvedCourse.courseSection}</span>}</div>
-            {resolvedCourse.courseAlternateLink && <div style={{marginTop:6}}><a href={resolvedCourse.courseAlternateLink} target="_blank" rel="noopener noreferrer">Abrir en Classroom</a></div>}
+            {resolvedCourse.courseAlternateLink && <div style={{marginTop:6}}><a href={resolvedCourse.courseAlternateLink} target="_blank" rel="noopener noreferrer" aria-label="Abrir curso en Classroom en una pestaña nueva">Abrir en Classroom</a></div>}
           </div>
           <div style={{marginTop:8}}>
-            <button className="button" onClick={async () => {
+            <button type="button" className="button" onClick={async () => {
               try {
                 setStatus('Guardando asociación…');
                 await confirmClassroomMapping(id, resolvedCourse.googleCourseId!);
@@ -271,7 +248,7 @@ export default function PlanillaPage() {
                 setStatus(e instanceof ApiError ? e.message : 'No se pudo guardar la asociación.');
               }
             }}>Volver a vincular este curso</button>
-            <button className="button secondary" onClick={() => setResolvedCourse(null)} style={{marginLeft:8}}>Ignorar</button>
+            <button type="button" className="button secondary" onClick={() => setResolvedCourse(null)} style={{marginLeft:8}}>Ignorar</button>
           </div>
         </div>
       )}
@@ -320,6 +297,7 @@ export default function PlanillaPage() {
         </header>
       <div className={`table-wrap planilla-grade-table-wrap${freezeStudents ? ' freeze-students' : ''}`}>
         <table className="grade-table planilla-grade-table">
+          <caption className="visually-hidden">Calificaciones de {data.planilla.materiaNombre}</caption>
           <thead>
             <tr>
               <th className="planilla-number-heading">#</th>
@@ -332,7 +310,7 @@ export default function PlanillaPage() {
                     {isClassroomTask ? (
                       <>
                         {task.googleCourseworkUrl ? (
-                          <a className="planilla-task-link" href={task.googleCourseworkUrl} target="_blank" rel="noopener noreferrer">{task.titulo}</a>
+                          <a className="planilla-task-link" href={task.googleCourseworkUrl} target="_blank" rel="noopener noreferrer" aria-label={`${task.titulo}, abrir en Classroom en una pestaña nueva`}>{task.titulo}</a>
                         ) : (
                           <span className="planilla-task-link readonly">{task.titulo}</span>
                         )}

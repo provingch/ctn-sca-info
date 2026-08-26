@@ -53,7 +53,7 @@ export default function TareaPage() {
     <label>Puntaje total<input type="number" min="1" value={form.total} required disabled={isReadOnly} onChange={(e) => setForm({ ...form, total: Number(e.target.value) })} /></label>
     {classroomTask.url && (
       <div className="classroom-link-row">
-        <a href={classroomTask.url} target="_blank" rel="noopener noreferrer">Abrir la tarea en Classroom</a>
+        <a href={classroomTask.url} target="_blank" rel="noopener noreferrer" aria-label="Abrir la tarea en Classroom en una pestaña nueva">Abrir la tarea en Classroom</a>
       </div>
     )}
     {status && <div className="notice error">{status}</div>}<div className="toolbar"><Link className="button secondary" to={`/planilla/${planillaId}`}>Cancelar</Link>{tareaId > 0 && !isReadOnly && <button className="button danger" type="button" onClick={remove}>Eliminar</button>}<button className="button" disabled={busy || isReadOnly}>{busy ? 'Guardando…' : isReadOnly ? 'Solo lectura' : 'Guardar'}</button></div>

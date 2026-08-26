@@ -72,13 +72,13 @@ export default function AppNavbar() {
         <ThemeToggle compact />
         <div className="navbar-user-menu">
           <button className="navbar-user-trigger" type="button" aria-haspopup="menu" aria-expanded={userMenuOpen} onClick={() => setUserMenuOpen((open) => !open)}>
-            {user?.fotoPerfil ? <img className="navbar-avatar" src={user.fotoPerfil} alt="Avatar" /> : <span className="navbar-avatar" aria-hidden="true">{initials}</span>}
+            {user?.fotoPerfil ? <img className="navbar-avatar" src={user.fotoPerfil} alt="" /> : <span className="navbar-avatar" aria-hidden="true">{initials}</span>}
             <span className="navbar-user-copy"><strong>{displayName}</strong><small>{config.roleLabel}</small></span>
             <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m6 8 4 4 4-4" /></svg>
           </button>
           <div className={`navbar-user-dropdown${userMenuOpen ? ' open' : ''}`} role="menu" aria-hidden={!userMenuOpen}>
             <NavLink to="/profile" role="menuitem">Mi perfil</NavLink>
-            <a href={config.manualPath} target="_blank" rel="noopener noreferrer" role="menuitem">Manual</a>
+            <a href={config.manualPath} target="_blank" rel="noopener noreferrer" role="menuitem" aria-label="Abrir manual en una pestaña nueva">Manual</a>
             <span className="navbar-menu-divider" />
             <button className="navbar-logout" type="button" role="menuitem" onClick={() => void signOut()}>Cerrar sesión</button>
           </div>
@@ -87,7 +87,7 @@ export default function AppNavbar() {
 
       <div className="navbar-mobile-actions">
         <NavLink className="navbar-mobile-avatar" to="/profile" aria-label={`Abrir perfil de ${displayName}`}>
-          {user?.fotoPerfil ? <img className="navbar-avatar" src={user.fotoPerfil} alt="Avatar" /> : <span className="navbar-avatar" aria-hidden="true">{initials}</span>}
+          {user?.fotoPerfil ? <img className="navbar-avatar" src={user.fotoPerfil} alt="" /> : <span className="navbar-avatar" aria-hidden="true">{initials}</span>}
         </NavLink>
         <button className={`navbar-hamburger${mobileMenuOpen ? ' open' : ''}`} type="button" aria-label={mobileMenuOpen ? 'Cerrar navegación' : 'Abrir navegación'} aria-expanded={mobileMenuOpen} aria-controls="mobile-navigation-panel" onClick={() => setMobileMenuOpen((open) => !open)}>
           <span /><span /><span />
@@ -98,7 +98,7 @@ export default function AppNavbar() {
         <PrimaryLinks items={config.primaryItems} mobile />
         <div className="navbar-mobile-account">
           <span>Cuenta</span>
-          <a href={config.manualPath} target="_blank" rel="noopener noreferrer">Manual</a>
+          <a href={config.manualPath} target="_blank" rel="noopener noreferrer" aria-label="Abrir manual en una pestaña nueva">Manual</a>
           <ThemeToggle />
           <button className="navbar-logout" type="button" onClick={() => void signOut()}>Cerrar sesión</button>
         </div>

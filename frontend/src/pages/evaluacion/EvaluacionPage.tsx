@@ -55,21 +55,21 @@ export default function EvaluacionPage() {
   if (view === 'menu') {
     return <AppShell title="Panel de Evaluación">
       <div className="choice-grid">
-        <button onClick={() => setView('planillas')}><span>01</span><h2>Descargar planillas</h2><p>Exportá planillas completadas de los cursos.</p></button>
-        <button onClick={() => setView('planes')}><span>02</span><h2>Revisar plan curricular</h2><p>Aprobá o rechazá planes de profesores.</p></button>
+        <button type="button" onClick={() => setView('planillas')}><span>01</span><h2>Descargar planillas</h2><p>Exportá planillas completadas de los cursos.</p></button>
+        <button type="button" onClick={() => setView('planes')}><span>02</span><h2>Revisar plan curricular</h2><p>Aprobá o rechazá planes de profesores.</p></button>
       </div>
     </AppShell>;
   }
 
   if (view === 'planes') {
     return <AppShell title="Revisar Planes Curriculares">
-      <button className="button secondary" onClick={() => setView('menu')} style={{ marginBottom: 16 }}>← Volver</button>
+      <button type="button" className="button secondary" onClick={() => setView('menu')} style={{ marginBottom: 16 }}>← Volver</button>
       <ReviewPlanesView />
     </AppShell>;
   }
 
   return <AppShell title="Descargar planillas">
-    <button className="button secondary" onClick={() => setView('menu')} style={{ marginBottom: 16 }}>← Volver</button>
+    <button type="button" className="button secondary" onClick={() => setView('menu')} style={{ marginBottom: 16 }}>← Volver</button>
     <section className="panel form-grid evaluation-filters">
       <p className="lead">Elegí la especialidad, el curso, la sección y el período académico para generar sus planillas.</p>
       {status && <div className="notice error" role="alert">{status}</div>}
@@ -84,7 +84,7 @@ export default function EvaluacionPage() {
       </label>
       <label>Etapa<AnimatedSelect ariaLabel="Etapa" value={etapa} onChange={setEtapa} options={[{ value: 'primera', label: 'Primera etapa' }, { value: 'segunda', label: 'Segunda etapa' }]} /></label>
       <label>Período<input type="number" min="2000" value={periodo} onChange={(event) => setPeriodo(Number(event.target.value))} /></label>
-      <a className={`button ${!selected ? 'disabled' : ''}`} href={exportUrl} aria-disabled={!selected}>Descargar planillas</a>
+      <a className={`button ${!selected ? 'disabled' : ''}`} href={selected ? exportUrl : undefined} aria-disabled={!selected} tabIndex={selected ? undefined : -1}>Descargar planillas</a>
     </section>
   </AppShell>;
 }
