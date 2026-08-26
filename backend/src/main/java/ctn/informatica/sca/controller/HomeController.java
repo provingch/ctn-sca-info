@@ -1,6 +1,7 @@
 package ctn.informatica.sca.controller;
 
 import ctn.informatica.sca.dao.AlumnoDao;
+import ctn.informatica.sca.dao.CursoBaseDao;
 import ctn.informatica.sca.dao.CursoDao;
 import ctn.informatica.sca.dao.InstrumentoDao;
 import ctn.informatica.sca.dao.MateriaDao;
@@ -70,6 +71,7 @@ public class HomeController {
     private static final String VIEW_PLANILLAS = "planillas";
 
     private final CursoDao cursoDao;
+    private final CursoBaseDao cursoBaseDao;
     private final ProfesorDao profesorDao;
     private final PlanillaDao planillaDao;
     private final MateriaDao materiaDao;
@@ -82,12 +84,13 @@ public class HomeController {
     private final ActivityLogService activityLogService;
 
     public HomeController() {
-        this(new CursoDao(), new ProfesorDao(), new PlanillaDao(), new MateriaDao(), new AlumnoDao(), new RasgoPlanillaDao(), new InstrumentoDao(), new UserDao(), new PlanCurricularDao(), new TemaVerificacionService(), new ActivityLogService());
+        this(new CursoDao(), new CursoBaseDao(), new ProfesorDao(), new PlanillaDao(), new MateriaDao(), new AlumnoDao(), new RasgoPlanillaDao(), new InstrumentoDao(), new UserDao(), new PlanCurricularDao(), new TemaVerificacionService(), new ActivityLogService());
     }
 
     @Autowired
     public HomeController(
             CursoDao cursoDao,
+            CursoBaseDao cursoBaseDao,
             ProfesorDao profesorDao,
             PlanillaDao planillaDao,
             MateriaDao materiaDao,
@@ -99,6 +102,7 @@ public class HomeController {
             TemaVerificacionService temaVerificacionService,
             ActivityLogService activityLogService) {
         this.cursoDao = cursoDao;
+        this.cursoBaseDao = cursoBaseDao;
         this.profesorDao = profesorDao;
         this.planillaDao = planillaDao;
         this.materiaDao = materiaDao;
@@ -202,7 +206,7 @@ public class HomeController {
                 Integer especialidadId = cursoDao.findEspecialidadId(selectedCurso.getId());
                 Integer cursoBaseId = null;
                 if (especialidadId != null) {
-                    cursoBaseId = new ctn.informatica.sca.dao.CursoBaseDao().findId(especialidadId, selectedCurso.getNivel(), selectedCurso.getSeccion());
+                    cursoBaseId = cursoBaseDao.findId(especialidadId, selectedCurso.getNivel(), selectedCurso.getSeccion());
                 }
                 if (cursoBaseId != null) {
                     List<ctn.informatica.sca.model.Materia> materias = planillaDao.findMateriasSinPlanilla(user.getId(), selectedCurso.getId(), cursoBaseId, selectedEtapa);
