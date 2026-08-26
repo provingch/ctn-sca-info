@@ -43,6 +43,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/plantillas/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/login", "/home", "/inicio", "/profile", "/perfil",
                     "/evaluacion", "/admin", "/admin/**", "/padre", "/styleguide", "/privacidad", "/terminos",
+                    "/admin/salas", "/admin/horarios/**",
                     "/planilla/**", "/google/callback", "/offline").permitAll()
                 .requestMatchers("/api/planillas/**", "/api/tareas/**").hasRole("LEVEL_1")
                 .requestMatchers("/api/evaluacion/especialidades").hasAnyRole("LEVEL_1", "LEVEL_2")

@@ -45,7 +45,7 @@ async function networkFirst(request, fallbackUrl) {
       await cache.put(request, response.clone());
     }
     return response;
-  } catch (error) {
+  } catch {
     return (await caches.match(request)) || (await caches.match(fallbackUrl)) || Response.error();
   }
 }

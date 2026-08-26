@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, Navigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import AppShell from '../../components/AppShell';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import ContentState from '../../components/ui/ContentState';
@@ -30,7 +30,7 @@ const modules = [
 export default function AdminPage() {
   const location = useLocation();
   const { user, identityStatus, refreshUserIdentity } = useAuth();
-  const selected = modules.find((module) => module.path === location.pathname) ?? null;
+  const selected = modules.find((module) => location.pathname === module.path || location.pathname.startsWith(`${module.path}/`)) ?? null;
   const [data, setData] = useState<AdminCatalog | null>(null);
   const [status, setStatus] = useState('');
 
@@ -60,8 +60,6 @@ export default function AdminPage() {
   const visibleModules = modules.filter((module) => !isScopedAdmin || !('globalOnly' in module && module.globalOnly));
   const selectedIsRestricted = Boolean(selected && isScopedAdmin && 'globalOnly' in selected && selected.globalOnly);
   const scopeName = user.especialidadNombre ?? data.especialidades.find((item) => item.id === user.especialidadId)?.nombre ?? (user.especialidadId === null ? null : `Especialidad #${user.especialidadId}`);
-
-  if (!selected && isScopedAdmin) return <Navigate to="/admin/horarios" replace />;
 
   return <AppShell title={selected?.title || 'Panel general'} subtitle={scopeName ? `Administración de ${scopeName}` : 'Administración global del sistema'} specialty={scopeName}>
     <AdminToolbar data={data} showBack={Boolean(selected)} scopeName={scopeName} />
