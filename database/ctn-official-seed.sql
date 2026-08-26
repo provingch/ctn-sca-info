@@ -253,21 +253,21 @@ INSERT INTO materia (id, nombre, categoria) VALUES
 
 -- Especificas
     -- Informática (ID 41-55)
-    (41, 'Administración Financiera', 'especifica'),
-    (42, 'Algorítmica', 'especifica'),
-    (43, 'Laboratorio Android', 'especifica'),
-    (44, 'Laboratorio Java', 'especifica'),
-    (45, 'Laboratorio Linux', 'especifica'),
-    (46, 'Laboratorio Python', 'especifica'),
-    (47, 'Laboratorio SQL', 'especifica'),
-    (48, 'Laboratorio Web', 'especifica'),
-    (49, 'Literatura', 'especifica'),
-    (50, 'Matemática Aplicada', 'especifica'),
-    (51, 'Plan de Lectura', 'especifica'),
-    (52, 'Laboratorio Redes', 'especifica'),
-    (53, 'Seguridad en Riesgos Eléctricos', 'especifica'),
-    (54, 'Dibujo Técnico', 'especifica'),
-    (55, 'Info General', 'especifica');
+    (41, 'Administración Financiera', 'especifico'),
+    (42, 'Algorítmica', 'especifico'),
+    (43, 'Laboratorio Android', 'especifico'),
+    (44, 'Laboratorio Java', 'especifico'),
+    (45, 'Laboratorio Linux', 'especifico'),
+    (46, 'Laboratorio Python', 'especifico'),
+    (47, 'Laboratorio SQL', 'especifico'),
+    (48, 'Laboratorio Web', 'especifico'),
+    (49, 'Literatura', 'especifico'),
+    (50, 'Matemática Aplicada', 'especifico'),
+    (51, 'Plan de Lectura', 'especifico'),
+    (52, 'Laboratorio Redes', 'especifico'),
+    (53, 'Seguridad en Riesgos Eléctricos', 'especifico'),
+    (54, 'Dibujo Técnico', 'especifico'),
+    (55, 'Info General', 'especifico');
 
     -- Las demas quedan pendientes a cargar...
 
