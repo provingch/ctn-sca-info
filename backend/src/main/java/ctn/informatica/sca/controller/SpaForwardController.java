@@ -21,6 +21,7 @@ public class SpaForwardController {
             "/evaluacion", "/admin", "/admin/{section}", "/padre", "/styleguide",
             "/privacidad", "/terminos", "/planilla/{planillaId}",
             "/planilla/{planillaId}/tarea", "/planilla/{planillaId}/tarea/{tareaId}",
+            "/admin/horarios/{cursoId}",
             "/google/callback"
     })
     public String forwardToIndex() {
