@@ -9,6 +9,7 @@ import ctn.informatica.sca.dto.HoraCatedraDto;
 import ctn.informatica.sca.dto.HorarioSlotDto;
 import ctn.informatica.sca.dto.HorarioImportResponse;
 import ctn.informatica.sca.dto.HorarioImportRowDto;
+import ctn.informatica.sca.dto.AsignacionResumenDto;
 import ctn.informatica.sca.model.Asignacion;
 import ctn.informatica.sca.model.Curso;
 import ctn.informatica.sca.model.HoraCatedra;
@@ -79,11 +80,8 @@ public class HorarioController {
     public List<ctn.informatica.sca.dto.HorarioResumenCursoDto> resumen(Authentication auth) {
         ApiAuth.requireUserId(auth);
         Integer actingSpecialtyId = resolveCurrentSpecialtyAdminId(auth);
-        if (actingSpecialtyId != null) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Los administradores por especialidad no tienen acceso a este resumen global");
-        }
         try {
-            return new HorarioSlotDao().resumenPorCurso();
+            return new HorarioSlotDao().resumenPorCurso(actingSpecialtyId);
         } catch (Exception ex) {
             throw failure("No se pudo cargar el resumen de horarios por curso", ex);
         }
@@ -109,6 +107,7 @@ public class HorarioController {
             if (asignacion == null) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Asignación no encontrada");
             }
+            authorizeCourse(asignacion.getCursoId(), auth);
             return new HorarioSlotDao().findByAsignacion(asignacionId).stream()
                     .map(this::toHorarioSlotDto)
                     .toList();
@@ -133,6 +132,7 @@ public class HorarioController {
             if (asignacion == null) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Asignación no encontrada");
             }
+            authorizeCourse(asignacion.getCursoId(), auth);
 
             HorarioSlotDao dao = new HorarioSlotDao();
             if (dao.existeProfesorConflict(asignacion.getProfesorId(), input.diaSemana(), input.horaCatedraId())) {
@@ -248,6 +248,8 @@ public class HorarioController {
     public void deleteSlot(@PathVariable int id, Authentication auth) {
         ApiAuth.requireUserId(auth);
         try {
+            HorarioSlot existing = new HorarioSlotDao().findById(id);
+            if (existing != null) authorizeCourse(existing.getCursoId(), auth);
             if (!new HorarioSlotDao().eliminar(id)) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Slot no encontrado");
             }
@@ -266,6 +268,7 @@ public class HorarioController {
             if (curso == null) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Curso no encontrado");
             }
+            authorizeCourse(cursoId, auth);
             List<HoraCatedra> horas = new HoraCatedraDao().findAll();
             List<HorarioSlot> slots = new HorarioSlotDao().findByCurso(cursoId);
             String base = "Horario_" + sanitize(curso.getEspecialidad()) + "_" + curso.getNivel() + curso.getSeccion();
@@ -279,6 +282,22 @@ public class HorarioController {
         } catch (Exception ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo generar el horario del curso", ex);
         }
+    }
+
+    @GetMapping("/asignaciones-por-curso")
+    public List<AsignacionResumenDto> asignacionesPorCurso(@RequestParam int cursoId, Authentication auth) {
+        authorizeCourse(cursoId, auth);
+        try {
+            return new AsignacionDao().findAll().stream().filter(a -> a.getCursoId() == cursoId)
+                    .map(a -> new AsignacionResumenDto(a.getId(), a.getMateriaNombre(), a.getProfesorNombre())).toList();
+        } catch (Exception ex) { throw failure("No se pudieron cargar las asignaciones del curso", ex); }
+    }
+
+    @GetMapping("/curso")
+    public List<HorarioSlotDto> listCourseSlots(@RequestParam int cursoId, Authentication auth) {
+        authorizeCourse(cursoId, auth);
+        try { return new HorarioSlotDao().findByCurso(cursoId).stream().map(this::toHorarioSlotDto).toList(); }
+        catch (Exception ex) { throw failure("No se pudo cargar el horario del curso", ex); }
     }
 
     private HoraCatedraDto toHoraCatedraDto(HoraCatedra hora) {

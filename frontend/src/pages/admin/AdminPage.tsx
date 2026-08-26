@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import AppShell from '../../components/AppShell';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import ContentState from '../../components/ui/ContentState';
@@ -17,11 +17,11 @@ import SpecialtyIcon from '../../components/SpecialtyIcon';
 import SistemaEstadoPanel from './SistemaEstadoPanel';
 
 const modules = [
-  { path: '/admin/materias', key: 'materias', title: 'Materias', detail: 'Catálogo, categorías y especialidades' },
-  { path: '/admin/usuarios', key: 'usuarios', title: 'Usuarios', detail: 'Altas, roles y datos de acceso' },
-  { path: '/admin/asignaciones', key: 'asignaciones', title: 'Asignaciones', detail: 'Profesor, materia y curso' },
+  { path: '/admin/materias', key: 'materias', title: 'Materias', detail: 'Catálogo, categorías y especialidades', globalOnly: true },
+  { path: '/admin/usuarios', key: 'usuarios', title: 'Usuarios', detail: 'Altas, roles y datos de acceso', globalOnly: true },
+  { path: '/admin/asignaciones', key: 'asignaciones', title: 'Asignaciones', detail: 'Profesor, materia y curso', globalOnly: true },
   { path: '/admin/alumnos', key: 'alumnos', title: 'Alumnos', detail: 'Carga de estudiantes y gestión por sección' },
-  { path: '/admin/horarios', key: 'horarios', title: 'Horarios', detail: 'Vista y descarga de horarios por especialidad', globalOnly: true },
+  { path: '/admin/horarios', key: 'horarios', title: 'Horarios', detail: 'Vista y descarga de horarios por especialidad' },
   { path: '/admin/sistema', key: 'sistema', title: 'Estado del sistema', detail: 'Salud de base de datos, migraciones y sincronización', globalOnly: true },
 ];
 
@@ -58,6 +58,8 @@ export default function AdminPage() {
   const visibleModules = modules.filter((module) => !isScopedAdmin || !('globalOnly' in module && module.globalOnly));
   const selectedIsRestricted = Boolean(selected && isScopedAdmin && 'globalOnly' in selected && selected.globalOnly);
   const scopeName = user.especialidadNombre ?? data.especialidades.find((item) => item.id === user.especialidadId)?.nombre ?? (user.especialidadId === null ? null : `Especialidad #${user.especialidadId}`);
+
+  if (!selected && isScopedAdmin) return <Navigate to="/admin/horarios" replace />;
 
   return <AppShell title={selected?.title || 'Panel general'} subtitle={scopeName ? `Administración de ${scopeName}` : 'Administración global del sistema'} specialty={scopeName}>
     <AdminToolbar data={data} showBack={Boolean(selected)} scopeName={scopeName} />
