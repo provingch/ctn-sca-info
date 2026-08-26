@@ -141,12 +141,11 @@ public class PlanillaDao extends conexion {
         }
     }
 
-    public List<Materia> findMateriasSinPlanilla(int profesorId, int cursoId, int etapaIndex) throws SQLException {
+    public List<Materia> findMateriasSinPlanilla(int profesorId, int cursoId, int cursoBaseId, int etapaIndex) throws SQLException {
         String sql = "SELECT DISTINCT m.id, m.nombre, m.categoria "
                 + "FROM materia m "
                 + "JOIN asignacion a ON a.materia_id = m.id AND a.usuario_id = ? "
-                + "JOIN curso c ON c.id = a.curso_id "
-                + "WHERE c.id = ? "
+                + "WHERE a.curso_base_id = ? "
                 + "AND m.id NOT IN ("
                 + "    SELECT p.materia_id FROM planilla p "
                 + "    WHERE p.curso_id = ? AND p.usuario_id = ? AND p.etapa = ? AND p.periodo = ?"
@@ -155,7 +154,7 @@ public class PlanillaDao extends conexion {
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
             int index = 1;
             ps.setInt(index++, profesorId);
-            ps.setInt(index++, cursoId);
+            ps.setInt(index++, cursoBaseId);
             ps.setInt(index++, cursoId);
             ps.setInt(index++, profesorId);
             ps.setString(index++, normalizeEtapa(etapaIndex));

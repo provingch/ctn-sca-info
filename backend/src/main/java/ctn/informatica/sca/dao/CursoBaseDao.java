@@ -71,6 +71,18 @@ public class CursoBaseDao extends conexion {
         }
     }
 
+    public Integer findId(int especialidadId, int nivel, String seccion) throws SQLException {
+        String sql = "SELECT id FROM curso_base WHERE especialidad_id = ? AND nivel = ? AND seccion = ?";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, especialidadId);
+            ps.setInt(2, nivel);
+            ps.setString(3, seccion);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt("id") : null;
+            }
+        }
+    }
+
     public boolean exists(int especialidadId, int nivel, String seccion) throws SQLException {
         String sql = "SELECT 1 FROM curso_base WHERE especialidad_id = ? AND nivel = ? AND seccion = ? LIMIT 1";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {

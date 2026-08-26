@@ -13,7 +13,6 @@ import org.springframework.stereotype.Repository;
 import ctn.informatica.sca.clases.conexion;
 import ctn.informatica.sca.dto.PlanCurricularDto;
 import ctn.informatica.sca.dto.TemaPlanDto;
-import ctn.informatica.sca.model.Curso;
 
 @Repository
 public class PlanCurricularDao extends conexion {
@@ -165,13 +164,13 @@ public class PlanCurricularDao extends conexion {
     public List<PlanCurricularDto> findPendientes() throws SQLException {
         String sql = "SELECT p.id, p.estado, p.archivo_nombre, p.fecha_subida, p.fecha_revision, p.observaciones_evaluador, " +
                 "a.id AS asignacion_id, m.nombre AS materia_nombre, u.apellido AS profesor_apellido, u.nombre AS profesor_nombre, " +
-                "c.promocion, c.seccion, e.nombre AS especialidad " +
+                "cb.nivel, cb.seccion, e.nombre AS especialidad " +
                 "FROM plan_curricular p " +
                 "JOIN asignacion a ON a.id = p.asignacion_id " +
                 "JOIN materia m ON m.id = a.materia_id " +
                 "JOIN usuario u ON u.id = a.usuario_id " +
-                "JOIN curso c ON c.id = a.curso_id " +
-                "JOIN especialidad e ON e.id = c.especialidad_id " +
+                "JOIN curso_base cb ON cb.id = a.curso_base_id " +
+                "JOIN especialidad e ON e.id = cb.especialidad_id " +
                 "WHERE p.estado = 'PENDIENTE' " +
                 "ORDER BY p.fecha_subida ASC";
         List<PlanCurricularDto> result = new ArrayList<>();
@@ -204,15 +203,15 @@ public class PlanCurricularDao extends conexion {
         String sql = "SELECT p.id, p.estado, p.archivo_nombre, p.fecha_subida, p.fecha_revision, p.observaciones_evaluador, " +
                 "p.etapa, p.anio_lectivo, a.id AS asignacion_id, " +
                 "m.nombre AS materia_nombre, u.apellido AS profesor_apellido, u.nombre AS profesor_nombre, " +
-                "c.promocion, c.seccion, e.nombre AS especialidad, " +
+                "cb.nivel, cb.seccion, e.nombre AS especialidad, " +
                 "t.id AS tema_id, t.mes, t.orden_mes, t.bloque, t.capacidades, t.temas_contenidos, t.actividades, " +
                 "t.instrumentos_evaluacion, t.indicador_conceptual, t.indicador_procedimental, t.indicador_actitudinal " +
                 "FROM plan_curricular p " +
                 "JOIN asignacion a ON a.id = p.asignacion_id " +
                 "JOIN materia m ON m.id = a.materia_id " +
                 "JOIN usuario u ON u.id = a.usuario_id " +
-                "JOIN curso c ON c.id = a.curso_id " +
-                "JOIN especialidad e ON e.id = c.especialidad_id " +
+                "JOIN curso_base cb ON cb.id = a.curso_base_id " +
+                "JOIN especialidad e ON e.id = cb.especialidad_id " +
                 "LEFT JOIN tema_plan_curricular t ON t.plan_curricular_id = p.id " +
                 "WHERE p.id = ? " +
                 "ORDER BY t.orden_mes ASC";
@@ -281,13 +280,13 @@ public class PlanCurricularDao extends conexion {
 
     public List<PlanCurricularDto> findAllByProfesor(int profesorId) throws SQLException {
         String sql = "SELECT p.id, p.estado, p.archivo_nombre, p.fecha_subida, p.fecha_revision, p.observaciones_evaluador, "
-                + "p.etapa, p.anio_lectivo, a.id AS asignacion_id, c.id AS curso_id, m.nombre AS materia_nombre, "
-                + "e.id AS especialidad_id, e.nombre AS especialidad, c.promocion, c.seccion "
+                + "p.etapa, p.anio_lectivo, a.id AS asignacion_id, cb.id AS curso_base_id, m.nombre AS materia_nombre, "
+                + "e.id AS especialidad_id, e.nombre AS especialidad, cb.nivel, cb.seccion "
                 + "FROM plan_curricular p "
                 + "JOIN asignacion a ON a.id = p.asignacion_id "
                 + "JOIN materia m ON m.id = a.materia_id "
-                + "JOIN curso c ON c.id = a.curso_id "
-                + "JOIN especialidad e ON e.id = c.especialidad_id "
+                + "JOIN curso_base cb ON cb.id = a.curso_base_id "
+                + "JOIN especialidad e ON e.id = cb.especialidad_id "
                 + "WHERE a.usuario_id = ? ORDER BY p.fecha_subida DESC";
         List<PlanCurricularDto> result = new ArrayList<>();
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
@@ -308,13 +307,21 @@ public class PlanCurricularDao extends conexion {
                     dto.especialidadId = rs.getInt("especialidad_id");
                     dto.especialidadNombre = rs.getString("especialidad");
                     dto.seccion = rs.getString("seccion");
-                    dto.cursoOrdinal = new Curso(rs.getInt("curso_id"), dto.especialidadNombre,
-                            rs.getInt("promocion"), dto.seccion).getCursoOrdinal();
+                    dto.cursoOrdinal = ordinalFromNivel(rs.getInt("nivel"));
                     result.add(dto);
                 }
             }
         }
         return result;
+    }
+
+    private String ordinalFromNivel(int nivel) {
+        return switch (nivel) {
+            case 1 -> "1º";
+            case 2 -> "2º";
+            case 3 -> "3º";
+            default -> "Desconocido";
+        };
     }
 
     public boolean existeAprobado(int asignacionId, String etapa, int anio) throws SQLException {
