@@ -4,6 +4,7 @@ import ctn.informatica.sca.dao.AsignacionDao;
 import ctn.informatica.sca.dao.CursoDao;
 import ctn.informatica.sca.dao.HoraCatedraDao;
 import ctn.informatica.sca.dao.HorarioSlotDao;
+import ctn.informatica.sca.dao.SalaDao;
 import ctn.informatica.sca.dto.CreateHorarioSlotRequest;
 import ctn.informatica.sca.dto.HoraCatedraDto;
 import ctn.informatica.sca.dto.HorarioSlotDto;
@@ -14,6 +15,7 @@ import ctn.informatica.sca.model.Asignacion;
 import ctn.informatica.sca.model.Curso;
 import ctn.informatica.sca.model.HoraCatedra;
 import ctn.informatica.sca.model.HorarioSlot;
+import ctn.informatica.sca.model.Sala;
 import ctn.informatica.sca.util.HorarioWorkbookBuilder;
 import jakarta.servlet.http.HttpServletResponse;
 import java.net.URLEncoder;
@@ -141,8 +143,13 @@ public class HorarioController {
             if (dao.existeCursoConflict(asignacion.getCursoId(), input.diaSemana(), input.horaCatedraId())) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Ese curso ya tiene otra materia asignada en ese día y hora.");
             }
+            validateSalaForCourse(input.salaId(), asignacion.getCursoId());
+            if (input.salaId() != null && dao.existeSalaConflict(input.salaId(), input.diaSemana(), input.horaCatedraId())) {
+                HorarioSlot occupying = dao.findSalaConflictDetail(input.salaId(), input.diaSemana(), input.horaCatedraId());
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Esa sala ya está ocupada en ese horario" + (occupying == null ? "." : " por " + occupying.getMateriaNombre() + " de " + occupying.getCursoDescripcion() + "."));
+            }
 
-            int id = dao.crear(asignacionId, asignacion.getProfesorId(), asignacion.getCursoId(), input.diaSemana(), input.horaCatedraId(), input.sala());
+            int id = dao.crear(asignacionId, asignacion.getProfesorId(), asignacion.getCursoId(), input.diaSemana(), input.horaCatedraId(), input.salaId());
             HorarioSlot slot = new HorarioSlot();
             slot.setId(id);
             slot.setAsignacionId(asignacionId);
@@ -150,7 +157,8 @@ public class HorarioController {
             slot.setCursoId(asignacion.getCursoId());
             slot.setDiaSemana(input.diaSemana());
             slot.setHoraCatedraId(input.horaCatedraId());
-            slot.setSala(input.sala());
+            slot.setSalaId(input.salaId());
+            slot.setSalaNombre(resolveSalaName(input.salaId()));
             return toHorarioSlotDto(slot);
         } catch (ResponseStatusException ex) {
             throw ex;
@@ -186,7 +194,7 @@ public class HorarioController {
             dao.eliminarPorCurso(cursoId);
             for (HorarioImportRowDto row : applied) {
                 Asignacion assignment = new AsignacionDao().findById(row.asignacionId());
-                dao.crear(assignment.getId(), assignment.getProfesorId(), cursoId, row.diaSemana(), row.horaCatedraId(), null);
+                dao.crear(assignment.getId(), assignment.getProfesorId(), cursoId, row.diaSemana(), row.horaCatedraId(), (Integer) null);
             }
             return new HorarioImportResponse(applied.size(), rows.size() - applied.size(), rows);
         } catch (ResponseStatusException ex) { throw ex; }
@@ -208,15 +216,24 @@ public class HorarioController {
         HorarioSlotDao dao = new HorarioSlotDao();
         Set<String> occupied = new HashSet<>();
         Set<String> professors = new HashSet<>();
+        Set<String> rooms = new HashSet<>();
         List<HorarioImportRowDto> result = new ArrayList<>();
         for (HorarioImportRowDto row : parsed) {
             if (!"ok".equals(row.estado())) { result.add(row); continue; }
             Asignacion assignment = new AsignacionDao().findById(row.asignacionId());
             String key = row.diaSemana() + ":" + row.horaCatedraId();
+            validateSalaForCourse(row.salaId(), cursoId);
             if (dao.existeProfesorConflict(assignment.getProfesorId(), row.diaSemana(), row.horaCatedraId())) {
                 HorarioSlot occupying = dao.findProfesorConflictDetail(assignment.getProfesorId(), row.diaSemana(), row.horaCatedraId());
                 if (occupying != null && occupying.getCursoId() == cursoId) occupying = null;
                 if (occupying != null) { result.add(withStatus(row, "conflicto_profesor", conflictDetail(occupying))); continue; }
+            }
+            if (row.salaId() != null && dao.existeSalaConflict(row.salaId(), row.diaSemana(), row.horaCatedraId())) {
+                HorarioSlot occupying = dao.findSalaConflictDetail(row.salaId(), row.diaSemana(), row.horaCatedraId());
+                if (occupying != null && occupying.getCursoId() != cursoId) { result.add(withStatus(row, "conflicto_sala", "Esa sala ya está ocupada por " + occupying.getMateriaNombre() + " de " + occupying.getCursoDescripcion() + ".")); continue; }
+            }
+            if (row.salaId() != null && !rooms.add(row.salaId() + ":" + key)) {
+                result.add(withStatus(row, "conflicto_sala", "Esa sala se repite en otra materia de esta misma carga en ese día y hora.")); continue;
             }
             String professorKey = assignment.getProfesorId() + ":" + key;
             if (!occupied.add(key)) {
@@ -230,8 +247,21 @@ public class HorarioController {
         return result;
     }
 
+    private void validateSalaForCourse(Integer salaId, int cursoId) throws Exception {
+        if (salaId == null) return;
+        int specialtyId = new CursoDao().findEspecialidadId(cursoId);
+        boolean visible = new SalaDao().findByEspecialidad(specialtyId).stream().anyMatch(sala -> sala.getId() == salaId);
+        if (!visible) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La sala no está disponible para la especialidad del curso");
+    }
+
+    private String resolveSalaName(Integer salaId) {
+        if (salaId == null) return null;
+        try { return new SalaDao().findAll().stream().filter(sala -> sala.getId() == salaId).map(Sala::getNombre).findFirst().orElse(null); }
+        catch (Exception ignored) { return null; }
+    }
+
     private HorarioImportRowDto withStatus(HorarioImportRowDto row, String status, String detail) {
-        return new HorarioImportRowDto(row.diaSemana(), row.horaCatedraId(), row.horaCatedraEtiqueta(), row.materiaTexto(), row.profesorTexto(), row.asignacionId(), status, detail);
+        return new HorarioImportRowDto(row.diaSemana(), row.horaCatedraId(), row.horaCatedraEtiqueta(), row.materiaTexto(), row.profesorTexto(), row.asignacionId(), row.salaId(), row.salaNombre(), status, detail);
     }
 
     private ResponseStatusException conflictProfesor(HorarioSlotDao dao, Asignacion assignment, int day, int hour) {
@@ -335,7 +365,8 @@ public class HorarioController {
                 slot.getHoraCatedraEtiqueta(),
                 horaInicio,
                 horaFin,
-                slot.getSala(),
+                slot.getSalaId(),
+                slot.getSalaNombre(),
                 slot.getMateriaNombre(),
                 slot.getCursoDescripcion(),
                 slot.getProfesorNombre());

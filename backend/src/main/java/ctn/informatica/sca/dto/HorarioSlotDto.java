@@ -9,7 +9,8 @@ public record HorarioSlotDto(
         String horaCatedraEtiqueta,
         String horaInicio,
         String horaFin,
-        String sala,
+        Integer salaId,
+        String salaNombre,
         String materiaNombre,
         String cursoDescripcion,
         String profesorNombre

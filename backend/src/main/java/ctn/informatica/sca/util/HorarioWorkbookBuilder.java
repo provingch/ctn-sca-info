@@ -172,9 +172,12 @@ public class HorarioWorkbookBuilder {
                     String materia = slot.getMateriaNombre() == null ? "" : slot.getMateriaNombre();
                     String profesor = slot.getProfesorNombre() == null ? "" : slot.getProfesorNombre();
                     String texto = materia.isBlank() ? profesor : (profesor.isBlank() ? materia : materia + "\n" + profesor);
+                    if (slot.getSalaNombre() != null && !slot.getSalaNombre().isBlank()) {
+                        texto += "\nSala: " + slot.getSalaNombre();
+                    }
                     cell.setCellValue(texto);
-                    if (slot.getSala() != null && !slot.getSala().isBlank()) {
-                        salasPorDia.get(dia).add(slot.getSala());
+                    if (slot.getSalaNombre() != null && !slot.getSalaNombre().isBlank()) {
+                        salasPorDia.get(dia).add(slot.getSalaNombre());
                     }
                 }
             }

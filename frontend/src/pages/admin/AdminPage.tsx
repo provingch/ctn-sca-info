@@ -15,6 +15,7 @@ import AlumnosPanel from './AlumnosPanel';
 import HorariosPanel from './HorariosPanel';
 import SpecialtyIcon from '../../components/SpecialtyIcon';
 import SistemaEstadoPanel from './SistemaEstadoPanel';
+import SalasPanel from './SalasPanel';
 
 const modules = [
   { path: '/admin/materias', key: 'materias', title: 'Materias', detail: 'Catálogo, categorías y especialidades', globalOnly: true },
@@ -23,6 +24,7 @@ const modules = [
   { path: '/admin/alumnos', key: 'alumnos', title: 'Alumnos', detail: 'Carga de estudiantes y gestión por sección' },
   { path: '/admin/horarios', key: 'horarios', title: 'Horarios', detail: 'Vista y descarga de horarios por especialidad' },
   { path: '/admin/sistema', key: 'sistema', title: 'Estado del sistema', detail: 'Salud de base de datos, migraciones y sincronización', globalOnly: true },
+  { path: '/admin/salas', key: 'salas', title: 'Salas', detail: 'Catálogo de salas comunes y de pabellón', globalOnly: true },
 ];
 
 export default function AdminPage() {
@@ -111,5 +113,6 @@ function AdminModule({ module, data, reload, status, isGlobalAdmin }: {
   if (module.key === 'asignaciones') return <AsignacionesPanel data={data} reload={reload} status={status} />;
   if (module.key === 'alumnos') return <AlumnosPanel data={data} reload={reload} status={status} />;
   if (module.key === 'horarios') return <HorariosPanel status={status} />;
+  if (module.key === 'salas') return <SalasPanel data={data} status={status} />;
   return <SistemaEstadoPanel />;
 }

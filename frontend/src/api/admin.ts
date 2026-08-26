@@ -76,7 +76,8 @@ export interface HorarioSlotItem {
   horaCatedraEtiqueta: string | null;
   horaInicio: string;
   horaFin: string;
-  sala: string | null;
+  salaId: number | null;
+  salaNombre: string | null;
   materiaNombre: string | null;
   cursoDescripcion: string | null;
   profesorNombre: string | null;
@@ -84,6 +85,7 @@ export interface HorarioSlotItem {
 
 export interface HorarioResumenCursoItem {
   cursoId: number;
+  especialidadId?: number;
   especialidad: string;
   cursoDescripcion: string;
   cantidadSlotsCargados: number;
@@ -96,11 +98,14 @@ export interface HorarioImportRowItem {
   materiaTexto: string;
   profesorTexto: string;
   asignacionId: number | null;
-  estado: 'ok' | 'sin_asignacion' | 'conflicto_profesor' | 'conflicto_curso';
+  salaId: number | null;
+  salaNombre: string | null;
+  estado: 'ok' | 'sin_asignacion' | 'sala_no_reconocida' | 'conflicto_profesor' | 'conflicto_curso' | 'conflicto_sala';
   detalle: string | null;
 }
 export interface HorarioImportResponse { creados: number; omitidos: number; filas: HorarioImportRowItem[]; }
 export interface AsignacionResumenItem { asignacionId: number; materiaNombre: string; profesorNombre: string; }
+export interface SalaItem { id: number; nombre: string; especialidadId: number | null; especialidadNombre: string | null; }
 
 export interface MigracionEstadoItem {
   version: string;
@@ -147,7 +152,7 @@ export const deleteAdminRecord = (section: string, id: number) => adminRequest((
 export const getMateriaEspecialidades = (materiaId: number) => adminRequest(() => api.get<number[]>(`/api/admin/materias/${materiaId}/especialidades`));
 export const getHoraCatedraCatalog = () => adminRequest(() => api.get<HoraCatedraItem[]>('/api/admin/horario/catalogo'));
 export const getHorarioByAsignacion = (asignacionId: number) => adminRequest(() => api.get<HorarioSlotItem[]>(`/api/admin/horario/asignaciones/${asignacionId}`));
-export const createHorarioSlot = (asignacionId: number, payload: { diaSemana: number; horaCatedraId: number; sala?: string }) => adminRequest(() => api.post<HorarioSlotItem>(`/api/admin/horario/asignaciones/${asignacionId}/slots`, payload));
+export const createHorarioSlot = (asignacionId: number, payload: { diaSemana: number; horaCatedraId: number; salaId?: number | null }) => adminRequest(() => api.post<HorarioSlotItem>(`/api/admin/horario/asignaciones/${asignacionId}/slots`, payload));
 export const deleteHorarioSlot = (id: number) => adminRequest(() => api.delete<void>(`/api/admin/horario/slots/${id}`));
 export const downloadHorarioCurso = (cursoId: number) => adminRequest(() => apiDownload(`/api/admin/horario/export?cursoId=${cursoId}`, `horario-curso-${cursoId}.xlsx`));
 export const getHorarioResumen = () => adminRequest(() => api.get<HorarioResumenCursoItem[]>('/api/admin/horario/resumen'));
@@ -155,6 +160,10 @@ export const previewHorarioImport = (cursoId: number, file: File) => { const for
 export const confirmHorarioImport = (cursoId: number, file: File) => { const form = new FormData(); form.append('file', file); return adminRequest(() => api.post<HorarioImportResponse>(`/api/admin/horario/import/confirm?cursoId=${cursoId}`, form)); };
 export const getHorarioCurso = (cursoId: number) => adminRequest(() => api.get<HorarioSlotItem[]>(`/api/admin/horario/curso?cursoId=${cursoId}`));
 export const getAsignacionesPorCurso = (cursoId: number) => adminRequest(() => api.get<AsignacionResumenItem[]>(`/api/admin/horario/asignaciones-por-curso?cursoId=${cursoId}`));
+export const getSalas = (especialidadId?: number) => adminRequest(() => api.get<SalaItem[]>(`/api/admin/salas${especialidadId ? `?especialidadId=${especialidadId}` : ''}`));
+export const createSala = (payload: { nombre: string; especialidadId: number | null }) => adminRequest(() => api.post<SalaItem>('/api/admin/salas', payload));
+export const updateSala = (id: number, payload: { nombre: string; especialidadId: number | null }) => adminRequest(() => api.put<SalaItem>(`/api/admin/salas/${id}`, payload));
+export const deleteSala = (id: number) => adminRequest(() => api.delete<void>(`/api/admin/salas/${id}`));
 export const getSistemaEstado = () => adminRequest(() => api.get<SistemaEstadoResponse>('/api/admin/sistema-estado'));
 export const buscarPadres = (q: string) => adminRequest(() => api.get<PadreSummary[]>(`/api/admin/padres/buscar?q=${encodeURIComponent(q)}`));
 export const getPadresDeAlumno = (alumnoId: number) => adminRequest(() => api.get<PadreSummary[]>(`/api/admin/alumnos/${alumnoId}/padres`));

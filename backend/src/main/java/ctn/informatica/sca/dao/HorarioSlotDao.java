@@ -22,7 +22,8 @@ public class HorarioSlotDao extends conexion {
         slot.setCursoId(rs.getInt("curso_id"));
         slot.setDiaSemana(rs.getInt("dia_semana"));
         slot.setHoraCatedraId(rs.getInt("hora_catedra_id"));
-        slot.setSala(rs.getString("sala"));
+        slot.setSalaId(rs.getObject("sala_id") == null ? null : rs.getInt("sala_id"));
+        slot.setSalaNombre(rs.getString("sala_nombre"));
 
         slot.setMateriaNombre(rs.getString("materia_nombre"));
         slot.setCursoDescripcion(rs.getString("curso_descripcion"));
@@ -49,12 +50,13 @@ public class HorarioSlotDao extends conexion {
     }
 
     public List<HorarioSlot> findByAsignacion(int asignacionId) throws SQLException {
-        String sql = "SELECT hs.id, hs.asignacion_id, hs.usuario_id, hs.curso_id, hs.dia_semana, hs.hora_catedra_id, hs.sala, "
+        String sql = "SELECT hs.id, hs.asignacion_id, hs.usuario_id, hs.curso_id, hs.dia_semana, hs.hora_catedra_id, hs.sala_id, s.nombre AS sala_nombre, "
                 + "m.nombre AS materia_nombre, e.nombre AS especialidad, c.promocion, c.seccion, "
                 + "u.nombre AS profesor_nombre, u.apellido AS profesor_apellido, "
                 + "hc.numero AS hora_catedra_numero, hc.etiqueta AS hora_catedra_etiqueta, "
                 + "TIME_FORMAT(hc.hora_inicio, '%H:%i') AS hora_inicio, TIME_FORMAT(hc.hora_fin, '%H:%i') AS hora_fin "
                 + "FROM horario_slot hs "
+                + "LEFT JOIN sala s ON s.id = hs.sala_id "
                 + "JOIN asignacion a ON a.id = hs.asignacion_id "
                 + "JOIN usuario u ON u.id = hs.usuario_id "
                 + "JOIN materia m ON m.id = a.materia_id "
@@ -75,7 +77,8 @@ public class HorarioSlotDao extends conexion {
                     slot.setCursoId(rs.getInt("curso_id"));
                     slot.setDiaSemana(rs.getInt("dia_semana"));
                     slot.setHoraCatedraId(rs.getInt("hora_catedra_id"));
-                    slot.setSala(rs.getString("sala"));
+                    slot.setSalaId(rs.getObject("sala_id") == null ? null : rs.getInt("sala_id"));
+                    slot.setSalaNombre(rs.getString("sala_nombre"));
                     slot.setMateriaNombre(rs.getString("materia_nombre"));
                     String especialidad = rs.getString("especialidad");
                     String seccion = rs.getString("seccion");
@@ -93,12 +96,13 @@ public class HorarioSlotDao extends conexion {
     }
 
     public List<HorarioSlot> findByProfesor(int usuarioId) throws SQLException {
-        String sql = "SELECT hs.id, hs.asignacion_id, hs.usuario_id, hs.curso_id, hs.dia_semana, hs.hora_catedra_id, hs.sala, "
+        String sql = "SELECT hs.id, hs.asignacion_id, hs.usuario_id, hs.curso_id, hs.dia_semana, hs.hora_catedra_id, hs.sala_id, s.nombre AS sala_nombre, "
                 + "m.nombre AS materia_nombre, e.nombre AS especialidad, c.promocion, c.seccion, "
                 + "u.nombre AS profesor_nombre, u.apellido AS profesor_apellido, "
                 + "hc.numero AS hora_catedra_numero, hc.etiqueta AS hora_catedra_etiqueta, "
                 + "TIME_FORMAT(hc.hora_inicio, '%H:%i') AS hora_inicio, TIME_FORMAT(hc.hora_fin, '%H:%i') AS hora_fin "
                 + "FROM horario_slot hs "
+                + "LEFT JOIN sala s ON s.id = hs.sala_id "
                 + "JOIN asignacion a ON a.id = hs.asignacion_id "
                 + "JOIN usuario u ON u.id = hs.usuario_id "
                 + "JOIN materia m ON m.id = a.materia_id "
@@ -119,7 +123,8 @@ public class HorarioSlotDao extends conexion {
                     slot.setCursoId(rs.getInt("curso_id"));
                     slot.setDiaSemana(rs.getInt("dia_semana"));
                     slot.setHoraCatedraId(rs.getInt("hora_catedra_id"));
-                    slot.setSala(rs.getString("sala"));
+                    slot.setSalaId(rs.getObject("sala_id") == null ? null : rs.getInt("sala_id"));
+                    slot.setSalaNombre(rs.getString("sala_nombre"));
                     slot.setMateriaNombre(rs.getString("materia_nombre"));
                     String especialidad = rs.getString("especialidad");
                     String seccion = rs.getString("seccion");
@@ -141,7 +146,7 @@ public class HorarioSlotDao extends conexion {
     }
 
     public List<ctn.informatica.sca.dto.HorarioResumenCursoDto> resumenPorCurso(Integer especialidadId) throws SQLException {
-        String sql = "SELECT c.id AS curso_id, e.nombre AS especialidad, c.promocion AS promocion, c.seccion AS seccion, "
+        String sql = "SELECT c.id AS curso_id, e.id AS especialidad_id, e.nombre AS especialidad, c.promocion AS promocion, c.seccion AS seccion, "
                 + "COUNT(hs.id) AS cantidad_slots_cargados "
                 + "FROM curso c "
                 + "JOIN especialidad e ON e.id = c.especialidad_id "
@@ -170,6 +175,7 @@ public class HorarioSlotDao extends conexion {
 
                 out.add(new ctn.informatica.sca.dto.HorarioResumenCursoDto(
                         cursoId,
+                        rs.getInt("especialidad_id"),
                         especialidad,
                         cursoDescripcion,
                         cantidad,
@@ -181,12 +187,13 @@ public class HorarioSlotDao extends conexion {
     }
 
     public List<HorarioSlot> findByCurso(int cursoId) throws SQLException {
-        String sql = "SELECT hs.id, hs.asignacion_id, hs.usuario_id, hs.curso_id, hs.dia_semana, hs.hora_catedra_id, hs.sala, "
+        String sql = "SELECT hs.id, hs.asignacion_id, hs.usuario_id, hs.curso_id, hs.dia_semana, hs.hora_catedra_id, hs.sala_id, s.nombre AS sala_nombre, "
                 + "m.nombre AS materia_nombre, e.nombre AS especialidad, c.promocion, c.seccion, "
                 + "u.nombre AS profesor_nombre, u.apellido AS profesor_apellido, "
                 + "hc.numero AS hora_catedra_numero, hc.etiqueta AS hora_catedra_etiqueta, "
                 + "TIME_FORMAT(hc.hora_inicio, '%H:%i') AS hora_inicio, TIME_FORMAT(hc.hora_fin, '%H:%i') AS hora_fin "
                 + "FROM horario_slot hs "
+                + "LEFT JOIN sala s ON s.id = hs.sala_id "
                 + "JOIN asignacion a ON a.id = hs.asignacion_id "
                 + "JOIN usuario u ON u.id = hs.usuario_id "
                 + "JOIN materia m ON m.id = a.materia_id "
@@ -207,7 +214,8 @@ public class HorarioSlotDao extends conexion {
                     slot.setCursoId(rs.getInt("curso_id"));
                     slot.setDiaSemana(rs.getInt("dia_semana"));
                     slot.setHoraCatedraId(rs.getInt("hora_catedra_id"));
-                    slot.setSala(rs.getString("sala"));
+                    slot.setSalaId(rs.getObject("sala_id") == null ? null : rs.getInt("sala_id"));
+                    slot.setSalaNombre(rs.getString("sala_nombre"));
                     slot.setMateriaNombre(rs.getString("materia_nombre"));
                     String especialidad = rs.getString("especialidad");
                     String seccion = rs.getString("seccion");
@@ -240,15 +248,15 @@ public class HorarioSlotDao extends conexion {
         }
     }
 
-    public int crear(int asignacionId, int usuarioId, int cursoId, int diaSemana, int horaCatedraId, String sala) throws SQLException {
-        String sql = "INSERT INTO horario_slot (asignacion_id, usuario_id, curso_id, dia_semana, hora_catedra_id, sala) VALUES (?, ?, ?, ?, ?, ?)";
+    public int crear(int asignacionId, int usuarioId, int cursoId, int diaSemana, int horaCatedraId, Integer salaId) throws SQLException {
+        String sql = "INSERT INTO horario_slot (asignacion_id, usuario_id, curso_id, dia_semana, hora_catedra_id, sala_id) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, asignacionId);
             ps.setInt(2, usuarioId);
             ps.setInt(3, cursoId);
             ps.setInt(4, diaSemana);
             ps.setInt(5, horaCatedraId);
-            ps.setString(6, sala);
+            if (salaId == null) ps.setNull(6, java.sql.Types.INTEGER); else ps.setInt(6, salaId);
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if (keys.next()) {
@@ -257,6 +265,12 @@ public class HorarioSlotDao extends conexion {
             }
         }
         return -1;
+    }
+
+    /** Compatibility overload for callers compiled against the former free-text field. */
+    @Deprecated
+    public int crear(int asignacionId, int usuarioId, int cursoId, int diaSemana, int horaCatedraId, String ignoredSala) throws SQLException {
+        return crear(asignacionId, usuarioId, cursoId, diaSemana, horaCatedraId, (Integer) null);
     }
 
     public boolean eliminar(int id) throws SQLException {
@@ -276,10 +290,11 @@ public class HorarioSlotDao extends conexion {
     }
 
     public HorarioSlot findProfesorConflictDetail(int usuarioId, int diaSemana, int horaCatedraId) throws SQLException {
-        String sql = "SELECT hs.id, hs.asignacion_id, hs.usuario_id, hs.curso_id, hs.dia_semana, hs.hora_catedra_id, hs.sala, "
+        String sql = "SELECT hs.id, hs.asignacion_id, hs.usuario_id, hs.curso_id, hs.dia_semana, hs.hora_catedra_id, hs.sala_id, s.nombre AS sala_nombre, "
                 + "m.nombre AS materia_nombre, e.nombre AS especialidad, c.seccion, u.nombre AS profesor_nombre, u.apellido AS profesor_apellido, "
                 + "hc.numero AS hora_catedra_numero, hc.etiqueta AS hora_catedra_etiqueta, TIME_FORMAT(hc.hora_inicio, '%H:%i') AS hora_inicio, TIME_FORMAT(hc.hora_fin, '%H:%i') AS hora_fin "
                 + "FROM horario_slot hs JOIN asignacion a ON a.id = hs.asignacion_id JOIN usuario u ON u.id = hs.usuario_id "
+                + "LEFT JOIN sala s ON s.id = hs.sala_id "
                 + "JOIN materia m ON m.id = a.materia_id JOIN curso c ON c.id = hs.curso_id JOIN especialidad e ON e.id = c.especialidad_id "
                 + "JOIN hora_catedra hc ON hc.id = hs.hora_catedra_id WHERE hs.usuario_id = ? AND hs.dia_semana = ? AND hs.hora_catedra_id = ? LIMIT 1";
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
@@ -290,7 +305,7 @@ public class HorarioSlotDao extends conexion {
                 slot.setId(rs.getInt("id")); slot.setAsignacionId(rs.getInt("asignacion_id"));
                 slot.setUsuarioId(rs.getInt("usuario_id")); slot.setCursoId(rs.getInt("curso_id"));
                 slot.setDiaSemana(rs.getInt("dia_semana")); slot.setHoraCatedraId(rs.getInt("hora_catedra_id"));
-                slot.setSala(rs.getString("sala")); slot.setMateriaNombre(rs.getString("materia_nombre"));
+                slot.setSalaId(rs.getObject("sala_id") == null ? null : rs.getInt("sala_id")); slot.setSalaNombre(rs.getString("sala_nombre")); slot.setMateriaNombre(rs.getString("materia_nombre"));
                 String specialty = rs.getString("especialidad"); String section = rs.getString("seccion");
                 slot.setCursoDescripcion((specialty == null ? "" : specialty) + (section == null || section.isBlank() ? "" : " " + section));
                 slot.setProfesorNombre(buildFullName(rs.getString("profesor_apellido"), rs.getString("profesor_nombre")));
@@ -309,6 +324,40 @@ public class HorarioSlotDao extends conexion {
             ps.setInt(3, horaCatedraId);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
+            }
+        }
+    }
+
+    public boolean existeSalaConflict(int salaId, int diaSemana, int horaCatedraId) throws SQLException {
+        String sql = "SELECT 1 FROM horario_slot WHERE sala_id = ? AND dia_semana = ? AND hora_catedra_id = ? LIMIT 1";
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, salaId); ps.setInt(2, diaSemana); ps.setInt(3, horaCatedraId);
+            try (ResultSet rs = ps.executeQuery()) { return rs.next(); }
+        }
+    }
+
+    public HorarioSlot findSalaConflictDetail(int salaId, int diaSemana, int horaCatedraId) throws SQLException {
+        String sql = "SELECT hs.id, hs.asignacion_id, hs.usuario_id, hs.curso_id, hs.dia_semana, hs.hora_catedra_id, hs.sala_id, s.nombre AS sala_nombre, "
+                + "m.nombre AS materia_nombre, e.nombre AS especialidad, c.seccion, u.nombre AS profesor_nombre, u.apellido AS profesor_apellido, "
+                + "hc.numero AS hora_catedra_numero, hc.etiqueta AS hora_catedra_etiqueta, TIME_FORMAT(hc.hora_inicio, '%H:%i') AS hora_inicio, TIME_FORMAT(hc.hora_fin, '%H:%i') AS hora_fin "
+                + "FROM horario_slot hs JOIN asignacion a ON a.id = hs.asignacion_id LEFT JOIN sala s ON s.id = hs.sala_id "
+                + "JOIN usuario u ON u.id = hs.usuario_id JOIN materia m ON m.id = a.materia_id JOIN curso c ON c.id = hs.curso_id "
+                + "JOIN especialidad e ON e.id = c.especialidad_id JOIN hora_catedra hc ON hc.id = hs.hora_catedra_id "
+                + "WHERE hs.sala_id = ? AND hs.dia_semana = ? AND hs.hora_catedra_id = ? LIMIT 1";
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, salaId); ps.setInt(2, diaSemana); ps.setInt(3, horaCatedraId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                HorarioSlot slot = new HorarioSlot();
+                slot.setId(rs.getInt("id")); slot.setAsignacionId(rs.getInt("asignacion_id")); slot.setUsuarioId(rs.getInt("usuario_id"));
+                slot.setCursoId(rs.getInt("curso_id")); slot.setDiaSemana(rs.getInt("dia_semana")); slot.setHoraCatedraId(rs.getInt("hora_catedra_id"));
+                slot.setSalaId(rs.getInt("sala_id")); slot.setSalaNombre(rs.getString("sala_nombre")); slot.setMateriaNombre(rs.getString("materia_nombre"));
+                String specialty = rs.getString("especialidad"); String section = rs.getString("seccion");
+                slot.setCursoDescripcion((specialty == null ? "" : specialty) + (section == null || section.isBlank() ? "" : " " + section));
+                slot.setProfesorNombre(buildFullName(rs.getString("profesor_apellido"), rs.getString("profesor_nombre")));
+                slot.setHoraCatedraNumero(rs.getInt("hora_catedra_numero")); slot.setHoraCatedraEtiqueta(rs.getString("hora_catedra_etiqueta"));
+                slot.setHoraInicio(rs.getString("hora_inicio")); slot.setHoraFin(rs.getString("hora_fin"));
+                return slot;
             }
         }
     }
