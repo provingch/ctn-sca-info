@@ -74,10 +74,7 @@ public class AdminController {
             PadreDao padreDao = new PadreDao();
             Integer actingSpecialtyId = getSpecialtyAdminIdForUser(ApiAuth.requireUserId(authentication));
 
-            List<Materia> materiasDb = materiaDao.listAll();
-            if (actingSpecialtyId != null) {
-                materiasDb = materiasDb.stream().filter(m -> canAccessMateria(actingSpecialtyId, m.getId())).toList();
-            }
+            List<Materia> materiasDb = actingSpecialtyId == null ? materiaDao.listAll() : List.of();
             List<MateriaItem> materias = new java.util.ArrayList<>();
             java.util.Map<Integer, String> especialidadNombreById = new EspecialidadDao().findAll().stream()
                 .collect(java.util.stream.Collectors.toMap(Especialidad::getId, Especialidad::getNombre, (current, replacement) -> current));
@@ -85,7 +82,7 @@ public class AdminController {
                 materias.add(new MateriaItem(m.getId(), m.getNombre(), m.getCategoria(), materiaDao.listEspecialidadIdsForMateria(m.getId())));
             }
             List<UserItem> usuarios = new java.util.ArrayList<>();
-            List<Profesor> profesoresDb = actingSpecialtyId == null ? profesorDao.findAll() : profesorDao.findByEspecialidadId(actingSpecialtyId);
+            List<Profesor> profesoresDb = actingSpecialtyId == null ? profesorDao.findAll() : List.of();
             usuarios.addAll(profesoresDb.stream().map(p -> new UserItem(
                 p.getId(),
                 p.getNombre(),
@@ -105,17 +102,16 @@ public class AdminController {
                 if (byApellido != 0) return byApellido;
                 return Integer.compare(a.id(), b.id());
             });
-            List<Asignacion> asignacionesDb = new AsignacionDao().findAll();
-            if (actingSpecialtyId != null) {
-                asignacionesDb = asignacionesDb.stream().filter(a -> canAccessAsignacion(actingSpecialtyId, a.getCursoId())).toList();
-            }
+            List<Asignacion> asignacionesDb = actingSpecialtyId == null ? new AsignacionDao().findAll() : List.of();
             List<AssignmentItem> asignaciones = asignacionesDb.stream().map(a -> new AssignmentItem(a.getId(), a.getProfesorId(), a.getMateriaId(), a.getCursoId(), a.getProfesorNombre(), a.getMateriaNombre(), a.getCursoDescripcion())).toList();
             List<Alumno> alumnosDb = new AlumnoDao().findAll();
             if (actingSpecialtyId != null) {
                 alumnosDb = alumnosDb.stream().filter(a -> canAccessAlumno(actingSpecialtyId, a.getCursoId())).toList();
             }
             List<StudentItem> alumnos = alumnosDb.stream().map(a -> new StudentItem(a.getId(), a.getNombre(), a.getApellido(), a.getCursoId(), a.getCi(), a.getCorreoEncargado(), a.getCorreoEncargado2())).toList();
-            List<CourseItem> cursos = new CursoDao().findAll().stream().map(c -> new CourseItem(c.getId(), c.getEspecialidad(), c.getNivel(), c.getSeccion())).toList();
+            List<CourseItem> cursos = new CursoDao().findAll().stream()
+                    .filter(c -> actingSpecialtyId == null || especialidadNombreById.entrySet().stream().anyMatch(entry -> entry.getKey().equals(actingSpecialtyId) && entry.getValue().equals(c.getEspecialidad())))
+                    .map(c -> new CourseItem(c.getId(), c.getEspecialidad(), c.getNivel(), c.getSeccion())).toList();
             List<SpecialtyItem> especialidades = new EspecialidadDao().findAll().stream().map(e -> new SpecialtyItem(e.getId(), e.getNombre())).toList();
             return new CatalogResponse(materias, usuarios, asignaciones, alumnos, cursos, especialidades);
         } catch (Exception ex) {
@@ -126,6 +122,7 @@ public class AdminController {
     @PutMapping("/materias/{id}")
     public void updateMateria(@PathVariable int id, @RequestBody MateriaInput input, Authentication auth) {
         ApiAuth.requireUserId(auth);
+        requireGlobalAdmin(auth);
         require(input != null && notBlank(input.nombre()), "El nombre es requerido");
         validateMateriaEspecialidades(input);
         try {
@@ -152,6 +149,7 @@ public class AdminController {
     @PostMapping("/materias") @ResponseStatus(HttpStatus.CREATED)
     public void createMateria(@RequestBody MateriaInput input, Authentication auth) {
         ApiAuth.requireUserId(auth); require(input != null && notBlank(input.nombre()), "El nombre es requerido");
+        requireGlobalAdmin(auth);
         validateMateriaEspecialidades(input);
         try {
             Integer actingSpecialtyId = getSpecialtyAdminIdForUser(ApiAuth.requireUserId(auth));
@@ -174,6 +172,7 @@ public class AdminController {
     @GetMapping("/materias/{id}/especialidades")
     public List<Integer> materiaEspecialidades(@PathVariable int id, Authentication auth) {
         ApiAuth.requireUserId(auth);
+        requireGlobalAdmin(auth);
         try {
             return new MateriaDao().listEspecialidadIdsForMateria(id);
         } catch (Exception ex) {
@@ -184,6 +183,7 @@ public class AdminController {
     @PostMapping("/usuarios") @ResponseStatus(HttpStatus.CREATED)
     public void createUser(@RequestBody UserInput input, Authentication auth) {
         ApiAuth.requireUserId(auth); require(input != null && notBlank(input.nombre()) && notBlank(input.apellido()) && notBlank(input.usuario()) && input.ci() != null, "Nombre, apellido, usuario y cédula son requeridos");
+        requireGlobalAdmin(auth);
         int actingUserId = ApiAuth.requireUserId(auth);
         try {
             String defaultPassword = input.contrasenia() == null || input.contrasenia().isBlank() ? "password" : input.contrasenia();
@@ -233,6 +233,7 @@ public class AdminController {
     @PutMapping("/usuarios/{id}")
     public void updateUser(@PathVariable int id, @RequestBody UserInput input, Authentication auth) {
         ApiAuth.requireUserId(auth);
+        requireGlobalAdmin(auth);
         require(input != null && notBlank(input.nombre()) && notBlank(input.apellido()) && notBlank(input.usuario()) && input.ci() != null, "Nombre, apellido, usuario y cédula son requeridos");
         int actingUserId = ApiAuth.requireUserId(auth);
         try {
@@ -297,6 +298,7 @@ public class AdminController {
     @PostMapping("/asignaciones") @ResponseStatus(HttpStatus.CREATED)
     public void createAssignment(@RequestBody AssignmentInput input, Authentication auth) {
         ApiAuth.requireUserId(auth); require(input != null && input.profesorId() > 0 && input.materiaId() > 0 && input.cursoId() > 0, "Profesor, materia y curso son requeridos");
+        requireGlobalAdmin(auth);
         try {
             Integer actingSpecialtyId = getSpecialtyAdminIdForUser(ApiAuth.requireUserId(auth));
             if (actingSpecialtyId != null && !canAccessAsignacion(actingSpecialtyId, input.cursoId())) {
@@ -310,6 +312,7 @@ public class AdminController {
     @DeleteMapping("/asignaciones/{id}") @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteAssignment(@PathVariable int id, Authentication auth) {
         ApiAuth.requireUserId(auth);
+        requireGlobalAdmin(auth);
         try {
             Integer actingSpecialtyId = getSpecialtyAdminIdForUser(ApiAuth.requireUserId(auth));
             Asignacion existente = new AsignacionDao().findById(id);
@@ -329,6 +332,7 @@ public class AdminController {
     @DeleteMapping("/materias/{id}") @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteMateria(@PathVariable int id, Authentication auth) {
         ApiAuth.requireUserId(auth);
+        requireGlobalAdmin(auth);
         try {
             Integer actingSpecialtyId = getSpecialtyAdminIdForUser(ApiAuth.requireUserId(auth));
             if (actingSpecialtyId != null && !canAccessMateria(actingSpecialtyId, id)) {
@@ -347,6 +351,7 @@ public class AdminController {
     @DeleteMapping("/usuarios/{id}") @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteUsuario(@PathVariable int id, Authentication auth) {
         ApiAuth.requireUserId(auth);
+        requireGlobalAdmin(auth);
         int actingUserId = ApiAuth.requireUserId(auth);
         try {
             ProfesorDao profesorDao = new ProfesorDao();
@@ -377,6 +382,7 @@ public class AdminController {
     @GetMapping("/asignaciones/por-profesor/{profesorId}")
     public java.util.List<Asignacion> asignacionesPorProfesor(@PathVariable int profesorId, Authentication auth) {
         ApiAuth.requireUserId(auth);
+        requireGlobalAdmin(auth);
         try {
             ProfesorDao profesorDao = new ProfesorDao();
             Profesor profesor = profesorDao.findById(profesorId);
@@ -397,6 +403,7 @@ public class AdminController {
     @PostMapping("/asignaciones/batch") @ResponseStatus(HttpStatus.CREATED)
     public BatchAssignmentResponse createAssignmentsBatch(@RequestBody BatchAssignmentInput input, Authentication auth) {
         ApiAuth.requireUserId(auth);
+        requireGlobalAdmin(auth);
         require(input != null && input.profesorId() > 0 && input.materiaId() > 0 && input.cursoIds() != null && !input.cursoIds().isEmpty(), "profesorId, materiaId y cursoIds son requeridos");
         AsignacionDao dao = new AsignacionDao();
         int creadas = 0;
@@ -417,6 +424,7 @@ public class AdminController {
     @PutMapping("/asignaciones/{id}")
     public void updateAssignment(@PathVariable int id, @RequestBody AssignmentInput input, Authentication auth) {
         ApiAuth.requireUserId(auth);
+        requireGlobalAdmin(auth);
         require(input != null && input.materiaId() > 0 && input.cursoId() > 0, "Materia y curso son requeridos");
         try {
             Integer actingSpecialtyId = getSpecialtyAdminIdForUser(ApiAuth.requireUserId(auth));
@@ -445,6 +453,7 @@ public class AdminController {
     @DeleteMapping("/usuarios/{id}/google/clear")
     public GoogleClearResponse clearUsuarioGoogleTokens(@PathVariable int id, Authentication auth) {
         ApiAuth.requireUserId(auth);
+        requireGlobalAdmin(auth);
         try {
             boolean updated = new ProfesorDao().updateGoogleTokens(id, null, null, 0L, null);
             if (!updated) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado o no se pudo limpiar tokens");
@@ -541,7 +550,9 @@ public class AdminController {
     public java.util.List<PadreSummary> padresDelAlumno(@PathVariable int id, Authentication auth) {
         ApiAuth.requireUserId(auth);
         try {
-            if (new AlumnoDao().findById(id) == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Alumno no encontrado");
+            Alumno alumno = new AlumnoDao().findById(id);
+            if (alumno == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Alumno no encontrado");
+            requireAlumnoScope(auth, alumno.getCursoId());
             return new PadreDao().findPadresByAlumnoId(id).stream()
                 .map(p -> new PadreSummary(p.getId(), p.getNombre(), p.getApellido(), p.getCi(), p.getUsuario()))
                 .toList();
@@ -556,7 +567,9 @@ public class AdminController {
     public void linkPadre(@PathVariable int id, @PathVariable int padreId, Authentication auth) {
         ApiAuth.requireUserId(auth);
         try {
-            if (new AlumnoDao().findById(id) == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Alumno no encontrado");
+            Alumno alumno = new AlumnoDao().findById(id);
+            if (alumno == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Alumno no encontrado");
+            requireAlumnoScope(auth, alumno.getCursoId());
             if (new PadreDao().findById(padreId) == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Padre no encontrado");
             if (!new PadreDao().linkPadre(id, padreId)) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "El vínculo alumno-padre ya existía");
@@ -572,6 +585,9 @@ public class AdminController {
     public void unlinkPadre(@PathVariable int id, @PathVariable int padreId, Authentication auth) {
         ApiAuth.requireUserId(auth);
         try {
+            Alumno alumno = new AlumnoDao().findById(id);
+            if (alumno == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Alumno no encontrado");
+            requireAlumnoScope(auth, alumno.getCursoId());
             if (!new PadreDao().unlinkPadre(id, padreId)) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Vínculo no encontrado");
             }
@@ -694,6 +710,13 @@ public class AdminController {
         }
     }
 
+    private void requireAlumnoScope(Authentication auth, int cursoId) {
+        Integer specialty = getSpecialtyAdminIdForUser(ApiAuth.requireUserId(auth));
+        if (specialty != null && !canAccessAlumno(specialty, cursoId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tenés permiso para gestionar alumnos de esta especialidad");
+        }
+    }
+
     private Integer normalizeAdminEspecialidadId(int level, Integer especialidadId) {
         if (level != 3) {
             return null;
@@ -702,6 +725,11 @@ public class AdminController {
     }
 
     private void require(boolean condition, String message) { if (!condition) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message); }
+    private void requireGlobalAdmin(Authentication auth) {
+        if (getSpecialtyAdminIdForUser(ApiAuth.requireUserId(auth)) != null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Los administradores por especialidad no tienen acceso a este módulo");
+        }
+    }
     private boolean notBlank(String value) { return value != null && !value.isBlank(); }
     private void validateMateriaEspecialidades(MateriaInput input) {
         if (input == null || input.especialidadIds() == null) {
@@ -768,6 +796,7 @@ public class AdminController {
     @GetMapping("/usuarios/{id}/google")
     public GoogleTokenInfo getUsuarioGoogleTokens(@PathVariable int id, Authentication auth) {
         ApiAuth.requireUserId(auth);
+        requireGlobalAdmin(auth);
         try {
             ProfesorDao dao = new ProfesorDao();
             ctn.informatica.sca.model.Profesor p = dao.findById(id);

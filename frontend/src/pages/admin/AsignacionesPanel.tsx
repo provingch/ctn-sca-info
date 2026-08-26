@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { createAdminRecord, createHorarioSlot, deleteAssignment, deleteHorarioSlot, downloadHorarioCurso, getHoraCatedraCatalog, getHorarioByAsignacion, updateAdminRecord, type AdminCatalog, type HoraCatedraItem, type HorarioSlotItem } from '../../api/admin';
+import { createAdminRecord, createHorarioSlot, deleteAssignment, deleteHorarioSlot, getHoraCatedraCatalog, getHorarioByAsignacion, updateAdminRecord, type AdminCatalog, type HoraCatedraItem, type HorarioSlotItem } from '../../api/admin';
 import { ApiError } from '../../api/client';
 
 interface AsignacionesPanelProps {
@@ -102,27 +102,6 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
       await reload();
     } catch (error) {
       status(error instanceof ApiError ? error.message : 'No se pudo guardar la asignación.');
-    }
-  };
-
-  const openHorario = async (assignmentId: number) => {
-    try {
-      const [catalog, slots] = await Promise.all([
-        getHoraCatedraCatalog(),
-        getHorarioByAsignacion(assignmentId),
-      ]);
-      const sortedCatalog = [...catalog].sort((first, second) => first.numero - second.numero);
-      setHorarioPopup({
-        assignmentId,
-        slots,
-        catalog: sortedCatalog,
-        diaSemana: 1,
-        horaCatedraId: String(sortedCatalog[0]?.id ?? ''),
-        hastaHoraCatedraId: String(sortedCatalog[0]?.id ?? ''),
-        sala: '',
-      });
-    } catch (error) {
-      status(error instanceof ApiError ? error.message : 'No se pudo cargar el horario.');
     }
   };
 
@@ -306,14 +285,6 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
                     <td>
                       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                         <button type="button" className="button secondary" onClick={() => openEdit(assignment)}>Editar</button>
-                        <button type="button" className="button secondary" onClick={() => void openHorario(assignment.id)}>Horario</button>
-                        <button type="button" className="button secondary" onClick={async () => {
-                          try {
-                            await downloadHorarioCurso(assignment.cursoId);
-                          } catch (error) {
-                            status(error instanceof ApiError ? error.message : 'No se pudo descargar el horario del curso.');
-                          }
-                        }}>Descargar horario del curso</button>
                         <button type="button" className="button danger" onClick={async () => {
                           if (!window.confirm('¿Eliminar esta asignación?')) return;
                           try {

@@ -137,16 +137,23 @@ public class HorarioSlotDao extends conexion {
     }
 
     public List<ctn.informatica.sca.dto.HorarioResumenCursoDto> resumenPorCurso() throws SQLException {
+        return resumenPorCurso(null);
+    }
+
+    public List<ctn.informatica.sca.dto.HorarioResumenCursoDto> resumenPorCurso(Integer especialidadId) throws SQLException {
         String sql = "SELECT c.id AS curso_id, e.nombre AS especialidad, c.promocion AS promocion, c.seccion AS seccion, "
                 + "COUNT(hs.id) AS cantidad_slots_cargados "
                 + "FROM curso c "
                 + "JOIN especialidad e ON e.id = c.especialidad_id "
                 + "LEFT JOIN asignacion a ON a.curso_id = c.id "
                 + "LEFT JOIN horario_slot hs ON hs.asignacion_id = a.id "
+                + (especialidadId == null ? "" : "WHERE c.especialidad_id = ? ")
                 + "GROUP BY c.id, e.nombre, c.promocion, c.seccion "
                 + "ORDER BY e.nombre, c.promocion DESC, c.seccion, c.id";
         List<ctn.informatica.sca.dto.HorarioResumenCursoDto> out = new ArrayList<>();
-        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
+            if (especialidadId != null) ps.setInt(1, especialidadId);
+            try (ResultSet rs = ps.executeQuery()) {
             int period = ctn.informatica.sca.util.AcademicPeriod.current();
             while (rs.next()) {
                 int cursoId = rs.getInt("curso_id");
@@ -168,8 +175,9 @@ public class HorarioSlotDao extends conexion {
                         cantidad,
                         nivel));
             }
-        }
+            }
         return out;
+        }
     }
 
     public List<HorarioSlot> findByCurso(int cursoId) throws SQLException {
@@ -214,6 +222,22 @@ public class HorarioSlotDao extends conexion {
             }
         }
         return out;
+    }
+
+    public HorarioSlot findById(int id) throws SQLException {
+        for (HorarioSlot slot : findByCursoIdForLookup(id)) return slot;
+        return null;
+    }
+
+    private List<HorarioSlot> findByCursoIdForLookup(int id) throws SQLException {
+        String sql = "SELECT hs.curso_id FROM horario_slot hs WHERE hs.id = ?";
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return List.of();
+                return findByCurso(rs.getInt(1)).stream().filter(slot -> slot.getId() == id).toList();
+            }
+        }
     }
 
     public int crear(int asignacionId, int usuarioId, int cursoId, int diaSemana, int horaCatedraId, String sala) throws SQLException {
