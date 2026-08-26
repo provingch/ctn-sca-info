@@ -162,7 +162,6 @@ public class HomeController {
         if (profesor != null) {
             googleClassroomConnected = GoogleClassroomService.isGoogleConnected(profesor);
             try {
-                teacherSubjects.addAll(planillaDao.findSubjectsByProfesor(profesor.getId()));
                 teacherSubjects.addAll(materiaDao.findNamesByProfesor(profesor.getId()));
                 manualTeacherSubjectsText = profesorDao.findManualSubjectsText(profesor.getId());
             } catch (SQLException ex) {

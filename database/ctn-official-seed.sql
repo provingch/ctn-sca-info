@@ -143,6 +143,15 @@ INSERT INTO curso (id, especialidad_id, promocion, seccion) VALUES
 (56, 8, 2028, 'B'),
 (57, 8, 2028, 'C');
 
+INSERT INTO curso_base (id, especialidad_id, nivel, seccion)
+VALUES
+(1, 5, 1, 'A'),
+(2, 5, 1, 'B'),
+(3, 5, 2, 'A'),
+(4, 5, 2, 'B'),
+(5, 5, 3, 'A'),
+(6, 5, 3, 'B');
+
 -- ========================================
 -- USUARIOS BASE
 -- ========================================
@@ -180,31 +189,33 @@ INSERT INTO usuario (
     
     -- Profesores
     -- Hasta ahora solo disponemos los profes que van en informatica, pero se pueden agregar los de las otras especialidades si se desea.
-    (10, 'Abner', 'Alcaraz', 'abner.alcaraz', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'abner_alcaraz.txt', 5),
-    (11, 'Alcira', 'Cáceres', 'alcira.caceres', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'alcira_caceres.txt', 5),
-    (12, 'Andres', 'Rojas', 'andres.rojas', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'andres_rojas.txt', 5),
-    (13, 'Claudia', 'Burgos', 'claudia.burgos', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'claudia_burgos.txt', 5),
-    (14, 'Cristian', 'Delgado', 'cristian.delgado', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'cristian_delgado.txt', 5),
-    (15, 'Daniel', 'Lenguaza', 'daniel.lenguaza', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'daniel_lenguaza.txt', 5),
-    (16, 'Emilce', 'Jara', 'emilce.jara', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'emilce_jara.txt', 5),
-    (17, 'Federico', 'González', 'federico.gonzalez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'federico_gonzalez.txt', 5),
-    (18, 'Gerardo', 'Ovelar', 'gerardo.ovelar', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'gerardo_ovelar.txt', 5),
-    (19, 'Graciela', 'López', 'graciela.lopez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'graciela_lopez.txt', 5),
-    (20, 'Graciela', 'Maidana', 'graciela.maidana', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'graciela_maidana.txt', 5),
-    (21, 'Gustavo', 'Ramirez', 'gustavo.ramirez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'gustavo_ramirez.txt', 5),
-    (22, 'Irma', 'Cardozo', 'irma.cardozo', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'irma_cardozo.txt', 5),
-    (23, 'Juan', 'Acosta', 'juan.acosta', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'juan_acosta.txt', 5),
-    (24, 'Laura', 'Rivas', 'laura.rivas', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'laura_rivas.txt', 5),
-    (25, 'Lourdes', 'Galeano', 'lourdes.galeano', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'lourdes_galeano.txt', 5),
-    (26, 'Luz', 'Angulo', 'luz.angulo', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'luz_angulo.txt', 5),
-    (27, 'Mirian', 'Montania', 'mirian.montania', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'mirian_montania.txt', 5),
-    (28, 'Oscar', 'Ibarrola', 'oscar.ibarrola', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'oscar_ibarrola.txt', 5),
-    (29, 'Oscar', 'Villasanti', 'oscar.villasanti', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'oscar_villasanti.txt', 5),
-    (30, 'Romy', 'Aguilera', 'romy.aguilera', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'romy_aguilera.txt', 5),
-    (31, 'Ruth', 'Estigarribia', 'ruth.estigarribia', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'ruth_estigarribia.txt', 5),
-    (32, 'Ruth', 'Román', 'ruth.roman', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'ruth_roman.txt', 5),
-    (33, 'Susana', 'Alvarenga', 'susana.alvarenga', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'susana_alvarenga.txt', 5),
-    (34, 'Zully', 'Nuñez', 'zully.nunez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'zully_nunez.txt', 5),
+    (10, 'Abner', 'Alcaraz', 'abner.alcaraz', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'abner_alcaraz.txt', null),
+    (11, 'Alcira', 'Cáceres', 'alcira.caceres', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'alcira_caceres.txt', null),
+    (12, 'Andres', 'Rojas', 'andres.rojas', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'andres_rojas.txt', null),
+    (13, 'Claudia', 'Burgos', 'claudia.burgos', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'claudia_burgos.txt', null),
+    (14, 'Cristian', 'Delgado', 'cristian.delgado', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'cristian_delgado.txt', null),
+    (15, 'Daniel', 'Lenguaza', 'daniel.lenguaza', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'daniel_lenguaza.txt', null),
+    (16, 'Emilce', 'Jara', 'emilce.jara', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'emilce_jara.txt', null),
+    (17, 'Federico', 'González', 'federico.gonzalez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'federico_gonzalez.txt', null),
+    (18, 'Gerardo', 'Ovelar', 'gerardo.ovelar', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'gerardo_ovelar.txt', null),
+    (19, 'Graciela', 'López', 'graciela.lopez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'graciela_lopez.txt', null),
+    (20, 'Graciela', 'Maidana', 'graciela.maidana', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'graciela_maidana.txt', null),
+    (21, 'Gustavo', 'Ramirez', 'gustavo.ramirez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'gustavo_ramirez.txt', null),
+    (22, 'Irma', 'Cardozo', 'irma.cardozo', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'irma_cardozo.txt', null),
+    (23, 'Juan', 'Acosta', 'juan.acosta', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'juan_acosta.txt', null),
+    (24, 'Laura', 'Rivas', 'laura.rivas', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'laura_rivas.txt', null),
+    (25, 'Lourdes', 'Galeano', 'lourdes.galeano', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'lourdes_galeano.txt', null),
+    (26, 'Luz', 'Angulo', 'luz.angulo', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'luz_angulo.txt', null),
+    (27, 'Mirian', 'Montania', 'mirian.montania', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'mirian_montania.txt', null),
+    (28, 'Oscar', 'Ibarrola', 'oscar.ibarrola', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'oscar_ibarrola.txt', null),
+    (29, 'Oscar', 'Villasanti', 'oscar.villasanti', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'oscar_villasanti.txt', null),
+    (30, 'Romy', 'Aguilera', 'romy.aguilera', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'romy_aguilera.txt', null),
+    (31, 'Ruth', 'Estigarribia', 'ruth.estigarribia', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'ruth_estigarribia.txt', null),
+    (32, 'Ruth', 'Román', 'ruth.roman', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'ruth_roman.txt', null),
+    (33, 'Susana', 'Alvarenga', 'susana.alvarenga', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'susana_alvarenga.txt', null),
+    (34, 'Zully', 'Nuñez', 'zully.nunez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'zully_nunez.txt', null),
+    (35, null, 'Chavez', 'null.chavez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'null_chavez.txt', null),
+    (36, null, 'Mequer', 'null.mequer', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'null_mequer.txt', null),
     -- Reservado hasta 90...
 
     -- Evaluadores
@@ -250,24 +261,26 @@ INSERT INTO materia (id, nombre, categoria) VALUES
 (12, 'Orientación', 'comun'),
 (13, 'Psicología', 'comun'),
 (14, 'Química', 'comun'),
+(15, 'Administración Financiera', 'comun'),
+(16, 'Literatura', 'comun'),
+
 
 -- Especificas
     -- Informática (ID 41-55)
-    (41, 'Administración Financiera', 'especifico'),
-    (42, 'Algorítmica', 'especifico'),
-    (43, 'Laboratorio Android', 'especifico'),
-    (44, 'Laboratorio Java', 'especifico'),
-    (45, 'Laboratorio Linux', 'especifico'),
-    (46, 'Laboratorio Python', 'especifico'),
-    (47, 'Laboratorio SQL', 'especifico'),
-    (48, 'Laboratorio Web', 'especifico'),
-    (49, 'Literatura', 'especifico'),
-    (50, 'Matemática Aplicada', 'especifico'),
-    (51, 'Plan de Lectura', 'especifico'),
-    (52, 'Laboratorio Redes', 'especifico'),
-    (53, 'Seguridad en Riesgos Eléctricos', 'especifico'),
-    (54, 'Dibujo Técnico', 'especifico'),
-    (55, 'Info General', 'especifico');
+    (41, 'Algorítmica', 'especifico'),
+    (42, 'Laboratorio Android', 'especifico'),
+    (43, 'Laboratorio Java', 'especifico'),
+    (44, 'Laboratorio Linux', 'especifico'),
+    (45, 'Laboratorio Python', 'especifico'),
+    (46, 'Laboratorio SQL', 'especifico'),
+    (47, 'Laboratorio Web', 'especifico'),
+    (48, 'Matemática Aplicada', 'especifico'),
+    (49, 'Plan de Lectura', 'especifico'),
+    (50, 'Laboratorio Redes', 'especifico'),
+    (51, 'Seguridad en Riesgos Eléctricos', 'especifico'),
+    (52, 'Dibujo Técnico', 'especifico'),
+    (53, 'Info General', 'especifico'),
+    (54, 'Laboratorio Hardware', 'especifico');
 
     -- Las demas quedan pendientes a cargar...
 
@@ -516,4 +529,330 @@ INSERT INTO instrumento (id, nombre) VALUES
     ('MATEO RAFAEL', 'VELAZQUEZ AMADI', 36, 0000055, NULL, NULL),
     ('FRANCISCO RAFAEL', 'ZARZA MARTÍNEZ', 36, 0000056, NULL, NULL);
 
--- Commit message: "Seed data for users, subjects, instruments, and students inserted into the database."
+-- ========================================
+-- SALAS
+-- ========================================
+INSERT INTO sala (nombre, especialidad_id) VALUES
+-- Plan Comun
+("PC 01", null),
+("PC 02", null),
+("PC 03", null),
+("PC 04", null),
+("PC 05", null),
+("PC 06", null),
+("PC 07", null),
+("PC 08", null),
+("PC 09", null),
+("PC 10", null),
+
+-- Informática
+("Aula INF-1º", 5),
+("Aula INF-2º", 5),
+("Aula INF-3º", 5),
+("Aula INF-N", 5),
+("Aula INF-T", 5),
+("Lab INF-S", 5),
+("Lab INF-H", 5),
+("INF-CDI", 5),
+("INF-CDT", 5),
+("INF-PEC", 5);
+
+-- ========================================
+-- RELACIONES COMPLEJAS
+-- ========================================
+-- Usuario - Materia
+INSERT INTO asignacion (usuario_id, materia_id, curso_base_id) VALUES
+    -- Informatica
+        (16, 1, 1), (16, 2, 1),
+        -- Antropologia 1ro A/B - Emilce Jara
+
+        (24, 2, 1), (24, 2, 2), (24, 2, 3),
+        (24, 2, 4), (24, 2, 5), (24, 2, 6),
+        -- Ciencias 1ro, 2do, 3ro A/B - Laura Rivas
+
+        (15, 3, 5), (15, 3, 6),
+        -- Economia y Gestion 3ro A/B - Daniel Lenguaza
+
+        (18, 4, 1), (18, 4, 3), (18, 4, 5),
+        -- Educacion Fisica 1ro, 2do, 3ro A - Gerardo Ovelar
+
+        (35, 4, 2),
+        -- Educacion Fisica 1ro B - Chavez
+
+        (36, 4, 4),
+        -- Educacion Fisica 2do B - Mequer
+
+        (29, 4, 6),
+        -- Educacion Fisica 3ro B - Oscar Villasanti
+
+        (27, 5, 3), (27, 5, 4),
+        -- Educacion Vial 2do A/B - Mirian Montania
+
+        (27, 6, 1), (28, 6, 2),
+        -- Etica 1ro A/B - Mirian Montania
+
+        (13, 7, 1), (13, 7, 2),
+        (13, 7, 3), (13, 7, 4),
+        -- Fisica 1ro, 2do A/B - Claudia Burgos
+
+        (34, 8, 1), (34, 8, 3), (34, 8, 4),
+        -- Guarani 1ro A, 2do A/B - Zully Nuñez
+
+        (30, 8, 2),
+        -- Guarani 1ro B - Romy Aguilera
+
+        (27, 9, 1), (27, 9, 3), (27, 9, 4),
+        -- Historia 1ro, 2do, 3ro A - Mirian Montania
+
+        (21, 9, 2), (21, 9, 6),
+        -- Historia 1ro, 3ro B - Gustavo Ramirez
+
+        (10, 9, 4),
+        -- Historia 2do B - Abner Alcaraz
+
+        (11, 10, 1), (11, 10, 2),
+        (11, 10, 3), (11, 10, 4),
+        -- Ingles 1ro, 2do A/B - Alcira Caceres
+
+        (12, 11, 1), (12, 11, 2), (12, 11, 3),
+        (12, 11, 4), (12, 11, 5), (12, 11, 6),
+        -- Matematica Comun 1ro, 2do, 3ro A/B - Andres Rojas
+
+        (20, 12, 1),
+        -- Orientacion 1ro A - Graciela Maidana
+
+        (31, 12, 2), (31, 12, 5), (31, 12, 6),
+        -- Orientacion 1ro B, 3ro A/B - Ruth Estigarribia
+
+        (22, 13, 5),
+        -- Psicologia 3ro A - Irma Cardozo
+
+        (20, 13, 5),
+        -- Psicologia 3ro B - Graciela Maidana
+
+        (28, 14, 1), (28, 14, 3),
+        -- Quimica 1ro, 2do A - Oscar Ibarrola
+
+        (26, 14, 2), (26, 14, 4),
+        -- Quimica 2do B - Luz Angulo
+
+        (25, 15, 3), (25, 15, 4)
+        -- Administracion Financiera 2do A/B - Lourdes Galeano
+
+        (32, 15, 5), (32, 15, 6),
+        -- Administracion Financiera 3ro A/B - Ruth Roman
+
+        (33, 16, 1), (33, 16, 2), (33, 16, 3),
+        (33, 16, 4), (33, 16, 5), (33, 16, 6),
+        -- Literatura 1ro, 2do, 3ro A/B - Susana Alvarenga
+
+        (19, 41, 1), (19, 41, 2), (19, 41, 3),
+        (19, 41, 4), (19, 41, 5), (19, 41, 6),
+        -- Algoritmica 1ro, 2do, 3ro A/B - Graciela Lopez
+
+        (17, 42, 5), (17, 42, 6),
+        -- Laboratorio Android 3ro A/B - Federico Gonzalez
+
+        (17, 43, 5), (17, 43, 6),
+        -- Laboratorio Java 3ro A/B - Federico Gonzalez
+
+        (14, 44, 1), (14, 44, 2),
+        -- Laboratorio Linux 1ro A/B - Cristian Delgado
+
+        (17, 45, 3), (17, 45, 4),
+        -- Laboratorio Python 2do A/B - Federico Gonzalez
+
+        (17, 46, 3), (17, 46, 4),
+        -- Laboratorio SQL 2do A/B - Federico Gonzalez
+
+        (17, 47, 1), (17, 47, 2),
+        -- Laboratorio Web 1ro A/B - Federico Gonzalez
+
+        (12, 48, 1), (12, 48, 2), (12, 48, 3),
+        (12, 48, 4), (12, 48, 5), (12, 48, 6),
+        -- Matematica Aplicada 1ro, 2do, 3ro A/B - Andres Rojas
+
+        (33, 49, 2),
+        -- Plan de Lectura 1ro B - Susana Alvarenga
+
+        (14, 50, 5), (14, 50, 6),
+        -- Laboratorio Redes 3ro A/B - Cristian Delgado
+
+        (14, 51, 5), (14, 51, 6),
+        -- Seguridad en Riesgos Electricos 3ro A/B - Cristian Delgado
+
+        (23, 52, 1), (23, 52, 2),
+        -- Dibujo Tecnico 1ro A/B - Juan Acosta
+
+        (14, 53, 1), (14, 53, 2),
+        (14, 53, 3), (14, 53, 4),
+        -- Info General 1ro, 2do A/B - Cristian Delgado
+
+        (14, 54, 3), (14, 54, 4);
+        -- Laboratorio Hardware 2do A/B - Cristian Delgado
+
+-- ========================================
+-- HORARIO
+-- ========================================
+-- Carga en dos pasos:
+-- 1) horario_slot_staging guarda la grilla con datos legibles.
+-- 2) el INSERT final resuelve asignacion_id / usuario_id / curso_base_id / hora_catedra_id.
+CREATE TEMPORARY TABLE horario_slot_staging (
+    profesor_usuario VARCHAR(45) NOT NULL,
+    materia_id INT NOT NULL,
+    nivel TINYINT NOT NULL,
+    seccion ENUM('A', 'B', 'C') NOT NULL,
+    dia_semana TINYINT UNSIGNED NOT NULL,
+    hora_numero TINYINT UNSIGNED NOT NULL,
+    duracion TINYINT UNSIGNED NOT NULL
+);
+
+CREATE TEMPORARY TABLE horario_slot_span (
+    n TINYINT UNSIGNED NOT NULL PRIMARY KEY
+);
+
+INSERT INTO horario_slot_span (n) VALUES (1), (2), (3), (4);
+
+INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, dia_semana, hora_numero, duracion) VALUES
+    -- Sección A, 1er año
+    ('oscar.ibarrola', 14, 1, 'A', 1, 1, 2),
+    ('mirian.montania', 6, 1, 'A', 1, 3, 2),
+    ('andres.rojas', 11, 1, 'A', 1, 5, 4),
+    ('federico.gonzalez', 47, 1, 'A', 2, 1, 4),
+    ('mirian.montania', 9, 1, 'A', 2, 5, 2),
+    ('zully.nunez', 8, 1, 'A', 2, 7, 2),
+    ('susana.alvarenga', 16, 1, 'A', 3, 1, 4),
+    ('claudia.burgos', 7, 1, 'A', 3, 5, 2),
+    ('juan.acosta', 52, 1, 'A', 4, 1, 2),
+    ('emilce.jara', 1, 1, 'A', 4, 5, 2),
+    ('susana.alvarenga', 16, 1, 'A', 4, 7, 1),
+    ('graciela.lopez', 41, 1, 'A', 5, 1, 2),
+    ('cristian.delgado', 44, 1, 'A', 5, 5, 4),
+    ('gerardo.ovelar', 4, 1, 'A', 1, 9, 2),
+    ('alcira.caceres', 10, 1, 'A', 2, 9, 2),
+    ('andres.rojas', 48, 1, 'A', 3, 9, 2),
+    ('graciela.maidana', 12, 1, 'A', 3, 11, 2),
+
+    -- Sección A, 2do año
+    ('graciela.lopez', 41, 2, 'A', 1, 1, 4),
+    ('claudia.burgos', 7, 2, 'A', 2, 1, 4),
+    ('gerardo.ovelar', 4, 2, 'A', 3, 1, 2),
+    ('alcira.caceres', 10, 2, 'A', 3, 3, 2),
+    ('susana.alvarenga', 16, 2, 'A', 4, 1, 2),
+    ('lourdes.galeano', 15, 2, 'A', 4, 3, 2),
+    ('susana.alvarenga', 16, 2, 'A', 5, 1, 2),
+    ('laura.rivas', 2, 2, 'A', 5, 3, 2),
+    ('zully.nunez', 8, 2, 'A', 1, 5, 2),
+    ('federico.gonzalez', 46, 2, 'A', 1, 7, 2),
+    ('cristian.delgado', 53, 2, 'A', 2, 5, 2),
+    ('andres.rojas', 11, 2, 'A', 2, 7, 2),
+    ('oscar.ibarrola', 14, 2, 'A', 3, 5, 4),
+    ('federico.gonzalez', 45, 2, 'A', 4, 5, 4),
+    ('andres.rojas', 48, 2, 'A', 5, 5, 2),
+    ('mirian.montania', 5, 2, 'A', 1, 9, 2),
+    ('zully.nunez', 8, 2, 'A', 1, 11, 2),
+    ('susana.alvarenga', 49, 2, 'A', 2, 9, 2),
+    ('susana.alvarenga', 16, 2, 'A', 2, 11, 2),
+    ('alcira.caceres', 10, 2, 'A', 3, 9, 2),
+    ('mirian.montania', 9, 2, 'A', 3, 11, 2),
+    ('cristian.delgado', 54, 2, 'A', 4, 9, 2),
+
+    -- Sección A, 3er año
+    ('andres.rojas', 11, 3, 'A', 1, 1, 4),
+    ('ruth.roman', 15, 3, 'A', 2, 1, 2),
+    ('mirian.montania', 9, 3, 'A', 2, 3, 2),
+    ('federico.gonzalez', 42, 3, 'A', 3, 1, 4),
+    ('federico.gonzalez', 43, 3, 'A', 4, 1, 4),
+    ('ruth.roman', 15, 3, 'A', 5, 1, 2),
+    ('susana.alvarenga', 16, 3, 'A', 5, 3, 2),
+    ('graciela.lopez', 41, 3, 'A', 1, 5, 4),
+    ('federico.gonzalez', 43, 3, 'A', 2, 5, 4),
+    ('cristian.delgado', 50, 3, 'A', 3, 5, 4),
+    ('irma.cardozo', 13, 3, 'A', 4, 5, 4),
+    ('laura.rivas', 2, 3, 'A', 5, 5, 2),
+    ('claudia.burgos', 7, 3, 'A', 5, 7, 2),
+    ('daniel.lenguaza', 3, 3, 'A', 1, 9, 4),
+    ('susana.alvarenga', 16, 3, 'A', 2, 9, 2),
+    ('andres.rojas', 48, 3, 'A', 2, 11, 2),
+    ('cristian.delgado', 51, 3, 'A', 3, 9, 4),
+    ('ruth.estigarribia', 12, 3, 'A', 4, 9, 2),
+    ('gerardo.ovelar', 4, 3, 'A', 5, 9, 2),
+
+    -- Sección B, 1er año
+    ('federico.gonzalez', 47, 1, 'B', 1, 1, 4),
+    ('graciela.lopez', 41, 1, 'B', 2, 1, 4),
+    ('alcira.caceres', 10, 1, 'B', 3, 1, 2),
+    ('claudia.burgos', 7, 1, 'B', 4, 1, 4),
+    ('cristian.delgado', 44, 1, 'B', 5, 1, 4),
+    ('emilce.jara', 1, 1, 'B', 1, 5, 2),
+    ('susana.alvarenga', 16, 1, 'B', 2, 5, 2),
+    ('susana.alvarenga', 16, 1, 'B', 3, 5, 2),
+    ('susana.alvarenga', 49, 1, 'B', 4, 5, 2),
+    ('romy.aguilera', 8, 1, 'B', 5, 5, 2),
+    ('mirian.montania', 6, 1, 'B', 1, 7, 2),
+    ('mirian.montania', 6, 1, 'B', 2, 7, 2),
+    ('ruth.estigarribia', 12, 1, 'B', 3, 7, 2),
+    ('cristian.delgado', 53, 1, 'B', 4, 7, 2),
+    ('andres.rojas', 48, 1, 'B', 5, 7, 2),
+    ('zully.nunez', 8, 1, 'B', 1, 9, 2),
+    ('gustavo.ramirez', 9, 1, 'B', 3, 9, 2),
+    ('juan.acosta', 52, 1, 'B', 4, 9, 2),
+    ('laura.rivas', 2, 1, 'B', 4, 11, 2),
+    ('andres.rojas', 11, 1, 'B', 1, 9, 2),
+
+    -- Sección B, 2do año
+    ('cristian.delgado', 54, 2, 'B', 1, 1, 4),
+    ('andres.rojas', 48, 2, 'B', 2, 1, 4),
+    ('claudia.burgos', 7, 2, 'B', 3, 1, 4),
+    ('lourdes.galeano', 15, 2, 'B', 4, 1, 2),
+    ('andres.rojas', 11, 2, 'B', 5, 1, 2),
+    ('zully.nunez', 8, 2, 'B', 1, 5, 2),
+    ('cristian.delgado', 53, 2, 'B', 1, 7, 2),
+    ('federico.gonzalez', 45, 2, 'B', 3, 5, 2),
+    ('alcira.caceres', 10, 2, 'B', 4, 5, 2),
+    ('graciela.lopez', 41, 2, 'B', 5, 5, 2),
+    ('luz.angulo', 14, 2, 'B', 1, 7, 2),
+    ('mirian.montania', 5, 2, 'B', 2, 9, 2),
+    ('cristian.delgado', 53, 2, 'B', 2, 11, 2),
+    ('federico.gonzalez', 45, 2, 'B', 3, 9, 4),
+    ('alcira.caceres', 10, 2, 'B', 4, 9, 2),
+    ('laura.rivas', 2, 2, 'B', 1, 11, 2),
+    ('mirian.montania', 5, 2, 'B', 2, 11, 2),
+    ('cristian.delgado', 43, 2, 'B', 3, 11, 2),
+    ('luz.angulo', 14, 2, 'B', 4, 11, 2),
+
+    -- Sección B, 3er año
+    ('daniel.lenguaza', 3, 3, 'B', 1, 1, 2),
+    ('susana.alvarenga', 16, 3, 'B', 2, 1, 2),
+    ('cristian.delgado', 50, 3, 'B', 3, 1, 4),
+    ('ruth.roman', 15, 3, 'B', 4, 1, 4),
+    ('laura.rivas', 2, 3, 'B', 5, 1, 2),
+    ('graciela.lopez', 41, 3, 'B', 1, 5, 4),
+    ('federico.gonzalez', 43, 3, 'B', 2, 5, 4),
+    ('cristian.delgado', 50, 3, 'B', 3, 5, 4),
+    ('irma.cardozo', 13, 3, 'B', 4, 5, 4),
+    ('graciela.lopez', 41, 3, 'B', 5, 5, 2),
+    ('susana.alvarenga', 16, 3, 'B', 1, 9, 2),
+    ('andres.rojas', 48, 3, 'B', 2, 9, 2),
+    ('ruth.estigarribia', 12, 3, 'B', 3, 9, 2),
+    ('federico.gonzalez', 42, 3, 'B', 4, 9, 2),
+    ('oscar.villasanti', 4, 3, 'B', 3, 13, 2);
+
+INSERT INTO horario_slot (asignacion_id, usuario_id, curso_base_id, dia_semana, hora_catedra_id, sala_id)
+SELECT DISTINCT
+    a.id,
+    u.id,
+    cb.id,
+    s.dia_semana,
+    hc.id,
+    NULL
+FROM horario_slot_staging s
+JOIN usuario u ON u.usuario = s.profesor_usuario
+JOIN curso_base cb ON cb.especialidad_id = 5 AND cb.nivel = s.nivel AND cb.seccion = s.seccion
+JOIN asignacion a ON a.usuario_id = u.id AND a.materia_id = s.materia_id AND a.curso_base_id = cb.id
+JOIN horario_slot_span span ON span.n <= s.duracion
+JOIN hora_catedra hc ON hc.numero = s.hora_numero + (span.n - 1)
+ORDER BY cb.nivel, cb.seccion, s.dia_semana, hc.numero;
+
+DROP TEMPORARY TABLE horario_slot_span;
+DROP TEMPORARY TABLE horario_slot_staging;

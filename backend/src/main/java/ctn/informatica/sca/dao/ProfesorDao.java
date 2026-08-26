@@ -198,8 +198,9 @@ public class ProfesorDao extends conexion {
             else                          ps.setNull(8, Types.INTEGER);
 
             ps.setString(9, p.getCorreo());
-            if (p.getEspecialidadId() != null) {
-                ps.setInt(10, p.getEspecialidadId());
+            Integer especialidadId = p.getNivel() == 3 ? p.getEspecialidadId() : null;
+            if (especialidadId != null) {
+                ps.setInt(10, especialidadId);
             } else {
                 ps.setNull(10, Types.INTEGER);
             }
@@ -238,11 +239,11 @@ public class ProfesorDao extends conexion {
         }
         return out;
     }
-    public java.util.List<Profesor> findByEspecialidadId(int especialidadId) {
+    public java.util.List<Profesor> findAdminsByEspecialidadId(int especialidadId) {
         final String sql = "SELECT id, nombre, apellido, usuario, contrasenia, nivel, "
                          + "ci, telefono, celular, correo, especialidad_id, google_email, "
                          + "google_access_token, google_refresh_token, google_token_expiry, totp_secret, firma_imagen, foto_perfil "
-                         + "FROM usuario WHERE nivel <> 4 AND especialidad_id = ? ORDER BY apellido, nombre";
+                         + "FROM usuario WHERE nivel = 3 AND especialidad_id = ? ORDER BY apellido, nombre";
         java.util.List<Profesor> out = new java.util.ArrayList<>();
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, especialidadId);
@@ -255,6 +256,11 @@ public class ProfesorDao extends conexion {
             ex.printStackTrace();
         }
         return out;
+    }
+
+    @Deprecated
+    public java.util.List<Profesor> findByEspecialidadId(int especialidadId) {
+        return findAdminsByEspecialidadId(especialidadId);
     }
     public boolean updateTotpSecret(int profesorId, String totpSecret) {
         final String sql = "UPDATE usuario SET totp_secret = ? WHERE nivel <> 4 AND id = ?";
@@ -351,7 +357,8 @@ public class ProfesorDao extends conexion {
             if (p.getTelefono() != null) ps.setInt(7, p.getTelefono()); else ps.setNull(7, Types.INTEGER);
             if (p.getCelular() != null) ps.setInt(8, p.getCelular()); else ps.setNull(8, Types.INTEGER);
             ps.setString(9, p.getCorreo());
-            if (p.getEspecialidadId() != null) ps.setInt(10, p.getEspecialidadId()); else ps.setNull(10, Types.INTEGER);
+            Integer especialidadId = p.getNivel() == 3 ? p.getEspecialidadId() : null;
+            if (especialidadId != null) ps.setInt(10, especialidadId); else ps.setNull(10, Types.INTEGER);
 
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {

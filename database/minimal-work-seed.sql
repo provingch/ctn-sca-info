@@ -148,6 +148,18 @@ INSERT INTO curso (id, especialidad_id, promocion, seccion) VALUES
 (75, 3, 2028, 'C'),
 (76, 8, 2028, 'C');
 
+INSERT INTO curso_base (id, especialidad_id, nivel, seccion)
+SELECT id, especialidad_id,
+    CASE promocion
+        WHEN 2025 THEN 3
+        WHEN 2026 THEN 2
+        WHEN 2027 THEN 1
+        WHEN 2028 THEN 1
+        ELSE 3
+    END AS nivel,
+    seccion
+FROM curso;
+
 -- ========================================
 -- PROFESORES
 -- ========================================

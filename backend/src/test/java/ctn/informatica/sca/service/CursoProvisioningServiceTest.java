@@ -34,7 +34,7 @@ public class CursoProvisioningServiceTest {
         when(cursoDao.listDistinctSeccionesForEspecialidad(7)).thenReturn(Set.of("A"));
         when(cursoDao.existsCurso(7, 2028, "A")).thenReturn(false);
         when(cursoDao.createCursoIfNotExists(7, 2028, "A")).thenReturn(true);
-        when(profesorDao.findByEspecialidadId(7)).thenReturn(List.of(admin));
+        when(profesorDao.findAdminsByEspecialidadId(7)).thenReturn(List.of(admin));
 
         try (MockedStatic<AcademicPeriod> period = mockStatic(AcademicPeriod.class);
              MockedStatic<PushNotificationService> push = mockStatic(PushNotificationService.class)) {

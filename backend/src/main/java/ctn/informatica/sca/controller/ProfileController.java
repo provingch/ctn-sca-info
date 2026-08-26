@@ -638,7 +638,7 @@ public class ProfileController {
             return "Tu perfil se muestra en modo lectura.";
         }
         return switch (user.getLevel()) {
-            case 1 -> "Podés editar tus datos de contacto, usuario, especialidad y conexión con Google Classroom.";
+            case 1 -> "Podés editar tus datos de contacto, usuario y conexión con Google Classroom.";
             case 2, 3 -> "Podés editar tus datos de contacto y cuenta desde este perfil.";
             case 4 -> "Podés editar tus datos de contacto y cuenta desde este perfil.";
             default -> "Tu perfil se muestra en modo lectura.";

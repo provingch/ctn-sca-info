@@ -34,23 +34,17 @@ public class MateriaDao extends conexion {
     }
 
     /**
-     * Materias del catálogo asociadas al profesor. Se une directamene con la
-     * relación profesor_materia y conserva compatibilidad con planillas ya
-     * existentes en la base.
+     * Materias del catálogo asociadas al profesor a través de sus asignaciones.
      */
     public List<Materia> listByProfesor(int profesorId) throws SQLException {
         String sql = "SELECT DISTINCT m.id, m.nombre, m.categoria "
-                + "FROM ( "
-                + "    SELECT um.materia_id FROM usuario_materia um WHERE um.usuario_id = ? "
-                + "    UNION "
-                + "    SELECT p.materia_id FROM planilla p WHERE p.usuario_id = ? "
-                + ") ids "
-                + "JOIN materia m ON m.id = ids.materia_id "
+                + "FROM asignacion a "
+                + "JOIN materia m ON m.id = a.materia_id "
+                + "WHERE a.usuario_id = ? "
                 + "ORDER BY m.nombre";
         List<Materia> out = new ArrayList<>();
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, profesorId);
-            ps.setInt(2, profesorId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     out.add(fromResultSet(rs));
@@ -61,26 +55,22 @@ public class MateriaDao extends conexion {
     }
 
     /**
-     * Materias válidas para un profesor: las 'comun' (aplican a cualquier especialidad)
-     * más las 'especifico' de las especialidades de los cursos que el profesor
-     * efectivamente tiene asignados (vía planilla -> curso -> especialidad), o las
-     * materias que el propio profesor haya registrado en su perfil.
+     * Materias válidas para un profesor: las 'comun' y las materias compatibles
+     * con las especialidades de sus cursos asignados.
      */
     public List<Materia> listAvailableForProfesor(int profesorId) throws SQLException {
         String sql = "SELECT DISTINCT m.id, m.nombre, m.categoria "
                 + "FROM materia m "
                 + "WHERE m.categoria = 'comun' "
                 + "   OR m.id IN ( "
-                + "        SELECT me.materia_id FROM materia_especialidad me "
-                + "        WHERE me.especialidad_id IN ( "
-                + "            SELECT DISTINCT c.especialidad_id "
-                + "            FROM planilla p "
-                + "            JOIN curso c ON p.curso_id = c.id "
-                + "            WHERE p.usuario_id = ? "
-                + "        ) "
+                + "        SELECT DISTINCT me.materia_id "
+                + "        FROM asignacion a "
+                + "        JOIN curso c ON c.id = a.curso_id "
+                + "        JOIN materia_especialidad me ON me.especialidad_id = c.especialidad_id "
+                + "        WHERE a.usuario_id = ? "
                 + "   ) "
                 + "   OR m.id IN ( "
-                + "        SELECT um.materia_id FROM usuario_materia um WHERE um.usuario_id = ? "
+                + "        SELECT DISTINCT a.materia_id FROM asignacion a WHERE a.usuario_id = ? "
                 + "   ) "
                 + "ORDER BY m.nombre";
         List<Materia> out = new ArrayList<>();
@@ -96,37 +86,15 @@ public class MateriaDao extends conexion {
         return out;
     }
 
-    public boolean linkProfesorMateria(int profesorId, int materiaId) throws SQLException {
-        String sql = "INSERT IGNORE INTO usuario_materia (usuario_id, materia_id) VALUES (?, ?)";
-        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setInt(1, profesorId);
-            ps.setInt(2, materiaId);
-            return ps.executeUpdate() > 0;
-        }
-    }
-
-    public boolean unlinkProfesorMateria(int profesorId, int materiaId) throws SQLException {
-        String sql = "DELETE FROM usuario_materia WHERE usuario_id = ? AND materia_id = ?";
-        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setInt(1, profesorId);
-            ps.setInt(2, materiaId);
-            return ps.executeUpdate() > 0;
-        }
-    }
-
     public List<String> findNamesByProfesor(int profesorId) throws SQLException {
         String sql = "SELECT DISTINCT m.nombre "
-                + "FROM ( "
-                + "    SELECT um.materia_id FROM usuario_materia um WHERE um.usuario_id = ? "
-                + "    UNION "
-                + "    SELECT p.materia_id FROM planilla p WHERE p.usuario_id = ? "
-                + ") ids "
-                + "JOIN materia m ON m.id = ids.materia_id "
+                + "FROM asignacion a "
+                + "JOIN materia m ON m.id = a.materia_id "
+                + "WHERE a.usuario_id = ? "
                 + "ORDER BY m.nombre";
         List<String> names = new ArrayList<>();
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, profesorId);
-            ps.setInt(2, profesorId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     String name = rs.getString("nombre");
@@ -161,7 +129,7 @@ public class MateriaDao extends conexion {
      * Count linked professors per materia for all materias. Returns a map materiaId->count.
      */
     public java.util.Map<Integer, Integer> countProfesoresForAll() throws SQLException {
-        String sql = "SELECT materia_id, COUNT(*) AS cnt FROM usuario_materia GROUP BY materia_id";
+        String sql = "SELECT materia_id, COUNT(DISTINCT usuario_id) AS cnt FROM asignacion GROUP BY materia_id";
         java.util.Map<Integer, Integer> out = new java.util.HashMap<>();
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
@@ -172,7 +140,7 @@ public class MateriaDao extends conexion {
     }
 
     public int countOtherProfesores(int materiaId, int excludingProfesorId) throws SQLException {
-        String sql = "SELECT COUNT(*) AS cnt FROM usuario_materia WHERE materia_id = ? AND usuario_id != ?";
+        String sql = "SELECT COUNT(DISTINCT usuario_id) AS cnt FROM asignacion WHERE materia_id = ? AND usuario_id != ?";
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, materiaId);
             ps.setInt(2, excludingProfesorId);
@@ -313,7 +281,7 @@ public class MateriaDao extends conexion {
     /**
      * Merge two materias: move all references from fromMateriaId into toMateriaId
      * and delete the source materia. This runs in a single transaction and will
-     * fail with SQLException if conflicting planillas exist (same curso/periodo/etapa).
+     * fail with SQLException if conflicting planillas or asignaciones exist.
      *
      * @throws SQLException with a descriptive message when merge cannot proceed
      */
@@ -322,10 +290,15 @@ public class MateriaDao extends conexion {
             throw new SQLException("Invalid materia ids for merge");
         }
 
-        String conflictSql = "SELECT p.id, p.curso_id, p.periodo, p.etapa "
+        String planillaConflictSql = "SELECT p.id, p.curso_id, p.periodo, p.etapa "
                 + "FROM planilla p "
                 + "WHERE p.materia_id = ? AND EXISTS ("
                 + "  SELECT 1 FROM planilla q WHERE q.materia_id = ? AND q.curso_id = p.curso_id AND q.periodo = p.periodo AND q.etapa = p.etapa"
+                + ")";
+        String asignacionConflictSql = "SELECT a.id, a.usuario_id, a.curso_id "
+                + "FROM asignacion a "
+                + "WHERE a.materia_id = ? AND EXISTS ("
+                + "  SELECT 1 FROM asignacion q WHERE q.materia_id = ? AND q.usuario_id = a.usuario_id AND q.curso_id = a.curso_id"
                 + ")";
 
         try (Connection c = getCon()) {
@@ -333,7 +306,7 @@ public class MateriaDao extends conexion {
                 c.setAutoCommit(false);
 
                 // detect conflicts
-                try (PreparedStatement ps = c.prepareStatement(conflictSql)) {
+                try (PreparedStatement ps = c.prepareStatement(planillaConflictSql)) {
                     ps.setInt(1, fromMateriaId);
                     ps.setInt(2, toMateriaId);
                     try (ResultSet rs = ps.executeQuery()) {
@@ -355,6 +328,27 @@ public class MateriaDao extends conexion {
                     }
                 }
 
+                try (PreparedStatement ps = c.prepareStatement(asignacionConflictSql)) {
+                    ps.setInt(1, fromMateriaId);
+                    ps.setInt(2, toMateriaId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        StringBuilder conflicts = new StringBuilder();
+                        while (rs.next()) {
+                            if (conflicts.length() > 0) {
+                                conflicts.append(", ");
+                            }
+                            conflicts.append("asignacion#").append(rs.getInt("id"))
+                                    .append("(profesor=").append(rs.getInt("usuario_id"))
+                                    .append(" curso=").append(rs.getInt("curso_id"))
+                                    .append(")");
+                        }
+                        if (conflicts.length() > 0) {
+                            c.rollback();
+                            throw new SQLException("Conflicting asignaciones exist: " + conflicts.toString());
+                        }
+                    }
+                }
+
                 // 1) update planilla references
                 try (PreparedStatement updPlan = c.prepareStatement("UPDATE planilla SET materia_id = ? WHERE materia_id = ?")) {
                     updPlan.setInt(1, toMateriaId);
@@ -362,33 +356,27 @@ public class MateriaDao extends conexion {
                     updPlan.executeUpdate();
                 }
 
-                // 2) copy usuario_materia entries
-                try (PreparedStatement insPm = c.prepareStatement("INSERT IGNORE INTO usuario_materia (usuario_id, materia_id) SELECT usuario_id, ? FROM usuario_materia WHERE materia_id = ?")) {
-                    insPm.setInt(1, toMateriaId);
-                    insPm.setInt(2, fromMateriaId);
-                    insPm.executeUpdate();
+                // 2) update assignment references
+                try (PreparedStatement updAsig = c.prepareStatement("UPDATE asignacion SET materia_id = ? WHERE materia_id = ?")) {
+                    updAsig.setInt(1, toMateriaId);
+                    updAsig.setInt(2, fromMateriaId);
+                    updAsig.executeUpdate();
                 }
 
-                // 3) delete old usuario_materia rows
-                try (PreparedStatement delPm = c.prepareStatement("DELETE FROM usuario_materia WHERE materia_id = ?")) {
-                    delPm.setInt(1, fromMateriaId);
-                    delPm.executeUpdate();
-                }
-
-                // 4) copy materia_especialidad rows
+                // 3) copy materia_especialidad rows
                 try (PreparedStatement insMe = c.prepareStatement("INSERT IGNORE INTO materia_especialidad (materia_id, especialidad_id) SELECT ?, especialidad_id FROM materia_especialidad WHERE materia_id = ?")) {
                     insMe.setInt(1, toMateriaId);
                     insMe.setInt(2, fromMateriaId);
                     insMe.executeUpdate();
                 }
 
-                // 5) delete old materia_especialidad rows
+                // 4) delete old materia_especialidad rows
                 try (PreparedStatement delMe = c.prepareStatement("DELETE FROM materia_especialidad WHERE materia_id = ?")) {
                     delMe.setInt(1, fromMateriaId);
                     delMe.executeUpdate();
                 }
 
-                // 6) delete materia
+                // 5) delete materia
                 try (PreparedStatement delM = c.prepareStatement("DELETE FROM materia WHERE id = ?")) {
                     delM.setInt(1, fromMateriaId);
                     delM.executeUpdate();
@@ -412,7 +400,7 @@ public class MateriaDao extends conexion {
     }
 
     /**
-     * Checks for conflicting planillas that would prevent merging from->to.
+     * Checks for conflicting planillas or asignaciones that would prevent merging from->to.
      * Returns an empty list when no conflicts are found.
      */
     public List<String> checkMergeConflicts(int fromMateriaId, int toMateriaId) throws SQLException {
@@ -420,19 +408,34 @@ public class MateriaDao extends conexion {
             return new ArrayList<>();
         }
 
-        String conflictSql = "SELECT p.id, p.curso_id, p.periodo, p.etapa "
+        String planillaConflictSql = "SELECT p.id, p.curso_id, p.periodo, p.etapa "
                 + "FROM planilla p "
                 + "WHERE p.materia_id = ? AND EXISTS ("
                 + "  SELECT 1 FROM planilla q WHERE q.materia_id = ? AND q.curso_id = p.curso_id AND q.periodo = p.periodo AND q.etapa = p.etapa"
                 + ")";
         List<String> conflicts = new ArrayList<>();
-        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(conflictSql)) {
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(planillaConflictSql)) {
             ps.setInt(1, fromMateriaId);
             ps.setInt(2, toMateriaId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     conflicts.add("planilla#" + rs.getInt("id") + " (curso=" + rs.getInt("curso_id")
                             + " periodo=" + rs.getInt("periodo") + " etapa=" + rs.getString("etapa") + ")");
+                }
+            }
+        }
+        String asignacionConflictSql = "SELECT a.id, a.usuario_id, a.curso_id "
+                + "FROM asignacion a "
+                + "WHERE a.materia_id = ? AND EXISTS ("
+                + "  SELECT 1 FROM asignacion q WHERE q.materia_id = ? AND q.usuario_id = a.usuario_id AND q.curso_id = a.curso_id"
+                + ")";
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(asignacionConflictSql)) {
+            ps.setInt(1, fromMateriaId);
+            ps.setInt(2, toMateriaId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    conflicts.add("asignacion#" + rs.getInt("id") + " (profesor=" + rs.getInt("usuario_id")
+                            + " curso=" + rs.getInt("curso_id") + ")");
                 }
             }
         }
@@ -449,10 +452,6 @@ public class MateriaDao extends conexion {
         }
 
         try (Connection c = getCon()) {
-            try (PreparedStatement ps = c.prepareStatement("DELETE FROM usuario_materia WHERE materia_id = ?")) {
-                ps.setInt(1, materiaId);
-                ps.executeUpdate();
-            }
             try (PreparedStatement ps = c.prepareStatement("DELETE FROM materia_especialidad WHERE materia_id = ?")) {
                 ps.setInt(1, materiaId);
                 ps.executeUpdate();

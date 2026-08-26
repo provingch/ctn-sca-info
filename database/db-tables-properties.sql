@@ -10,6 +10,18 @@ CREATE TABLE especialidad (
     PRIMARY KEY (id)
 );
 
+CREATE TABLE curso_base (
+    id INT AUTO_INCREMENT,
+    especialidad_id INT NOT NULL,
+    nivel TINYINT NOT NULL,
+    seccion enum('A', 'B', 'C') NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE (especialidad_id , nivel , seccion),
+    CONSTRAINT fk_curso_base_especialidad FOREIGN KEY (especialidad_id)
+        REFERENCES especialidad (id)
+        ON UPDATE CASCADE ON DELETE RESTRICT
+);
+
 CREATE TABLE curso (
     id INT AUTO_INCREMENT,
     especialidad_id INT NOT NULL,
@@ -73,30 +85,18 @@ CREATE TABLE materia (
     UNIQUE KEY uq_materia_nombre (nombre)
 );
 
-CREATE TABLE usuario_materia (
-    usuario_id INT NOT NULL,
-    materia_id INT NOT NULL,
-    PRIMARY KEY (usuario_id, materia_id),
-    CONSTRAINT fk_um_usuario FOREIGN KEY (usuario_id)
-        REFERENCES usuario (id)
-        ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_um_materia FOREIGN KEY (materia_id)
-        REFERENCES materia (id)
-        ON UPDATE CASCADE ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
 CREATE TABLE asignacion (
     id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
     materia_id INT NOT NULL,
-    curso_id INT NOT NULL,
-    UNIQUE KEY uq_asignacion (usuario_id, materia_id, curso_id),
+    curso_base_id INT NOT NULL,
+    UNIQUE KEY uq_asignacion (usuario_id, materia_id, curso_base_id),
     CONSTRAINT fk_asig_usuario FOREIGN KEY (usuario_id)
         REFERENCES usuario (id) ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT fk_asig_materia FOREIGN KEY (materia_id)
         REFERENCES materia (id) ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_asig_curso FOREIGN KEY (curso_id)
-        REFERENCES curso (id) ON UPDATE CASCADE ON DELETE CASCADE
+    CONSTRAINT fk_asig_curso_base FOREIGN KEY (curso_base_id)
+        REFERENCES curso_base (id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE TABLE hora_catedra (
@@ -123,19 +123,19 @@ CREATE TABLE horario_slot (
     id INT AUTO_INCREMENT,
     asignacion_id INT NOT NULL,
     usuario_id INT NOT NULL,
-    curso_id INT NOT NULL,
+    curso_base_id INT NOT NULL,
     dia_semana TINYINT UNSIGNED NOT NULL COMMENT '1=Lunes ... 6=Sabado',
     hora_catedra_id INT NOT NULL,
     sala_id INT NULL,
     PRIMARY KEY (id),
     UNIQUE KEY uq_horario_profesor (dia_semana, hora_catedra_id, usuario_id),
-    UNIQUE KEY uq_horario_curso (dia_semana, hora_catedra_id, curso_id),
+    UNIQUE KEY uq_horario_curso (dia_semana, hora_catedra_id, curso_base_id),
     CONSTRAINT fk_horario_slot_asignacion FOREIGN KEY (asignacion_id)
         REFERENCES asignacion (id) ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT fk_horario_slot_usuario FOREIGN KEY (usuario_id)
         REFERENCES usuario (id) ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_horario_slot_curso FOREIGN KEY (curso_id)
-        REFERENCES curso (id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_horario_slot_curso FOREIGN KEY (curso_base_id)
+        REFERENCES curso_base (id) ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT fk_horario_slot_hora_catedra FOREIGN KEY (hora_catedra_id)
         REFERENCES hora_catedra (id) ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT fk_horario_slot_sala FOREIGN KEY (sala_id)

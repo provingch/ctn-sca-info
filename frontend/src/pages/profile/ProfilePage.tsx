@@ -52,7 +52,6 @@ export default function ProfilePage() {
   if (!data) return <AppShell><ContentState tone={status ? 'error' : 'loading'} title={status || 'Cargando perfil…'} detail={status ? 'Recargá la página para volver a intentarlo.' : 'Estamos preparando los datos de tu cuenta.'} /></AppShell>;
 
   const owner = data.profileOwner;
-  const ownerEspecialidad = data.especialidades.find((especialidad) => especialidad.id === owner.especialidadId)?.nombre ?? null;
   // `completion` removed — progress UI was eliminated from the profile header
   const finish = async (text: string) => { setStatus(text); await Promise.all([load(), refreshUserIdentity()]); };
 
@@ -74,20 +73,18 @@ export default function ProfilePage() {
           {tab === 'app' && <AppStatus data={data} />}
           {tab === 'activity' && <Activity entries={data.activityLog} />}
         </div>
-        <aside className="profile-preview" aria-label="Vista previa del perfil" data-specialty={normalizeSpecialty(ownerEspecialidad)}>
+        <aside className="profile-preview" aria-label="Vista previa del perfil">
           <span className="profile-preview-kicker">Vista previa</span>
-          <div className="avatar" data-specialty={normalizeSpecialty(ownerEspecialidad)}>
+          <div className="avatar">
             {owner.fotoPerfil
               ? <img src={owner.fotoPerfil} alt="Foto de perfil" />
-              : ownerEspecialidad
-                ? <SpecialtyIcon name={ownerEspecialidad} className="avatar-specialty-icon" />
-                : <CtnLogo className="avatar-specialty-icon" />}
+              : <CtnLogo className="avatar-specialty-icon" />}
           </div>
           <div className="profile-identity-copy">
             <span className="badge">{data.profileRoleLabel}</span>
             <h2>{owner.fullName?.trim() || owner.usuario || 'Usuario SCA'}</h2>
             <strong>@{owner.usuario || 'sin-usuario'}</strong>
-            <p>{ownerEspecialidad || 'Colegio Técnico Nacional'}</p>
+            <p>{data.profileAccessDescription}</p>
           </div>
         </aside>
       </div>
