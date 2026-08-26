@@ -89,6 +89,18 @@ export interface HorarioResumenCursoItem {
   cantidadSlotsCargados: number;
 }
 
+export interface HorarioImportRowItem {
+  diaSemana: number;
+  horaCatedraId: number;
+  horaCatedraEtiqueta: string | null;
+  materiaTexto: string;
+  profesorTexto: string;
+  asignacionId: number | null;
+  estado: 'ok' | 'sin_asignacion' | 'conflicto_profesor' | 'conflicto_curso';
+  detalle: string | null;
+}
+export interface HorarioImportResponse { creados: number; omitidos: number; filas: HorarioImportRowItem[]; }
+
 export interface MigracionEstadoItem {
   version: string;
   appliedAt: string | null;
@@ -138,6 +150,8 @@ export const createHorarioSlot = (asignacionId: number, payload: { diaSemana: nu
 export const deleteHorarioSlot = (id: number) => adminRequest(() => api.delete<void>(`/api/admin/horario/slots/${id}`));
 export const downloadHorarioCurso = (cursoId: number) => adminRequest(() => apiDownload(`/api/admin/horario/export?cursoId=${cursoId}`, `horario-curso-${cursoId}.xlsx`));
 export const getHorarioResumen = () => adminRequest(() => api.get<HorarioResumenCursoItem[]>('/api/admin/horario/resumen'));
+export const previewHorarioImport = (cursoId: number, file: File) => { const form = new FormData(); form.append('file', file); return adminRequest(() => api.post<HorarioImportRowItem[]>(`/api/admin/horario/import/preview?cursoId=${cursoId}`, form)); };
+export const confirmHorarioImport = (cursoId: number, file: File) => { const form = new FormData(); form.append('file', file); return adminRequest(() => api.post<HorarioImportResponse>(`/api/admin/horario/import/confirm?cursoId=${cursoId}`, form)); };
 export const getSistemaEstado = () => adminRequest(() => api.get<SistemaEstadoResponse>('/api/admin/sistema-estado'));
 export const buscarPadres = (q: string) => adminRequest(() => api.get<PadreSummary[]>(`/api/admin/padres/buscar?q=${encodeURIComponent(q)}`));
 export const getPadresDeAlumno = (alumnoId: number) => adminRequest(() => api.get<PadreSummary[]>(`/api/admin/alumnos/${alumnoId}/padres`));

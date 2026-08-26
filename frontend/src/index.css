@@ -644,6 +644,18 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .admin-summary-section { margin: 0; padding: 20px 24px; }
 .admin-summary-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
 .admin-summary-heading > strong { color: var(--muted); font-size: .8rem; }
+.admin-actions { display: inline-flex; gap: 8px; align-items: center; }
+.admin-actions label { cursor: pointer; }
+.schedule-import-modal { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 18px; background: color-mix(in srgb, var(--ink) 45%, transparent); }
+.schedule-import-card { width: min(1180px, 100%); max-height: 92vh; display: grid; gap: 16px; padding: 20px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); box-shadow: var(--shadow); }
+.schedule-preview-wrap { overflow: auto; max-height: 64vh; }
+.schedule-preview { min-width: 900px; }
+.schedule-preview td { min-width: 140px; vertical-align: top; }
+.schedule-preview td small, .schedule-preview td em { display: block; margin-top: 4px; font-size: .72rem; }
+.schedule-preview td em { color: inherit; font-style: normal; font-weight: 700; }
+.schedule-cell-sin_asignacion { background: color-mix(in srgb, #f59e0b 22%, var(--paper)); }
+.schedule-cell-conflicto_profesor, .schedule-cell-conflicto_curso { background: color-mix(in srgb, #ef4444 20%, var(--paper)); }
+.schedule-import-actions { display: flex; justify-content: flex-end; gap: 10px; }
 .system-status-toolbar { justify-content: space-between; margin-bottom: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
 .system-status-toolbar p { margin: 0; color: var(--muted); }
 .system-status-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
