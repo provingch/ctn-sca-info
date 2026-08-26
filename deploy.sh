@@ -2,8 +2,6 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# Repository root (for git pull) and backend project directory (for Maven build).
 REPO_DIR="${REPO_DIR:-$SCRIPT_DIR}"
 PROJECT_DIR="${PROJECT_DIR:-}"
 FRONTEND_DIR="${FRONTEND_DIR:-$REPO_DIR/frontend}"
@@ -14,21 +12,21 @@ if [[ -z "$PROJECT_DIR" ]]; then
   elif [[ -f "$REPO_DIR/pom.xml" ]]; then
     PROJECT_DIR="$REPO_DIR"
   else
-    # Keep the legacy default path in the error message context below.
     PROJECT_DIR="$REPO_DIR/backend"
   fi
 fi
 
+REPO_URL="${REPO_URL:-https://github.com/provingch/ctn-sca-info.git}"
 SERVICE_NAME="${SERVICE_NAME:-sca-backend}"
 APP_USER="${APP_USER:-deploy}"
 APP_GROUP="${APP_GROUP:-deploy}"
 INSTALL_DIR="${INSTALL_DIR:-/opt/ctn-sca-info/backend}"
 JAR_NAME="${JAR_NAME:-sca-backend.jar}"
+SERVICE_UNIT_PATH="${SERVICE_UNIT_PATH:-/etc/systemd/system/${SERVICE_NAME}.service}"
 
 APP_PORT="${APP_PORT:-8080}"
 APP_URL="${APP_URL:-http://127.0.0.1:${APP_PORT}/api/health}"
 STARTUP_TIMEOUT_SECONDS="${STARTUP_TIMEOUT_SECONDS:-90}"
-# Reasonable defaults: try 10 times with 2s delay (≈20s) — app needs ~8-11s to boot
 HEALTHCHECK_RETRIES="${HEALTHCHECK_RETRIES:-10}"
 HEALTHCHECK_DELAY_SECONDS="${HEALTHCHECK_DELAY_SECONDS:-2}"
 
@@ -49,7 +47,72 @@ VAPID_PRIVATE_KEY="${CTN_VAPID_PRIVATE_KEY:-}"
 
 SYSTEMD_DROPIN_DIR="/etc/systemd/system/${SERVICE_NAME}.service.d"
 SYSTEMD_DROPIN_FILE="${SYSTEMD_DROPIN_DIR}/ctn-sca-info.conf"
-SYSTEMD_UNIT_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
+
+LOG_DIR="${LOG_DIR:-/var/log/ctn-sca-info}"
+DEPLOY_LOG="${DEPLOY_LOG:-${LOG_DIR}/deploy.log}"
+mkdir -p "$LOG_DIR" 2>/dev/null || true
+
+C_RESET='\033[0m'
+C_BOLD='\033[1m'
+C_DIM='\033[2m'
+C_RED='\033[38;5;196m'
+C_GREEN='\033[38;5;77m'
+C_YELLOW='\033[38;5;220m'
+C_BLUE='\033[38;5;33m'
+C_CYAN='\033[38;5;51m'
+C_GRAY='\033[38;5;244m'
+
+log()     { printf "%b\n" "  ${C_GRAY}[$(date '+%H:%M:%S')]${C_RESET} $*" | tee -a "$DEPLOY_LOG" 2>/dev/null || printf "%b\n" "  $*"; }
+log_ok()  { printf "%b\n" "  ${C_GREEN}✔${C_RESET} $*" | tee -a "$DEPLOY_LOG" 2>/dev/null || printf "%b\n" "  ✔ $*"; }
+log_err() { printf "%b\n" "  ${C_RED}✘${C_RESET} $*" | tee -a "$DEPLOY_LOG" 2>/dev/null || printf "%b\n" "  ✘ $*"; }
+log_warn(){ printf "%b\n" "  ${C_YELLOW}▲${C_RESET} $*" | tee -a "$DEPLOY_LOG" 2>/dev/null || printf "%b\n" "  ▲ $*"; }
+log_info(){ printf "%b\n" "  ${C_CYAN}ℹ${C_RESET} $*" | tee -a "$DEPLOY_LOG" 2>/dev/null || printf "%b\n" "  ℹ $*"; }
+
+section() {
+  local title="$1"
+  local width=64
+  printf "\n${C_BOLD}${C_BLUE}┏"; printf '━%.0s' $(seq 1 "$width"); printf "┓${C_RESET}\n"
+  printf "${C_BOLD}${C_BLUE}┃${C_RESET}  %-*s${C_BOLD}${C_BLUE}┃${C_RESET}\n" $((width - 2)) "$title"
+  printf "${C_BOLD}${C_BLUE}┗"; printf '━%.0s' $(seq 1 "$width"); printf "┛${C_RESET}\n\n"
+}
+
+confirm() {
+  local prompt="${1:-¿Confirmás?}"
+  local resp
+  read -r -p "$(printf "${C_YELLOW}%s${C_RESET} [s/N]: " "$prompt")" resp
+  [[ "$resp" =~ ^([sS][iI]?|[yY])$ ]]
+}
+
+press_enter() {
+  printf "\n${C_DIM}Presioná ENTER para continuar...${C_RESET}"
+  read -r
+}
+
+need_cmd() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    log_err "Falta el comando '$1' en el PATH."
+    return 1
+  fi
+}
+
+as_root_or_sudo() {
+  if [[ $EUID -eq 0 ]]; then
+    "$@"
+  else
+    sudo "$@"
+  fi
+}
+
+validate_project_layout() {
+  if [[ ! -d "$REPO_DIR/.git" ]]; then
+    log_err "No encuentro un repo git en ${REPO_DIR}."
+    return 1
+  fi
+  if [[ ! -f "$PROJECT_DIR/pom.xml" ]]; then
+    log_err "No encuentro Maven en ${PROJECT_DIR}."
+    return 1
+  fi
+}
 
 require_command() {
   command -v "$1" >/dev/null 2>&1 || {
@@ -60,83 +123,36 @@ require_command() {
 
 normalize_db_type() {
   case "${DB_TYPE,,}" in
-    mysql|mariadb)
-      DB_TYPE="${DB_TYPE,,}"
-      ;;
-    *)
-      echo "Unsupported SCA_DB_TYPE: ${DB_TYPE}. Use mysql or mariadb." >&2
-      exit 1
-      ;;
+    mysql|mariadb) DB_TYPE="${DB_TYPE,,}" ;;
+    *) echo "Unsupported SCA_DB_TYPE: ${DB_TYPE}. Use mysql or mariadb." >&2; exit 1 ;;
   esac
 }
 
 default_db_port() {
   if [[ -n "$DB_PORT" ]]; then
-    printf "%s" "$DB_PORT"
+    printf '%s' "$DB_PORT"
     return
   fi
-
-  case "$DB_TYPE" in
-    mysql|mariadb)
-      printf "3306"
-      ;;
-  esac
+  printf '3306'
 }
 
 build_jdbc_url() {
   local port="$1"
-
   case "$DB_TYPE" in
-    mysql)
-      printf "jdbc:mysql://%s:%s/%s?useUnicode=true&characterEncoding=UTF-8" "$DB_HOST" "$port" "$DB_NAME"
-      ;;
-    mariadb)
-      printf "jdbc:mariadb://%s:%s/%s?useUnicode=true&characterEncoding=UTF-8" "$DB_HOST" "$port" "$DB_NAME"
-      ;;
+    mysql) printf 'jdbc:mysql://%s:%s/%s?useUnicode=true&characterEncoding=UTF-8' "$DB_HOST" "$port" "$DB_NAME" ;;
+    mariadb) printf 'jdbc:mariadb://%s:%s/%s?useUnicode=true&characterEncoding=UTF-8' "$DB_HOST" "$port" "$DB_NAME" ;;
   esac
-}
-
-get_db_password() {
-  if [[ -n "$DB_PASSWORD_INPUT" ]]; then
-    printf "%s" "$DB_PASSWORD_INPUT"
-    return
-  fi
-
-  if [[ -f "$DB_ENV_FILE" ]]; then
-    return
-  fi
-
-  if [[ ! -t 0 ]]; then
-    cat >&2 <<MSG
-$DB_ENV_FILE does not exist and SCA_DB_PASSWORD/CTN_DB_PASSWORD was not provided.
-Run once with:
-
-  SCA_DB_PASSWORD='your_password' ./deploy.sh
-
-Or run interactively to enter a hidden password.
-MSG
-    exit 1
-  fi
-
-  read -r -s -p "Database password for $DB_USER: " password
-  echo >&2
-  printf "%s" "$password"
 }
 
 read_env_file_value() {
   local key="$1"
-  local line
-
   if ! sudo test -f "$DB_ENV_FILE"; then
     return
   fi
-
+  local line value
   line="$(sudo grep -E "^${key}=" "$DB_ENV_FILE" 2>/dev/null | tail -n 1 || true)"
-  if [[ -z "$line" ]]; then
-    return
-  fi
-
-  local value="${line#${key}=}"
+  [[ -z "$line" ]] && return
+  value="${line#${key}=}"
   value="${value%\"}"
   value="${value#\"}"
   value="${value%\'}"
@@ -144,16 +160,30 @@ read_env_file_value() {
   printf '%s' "$value"
 }
 
+get_db_password() {
+  if [[ -n "$DB_PASSWORD_INPUT" ]]; then
+    printf '%s' "$DB_PASSWORD_INPUT"
+    return
+  fi
+  if [[ -f "$DB_ENV_FILE" ]]; then
+    return
+  fi
+  if [[ ! -t 0 ]]; then
+    echo "$DB_ENV_FILE does not exist and SCA_DB_PASSWORD/CTN_DB_PASSWORD was not provided." >&2
+    exit 1
+  fi
+  read -r -s -p "Database password for $DB_USER: " password
+  echo >&2
+  printf '%s' "$password"
+}
+
 write_db_env_file() {
   local password="$1"
-  local db_port
-  local jdbc_url
-
+  local db_port jdbc_url
   db_port="$(default_db_port)"
   jdbc_url="$(build_jdbc_url "$db_port")"
 
   local persisted_jwt_secret=""
-  local persisted_password=""
   local persisted_demo_data=""
   local persisted_vapid_public_key=""
   local persisted_vapid_private_key=""
@@ -163,26 +193,14 @@ write_db_env_file() {
     persisted_vapid_public_key="$(read_env_file_value 'CTN_VAPID_PUBLIC_KEY')"
     persisted_vapid_private_key="$(read_env_file_value 'CTN_VAPID_PRIVATE_KEY')"
     if [[ -z "$password" ]]; then
-      persisted_password="$(read_env_file_value 'SCA_DB_PASSWORD')"
-      if [[ -z "$persisted_password" ]]; then
-        persisted_password="$(read_env_file_value 'CTN_DB_PASSWORD')"
-      fi
-      password="$persisted_password"
+      password="$(read_env_file_value 'SCA_DB_PASSWORD')"
+      [[ -z "$password" ]] && password="$(read_env_file_value 'CTN_DB_PASSWORD')"
     fi
   fi
 
-  local vapid_public_key="${VAPID_PUBLIC_KEY:-$persisted_vapid_public_key}"
-  local vapid_private_key="${VAPID_PRIVATE_KEY:-$persisted_vapid_private_key}"
-
   local load_demo_data="$LOAD_DEMO_DATA_INPUT"
-  if [[ -z "$load_demo_data" ]]; then
-    load_demo_data="${persisted_demo_data:-false}"
-  fi
+  [[ -z "$load_demo_data" ]] && load_demo_data="${persisted_demo_data:-false}"
 
-  # Determine or generate JWT secret to persist in the env file. Priority:
-  # 1) explicit env vars SCA_JWT_SECRET / JWT_SECRET passed by operator
-  # 2) existing value already persisted in $DB_ENV_FILE (if present)
-  # 3) generate a strong random secret using openssl
   local jwt_secret=""
   if [[ -n "${SCA_JWT_SECRET:-}" ]]; then
     jwt_secret="$SCA_JWT_SECRET"
@@ -195,9 +213,8 @@ write_db_env_file() {
     echo "==> Generated a new JWT secret to persist in $DB_ENV_FILE"
   fi
 
-  if [[ -f "$DB_ENV_FILE" && -z "$password" && -z "${SCA_JWT_SECRET:-}" && -z "${JWT_SECRET:-}" && -z "$GOOGLE_CLIENT_ID" && -z "$GOOGLE_CLIENT_SECRET" && -z "$GOOGLE_REDIRECT_URI" && -z "$VAPID_PUBLIC_KEY" && -z "$VAPID_PRIVATE_KEY" && -z "$LOAD_DEMO_DATA_INPUT" ]]; then
-    return
-  fi
+  local vapid_public_key="${VAPID_PUBLIC_KEY:-$persisted_vapid_public_key}"
+  local vapid_private_key="${VAPID_PRIVATE_KEY:-$persisted_vapid_private_key}"
 
   echo "==> Writing runtime config to $DB_ENV_FILE"
   local tmp_env
@@ -206,49 +223,30 @@ write_db_env_file() {
   {
     printf 'APP_PORT=%q\n' "$APP_PORT"
     printf 'SERVER_PORT=%q\n' "$APP_PORT"
-
     printf 'SCA_DB_TYPE=%q\n' "$DB_TYPE"
     printf 'SCA_DB_NAME=%q\n' "$DB_NAME"
     printf 'SCA_DB_HOST=%q\n' "$DB_HOST"
     printf 'SCA_DB_PORT=%q\n' "$db_port"
     printf 'SCA_DB_USER=%q\n' "$DB_USER"
     printf 'SCA_DB_PASSWORD=%q\n' "$password"
-
-    # Backward compatibility for code paths that still read CTN_* variables.
     printf 'CTN_DB_NAME=%q\n' "$DB_NAME"
     printf 'CTN_DB_HOST=%q\n' "${DB_HOST}:${db_port}"
     printf 'CTN_DB_USER=%q\n' "$DB_USER"
     printf 'CTN_DB_PASSWORD=%q\n' "$password"
-
-    # Spring datasource values for newer code paths.
     printf 'SPRING_DATASOURCE_URL=%q\n' "$jdbc_url"
     printf 'SPRING_DATASOURCE_USERNAME=%q\n' "$DB_USER"
     printf 'SPRING_DATASOURCE_PASSWORD=%q\n' "$password"
     printf 'SCA_LOAD_DEMO_DATA=%q\n' "$load_demo_data"
-
-    # Google OAuth values used by AppConfig.get("google.client.*").
-    if [[ -n "$GOOGLE_CLIENT_ID" ]]; then
-      printf 'GOOGLE_CLIENT_ID=%q\n' "$GOOGLE_CLIENT_ID"
-    fi
-    if [[ -n "$GOOGLE_CLIENT_SECRET" ]]; then
-      printf 'GOOGLE_CLIENT_SECRET=%q\n' "$GOOGLE_CLIENT_SECRET"
-    fi
-    if [[ -n "$GOOGLE_REDIRECT_URI" ]]; then
-      printf 'GOOGLE_REDIRECT_URI=%q\n' "$GOOGLE_REDIRECT_URI"
-    fi
-    if [[ -n "$vapid_public_key" ]]; then
-      printf 'CTN_VAPID_PUBLIC_KEY=%q\n' "$vapid_public_key"
-    fi
-    if [[ -n "$vapid_private_key" ]]; then
-      printf 'CTN_VAPID_PRIVATE_KEY=%q\n' "$vapid_private_key"
-    fi
-    # Persist JWT secret for the application (SPRING / direct property mapping)
+    [[ -n "$GOOGLE_CLIENT_ID" ]] && printf 'GOOGLE_CLIENT_ID=%q\n' "$GOOGLE_CLIENT_ID"
+    [[ -n "$GOOGLE_CLIENT_SECRET" ]] && printf 'GOOGLE_CLIENT_SECRET=%q\n' "$GOOGLE_CLIENT_SECRET"
+    [[ -n "$GOOGLE_REDIRECT_URI" ]] && printf 'GOOGLE_REDIRECT_URI=%q\n' "$GOOGLE_REDIRECT_URI"
+    [[ -n "$vapid_public_key" ]] && printf 'CTN_VAPID_PUBLIC_KEY=%q\n' "$vapid_public_key"
+    [[ -n "$vapid_private_key" ]] && printf 'CTN_VAPID_PRIVATE_KEY=%q\n' "$vapid_private_key"
     if [[ -n "$jwt_secret" ]]; then
       printf 'JWT_SECRET=%q\n' "$jwt_secret"
       printf 'SCA_JWT_SECRET=%q\n' "$jwt_secret"
     fi
   } > "$tmp_env"
-
   sudo install -o root -g root -m 600 "$tmp_env" "$DB_ENV_FILE"
   rm -f "$tmp_env"
 }
@@ -260,70 +258,20 @@ configure_service_env() {
 
   echo "==> Configuring environment for service $SERVICE_NAME"
   sudo mkdir -p "$SYSTEMD_DROPIN_DIR"
-
   local tmp_dropin
   tmp_dropin="$(mktemp)"
   cat > "$tmp_dropin" <<DROPIN
 [Service]
 EnvironmentFile=$DB_ENV_FILE
 DROPIN
-
   sudo install -o root -g root -m 644 "$tmp_dropin" "$SYSTEMD_DROPIN_FILE"
   rm -f "$tmp_dropin"
   sudo systemctl daemon-reload
 }
 
-wait_for_service_active() {
-  local waited=0
-  while (( waited < STARTUP_TIMEOUT_SECONDS )); do
-    if sudo systemctl is-active --quiet "$SERVICE_NAME"; then
-      return 0
-    fi
-    sleep 1
-    waited=$((waited + 1))
-  done
-  return 1
-}
-
-wait_for_app_response() {
-  local retries="$HEALTHCHECK_RETRIES"
-  local delay="$HEALTHCHECK_DELAY_SECONDS"
-  local attempt=1
-
-  while (( attempt <= retries )); do
-    # Use a small per-request timeout to avoid long hangs and allow retries
-    if curl -fsS --max-time 5 "$APP_URL" >/dev/null; then
-      return 0
-    fi
-    echo "==> Health check failed on attempt ${attempt}/${retries}, retrying in ${delay}s..."
-    sleep "$delay"
-    attempt=$((attempt + 1))
-  done
-  return 1
-}
-
-print_diagnostics() {
-  echo "==> Service diagnostics ($SERVICE_NAME)" >&2
-  sudo systemctl status "$SERVICE_NAME" --no-pager -l || true
-  echo "==> Recent journal logs" >&2
-  sudo journalctl -u "$SERVICE_NAME" -n 150 --no-pager || true
-}
-
-build_frontend() {
-  if [[ ! -f "$FRONTEND_DIR/package.json" ]]; then
-    echo "==> No frontend/ found at $FRONTEND_DIR (nothing to build yet); skipping"
-    return 0
-  fi
-
-  require_command npm
-
-  echo "==> Building frontend (Vite) into backend/src/main/resources/static"
-  if [[ -f "$FRONTEND_DIR/package-lock.json" ]]; then
-    npm --prefix "$FRONTEND_DIR" ci
-  else
-    npm --prefix "$FRONTEND_DIR" install
-  fi
-  npm --prefix "$FRONTEND_DIR" run build
+service_exists() {
+  command -v systemctl >/dev/null 2>&1 \
+    && systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk '{print $1}' | grep -Fxq "${SERVICE_NAME}.service"
 }
 
 ensure_service_exists() {
@@ -361,103 +309,26 @@ RestartSec=5
 WantedBy=multi-user.target
 UNIT
 
-  sudo install -o root -g root -m 644 "$tmp_unit" "$SYSTEMD_UNIT_FILE"
+  sudo install -o root -g root -m 644 "$tmp_unit" "$SERVICE_UNIT_PATH"
   rm -f "$tmp_unit"
   sudo systemctl daemon-reload
   sudo systemctl enable "$SERVICE_NAME" >/dev/null
 }
 
-# Clean known frontend build residues that may be untracked and block pull
-clean_frontend_residues() {
-  # Vite writes this tracked entry point into backend resources. Restore the
-  # repository version before pull so a local build cannot block deployment.
-  git -C "$REPO_DIR" restore -- backend/src/main/resources/static/index.html 2>/dev/null || true
-
-  # Assets generated by Vite into the backend resources folder
-  local assets_dir="$REPO_DIR/backend/src/main/resources/static/assets"
-  if [[ -d "$assets_dir" ]]; then
-    echo "==> Removing generated frontend assets in $assets_dir"
-    # Remove common hashed bundle files that Vite emits (index-*.js/css and their maps)
-    find "$assets_dir" -maxdepth 1 -type f \( -name 'index-*.js' -o -name 'index-*.css' -o -name 'index-*.js.map' -o -name 'index-*.css.map' -o -name 'index-*.js.gz' -o -name 'index-*.css.gz' \) -print0 | xargs -0 -r rm -f --
+build_frontend() {
+  if [[ ! -f "$FRONTEND_DIR/package.json" ]]; then
+    echo "==> No frontend/ found at $FRONTEND_DIR; skipping"
+    return 0
   fi
 
-  # Also remove any top-level index-*.{js,css} files in static root
-  local static_root="$REPO_DIR/backend/src/main/resources/static"
-  if [[ -d "$static_root" ]]; then
-    find "$static_root" -maxdepth 1 -type f \( -name 'index-*.js' -o -name 'index-*.css' -o -name 'index-*.js.map' -o -name 'index-*.css.map' \) -print0 | xargs -0 -r rm -f --
+  require_command npm
+  echo "==> Building frontend into backend/src/main/resources/static"
+  if [[ -f "$FRONTEND_DIR/package-lock.json" ]]; then
+    npm --prefix "$FRONTEND_DIR" ci
+  else
+    npm --prefix "$FRONTEND_DIR" install
   fi
-
-  # Clean frontend dist folder (if present) to avoid leftover built files
-  local frontend_dist="$FRONTEND_DIR/dist"
-  if [[ -d "$frontend_dist" ]]; then
-    echo "==> Removing frontend dist directory $frontend_dist"
-    rm -rf "$frontend_dist"
-  fi
-
-  # Also clean bundled assets that sometimes land in backend/target/classes/static during build
-  local target_assets="$PROJECT_DIR/target/classes/static/assets"
-  if [[ -d "$target_assets" ]]; then
-    echo "==> Removing generated assets in $target_assets"
-    find "$target_assets" -maxdepth 1 -type f \( -name 'index-*.js' -o -name 'index-*.css' -o -name 'index-*.js.map' -o -name 'index-*.css.map' \) -print0 | xargs -0 -r rm -f --
-  fi
-
-  # Remove untracked backend build residues (target, classes, generated-sources) only
-  remove_untracked_under() {
-    local abs_path="$1"
-    # Derive repository-relative path (git expects paths relative to repo root)
-    local rel_path
-    rel_path="${abs_path#$REPO_DIR/}"
-    # Ask git for untracked files under this path
-    local untracked
-    untracked=$(git -C "$REPO_DIR" ls-files --others --exclude-standard -- "$rel_path" 2>/dev/null || true)
-    if [[ -n "$untracked" ]]; then
-      echo "==> Removing untracked files under $rel_path"
-      # Remove each untracked path (safe: only removes untracked files)
-      printf '%s\n' "$untracked" | while IFS= read -r f; do
-        rm -rf -- "$REPO_DIR/$f" || true
-      done
-    fi
-  }
-
-  # Candidate backend/build paths to scan for untracked files
-  for p in "$PROJECT_DIR/target" "$REPO_DIR/target" "$PROJECT_DIR/classes" "$PROJECT_DIR/generated-sources" "$PROJECT_DIR/src/main/resources/static"; do
-    if [[ -e "$p" ]]; then
-      remove_untracked_under "$p"
-    fi
-  done
-}
-
-service_exists() {
-  command -v systemctl >/dev/null 2>&1 \
-    && systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk '{print $1}' | grep -Fxq "${SERVICE_NAME}.service"
-}
-
-show_banner() {
-  cat <<'BANNER'
-
-              .-----------------------.
-             /        C T N            \
-            /   COLEGIO TECNICO         \
-           |        NACIONAL             |
-           |      +-----------+           |
-           |      |  S C A    |           |
-           |      +-----------+           |
-            \                           /
-             '-------------------------'
-
-          Sistema de Carpetas Academicas
-BANNER
-}
-
-validate_project_layout() {
-  if [[ ! -d "$REPO_DIR/.git" ]]; then
-    echo "Repository directory is not a git repository: $REPO_DIR" >&2
-    return 1
-  fi
-  if [[ ! -f "$PROJECT_DIR/pom.xml" ]]; then
-    echo "Cannot find Maven project (pom.xml) at: $PROJECT_DIR" >&2
-    return 1
-  fi
+  npm --prefix "$FRONTEND_DIR" run build
 }
 
 update_system() {
@@ -474,7 +345,6 @@ update_system() {
   ensure_service_exists
 
   echo "==> Pulling latest changes"
-  clean_frontend_residues
   git -C "$REPO_DIR" pull --ff-only
   configure_service_env
   build_frontend
@@ -483,7 +353,7 @@ update_system() {
   mvn -f "$PROJECT_DIR/pom.xml" clean package -DskipTests
 
   local built_jar
-  built_jar="$(find "$PROJECT_DIR/target" -maxdepth 1 -type f -name "*.jar" ! -name "original-*.jar" | head -n 1)"
+  built_jar="$(find "$PROJECT_DIR/target" -maxdepth 1 -type f -name '*.jar' ! -name 'original-*.jar' | head -n 1)"
   if [[ -z "$built_jar" ]]; then
     echo "No runnable .jar file found under $PROJECT_DIR/target" >&2
     return 1
@@ -495,17 +365,36 @@ update_system() {
   sudo systemctl restart "$SERVICE_NAME"
 
   echo "==> Waiting for service to become active"
-  if ! wait_for_service_active; then
+  local waited=0
+  while (( waited < STARTUP_TIMEOUT_SECONDS )); do
+    if sudo systemctl is-active --quiet "$SERVICE_NAME"; then
+      break
+    fi
+    sleep 1
+    waited=$((waited + 1))
+  done
+  if ! sudo systemctl is-active --quiet "$SERVICE_NAME"; then
     echo "Service did not become active within ${STARTUP_TIMEOUT_SECONDS}s" >&2
-    print_diagnostics
+    sudo systemctl status "$SERVICE_NAME" --no-pager -l || true
+    sudo journalctl -u "$SERVICE_NAME" -n 150 --no-pager || true
     return 1
   fi
-  if ! wait_for_app_response; then
-    echo "ERROR: Health check failed after ${HEALTHCHECK_RETRIES} attempts." >&2
-    print_diagnostics
-    return 1
-  fi
-  echo "==> System updated successfully"
+
+  local attempt=1
+  while (( attempt <= HEALTHCHECK_RETRIES )); do
+    if curl -fsS --max-time 5 "$APP_URL" >/dev/null; then
+      echo "==> System updated successfully"
+      return 0
+    fi
+    echo "==> Health check failed on attempt ${attempt}/${HEALTHCHECK_RETRIES}, retrying in ${HEALTHCHECK_DELAY_SECONDS}s..."
+    sleep "$HEALTHCHECK_DELAY_SECONDS"
+    attempt=$((attempt + 1))
+  done
+
+  echo "ERROR: Health check failed after ${HEALTHCHECK_RETRIES} attempts." >&2
+  sudo systemctl status "$SERVICE_NAME" --no-pager -l || true
+  sudo journalctl -u "$SERVICE_NAME" -n 150 --no-pager || true
+  return 1
 }
 
 database_client() {
@@ -605,8 +494,9 @@ load_default_database() {
   password="$(get_db_password)"
   if [[ -z "$password" && -f "$DB_ENV_FILE" ]]; then
     password="$(read_env_file_value 'SCA_DB_PASSWORD')"
-    if [[ -z "$password" ]]; then password="$(read_env_file_value 'CTN_DB_PASSWORD')"; fi
+    [[ -z "$password" ]] && password="$(read_env_file_value 'CTN_DB_PASSWORD')"
   fi
+
   local client
   client="$(database_client 2>/dev/null || true)"
   if [[ -z "$client" ]]; then
@@ -664,20 +554,26 @@ edit_linux_service() {
 
   echo "==> Current effective service definition"
   sudo systemctl cat "$SERVICE_NAME"
-  if [[ ! -t 0 ]]; then return 0; fi
+  if [[ ! -t 0 ]]; then
+    return 0
+  fi
   read -r -p "Open the systemd override editor? [y/N]: " answer
   [[ "$answer" =~ ^[Yy]$ ]] || return 0
   sudo systemctl edit "$SERVICE_NAME"
   sudo systemctl daemon-reload
   if [[ -t 0 ]]; then
     read -r -p "Restart ${SERVICE_NAME}.service now? [y/N]: " answer
-    if [[ "$answer" =~ ^[Yy]$ ]]; then sudo systemctl restart "$SERVICE_NAME"; fi
+    if [[ "$answer" =~ ^[Yy]$ ]]; then
+      sudo systemctl restart "$SERVICE_NAME"
+    fi
   fi
 }
 
 health_snapshot() {
   local service_state="not-installed"
-  if service_exists; then service_state="$(systemctl is-active "$SERVICE_NAME" 2>/dev/null || true)"; fi
+  if service_exists; then
+    service_state="$(systemctl is-active "$SERVICE_NAME" 2>/dev/null || true)"
+  fi
   local http_state="unreachable"
   if command -v curl >/dev/null 2>&1; then
     http_state="$(curl -fsS --max-time 3 "$APP_URL" 2>/dev/null || printf 'unreachable')"
@@ -705,7 +601,6 @@ health_monitor() {
   trap 'monitoring=false' INT
   while [[ "$monitoring" == true ]]; do
     printf '\033[2J\033[H'
-    show_banner
     echo "Health monitor - refresh every ${interval}s - Ctrl+C to return"
     echo "----------------------------------------------------------------"
     health_snapshot
@@ -719,6 +614,23 @@ pause_menu() {
     echo
     read -r -p "Press Enter to return to the menu..." _
   fi
+}
+
+show_banner() {
+  cat <<'BANNER'
+
+              .-----------------------.
+             /        C T N            \
+            /   COLEGIO TECNICO         \
+           |        NACIONAL             |
+           |      +-----------+           |
+           |      |  S C A    |           |
+           |      +-----------+           |
+            \                           /
+             '-------------------------'
+
+          Sistema de Carpetas Academicas
+BANNER
 }
 
 main_menu() {
