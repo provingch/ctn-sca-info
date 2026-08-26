@@ -120,6 +120,7 @@ export default function HomePage() {
 
   const params = (next: Record<string, string>) => setSearch({
     view,
+    subview,
     etapa: String(data.selEtapa),
     especialidadId: String(especialidadId || ''),
     cursoId: String(cursoId || ''),
