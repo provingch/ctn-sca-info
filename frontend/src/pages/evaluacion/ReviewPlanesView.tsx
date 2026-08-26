@@ -133,7 +133,7 @@ export default function ReviewPlanesView() {
         {loading ? (
           <p>Cargando planes...</p>
         ) : planes.length === 0 ? (
-          <p style={{ color: '#666' }}>No hay planes pendientes de revisión.</p>
+          <p style={{ color: 'var(--muted)' }}>No hay planes pendientes de revisión.</p>
         ) : (
           <div style={{ display: 'grid', gap: 8 }}>
             {planes.map((plan) => (
@@ -147,19 +147,20 @@ export default function ReviewPlanesView() {
                 }}
                 style={{
                   padding: 12,
-                  background: selectedPlanId === plan.id ? '#e0e7ff' : '#f9fafb',
-                  border: selectedPlanId === plan.id ? '2px solid #3b82f6' : '1px solid #e5e7eb',
+                  background: selectedPlanId === plan.id ? 'var(--accent-strong)' : 'var(--paper-raised)',
+                  border: selectedPlanId === plan.id ? '2px solid var(--accent)' : '1px solid var(--line)',
                   borderRadius: 4,
                   cursor: 'pointer',
                   textAlign: 'left',
+                  color: 'var(--ink)',
                   transition: 'all 0.2s',
                 }}
               >
                 <strong>{plan.materiaNombre}</strong>
-                <div style={{ fontSize: '0.9rem', color: '#666', marginTop: 4 }}>
+                <div style={{ fontSize: '0.9rem', color: 'var(--muted)', marginTop: 4 }}>
                   {plan.profesorNombre}
                 </div>
-                <div style={{ fontSize: '0.85rem', color: '#999', marginTop: 2 }}>
+                <div style={{ fontSize: '0.85rem', color: 'var(--muted)', marginTop: 2 }}>
                   {plan.cursoDescripcion}
                   {plan.especialidad && (
                     <>
@@ -179,11 +180,11 @@ export default function ReviewPlanesView() {
       {/* Panel derecho: detalle del plan */}
       <div className="panel">
         {!selectedPlanId ? (
-          <p style={{ textAlign: 'center', color: '#999' }}>Seleccioná un plan para verlo en detalle.</p>
+          <p style={{ textAlign: 'center', color: 'var(--muted)' }}>Seleccioná un plan para verlo en detalle.</p>
         ) : loadingDetalle ? (
           <p>Cargando detalle...</p>
         ) : !selectedPlan ? (
-          <p style={{ color: '#d32f2f' }}>No se pudo cargar el plan.</p>
+          <p style={{ color: 'var(--danger)' }}>No se pudo cargar el plan.</p>
         ) : (
           <>
             <h3>Detalle del plan curricular</h3>
