@@ -640,7 +640,7 @@ INSERT INTO asignacion (usuario_id, materia_id, curso_base_id) VALUES
         (26, 14, 2), (26, 14, 4),
         -- Quimica 2do B - Luz Angulo
 
-        (25, 15, 3), (25, 15, 4)
+        (25, 15, 3), (25, 15, 4),
         -- Administracion Financiera 2do A/B - Lourdes Galeano
 
         (32, 15, 5), (32, 15, 6),
