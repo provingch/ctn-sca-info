@@ -130,6 +130,7 @@ export default function HomePage() {
   const sectionOptions = (selectedCourseNivel != null ? seccionesForNivel(selectedCourseNivel) : []).map((s) => ({ value: s, label: String(s) }));
 
   const showSelectionWait = !hasEspecialidad || !hasCursoSeleccionado || !hasSeccionSeleccionada;
+  const showSelector = view === 'planillas' || (view === 'catedra' && subview === 'clase');
 
   return <>
     <style>{`
@@ -161,51 +162,59 @@ export default function HomePage() {
       .idle-dot:nth-child(3) { animation-delay: 0.3s; }
     `}</style>
     <AppShell title="Panel SCA del curso" specialty={selectedEspecialidad?.nombre ?? null}><div className="toolbar filters"><button className="button secondary" onClick={() => setSearch({})}>← Inicio</button>
-      <label className="inline-filter">Especialidad
-        <AnimatedSelect ariaLabel="Especialidad" value={especialidadId || ''} onChange={(value) => {
-          setSelectedNivel(null);
-          setSelectedSeccion('');
-          params({ especialidadId: value, cursoId: '' });
-          const id = Number(value || 0);
-          if (id) {
-            const s = especialidades.find((item) => item.id === id);
-            if (s) selectSpecialty(s.nombre, s.id);
-          } else {
-            resetSpecialty();
-          }
-        }} placeholder="Seleccione la especialidad" options={[{ value: '', label: 'Seleccione la especialidad' }, ...especialidades.map((item) => ({ value: item.id, label: item.nombre }))]} />
-      </label>
-      <label className="inline-filter">Curso
-        <AnimatedSelect ariaLabel="Curso" value={selectedCourseNivel ?? ''} onChange={(value) => {
-          setCourseSelection(value);
-        }} disabled={!hasEspecialidad || visibleCursos.length === 0} placeholder="Seleccione el curso" options={[{ value: '', label: 'Seleccione el curso' }, ...courseOptions]} />
-      </label>
-      <label className="inline-filter">Sección
-          <AnimatedSelect ariaLabel="Sección" value={selectedSeccion ?? ''} onChange={(value) => {
-          setSelectionLoading(true);
-          setSelectedSeccion(value);
-          const nivel = selectedCourseNivel ?? undefined;
-          const seccion = String(value);
-          const match = visibleCursos.find((c) => (nivel == null || Number(c.curso) === nivel) && c.seccion === seccion && (!selectedEspecialidad || c.especialidad === selectedEspecialidad.nombre));
-          params({ cursoId: match ? String(match.id) : '' });
-        }} disabled={!hasEspecialidad || selectedCourseNivel == null || visibleCursos.length === 0} placeholder="Seleccione la sección" options={[{ value: '', label: 'Seleccione la sección' }, ...sectionOptions]} />
-      </label>
+      {showSelector && <>
+        <label className="inline-filter">Especialidad
+          <AnimatedSelect ariaLabel="Especialidad" value={especialidadId || ''} onChange={(value) => {
+            setSelectedNivel(null);
+            setSelectedSeccion('');
+            params({ especialidadId: value, cursoId: '' });
+            const id = Number(value || 0);
+            if (id) {
+              const s = especialidades.find((item) => item.id === id);
+              if (s) selectSpecialty(s.nombre, s.id);
+            } else {
+              resetSpecialty();
+            }
+          }} placeholder="Seleccione la especialidad" options={[{ value: '', label: 'Seleccione la especialidad' }, ...especialidades.map((item) => ({ value: item.id, label: item.nombre }))]} />
+        </label>
+        <label className="inline-filter">Curso
+          <AnimatedSelect ariaLabel="Curso" value={selectedCourseNivel ?? ''} onChange={(value) => {
+            setCourseSelection(value);
+          }} disabled={!hasEspecialidad || visibleCursos.length === 0} placeholder="Seleccione el curso" options={[{ value: '', label: 'Seleccione el curso' }, ...courseOptions]} />
+        </label>
+        <label className="inline-filter">Sección
+            <AnimatedSelect ariaLabel="Sección" value={selectedSeccion ?? ''} onChange={(value) => {
+            setSelectionLoading(true);
+            setSelectedSeccion(value);
+            const nivel = selectedCourseNivel ?? undefined;
+            const seccion = String(value);
+            const match = visibleCursos.find((c) => (nivel == null || Number(c.curso) === nivel) && c.seccion === seccion && (!selectedEspecialidad || c.especialidad === selectedEspecialidad.nombre));
+            params({ cursoId: match ? String(match.id) : '' });
+          }} disabled={!hasEspecialidad || selectedCourseNivel == null || visibleCursos.length === 0} placeholder="Seleccione la sección" options={[{ value: '', label: 'Seleccione la sección' }, ...sectionOptions]} />
+        </label>
+      </>}
     </div>
-      {selectionLoading ? <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Cargando planilla…</h2><p>Esperá un momento mientras cargamos la planilla seleccionada.</p></section> : showSelectionWait ? <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Esperando selección</h2><p>Elegí una especialidad, un curso y una sección para continuar.</p></section> : (
-        view === 'catedra' ? (
-          !search.get('subview') ? (
-            <div className="choice-grid">
-              <button onClick={() => params({ subview: 'clase' })}><span>01</span><h2>Iniciar clase</h2><p>Asistencia, rasgos e historial del curso.</p></button>
-              <button onClick={() => params({ subview: 'plan-curricular' })}><span>02</span><h2>Plan curricular</h2><p>Cargá y revisá tu plan curricular anual.</p></button>
-            </div>
-          ) : search.get('subview') === 'plan-curricular' ? (
-            <PlanCurricularView />
-          ) : (
-            <ClassView data={data} reload={load} />
-          )
+      {view === 'catedra' ? (
+        !subview ? (
+          <div className="choice-grid">
+            <button onClick={() => params({ subview: 'clase' })}><span>01</span><h2>Iniciar clase</h2><p>Asistencia, rasgos e historial del curso.</p></button>
+            <button onClick={() => params({ subview: 'plan-curricular' })}><span>02</span><h2>Plan curricular</h2><p>Cargá y revisá tu plan curricular anual.</p></button>
+          </div>
+        ) : subview === 'plan-curricular' ? (
+          <PlanCurricularView />
+        ) : selectionLoading ? (
+          <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Cargando…</h2><p>Esperá un momento mientras preparamos la clase.</p></section>
+        ) : showSelectionWait ? (
+          <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Esperando selección</h2><p>Elegí una especialidad, un curso y una sección para continuar.</p></section>
         ) : (
-          <PlanillasView data={data} syncingProp={syncingAll} setSyncingProp={setSyncingAll} />
+          <ClassView data={data} reload={load} />
         )
+      ) : selectionLoading ? (
+        <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Cargando planilla…</h2><p>Esperá un momento mientras cargamos la planilla seleccionada.</p></section>
+      ) : showSelectionWait ? (
+        <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Esperando selección</h2><p>Elegí una especialidad, un curso y una sección para continuar.</p></section>
+      ) : (
+        <PlanillasView data={data} syncingProp={syncingAll} setSyncingProp={setSyncingAll} />
       )}
     </AppShell>
   </>;
