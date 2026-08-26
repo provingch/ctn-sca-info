@@ -33,6 +33,48 @@ interface HorarioCursoPageProps {
 
 const makeKey = (day: number, hourId: number) => `${day}:${hourId}`;
 
+interface HorarioBlock {
+  day: number;
+  slots: HorarioSlotItem[];
+  startHour: HoraCatedraItem;
+  endHour: HoraCatedraItem;
+}
+
+function groupHorarioSlots(slots: HorarioSlotItem[], hours: HoraCatedraItem[]) {
+  const hourIndexById = new Map(hours.map((hour, index) => [hour.id, index]));
+  const sorted = [...slots].sort((first, second) => {
+    const dayOrder = first.diaSemana - second.diaSemana;
+    if (dayOrder !== 0) return dayOrder;
+    return (hourIndexById.get(first.horaCatedraId) ?? first.horaCatedraId) - (hourIndexById.get(second.horaCatedraId) ?? second.horaCatedraId);
+  });
+
+  const blocks: Array<HorarioBlock & { lastHourIndex: number }> = [];
+  for (const slot of sorted) {
+    const hourIndex = hourIndexById.get(slot.horaCatedraId);
+    if (hourIndex === undefined) {
+      continue;
+    }
+
+    const current = blocks.at(-1);
+    if (current && current.day === slot.diaSemana && current.slots[0]?.asignacionId === slot.asignacionId && current.lastHourIndex + 1 === hourIndex) {
+      current.slots.push(slot);
+      current.lastHourIndex = hourIndex;
+      current.endHour = hours[hourIndex];
+      continue;
+    }
+
+    blocks.push({
+      day: slot.diaSemana,
+      slots: [slot],
+      startHour: hours[hourIndex],
+      endHour: hours[hourIndex],
+      lastHourIndex: hourIndex,
+    });
+  }
+
+  return blocks.map(({ lastHourIndex: _lastHourIndex, ...block }) => block);
+}
+
 export default function HorarioCursoPage({ cursoId, summary, hours, status, refreshSummary }: HorarioCursoPageProps) {
   const courseId = Number(cursoId);
   const courseItem = useMemo(() => summary.find((item) => item.cursoId === courseId) ?? null, [courseId, summary]);
@@ -89,9 +131,19 @@ export default function HorarioCursoPage({ cursoId, summary, hours, status, refr
   }, [courseItem?.cursoId, courseItem?.especialidadId]);
 
   const sortedSlots = useMemo(() => [...slots].sort((first, second) => first.diaSemana - second.diaSemana || first.horaCatedraId - second.horaCatedraId), [slots]);
+  const groupedSlots = useMemo(() => groupHorarioSlots(sortedSlots, hours), [hours, sortedSlots]);
   const activeRows = previewRows ?? sortedSlots;
   const cellMap = useMemo(() => new Map(activeRows.map((item) => [makeKey(item.diaSemana, item.horaCatedraId), item])), [activeRows]);
   const hasPreviewOkRows = previewRows?.some((row) => row.estado === 'ok') ?? false;
+  const tableGroupKey = previewRows
+    ? (day: number, hour: HoraCatedraItem) => {
+        const row = cellMap.get(makeKey(day, hour.id));
+        return row && 'estado' in row && row.estado === 'ok' ? `${row.materiaTexto}·${row.profesorTexto}` : null;
+      }
+    : (day: number, hour: HoraCatedraItem) => {
+        const slot = cellMap.get(makeKey(day, hour.id));
+        return slot ? String(slot.asignacionId) : null;
+      };
 
   const renderCell = (day: number, hour: HoraCatedraItem): HorarioGridCell => {
     const item = cellMap.get(makeKey(day, hour.id));
@@ -189,15 +241,17 @@ export default function HorarioCursoPage({ cursoId, summary, hours, status, refr
     }
   }
 
-  async function removeManualSlot(slotId: number) {
+  async function removeManualBlock(block: HorarioBlock) {
     if (!courseItem) return;
     try {
-      await deleteHorarioSlot(slotId);
-      status('Slot removido.');
+      for (const slot of block.slots) {
+        await deleteHorarioSlot(slot.id);
+      }
+      status('Bloque de horario removido.');
       await loadCourseData();
       await refreshSummary();
     } catch (reason) {
-      status(reason instanceof ApiError ? reason.message : 'No se pudo quitar el slot.');
+      status(reason instanceof ApiError ? reason.message : 'No se pudo quitar el bloque.');
     }
   }
 
@@ -257,6 +311,7 @@ export default function HorarioCursoPage({ cursoId, summary, hours, status, refr
           </header>
           <HorarioTablaGrid
             hours={hours}
+            groupKey={tableGroupKey}
             className="schedule-course-grid"
             wrapClassName="schedule-course-preview-wrap"
             renderCell={renderCell}
@@ -302,14 +357,14 @@ export default function HorarioCursoPage({ cursoId, summary, hours, status, refr
           </div>
 
           <div className="admin-list schedule-course-slot-list">
-            {sortedSlots.length === 0 && <div className="admin-empty">Todavía no hay bloques cargados para este curso.</div>}
-            {sortedSlots.map((slot) => (
-              <div key={slot.id}>
+            {groupedSlots.length === 0 && <div className="admin-empty">Todavía no hay bloques cargados para este curso.</div>}
+            {groupedSlots.map((block) => (
+              <div key={`${block.day}-${block.startHour.id}-${block.slots[0]?.asignacionId ?? 'na'}`}>
                 <span>
-                  <strong>{SCHEDULE_DAYS[slot.diaSemana]} · {slot.horaInicio} - {slot.horaFin}</strong>
-                  <small>{slot.materiaNombre} — {slot.profesorNombre}{slot.salaNombre ? ` · ${slot.salaNombre}` : ''}</small>
+                  <strong>{SCHEDULE_DAYS[block.day]} · {block.startHour.horaInicio} - {block.endHour.horaFin}</strong>
+                  <small>{block.slots[0]?.materiaNombre} — {block.slots[0]?.profesorNombre}{block.slots[0]?.salaNombre ? ` · ${block.slots[0].salaNombre}` : ''}</small>
                 </span>
-                <button className="button danger" type="button" onClick={() => void removeManualSlot(slot.id)}>Quitar</button>
+                <button className="button danger" type="button" onClick={() => void removeManualBlock(block)}>Quitar</button>
               </div>
             ))}
           </div>
