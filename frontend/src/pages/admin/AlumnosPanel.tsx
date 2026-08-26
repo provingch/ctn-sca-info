@@ -4,6 +4,7 @@ import { buscarPadres, createAdminRecord, deleteAdminRecord, getPadresDeAlumno, 
 import { normalizeSpecialty } from '../../theme/theme';
 import SpecialtyIcon from '../../components/SpecialtyIcon';
 import AnimatedSelect from '../../components/AnimatedSelect';
+import useAccessibleDialog from '../../hooks/useAccessibleDialog';
 
 interface AlumnosPanelProps {
   data: AdminCatalog;
@@ -19,6 +20,7 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
   const [selectedNivel, setSelectedNivel] = useState<number | null>(null);
   const [selectedSeccion, setSelectedSeccion] = useState<string | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const formDialogRef = useAccessibleDialog(isFormOpen, () => setIsFormOpen(false));
   const [editingId, setEditingId] = useState<number | null>(null);
   const [padres, setPadres] = useState<PadreSummary[]>([]);
   const [padresSearch, setPadresSearch] = useState('');
@@ -250,6 +252,7 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
             <h2>{currentEspecialidad} · {currentCurso?.nivel}° · {selectedSeccion}</h2>
             <div className="table-wrap">
               <table className="grade-table" style={{ minWidth: 760 }}>
+                <caption className="visually-hidden">Alumnos de {currentCurso?.nivel}° {selectedSeccion}</caption>
                 <thead>
                   <tr>
                     <th>Apellido</th>
@@ -295,13 +298,13 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
       )}
 
       {isFormOpen && (
-        <div className="signature-modal" role="dialog" aria-modal="true" aria-labelledby="alumno-form-title" style={{ display: 'grid' }}>
+        <div ref={formDialogRef} className="signature-modal" role="dialog" aria-modal="true" aria-labelledby="alumno-form-title" tabIndex={-1} style={{ display: 'grid' }}>
           <div className="signature-modal-header">
             <div>
               <span>Alumnos</span>
               <h2 id="alumno-form-title">{editingId ? 'Editar alumno' : 'Crear alumno'}</h2>
             </div>
-            <button type="button" className="signature-modal-close" aria-label="Cerrar formulario" onClick={() => setIsFormOpen(false)}>×</button>
+            <button type="button" className="signature-modal-close" aria-label="Cerrar formulario" data-dialog-initial-focus onClick={() => setIsFormOpen(false)}>×</button>
           </div>
           <form className="form-grid" onSubmit={submit} style={{ alignContent: 'start' }}>
             <label>

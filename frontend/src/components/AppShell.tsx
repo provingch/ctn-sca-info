@@ -18,10 +18,15 @@ export default function AppShell({ children, title, subtitle, specialty }: { chi
     }
   }, [specialty, selectedSpecialty, selectSpecialty]);
 
+  useEffect(() => {
+    document.title = title ? `${title} | SCA CTN` : 'SCA CTN';
+  }, [title]);
+
   return (
     <div className="app-frame" data-specialty={normalizeSpecialty(effectiveSpecialty)}>
+      <a className="skip-link" href="#main-content">Saltar al contenido principal</a>
       <AppNavbar />
-      <main className="app-main">
+      <main id="main-content" className="app-main" tabIndex={-1}>
         {title && <section className="page-hero"><div className="hero-content"><span className="hero-kicker"><i />{user ? getRoleNavigation(user.level).roleLabel : 'SCA'}</span><h1>{title}</h1><p>{subtitle || 'Sistema de Carpetas Académicas del Colegio Técnico Nacional'}</p></div><div className="hero-emblem"><CtnLogo /></div></section>}
         {children}
       </main>

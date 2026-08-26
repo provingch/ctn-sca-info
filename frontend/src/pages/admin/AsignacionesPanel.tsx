@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { createAdminRecord, createHorarioSlot, deleteAssignment, deleteHorarioSlot, getHoraCatedraCatalog, getHorarioByAsignacion, updateAdminRecord, type AdminCatalog, type HoraCatedraItem, type HorarioSlotItem } from '../../api/admin';
 import { ApiError } from '../../api/client';
 import AnimatedSelect from '../../components/AnimatedSelect';
+import useAccessibleDialog from '../../hooks/useAccessibleDialog';
 
 interface AsignacionesPanelProps {
   data: AdminCatalog;
@@ -46,6 +47,8 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState({ materiaId: '', cursoIds: [] as number[] });
   const [horarioPopup, setHorarioPopup] = useState<{ assignmentId: number; slots: HorarioSlotItem[]; catalog: HoraCatedraItem[]; diaSemana: number; horaCatedraId: string; hastaHoraCatedraId?: string; sala: string } | null>(null);
+  const formDialogRef = useAccessibleDialog(isFormOpen, () => setIsFormOpen(false));
+  const scheduleDialogRef = useAccessibleDialog(Boolean(horarioPopup), () => setHorarioPopup(null));
 
   const profesores = useMemo(() => data.usuarios.filter((user) => user.nivel === 1), [data.usuarios]);
   const profesorAsignaciones = useMemo(
@@ -225,6 +228,7 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
       <>
         <div className="table-wrap">
           <table className="grade-table" style={{ minWidth: 680 }}>
+            <caption className="visually-hidden">Profesores y cantidad de asignaciones</caption>
             <thead>
               <tr>
                 <th>Profesor</th>
@@ -262,6 +266,7 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
 
       <div className="table-wrap">
         <table className="grade-table" style={{ minWidth: 760 }}>
+          <caption className="visually-hidden">Asignaciones del profesor seleccionado</caption>
           <thead>
             <tr>
               <th>Materia</th>
@@ -307,13 +312,13 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
       </div>
 
       {isFormOpen && (
-        <div className="signature-modal" role="dialog" aria-modal="true" aria-labelledby="asignacion-form-title" style={{ display: 'grid' }}>
+        <div ref={formDialogRef} className="signature-modal" role="dialog" aria-modal="true" aria-labelledby="asignacion-form-title" tabIndex={-1} style={{ display: 'grid' }}>
           <div className="signature-modal-header">
             <div>
               <span>Asignaciones</span>
               <h2 id="asignacion-form-title">{editingId ? 'Editar asignación' : 'Crear asignación'}</h2>
             </div>
-            <button type="button" className="signature-modal-close" aria-label="Cerrar formulario" onClick={() => setIsFormOpen(false)}>×</button>
+            <button type="button" className="signature-modal-close" aria-label="Cerrar formulario" data-dialog-initial-focus onClick={() => setIsFormOpen(false)}>×</button>
           </div>
           <form className="form-grid" onSubmit={submit} style={{ alignContent: 'start' }}>
             <label>
@@ -355,13 +360,13 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
       )}
 
       {horarioPopup && (
-        <div className="signature-modal" role="dialog" aria-modal="true" aria-labelledby="horario-panel-title" style={{ display: 'grid', maxWidth: 700 }}>
+        <div ref={scheduleDialogRef} className="signature-modal" role="dialog" aria-modal="true" aria-labelledby="horario-panel-title" tabIndex={-1} style={{ display: 'grid', maxWidth: 700 }}>
           <div className="signature-modal-header">
             <div>
               <span>Horario</span>
               <h2 id="horario-panel-title">Asignación #{horarioPopup.assignmentId}</h2>
             </div>
-            <button type="button" className="signature-modal-close" aria-label="Cerrar horario" onClick={() => setHorarioPopup(null)}>×</button>
+            <button type="button" className="signature-modal-close" aria-label="Cerrar horario" data-dialog-initial-focus onClick={() => setHorarioPopup(null)}>×</button>
           </div>
 
           <div className="form-grid" style={{ alignContent: 'start' }}>

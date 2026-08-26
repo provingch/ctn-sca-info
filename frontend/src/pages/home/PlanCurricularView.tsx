@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError } from '../../api/client';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import * as planCurricularApi from '../../api/planCurricular';
+import useAccessibleDialog from '../../hooks/useAccessibleDialog';
 
 type AssignmentGroup = { id: number; nombre: string; asignaciones: planCurricularApi.AsignacionCompleta[] };
 
@@ -21,18 +22,19 @@ function EstadoBadge({ estado }: { estado: string }) {
 function PlanDetalleModal({ id, onClose }: { id: number; onClose: () => void }) {
   const [plan, setPlan] = useState<planCurricularApi.PlanCurricularEstado | null>(null);
   const [error, setError] = useState('');
+  const dialogRef = useAccessibleDialog(true, onClose);
 
   useEffect(() => {
     void planCurricularApi.getPlanDetalle(id).then(setPlan).catch((err) => setError(errorMessage(err, 'No se pudo cargar el detalle del plan.')));
   }, [id]);
 
-  return <div role="dialog" aria-modal="true" aria-label="Detalle del plan curricular" style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'grid', placeItems: 'center', padding: 20, background: 'rgba(0, 0, 0, .55)' }} onClick={onClose}>
+  return <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="plan-detail-title" tabIndex={-1} style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'grid', placeItems: 'center', padding: 20, background: 'rgba(0, 0, 0, .55)' }} onClick={onClose}>
     <section className="panel" style={{ width: 'min(1000px, 100%)', maxHeight: '85vh', overflow: 'auto', margin: 0 }} onClick={(event) => event.stopPropagation()}>
-      <div className="class-card-head"><h3>Detalle del plan curricular</h3><button type="button" className="button secondary" onClick={onClose}>Cerrar</button></div>
+      <div className="class-card-head"><h3 id="plan-detail-title">Detalle del plan curricular</h3><button type="button" className="button secondary" data-dialog-initial-focus onClick={onClose}>Cerrar</button></div>
       {error ? <div className="notice error">{error}</div> : !plan ? <p>Cargando detalle…</p> : <>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', margin: '16px 0' }}><EstadoBadge estado={plan.estado} /><span>{plan.archivoNombre}</span><button type="button" className="button secondary" onClick={() => void planCurricularApi.descargarDocumentoOriginal(id)}>Descargar archivo original</button></div>
         {plan.observacionesEvaluador && <div style={{ marginBottom: 16, padding: 14, borderLeft: '4px solid var(--danger)', background: 'color-mix(in srgb, var(--danger) 8%, var(--paper-raised))' }}><strong>Observaciones del evaluador</strong><p style={{ margin: '6px 0 0' }}>{plan.observacionesEvaluador}</p></div>}
-        {plan.temas?.length ? <div className="table-responsive"><table className="table table-striped"><thead><tr><th>Mes</th><th>Tema / Contenido</th><th>Capacidades</th><th>Actividades</th></tr></thead><tbody>{plan.temas.map((tema, index) => <tr key={index}><td>{tema.mes}</td><td>{tema.temasContenidos}</td><td>{tema.capacidades || '—'}</td><td>{tema.actividades || '—'}</td></tr>)}</tbody></table></div> : <p>No hay temas parseados para este plan.</p>}
+        {plan.temas?.length ? <div className="table-responsive"><table className="table table-striped"><caption className="visually-hidden">Contenido del plan curricular</caption><thead><tr><th>Mes</th><th>Tema / Contenido</th><th>Capacidades</th><th>Actividades</th></tr></thead><tbody>{plan.temas.map((tema, index) => <tr key={index}><td>{tema.mes}</td><td>{tema.temasContenidos}</td><td>{tema.capacidades || '—'}</td><td>{tema.actividades || '—'}</td></tr>)}</tbody></table></div> : <p>No hay temas parseados para este plan.</p>}
       </>}
     </section>
   </div>;
@@ -138,14 +140,14 @@ export default function PlanCurricularView() {
       ) : groups.length === 0 ? <p>No tenés asignaciones disponibles.</p> : groups.map((group) => <div key={group.id}><h4 style={{ margin: '0 0 8px' }}>{groups.length > 1 ? group.nombre : 'Mis asignaciones'}</h4><DescargarPlantillaSection group={group} /></div>)}
     </section>
 
-    <section className="class-card"><h3 style={{ margin: 0 }}>Subir plan</h3><p style={{ margin: 0, color: 'var(--muted)' }}>El sistema identifica automáticamente la asignación a partir de la plantilla.</p><input ref={fileRef} type="file" accept=".xlsx" disabled={uploading} onChange={(event) => { setSelectedFile(event.target.files?.[0] ?? null); setUploadError(''); setUploadMessage(''); }} /><button type="button" className="button" disabled={!selectedFile || uploading} onClick={() => selectedFile && void upload(selectedFile)}>{uploading ? 'Subiendo…' : 'Subir plan curricular'}</button>{uploadMessage && <div className="notice">{uploadMessage}</div>}{uploadError && <div className="notice error">{uploadError}</div>}
+    <section className="class-card"><h3 style={{ margin: 0 }}>Subir plan</h3><p style={{ margin: 0, color: 'var(--muted)' }}>El sistema identifica automáticamente la asignación a partir de la plantilla.</p><input ref={fileRef} type="file" accept=".xlsx" aria-label="Seleccionar archivo del plan curricular" disabled={uploading} onChange={(event) => { setSelectedFile(event.target.files?.[0] ?? null); setUploadError(''); setUploadMessage(''); }} /><button type="button" className="button" disabled={!selectedFile || uploading} onClick={() => selectedFile && void upload(selectedFile)}>{uploading ? 'Subiendo…' : 'Subir plan curricular'}</button>{uploadMessage && <div className="notice">{uploadMessage}</div>}{uploadError && <div className="notice error">{uploadError}</div>}
       {candidatas.length > 0 && pendingFile && <div className="notice"><p>Se encontraron varias asignaciones compatibles. Elegí la correcta para continuar.</p><AnimatedSelect ariaLabel="Asignación compatible" value={candidataId} onChange={setCandidataId} options={[{ value: '', label: 'Seleccione una asignación' }, ...candidatas.map((candidate) => ({ value: candidate.id, label: candidate.descripcion }))]} /><button type="button" className="button" disabled={!candidataId || uploading} onClick={() => void upload(pendingFile, Number(candidataId))}>Confirmar asignación</button></div>}</section>
 
     <section className="class-card" style={{ gridColumn: '1 / -1' }}><div className="class-card-head"><h3>Entregas realizadas</h3><button type="button" className="button secondary" onClick={() => void loadPlanes()}>Actualizar</button></div>{errorPlanes ? <div className="notice error">{errorPlanes}</div> : planes === null ? (
       <div aria-hidden="true" style={{ opacity: 0.55, pointerEvents: 'none' }} className="table-responsive">
         <table className="table table-striped"><thead><tr><th>Materia</th><th>Especialidad</th><th>Curso</th><th>Archivo</th><th>Etapa / año</th><th>Estado</th><th>Subido</th></tr></thead><tbody><tr><td colSpan={7}>&nbsp;</td></tr><tr><td colSpan={7}>&nbsp;</td></tr></tbody></table>
       </div>
-    ) : planes.length === 0 ? <p>Aún no registraste entregas.</p> : <div className="table-responsive"><table className="table table-striped"><thead><tr><th>Materia</th><th>Especialidad</th><th>Curso</th><th>Archivo</th><th>Etapa / año</th><th>Estado</th><th>Subido</th></tr></thead><tbody>{planes.map((plan) => <tr key={plan.id} onClick={() => setDetalleId(plan.id)} style={{ cursor: 'pointer' }} tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter') setDetalleId(plan.id); }}><td>{plan.materiaNombre}</td><td>{plan.especialidadNombre}</td><td>{plan.cursoOrdinal} {plan.seccion}</td><td>{plan.archivoNombre}</td><td>{plan.etapa} / {plan.anio}</td><td><EstadoBadge estado={plan.estado} /></td><td>{new Date(plan.fechaSubida).toLocaleDateString('es-AR')}</td></tr>)}</tbody></table></div>}</section>
+    ) : planes.length === 0 ? <p>Aún no registraste entregas.</p> : <div className="table-responsive"><table className="table table-striped"><caption className="visually-hidden">Planes curriculares entregados</caption><thead><tr><th>Materia</th><th>Especialidad</th><th>Curso</th><th>Archivo</th><th>Etapa / año</th><th>Estado</th><th>Subido</th></tr></thead><tbody>{planes.map((plan) => <tr key={plan.id}><td>{plan.materiaNombre}</td><td>{plan.especialidadNombre}</td><td>{plan.cursoOrdinal} {plan.seccion}</td><td><button type="button" className="table-row-action" onClick={() => setDetalleId(plan.id)} aria-label={`Ver detalle de ${plan.archivoNombre}`}>{plan.archivoNombre}</button></td><td>{plan.etapa} / {plan.anio}</td><td><EstadoBadge estado={plan.estado} /></td><td>{new Date(plan.fechaSubida).toLocaleDateString('es-AR')}</td></tr>)}</tbody></table></div>}</section>
 
     {detalleId !== null && <PlanDetalleModal id={detalleId} onClose={() => setDetalleId(null)} />}
   </div>;
