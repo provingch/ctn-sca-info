@@ -135,6 +135,29 @@ public class CursoDao extends conexion {
         return cursos;
     }
 
+    public ArrayList<Curso> findAllByEspecialidadId(int especialidadId) throws SQLException {
+        ArrayList<Curso> cursos = new ArrayList<>();
+        int period = ctn.informatica.sca.util.AcademicPeriod.current();
+        String sql = "SELECT c.id, e.nombre AS especialidad, c.promocion, c.seccion "
+                + "FROM curso c JOIN especialidad e ON c.especialidad_id = e.id "
+                + "WHERE c.promocion >= ? AND c.especialidad_id = ? "
+                + "ORDER BY e.nombre, c.promocion, c.seccion";
+        try (Connection con = getCon(); PreparedStatement stm = con.prepareStatement(sql)) {
+            stm.setInt(1, period);
+            stm.setInt(2, especialidadId);
+            try (ResultSet rs = stm.executeQuery()) {
+                while (rs.next()) {
+                    int curso_id = rs.getInt("id");
+                    String especialidad = rs.getString("especialidad");
+                    int promocion = rs.getInt("promocion");
+                    String seccion = rs.getString("seccion");
+                    cursos.add(new Curso(curso_id, especialidad, promocion, seccion));
+                }
+            }
+        }
+        return cursos;
+    }
+
     public Set<String> listDistinctSeccionesForEspecialidad(int especialidadId) throws SQLException {
         Set<String> secciones = new HashSet<>();
         String sql = "SELECT DISTINCT seccion FROM curso WHERE especialidad_id = ?";
