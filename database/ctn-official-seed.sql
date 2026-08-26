@@ -212,7 +212,7 @@ INSERT INTO usuario (
     (92, 'Evaluador', '2', 'evaluador2', '$2a$12$dY1Gt90541sE0Z2H0Rq2ZOuGo4RyzE3iY9jSE6uPPR/gBfx1ClK2y', 12, null, null, null, null, 2, 'evaluador_2.txt', null),
     (93, 'Evaluador', '3', 'evaluador3', '$2a$12$dY1Gt90541sE0Z2H0Rq2ZOuGo4RyzE3iY9jSE6uPPR/gBfx1ClK2y', 13, null, null, null, null, 2, 'evaluador_3.txt', null),
     (94, 'Evaluador', '4', 'evaluador4', '$2a$12$dY1Gt90541sE0Z2H0Rq2ZOuGo4RyzE3iY9jSE6uPPR/gBfx1ClK2y', 14, null, null, null, null, 2, 'evaluador_4.txt', null),
-    (95, 'Evaluador', '5', 'evaluador5', '$2a$12$dY1Gt90541sE0Z2H0Rq2ZOuGo4RyzE3iY9jSE6uPPR/gBfx1ClK2y', 15, null, null, null, null, 2, 'evaluador_5.txt', null),
+    (95, 'Evaluador', '5', 'evaluador5', '$2a$12$dY1Gt90541sE0Z2H0Rq2ZOuGo4RyzE3iY9jSE6uPPR/gBfx1ClK2y', 15, null, null, null, null, 2, 'evaluador_5.txt', null)
 
     -- Padres (deben ser creados a traves del flujo de autenticacion de Google, por lo que no se insertan aca)    
 ON DUPLICATE KEY UPDATE
