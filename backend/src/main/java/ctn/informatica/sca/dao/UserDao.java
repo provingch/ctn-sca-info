@@ -112,24 +112,7 @@ public class UserDao {
                 }
 
                 String stored = rs.getString("contrasenia");
-                boolean ok;
-                if (PasswordUtil.isBcryptHash(stored)) {
-                    ok = PasswordUtil.matches(password, stored);
-                } else {
-                    // Migración transparente: todavía es texto plano
-                    ok = PasswordUtil.matches(password, stored);
-                    if (ok) {
-                        // Rehashear en el próximo login
-                        int userId = rs.getInt("id");
-                        try {
-                            new ProfesorDao().resetPassword(userId, password);
-                        } catch (Exception e) {
-                            // Log pero no falla el login
-                            System.err.println("Warning: could not rehash password on login for profesor " + userId + ": " + e.getMessage());
-                        }
-                    }
-                }
-                if (!ok) {
+                if (!PasswordUtil.matches(password, stored)) {
                     return null;
                 }
 
@@ -175,24 +158,7 @@ public class UserDao {
                 }
 
                 String stored = rs.getString("contrasenia");
-                boolean ok;
-                if (PasswordUtil.isBcryptHash(stored)) {
-                    ok = PasswordUtil.matches(password, stored);
-                } else {
-                    // Migración transparente: todavía es texto plano
-                    ok = PasswordUtil.matches(password, stored);
-                    if (ok) {
-                        // Rehashear en el próximo login
-                        int userId = rs.getInt("id");
-                        try {
-                            new PadreDao().resetPassword(userId, password);
-                        } catch (Exception e) {
-                            // Log pero no falla el login
-                            System.err.println("Warning: could not rehash password on login for padre " + userId + ": " + e.getMessage());
-                        }
-                    }
-                }
-                if (!ok) {
+                if (!PasswordUtil.matches(password, stored)) {
                     return null;
                 }
 
