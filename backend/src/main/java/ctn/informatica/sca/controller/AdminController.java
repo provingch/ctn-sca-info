@@ -74,11 +74,13 @@ public class AdminController {
             MateriaDao materiaDao = new MateriaDao();
             ProfesorDao profesorDao = new ProfesorDao();
             PadreDao padreDao = new PadreDao();
+            CursoDao cursoDao = new CursoDao();
+            EspecialidadDao especialidadDao = new EspecialidadDao();
             Integer actingSpecialtyId = getSpecialtyAdminIdForUser(ApiAuth.requireUserId(authentication));
 
             List<Materia> materiasDb = actingSpecialtyId == null ? materiaDao.listAll() : List.of();
             List<MateriaItem> materias = new java.util.ArrayList<>();
-            java.util.Map<Integer, String> especialidadNombreById = new EspecialidadDao().findAll().stream()
+            java.util.Map<Integer, String> especialidadNombreById = especialidadDao.findAll().stream()
                 .collect(java.util.stream.Collectors.toMap(Especialidad::getId, Especialidad::getNombre, (current, replacement) -> current));
             for (Materia m : materiasDb) {
                 materias.add(new MateriaItem(m.getId(), m.getNombre(), m.getCategoria(), materiaDao.listEspecialidadIdsForMateria(m.getId())));
@@ -111,10 +113,19 @@ public class AdminController {
                 alumnosDb = alumnosDb.stream().filter(a -> canAccessAlumno(actingSpecialtyId, a.getCursoId())).toList();
             }
             List<StudentItem> alumnos = alumnosDb.stream().map(a -> new StudentItem(a.getId(), a.getNombre(), a.getApellido(), a.getCursoId(), a.getCi(), a.getCorreoEncargado(), a.getCorreoEncargado2())).toList();
-            List<CourseItem> cursos = new CursoDao().findAll().stream()
-                    .filter(c -> actingSpecialtyId == null || especialidadNombreById.entrySet().stream().anyMatch(entry -> entry.getKey().equals(actingSpecialtyId) && entry.getValue().equals(c.getEspecialidad())))
+            List<Curso> cursosDb = actingSpecialtyId == null ? cursoDao.findAll() : cursoDao.findAllByEspecialidadId(actingSpecialtyId);
+            List<CourseItem> cursos = cursosDb.stream()
                     .map(c -> new CourseItem(c.getId(), c.getEspecialidad(), c.getNivel(), c.getSeccion())).toList();
-            List<SpecialtyItem> especialidades = new EspecialidadDao().findAll().stream().map(e -> new SpecialtyItem(e.getId(), e.getNombre())).toList();
+            List<Especialidad> especialidadesDb;
+            if (actingSpecialtyId == null) {
+                especialidadesDb = especialidadDao.findAll();
+            } else {
+                Especialidad especialidad = especialidadDao.findById(actingSpecialtyId);
+                especialidadesDb = especialidad == null ? List.of() : List.of(especialidad);
+            }
+            List<SpecialtyItem> especialidades = especialidadesDb.stream()
+                    .map(e -> new SpecialtyItem(e.getId(), e.getNombre()))
+                    .toList();
             return new CatalogResponse(materias, usuarios, asignaciones, alumnos, cursos, especialidades);
         } catch (Exception ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo cargar el panel administrativo", ex);
