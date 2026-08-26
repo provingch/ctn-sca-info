@@ -18,6 +18,7 @@ import {
   type SalaItem,
 } from '../../api/admin';
 import ContentState from '../../components/ui/ContentState';
+import AnimatedSelect from '../../components/AnimatedSelect';
 import HorarioTablaGrid from './HorarioTablaGrid';
 import { SCHEDULE_DAYS, type HorarioGridCell } from './horarioSchedule';
 import SpecialtyIcon from '../../components/SpecialtyIcon';
@@ -281,30 +282,19 @@ export default function HorarioCursoPage({ cursoId, summary, hours, status, refr
 
           <div className="form-grid schedule-course-form">
             <label>Materia - Profesor
-              <select value={manualAssignment} onChange={(event) => setManualAssignment(event.target.value)}>
-                {assignments.map((item) => <option key={item.asignacionId} value={item.asignacionId}>{item.materiaNombre} — {item.profesorNombre}</option>)}
-              </select>
+              <AnimatedSelect ariaLabel="Materia y profesor" value={manualAssignment} onChange={setManualAssignment} options={assignments.map((item) => ({ value: item.asignacionId, label: `${item.materiaNombre} — ${item.profesorNombre}` }))} />
             </label>
             <label>Día
-              <select value={manualDay} onChange={(event) => setManualDay(event.target.value)}>
-                {SCHEDULE_DAYS.slice(1).map((day, index) => <option key={day} value={index + 1}>{day}</option>)}
-              </select>
+              <AnimatedSelect ariaLabel="Día de la semana" value={manualDay} onChange={setManualDay} options={SCHEDULE_DAYS.slice(1).map((day, index) => ({ value: index + 1, label: day }))} />
             </label>
             <label>Desde
-              <select value={manualHour} onChange={(event) => setManualHour(event.target.value)}>
-                {hours.map((hour) => <option key={hour.id} value={hour.id}>{hour.numero}° · {hour.horaInicio} - {hour.horaFin}</option>)}
-              </select>
+              <AnimatedSelect ariaLabel="Hora de inicio" value={manualHour} onChange={setManualHour} options={hours.map((hour) => ({ value: hour.id, label: `${hour.numero}° · ${hour.horaInicio} - ${hour.horaFin}` }))} />
             </label>
             <label>Hasta
-              <select value={manualUntil} onChange={(event) => setManualUntil(event.target.value)}>
-                {hours.map((hour) => <option key={hour.id} value={hour.id}>{hour.numero}° · {hour.horaInicio} - {hour.horaFin}</option>)}
-              </select>
+              <AnimatedSelect ariaLabel="Hora de finalización" value={manualUntil} onChange={setManualUntil} options={hours.map((hour) => ({ value: hour.id, label: `${hour.numero}° · ${hour.horaInicio} - ${hour.horaFin}` }))} />
             </label>
             <label>Sala
-              <select value={manualSala} onChange={(event) => setManualSala(event.target.value)}>
-                <option value="">Sin sala</option>
-                {salas.map((sala) => <option key={sala.id} value={sala.id}>{sala.nombre}</option>)}
-              </select>
+              <AnimatedSelect ariaLabel="Sala" value={manualSala} onChange={setManualSala} options={[{ value: '', label: 'Sin sala' }, ...salas.map((sala) => ({ value: sala.id, label: sala.nombre }))]} />
             </label>
             <button className="button" type="button" onClick={() => void addManualSlot()} disabled={savingManual || assignments.length === 0 || hours.length === 0}>
               {savingManual ? 'Agregando…' : 'Agregar rango'}

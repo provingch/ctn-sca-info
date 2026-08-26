@@ -1,4 +1,4 @@
-import { siGoogleclassroom } from 'simple-icons/icons';
+import { siGoogleclassroom } from 'simple-icons';
 
 interface ClassroomBadgeProps {
   className?: string;

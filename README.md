@@ -98,3 +98,16 @@ La instalación de la PWA funciona sin configuración adicional. Para notificaci
 
 - Backend: servicio systemd `sca-backend.service` (jar en `/opt/ctn-sca-info/backend/sca-backend.jar`).
 - Frontend: build estático (`npm run build`) servido junto al backend o vía proxy.
+
+En Linux, `./deploy.sh` abre la consola interactiva del CTN cuando se ejecuta desde una terminal. Desde el menú se puede actualizar el sistema, reconstruir la base con `db-tables-properties.sql` + `ctn-official-seed.sql`, editar el override de systemd y abrir el monitor de salud. La carga por defecto reemplaza la base seleccionada, exige escribir `RESET` y crea un respaldo previo cuando `mariadb-dump` o `mysqldump` está disponible.
+
+Para automatización también se mantienen acciones no interactivas:
+
+```bash
+./deploy.sh --update
+SCA_CONFIRM_DB_RESET=RESET ./deploy.sh --load-default-db
+./deploy.sh --edit-service
+./deploy.sh --health
+```
+
+Los valores `REPO_DIR`, `PROJECT_DIR`, `SERVICE_NAME`, `APP_URL`, `SCA_DB_NAME`, `SCA_DB_HOST`, `SCA_DB_PORT`, `SCA_DB_USER` y `BACKUP_DIR` permiten adaptar el mismo script a diferentes instalaciones MySQL/MariaDB.
