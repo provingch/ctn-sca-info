@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type FormEvent, type RefObject } from 'react';
 import QRCode from 'qrcode';
 import { changePassword, confirmTotp, disableTotp, disconnectGoogle, getProfile, prepareTotp, saveProfile, type ProfileResponse, getGoogleAuthorizeUrl } from '../../api/profile';
 
@@ -7,13 +7,16 @@ const PHOTO_PERSISTENCE_MAX_BYTES = 1_500_000;
 const SIGNATURE_MOBILE_MEDIA_QUERY = '(max-width: 680px), (max-height: 680px) and (pointer: coarse)';
 import { ApiError } from '../../api/client';
 import AppShell from '../../components/AppShell';
+import CtnLogo from '../../components/CtnLogo';
 import PasswordInput from '../../components/PasswordInput';
+import SpecialtyIcon from '../../components/SpecialtyIcon';
 import ConnectionState from '../../components/ui/ConnectionState';
 import ContentState from '../../components/ui/ContentState';
 import SectionHeading from '../../components/ui/SectionHeading';
 import { useAuth } from '../../context/AuthContext';
 import { getPushSubscriptionStatus, removePushSubscription, savePushSubscription, sendPushTest, toPushPayload, urlBase64ToUint8Array } from '../../api/push';
 import { getPwaInstallSnapshot, promptPwaInstall, registerPwaServiceWorker, subscribePwaInstall } from '../../pwa/pwa';
+import { normalizeSpecialty } from '../../theme/theme';
 
 type ProfileTab = 'profile' | 'security' | 'subjects' | 'app' | 'activity';
 const message = (error: unknown, fallback: string) => error instanceof ApiError ? error.message : fallback;
@@ -24,6 +27,7 @@ export default function ProfilePage() {
   const [status, setStatus] = useState('');
   const [tab, setTab] = useState<ProfileTab>('profile');
   const profilePageRef = useRef<HTMLDivElement>(null);
+  const profileContentRef = useRef<HTMLDivElement>(null);
   const load = useCallback(async () => {
     try {
       const response = await getProfile();
@@ -47,40 +51,82 @@ export default function ProfilePage() {
   if (!data) return <AppShell><ContentState tone={status ? 'error' : 'loading'} title={status || 'Cargando perfil…'} detail={status ? 'Recargá la página para volver a intentarlo.' : 'Estamos preparando los datos de tu cuenta.'} /></AppShell>;
 
   const owner = data.profileOwner;
-  const initials = `${owner.nombre?.[0] || owner.usuario?.[0] || 'S'}${owner.apellido?.[0] || ''}`.toUpperCase();
+  const ownerEspecialidad = data.especialidades.find((especialidad) => especialidad.id === owner.especialidadId)?.nombre ?? null;
   // `completion` removed — progress UI was eliminated from the profile header
   const finish = async (text: string) => { setStatus(text); await Promise.all([load(), refreshUserIdentity()]); };
 
   return <AppShell subtitle={`Cuenta de ${owner.usuario || 'usuario'} · ${data.profileRoleLabel}`}>
     <div className="profile-page" ref={profilePageRef}>
-    <section className="profile-identity">
-      <div className="avatar" aria-hidden="true">{owner.fotoPerfil ? <img src={owner.fotoPerfil} alt="Foto de perfil" /> : initials}</div>
-      <div className="profile-identity-copy"><span className="badge">{data.profileRoleLabel}</span><h2>{owner.fullName?.trim() || owner.usuario || 'Usuario SCA'}</h2><strong>@{owner.usuario || 'sin-usuario'}</strong></div>
-        {/* Perfil completion and access description removed from header */}
-    </section>
-    <div className="profile-workspace">
-      <aside className="profile-menu" aria-label="Secciones del perfil">
-        <Tab active={tab === 'profile'} onClick={() => setTab('profile')} title="Perfil" detail="Datos personales" />
-        {data.showSecurityPanel && <Tab active={tab === 'security'} onClick={() => setTab('security')} title="Seguridad" detail="Contraseña y 2FA" />}
-        {data.showMateriasPanel && <Tab active={tab === 'subjects'} onClick={() => setTab('subjects')} title="Materias" detail="Asignaciones" />}
-        <Tab active={tab === 'app'} onClick={() => setTab('app')} title="Aplicación" detail="Estado y avisos" />
-        {data.showActivityPanel && <Tab active={tab === 'activity'} onClick={() => setTab('activity')} title="Registros" detail="Actividad" />}
-      </aside>
-      <div className="profile-content">
-        {status && <div className="notice" role="status">{status}</div>}
-        {tab === 'profile' && <ProfileForm data={data} done={finish} setStatus={setStatus} />}
-        {tab === 'security' && <Security data={data} done={finish} />}
-        {tab === 'subjects' && <Subjects data={data} />}
-        {tab === 'app' && <AppStatus data={data} />}
-        {tab === 'activity' && <Activity entries={data.activityLog} />}
+      <div className="profile-workspace">
+        <aside className="profile-menu" aria-label="Secciones del perfil">
+          <Tab active={tab === 'profile'} onClick={() => setTab('profile')} title="Perfil" detail="Datos personales" />
+          {data.showSecurityPanel && <Tab active={tab === 'security'} onClick={() => setTab('security')} title="Seguridad" detail="Contraseña y 2FA" />}
+          {data.showMateriasPanel && <Tab active={tab === 'subjects'} onClick={() => setTab('subjects')} title="Materias" detail="Asignaciones" />}
+          <Tab active={tab === 'app'} onClick={() => setTab('app')} title="Aplicación" detail="Estado y avisos" />
+          {data.showActivityPanel && <Tab active={tab === 'activity'} onClick={() => setTab('activity')} title="Registros" detail="Actividad" />}
+        </aside>
+        <div className="profile-content" ref={profileContentRef}>
+          {status && <div className="notice" role="status">{status}</div>}
+          {tab === 'profile' && <ProfileForm data={data} done={finish} setStatus={setStatus} />}
+          {tab === 'security' && <Security data={data} done={finish} />}
+          {tab === 'subjects' && <Subjects data={data} />}
+          {tab === 'app' && <AppStatus data={data} />}
+          {tab === 'activity' && <Activity entries={data.activityLog} />}
+        </div>
+        <aside className="profile-preview" aria-label="Vista previa del perfil" data-specialty={normalizeSpecialty(ownerEspecialidad)}>
+          <span className="profile-preview-kicker">Vista previa</span>
+          <div className="avatar" data-specialty={normalizeSpecialty(ownerEspecialidad)}>
+            {owner.fotoPerfil
+              ? <img src={owner.fotoPerfil} alt="Foto de perfil" />
+              : ownerEspecialidad
+                ? <SpecialtyIcon name={ownerEspecialidad} className="avatar-specialty-icon" />
+                : <CtnLogo className="avatar-specialty-icon" />}
+          </div>
+          <div className="profile-identity-copy">
+            <span className="badge">{data.profileRoleLabel}</span>
+            <h2>{owner.fullName?.trim() || owner.usuario || 'Usuario SCA'}</h2>
+            <strong>@{owner.usuario || 'sin-usuario'}</strong>
+            <p>{ownerEspecialidad || 'Colegio Técnico Nacional'}</p>
+          </div>
+        </aside>
       </div>
-    </div>
+      <ScrollToTopButton contentRef={profileContentRef} />
     </div>
   </AppShell>;
 }
 
 function Tab({ active, onClick, title, detail }: { active: boolean; onClick: () => void; title: string; detail: string }) {
   return <button type="button" className={active ? 'active' : ''} onClick={onClick}><strong>{title}</strong><small>{detail}</small></button>;
+}
+
+function ScrollToTopButton({ contentRef }: { contentRef: RefObject<HTMLDivElement | null> }) {
+  const [visible, setVisible] = useState(false);
+  const [desktop, setDesktop] = useState(() => window.matchMedia('(min-width: 901px)').matches);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(min-width: 901px)');
+    const onChange = () => setDesktop(mediaQuery.matches);
+    mediaQuery.addEventListener('change', onChange);
+    return () => mediaQuery.removeEventListener('change', onChange);
+  }, []);
+
+  useEffect(() => {
+    const target = desktop ? contentRef.current : window;
+    if (!target) return;
+    const updateVisibility = () => setVisible(desktop ? (contentRef.current?.scrollTop ?? 0) > 200 : window.scrollY > 200);
+    target.addEventListener('scroll', updateVisibility, { passive: true });
+    updateVisibility();
+    return () => target.removeEventListener('scroll', updateVisibility);
+  }, [contentRef, desktop]);
+
+  function scrollToTop() {
+    if (desktop) contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    else window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  return <button type="button" className={`profile-scroll-top${visible ? ' visible' : ''}`} onClick={scrollToTop} aria-label="Volver arriba" aria-hidden={!visible} tabIndex={visible ? 0 : -1}>
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 15 6-6 6 6" /></svg>
+  </button>;
 }
 
 function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (text: string) => Promise<void>; setStatus: (value: string) => void }) {
@@ -507,7 +553,14 @@ function Subjects({ data }: { data: ProfileResponse }) {
       {data.misAsignaciones.length === 0 ? <ContentState compact title="Sin asignaciones" detail="Administración todavía no vinculó materias y cursos a este perfil." /> : (
         <div className="profile-list">
           <div className="profile-list-header"><span>Materia</span><span>Especialidad</span><span>Curso</span></div>
-          {data.misAsignaciones.map((item) => <div key={item.id}><strong>{item.materiaNombre}</strong><span>{item.especialidad || ''}</span><span>{(item.cursoNivel ?? '') + (item.cursoSeccion ? (' · ' + item.cursoSeccion) : '')}</span></div>)}
+          {data.misAsignaciones.map((item) => <div key={item.id} data-specialty={normalizeSpecialty(item.especialidad)}>
+            <strong>{item.materiaNombre}</strong>
+            <span className="profile-list-especialidad">
+              <SpecialtyIcon name={item.especialidad || 'general'} className="profile-list-especialidad-icon" />
+              {item.especialidad || 'General'}
+            </span>
+            <span>{(item.cursoNivel ?? '') + (item.cursoSeccion ? (' · ' + item.cursoSeccion) : '')}</span>
+          </div>)}
         </div>
       )}
     </section>
