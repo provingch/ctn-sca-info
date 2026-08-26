@@ -2,6 +2,7 @@ package ctn.informatica.sca.controller;
 
 import ctn.informatica.sca.dao.AlumnoDao;
 import ctn.informatica.sca.dao.AsignacionDao;
+import ctn.informatica.sca.dao.CursoBaseDao;
 import ctn.informatica.sca.dao.CursoDao;
 import ctn.informatica.sca.dao.EspecialidadDao;
 import ctn.informatica.sca.dao.MateriaDao;
@@ -14,6 +15,7 @@ import ctn.informatica.sca.dao.PlanillaDao;
 import ctn.informatica.sca.model.Alumno;
 import ctn.informatica.sca.model.Asignacion;
 import ctn.informatica.sca.model.Curso;
+import ctn.informatica.sca.model.CursoBase;
 import ctn.informatica.sca.model.Especialidad;
 import ctn.informatica.sca.model.Materia;
 import ctn.informatica.sca.model.Padre;
@@ -74,7 +76,6 @@ public class AdminController {
             MateriaDao materiaDao = new MateriaDao();
             ProfesorDao profesorDao = new ProfesorDao();
             PadreDao padreDao = new PadreDao();
-            CursoDao cursoDao = new CursoDao();
             EspecialidadDao especialidadDao = new EspecialidadDao();
             Integer actingSpecialtyId = getSpecialtyAdminIdForUser(ApiAuth.requireUserId(authentication));
 
@@ -113,7 +114,7 @@ public class AdminController {
                 alumnosDb = alumnosDb.stream().filter(a -> canAccessAlumno(actingSpecialtyId, a.getCursoId())).toList();
             }
             List<StudentItem> alumnos = alumnosDb.stream().map(a -> new StudentItem(a.getId(), a.getNombre(), a.getApellido(), a.getCursoId(), a.getCi(), a.getCorreoEncargado(), a.getCorreoEncargado2())).toList();
-            List<Curso> cursosDb = actingSpecialtyId == null ? cursoDao.findAll() : cursoDao.findAllByEspecialidadId(actingSpecialtyId);
+            List<CursoBase> cursosDb = actingSpecialtyId == null ? new CursoBaseDao().findAll() : new CursoBaseDao().findAllByEspecialidadId(actingSpecialtyId);
             List<CourseItem> cursos = cursosDb.stream()
                     .map(c -> new CourseItem(c.getId(), c.getEspecialidad(), c.getNivel(), c.getSeccion())).toList();
             List<Especialidad> especialidadesDb;
@@ -752,15 +753,8 @@ public class AdminController {
     }
 
     private Integer getEspecialidadIdForCurso(int cursoId) {
-        try (java.sql.Connection con = new CursoDao().getCon(); java.sql.PreparedStatement ps = con.prepareStatement("SELECT especialidad_id FROM curso WHERE id = ?")) {
-            ps.setInt(1, cursoId);
-            try (java.sql.ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    int value = rs.getInt("especialidad_id");
-                    return rs.wasNull() ? null : value;
-                }
-                return null;
-            }
+        try {
+            return new CursoBaseDao().findEspecialidadId(cursoId);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }

@@ -37,18 +37,10 @@ public class PlanillaDao extends conexion {
     }
 
     private Set<Integer> findAllowedMateriaIdsForProfesor(int profesorId) throws SQLException {
-        String sql = "SELECT DISTINCT materia_id FROM ("
-                + "    SELECT p.materia_id FROM planilla p WHERE p.usuario_id = ? "
-                + "    UNION "
-                + "    SELECT um.materia_id FROM usuario_materia um WHERE um.usuario_id = ? "
-                + "    UNION "
-                + "    SELECT a.materia_id FROM asignacion a WHERE a.usuario_id = ?"
-                + ") ids";
+        String sql = "SELECT DISTINCT materia_id FROM asignacion WHERE usuario_id = ?";
         Set<Integer> allowedMateriaIds = new HashSet<>();
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, profesorId);
-            ps.setInt(2, profesorId);
-            ps.setInt(3, profesorId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     allowedMateriaIds.add(rs.getInt("materia_id"));
@@ -244,20 +236,13 @@ public class PlanillaDao extends conexion {
 
     public List<String> findSubjectsByProfesor(int profesorId) throws SQLException {
         String sql = "SELECT DISTINCT m.nombre AS materia_nombre "
-                + "FROM ("
-                + "    SELECT p.materia_id FROM planilla p WHERE p.usuario_id = ? "
-                + "    UNION "
-                + "    SELECT um.materia_id FROM usuario_materia um WHERE um.usuario_id = ? "
-                + "    UNION "
-                + "    SELECT a.materia_id FROM asignacion a WHERE a.usuario_id = ?"
-                + ") ids "
-                + "JOIN materia m ON m.id = ids.materia_id "
+                + "FROM asignacion a "
+                + "JOIN materia m ON m.id = a.materia_id "
+                + "WHERE a.usuario_id = ? "
                 + "ORDER BY m.nombre";
         List<String> subjects = new ArrayList<>();
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, profesorId);
-            ps.setInt(2, profesorId);
-            ps.setInt(3, profesorId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     String subject = rs.getString("materia_nombre");
@@ -272,17 +257,13 @@ public class PlanillaDao extends conexion {
 
     public List<Materia> findMateriasByProfesor(int profesorId) throws SQLException {
         String sql = "SELECT DISTINCT m.id, m.nombre, m.categoria "
-                + "FROM ("
-                + "    SELECT p.materia_id FROM planilla p WHERE p.usuario_id = ? "
-                + "    UNION "
-                + "    SELECT um.materia_id FROM usuario_materia um WHERE um.usuario_id = ?"
-                + ") ids "
-                + "JOIN materia m ON m.id = ids.materia_id "
+                + "FROM asignacion a "
+                + "JOIN materia m ON m.id = a.materia_id "
+                + "WHERE a.usuario_id = ? "
                 + "ORDER BY m.nombre";
         List<Materia> materias = new ArrayList<>();
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, profesorId);
-            ps.setInt(2, profesorId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     materias.add(new Materia(rs.getInt("id"), rs.getString("nombre"), rs.getString("categoria")));

@@ -1,7 +1,7 @@
 package ctn.informatica.sca.util;
 
 import ctn.informatica.sca.dao.AsignacionDao;
-import ctn.informatica.sca.dao.CursoDao;
+import ctn.informatica.sca.dao.CursoBaseDao;
 import ctn.informatica.sca.dao.HoraCatedraDao;
 import ctn.informatica.sca.dao.SalaDao;
 import ctn.informatica.sca.dto.HorarioImportRowDto;
@@ -33,7 +33,7 @@ public class HorarioWorkbookParser {
         for (Asignacion assignment : new AsignacionDao().findAll()) if (assignment.getCursoId() == cursoId) assignments.putIfAbsent(normalize(assignment.getMateriaNombre()), assignment);
         Map<String, HoraCatedra> hours = new HashMap<>();
         for (HoraCatedra hour : new HoraCatedraDao().findAll()) hours.put(key(hour.getHoraInicio(), hour.getHoraFin()), hour);
-        int specialtyId = new CursoDao().findEspecialidadId(cursoId);
+        int specialtyId = new CursoBaseDao().findEspecialidadId(cursoId);
         Map<String, Sala> salas = new HashMap<>();
         for (Sala sala : new SalaDao().findByEspecialidad(specialtyId)) salas.put(normalize(sala.getNombre()), sala);
 

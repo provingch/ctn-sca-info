@@ -1,6 +1,6 @@
 package ctn.informatica.sca.util;
 
-import ctn.informatica.sca.model.Curso;
+import ctn.informatica.sca.model.CursoBase;
 import ctn.informatica.sca.model.HoraCatedra;
 import ctn.informatica.sca.model.HorarioSlot;
 import java.io.IOException;
@@ -40,7 +40,7 @@ public class HorarioWorkbookBuilder {
     private static final String[] DIAS = {"Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"};
     private static final String ETIQUETA_MANANA = "M";
 
-    public XSSFWorkbook build(Curso curso, List<HoraCatedra> horas, List<HorarioSlot> slots) throws IOException {
+    public XSSFWorkbook build(CursoBase curso, List<HoraCatedra> horas, List<HorarioSlot> slots) throws IOException {
         XSSFWorkbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Horario");
 
@@ -87,10 +87,10 @@ public class HorarioWorkbookBuilder {
         return workbook;
     }
 
-    private int writeTitle(Sheet sheet, Styles styles, Curso curso, int lastCol, int rowIndex, XSSFWorkbook workbook, Sheet workbookSheet) {
+    private int writeTitle(Sheet sheet, Styles styles, CursoBase curso, int lastCol, int rowIndex, XSSFWorkbook workbook, Sheet workbookSheet) {
         Row titleRow = sheet.createRow(rowIndex++);
         Cell titleCell = titleRow.createCell(0);
-        titleCell.setCellValue("HORARIO DE CLASES" + (curso == null ? "" : " " + curso.getPeriod()));
+        titleCell.setCellValue("HORARIO DE CLASES");
         titleCell.setCellStyle(styles.title);
         sheet.addMergedRegion(new CellRangeAddress(titleRow.getRowNum(), titleRow.getRowNum(), 0, lastCol));
 

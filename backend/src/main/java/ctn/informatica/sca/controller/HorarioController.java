@@ -1,7 +1,7 @@
 package ctn.informatica.sca.controller;
 
 import ctn.informatica.sca.dao.AsignacionDao;
-import ctn.informatica.sca.dao.CursoDao;
+import ctn.informatica.sca.dao.CursoBaseDao;
 import ctn.informatica.sca.dao.HoraCatedraDao;
 import ctn.informatica.sca.dao.HorarioSlotDao;
 import ctn.informatica.sca.dao.SalaDao;
@@ -12,7 +12,7 @@ import ctn.informatica.sca.dto.HorarioImportResponse;
 import ctn.informatica.sca.dto.HorarioImportRowDto;
 import ctn.informatica.sca.dto.AsignacionResumenDto;
 import ctn.informatica.sca.model.Asignacion;
-import ctn.informatica.sca.model.Curso;
+import ctn.informatica.sca.model.CursoBase;
 import ctn.informatica.sca.model.HoraCatedra;
 import ctn.informatica.sca.model.HorarioSlot;
 import ctn.informatica.sca.model.Sala;
@@ -204,10 +204,11 @@ public class HorarioController {
     private void authorizeCourse(int cursoId, Authentication auth) {
         ApiAuth.requireUserId(auth);
         try {
-            Curso course = new CursoDao().findById(cursoId);
+            CursoBase course = new CursoBaseDao().findById(cursoId);
             if (course == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Curso no encontrado");
             Integer specialty = resolveCurrentSpecialtyAdminId(auth);
-            if (specialty != null && new CursoDao().findEspecialidadId(cursoId) != specialty) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tenés permiso para gestionar este curso");
+            Integer courseSpecialty = new CursoBaseDao().findEspecialidadId(cursoId);
+            if (specialty != null && !specialty.equals(courseSpecialty)) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tenés permiso para gestionar este curso");
         } catch (ResponseStatusException ex) { throw ex; }
         catch (Exception ex) { throw failure("No se pudo validar el curso", ex); }
     }
@@ -249,7 +250,10 @@ public class HorarioController {
 
     private void validateSalaForCourse(Integer salaId, int cursoId) throws Exception {
         if (salaId == null) return;
-        int specialtyId = new CursoDao().findEspecialidadId(cursoId);
+        Integer specialtyId = new CursoBaseDao().findEspecialidadId(cursoId);
+        if (specialtyId == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Curso no encontrado");
+        }
         boolean visible = new SalaDao().findByEspecialidad(specialtyId).stream().anyMatch(sala -> sala.getId() == salaId);
         if (!visible) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La sala no está disponible para la especialidad del curso");
     }
@@ -294,7 +298,7 @@ public class HorarioController {
     public void export(@RequestParam int cursoId, Authentication auth, HttpServletResponse response) {
         ApiAuth.requireUserId(auth);
         try {
-            Curso curso = new CursoDao().findById(cursoId);
+            CursoBase curso = new CursoBaseDao().findById(cursoId);
             if (curso == null) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Curso no encontrado");
             }

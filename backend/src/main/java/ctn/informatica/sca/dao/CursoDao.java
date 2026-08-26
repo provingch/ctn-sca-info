@@ -37,29 +37,20 @@ public class CursoDao extends conexion {
             + "FROM curso c "
                 + "JOIN especialidad e ON c.especialidad_id = e.id "
             + "WHERE ( "
-                + "    c.id IN (SELECT DISTINCT p.curso_id FROM planilla p WHERE p.usuario_id = ?) "
+                + "   c.id IN (SELECT curso_id FROM asignacion WHERE usuario_id = ?) "
                 + "   OR c.especialidad_id IN ( "
                 + "       SELECT DISTINCT me.especialidad_id "
-                + "       FROM planilla p "
-                + "       JOIN materia_especialidad me ON me.materia_id = p.materia_id "
-                + "       WHERE p.usuario_id = ? "
+                + "       FROM asignacion a "
+                + "       JOIN materia_especialidad me ON me.materia_id = a.materia_id "
+                + "       WHERE a.usuario_id = ? "
                 + "   ) "
-                + "   OR c.especialidad_id IN ( "
-                + "       SELECT DISTINCT me.especialidad_id "
-                + "       FROM usuario_materia um "
-                + "       JOIN materia_especialidad me ON me.materia_id = um.materia_id "
-                + "       WHERE um.usuario_id = ? "
-                + "   ) "
-                + "   OR c.id IN (SELECT curso_id FROM asignacion WHERE usuario_id = ?) "
             + ") "
             + "AND c.promocion >= ? "
             + "ORDER BY e.nombre, c.promocion, c.seccion";
         try (Connection con = getCon(); PreparedStatement stm = con.prepareStatement(sql)) {
             stm.setInt(1, userId);
             stm.setInt(2, userId);
-            stm.setInt(3, userId);
-            stm.setInt(4, userId);
-            stm.setInt(5, period);
+            stm.setInt(3, period);
             ResultSet rs = stm.executeQuery();
             while (rs.next()) {
                 int curso_id = rs.getInt("id");

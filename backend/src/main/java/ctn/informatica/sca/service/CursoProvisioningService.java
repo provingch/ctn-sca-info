@@ -71,7 +71,7 @@ public class CursoProvisioningService {
                 }
             }
             if (created.size() > createdBeforeEspecialidad) {
-                for (Profesor admin : profesorDao.findByEspecialidadId(e.getId())) {
+                for (Profesor admin : profesorDao.findAdminsByEspecialidadId(e.getId())) {
                     if (admin.getNivel() == 3) {
                         PushNotificationService.sendToUser(
                                 admin.getId(),
