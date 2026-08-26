@@ -87,6 +87,17 @@ public class CursoDao extends conexion {
         }
     }
 
+    public int findEspecialidadId(int id) throws SQLException {
+        String sql = "SELECT especialidad_id FROM curso WHERE id = ?";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return -1;
+                return rs.getInt(1);
+            }
+        }
+    }
+
     public Curso fromResultSet(ResultSet rs) throws SQLException {
         if (rs.next()) {
             int curso_id = rs.getInt("id");
