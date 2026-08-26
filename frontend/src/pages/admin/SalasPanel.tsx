@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ApiError } from '../../api/client';
 import { createSala, deleteSala, getSalas, updateSala, type AdminCatalog, type SalaItem } from '../../api/admin';
 
@@ -7,8 +7,11 @@ export default function SalasPanel({ data, status }: { data: AdminCatalog; statu
   const [name, setName] = useState('');
   const [specialty, setSpecialty] = useState('');
   const [editing, setEditing] = useState<number | null>(null);
-  const load = () => getSalas().then(setItems).catch((reason) => status(reason instanceof ApiError ? reason.message : 'No se pudo cargar las salas.'));
-  useEffect(() => { void load(); }, []);
+  const load = useCallback(
+    () => getSalas().then(setItems).catch((reason) => status(reason instanceof ApiError ? reason.message : 'No se pudo cargar las salas.')),
+    [status],
+  );
+  useEffect(() => { void load(); }, [load]);
   const save = async () => {
     try { const payload = { nombre: name.trim(), especialidadId: specialty ? Number(specialty) : null }; if (!payload.nombre) { status('El nombre de la sala es requerido.'); return; } if (editing) await updateSala(editing, payload); else await createSala(payload); setName(''); setSpecialty(''); setEditing(null); await load(); status('Sala guardada.'); }
     catch (reason) { status(reason instanceof ApiError ? reason.message : 'No se pudo guardar la sala.'); }

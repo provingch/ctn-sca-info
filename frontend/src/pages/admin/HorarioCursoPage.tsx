@@ -18,7 +18,8 @@ import {
   type SalaItem,
 } from '../../api/admin';
 import ContentState from '../../components/ui/ContentState';
-import HorarioTablaGrid, { SCHEDULE_DAYS, type HorarioGridCell } from './HorarioTablaGrid';
+import HorarioTablaGrid from './HorarioTablaGrid';
+import { SCHEDULE_DAYS, type HorarioGridCell } from './horarioSchedule';
 import SpecialtyIcon from '../../components/SpecialtyIcon';
 
 interface HorarioCursoPageProps {
