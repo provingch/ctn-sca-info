@@ -842,7 +842,7 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     ('federico.gonzalez', 42, 3, 'B', 4, 9, 2),
     ('oscar.villasanti', 4, 3, 'B', 3, 13, 2);
 
-INSERT INTO horario_slot (asignacion_id, usuario_id, curso_base_id, dia_semana, hora_catedra_id, sala_id)
+INSERT IGNORE INTO horario_slot (asignacion_id, usuario_id, curso_base_id, dia_semana, hora_catedra_id, sala_id)
 SELECT DISTINCT
     a.id,
     u.id,
