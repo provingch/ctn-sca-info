@@ -6,7 +6,7 @@ describe('SpecialtyIcon', () => {
   it('matches known specialty variants without accents', () => {
     render(<SpecialtyIcon name="Mecánica General" />);
 
-    expect(screen.getByRole('img', { name: 'Especialidad Mecánica General' }).querySelector('svg')).not.toBeNull();
+    expect(screen.getByRole('img', { name: 'Especialidad Mecánica General' }).querySelector('img')).not.toBeNull();
   });
 
   it('uses an initial fallback for an unknown specialty', () => {

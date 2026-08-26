@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createAdminRecord, deleteAdminRecord, getMateriaEspecialidades, updateAdminRecord, type AdminCatalog } from '../../api/admin';
 import { ApiError } from '../../api/client';
+import AnimatedSelect from '../../components/AnimatedSelect';
 
 interface MateriasPanelProps {
   data: AdminCatalog;
@@ -126,10 +127,7 @@ export default function MateriasPanel({ data, reload, status }: MateriasPanelPro
             </label>
             <label>
               Tipo
-              <select value={form.categoria} onChange={(event) => handleCategoriaChange(event.target.value)}>
-                <option value="comun">Común</option>
-                <option value="especifico">Específica</option>
-              </select>
+              <AnimatedSelect ariaLabel="Tipo de materia" value={form.categoria} onChange={handleCategoriaChange} options={[{ value: 'comun', label: 'Común' }, { value: 'especifico', label: 'Específica' }]} />
             </label>
 
             {onlySpecialty ? (
@@ -137,12 +135,7 @@ export default function MateriasPanel({ data, reload, status }: MateriasPanelPro
             ) : form.categoria === 'especifico' ? (
               <label>
                 Especialidad
-                <select value={form.especialidadIds[0] ?? ''} onChange={(event) => setForm({ ...form, especialidadIds: event.target.value ? [Number(event.target.value)] : [] })}>
-                  <option value="">Seleccione…</option>
-                  {data.especialidades.map((specialty) => (
-                    <option key={specialty.id} value={specialty.id}>{specialty.nombre}</option>
-                  ))}
-                </select>
+                <AnimatedSelect ariaLabel="Especialidad de la materia" value={form.especialidadIds[0] ?? ''} placeholder="Seleccione…" onChange={(value) => setForm({ ...form, especialidadIds: value ? [Number(value)] : [] })} options={data.especialidades.map((specialty) => ({ value: specialty.id, label: specialty.nombre }))} />
               </label>
             ) : (
               <fieldset className="check-list">

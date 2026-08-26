@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { clearUserGoogleTokens, createAdminRecord, deleteAdminRecord, updateAdminRecord, type AdminCatalog } from '../../api/admin';
 import { ApiError } from '../../api/client';
+import AnimatedSelect from '../../components/AnimatedSelect';
 
 interface UsuariosPanelProps {
   data: AdminCatalog;
@@ -180,18 +181,11 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
             </label>
             <label>
               Rol
-              <select value={form.nivel} onChange={(event) => setForm({ ...form, nivel: event.target.value, especialidadId: event.target.value === '3' ? form.especialidadId : '' })}>
-                {USER_LEVELS.filter((level) => isGlobalAdmin || level.value !== 3).map((level) => (
-                  <option key={level.value} value={level.value}>{level.label}</option>
-                ))}
-              </select>
+              <AnimatedSelect ariaLabel="Rol del usuario" value={form.nivel} onChange={(value) => setForm({ ...form, nivel: value, especialidadId: value === '3' ? form.especialidadId : '' })} options={USER_LEVELS.filter((level) => isGlobalAdmin || level.value !== 3)} />
             </label>
             {isGlobalAdmin && form.nivel === '3' && <label>
               Especialidad
-              <select value={form.especialidadId} onChange={(event) => setForm({ ...form, especialidadId: event.target.value })}>
-                <option value="">Administrador global</option>
-                {data.especialidades.map((specialty) => <option key={specialty.id} value={specialty.id}>{specialty.nombre}</option>)}
-              </select>
+              <AnimatedSelect ariaLabel="Especialidad administrada" value={form.especialidadId} onChange={(value) => setForm({ ...form, especialidadId: value })} options={[{ value: '', label: 'Administrador global' }, ...data.especialidades.map((specialty) => ({ value: specialty.id, label: specialty.nombre }))]} />
               <small className="field-help">Dejá vacío para crear un administrador global con acceso a todo.</small>
             </label>}
             <label>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createAdminRecord, createHorarioSlot, deleteAssignment, deleteHorarioSlot, getHoraCatedraCatalog, getHorarioByAsignacion, updateAdminRecord, type AdminCatalog, type HoraCatedraItem, type HorarioSlotItem } from '../../api/admin';
 import { ApiError } from '../../api/client';
+import AnimatedSelect from '../../components/AnimatedSelect';
 
 interface AsignacionesPanelProps {
   data: AdminCatalog;
@@ -317,12 +318,7 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
           <form className="form-grid" onSubmit={submit} style={{ alignContent: 'start' }}>
             <label>
               Materia
-              <select value={form.materiaId} onChange={(event) => setForm({ materiaId: event.target.value, cursoIds: [] })}>
-                <option value="">Seleccione…</option>
-                {materiaOptions.map((subject) => (
-                  <option key={subject.id} value={subject.id}>{subject.nombre}</option>
-                ))}
-              </select>
+              <AnimatedSelect ariaLabel="Materia" value={form.materiaId} placeholder="Seleccione…" onChange={(value) => setForm({ materiaId: value, cursoIds: [] })} options={materiaOptions.map((subject) => ({ value: subject.id, label: subject.nombre }))} />
             </label>
 
             <fieldset>
@@ -371,11 +367,7 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
           <div className="form-grid" style={{ alignContent: 'start' }}>
             <label>
               Día
-              <select value={horarioPopup.diaSemana} onChange={(event) => setHorarioPopup({ ...horarioPopup, diaSemana: Number(event.target.value) })}>
-                {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'].map((label, index) => (
-                  <option key={label} value={index + 1}>{label}</option>
-                ))}
-              </select>
+              <AnimatedSelect ariaLabel="Día de la semana" value={horarioPopup.diaSemana} onChange={(value) => setHorarioPopup({ ...horarioPopup, diaSemana: Number(value) })} options={['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'].map((label, index) => ({ value: index + 1, label }))} />
             </label>
 
             <HorarioStepper

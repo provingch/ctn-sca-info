@@ -3,6 +3,7 @@ import { ApiError } from '../../api/client';
 import { buscarPadres, createAdminRecord, deleteAdminRecord, getPadresDeAlumno, linkPadreAlumno, unlinkPadreAlumno, updateAdminRecord, type AdminCatalog, type PadreSummary } from '../../api/admin';
 import { normalizeSpecialty } from '../../theme/theme';
 import SpecialtyIcon from '../../components/SpecialtyIcon';
+import AnimatedSelect from '../../components/AnimatedSelect';
 
 interface AlumnosPanelProps {
   data: AdminCatalog;
@@ -323,12 +324,13 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
             ) : (
               <label>
                 Curso
-                <select value={form.cursoId} onChange={(event) => setForm({ ...form, cursoId: event.target.value })}>
-                  <option value="">Seleccione…</option>
-                  {data.cursos.map((course) => (
-                    <option key={course.id} value={course.id}>{course.nivel}° {course.seccion} · {course.especialidad}</option>
-                  ))}
-                </select>
+                <AnimatedSelect
+                  ariaLabel="Curso del alumno"
+                  value={form.cursoId}
+                  placeholder="Seleccione…"
+                  onChange={(value) => setForm({ ...form, cursoId: value })}
+                  options={data.cursos.map((course) => ({ value: course.id, label: `${course.nivel}° ${course.seccion} · ${course.especialidad}` }))}
+                />
               </label>
             )}
             <label>

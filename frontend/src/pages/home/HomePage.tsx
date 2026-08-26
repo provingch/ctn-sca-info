@@ -420,13 +420,8 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
               <label>Horario</label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
                 <div className="class-field">
-                  <label htmlFor="horarioClase">Inicio de clase</label>
-                  <select id="horarioClase" value={horario} onChange={(e) => setHorario(e.target.value)}>
-                    <option value="">Seleccione el horario</option>
-                    {HORARIOS_CATEDRA.map((hora) => (
-                      <option key={hora} value={hora}>{hora}</option>
-                    ))}
-                  </select>
+                  <label>Inicio de clase</label>
+                  <AnimatedSelect ariaLabel="Inicio de clase" value={horario} placeholder="Seleccione el horario" onChange={setHorario} options={HORARIOS_CATEDRA.map((hora) => ({ value: hora, label: hora }))} />
                 </div>
                 <div className="class-field">
                   <label htmlFor="horarioFinalClase">Final de la clase</label>
@@ -439,11 +434,8 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
               <input id="cantidadHoras" type="text" inputMode="numeric" maxLength={2} value={cantidadHoras} onChange={(e) => handleCantidadHorasInput(e.target.value)} placeholder="Ej: 18" />
             </div>
             <div className="class-field">
-              <label htmlFor="modalidadClase">Modalidad</label>
-              <select id="modalidadClase" value={modalidad} onChange={(e) => setModalidad(e.target.value)}>
-                <option>Presencial</option>
-                <option>Virtual</option>
-              </select>
+              <label>Modalidad</label>
+              <AnimatedSelect ariaLabel="Modalidad de la clase" value={modalidad} onChange={setModalidad} options={[{ value: 'Presencial', label: 'Presencial' }, { value: 'Virtual', label: 'Virtual' }]} />
             </div>
             <div className="class-field">
               <label htmlFor="instrumentoId">Tipo de clase</label>
@@ -470,10 +462,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
           {asignacionesDisponibles.length === 0 ? <p>No hay asignaciones disponibles para este curso.</p> : (
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               {asignacionesDisponibles.length > 1 && (
-                <select value={selectedAsignacionId ?? ''} onChange={(e) => setSelectedAsignacionId(Number(e.target.value))}>
-                  <option value="">Seleccione asignación…</option>
-                  {asignacionesDisponibles.map((a) => <option key={a.id} value={a.id}>{a.materiaNombre ?? `Asignación ${a.id}`}</option>)}
-                </select>
+                <AnimatedSelect className="plan-template-assignment-select" ariaLabel="Asignación para la plantilla" value={selectedAsignacionId ?? ''} placeholder="Seleccione asignación…" onChange={(value) => setSelectedAsignacionId(value ? Number(value) : null)} options={asignacionesDisponibles.map((a) => ({ value: a.id, label: a.materiaNombre ?? `Asignación ${a.id}` }))} />
               )}
               <button type="button" className="button" disabled={!selectedAsignacionId} onClick={async () => {
                 if (!selectedAsignacionId) return;
