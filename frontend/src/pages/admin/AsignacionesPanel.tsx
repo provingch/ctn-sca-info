@@ -143,7 +143,7 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
           await createHorarioSlot(horarioPopup.assignmentId, {
             diaSemana: horarioPopup.diaSemana,
             horaCatedraId: Number(item.id),
-            sala: horarioPopup.sala.trim() || undefined,
+            salaId: null,
           });
         } catch (err) {
           if (err instanceof ApiError && err.status === 409) {
@@ -417,7 +417,7 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
                   <li key={slot.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', border: '1px solid #ddd', padding: 8, borderRadius: 6 }}>
                     <span>
                       {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][slot.diaSemana - 1]} · {slot.horaCatedraNumero} · {slot.horaInicio}-{slot.horaFin}
-                      {slot.sala ? ` · ${slot.sala}` : ''}
+                      {slot.salaNombre ? ` · ${slot.salaNombre}` : ''}
                     </span>
                     <button type="button" className="button danger" onClick={() => void removeHorarioSlot(slot.id)}>Quitar</button>
                   </li>

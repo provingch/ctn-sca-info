@@ -4,6 +4,6 @@ public record CreateHorarioSlotRequest(
         Integer asignacionId,
         Integer diaSemana,
         Integer horaCatedraId,
-        String sala
+        Integer salaId
 ) {
 }

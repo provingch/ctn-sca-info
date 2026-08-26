@@ -8,7 +8,8 @@ public class HorarioSlot {
     private int cursoId;
     private int diaSemana;
     private int horaCatedraId;
-    private String sala;
+    private Integer salaId;
+    private String salaNombre;
 
     private String materiaNombre;
     private String cursoDescripcion;
@@ -21,14 +22,14 @@ public class HorarioSlot {
     public HorarioSlot() {
     }
 
-    public HorarioSlot(int id, int asignacionId, int usuarioId, int cursoId, int diaSemana, int horaCatedraId, String sala) {
+    public HorarioSlot(int id, int asignacionId, int usuarioId, int cursoId, int diaSemana, int horaCatedraId, Integer salaId) {
         this.id = id;
         this.asignacionId = asignacionId;
         this.usuarioId = usuarioId;
         this.cursoId = cursoId;
         this.diaSemana = diaSemana;
         this.horaCatedraId = horaCatedraId;
-        this.sala = sala;
+        this.salaId = salaId;
     }
 
     public int getId() {
@@ -79,13 +80,10 @@ public class HorarioSlot {
         this.horaCatedraId = horaCatedraId;
     }
 
-    public String getSala() {
-        return sala;
-    }
-
-    public void setSala(String sala) {
-        this.sala = sala;
-    }
+    public Integer getSalaId() { return salaId; }
+    public void setSalaId(Integer salaId) { this.salaId = salaId; }
+    public String getSalaNombre() { return salaNombre; }
+    public void setSalaNombre(String salaNombre) { this.salaNombre = salaNombre; }
 
     public String getMateriaNombre() {
         return materiaNombre;

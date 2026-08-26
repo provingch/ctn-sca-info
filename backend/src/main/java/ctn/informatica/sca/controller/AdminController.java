@@ -8,6 +8,7 @@ import ctn.informatica.sca.dao.MateriaDao;
 import ctn.informatica.sca.dao.PadreDao;
 import ctn.informatica.sca.dao.ProfesorDao;
 import ctn.informatica.sca.dao.TareaDao;
+import ctn.informatica.sca.dao.SalaDao;
 import ctn.informatica.sca.dao.GradeDao;
 import ctn.informatica.sca.dao.PlanillaDao;
 import ctn.informatica.sca.model.Alumno;
@@ -17,6 +18,7 @@ import ctn.informatica.sca.model.Especialidad;
 import ctn.informatica.sca.model.Materia;
 import ctn.informatica.sca.model.Padre;
 import ctn.informatica.sca.model.Profesor;
+import ctn.informatica.sca.model.Sala;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,6 +119,49 @@ public class AdminController {
         } catch (Exception ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo cargar el panel administrativo", ex);
         }
+    }
+
+    @GetMapping("/salas")
+    public List<SalaItem> salas(@RequestParam(required = false) Integer especialidadId, Authentication auth) {
+        ApiAuth.requireUserId(auth);
+        try {
+            Integer scopedId = getSpecialtyAdminIdForUser(ApiAuth.requireUserId(auth));
+            if (scopedId != null) especialidadId = scopedId;
+            List<Sala> salas = especialidadId == null ? new SalaDao().findAll() : new SalaDao().findByEspecialidad(especialidadId);
+            return salas.stream().map(s -> new SalaItem(s.getId(), s.getNombre(), s.getEspecialidadId(), s.getEspecialidadNombre())).toList();
+        } catch (Exception ex) { throw failure("No se pudo cargar el catálogo de salas", ex); }
+    }
+
+    @PostMapping("/salas")
+    @ResponseStatus(HttpStatus.CREATED)
+    public SalaItem createSala(@RequestBody SalaInput input, Authentication auth) {
+        ApiAuth.requireUserId(auth); requireGlobalAdmin(auth); validateSala(input);
+        try {
+            int id = new SalaDao().crear(input.nombre().trim(), input.especialidadId());
+            return new SalaItem(id, input.nombre().trim(), input.especialidadId(), null);
+        } catch (java.sql.SQLIntegrityConstraintViolationException ex) { throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe una sala con ese nombre para ese alcance"); }
+        catch (Exception ex) { throw failure("No se pudo crear la sala", ex); }
+    }
+
+    @PutMapping("/salas/{id}")
+    public SalaItem updateSala(@PathVariable int id, @RequestBody SalaInput input, Authentication auth) {
+        ApiAuth.requireUserId(auth); requireGlobalAdmin(auth); validateSala(input);
+        try {
+            SalaDao dao = new SalaDao();
+            if (!dao.editar(id, input.nombre().trim(), input.especialidadId())) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Sala no encontrada");
+            return new SalaItem(id, input.nombre().trim(), input.especialidadId(), null);
+        } catch (ResponseStatusException ex) { throw ex; }
+        catch (java.sql.SQLIntegrityConstraintViolationException ex) { throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya existe una sala con ese nombre para ese alcance"); }
+        catch (Exception ex) { throw failure("No se pudo actualizar la sala", ex); }
+    }
+
+    @DeleteMapping("/salas/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteSala(@PathVariable int id, Authentication auth) {
+        ApiAuth.requireUserId(auth); requireGlobalAdmin(auth);
+        try { if (!new SalaDao().eliminar(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Sala no encontrada"); }
+        catch (ResponseStatusException ex) { throw ex; }
+        catch (Exception ex) { throw failure("No se pudo eliminar la sala", ex); }
     }
 
     @PutMapping("/materias/{id}")
@@ -725,6 +770,14 @@ public class AdminController {
     }
 
     private void require(boolean condition, String message) { if (!condition) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message); }
+    private void validateSala(SalaInput input) {
+        require(input != null && input.nombre() != null && !input.nombre().isBlank(), "El nombre de la sala es requerido");
+        require(input.nombre().trim().length() <= 45, "El nombre de la sala no puede superar 45 caracteres");
+        if (input.especialidadId() != null) {
+            try { require(new EspecialidadDao().findById(input.especialidadId()) != null, "La especialidad no existe"); }
+            catch (Exception ex) { throw failure("No se pudo validar la especialidad de la sala", ex); }
+        }
+    }
     private void requireGlobalAdmin(Authentication auth) {
         if (getSpecialtyAdminIdForUser(ApiAuth.requireUserId(auth)) != null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Los administradores por especialidad no tienen acceso a este módulo");
@@ -790,6 +843,8 @@ public class AdminController {
     public record WipeResponse(String message, int deletedGrades, int deletedTasks, int planillaId, int clearedGoogleCourseIds) {}
     public record GlobalWipeResponse(String message, int deletedGrades, int deletedTasks, int clearedGoogleCourseIds) {}
     public record GoogleClearResponse(String message) {}
+    public record SalaItem(int id, String nombre, Integer especialidadId, String especialidadNombre) {}
+    public record SalaInput(String nombre, Integer especialidadId) {}
 
     public record GoogleTokenInfo(String googleEmail, boolean hasAccessToken, boolean hasRefreshToken, long tokenExpiry) {}
 

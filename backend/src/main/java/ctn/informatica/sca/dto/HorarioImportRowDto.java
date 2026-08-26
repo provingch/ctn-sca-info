@@ -7,6 +7,8 @@ public record HorarioImportRowDto(
         String materiaTexto,
         String profesorTexto,
         Integer asignacionId,
+        Integer salaId,
+        String salaNombre,
         String estado,
         String detalle) {
 }
