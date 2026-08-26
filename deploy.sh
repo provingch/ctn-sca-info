@@ -60,6 +60,9 @@ C_GREEN='\033[38;5;77m'
 C_YELLOW='\033[38;5;220m'
 C_BLUE='\033[38;5;33m'
 C_CYAN='\033[38;5;51m'
+C_MAGENTA='\033[38;5;201m'
+C_ORANGE='\033[38;5;208m'
+C_WHITE='\033[38;5;15m'
 C_GRAY='\033[38;5;244m'
 
 log()     { printf "%b\n" "  ${C_GRAY}[$(date '+%H:%M:%S')]${C_RESET} $*" | tee -a "$DEPLOY_LOG" 2>/dev/null || printf "%b\n" "  $*"; }
@@ -86,6 +89,74 @@ confirm() {
 press_enter() {
   printf "\n${C_DIM}Presioná ENTER para continuar...${C_RESET}"
   read -r
+}
+
+terminal_cols() {
+  local cols="${COLUMNS:-}"
+  if [[ -z "$cols" ]]; then
+    cols="$(tput cols 2>/dev/null || printf '80')"
+  fi
+  [[ "$cols" =~ ^[0-9]+$ ]] || cols=80
+  printf '%s' "$cols"
+}
+
+banner_art_path() {
+  local local_path="${SCRIPT_DIR}/ascii-art.html"
+  if [[ -f "$local_path" ]]; then
+    printf '%s' "$local_path"
+    return 0
+  fi
+
+  local downloads_path="${HOME}/Descargas/ascii-art.html"
+  if [[ -f "$downloads_path" ]]; then
+    printf '%s' "$downloads_path"
+    return 0
+  fi
+
+  return 1
+}
+
+render_color_banner() {
+  local cols="$1"
+  local art_path
+  if ! art_path="$(banner_art_path)"; then
+    return 1
+  fi
+
+  perl - "$cols" "$art_path" <<'PERL'
+use strict;
+use warnings;
+
+my ($cols, $path) = @ARGV;
+$cols = 80 if !defined($cols) || $cols !~ /^\d+$/ || $cols < 1;
+
+open my $fh, '<', $path or die "Unable to read $path: $!";
+local $/;
+my $html = <$fh>;
+close $fh;
+
+$html =~ s{(?is)<style.*?</style>}{}g;
+$html =~ s{(?i)<br\s*/?>}{\n}g;
+$html =~ s{(?i)<span style="color:#([0-9a-f]{6})">}{
+  my $hex = $1;
+  my ($r, $g, $b) = map { hex($_) } ($hex =~ /(..)(..)(..)/);
+  sprintf("\e[38;2;%d;%d;%dm", $r, $g, $b);
+}ge;
+$html =~ s{</span>}{\e[0m}gi;
+$html =~ s{(?is)<[^>]+>}{}g;
+
+my @lines = split /\n/, $html, -1;
+shift @lines while @lines && $lines[0] =~ /^\s*$/;
+pop @lines while @lines && $lines[-1] =~ /^\s*$/;
+
+for my $line (@lines) {
+  my $plain = $line;
+  $plain =~ s/\e\[[0-9;]*m//g;
+  my $len = length($plain);
+  my $pad = $cols > $len ? int(($cols - $len) / 2) : 0;
+  print ' ' x $pad, $line, "\n";
+}
+PERL
 }
 
 need_cmd() {
@@ -617,20 +688,15 @@ pause_menu() {
 }
 
 show_banner() {
-  cat <<'BANNER'
+  local cols
+  cols="$(terminal_cols)"
 
-              .-----------------------.
-             /        C T N            \
-            /   COLEGIO TECNICO         \
-           |        NACIONAL             |
-           |      +-----------+           |
-           |      |  S C A    |           |
-           |      +-----------+           |
-            \                           /
-             '-------------------------'
-
-          Sistema de Carpetas Academicas
-BANNER
+  printf '\n'
+  if ! render_color_banner "$cols"; then
+    printf '%b\n' "${C_ORANGE}${C_BOLD}CTN - SCA${C_RESET}"
+    printf '%b\n' "${C_CYAN}Sistema de Carpetas Academicas${C_RESET}"
+  fi
+  printf '\n'
 }
 
 main_menu() {
