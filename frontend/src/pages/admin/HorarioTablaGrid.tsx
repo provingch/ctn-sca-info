@@ -1,20 +1,4 @@
-import type { ReactNode } from 'react';
-import type { HoraCatedraItem } from '../../api/admin';
-
-export const SCHEDULE_DAYS = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-
-export interface HorarioGridCell {
-  content: ReactNode;
-  className?: string;
-  title?: string;
-}
-
-interface HorarioTablaGridProps {
-  hours: HoraCatedraItem[];
-  renderCell: (day: number, hour: HoraCatedraItem) => HorarioGridCell;
-  className?: string;
-  wrapClassName?: string;
-}
+import { SCHEDULE_DAYS, type HorarioTablaGridProps } from './horarioSchedule';
 
 export default function HorarioTablaGrid({ hours, renderCell, className, wrapClassName }: HorarioTablaGridProps) {
   return (

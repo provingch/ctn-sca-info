@@ -1,6 +1,7 @@
 package ctn.informatica.sca.util;
 
 import org.mindrot.jbcrypt.BCrypt;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 public final class PasswordUtil {
     private PasswordUtil() {
@@ -27,7 +28,11 @@ public final class PasswordUtil {
             try {
                 return BCrypt.checkpw(plainText, stored);
             } catch (IllegalArgumentException ex) {
-                return false;
+                try {
+                    return new BCryptPasswordEncoder().matches(plainText, stored);
+                } catch (Exception ex2) {
+                    return false;
+                }
             }
         }
         return false;
