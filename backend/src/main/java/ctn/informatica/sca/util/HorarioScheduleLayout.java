@@ -77,7 +77,7 @@ final class HorarioScheduleLayout {
             block.rows.add(row);
 
             boolean hayHuecoDespues = i + 1 < horasBloque.size()
-                    && !continuaSinHueco(hora, horasBloque.get(i + 1));
+                    && !areConsecutive(hora, horasBloque.get(i + 1));
             if (hayHuecoDespues) {
                 block.rows.add(RowLayout.receso());
             }
