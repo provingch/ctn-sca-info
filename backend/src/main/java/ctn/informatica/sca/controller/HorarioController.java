@@ -2,6 +2,7 @@ package ctn.informatica.sca.controller;
 
 import ctn.informatica.sca.dao.AsignacionDao;
 import ctn.informatica.sca.dao.CursoBaseDao;
+import ctn.informatica.sca.dao.EspecialidadDao;
 import ctn.informatica.sca.dao.HoraCatedraDao;
 import ctn.informatica.sca.dao.HorarioSlotDao;
 import ctn.informatica.sca.dao.SalaDao;
@@ -16,6 +17,7 @@ import ctn.informatica.sca.model.CursoBase;
 import ctn.informatica.sca.model.HoraCatedra;
 import ctn.informatica.sca.model.HorarioSlot;
 import ctn.informatica.sca.model.Sala;
+import ctn.informatica.sca.util.HorarioPdfBuilder;
 import ctn.informatica.sca.util.HorarioWorkbookBuilder;
 import jakarta.servlet.http.HttpServletResponse;
 import java.net.URLEncoder;
@@ -27,6 +29,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -315,6 +318,72 @@ public class HorarioController {
             throw ex;
         } catch (Exception ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo generar el horario del curso", ex);
+        }
+    }
+
+    @GetMapping("/export/pdf")
+    public void exportPdf(@RequestParam int cursoId, Authentication auth, HttpServletResponse response) {
+        ApiAuth.requireUserId(auth);
+        try {
+            CursoBase curso = new CursoBaseDao().findById(cursoId);
+            if (curso == null) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Curso no encontrado");
+            }
+            authorizeCourse(cursoId, auth);
+            List<HoraCatedra> horas = new HoraCatedraDao().findAll();
+            List<HorarioSlot> slots = new HorarioSlotDao().findByCurso(cursoId);
+            String base = "Horario_" + sanitize(curso.getEspecialidad()) + "_" + curso.getNivel() + curso.getSeccion();
+            response.setContentType("application/pdf");
+            response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + URLEncoder.encode(base + ".pdf", StandardCharsets.UTF_8).replace("+", "%20"));
+            try (PDDocument document = new HorarioPdfBuilder().build(curso, horas, slots)) {
+                document.save(response.getOutputStream());
+            }
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo generar el horario del curso", ex);
+        }
+    }
+
+    @GetMapping("/export/especialidad")
+    public void exportEspecialidad(@RequestParam int especialidadId, @RequestParam(defaultValue = "xlsx") String formato, Authentication auth, HttpServletResponse response) {
+        ApiAuth.requireUserId(auth);
+        try {
+            var especialidad = new EspecialidadDao().findById(especialidadId);
+            if (especialidad == null) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Especialidad no encontrada");
+            }
+            Integer currentSpecialtyId = resolveCurrentSpecialtyAdminId(auth);
+            if (currentSpecialtyId != null && !currentSpecialtyId.equals(especialidadId)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tenés permiso para gestionar esta especialidad");
+            }
+
+            List<CursoBase> cursos = new CursoBaseDao().findAllByEspecialidadId(especialidadId);
+            List<HoraCatedra> horas = new HoraCatedraDao().findAll();
+            List<HorarioSlot> slots = new ArrayList<>();
+            HorarioSlotDao slotDao = new HorarioSlotDao();
+            for (CursoBase curso : cursos) {
+                slots.addAll(slotDao.findByCurso(curso.getId()));
+            }
+
+            String base = "Horario_" + sanitize(especialidad.getNombre()) + "_completo";
+            if ("pdf".equalsIgnoreCase(formato)) {
+                response.setContentType("application/pdf");
+                response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + URLEncoder.encode(base + ".pdf", StandardCharsets.UTF_8).replace("+", "%20"));
+                try (PDDocument document = new HorarioPdfBuilder().buildEspecialidad(especialidad.getNombre(), cursos, horas, slots)) {
+                    document.save(response.getOutputStream());
+                }
+            } else {
+                response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+                response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + URLEncoder.encode(base + ".xlsx", StandardCharsets.UTF_8).replace("+", "%20"));
+                try (XSSFWorkbook workbook = new HorarioWorkbookBuilder().buildEspecialidad(especialidad.getNombre(), cursos, horas, slots)) {
+                    workbook.write(response.getOutputStream());
+                }
+            }
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo generar el horario de la especialidad", ex);
         }
     }
 

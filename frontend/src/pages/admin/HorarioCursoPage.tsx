@@ -6,6 +6,7 @@ import {
   createHorarioSlot,
   deleteHorarioSlot,
   downloadHorarioCurso,
+  downloadHorarioCursoPdf,
   getAsignacionesPorCurso,
   getHorarioCurso,
   getSalas,
@@ -175,11 +176,15 @@ export default function HorarioCursoPage({ cursoId, summary, hours, status, refr
     };
   };
 
-  async function download() {
+  async function download(format: 'xlsx' | 'pdf') {
     if (!courseItem) return;
     try {
-      await downloadHorarioCurso(courseItem.cursoId);
-      status(`Horario de ${courseItem.cursoDescripcion} descargado.`);
+      if (format === 'pdf') {
+        await downloadHorarioCursoPdf(courseItem.cursoId);
+      } else {
+        await downloadHorarioCurso(courseItem.cursoId);
+      }
+      status(`Horario de ${courseItem.cursoDescripcion} descargado en ${format.toUpperCase()}.`);
     } catch (reason) {
       status(reason instanceof ApiError ? reason.message : 'No se pudo descargar el horario.');
     }
@@ -279,7 +284,8 @@ export default function HorarioCursoPage({ cursoId, summary, hours, status, refr
             Cargar
             <input hidden type="file" accept=".xlsx" onChange={(event) => void previewFile(event.target.files?.[0] ?? null)} />
           </label>
-          <button className="button secondary" type="button" onClick={() => void download()}>Descargar</button>
+          <button className="button secondary" type="button" onClick={() => void download('xlsx')}>Descargar Excel</button>
+          <button className="button secondary" type="button" onClick={() => void download('pdf')}>Descargar PDF</button>
         </div>
       </div>
 
