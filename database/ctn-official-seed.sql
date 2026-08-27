@@ -695,12 +695,39 @@ INSERT INTO asignacion (usuario_id, materia_id, curso_base_id) VALUES
         (14, 54, 3), (14, 54, 4);
         -- Laboratorio Hardware 2do A/B - Cristian Delgado
 
--- ========================================
--- HORARIO
--- ========================================
--- Carga en dos pasos:
--- 1) horario_slot_staging guarda la grilla con datos legibles.
--- 2) el INSERT final resuelve asignacion_id / usuario_id / curso_base_id / hora_catedra_id.
+-- ========================================================================
+-- FIX: Horario Informática 2026 (Secciones A y B)
+-- Reconstruido celda por celda a partir de Horario_Info_2026_1_.pdf
+-- ========================================================================
+-- Este script reemplaza por completo la carga de horario_slot para la
+-- especialidad Informática (especialidad_id = 5). No toca alumnos,
+-- usuarios, materias ni asignaciones (salvo el PREREQUISITO de abajo).
+--
+-- PREREQUISITO — 2 correcciones en la tabla `asignacion` (necesarias para
+-- que el INSERT final de más abajo pueda resolver correctamente algunas
+-- clases; sin esto, esas filas simplemente no se insertan porque el JOIN
+-- contra `asignacion` no encuentra la combinación usuario+materia+curso):
+--
+-- 1) Psicología de 3er B estaba asignada al curso_base de 3er A (bug de
+--    copy-paste en el seed original: dos filas con curso_base_id=5).
+UPDATE asignacion
+   SET curso_base_id = 6
+ WHERE usuario_id = 20 AND materia_id = 13 AND curso_base_id = 5;
+ -- (usuario_id 20 = graciela.maidana; deja intacta la fila de usuario_id 22 = irma.cardozo)
+
+-- 2) A Claudia Burgos (Física) le faltaba la asignación para 3er año
+--    (A y B) — el PDF muestra "Física Aplicada" con ella en ambas
+--    secciones de 3er año, pero asignacion solo la vinculaba a 1ro/2do.
+INSERT IGNORE INTO asignacion (usuario_id, materia_id, curso_base_id) VALUES
+    (13, 7, 5), (13, 7, 6);
+
+-- ========================================================================
+-- Reemplazo de horario_slot para Informática
+-- ========================================================================
+DELETE hs FROM horario_slot hs
+JOIN curso_base cb ON cb.id = hs.curso_base_id
+WHERE cb.especialidad_id = 5;
+
 CREATE TEMPORARY TABLE horario_slot_staging (
     profesor_usuario VARCHAR(45) NOT NULL,
     materia_id INT NOT NULL,
@@ -718,26 +745,31 @@ CREATE TEMPORARY TABLE horario_slot_span (
 INSERT INTO horario_slot_span (n) VALUES (1), (2), (3), (4);
 
 INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, dia_semana, hora_numero, duracion) VALUES
-    -- Sección A, 1er año
-    ('oscar.ibarrola', 14, 1, 'A', 1, 1, 2),
-    ('mirian.montania', 6, 1, 'A', 1, 3, 2),
-    ('andres.rojas', 11, 1, 'A', 1, 5, 4),
-    ('federico.gonzalez', 47, 1, 'A', 2, 1, 4),
-    ('mirian.montania', 9, 1, 'A', 2, 5, 2),
-    ('zully.nunez', 8, 1, 'A', 2, 7, 2),
-    ('susana.alvarenga', 16, 1, 'A', 3, 1, 4),
-    ('claudia.burgos', 7, 1, 'A', 3, 5, 2),
-    ('juan.acosta', 52, 1, 'A', 4, 1, 2),
-    ('emilce.jara', 1, 1, 'A', 4, 5, 2),
-    ('susana.alvarenga', 16, 1, 'A', 4, 7, 1),
-    ('graciela.lopez', 41, 1, 'A', 5, 1, 2),
-    ('cristian.delgado', 44, 1, 'A', 5, 5, 4),
-    ('gerardo.ovelar', 4, 1, 'A', 1, 9, 2),
-    ('alcira.caceres', 10, 1, 'A', 2, 9, 2),
-    ('andres.rojas', 48, 1, 'A', 3, 9, 2),
-    ('graciela.maidana', 12, 1, 'A', 3, 11, 2),
+    -- ============================================================
+    -- SECCIÓN A — 1er año
+    -- ============================================================
+    ('oscar.ibarrola', 14, 1, 'A', 1, 1, 2),       -- Lunes: Química
+    ('mirian.montania', 6, 1, 'A', 1, 3, 2),       -- Lunes: Ética
+    ('andres.rojas', 11, 1, 'A', 1, 5, 4),         -- Lunes: Mate_Común
+    ('federico.gonzalez', 47, 1, 'A', 2, 1, 4),    -- Martes: Laboratorio Web
+    ('mirian.montania', 9, 1, 'A', 2, 5, 2),       -- Martes: Historia
+    ('zully.nunez', 8, 1, 'A', 2, 7, 2),           -- Martes: Guaraní
+    ('cristian.delgado', 53, 1, 'A', 2, 11, 2),    -- Martes tarde: Info Gral  [AGREGADO, faltaba]
+    ('susana.alvarenga', 16, 1, 'A', 3, 1, 4),     -- Miércoles: Literatura
+    ('claudia.burgos', 7, 1, 'A', 3, 5, 4),        -- Miércoles: Física        [FIX dur 2->4]
+    ('juan.acosta', 52, 1, 'A', 4, 1, 2),          -- Jueves: D. Técnico
+    ('emilce.jara', 1, 1, 'A', 4, 5, 2),           -- Jueves: Antropología
+    ('susana.alvarenga', 16, 1, 'A', 4, 7, 1),     -- Jueves: Literatura (1 período)
+    ('graciela.lopez', 41, 1, 'A', 5, 1, 2),       -- Viernes: Algorítmica
+    ('cristian.delgado', 44, 1, 'A', 5, 5, 4),     -- Viernes: Laboratorio Linux
+    ('gerardo.ovelar', 4, 1, 'A', 1, 9, 2),        -- Lunes tarde: E. Física
+    ('alcira.caceres', 10, 1, 'A', 2, 9, 2),       -- Martes tarde: Inglés
+    ('andres.rojas', 48, 1, 'A', 3, 9, 2),         -- Miércoles tarde: Mate_Aplicada
+    ('graciela.maidana', 12, 1, 'A', 3, 11, 2),    -- Miércoles tarde: Orientación
 
-    -- Sección A, 2do año
+    -- ============================================================
+    -- SECCIÓN A — 2do año
+    -- ============================================================
     ('graciela.lopez', 41, 2, 'A', 1, 1, 4),
     ('claudia.burgos', 7, 2, 'A', 2, 1, 4),
     ('gerardo.ovelar', 4, 2, 'A', 3, 1, 2),
@@ -755,13 +787,19 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     ('andres.rojas', 48, 2, 'A', 5, 5, 2),
     ('mirian.montania', 5, 2, 'A', 1, 9, 2),
     ('zully.nunez', 8, 2, 'A', 1, 11, 2),
-    ('susana.alvarenga', 49, 2, 'A', 2, 9, 2),
-    ('susana.alvarenga', 16, 2, 'A', 2, 11, 2),
+    -- REVISAR CON LA FUENTE ORIGINAL: en el PDF, Martes 13:00-14:10 (horas 9-10)
+    -- aparece con comillas de continuación sin materia visible arriba (posible
+    -- error/arrastre del documento original). Lo dejo SIN cargar (antes había
+    -- una fila falsa de "Plan de Lectura" ahí que no se ve en ningún lado del PDF).
+    -- Si en la realidad SÍ hay clase ahí, avisame qué materia/profesor va.
+    ('susana.alvarenga', 16, 2, 'A', 2, 11, 1),    -- Martes tarde: Literatura (1 período) [FIX dur 2->1; se elimina fila falsa de Plan de Lectura en hora 9]
     ('alcira.caceres', 10, 2, 'A', 3, 9, 2),
     ('mirian.montania', 9, 2, 'A', 3, 11, 2),
-    ('cristian.delgado', 54, 2, 'A', 4, 9, 2),
+    ('cristian.delgado', 54, 2, 'A', 4, 9, 4),     -- Jueves tarde: Laboratorio Hardware [FIX dur 2->4]
 
-    -- Sección A, 3er año
+    -- ============================================================
+    -- SECCIÓN A — 3er año  (verificado contra el PDF, sin cambios)
+    -- ============================================================
     ('andres.rojas', 11, 3, 'A', 1, 1, 4),
     ('ruth.roman', 15, 3, 'A', 2, 1, 2),
     ('mirian.montania', 9, 3, 'A', 2, 3, 2),
@@ -782,65 +820,74 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     ('ruth.estigarribia', 12, 3, 'A', 4, 9, 2),
     ('gerardo.ovelar', 4, 3, 'A', 5, 9, 2),
 
-    -- Sección B, 1er año
+    -- ============================================================
+    -- SECCIÓN B — 1er año
+    -- ============================================================
     ('federico.gonzalez', 47, 1, 'B', 1, 1, 4),
-    ('graciela.lopez', 41, 1, 'B', 2, 1, 4),
-    ('alcira.caceres', 10, 1, 'B', 3, 1, 2),
-    ('claudia.burgos', 7, 1, 'B', 4, 1, 4),
-    ('cristian.delgado', 44, 1, 'B', 5, 1, 4),
     ('emilce.jara', 1, 1, 'B', 1, 5, 2),
+    ('luz.angulo', 14, 1, 'B', 1, 7, 2),           -- Química               [AGREGADO, faltaba]
+    ('andres.rojas', 11, 1, 'B', 1, 9, 4),         -- Mate_Común            [FIX dur 2->4]
+    ('graciela.lopez', 41, 1, 'B', 2, 1, 4),
     ('susana.alvarenga', 16, 1, 'B', 2, 5, 2),
-    ('susana.alvarenga', 16, 1, 'B', 3, 5, 2),
-    ('susana.alvarenga', 49, 1, 'B', 4, 5, 2),
-    ('romy.aguilera', 8, 1, 'B', 5, 5, 2),
-    ('mirian.montania', 6, 1, 'B', 1, 7, 2),
     ('mirian.montania', 6, 1, 'B', 2, 7, 2),
-    ('ruth.estigarribia', 12, 1, 'B', 3, 7, 2),
-    ('cristian.delgado', 53, 1, 'B', 4, 7, 2),
-    ('andres.rojas', 48, 1, 'B', 5, 7, 2),
-    ('zully.nunez', 8, 1, 'B', 1, 9, 2),
+    ('alcira.caceres', 10, 1, 'B', 3, 1, 2),
+    ('null.chavez', 4, 1, 'B', 3, 3, 2),           -- E. Física             [AGREGADO, faltaba]
+    ('susana.alvarenga', 16, 1, 'B', 3, 5, 2),
     ('gustavo.ramirez', 9, 1, 'B', 3, 9, 2),
+    ('claudia.burgos', 7, 1, 'B', 4, 1, 4),
+    ('susana.alvarenga', 49, 1, 'B', 4, 5, 2),
+    ('cristian.delgado', 53, 1, 'B', 4, 7, 2),
     ('juan.acosta', 52, 1, 'B', 4, 9, 2),
     ('laura.rivas', 2, 1, 'B', 4, 11, 2),
-    ('andres.rojas', 11, 1, 'B', 1, 9, 2),
+    ('cristian.delgado', 44, 1, 'B', 5, 1, 4),
+    ('romy.aguilera', 8, 1, 'B', 5, 5, 2),
+    ('andres.rojas', 48, 1, 'B', 5, 7, 2),
 
-    -- Sección B, 2do año
+    -- ============================================================
+    -- SECCIÓN B — 2do año  (la más desordenada del seed anterior)
+    -- ============================================================
     ('cristian.delgado', 54, 2, 'B', 1, 1, 4),
-    ('andres.rojas', 48, 2, 'B', 2, 1, 4),
-    ('claudia.burgos', 7, 2, 'B', 3, 1, 4),
-    ('lourdes.galeano', 15, 2, 'B', 4, 1, 2),
-    ('andres.rojas', 11, 2, 'B', 5, 1, 2),
-    ('zully.nunez', 8, 2, 'B', 1, 5, 2),
-    ('cristian.delgado', 53, 2, 'B', 1, 7, 2),
-    ('federico.gonzalez', 45, 2, 'B', 3, 5, 2),
-    ('alcira.caceres', 10, 2, 'B', 4, 5, 2),
-    ('graciela.lopez', 41, 2, 'B', 5, 5, 2),
-    ('luz.angulo', 14, 2, 'B', 1, 7, 2),
-    ('mirian.montania', 5, 2, 'B', 2, 9, 2),
-    ('cristian.delgado', 53, 2, 'B', 2, 11, 2),
-    ('federico.gonzalez', 45, 2, 'B', 3, 9, 4),
-    ('alcira.caceres', 10, 2, 'B', 4, 9, 2),
+    ('federico.gonzalez', 46, 2, 'B', 1, 5, 2),    -- Laboratorio SQL       [FIX: antes decía Guaraní en este slot]
     ('laura.rivas', 2, 2, 'B', 1, 11, 2),
-    ('mirian.montania', 5, 2, 'B', 2, 11, 2),
-    ('cristian.delgado', 43, 2, 'B', 3, 11, 2),
-    ('luz.angulo', 14, 2, 'B', 4, 11, 2),
+    ('andres.rojas', 48, 2, 'B', 2, 1, 2),         -- Mate_Aplicada         [FIX dur 4->2]
+    ('abner.alcaraz', 9, 2, 'B', 2, 3, 2),         -- Historia              [AGREGADO, faltaba]
+    ('zully.nunez', 8, 2, 'B', 2, 5, 2),           -- Guaraní               [FIX: día 1->2]
+    ('null.mequer', 4, 2, 'B', 2, 7, 2),           -- E. Física             [AGREGADO, faltaba]
+    ('cristian.delgado', 53, 2, 'B', 2, 9, 2),     -- Info Gral             [FIX: hora 11->9]
+    ('mirian.montania', 5, 2, 'B', 2, 11, 2),      -- Educación Vial        [FIX: hora 9->11]
+    ('claudia.burgos', 7, 2, 'B', 3, 1, 4),
+    ('alcira.caceres', 10, 2, 'B', 3, 5, 2),       -- Inglés                [FIX: día 4->3]
+    ('susana.alvarenga', 16, 2, 'B', 3, 7, 2),     -- Literatura            [AGREGADO, faltaba]
+    ('federico.gonzalez', 45, 2, 'B', 3, 9, 4),
+    ('lourdes.galeano', 15, 2, 'B', 4, 1, 2),
+    ('luz.angulo', 14, 2, 'B', 4, 3, 2),           -- Química bloque 1      [FIX: estaba en día 1 / hora 7]
+    ('graciela.lopez', 41, 2, 'B', 4, 5, 4),       -- Algorítmica           [FIX: día 5->4, dur 2->4]
+    ('alcira.caceres', 10, 2, 'B', 4, 9, 2),
+    ('luz.angulo', 14, 2, 'B', 4, 11, 2),          -- Química bloque 2 (este ya estaba bien)
+    ('andres.rojas', 11, 2, 'B', 5, 1, 4),         -- Mate_Común            [FIX dur 2->4]
+    ('susana.alvarenga', 16, 2, 'B', 5, 5, 3),     -- Literatura, 3 períodos [FIX: día/hora/dur]
 
-    -- Sección B, 3er año
-    ('daniel.lenguaza', 3, 3, 'B', 1, 1, 2),
-    ('susana.alvarenga', 16, 3, 'B', 2, 1, 2),
+    -- ============================================================
+    -- SECCIÓN B — 3er año
+    -- ============================================================
+    ('daniel.lenguaza', 3, 3, 'B', 1, 1, 4),       -- Economía y Gestión    [FIX dur 2->4]
+    ('cristian.delgado', 51, 3, 'B', 1, 5, 4),     -- Seguridad en Riesgos  [AGREGADO, faltaba]
+    ('graciela.maidana', 13, 3, 'B', 1, 9, 2),     -- Psicología bloque 1   [FIX: era Literatura/Susana por error]
+    ('susana.alvarenga', 16, 3, 'B', 2, 1, 4),     -- Literatura            [FIX dur 2->4]
+    ('andres.rojas', 48, 3, 'B', 2, 5, 2),         -- Mate_Aplicada         [FIX: hora 9->5]
+    ('claudia.burgos', 7, 3, 'B', 2, 7, 2),        -- Física Aplicada       [AGREGADO, faltaba]
+    ('federico.gonzalez', 43, 3, 'B', 2, 9, 4),    -- Laboratorio Java      [FIX: hora 5->9]
     ('cristian.delgado', 50, 3, 'B', 3, 1, 4),
-    ('ruth.roman', 15, 3, 'B', 4, 1, 4),
-    ('laura.rivas', 2, 3, 'B', 5, 1, 2),
-    ('graciela.lopez', 41, 3, 'B', 1, 5, 4),
-    ('federico.gonzalez', 43, 3, 'B', 2, 5, 4),
-    ('cristian.delgado', 50, 3, 'B', 3, 5, 4),
-    ('irma.cardozo', 13, 3, 'B', 4, 5, 4),
-    ('graciela.lopez', 41, 3, 'B', 5, 5, 2),
-    ('susana.alvarenga', 16, 3, 'B', 1, 9, 2),
-    ('andres.rojas', 48, 3, 'B', 2, 9, 2),
+    ('federico.gonzalez', 43, 3, 'B', 3, 5, 4),    -- Laboratorio Java      [FIX: era Redes/Delgado por error]
     ('ruth.estigarribia', 12, 3, 'B', 3, 9, 2),
-    ('federico.gonzalez', 42, 3, 'B', 4, 9, 2),
-    ('oscar.villasanti', 4, 3, 'B', 3, 13, 2);
+    ('gustavo.ramirez', 9, 3, 'B', 3, 11, 2),      -- Historia              [AGREGADO, faltaba]
+    ('oscar.villasanti', 4, 3, 'B', 3, 13, 2),
+    ('ruth.roman', 15, 3, 'B', 4, 1, 4),
+    ('andres.rojas', 11, 3, 'B', 4, 5, 4),         -- Mate_Común            [FIX: era Psicología/Irma Cardozo por error]
+    ('federico.gonzalez', 42, 3, 'B', 4, 9, 4),    -- Laboratorio Android   [FIX dur 2->4]
+    ('laura.rivas', 2, 3, 'B', 5, 1, 2),
+    ('graciela.maidana', 13, 3, 'B', 5, 3, 2),     -- Psicología bloque 2   [AGREGADO, faltaba]
+    ('graciela.lopez', 41, 3, 'B', 5, 5, 4);       -- Algorítmica           [FIX dur 2->4]
 
 INSERT IGNORE INTO horario_slot (asignacion_id, usuario_id, curso_base_id, dia_semana, hora_catedra_id, sala_id)
 SELECT DISTINCT
@@ -860,3 +907,11 @@ ORDER BY cb.nivel, cb.seccion, s.dia_semana, hc.numero;
 
 DROP TEMPORARY TABLE horario_slot_span;
 DROP TEMPORARY TABLE horario_slot_staging;
+
+-- ========================================================================
+-- Verificación rápida sugerida después de correr esto:
+--   SELECT cb.nivel, cb.seccion, COUNT(*) FROM horario_slot hs
+--   JOIN curso_base cb ON cb.id = hs.curso_base_id
+--   WHERE cb.especialidad_id = 5 GROUP BY cb.nivel, cb.seccion;
+-- (comparar cantidad de slots contra lo esperado por el PDF)
+-- ========================================================================
