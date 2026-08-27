@@ -4,15 +4,17 @@ import ctn.informatica.sca.model.CursoBase;
 import ctn.informatica.sca.model.HoraCatedra;
 import ctn.informatica.sca.model.HorarioSlot;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.ClientAnchor;
+import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.Drawing;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
@@ -21,80 +23,104 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.util.IOUtils;
-import org.apache.poi.ss.usermodel.ClientAnchor;
-import org.apache.poi.ss.usermodel.CreationHelper;
-import org.apache.poi.ss.usermodel.Drawing;
-import java.io.InputStream;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 /**
  * Genera el horario de un curso en dos bloques (Mañana y T.O. / turno
  * opuesto), imitando el formato en uso por el colegio: columnas fijas de
- * Lunes a Viernes (más Sábado solo si hay datos cargados ese día), una fila
- * de RECESO donde corresponde según el hueco horario, y una fila de SALAS
- * al pie de cada bloque con los ambientes usados por día.
+ * Lunes a Sábado, una fila de RECESO donde corresponde según el hueco
+ * horario, y una fila de SALAS al pie de cada bloque con los ambientes
+ * usados por día.
  */
 public class HorarioWorkbookBuilder {
 
-    private static final String[] DIAS = {"Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"};
-    private static final String ETIQUETA_MANANA = "M";
-
     public XSSFWorkbook build(CursoBase curso, List<HoraCatedra> horas, List<HorarioSlot> slots) throws IOException {
         XSSFWorkbook workbook = new XSSFWorkbook();
-        Sheet sheet = workbook.createSheet("Horario");
+        Styles styles = new Styles(workbook);
+        createCourseSheet(workbook, styles, "Horario", curso, horas, slots);
+        workbook.setActiveSheet(0);
+        return workbook;
+    }
 
+    public XSSFWorkbook buildEspecialidad(String especialidadNombre, List<CursoBase> cursos, List<HoraCatedra> horas, List<HorarioSlot> slots) throws IOException {
+        XSSFWorkbook workbook = new XSSFWorkbook();
         Styles styles = new Styles(workbook);
 
-        int lastDay = 5;
-        for (HorarioSlot slot : slots) {
-            if (slot.getDiaSemana() == 6) {
-                lastDay = 6;
+        List<CursoBase> safeCourses = cursos == null ? List.of() : cursos;
+        Set<String> usedNames = new LinkedHashSet<>();
+        if (safeCourses.isEmpty()) {
+            createEmptySpecialtySheet(workbook, styles, especialidadNombre);
+            return workbook;
+        }
+
+        for (CursoBase curso : safeCourses) {
+            if (curso == null) {
+                continue;
             }
-        }
-        int dayCount = lastDay;
-        int lastCol = dayCount;
-
-        Map<Integer, List<HorarioSlot>> slotsPorHoraCatedra = new LinkedHashMap<>();
-        for (HorarioSlot slot : slots) {
-            slotsPorHoraCatedra.computeIfAbsent(slot.getHoraCatedraId(), key -> new ArrayList<>()).add(slot);
-        }
-
-        List<HoraCatedra> manana = new ArrayList<>();
-        List<HoraCatedra> tarde = new ArrayList<>();
-        for (HoraCatedra hora : horas) {
-            if (ETIQUETA_MANANA.equalsIgnoreCase(hora.getEtiqueta())) {
-                manana.add(hora);
-            } else {
-                tarde.add(hora);
-            }
-        }
-
-        int rowIndex = 0;
-        rowIndex = writeTitle(sheet, styles, curso, lastCol, rowIndex, workbook, sheet);
-        rowIndex++;
-
-        rowIndex = writeBloque(sheet, styles, "MAÑANA", manana, slotsPorHoraCatedra, dayCount, lastCol, rowIndex);
-        rowIndex++;
-        rowIndex = writeBloque(sheet, styles, "T.O.", tarde, slotsPorHoraCatedra, dayCount, lastCol, rowIndex);
-
-        sheet.setColumnWidth(0, 3200);
-        for (int i = 1; i <= lastCol; i++) {
-            sheet.setColumnWidth(i, 6500);
+            String baseName = buildSheetName(curso);
+            String sheetName = uniqueSheetName(baseName, usedNames);
+            Sheet sheet = workbook.createSheet(sheetName);
+            usedNames.add(sheetName);
+            List<HorarioSlot> courseSlots = filterSlotsForCourse(slots, curso.getId());
+            writeCourseSheet(workbook, sheet, styles, curso, horas, courseSlots);
         }
 
         workbook.setActiveSheet(0);
         return workbook;
     }
 
-    private int writeTitle(Sheet sheet, Styles styles, CursoBase curso, int lastCol, int rowIndex, XSSFWorkbook workbook, Sheet workbookSheet) {
+    private void createCourseSheet(XSSFWorkbook workbook, Styles styles, String sheetName, CursoBase curso, List<HoraCatedra> horas, List<HorarioSlot> slots) {
+        Sheet sheet = workbook.createSheet(sheetName);
+        writeCourseSheet(workbook, sheet, styles, curso, horas, slots);
+    }
+
+    private void createEmptySpecialtySheet(XSSFWorkbook workbook, Styles styles, String especialidadNombre) {
+        Sheet sheet = workbook.createSheet("Sin cursos");
+        Row row = sheet.createRow(0);
+        Cell cell = row.createCell(0);
+        cell.setCellValue("No hay cursos para " + (especialidadNombre == null ? "esta especialidad" : especialidadNombre));
+        cell.setCellStyle(styles.title);
+        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 4));
+        sheet.setColumnWidth(0, 9000);
+    }
+
+    private void writeCourseSheet(XSSFWorkbook workbook, Sheet sheet, Styles styles, CursoBase curso, List<HoraCatedra> horas, List<HorarioSlot> slots) {
+        int dayCount = detectDayCount(slots);
+        List<HorarioScheduleLayout.BlockLayout> blocks = HorarioScheduleLayout.buildBlocks(horas, slots, dayCount);
+        int rowIndex = 0;
+        rowIndex = writeTitle(sheet, styles, curso, rowIndex, workbook, dayCount);
+        rowIndex++;
+
+        if (blocks.isEmpty()) {
+            Row emptyRow = sheet.createRow(rowIndex++);
+            Cell emptyCell = emptyRow.createCell(0);
+            emptyCell.setCellValue("No hay horario cargado para este curso.");
+            emptyCell.setCellStyle(styles.grid);
+            sheet.addMergedRegion(new CellRangeAddress(emptyRow.getRowNum(), emptyRow.getRowNum(), 0, dayCount));
+        } else {
+            for (HorarioScheduleLayout.BlockLayout block : blocks) {
+                rowIndex = writeBlock(sheet, styles, block, rowIndex);
+                rowIndex++;
+            }
+        }
+
+        sheet.setColumnWidth(0, 3200);
+        for (int i = 1; i <= dayCount; i++) {
+            sheet.setColumnWidth(i, 6500);
+        }
+    }
+
+    private int writeTitle(Sheet sheet, Styles styles, CursoBase curso, int rowIndex, XSSFWorkbook workbook, int lastCol) {
         Row titleRow = sheet.createRow(rowIndex++);
+        titleRow.setHeightInPoints(24);
         Cell titleCell = titleRow.createCell(0);
         titleCell.setCellValue("HORARIO DE CLASES");
         titleCell.setCellStyle(styles.title);
         sheet.addMergedRegion(new CellRangeAddress(titleRow.getRowNum(), titleRow.getRowNum(), 0, lastCol));
 
         Row subtitleRow = sheet.createRow(rowIndex++);
+        subtitleRow.setHeightInPoints(22);
         Cell subtitleCell = subtitleRow.createCell(0);
         String subtitle = curso == null ? "" : ("Curso: " + curso.getCursoOrdinal() + " " + curso.getEspecialidad()
                 + "    Turno: Mañana - Tarde    Sección: " + curso.getSeccion());
@@ -102,138 +128,164 @@ public class HorarioWorkbookBuilder {
         subtitleCell.setCellStyle(styles.subtitle);
         sheet.addMergedRegion(new CellRangeAddress(subtitleRow.getRowNum(), subtitleRow.getRowNum(), 0, lastCol));
 
-        // Intentional: try to load institutional logo from backend resources
         try (InputStream is = HorarioWorkbookBuilder.class.getResourceAsStream("/static/logo-institucional.png")) {
             if (is != null) {
                 byte[] bytes = IOUtils.toByteArray(is);
                 int pictureIdx = workbook.addPicture(bytes, XSSFWorkbook.PICTURE_TYPE_PNG);
                 CreationHelper helper = workbook.getCreationHelper();
-                Drawing<?> drawing = workbookSheet.createDrawingPatriarch();
+                Drawing<?> drawing = sheet.createDrawingPatriarch();
                 ClientAnchor anchor = helper.createClientAnchor();
-                // place the logo at column 0, row 0 with an offset
                 anchor.setCol1(0);
                 anchor.setRow1(titleRow.getRowNum());
-                anchor.setCol2(0);
-                anchor.setRow2(titleRow.getRowNum() + 1);
+                anchor.setCol2(1);
+                anchor.setRow2(subtitleRow.getRowNum() + 1);
                 drawing.createPicture(anchor, pictureIdx);
             }
         } catch (Exception ignored) {
-            // If logo not found or insertion fails, continue without failing the whole export
+            // Si el logo no está disponible, seguimos sin abortar la exportación.
         }
 
         return rowIndex;
     }
 
-    private int writeBloque(Sheet sheet, Styles styles, String nombreBloque, List<HoraCatedra> horasBloque,
-            Map<Integer, List<HorarioSlot>> slotsPorHoraCatedra, int dayCount, int lastCol, int rowIndex) {
-
-        if (horasBloque.isEmpty()) {
-            return rowIndex;
-        }
-
+    private int writeBlock(Sheet sheet, Styles styles, HorarioScheduleLayout.BlockLayout block, int rowIndex) {
         Row bloqueTitleRow = sheet.createRow(rowIndex++);
+        bloqueTitleRow.setHeightInPoints(20);
         Cell bloqueTitleCell = bloqueTitleRow.createCell(0);
-        bloqueTitleCell.setCellValue(nombreBloque);
+        bloqueTitleCell.setCellValue(block.name);
         bloqueTitleCell.setCellStyle(styles.bloqueTitle);
-        sheet.addMergedRegion(new CellRangeAddress(bloqueTitleRow.getRowNum(), bloqueTitleRow.getRowNum(), 0, lastCol));
+        sheet.addMergedRegion(new CellRangeAddress(bloqueTitleRow.getRowNum(), bloqueTitleRow.getRowNum(), 0, block.dayCount));
 
         Row headerRow = sheet.createRow(rowIndex++);
+        headerRow.setHeightInPoints(22);
         Cell horaHeader = headerRow.createCell(0);
         horaHeader.setCellValue("Hora");
         horaHeader.setCellStyle(styles.header);
-        for (int dia = 1; dia <= dayCount; dia++) {
+        for (int dia = 1; dia <= block.dayCount; dia++) {
             Cell cell = headerRow.createCell(dia);
-            cell.setCellValue(DIAS[dia - 1]);
+            cell.setCellValue(HorarioScheduleLayout.DIAS[dia - 1]);
             cell.setCellStyle(styles.header);
         }
 
-        // Filas de datos, con una fila de RECESO insertada donde hay un salto
-        // en la hora de fin de una hora cátedra y el inicio de la siguiente.
-        Map<Integer, Set<String>> salasPorDia = new LinkedHashMap<>();
-        for (int dia = 1; dia <= dayCount; dia++) {
-            salasPorDia.put(dia, new LinkedHashSet<>());
-        }
-
-        for (int i = 0; i < horasBloque.size(); i++) {
-            HoraCatedra hora = horasBloque.get(i);
-
+        int dataStartRow = rowIndex;
+        for (int rowOffset = 0; rowOffset < block.rows.size(); rowOffset++) {
+            HorarioScheduleLayout.RowLayout rowLayout = block.rows.get(rowOffset);
             Row row = sheet.createRow(rowIndex++);
-            Cell horaCell = row.createCell(0);
-            String horaInicio = hora.getHoraInicio() == null ? "" : hora.getHoraInicio().toString();
-            String horaFin = hora.getHoraFin() == null ? "" : hora.getHoraFin().toString();
-            horaCell.setCellValue((i + 1) + "° " + horaInicio + " - " + horaFin);
-            horaCell.setCellStyle(styles.grid);
+            row.setHeightInPoints(rowLayout.receso ? 18 : 40);
 
-            for (int dia = 1; dia <= dayCount; dia++) {
+            if (rowLayout.receso) {
+                Cell recesoCell = row.createCell(0);
+                recesoCell.setCellValue("RECESO");
+                recesoCell.setCellStyle(styles.receso);
+                sheet.addMergedRegion(new CellRangeAddress(row.getRowNum(), row.getRowNum(), 0, block.dayCount));
+                for (int dia = 1; dia <= block.dayCount; dia++) {
+                    Cell filler = row.createCell(dia);
+                    filler.setCellStyle(styles.receso);
+                }
+                continue;
+            }
+
+            Cell hourCell = row.createCell(0);
+            hourCell.setCellValue(rowLayout.horaLabel);
+            hourCell.setCellStyle(styles.grid);
+
+            for (int dia = 1; dia <= block.dayCount; dia++) {
                 Cell cell = row.createCell(dia);
                 cell.setCellStyle(styles.grid);
-                HorarioSlot slot = findSlot(slotsPorHoraCatedra, hora.getId(), dia);
-                if (slot != null) {
-                    String materia = slot.getMateriaNombre() == null ? "" : slot.getMateriaNombre();
-                    String profesor = slot.getProfesorNombre() == null ? "" : slot.getProfesorNombre();
-                    String texto = materia.isBlank() ? profesor : (profesor.isBlank() ? materia : materia + "\n" + profesor);
-                    if (slot.getSalaNombre() != null && !slot.getSalaNombre().isBlank()) {
-                        texto += "\nSala: " + slot.getSalaNombre();
-                    }
-                    cell.setCellValue(texto);
-                    if (slot.getSalaNombre() != null && !slot.getSalaNombre().isBlank()) {
-                        salasPorDia.get(dia).add(slot.getSalaNombre());
-                    }
+                if (isMergedContinuation(block, rowOffset, dia)) {
+                    continue;
+                }
+                HorarioScheduleLayout.CellLayout cellLayout = rowLayout.cells.get(dia);
+                if (cellLayout != null && cellLayout.text != null && !cellLayout.text.isBlank()) {
+                    cell.setCellValue(cellLayout.text);
                 }
             }
+        }
 
-            boolean hayHuecoDespues = i + 1 < horasBloque.size()
-                    && !continuaSinHueco(hora, horasBloque.get(i + 1));
-            if (hayHuecoDespues) {
-                rowIndex = writeReceso(sheet, styles, dayCount, lastCol, rowIndex);
-            }
+        for (HorarioScheduleLayout.MergedRange range : block.mergedRanges) {
+            sheet.addMergedRegion(new CellRangeAddress(dataStartRow + range.startRow, dataStartRow + range.endRow, range.day, range.day));
         }
 
         Row salasRow = sheet.createRow(rowIndex++);
+        salasRow.setHeightInPoints(22);
         Cell salasHeaderCell = salasRow.createCell(0);
         salasHeaderCell.setCellValue("Salas");
         salasHeaderCell.setCellStyle(styles.header);
-        for (int dia = 1; dia <= dayCount; dia++) {
+        for (int dia = 1; dia <= block.dayCount; dia++) {
             Cell cell = salasRow.createCell(dia);
-            cell.setCellValue(String.join(" / ", salasPorDia.get(dia)));
+            cell.setCellValue(String.join(" / ", block.salasPorDia.get(dia)));
             cell.setCellStyle(styles.header);
         }
 
         return rowIndex;
     }
 
-    private int writeReceso(Sheet sheet, Styles styles, int dayCount, int lastCol, int rowIndex) {
-        Row recesoRow = sheet.createRow(rowIndex++);
-        Cell recesoCell = recesoRow.createCell(0);
-        recesoCell.setCellValue("RECESO");
-        recesoCell.setCellStyle(styles.receso);
-        sheet.addMergedRegion(new CellRangeAddress(recesoRow.getRowNum(), recesoRow.getRowNum(), 0, lastCol));
-        for (int i = 1; i <= dayCount; i++) {
-            Cell fillerCell = recesoRow.createCell(i);
-            fillerCell.setCellStyle(styles.receso);
-        }
-        return rowIndex;
-    }
-
-    /** True si no hay hueco entre el fin de una hora cátedra y el inicio de la siguiente (mismo minuto). */
-    private boolean continuaSinHueco(HoraCatedra anterior, HoraCatedra siguiente) {
-        if (anterior.getHoraFin() == null || siguiente.getHoraInicio() == null) {
-            return true;
-        }
-        return anterior.getHoraFin().equals(siguiente.getHoraInicio());
-    }
-
-    private HorarioSlot findSlot(Map<Integer, List<HorarioSlot>> slotsPorHoraCatedra, int horaCatedraId, int dia) {
-        List<HorarioSlot> candidatos = slotsPorHoraCatedra.get(horaCatedraId);
-        if (candidatos == null) {
-            return null;
-        }
-        for (HorarioSlot slot : candidatos) {
-            if (slot.getDiaSemana() == dia) {
-                return slot;
+    private boolean isMergedContinuation(HorarioScheduleLayout.BlockLayout block, int rowOffset, int day) {
+        for (HorarioScheduleLayout.MergedRange range : block.mergedRanges) {
+            if (range.day == day && range.startRow < rowOffset && range.endRow >= rowOffset) {
+                return true;
             }
         }
-        return null;
+        return false;
+    }
+
+    private int detectDayCount(List<HorarioSlot> slots) {
+        int maxDay = 5;
+        if (slots != null) {
+            for (HorarioSlot slot : slots) {
+                if (slot != null) {
+                    maxDay = Math.max(maxDay, slot.getDiaSemana());
+                }
+            }
+        }
+        return Math.min(6, Math.max(5, maxDay));
+    }
+
+    private List<HorarioSlot> filterSlotsForCourse(List<HorarioSlot> slots, int cursoBaseId) {
+        List<HorarioSlot> out = new ArrayList<>();
+        for (HorarioSlot slot : slots == null ? List.<HorarioSlot>of() : slots) {
+            if (slot != null && slot.getCursoId() == cursoBaseId) {
+                out.add(slot);
+            }
+        }
+        return out;
+    }
+
+    private String buildSheetName(CursoBase curso) {
+        String base = curso == null ? "Curso" : (curso.getCursoOrdinal() + curso.getSeccion());
+        if (base.length() > 31) {
+            base = base.substring(0, 31);
+        }
+        return base;
+    }
+
+    private String uniqueSheetName(String base, Set<String> usedNames) {
+        String candidate = sanitizeSheetName(base);
+        if (!usedNames.contains(candidate)) {
+            return candidate;
+        }
+
+        int suffix = 2;
+        while (true) {
+            String prefix = candidate;
+            String suffixText = "_" + suffix++;
+            if (prefix.length() + suffixText.length() > 31) {
+                prefix = prefix.substring(0, 31 - suffixText.length());
+            }
+            String variant = prefix + suffixText;
+            if (!usedNames.contains(variant)) {
+                return variant;
+            }
+        }
+    }
+
+    private String sanitizeSheetName(String value) {
+        String safe = value == null || value.isBlank() ? "Curso" : value.trim();
+        safe = safe.replaceAll("[\\\\/?*\\[\\]:]", "_");
+        if (safe.length() > 31) {
+            safe = safe.substring(0, 31);
+        }
+        return safe;
     }
 
     private static final class Styles {
