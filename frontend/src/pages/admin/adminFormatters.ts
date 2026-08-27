@@ -7,7 +7,7 @@ export function groupSchedulesBySpecialty(items: HorarioResumenCursoItem[]) {
     return result;
   }, {});
   return Object.entries(grouped)
-    .map(([specialty, courses]) => ({ specialty, courses }))
+    .map(([specialty, courses]) => ({ specialty, specialtyId: courses[0]?.especialidadId ?? null, courses }))
     .sort((first, second) => first.specialty.localeCompare(second.specialty, 'es', { sensitivity: 'base' }));
 }
 

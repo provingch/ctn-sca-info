@@ -667,6 +667,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .schedule-course-panel, .schedule-course-sidebar { display: grid; gap: 14px; }
 .schedule-course-preview-wrap { overflow: auto; }
 .schedule-course-grid { min-width: 900px; }
+.schedule-course-grid th, .schedule-course-grid td { border: 1px solid var(--line); }
 .schedule-course-grid td { min-width: 140px; vertical-align: top; }
 .schedule-course-grid td small, .schedule-course-grid td em { display: block; margin-top: 4px; font-size: .72rem; }
 .schedule-course-grid td em { color: inherit; font-style: normal; font-weight: 700; }

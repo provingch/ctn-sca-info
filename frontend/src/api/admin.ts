@@ -89,6 +89,7 @@ export interface HorarioResumenCursoItem {
   especialidad: string;
   cursoDescripcion: string;
   cantidadSlotsCargados: number;
+  nivel?: number;
 }
 
 export interface HorarioImportRowItem {
@@ -155,6 +156,8 @@ export const getHorarioByAsignacion = (asignacionId: number) => adminRequest(() 
 export const createHorarioSlot = (asignacionId: number, payload: { diaSemana: number; horaCatedraId: number; salaId?: number | null }) => adminRequest(() => api.post<HorarioSlotItem>(`/api/admin/horario/asignaciones/${asignacionId}/slots`, payload));
 export const deleteHorarioSlot = (id: number) => adminRequest(() => api.delete<void>(`/api/admin/horario/slots/${id}`));
 export const downloadHorarioCurso = (cursoId: number) => adminRequest(() => apiDownload(`/api/admin/horario/export?cursoId=${cursoId}`, `horario-curso-${cursoId}.xlsx`));
+export const downloadHorarioCursoPdf = (cursoId: number) => adminRequest(() => apiDownload(`/api/admin/horario/export/pdf?cursoId=${cursoId}`, `horario-curso-${cursoId}.pdf`));
+export const downloadHorarioEspecialidad = (especialidadId: number, formato: 'xlsx' | 'pdf') => adminRequest(() => apiDownload(`/api/admin/horario/export/especialidad?especialidadId=${especialidadId}&formato=${formato}`, `horario-especialidad-${especialidadId}.${formato}`));
 export const getHorarioResumen = () => adminRequest(() => api.get<HorarioResumenCursoItem[]>('/api/admin/horario/resumen'));
 export const previewHorarioImport = (cursoId: number, file: File) => { const form = new FormData(); form.append('file', file); return adminRequest(() => api.post<HorarioImportRowItem[]>(`/api/admin/horario/import/preview?cursoId=${cursoId}`, form)); };
 export const confirmHorarioImport = (cursoId: number, file: File) => { const form = new FormData(); form.append('file', file); return adminRequest(() => api.post<HorarioImportResponse>(`/api/admin/horario/import/confirm?cursoId=${cursoId}`, form)); };

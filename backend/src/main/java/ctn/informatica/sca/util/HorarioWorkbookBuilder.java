@@ -252,7 +252,7 @@ public class HorarioWorkbookBuilder {
     }
 
     private String buildSheetName(CursoBase curso) {
-        String base = curso == null ? "Curso" : (curso.getCursoOrdinal() + curso.getSeccion());
+        String base = curso == null ? "Curso" : (curso.getNivel() + curso.getSeccion());
         if (base.length() > 31) {
             base = base.substring(0, 31);
         }
