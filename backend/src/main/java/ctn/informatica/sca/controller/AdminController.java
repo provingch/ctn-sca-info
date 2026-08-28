@@ -22,6 +22,7 @@ import ctn.informatica.sca.model.Padre;
 import ctn.informatica.sca.model.Profesor;
 import ctn.informatica.sca.model.Sala;
 import java.util.List;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ctn.informatica.sca.service.ActivityLogService;
@@ -130,6 +131,16 @@ public class AdminController {
             return new CatalogResponse(materias, usuarios, asignaciones, alumnos, cursos, especialidades);
         } catch (Exception ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo cargar el panel administrativo", ex);
+        }
+    }
+
+    @GetMapping("/quejas")
+    public List<Map<String, Object>> listarQuejas(Authentication auth) {
+        ApiAuth.requireUserId(auth);
+        try {
+            return new ctn.informatica.sca.dao.QuejaDao().listar();
+        } catch (Exception ex) {
+            throw failure("No se pudo cargar las quejas", ex);
         }
     }
 
