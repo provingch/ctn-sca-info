@@ -1,12 +1,16 @@
 package ctn.informatica.sca.controller;
 
 import ctn.informatica.sca.dao.AlumnoDao;
+import ctn.informatica.sca.dao.ConfiguracionSistemaDao;
 import ctn.informatica.sca.dao.CursoBaseDao;
 import ctn.informatica.sca.dao.CursoDao;
+import ctn.informatica.sca.dao.IncumplimientoRevisionDao;
 import ctn.informatica.sca.dao.InstrumentoDao;
 import ctn.informatica.sca.dao.MateriaDao;
+import ctn.informatica.sca.dao.NotificacionDao;
 import ctn.informatica.sca.dao.PlanillaDao;
 import ctn.informatica.sca.dao.ProfesorDao;
+import ctn.informatica.sca.dao.QuejaDao;
 import ctn.informatica.sca.dao.RasgoPlanillaDao;
 import ctn.informatica.sca.dao.PlanCurricularDao;
 import ctn.informatica.sca.dao.UserDao;
@@ -82,9 +86,13 @@ public class HomeController {
     private final InstrumentoDao instrumentoDao;
     private final UserDao userDao;
     private final ActivityLogService activityLogService;
+    private final ConfiguracionSistemaDao configuracionSistemaDao;
+    private final IncumplimientoRevisionDao incumplimientoRevisionDao;
+    private final NotificacionDao notificacionDao;
+    private final QuejaDao quejaDao;
 
     public HomeController() {
-        this(new CursoDao(), new CursoBaseDao(), new ProfesorDao(), new PlanillaDao(), new MateriaDao(), new AlumnoDao(), new RasgoPlanillaDao(), new InstrumentoDao(), new UserDao(), new PlanCurricularDao(), new TemaVerificacionService(), new ActivityLogService());
+        this(new CursoDao(), new CursoBaseDao(), new ProfesorDao(), new PlanillaDao(), new MateriaDao(), new AlumnoDao(), new RasgoPlanillaDao(), new InstrumentoDao(), new UserDao(), new PlanCurricularDao(), new TemaVerificacionService(), new ActivityLogService(), new ConfiguracionSistemaDao(), new IncumplimientoRevisionDao(), new NotificacionDao(), new QuejaDao());
     }
 
     @Autowired
@@ -100,7 +108,11 @@ public class HomeController {
             UserDao userDao,
             PlanCurricularDao planCurricularDao,
             TemaVerificacionService temaVerificacionService,
-            ActivityLogService activityLogService) {
+            ActivityLogService activityLogService,
+            ConfiguracionSistemaDao configuracionSistemaDao,
+            IncumplimientoRevisionDao incumplimientoRevisionDao,
+            NotificacionDao notificacionDao,
+            QuejaDao quejaDao) {
         this.cursoDao = cursoDao;
         this.cursoBaseDao = cursoBaseDao;
         this.profesorDao = profesorDao;
@@ -113,6 +125,10 @@ public class HomeController {
         this.instrumentoDao = instrumentoDao;
         this.userDao = userDao;
         this.activityLogService = activityLogService;
+        this.configuracionSistemaDao = configuracionSistemaDao;
+        this.incumplimientoRevisionDao = incumplimientoRevisionDao;
+        this.notificacionDao = notificacionDao;
+        this.quejaDao = quejaDao;
     }
 
     @GetMapping
@@ -363,7 +379,15 @@ public class HomeController {
 
         String temaPersistido = composeTemaConContexto(request.instrumentoId() == null ? 0 : request.instrumentoId(), request.turno(), tema);
         try {
-            int planillaId = rasgoPlanillaDao.crearPlanillaRasgo(cursoId, user.getId(), temaPersistido, elegibles, ausentes, request.codigosPorAlumno(), request.asignacionId());
+            int planillaId = rasgoPlanillaDao.crearPlanillaRasgo(
+                    cursoId,
+                    user.getId(),
+                    temaPersistido,
+                    request.justificacionAtraso(),
+                    elegibles,
+                    ausentes,
+                    request.codigosPorAlumno(),
+                    request.asignacionId());
             String cursoLabel = "curso " + cursoId;
             try {
                 Curso curso = cursoDao.findById(cursoId);
@@ -390,12 +414,13 @@ public class HomeController {
                         try {
                             planCurricularDao.marcarCubierto(resultado.temaPlanCurricularId(), planillaId);
                         } catch (SQLException ex) {
-                            // No bloquear la creación de la planilla si el marcado falla; loguear y continuar
                             System.err.println("Error marcando tema como cubierto: " + ex.getMessage());
                         }
                     }
+                    if (request.justificacionAtraso() != null && !request.justificacionAtraso().isBlank()) {
+                        registrarIncumplimientoPorAtraso(request.asignacionId(), user.getId(), resultado.temaPlanCurricularId(), request.justificacionAtraso());
+                    }
                 } catch (Exception ex) {
-                    // No bloquear la creación de la planilla si la verificación falla; loguear y continuar
                     System.err.println("Error verificando tema contra plan curricular: " + ex.getMessage());
                 }
             }
@@ -483,6 +508,41 @@ public class HomeController {
         }
     }
 
+    @PostMapping("/quejas")
+    @PreAuthorize("hasAnyRole('LEVEL_1','LEVEL_2','LEVEL_3','LEVEL_5')")
+    public void registrarQueja(@RequestBody Map<String, Object> payload, Authentication authentication) {
+        User current = requireUser(authentication);
+        if (payload == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La queja es requerida");
+        }
+        Integer profesorId = payload.get("profesorId") instanceof Number n ? n.intValue() : null;
+        Integer cursoId = payload.get("cursoId") instanceof Number n ? n.intValue() : null;
+        Integer especialidadId = payload.get("especialidadId") instanceof Number n ? n.intValue() : null;
+        String motivo = payload.get("motivo") instanceof String s ? s : null;
+        if (profesorId == null || cursoId == null || especialidadId == null || motivo == null || motivo.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Faltan datos para registrar la queja");
+        }
+        try {
+            int id = quejaDao.crear(profesorId, cursoId, especialidadId, motivo, current.getId());
+            if (id <= 0) {
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo registrar la queja");
+            }
+            long total = quejaDao.contarPorProfesor(profesorId);
+            int umbral = configuracionSistemaDao.getInt("umbral_quejas_coordinacion", 5);
+            if (total >= umbral) {
+                List<User> coordinadores = userDao.findAllByLevel(5);
+                for (User coordinador : coordinadores) {
+                    if (coordinador == null) continue;
+                    notificacionDao.crear(coordinador.getId(), "profesor", "COORDINACION", "Profesor con quejas acumuladas", "El profesor " + profesorId + " alcanzó " + total + " quejas. Requiere revisión de coordinación pedagógica.", "QUEJA", (long) profesorId);
+                }
+            }
+        } catch (SQLException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo registrar la queja", ex);
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo registrar la queja", ex);
+        }
+    }
+
     private User requireUser(Authentication authentication) {
         int userId = ApiAuth.requireUserId(authentication);
         try {
@@ -493,6 +553,24 @@ public class HomeController {
             return user;
         } catch (Exception ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al cargar el usuario", ex);
+        }
+    }
+
+    private void registrarIncumplimientoPorAtraso(int asignacionId, int usuarioId, Integer temaPlanCurricularId, String justificacionAtraso) {
+        try {
+            int umbral = configuracionSistemaDao.getInt("umbral_atrasos_incumplimiento", 3);
+            long count = incumplimientoRevisionDao.contarPorAsignacionYUsuario(asignacionId, usuarioId, "ATRASO");
+            if (count + 1 >= umbral) {
+                incumplimientoRevisionDao.registrar(asignacionId, usuarioId, temaPlanCurricularId, "ATRASO",
+                        "Se registró una justificación de atraso y se alcanzó el umbral de incumplimiento", "PENDIENTE", null, null, null);
+                List<User> evaluadores = userDao.findAllByLevel(2);
+                for (User evaluador : evaluadores) {
+                    if (evaluador == null) continue;
+                    notificacionDao.crear(evaluador.getId(), "profesor", "INCUMPLIMIENTO", "Incumplimiento por atraso", "Asignación " + asignacionId + " alcanzó el umbral de atrasos justificados.", "INCUMPLIMIENTO_REVISION", (long) asignacionId);
+                }
+            }
+        } catch (Exception ex) {
+            log.warn("No se pudo registrar incumplimiento por atraso para asignación {}: {}", asignacionId, ex.getMessage());
         }
     }
 

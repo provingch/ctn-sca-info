@@ -10,6 +10,7 @@ public record CreateRasgoPlanillaRequest(
         Integer instrumentoId,
         String turno,
         String tema,
+        String justificacionAtraso,
         List<Integer> alumnosAusentes,
         Map<Integer, List<String>> codigosPorAlumno
 ) {
