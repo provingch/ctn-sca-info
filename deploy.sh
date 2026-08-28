@@ -196,11 +196,13 @@ C_ORANGE='\033[38;5;208m'
 C_WHITE='\033[38;5;15m'
 C_GRAY='\033[38;5;244m'
 
-log()     { printf "%b\n" "  ${C_GRAY}[$(date '+%H:%M:%S')]${C_RESET} $*" | tee -a "$DEPLOY_LOG" 2>/dev/null || printf "%b\n" "  $*"; }
-log_ok()  { printf "%b\n" "  ${C_GREEN}✔${C_RESET} $*" | tee -a "$DEPLOY_LOG" 2>/dev/null || printf "%b\n" "  ✔ $*"; }
-log_err() { printf "%b\n" "  ${C_RED}✘${C_RESET} $*" | tee -a "$DEPLOY_LOG" 2>/dev/null || printf "%b\n" "  ✘ $*"; }
-log_warn(){ printf "%b\n" "  ${C_YELLOW}▲${C_RESET} $*" | tee -a "$DEPLOY_LOG" 2>/dev/null || printf "%b\n" "  ▲ $*"; }
-log_info(){ printf "%b\n" "  ${C_CYAN}ℹ${C_RESET} $*" | tee -a "$DEPLOY_LOG" 2>/dev/null || printf "%b\n" "  ℹ $*"; }
+_log_to_file() { printf "%b\n" "$1" >> "$DEPLOY_LOG" 2>/dev/null || true; }
+
+log()     { printf "%b\n" "  ${C_GRAY}[$(date '+%H:%M:%S')]${C_RESET} $*"; _log_to_file "  [$(date '+%H:%M:%S')] $*"; }
+log_ok()  { printf "%b\n" "  ${C_GREEN}✔${C_RESET} $*"; _log_to_file "  OK $*"; }
+log_err() { printf "%b\n" "  ${C_RED}✘${C_RESET} $*"; _log_to_file "  ERROR $*"; }
+log_warn(){ printf "%b\n" "  ${C_YELLOW}▲${C_RESET} $*"; _log_to_file "  WARN $*"; }
+log_info(){ printf "%b\n" "  ${C_CYAN}ℹ${C_RESET} $*"; _log_to_file "  INFO $*"; }
 
 section() {
   local title="$1"
@@ -389,17 +391,18 @@ install_requirements() {
 
   case "$pm" in
     pacman)
+      # "mariadb" en Arch incluye servidor (mysqld) + cliente
       sudo pacman -Sy --needed --noconfirm \
-        git maven curl jdk-openjdk openssl mariadb-clients nodejs npm
+        git maven curl jdk-openjdk openssl mariadb nodejs npm
       ;;
     apt)
       sudo apt-get update -y
       sudo apt-get install -y \
-        git maven curl default-jdk openssl mariadb-client nodejs npm
+        git maven curl default-jdk openssl mariadb-server mariadb-client nodejs npm
       ;;
     dnf)
       sudo dnf install -y \
-        git maven curl java-17-openjdk openssl mariadb nodejs npm
+        git maven curl java-17-openjdk openssl mariadb-server nodejs npm
       ;;
     *)
       log_err "Gestor de paquetes no reconocido; instalá manualmente: ${REQUIRED_BINARIES[*]}"
@@ -963,6 +966,64 @@ load_default_database() {
   echo "==> Default database loaded successfully"
 }
 
+mariadb_service_name() {
+  local list
+  list="$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk '{print $1}')"
+  if grep -Fxq 'mariadb.service' <<<"$list"; then
+    printf 'mariadb'
+  elif grep -Fxq 'mysqld.service' <<<"$list"; then
+    printf 'mysqld'
+  else
+    printf 'mariadb'
+  fi
+}
+
+ensure_database_server_running() {
+  # Only manage a local server; a remote DB_HOST is someone else's responsibility.
+  if [[ "$DB_HOST" != "localhost" && "$DB_HOST" != "127.0.0.1" ]]; then
+    return 0
+  fi
+  if ! command -v systemctl >/dev/null 2>&1; then
+    log_warn "systemctl no disponible; se omite el arranque automático del servidor de DB"
+    return 0
+  fi
+
+  section "🐬  Servidor de base de datos"
+
+  local svc
+  svc="$(mariadb_service_name)"
+
+  if ! sudo test -d /var/lib/mysql/mysql; then
+    log_warn "Datadir de MariaDB no inicializado — ejecutando mariadb-install-db"
+    if command -v mariadb-install-db >/dev/null 2>&1; then
+      sudo mariadb-install-db --user=mysql --basedir=/usr --datadir=/var/lib/mysql >/dev/null
+      log_ok "Datadir inicializado"
+    else
+      log_err "mariadb-install-db no encontrado; instalá el paquete del servidor (mariadb / mariadb-server) primero"
+      return 1
+    fi
+  fi
+
+  if ! sudo systemctl is-active --quiet "$svc" 2>/dev/null; then
+    log_info "Iniciando servicio ${svc}..."
+    sudo systemctl enable --now "$svc"
+  fi
+
+  local waited=0
+  while (( waited < 20 )); do
+    if sudo systemctl is-active --quiet "$svc" 2>/dev/null; then
+      log_ok "Servidor de base de datos activo (${svc})"
+      return 0
+    fi
+    sleep 1
+    waited=$((waited + 1))
+  done
+
+  log_err "El servicio ${svc} no llegó a estar activo a tiempo"
+  sudo systemctl status "$svc" --no-pager -l || true
+  return 1
+}
+
 database_exists() {
   local client config password rc
   client="$(database_client 2>/dev/null || true)"
@@ -985,8 +1046,10 @@ database_exists() {
 }
 
 ensure_database_initialized() {
-  section "🗄️   Base de datos"
   normalize_db_type
+  ensure_database_server_running || return 1
+
+  section "🗄️   Base de datos"
 
   local client
   client="$(database_client 2>/dev/null || true)"
