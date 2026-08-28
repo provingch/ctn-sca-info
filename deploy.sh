@@ -19,6 +19,8 @@ first_run_wizard() {
   echo
   echo "Este asistente va a crear un archivo de configuración de usuario y un alias 'deploy'."
   echo "Los valores de configuración no incluirán la contraseña de la base de datos."
+  echo
+  echo "Nota: podés dejar en blanco las credenciales de Google o VAPID si no las tenés ahora."
   if ! confirm "¿Querés configurar el alias 'deploy' con tus datos ahora?"; then
     return 0
   fi
@@ -50,6 +52,19 @@ first_run_wizard() {
   read -r -p "SCA_DB_USER [${def_db_user}]: " inp
   SCA_DB_USER="${inp:-$def_db_user}"
 
+  # Opcionales: credenciales de Google OAuth y claves VAPID. Enter para dejar en blanco.
+  read -r -p "GOOGLE_CLIENT_ID [${GOOGLE_CLIENT_ID:-}]: " inp
+  GOOGLE_CLIENT_ID="${inp:-${GOOGLE_CLIENT_ID:-}}"
+  read -r -p "GOOGLE_CLIENT_SECRET [${GOOGLE_CLIENT_SECRET:-}]: " inp
+  GOOGLE_CLIENT_SECRET="${inp:-${GOOGLE_CLIENT_SECRET:-}}"
+  read -r -p "GOOGLE_REDIRECT_URI [${GOOGLE_REDIRECT_URI:-}]: " inp
+  GOOGLE_REDIRECT_URI="${inp:-${GOOGLE_REDIRECT_URI:-}}"
+
+  read -r -p "CTN_VAPID_PUBLIC_KEY [${CTN_VAPID_PUBLIC_KEY:-}]: " inp
+  CTN_VAPID_PUBLIC_KEY="${inp:-${CTN_VAPID_PUBLIC_KEY:-}}"
+  read -r -p "CTN_VAPID_PRIVATE_KEY [${CTN_VAPID_PRIVATE_KEY:-}]: " inp
+  CTN_VAPID_PRIVATE_KEY="${inp:-${CTN_VAPID_PRIVATE_KEY:-}}"
+
   mkdir -p "$USER_CONFIG_DIR"
   local tmpcfg
   tmpcfg="$(mktemp)"
@@ -62,6 +77,11 @@ first_run_wizard() {
   printf 'SCA_DB_HOST=%q\n' "$SCA_DB_HOST" >> "$tmpcfg"
   printf 'SCA_DB_PORT=%q\n' "$SCA_DB_PORT" >> "$tmpcfg"
   printf 'SCA_DB_USER=%q\n' "$SCA_DB_USER" >> "$tmpcfg"
+  printf 'GOOGLE_CLIENT_ID=%q\n' "$GOOGLE_CLIENT_ID" >> "$tmpcfg"
+  printf 'GOOGLE_CLIENT_SECRET=%q\n' "$GOOGLE_CLIENT_SECRET" >> "$tmpcfg"
+  printf 'GOOGLE_REDIRECT_URI=%q\n' "$GOOGLE_REDIRECT_URI" >> "$tmpcfg"
+  printf 'CTN_VAPID_PUBLIC_KEY=%q\n' "$CTN_VAPID_PUBLIC_KEY" >> "$tmpcfg"
+  printf 'CTN_VAPID_PRIVATE_KEY=%q\n' "$CTN_VAPID_PRIVATE_KEY" >> "$tmpcfg"
   install -m 600 "$tmpcfg" "$USER_CONFIG_FILE"
   rm -f "$tmpcfg"
   log_ok "Wrote user config to $USER_CONFIG_FILE"
@@ -369,11 +389,17 @@ write_db_env_file() {
   local persisted_demo_data=""
   local persisted_vapid_public_key=""
   local persisted_vapid_private_key=""
+  local persisted_google_client_id=""
+  local persisted_google_client_secret=""
+  local persisted_google_redirect_uri=""
   if [[ -f "$DB_ENV_FILE" ]]; then
     persisted_jwt_secret="$(read_env_file_value 'JWT_SECRET')"
     persisted_demo_data="$(read_env_file_value 'SCA_LOAD_DEMO_DATA')"
     persisted_vapid_public_key="$(read_env_file_value 'CTN_VAPID_PUBLIC_KEY')"
     persisted_vapid_private_key="$(read_env_file_value 'CTN_VAPID_PRIVATE_KEY')"
+    persisted_google_client_id="$(read_env_file_value 'GOOGLE_CLIENT_ID')"
+    persisted_google_client_secret="$(read_env_file_value 'GOOGLE_CLIENT_SECRET')"
+    persisted_google_redirect_uri="$(read_env_file_value 'GOOGLE_REDIRECT_URI')"
     if [[ -z "$password" ]]; then
       password="$(read_env_file_value 'SCA_DB_PASSWORD')"
       [[ -z "$password" ]] && password="$(read_env_file_value 'CTN_DB_PASSWORD')"
@@ -397,6 +423,9 @@ write_db_env_file() {
 
   local vapid_public_key="${VAPID_PUBLIC_KEY:-$persisted_vapid_public_key}"
   local vapid_private_key="${VAPID_PRIVATE_KEY:-$persisted_vapid_private_key}"
+  local google_client_id="${GOOGLE_CLIENT_ID:-$persisted_google_client_id}"
+  local google_client_secret="${GOOGLE_CLIENT_SECRET:-$persisted_google_client_secret}"
+  local google_redirect_uri="${GOOGLE_REDIRECT_URI:-$persisted_google_redirect_uri}"
 
   echo "==> Writing runtime config to $DB_ENV_FILE"
   local tmp_env
@@ -419,9 +448,9 @@ write_db_env_file() {
     printf 'SPRING_DATASOURCE_USERNAME=%q\n' "$DB_USER"
     printf 'SPRING_DATASOURCE_PASSWORD=%q\n' "$password"
     printf 'SCA_LOAD_DEMO_DATA=%q\n' "$load_demo_data"
-    [[ -n "$GOOGLE_CLIENT_ID" ]] && printf 'GOOGLE_CLIENT_ID=%q\n' "$GOOGLE_CLIENT_ID"
-    [[ -n "$GOOGLE_CLIENT_SECRET" ]] && printf 'GOOGLE_CLIENT_SECRET=%q\n' "$GOOGLE_CLIENT_SECRET"
-    [[ -n "$GOOGLE_REDIRECT_URI" ]] && printf 'GOOGLE_REDIRECT_URI=%q\n' "$GOOGLE_REDIRECT_URI"
+    [[ -n "$google_client_id" ]] && printf 'GOOGLE_CLIENT_ID=%q\n' "$google_client_id"
+    [[ -n "$google_client_secret" ]] && printf 'GOOGLE_CLIENT_SECRET=%q\n' "$google_client_secret"
+    [[ -n "$google_redirect_uri" ]] && printf 'GOOGLE_REDIRECT_URI=%q\n' "$google_redirect_uri"
     [[ -n "$vapid_public_key" ]] && printf 'CTN_VAPID_PUBLIC_KEY=%q\n' "$vapid_public_key"
     [[ -n "$vapid_private_key" ]] && printf 'CTN_VAPID_PRIVATE_KEY=%q\n' "$vapid_private_key"
     if [[ -n "$jwt_secret" ]]; then
