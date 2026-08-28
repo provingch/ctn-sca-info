@@ -373,9 +373,34 @@ public class HomeController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No hay alumnos válidos para crear la planilla de rasgos.");
         }
 
+        if (request.asignacionId() != null) {
+            try {
+                if (incumplimientoRevisionDao.existeBloqueoActivo(request.asignacionId())) {
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "La asignación tiene un incumplimiento pendiente o una suspensión activa. Revisa el historial antes de registrar otra clase.");
+                }
+            } catch (SQLException ex) {
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo validar el bloqueo de la asignación", ex);
+            }
+        }
+
         Set<Integer> ausentes = request.alumnosAusentes() == null
                 ? Collections.emptySet()
                 : request.alumnosAusentes().stream().filter(id -> id != null && id > 0).collect(Collectors.toSet());
+
+        String justificacionPersistida = null;
+        if (request.asignacionId() != null) {
+            try {
+                boolean atrasado = temaVerificacionService.estaAtrasado(request.asignacionId(), tema);
+                if (atrasado) {
+                    if (request.justificacionAtraso() == null || request.justificacionAtraso().isBlank()) {
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Se requiere justificar el atraso para este tema.");
+                    }
+                    justificacionPersistida = request.justificacionAtraso().trim();
+                }
+            } catch (SQLException ex) {
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo verificar el estado del tema", ex);
+            }
+        }
 
         String temaPersistido = composeTemaConContexto(request.instrumentoId() == null ? 0 : request.instrumentoId(), request.turno(), tema);
         try {
@@ -383,7 +408,7 @@ public class HomeController {
                     cursoId,
                     user.getId(),
                     temaPersistido,
-                    request.justificacionAtraso(),
+                    justificacionPersistida,
                     elegibles,
                     ausentes,
                     request.codigosPorAlumno(),

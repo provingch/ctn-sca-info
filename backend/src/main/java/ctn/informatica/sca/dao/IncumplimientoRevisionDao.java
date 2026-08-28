@@ -108,12 +108,41 @@ public class IncumplimientoRevisionDao extends conexion {
         return items;
     }
 
-    public boolean resolver(int id, String estado, int evaluadorId) throws SQLException {
-        String sql = "UPDATE incumplimiento_revision SET estado = ?, evaluador_id = ?, fecha_resolucion = CURRENT_TIMESTAMP WHERE id = ?";
+    public boolean existeBloqueoActivo(int asignacionId) throws SQLException {
+        String sql = "SELECT EXISTS(SELECT 1 FROM incumplimiento_revision WHERE asignacion_id = ? AND estado = 'PENDIENTE') OR EXISTS(SELECT 1 FROM incumplimiento_revision WHERE asignacion_id = ? AND estado = 'RECHAZADO' AND suspension_desde <= NOW() AND suspension_hasta >= NOW())";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, estado == null || estado.isBlank() ? "PERMITIDO" : estado.trim().toUpperCase());
+            ps.setInt(1, asignacionId);
+            ps.setInt(2, asignacionId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getBoolean(1);
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean resolver(int id, String estado, int evaluadorId) throws SQLException {
+        return resolver(id, estado, evaluadorId, null, null);
+    }
+
+    public boolean resolver(int id, String estado, int evaluadorId, java.time.LocalDateTime suspensionDesde, java.time.LocalDateTime suspensionHasta) throws SQLException {
+        String sql = "UPDATE incumplimiento_revision SET estado = ?, evaluador_id = ?, fecha_resolucion = CURRENT_TIMESTAMP, suspension_desde = ?, suspension_hasta = ? WHERE id = ?";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            String normalizedEstado = estado == null || estado.isBlank() ? "PERMITIDO" : estado.trim().toUpperCase();
+            ps.setString(1, normalizedEstado);
             ps.setInt(2, evaluadorId);
-            ps.setInt(3, id);
+            if (suspensionDesde == null) {
+                ps.setNull(3, java.sql.Types.TIMESTAMP);
+            } else {
+                ps.setTimestamp(3, Timestamp.valueOf(suspensionDesde));
+            }
+            if (suspensionHasta == null) {
+                ps.setNull(4, java.sql.Types.TIMESTAMP);
+            } else {
+                ps.setTimestamp(4, Timestamp.valueOf(suspensionHasta));
+            }
+            ps.setInt(5, id);
             return ps.executeUpdate() > 0;
         }
     }

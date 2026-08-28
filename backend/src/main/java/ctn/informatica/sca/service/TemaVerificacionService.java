@@ -57,10 +57,56 @@ public class TemaVerificacionService extends conexion {
         return false;
     }
 
+    public boolean estaAtrasado(int asignacionId, String temaIngresado) throws SQLException {
+        VerificacionResultado resultado = verificar(asignacionId, temaIngresado);
+        if ("ATRASADO".equalsIgnoreCase(resultado.estado())) {
+            return true;
+        }
+        if ("DUDOSO".equalsIgnoreCase(resultado.estado())) {
+            return this.ordenEsperadoActual() > 0 && this.ordenTemaPendiente(asignacionId) > this.ordenEsperadoActual();
+        }
+        return false;
+    }
+
+    public int ordenEsperadoActual() {
+        int mes = java.time.LocalDate.now().getMonthValue();
+        int etapa = AcademicPeriod.currentEtapa();
+        int base = (mes - 1) / 2 + 1;
+        if (etapa == 2) {
+            base += 6;
+        }
+        return Math.max(1, Math.min(base, 12));
+    }
+
+    public int ordenTemaPendiente(int asignacionId) throws SQLException {
+        int anio = AcademicPeriod.current();
+        int etapa = AcademicPeriod.currentEtapa();
+        Integer planId = null;
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("SELECT id FROM plan_curricular WHERE asignacion_id = ? AND etapa = ? AND estado = 'APROBADO' AND anio_lectivo = ? ORDER BY fecha_revision DESC LIMIT 1")) {
+            ps.setInt(1, asignacionId);
+            ps.setInt(2, etapa);
+            ps.setInt(3, anio);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) planId = rs.getInt("id");
+            }
+        }
+        if (planId == null) {
+            return 0;
+        }
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("SELECT COALESCE(MAX(orden_mes),0) FROM tema_plan_curricular WHERE plan_curricular_id = ? AND estado_cobertura = 'PENDIENTE'")) {
+            ps.setInt(1, planId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        }
+        return 0;
+    }
+
     public VerificacionResultado verificar(int asignacionId, String temaIngresado) throws SQLException {
         int anio = AcademicPeriod.current();
         int etapa = AcademicPeriod.currentEtapa();
-        // 1. resolver plan aprobado vigente para la asignacion, etapa y año actual
         Integer planId = null;
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("SELECT id FROM plan_curricular WHERE asignacion_id = ? AND etapa = ? AND estado = 'APROBADO' AND anio_lectivo = ? ORDER BY fecha_revision DESC LIMIT 1")) {
             ps.setInt(1, asignacionId);
@@ -75,29 +121,32 @@ public class TemaVerificacionService extends conexion {
             return new VerificacionResultado("SIN_PLAN", null);
         }
 
-        // 2. buscar próximo tema pendiente
         Integer temaId = null;
         String temasContenidos = null;
-        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("SELECT id, temas_contenidos FROM tema_plan_curricular WHERE plan_curricular_id = ? AND estado_cobertura = 'PENDIENTE' ORDER BY orden_mes, bloque LIMIT 1")) {
+        Integer ordenMes = null;
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("SELECT id, temas_contenidos, orden_mes FROM tema_plan_curricular WHERE plan_curricular_id = ? AND estado_cobertura = 'PENDIENTE' ORDER BY orden_mes, bloque LIMIT 1")) {
             ps.setInt(1, planId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     temaId = rs.getInt("id");
                     temasContenidos = rs.getString("temas_contenidos");
+                    ordenMes = rs.getInt("orden_mes");
                 }
             }
         }
 
         if (temaId == null) {
-            // plan aprobado pero ya cubierto totalmente
             return new VerificacionResultado("OK", null);
         }
 
         if (coincidenTemas(temaIngresado, temasContenidos)) {
-            // coincidencia suficiente -> OK, devolver tema candidato (controller marcará como cubierto)
             return new VerificacionResultado("OK", temaId);
-        } else {
-            return new VerificacionResultado("DUDOSO", temaId);
         }
+
+        if (ordenMes != null && ordenMes > ordenEsperadoActual()) {
+            return new VerificacionResultado("ATRASADO", temaId);
+        }
+
+        return new VerificacionResultado("DUDOSO", temaId);
     }
 }

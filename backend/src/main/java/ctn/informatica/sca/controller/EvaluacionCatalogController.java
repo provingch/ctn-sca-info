@@ -2,6 +2,7 @@ package ctn.informatica.sca.controller;
 
 import ctn.informatica.sca.dao.CursoDao;
 import ctn.informatica.sca.dao.EspecialidadDao;
+import ctn.informatica.sca.dao.IncumplimientoRevisionDao;
 import ctn.informatica.sca.dao.InstrumentoDao;
 import ctn.informatica.sca.dao.RasgoPlanillaDao;
 import ctn.informatica.sca.model.Curso;
@@ -11,10 +12,15 @@ import ctn.informatica.sca.model.RasgoPlanilla;
 import ctn.informatica.sca.util.ScaUiContext;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.time.LocalDateTime;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,16 +34,19 @@ public class EvaluacionCatalogController {
     private final EspecialidadDao especialidadDao;
     private final InstrumentoDao instrumentoDao;
     private final RasgoPlanillaDao rasgoPlanillaDao;
+    private final IncumplimientoRevisionDao incumplimientoRevisionDao;
 
     public EvaluacionCatalogController(
             CursoDao cursoDao,
             EspecialidadDao especialidadDao,
             InstrumentoDao instrumentoDao,
-            RasgoPlanillaDao rasgoPlanillaDao) {
+            RasgoPlanillaDao rasgoPlanillaDao,
+            IncumplimientoRevisionDao incumplimientoRevisionDao) {
         this.cursoDao = cursoDao;
         this.especialidadDao = especialidadDao;
         this.instrumentoDao = instrumentoDao;
         this.rasgoPlanillaDao = rasgoPlanillaDao;
+        this.incumplimientoRevisionDao = incumplimientoRevisionDao == null ? new IncumplimientoRevisionDao() : incumplimientoRevisionDao;
     }
 
     @GetMapping("/instrumentos")
@@ -134,6 +143,56 @@ public class EvaluacionCatalogController {
             throw ex;
         } catch (Exception ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al listar clases", ex);
+        }
+    }
+
+    @GetMapping("/evaluacion/incumplimientos")
+    @PreAuthorize("hasRole('LEVEL_2')")
+    public List<Map<String, Object>> listarIncumplimientos(Authentication authentication) {
+        ApiAuth.requireUserId(authentication);
+        try {
+            return incumplimientoRevisionDao.listarPendientes();
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudieron cargar los incumplimientos", ex);
+        }
+    }
+
+    @PostMapping("/evaluacion/incumplimientos/{id}/resolver")
+    @PreAuthorize("hasRole('LEVEL_2')")
+    public Map<String, Object> resolverIncumplimiento(@PathVariable int id, @RequestBody Map<String, Object> payload, Authentication authentication) {
+        int evaluadorId = ApiAuth.requireUserId(authentication);
+        if (payload == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Se requiere el estado de resolución.");
+        }
+        String estado = payload.get("estado") instanceof String s ? s.trim() : "PERMITIDO";
+        LocalDateTime suspensionDesde = parseDateTime(payload.get("suspensionDesde"));
+        LocalDateTime suspensionHasta = parseDateTime(payload.get("suspensionHasta"));
+        try {
+            boolean updated = incumplimientoRevisionDao.resolver(id, estado, evaluadorId, suspensionDesde, suspensionHasta);
+            if (!updated) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el incumplimiento a resolver.");
+            }
+            return Map.of("ok", true, "id", id, "estado", estado.toUpperCase());
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo resolver el incumplimiento", ex);
+        }
+    }
+
+    private LocalDateTime parseDateTime(Object raw) {
+        if (raw == null || raw.toString().isBlank()) {
+            return null;
+        }
+        String text = raw.toString();
+        try {
+            return LocalDateTime.parse(text);
+        } catch (Exception ignored) {
+            try {
+                return java.time.OffsetDateTime.parse(text).toLocalDateTime();
+            } catch (Exception ex) {
+                return null;
+            }
         }
     }
 
