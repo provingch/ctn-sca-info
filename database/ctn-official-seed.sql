@@ -592,7 +592,7 @@ INSERT INTO asignacion (usuario_id, materia_id, curso_base_id) VALUES
         (27, 5, 3), (27, 5, 4),
         -- Educacion Vial 2do A/B - Mirian Montania
 
-        (27, 6, 1), (28, 6, 2),
+        (27, 6, 1), (27, 6, 2),
         -- Etica 1ro A/B - Mirian Montania
 
         (13, 7, 1), (13, 7, 2),
@@ -605,7 +605,7 @@ INSERT INTO asignacion (usuario_id, materia_id, curso_base_id) VALUES
         (30, 8, 2),
         -- Guarani 1ro B - Romy Aguilera
 
-        (27, 9, 1), (27, 9, 3), (27, 9, 4),
+        (27, 9, 1), (27, 9, 3), (27, 9, 5),
         -- Historia 1ro, 2do, 3ro A - Mirian Montania
 
         (21, 9, 2), (21, 9, 6),
@@ -695,21 +695,6 @@ INSERT INTO asignacion (usuario_id, materia_id, curso_base_id) VALUES
         (14, 54, 3), (14, 54, 4);
         -- Laboratorio Hardware 2do A/B - Cristian Delgado
 
--- ========================================================================
--- FIX: Horario Informática 2026 (Secciones A y B)
--- Reconstruido celda por celda a partir de Horario_Info_2026_1_.pdf
--- ========================================================================
--- Este script reemplaza por completo la carga de horario_slot para la
--- especialidad Informática (especialidad_id = 5). No toca alumnos,
--- usuarios, materias ni asignaciones (salvo el PREREQUISITO de abajo).
---
--- PREREQUISITO — 2 correcciones en la tabla `asignacion` (necesarias para
--- que el INSERT final de más abajo pueda resolver correctamente algunas
--- clases; sin esto, esas filas simplemente no se insertan porque el JOIN
--- contra `asignacion` no encuentra la combinación usuario+materia+curso):
---
--- 1) Psicología de 3er B estaba asignada al curso_base de 3er A (bug de
---    copy-paste en el seed original: dos filas con curso_base_id=5).
 UPDATE asignacion
    SET curso_base_id = 6
  WHERE usuario_id = 20 AND materia_id = 13 AND curso_base_id = 5;
@@ -758,9 +743,10 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     ('susana.alvarenga', 16, 1, 'A', 3, 1, 4),     -- Miércoles: Literatura
     ('claudia.burgos', 7, 1, 'A', 3, 5, 4),        -- Miércoles: Física        [FIX dur 2->4]
     ('juan.acosta', 52, 1, 'A', 4, 1, 2),          -- Jueves: D. Técnico
+    ('laura.rivas', 52, 1, 'A', 4, 3, 2),          -- Jueves: Ciencias
     ('emilce.jara', 1, 1, 'A', 4, 5, 2),           -- Jueves: Antropología
     ('susana.alvarenga', 16, 1, 'A', 4, 7, 1),     -- Jueves: Literatura (1 período)
-    ('graciela.lopez', 41, 1, 'A', 5, 1, 2),       -- Viernes: Algorítmica
+    ('graciela.lopez', 41, 1, 'A', 5, 1, 4),       -- Viernes: Algorítmica
     ('cristian.delgado', 44, 1, 'A', 5, 5, 4),     -- Viernes: Laboratorio Linux
     ('gerardo.ovelar', 4, 1, 'A', 1, 9, 2),        -- Lunes tarde: E. Física
     ('alcira.caceres', 10, 1, 'A', 2, 9, 2),       -- Martes tarde: Inglés
@@ -781,7 +767,7 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     ('zully.nunez', 8, 2, 'A', 1, 5, 2),
     ('federico.gonzalez', 46, 2, 'A', 1, 7, 2),
     ('cristian.delgado', 53, 2, 'A', 2, 5, 2),
-    ('andres.rojas', 11, 2, 'A', 2, 7, 2),
+    ('andres.rojas', 11, 2, 'A', 2, 7, 4),
     ('oscar.ibarrola', 14, 2, 'A', 3, 5, 4),
     ('federico.gonzalez', 45, 2, 'A', 4, 5, 4),
     ('andres.rojas', 48, 2, 'A', 5, 5, 2),
@@ -827,12 +813,14 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     ('emilce.jara', 1, 1, 'B', 1, 5, 2),
     ('luz.angulo', 14, 1, 'B', 1, 7, 2),           -- Química               [AGREGADO, faltaba]
     ('andres.rojas', 11, 1, 'B', 1, 9, 4),         -- Mate_Común            [FIX dur 2->4]
+    ('emilce.jara', 11, 1, 'B', 1, 5, 2),
     ('graciela.lopez', 41, 1, 'B', 2, 1, 4),
     ('susana.alvarenga', 16, 1, 'B', 2, 5, 2),
     ('mirian.montania', 6, 1, 'B', 2, 7, 2),
     ('alcira.caceres', 10, 1, 'B', 3, 1, 2),
     ('null.chavez', 4, 1, 'B', 3, 3, 2),           -- E. Física             [AGREGADO, faltaba]
     ('susana.alvarenga', 16, 1, 'B', 3, 5, 2),
+    ('ruth.estigarribia', 12, 1, 'B', 3, 7, 2),
     ('gustavo.ramirez', 9, 1, 'B', 3, 9, 2),
     ('claudia.burgos', 7, 1, 'B', 4, 1, 4),
     ('susana.alvarenga', 49, 1, 'B', 4, 5, 2),
@@ -847,7 +835,8 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     -- SECCIÓN B — 2do año  (la más desordenada del seed anterior)
     -- ============================================================
     ('cristian.delgado', 54, 2, 'B', 1, 1, 4),
-    ('federico.gonzalez', 46, 2, 'B', 1, 5, 2),    -- Laboratorio SQL       [FIX: antes decía Guaraní en este slot]
+    ('federico.gonzalez', 46, 2, 'B', 1, 5, 4),    -- Laboratorio SQL       [FIX: antes decía Guaraní en este slot]
+    ('zully.nunez', 46, 2, 'B', 1, 9, 2),
     ('laura.rivas', 2, 2, 'B', 1, 11, 2),
     ('andres.rojas', 48, 2, 'B', 2, 1, 2),         -- Mate_Aplicada         [FIX dur 4->2]
     ('abner.alcaraz', 9, 2, 'B', 2, 3, 2),         -- Historia              [AGREGADO, faltaba]
