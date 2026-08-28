@@ -108,6 +108,28 @@ public class IncumplimientoRevisionDao extends conexion {
         return items;
     }
 
+    public Map<String, Object> findById(int id) throws SQLException {
+        String sql = "SELECT id, asignacion_id, usuario_id, estado, evaluador_id, suspension_desde, suspension_hasta "
+                + "FROM incumplimiento_revision WHERE id = ?";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Map<String, Object> row = new HashMap<>();
+                    row.put("id", rs.getLong("id"));
+                    row.put("asignacionId", rs.getInt("asignacion_id"));
+                    row.put("usuarioId", rs.getInt("usuario_id"));
+                    row.put("estado", rs.getString("estado"));
+                    row.put("evaluadorId", rs.getObject("evaluador_id", Integer.class));
+                    row.put("suspensionDesde", rs.getTimestamp("suspension_desde"));
+                    row.put("suspensionHasta", rs.getTimestamp("suspension_hasta"));
+                    return row;
+                }
+            }
+        }
+        return null;
+    }
+
     public boolean existeBloqueoActivo(int asignacionId) throws SQLException {
         String sql = "SELECT EXISTS(SELECT 1 FROM incumplimiento_revision WHERE asignacion_id = ? AND estado = 'PENDIENTE') OR EXISTS(SELECT 1 FROM incumplimiento_revision WHERE asignacion_id = ? AND estado = 'RECHAZADO' AND suspension_desde <= NOW() AND suspension_hasta >= NOW())";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {

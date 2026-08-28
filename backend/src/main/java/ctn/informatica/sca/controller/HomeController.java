@@ -559,16 +559,23 @@ public class HomeController {
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo registrar la queja");
             }
             long total = quejaDao.contarPorProfesor(profesorId);
-            int umbral = configuracionSistemaDao.getInt("umbral_quejas_coordinacion", 5);
-            if (total >= umbral) {
-                List<User> coordinadores = userDao.findAllByLevel(5);
-                for (User coordinador : coordinadores) {
-                    if (coordinador == null) continue;
-                    notificacionDao.crear(coordinador.getId(), "profesor", "COORDINACION", "Profesor con quejas acumuladas", "El profesor " + profesorId + " alcanzó " + total + " quejas. Requiere revisión de coordinación pedagógica.", "QUEJA", (long) profesorId);
+                int umbral = configuracionSistemaDao.getInt("umbral_quejas_coordinacion", 5);
+                if (total >= umbral) {
+                    List<User> coordinadores = userDao.findAllByLevel(5);
+                    for (User coordinador : coordinadores) {
+                        if (coordinador == null) continue;
+                        notificacionDao.crear(
+                                coordinador.getId(),
+                                NotificacionDao.resolveUserType(userDao, coordinador.getId()),
+                                "COORDINACION",
+                                "Profesor con quejas acumuladas",
+                                "El profesor " + profesorId + " alcanzó " + total + " quejas. Requiere revisión de coordinación pedagógica.",
+                                "QUEJA",
+                                (long) profesorId);
+                    }
                 }
-            }
-        } catch (SQLException ex) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo registrar la queja", ex);
+            } catch (SQLException ex) {
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo registrar la queja", ex);
         } catch (Exception ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo registrar la queja", ex);
         }
@@ -597,7 +604,14 @@ public class HomeController {
                 List<User> evaluadores = userDao.findAllByLevel(2);
                 for (User evaluador : evaluadores) {
                     if (evaluador == null) continue;
-                    notificacionDao.crear(evaluador.getId(), "profesor", "INCUMPLIMIENTO", "Incumplimiento por atraso", "Asignación " + asignacionId + " alcanzó el umbral de atrasos justificados.", "INCUMPLIMIENTO_REVISION", (long) asignacionId);
+                    notificacionDao.crear(
+                            evaluador.getId(),
+                            NotificacionDao.resolveUserType(userDao, evaluador.getId()),
+                            "INCUMPLIMIENTO",
+                            "Incumplimiento por atraso",
+                            "Asignación " + asignacionId + " alcanzó el umbral de atrasos justificados.",
+                            "INCUMPLIMIENTO_REVISION",
+                            (long) asignacionId);
                 }
             }
         } catch (Exception ex) {

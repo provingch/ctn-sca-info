@@ -8,6 +8,7 @@ import ctn.informatica.sca.dao.EspecialidadDao;
 import ctn.informatica.sca.dao.MateriaDao;
 import ctn.informatica.sca.dao.PadreDao;
 import ctn.informatica.sca.dao.ProfesorDao;
+import ctn.informatica.sca.dao.QuejaDao;
 import ctn.informatica.sca.dao.TareaDao;
 import ctn.informatica.sca.dao.SalaDao;
 import ctn.informatica.sca.dao.GradeDao;
@@ -47,27 +48,26 @@ public class AdminController {
     private final TareaDao tareaDao;
     private final GradeDao gradeDao;
     private final PlanillaDao planillaDao;
+    private final QuejaDao quejaDao;
     private final ActivityLogService activityLogService;
 
     public AdminController() {
-        this.tareaDao = new TareaDao();
-        this.gradeDao = new GradeDao();
-        this.planillaDao = new PlanillaDao();
-        this.activityLogService = new ActivityLogService();
+        this(new TareaDao(), new GradeDao(), new PlanillaDao(), new QuejaDao(), new ActivityLogService());
     }
 
     AdminController(TareaDao tareaDao, GradeDao gradeDao, PlanillaDao planillaDao) {
-        this.tareaDao = tareaDao;
-        this.gradeDao = gradeDao;
-        this.planillaDao = planillaDao;
-        this.activityLogService = new ActivityLogService();
+        this(tareaDao, gradeDao, planillaDao, new QuejaDao(), new ActivityLogService());
     }
 
-    @org.springframework.beans.factory.annotation.Autowired
-    public AdminController(TareaDao tareaDao, GradeDao gradeDao, PlanillaDao planillaDao, ActivityLogService activityLogService) {
+    AdminController(TareaDao tareaDao, GradeDao gradeDao, PlanillaDao planillaDao, QuejaDao quejaDao) {
+        this(tareaDao, gradeDao, planillaDao, quejaDao, new ActivityLogService());
+    }
+
+    public AdminController(TareaDao tareaDao, GradeDao gradeDao, PlanillaDao planillaDao, QuejaDao quejaDao, ActivityLogService activityLogService) {
         this.tareaDao = tareaDao;
         this.gradeDao = gradeDao;
         this.planillaDao = planillaDao;
+        this.quejaDao = quejaDao == null ? new QuejaDao() : quejaDao;
         this.activityLogService = activityLogService == null ? new ActivityLogService() : activityLogService;
     }
     @GetMapping
@@ -136,9 +136,22 @@ public class AdminController {
 
     @GetMapping("/quejas")
     public List<Map<String, Object>> listarQuejas(Authentication auth) {
-        ApiAuth.requireUserId(auth);
+        int userId = ApiAuth.requireUserId(auth);
         try {
-            return new ctn.informatica.sca.dao.QuejaDao().listar();
+            List<Map<String, Object>> quejas = quejaDao.listar();
+            Integer actingSpecialtyId = getSpecialtyAdminIdForUser(userId);
+            if (actingSpecialtyId == null) {
+                return quejas;
+            }
+            return quejas.stream()
+                    .filter(row -> {
+                        Object especialidadValue = row.get("especialidadId");
+                        if (!(especialidadValue instanceof Number number)) {
+                            return false;
+                        }
+                        return number.intValue() == actingSpecialtyId;
+                    })
+                    .toList();
         } catch (Exception ex) {
             throw failure("No se pudo cargar las quejas", ex);
         }
@@ -724,7 +737,7 @@ public class AdminController {
         }
     }
 
-    private Integer getSpecialtyAdminIdForUser(int userId) {
+    protected Integer getSpecialtyAdminIdForUser(int userId) {
         ProfesorDao profesorDao = new ProfesorDao();
         Profesor professor = profesorDao.findById(userId);
         if (professor == null || professor.getNivel() != 3) {

@@ -1,6 +1,7 @@
 package ctn.informatica.sca.controller;
 
 import ctn.informatica.sca.dao.GradeDao;
+import ctn.informatica.sca.dao.QuejaDao;
 import ctn.informatica.sca.dao.PlanillaDao;
 import ctn.informatica.sca.dao.TareaDao;
 import org.junit.jupiter.api.Test;
@@ -10,7 +11,24 @@ import org.springframework.web.server.ResponseStatusException;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.util.List;
+import java.util.Map;
+
 public class AdminControllerTest {
+
+    private static final class ScopedAdminController extends AdminController {
+        private final Integer specialtyId;
+
+        private ScopedAdminController(TareaDao tareaDao, GradeDao gradeDao, PlanillaDao planillaDao, QuejaDao quejaDao, Integer specialtyId) {
+            super(tareaDao, gradeDao, planillaDao, quejaDao);
+            this.specialtyId = specialtyId;
+        }
+
+        @Override
+        protected Integer getSpecialtyAdminIdForUser(int userId) {
+            return specialtyId;
+        }
+    }
 
     @Test
     public void wipePlanillaSync_invokesDaos_andReturnsCounts() throws Exception {
@@ -97,5 +115,24 @@ public class AdminControllerTest {
         ResponseStatusException selfEditEx = assertThrows(ResponseStatusException.class,
                 () -> AdminController.validateAdminMutationAccess(7, 7, 3));
         assertEquals(403, selfEditEx.getStatusCode().value());
+    }
+
+    @Test
+    public void listarQuejas_scopedAdminOnlySeesItsOwnSpecialty() throws Exception {
+        QuejaDao quejaDao = mock(QuejaDao.class);
+        when(quejaDao.listar()).thenReturn(List.of(
+                Map.of("id", 1L, "especialidadId", 7),
+                Map.of("id", 2L, "especialidadId", 8),
+                Map.of("id", 3L, "especialidadId", 7)));
+
+        AdminController controller = new ScopedAdminController(mock(TareaDao.class), mock(GradeDao.class), mock(PlanillaDao.class), quejaDao, 7);
+        Authentication auth = mock(Authentication.class);
+        when(auth.getPrincipal()).thenReturn(1);
+
+        List<Map<String, Object>> result = controller.listarQuejas(auth);
+
+        assertEquals(2, result.size());
+        assertTrue(result.stream().allMatch(row -> ((Number) row.get("especialidadId")).intValue() == 7));
+        verify(quejaDao).listar();
     }
 }

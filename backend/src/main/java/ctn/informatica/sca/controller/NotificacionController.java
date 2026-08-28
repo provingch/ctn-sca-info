@@ -1,6 +1,7 @@
 package ctn.informatica.sca.controller;
 
 import ctn.informatica.sca.dao.NotificacionDao;
+import ctn.informatica.sca.dao.UserDao;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,14 +21,20 @@ import org.springframework.web.server.ResponseStatusException;
 public class NotificacionController {
 
     private final NotificacionDao notificacionDao;
+    private final UserDao userDao;
 
     public NotificacionController() {
-        this(new NotificacionDao());
+        this(new NotificacionDao(), new UserDao());
+    }
+
+    public NotificacionController(NotificacionDao notificacionDao) {
+        this(notificacionDao, new UserDao());
     }
 
     @Autowired
-    public NotificacionController(NotificacionDao notificacionDao) {
+    public NotificacionController(NotificacionDao notificacionDao, UserDao userDao) {
         this.notificacionDao = notificacionDao;
+        this.userDao = userDao;
     }
 
     @GetMapping
@@ -37,7 +44,7 @@ public class NotificacionController {
             Authentication authentication) {
         int userId = ApiAuth.requireUserId(authentication);
         try {
-            return notificacionDao.listarPorUsuario(userId, "profesor", soloNoLeidas);
+            return notificacionDao.listarPorUsuario(userId, NotificacionDao.resolveUserType(userDao, userId), soloNoLeidas);
         } catch (Exception ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudieron cargar las notificaciones", ex);
         }
@@ -48,7 +55,7 @@ public class NotificacionController {
     public Map<String, Object> contador(Authentication authentication) {
         int userId = ApiAuth.requireUserId(authentication);
         try {
-            long total = notificacionDao.contarNoLeidas(userId, "profesor");
+            long total = notificacionDao.contarNoLeidas(userId, NotificacionDao.resolveUserType(userDao, userId));
             return Map.of("count", total);
         } catch (Exception ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo contar las notificaciones", ex);
@@ -60,7 +67,7 @@ public class NotificacionController {
     public Map<String, Object> marcarLeida(@PathVariable int id, Authentication authentication) {
         int userId = ApiAuth.requireUserId(authentication);
         try {
-            boolean ok = notificacionDao.marcarLeida(id, userId, "profesor");
+            boolean ok = notificacionDao.marcarLeida(id, userId, NotificacionDao.resolveUserType(userDao, userId));
             if (!ok) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Notificación no encontrada");
             }
