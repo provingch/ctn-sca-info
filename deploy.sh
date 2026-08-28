@@ -694,6 +694,44 @@ NGINXCONF
     log_ok "nginx configuration test OK and reloaded"
   else
     log_err "nginx configuration test failed; check /var/log/nginx/error.log"
+    return 1
+  fi
+
+  # "nginx -t" solo valida sintaxis de lo que YA está incluido; un site file
+  # que nadie referencia desde nginx.conf pasa el test igual y nginx nunca lo
+  # carga (por eso certbot después no encuentra el server_name). Confirmamos
+  # con nginx -T (config activa real) y, si no aparece, agregamos el include
+  # que falta en nginx.conf y reintentamos.
+  if ! sudo nginx -T 2>/dev/null | grep -qE "server_name[[:space:]]+.*\b${DOMAIN_NAME}\b"; then
+    local inc_dir
+    if [[ "$use_sites_enabled" == true ]]; then
+      inc_dir="/etc/nginx/sites-enabled/*"
+    else
+      inc_dir="/etc/nginx/conf.d/*.conf"
+    fi
+    log_warn "$site_path no está siendo cargado por nginx.conf (server_name ${DOMAIN_NAME} ausente en config activa)"
+    if sudo grep -qF "include ${inc_dir};" /etc/nginx/nginx.conf 2>/dev/null; then
+      log_err "nginx.conf ya incluye ${inc_dir} pero el server_name sigue sin aparecer; revisá manualmente con 'nginx -T'"
+      return 1
+    fi
+    local ncbak="/etc/nginx/nginx.conf.$(date +%Y%m%d-%H%M%S).bak"
+    log_warn "Agregando 'include ${inc_dir};' al bloque http de nginx.conf (backup: $ncbak)"
+    sudo cp -a /etc/nginx/nginx.conf "$ncbak"
+    sudo sed -i "0,/http[[:space:]]*{/s//http {\n    include ${inc_dir};/" /etc/nginx/nginx.conf
+    if sudo nginx -t; then
+      sudo systemctl reload nginx || sudo systemctl restart nginx || true
+      if sudo nginx -T 2>/dev/null | grep -qE "server_name[[:space:]]+.*\b${DOMAIN_NAME}\b"; then
+        log_ok "nginx.conf corregido; ${DOMAIN_NAME} ahora está en la config activa"
+      else
+        log_err "Se agregó el include pero ${DOMAIN_NAME} sigue sin aparecer; revisá nginx.conf manualmente"
+        return 1
+      fi
+    else
+      log_err "nginx -t falló tras editar nginx.conf; revirtiendo backup"
+      sudo cp -a "$ncbak" /etc/nginx/nginx.conf
+      sudo nginx -t && (sudo systemctl reload nginx || sudo systemctl restart nginx || true)
+      return 1
+    fi
   fi
 
   # Try to obtain TLS cert if email provided
