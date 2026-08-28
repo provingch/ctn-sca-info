@@ -171,7 +171,14 @@
 				</includes>
 			</resource>
 		</resources>
-                <plugins>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<argLine>-javaagent:/home/provingchill/.m2/repository/net/bytebuddy/byte-buddy-agent/1.18.10/byte-buddy-agent-1.18.10.jar -XX:+EnableDynamicAgentLoading -XX:+StartAttachListener -Djdk.attach.allowAttachSelf=true</argLine>
+				</configuration>
+			</plugin>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>

@@ -15,6 +15,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class TemaVerificacionService extends conexion {
 
+    protected record TemaPendiente(Integer temaId, String temasContenidos, Integer ordenMes) {
+    }
+
     public static String normalizarTema(String tema) {
         if (tema == null) {
             return "";
@@ -58,38 +61,66 @@ public class TemaVerificacionService extends conexion {
     }
 
     public boolean estaAtrasado(int asignacionId, String temaIngresado) throws SQLException {
-        VerificacionResultado resultado = verificar(asignacionId, temaIngresado);
-        if ("ATRASADO".equalsIgnoreCase(resultado.estado())) {
-            return true;
-        }
-        if ("DUDOSO".equalsIgnoreCase(resultado.estado())) {
-            return this.ordenEsperadoActual() > 0 && this.ordenTemaPendiente(asignacionId) > this.ordenEsperadoActual();
-        }
-        return false;
+        return verificar(asignacionId, temaIngresado).atrasado();
     }
 
     public int ordenEsperadoActual() {
-        int mes = java.time.LocalDate.now().getMonthValue();
-        int etapa = AcademicPeriod.currentEtapa();
-        int base = (mes - 1) / 2 + 1;
-        if (etapa == 2) {
-            base += 6;
-        }
-        return Math.max(1, Math.min(base, 12));
+        return ordenEsperadoActual(mesActual(), etapaActual());
     }
 
-    public int ordenTemaPendiente(int asignacionId) throws SQLException {
-        int anio = AcademicPeriod.current();
-        int etapa = AcademicPeriod.currentEtapa();
+    protected int mesActual() {
+        return java.time.LocalDate.now().getMonthValue();
+    }
+
+    protected int etapaActual() {
+        return AcademicPeriod.currentEtapa();
+    }
+
+    protected int anioActual() {
+        return AcademicPeriod.current();
+    }
+
+    protected Integer buscarPlanCurricularId(int asignacionId) throws SQLException {
+        int anio = anioActual();
+        int etapa = etapaActual();
         Integer planId = null;
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("SELECT id FROM plan_curricular WHERE asignacion_id = ? AND etapa = ? AND estado = 'APROBADO' AND anio_lectivo = ? ORDER BY fecha_revision DESC LIMIT 1")) {
             ps.setInt(1, asignacionId);
             ps.setInt(2, etapa);
             ps.setInt(3, anio);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) planId = rs.getInt("id");
+                if (rs.next()) {
+                    planId = rs.getInt("id");
+                }
             }
         }
+        return planId;
+    }
+
+    protected TemaPendiente buscarTemaPendiente(int planId) throws SQLException {
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("SELECT id, temas_contenidos, orden_mes FROM tema_plan_curricular WHERE plan_curricular_id = ? AND estado_cobertura = 'PENDIENTE' ORDER BY orden_mes, bloque LIMIT 1")) {
+            ps.setInt(1, planId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new TemaPendiente(
+                            rs.getInt("id"),
+                            rs.getString("temas_contenidos"),
+                            rs.getObject("orden_mes") == null ? null : rs.getInt("orden_mes"));
+                }
+            }
+        }
+        return null;
+    }
+
+    protected int ordenEsperadoActual(int mes, int etapa) {
+        int base = etapa == 2 ? mes - 6 : mes - 2;
+        int minimo = 1;
+        int maximo = etapa == 2 ? 5 : 4;
+        return Math.max(minimo, Math.min(base, maximo));
+    }
+
+    public int ordenTemaPendiente(int asignacionId) throws SQLException {
+        Integer planId = buscarPlanCurricularId(asignacionId);
         if (planId == null) {
             return 0;
         }
@@ -105,48 +136,26 @@ public class TemaVerificacionService extends conexion {
     }
 
     public VerificacionResultado verificar(int asignacionId, String temaIngresado) throws SQLException {
-        int anio = AcademicPeriod.current();
-        int etapa = AcademicPeriod.currentEtapa();
-        Integer planId = null;
-        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("SELECT id FROM plan_curricular WHERE asignacion_id = ? AND etapa = ? AND estado = 'APROBADO' AND anio_lectivo = ? ORDER BY fecha_revision DESC LIMIT 1")) {
-            ps.setInt(1, asignacionId);
-            ps.setInt(2, etapa);
-            ps.setInt(3, anio);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) planId = rs.getInt("id");
-            }
-        }
-
+        Integer planId = buscarPlanCurricularId(asignacionId);
         if (planId == null) {
-            return new VerificacionResultado("SIN_PLAN", null);
+            return new VerificacionResultado("SIN_PLAN", null, false);
         }
 
-        Integer temaId = null;
-        String temasContenidos = null;
-        Integer ordenMes = null;
-        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("SELECT id, temas_contenidos, orden_mes FROM tema_plan_curricular WHERE plan_curricular_id = ? AND estado_cobertura = 'PENDIENTE' ORDER BY orden_mes, bloque LIMIT 1")) {
-            ps.setInt(1, planId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    temaId = rs.getInt("id");
-                    temasContenidos = rs.getString("temas_contenidos");
-                    ordenMes = rs.getInt("orden_mes");
-                }
-            }
+        TemaPendiente temaPendiente = buscarTemaPendiente(planId);
+        if (temaPendiente == null) {
+            return new VerificacionResultado("OK", null, false);
         }
 
-        if (temaId == null) {
-            return new VerificacionResultado("OK", null);
+        boolean atrasado = temaPendiente.ordenMes() != null && temaPendiente.ordenMes() < ordenEsperadoActual();
+
+        if (coincidenTemas(temaIngresado, temaPendiente.temasContenidos())) {
+            return new VerificacionResultado("OK", temaPendiente.temaId(), atrasado);
         }
 
-        if (coincidenTemas(temaIngresado, temasContenidos)) {
-            return new VerificacionResultado("OK", temaId);
+        if (atrasado) {
+            return new VerificacionResultado("ATRASADO", temaPendiente.temaId(), true);
         }
 
-        if (ordenMes != null && ordenMes > ordenEsperadoActual()) {
-            return new VerificacionResultado("ATRASADO", temaId);
-        }
-
-        return new VerificacionResultado("DUDOSO", temaId);
+        return new VerificacionResultado("DUDOSO", temaPendiente.temaId(), false);
     }
 }

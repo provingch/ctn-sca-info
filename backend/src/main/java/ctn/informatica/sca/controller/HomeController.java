@@ -388,9 +388,12 @@ public class HomeController {
                 : request.alumnosAusentes().stream().filter(id -> id != null && id > 0).collect(Collectors.toSet());
 
         String justificacionPersistida = null;
+        boolean atrasado = false;
+        VerificacionResultado verificacion = null;
         if (request.asignacionId() != null) {
             try {
-                boolean atrasado = temaVerificacionService.estaAtrasado(request.asignacionId(), tema);
+                verificacion = temaVerificacionService.verificar(request.asignacionId(), tema);
+                atrasado = verificacion.atrasado();
                 if (atrasado) {
                     if (request.justificacionAtraso() == null || request.justificacionAtraso().isBlank()) {
                         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Se requiere justificar el atraso para este tema.");
@@ -433,17 +436,20 @@ public class HomeController {
             // Si se indicó asignacionId, intentamos verificar el tema contra el plan curricular.
             if (request.asignacionId() != null) {
                 try {
-                    VerificacionResultado resultado = temaVerificacionService.verificar(request.asignacionId(), tema);
-                    rasgoPlanillaDao.actualizarVerificacionPlanilla(planillaId, resultado.estado(), resultado.temaPlanCurricularId());
-                    if ("OK".equalsIgnoreCase(resultado.estado()) && resultado.temaPlanCurricularId() != null) {
+                    if (verificacion == null) {
+                        verificacion = temaVerificacionService.verificar(request.asignacionId(), tema);
+                        atrasado = verificacion.atrasado();
+                    }
+                    rasgoPlanillaDao.actualizarVerificacionPlanilla(planillaId, verificacion.estado(), verificacion.temaPlanCurricularId());
+                    if ("OK".equalsIgnoreCase(verificacion.estado()) && verificacion.temaPlanCurricularId() != null) {
                         try {
-                            planCurricularDao.marcarCubierto(resultado.temaPlanCurricularId(), planillaId);
+                            planCurricularDao.marcarCubierto(verificacion.temaPlanCurricularId(), planillaId);
                         } catch (SQLException ex) {
                             System.err.println("Error marcando tema como cubierto: " + ex.getMessage());
                         }
                     }
-                    if (request.justificacionAtraso() != null && !request.justificacionAtraso().isBlank()) {
-                        registrarIncumplimientoPorAtraso(request.asignacionId(), user.getId(), resultado.temaPlanCurricularId(), request.justificacionAtraso());
+                    if (atrasado && request.justificacionAtraso() != null && !request.justificacionAtraso().isBlank()) {
+                        registrarIncumplimientoPorAtraso(request.asignacionId(), user.getId(), verificacion.temaPlanCurricularId(), request.justificacionAtraso());
                     }
                 } catch (Exception ex) {
                     System.err.println("Error verificando tema contra plan curricular: " + ex.getMessage());
