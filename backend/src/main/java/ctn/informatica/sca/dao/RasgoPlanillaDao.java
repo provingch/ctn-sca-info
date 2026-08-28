@@ -151,15 +151,19 @@ public class RasgoPlanillaDao extends conexion {
 
     // Nueva sobrecarga: permite persistir asignacion_id si se conoce
     public int crearPlanillaRasgo(int cursoId, int profesorId, String tema, List<Alumno> alumnos, Set<Integer> alumnosAusentes, Map<Integer, List<String>> codigosPorAlumno, Integer asignacionId) throws SQLException {
+        return crearPlanillaRasgo(cursoId, profesorId, tema, null, alumnos, alumnosAusentes, codigosPorAlumno, asignacionId);
+    }
+
+    public int crearPlanillaRasgo(int cursoId, int profesorId, String tema, String justificacionAtraso, List<Alumno> alumnos, Set<Integer> alumnosAusentes, Map<Integer, List<String>> codigosPorAlumno, Integer asignacionId) throws SQLException {
         if (alumnos == null || alumnos.isEmpty()) {
             throw new SQLException("No hay alumnos elegibles para crear la planilla de rasgos");
         }
 
         String insertPlanillaSql;
         if (asignacionId != null) {
-            insertPlanillaSql = "INSERT INTO planilla_rasgo (curso_id, usuario_id, asignacion_id, tema, fecha_clase) VALUES (?, ?, ?, ?, CURRENT_DATE())";
+            insertPlanillaSql = "INSERT INTO planilla_rasgo (curso_id, usuario_id, asignacion_id, tema, justificacion_atraso, fecha_clase) VALUES (?, ?, ?, ?, ?, CURRENT_DATE())";
         } else {
-            insertPlanillaSql = "INSERT INTO planilla_rasgo (curso_id, usuario_id, tema, fecha_clase) VALUES (?, ?, ?, CURRENT_DATE())";
+            insertPlanillaSql = "INSERT INTO planilla_rasgo (curso_id, usuario_id, tema, justificacion_atraso, fecha_clase) VALUES (?, ?, ?, ?, CURRENT_DATE())";
         }
 
         try (Connection con = getCon()) {
@@ -175,8 +179,18 @@ public class RasgoPlanillaDao extends conexion {
                     if (asignacionId != null) {
                         ps.setInt(3, asignacionId);
                         ps.setString(4, tema);
+                        if (justificacionAtraso == null || justificacionAtraso.isBlank()) {
+                            ps.setNull(5, java.sql.Types.VARCHAR);
+                        } else {
+                            ps.setString(5, justificacionAtraso.trim());
+                        }
                     } else {
                         ps.setString(3, tema);
+                        if (justificacionAtraso == null || justificacionAtraso.isBlank()) {
+                            ps.setNull(4, java.sql.Types.VARCHAR);
+                        } else {
+                            ps.setString(4, justificacionAtraso.trim());
+                        }
                     }
                     ps.executeUpdate();
                     try (ResultSet keys = ps.getGeneratedKeys()) {
