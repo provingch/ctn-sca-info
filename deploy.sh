@@ -4,7 +4,114 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="${REPO_DIR:-$SCRIPT_DIR}"
 PROJECT_DIR="${PROJECT_DIR:-}"
+
+first_run_wizard() {
+  # Only run when called with no args, interactive TTY, and no existing user config
+  if [[ -n "${1:-}" ]]; then
+    return 0
+  fi
+  if [[ ! -t 0 ]]; then
+    return 0
+  fi
+  if [[ -f "$USER_CONFIG_FILE" ]]; then
+    return 0
+  fi
+
+  echo
+  echo "Este asistente va a crear un archivo de configuración de usuario y un alias 'deploy'."
+  echo "Los valores de configuración no incluirán la contraseña de la base de datos."
+  if ! confirm "¿Querés configurar el alias 'deploy' con tus datos ahora?"; then
+    return 0
+  fi
+
+  local def_service def_port def_domain def_email def_db_name def_db_host def_db_port def_db_user inp
+  def_service="${SERVICE_NAME:-sca-backend}"
+  def_port="${APP_PORT:-8080}"
+  def_domain="${DOMAIN_NAME:-}"
+  def_email="${CERTBOT_EMAIL:-}"
+  def_db_name="${SCA_DB_NAME:-${CTN_DB_NAME:-ctndb}}"
+  def_db_host="${SCA_DB_HOST:-${CTN_DB_HOST:-localhost}}"
+  def_db_port="${SCA_DB_PORT:-}"
+  def_db_user="${SCA_DB_USER:-${CTN_DB_USER:-testadmin}}"
+
+  read -r -p "SERVICE_NAME [${def_service}]: " inp
+  SERVICE_NAME="${inp:-$def_service}"
+  read -r -p "APP_PORT [${def_port}]: " inp
+  APP_PORT="${inp:-$def_port}"
+  read -r -p "DOMAIN_NAME [${def_domain}]: " inp
+  DOMAIN_NAME="${inp:-$def_domain}"
+  read -r -p "CERTBOT_EMAIL [${def_email}]: " inp
+  CERTBOT_EMAIL="${inp:-$def_email}"
+  read -r -p "SCA_DB_NAME [${def_db_name}]: " inp
+  SCA_DB_NAME="${inp:-$def_db_name}"
+  read -r -p "SCA_DB_HOST [${def_db_host}]: " inp
+  SCA_DB_HOST="${inp:-$def_db_host}"
+  read -r -p "SCA_DB_PORT [${def_db_port}]: " inp
+  SCA_DB_PORT="${inp:-$def_db_port}"
+  read -r -p "SCA_DB_USER [${def_db_user}]: " inp
+  SCA_DB_USER="${inp:-$def_db_user}"
+
+  mkdir -p "$USER_CONFIG_DIR"
+  local tmpcfg
+  tmpcfg="$(mktemp)"
+  chmod 600 "$tmpcfg"
+  printf '%s=%q
 FRONTEND_DIR="${FRONTEND_DIR:-$REPO_DIR/frontend}"
+  printf '%s=%q
+
+  printf '%s=%q
+# Per-user deploy convenience config (not the runtime env file)
+  printf '%s=%q
+USER_CONFIG_DIR="${USER_CONFIG_DIR:-$HOME/.config/ctn-sca-deploy}"
+  printf '%s=%q
+USER_CONFIG_FILE="${USER_CONFIG_FILE:-$USER_CONFIG_DIR/config.env}"
+  printf '%s=%q
+
+  printf '%s=%q
+# If a user config exists, load it but do not overwrite already-exported env vars.
+  printf '%s=%q
+if [[ -f "$USER_CONFIG_FILE" ]]; then
+  install -m 600 "$tmpcfg" "$USER_CONFIG_FILE"
+  rm -f "$tmpcfg"
+  log_ok "Wrote user config to $USER_CONFIG_FILE"
+
+  # Idempotent alias block in ~/.bashrc
+  local bashrc="$HOME/.bashrc"
+  local marker_start="# >>> ctn-sca-deploy alias >>>"
+  local marker_end="# <<< ctn-sca-deploy alias <<<"
+  local tmpbash
+  tmpbash="$(mktemp)"
+  if [[ -f "$bashrc" ]]; then
+    awk -v s="$marker_start" -v e="$marker_end" 'BEGIN{skip=0} $0==s{skip=1; next} $0==e{skip=0; next} !skip{print}' "$bashrc" > "$tmpbash"
+  else
+    : > "$tmpbash"
+  fi
+  printf '%s
+  while IFS= read -r line || [[ -n "$line" ]]; do
+  printf 'alias deploy="%s"\n' "$SCRIPT_DIR/deploy.sh" >> "$tmpbash"
+  printf '%s
+    # skip comments and blank lines
+  install -m 644 "$tmpbash" "$bashrc"
+  rm -f "$tmpbash"
+
+  echo
+  echo "Alias configurado. Corré 'source ~/.bashrc' (o abrí una terminal nueva) y después podés usar 'deploy' en vez de './deploy.sh'."
+  exit 0
+}
+    [[ "$line" =~ ^[[:space:]]*# ]] && continue
+    [[ -z "$line" ]] && continue
+    key="${line%%=*}"
+    val="${line#*=}"
+    # Evaluate the right-hand side which was written with %q to recover proper quoting
+    if eval "parsed_val=$val" 2>/dev/null; then
+      # only set if variable is not already set in the environment
+      if [[ -z "${!key:-}" ]]; then
+        printf -v "$key" '%s' "$parsed_val"
+        export "$key"
+      fi
+    fi
+  done < "$USER_CONFIG_FILE"
+fi
 
 if [[ -z "$PROJECT_DIR" ]]; then
   if [[ -f "$REPO_DIR/backend/pom.xml" ]]; then
@@ -879,6 +986,6 @@ case "${1:-}" in
   --health) health_monitor ;;
   --configure-nginx) configure_nginx ;;
   --help|-h) show_help ;;
-  "") if [[ -t 0 ]]; then main_menu; else update_system; fi ;;
+  "") if [[ -t 0 ]]; then first_run_wizard ""; main_menu; else update_system; fi ;;
   *) echo "Unknown action: $1" >&2; show_help >&2; exit 2 ;;
 esac
