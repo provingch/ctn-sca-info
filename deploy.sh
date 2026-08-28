@@ -627,6 +627,18 @@ configure_nginx() {
     site_path="/etc/nginx/conf.d/${SERVICE_NAME}.conf"
     use_sites_enabled=false
     log_info "Convención Debian (sites-available) no detectada — usando ${site_path}"
+  elif [[ "$use_sites_enabled" == true && ! -d /etc/nginx/sites-enabled ]]; then
+    # sites-available existe pero sites-enabled no: instalación a medias/no
+    # estándar. Si nginx.conf igual lo incluye, lo creamos; si no, caemos a
+    # conf.d en vez de dejar que el symlink falle más adelante.
+    if sudo grep -qE '^[[:space:]]*include[[:space:]]+/etc/nginx/sites-enabled/' /etc/nginx/nginx.conf 2>/dev/null; then
+      log_warn "/etc/nginx/sites-enabled no existe pero nginx.conf lo incluye — creándolo"
+      sudo mkdir -p /etc/nginx/sites-enabled
+    else
+      site_path="/etc/nginx/conf.d/${SERVICE_NAME}.conf"
+      use_sites_enabled=false
+      log_warn "sites-enabled no existe y nginx.conf no lo incluye — usando ${site_path}"
+    fi
   fi
 
   local server_block tmpfile existing
