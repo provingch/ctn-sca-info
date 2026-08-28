@@ -4,7 +4,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="${REPO_DIR:-$SCRIPT_DIR}"
 PROJECT_DIR="${PROJECT_DIR:-}"
-
 first_run_wizard() {
   # Only run when called with no args, interactive TTY, and no existing user config
   if [[ -n "${1:-}" ]]; then
@@ -55,22 +54,14 @@ first_run_wizard() {
   local tmpcfg
   tmpcfg="$(mktemp)"
   chmod 600 "$tmpcfg"
-  printf '%s=%q
-FRONTEND_DIR="${FRONTEND_DIR:-$REPO_DIR/frontend}"
-  printf '%s=%q
-
-  printf '%s=%q
-# Per-user deploy convenience config (not the runtime env file)
-  printf '%s=%q
-USER_CONFIG_DIR="${USER_CONFIG_DIR:-$HOME/.config/ctn-sca-deploy}"
-  printf '%s=%q
-USER_CONFIG_FILE="${USER_CONFIG_FILE:-$USER_CONFIG_DIR/config.env}"
-  printf '%s=%q
-
-  printf '%s=%q
-# If a user config exists, load it but do not overwrite already-exported env vars.
-  printf '%s=%q
-if [[ -f "$USER_CONFIG_FILE" ]]; then
+  printf 'SERVICE_NAME=%q\n' "$SERVICE_NAME" >> "$tmpcfg"
+  printf 'APP_PORT=%q\n' "$APP_PORT" >> "$tmpcfg"
+  printf 'DOMAIN_NAME=%q\n' "$DOMAIN_NAME" >> "$tmpcfg"
+  printf 'CERTBOT_EMAIL=%q\n' "$CERTBOT_EMAIL" >> "$tmpcfg"
+  printf 'SCA_DB_NAME=%q\n' "$SCA_DB_NAME" >> "$tmpcfg"
+  printf 'SCA_DB_HOST=%q\n' "$SCA_DB_HOST" >> "$tmpcfg"
+  printf 'SCA_DB_PORT=%q\n' "$SCA_DB_PORT" >> "$tmpcfg"
+  printf 'SCA_DB_USER=%q\n' "$SCA_DB_USER" >> "$tmpcfg"
   install -m 600 "$tmpcfg" "$USER_CONFIG_FILE"
   rm -f "$tmpcfg"
   log_ok "Wrote user config to $USER_CONFIG_FILE"
@@ -86,11 +77,9 @@ if [[ -f "$USER_CONFIG_FILE" ]]; then
   else
     : > "$tmpbash"
   fi
-  printf '%s
-  while IFS= read -r line || [[ -n "$line" ]]; do
+  printf '%s\n' "$marker_start" >> "$tmpbash"
   printf 'alias deploy="%s"\n' "$SCRIPT_DIR/deploy.sh" >> "$tmpbash"
-  printf '%s
-    # skip comments and blank lines
+  printf '%s\n' "$marker_end" >> "$tmpbash"
   install -m 644 "$tmpbash" "$bashrc"
   rm -f "$tmpbash"
 
@@ -98,6 +87,17 @@ if [[ -f "$USER_CONFIG_FILE" ]]; then
   echo "Alias configurado. Corré 'source ~/.bashrc' (o abrí una terminal nueva) y después podés usar 'deploy' en vez de './deploy.sh'."
   exit 0
 }
+
+FRONTEND_DIR="${FRONTEND_DIR:-$REPO_DIR/frontend}"
+
+# Per-user deploy convenience config (not the runtime env file)
+USER_CONFIG_DIR="${USER_CONFIG_DIR:-$HOME/.config/ctn-sca-deploy}"
+USER_CONFIG_FILE="${USER_CONFIG_FILE:-$USER_CONFIG_DIR/config.env}"
+
+# If a user config exists, load it but do not overwrite already-exported env vars.
+if [[ -f "$USER_CONFIG_FILE" ]]; then
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    # skip comments and blank lines
     [[ "$line" =~ ^[[:space:]]*# ]] && continue
     [[ -z "$line" ]] && continue
     key="${line%%=*}"
@@ -944,8 +944,8 @@ main_menu() {
      (db-tables-properties.sql + ctn-official-seed.sql)
   3) Editar servicio Linux
   4) Health monitor
-  6) Configurar nginx + SSL
-  5) Salir
+  5) Configurar nginx + SSL
+  6) Salir
 MENU
     echo
     read -r -p "Select an action [1-6]: " choice
@@ -954,8 +954,8 @@ MENU
       2) if ! load_default_database; then echo "Database load failed."; fi; pause_menu ;;
       3) if ! edit_linux_service; then echo "Service editor is unavailable."; fi; pause_menu ;;
       4) if ! health_monitor; then echo "Health monitor failed."; pause_menu; fi ;;
-      6) if ! configure_nginx; then echo "nginx configuration failed."; fi; pause_menu ;;
-      5) echo "Bye."; return 0 ;;
+      5) if ! configure_nginx; then echo "nginx configuration failed."; fi; pause_menu ;;
+      6) echo "Bye."; return 0 ;;
       *) echo "Invalid option."; sleep 1 ;;
     esac
   done
