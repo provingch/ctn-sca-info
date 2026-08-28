@@ -18,6 +18,10 @@ fi
 
 REPO_URL="${REPO_URL:-https://github.com/provingch/ctn-sca-info.git}"
 SERVICE_NAME="${SERVICE_NAME:-sca-backend}"
+SERVICE_NAME="$(echo -n "${SERVICE_NAME}" | xargs)"
+DOMAIN_NAME="${DOMAIN_NAME:-}"
+CERTBOT_EMAIL="${CERTBOT_EMAIL:-}"
+NGINX_SITE_PATH="${NGINX_SITE_PATH:-/etc/nginx/sites-available/${SERVICE_NAME}}"
 APP_USER="${APP_USER:-deploy}"
 APP_GROUP="${APP_GROUP:-deploy}"
 INSTALL_DIR="${INSTALL_DIR:-/opt/ctn-sca-info/backend}"
@@ -340,9 +344,118 @@ DROPIN
   sudo systemctl daemon-reload
 }
 
+configure_nginx() {
+  require_command sudo
+  # Ask for DOMAIN_NAME if not provided and we have a TTY
+  if [[ -z "$DOMAIN_NAME" ]]; then
+    if [[ ! -t 0 ]]; then
+      log_err "DOMAIN_NAME is not set and no TTY available; cannot configure nginx.";
+      return 1
+    fi
+    read -r -p "Dominio público para el sitio (example.com): " DOMAIN_NAME
+    DOMAIN_NAME="$(echo -n "$DOMAIN_NAME" | xargs)"
+    if [[ -z "$DOMAIN_NAME" ]]; then
+      log_err "DOMAIN_NAME required."; return 1
+    fi
+  fi
+
+  log_info "Configuring nginx for ${DOMAIN_NAME} -> proxy to 127.0.0.1:${APP_PORT}"
+
+  # Install nginx and certbot (assume apt available)
+  if ! command -v nginx >/dev/null 2>&1 || ! command -v certbot >/dev/null 2>&1; then
+    log_info "Installing nginx and certbot (apt)..."
+    sudo apt-get update -y || true
+    sudo apt-get install -y nginx python3-certbot-nginx || true
+  fi
+
+  local server_block tmpfile existing
+  tmpfile="$(mktemp)"
+  cat > "$tmpfile" <<NGINXCONF
+server {
+    listen 80;
+    server_name ${DOMAIN_NAME};
+
+    location / {
+        proxy_pass http://127.0.0.1:${APP_PORT};
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_read_timeout 90;
+    }
+
+    access_log /var/log/nginx/${SERVICE_NAME}.access.log;
+    error_log /var/log/nginx/${SERVICE_NAME}.error.log;
+}
+NGINXCONF
+
+  # Ensure sites-available directory exists
+  sudo mkdir -p "$(dirname "$NGINX_SITE_PATH")"
+
+  if sudo test -f "$NGINX_SITE_PATH"; then
+    existing="$(sudo cat "$NGINX_SITE_PATH")"
+    if printf '%s' "$existing" | cmp -s - "$tmpfile" 2>/dev/null; then
+      log_ok "Nginx site file at $NGINX_SITE_PATH already up-to-date."
+      rm -f "$tmpfile"
+    else
+      local bak="${NGINX_SITE_PATH}.$(date +%Y%m%d-%H%M%S).bak"
+      log_warn "Backing up existing nginx site file to $bak"
+      sudo cp -a "$NGINX_SITE_PATH" "$bak"
+      sudo install -o root -g root -m 644 "$tmpfile" "$NGINX_SITE_PATH"
+      rm -f "$tmpfile"
+      log_ok "Wrote new nginx site file to $NGINX_SITE_PATH"
+    fi
+  else
+    sudo install -o root -g root -m 644 "$tmpfile" "$NGINX_SITE_PATH"
+    rm -f "$tmpfile"
+    log_ok "Created nginx site file at $NGINX_SITE_PATH"
+  fi
+
+  # Symlink to sites-enabled
+  if [[ ! -L "/etc/nginx/sites-enabled/$(basename "$NGINX_SITE_PATH")" ]]; then
+    sudo ln -sf "$NGINX_SITE_PATH" "/etc/nginx/sites-enabled/$(basename "$NGINX_SITE_PATH")"
+  fi
+
+  # Test and reload nginx
+  if sudo nginx -t; then
+    sudo systemctl reload nginx || sudo systemctl restart nginx || true
+    log_ok "nginx configuration test OK and reloaded"
+  else
+    log_err "nginx configuration test failed; check /var/log/nginx/error.log"
+  fi
+
+  # Try to obtain TLS cert if email provided
+  if [[ -n "$CERTBOT_EMAIL" ]]; then
+    log_info "Requesting Let's Encrypt cert for $DOMAIN_NAME (certbot)"
+    sudo certbot --nginx -d "$DOMAIN_NAME" -m "$CERTBOT_EMAIL" --non-interactive --agree-tos --redirect || {
+      log_err "certbot failed; certificate not installed"
+    }
+  else
+    log_warn "CERTBOT_EMAIL not set; skipping certbot. Site will remain on HTTP."
+  fi
+}
+
 service_exists() {
-  command -v systemctl >/dev/null 2>&1 \
-    && systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk '{print $1}' | grep -Fxq "${SERVICE_NAME}.service"
+  if ! command -v systemctl >/dev/null 2>&1; then
+    return 1
+  fi
+
+  # Try to list known unit files and match exact service name. Do not hide stderr
+  # so failures are visible to the caller for debugging.
+  local list_out
+  if list_out="$(systemctl list-unit-files --type=service --no-legend 2>&1)"; then
+    printf '%s' "$list_out" | awk '{print $1}' | grep -Fxq "${SERVICE_NAME}.service" && return 0 || true
+  else
+    # If systemctl itself failed, print the captured error for diagnostics and continue
+    printf '%s\n' "$list_out" >&2
+  fi
+
+  # Fallback: if a unit file exists on disk, treat the service as existing.
+  if sudo test -f "$SERVICE_UNIT_PATH"; then
+    return 0
+  fi
+
+  return 1
 }
 
 ensure_service_exists() {
@@ -620,6 +733,21 @@ edit_linux_service() {
   require_command sudo
   if ! service_exists; then
     echo "Linux service ${SERVICE_NAME}.service does not exist." >&2
+    echo "==> Diagnostic information:" >&2
+    echo "SERVICE_NAME='${SERVICE_NAME}'" >&2
+    echo "Output of 'systemctl list-unit-files --type=service --no-legend | grep -i sca':" >&2
+    systemctl list-unit-files --type=service --no-legend 2>/dev/null | grep -i sca || true
+    if sudo test -f "$SERVICE_UNIT_PATH"; then
+      echo "Service unit file exists on disk at $SERVICE_UNIT_PATH" >&2
+    else
+      echo "Service unit file does NOT exist at $SERVICE_UNIT_PATH" >&2
+    fi
+    if command -v git >/dev/null 2>&1 && [[ -d "$REPO_DIR/.git" ]]; then
+      echo "Git status for $REPO_DIR:" >&2
+      git -C "$REPO_DIR" status --porcelain 2>/dev/null || true
+      echo "Last commit in $REPO_DIR:" >&2
+      git -C "$REPO_DIR" log -1 --oneline 2>/dev/null || true
+    fi
     return 1
   fi
 
@@ -709,15 +837,17 @@ main_menu() {
      (db-tables-properties.sql + ctn-official-seed.sql)
   3) Editar servicio Linux
   4) Health monitor
+  6) Configurar nginx + SSL
   5) Salir
 MENU
     echo
-    read -r -p "Select an action [1-5]: " choice
+    read -r -p "Select an action [1-6]: " choice
     case "$choice" in
       1) if ! update_system; then echo "System update failed."; fi; pause_menu ;;
       2) if ! load_default_database; then echo "Database load failed."; fi; pause_menu ;;
       3) if ! edit_linux_service; then echo "Service editor is unavailable."; fi; pause_menu ;;
       4) if ! health_monitor; then echo "Health monitor failed."; pause_menu; fi ;;
+      6) if ! configure_nginx; then echo "nginx configuration failed."; fi; pause_menu ;;
       5) echo "Bye."; return 0 ;;
       *) echo "Invalid option."; sleep 1 ;;
     esac
@@ -733,6 +863,7 @@ Usage: ./deploy.sh [action]
   --load-default-db   Replace the database with schema + official seed
   --edit-service      Open the systemd override editor when the service exists
   --health            Start the health monitor (single snapshot without a TTY)
+  --configure-nginx   Configure nginx site and obtain TLS via certbot
   --help              Show this help
 
 Without arguments, an interactive terminal opens the menu. Non-interactive
@@ -746,6 +877,7 @@ case "${1:-}" in
   --load-default-db) load_default_database ;;
   --edit-service) edit_linux_service ;;
   --health) health_monitor ;;
+  --configure-nginx) configure_nginx ;;
   --help|-h) show_help ;;
   "") if [[ -t 0 ]]; then main_menu; else update_system; fi ;;
   *) echo "Unknown action: $1" >&2; show_help >&2; exit 2 ;;
