@@ -2,7 +2,7 @@ package ctn.informatica.sca.service;
 
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -21,53 +21,66 @@ public class PlanCurricularParser {
 
     private static final String ETAPA_PARSE_ERROR =
             "No se pudo interpretar la etapa/año del plan. Descargá la plantilla actual y volvé a completarla.";
-    private static final Map<String,Integer> MES_ORDEN = new HashMap<>();
+    private static final Map<String, Integer> MES_ORDEN = new LinkedHashMap<>();
+    private static final Map<String, List<String>> MESES_POR_ETAPA = new LinkedHashMap<>();
     static {
+        MESES_POR_ETAPA.put("1", List.of("Marzo", "Abril", "Mayo", "Junio"));
+        MESES_POR_ETAPA.put("2", List.of("Julio", "Agosto", "Septiembre", "Octubre", "Noviembre"));
         MES_ORDEN.put("Marzo", 1);
         MES_ORDEN.put("Abril", 2);
         MES_ORDEN.put("Mayo", 3);
         MES_ORDEN.put("Junio", 4);
+        MES_ORDEN.put("Julio", 1);
+        MES_ORDEN.put("Agosto", 2);
+        MES_ORDEN.put("Septiembre", 3);
+        MES_ORDEN.put("Octubre", 4);
+        MES_ORDEN.put("Noviembre", 5);
     }
 
     public PlanCurricularDto parse(InputStream in) throws Exception {
         try (Workbook wb = WorkbookFactory.create(in)) {
-            // verify sheets
-            for (String nombre : new String[]{"Marzo","Abril","Mayo","Junio"}) {
-                if (wb.getSheet(nombre) == null) throw new IllegalArgumentException("Falta la hoja: " + nombre);
+            String primerMes = findFirstAvailableSheet(wb);
+            if (primerMes == null) {
+                throw new IllegalArgumentException("El plan no contiene ninguna hoja de meses válida");
             }
+            Sheet primerSheet = wb.getSheet(primerMes);
+            EtapaAnio etapaAnio = parseEtapaAnio(getCellString(primerSheet, 4, 1));
+            List<String> mesesEsperados = mesesEsperadosParaEtapa(etapaAnio.etapa());
+            for (String nombre : mesesEsperados) {
+                if (wb.getSheet(nombre) == null) {
+                    throw new IllegalArgumentException("Falta la hoja: " + nombre);
+                }
+            }
+
             PlanCurricularDto out = new PlanCurricularDto();
-            // read header from first sheet (Marzo)
-            Sheet marzo = wb.getSheet("Marzo");
-            EtapaAnio etapaAnio = parseEtapaAnio(getCellString(marzo, 4, 1)); // B5 -> row 4 col 1
             out.etapa = etapaAnio.etapa();
             out.anio = etapaAnio.anio();
-            out.disciplina = extractAfterColon(getCellString(marzo,6,1));
-            out.turno = extractAfterColon(getCellString(marzo,8,18));
-            out.curso = extractAfterColon(getCellString(marzo,8,1));
-            out.seccion = extractAfterColon(getCellString(marzo,8,12));
-            out.especialidad = extractAfterColon(getCellString(marzo,8,22));
+            out.disciplina = extractAfterColon(getCellString(primerSheet, 6, 1));
+            out.turno = extractAfterColon(getCellString(primerSheet, 8, 18));
+            out.curso = extractAfterColon(getCellString(primerSheet, 8, 1));
+            out.seccion = extractAfterColon(getCellString(primerSheet, 8, 12));
+            out.especialidad = extractAfterColon(getCellString(primerSheet, 8, 22));
 
             List<TemaPlanDto> temas = new ArrayList<>();
-            // Blocks per month: fixed anchor rows: 15,21,28,35 (1-based). zero-based rows:14,20,27,34
-            int[] bloqueRows = new int[]{14,20,27,34};
-            for (Map.Entry<String,Integer> me : MES_ORDEN.entrySet()) {
-                Sheet sh = wb.getSheet(me.getKey());
-                int ordenMes = me.getValue();
+            int[] bloqueRows = new int[] {14, 20, 27, 34};
+            for (String nombreMes : mesesEsperados) {
+                Sheet sh = wb.getSheet(nombreMes);
+                int ordenMes = MES_ORDEN.getOrDefault(nombreMes, 1);
                 for (int i = 0; i < 4; i++) {
                     int row = bloqueRows[i];
-                    String contenidos = getCellString(sh, row, 2); // C? C15 -> col2
+                    String contenidos = getCellString(sh, row, 2);
                     if (contenidos == null || contenidos.isBlank()) continue;
                     TemaPlanDto t = new TemaPlanDto();
-                    t.mes = me.getKey();
+                    t.mes = nombreMes;
                     t.ordenMes = ordenMes;
-                    t.bloque = i+1;
+                    t.bloque = i + 1;
                     t.capacidades = getCellString(sh, row, 2);
                     t.temasContenidos = getCellString(sh, row, 11);
                     t.actividades = getCellString(sh, row, 18);
                     t.instrumentos = getCellString(sh, row, 27);
                     t.indicadorConceptual = getCellString(sh, row, 34);
-                    t.indicadorProcedimental = getCellString(sh, row+2, 34);
-                    t.indicadorActitudinal = getCellString(sh, row+4, 34);
+                    t.indicadorProcedimental = getCellString(sh, row + 2, 34);
+                    t.indicadorActitudinal = getCellString(sh, row + 4, 34);
                     temas.add(t);
                 }
             }
@@ -75,6 +88,26 @@ public class PlanCurricularParser {
             if (temas.isEmpty()) throw new IllegalArgumentException("El plan no contiene temas en ninguna hoja");
             return out;
         }
+    }
+
+    private String findFirstAvailableSheet(Workbook wb) {
+        for (String nombre : List.of("Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre")) {
+            if (wb.getSheet(nombre) != null) {
+                return nombre;
+            }
+        }
+        return null;
+    }
+
+    private List<String> mesesEsperadosParaEtapa(String etapa) {
+        if (etapa == null) {
+            throw new IllegalArgumentException(ETAPA_PARSE_ERROR);
+        }
+        List<String> meses = MESES_POR_ETAPA.get(etapa.trim());
+        if (meses == null) {
+            throw new IllegalArgumentException(ETAPA_PARSE_ERROR);
+        }
+        return meses;
     }
 
     static EtapaAnio parseEtapaAnio(String tituloCelda) {
