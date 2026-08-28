@@ -330,6 +330,92 @@ normalize_db_type() {
   esac
 }
 
+# ---------------------------------------------------------------------------
+# Requisitos del sistema — detección de gestor de paquetes e instalación
+# ---------------------------------------------------------------------------
+
+REQUIRED_BINARIES=(git mvn curl java openssl node npm)
+
+detect_pkg_manager() {
+  if command -v pacman >/dev/null 2>&1; then
+    printf 'pacman'
+  elif command -v apt-get >/dev/null 2>&1; then
+    printf 'apt'
+  elif command -v dnf >/dev/null 2>&1; then
+    printf 'dnf'
+  else
+    printf 'unknown'
+  fi
+}
+
+check_requirements_status() {
+  local all_ok=true
+  local bin ver
+  printf "  ${C_BOLD}%-12s %-8s %s${C_RESET}\n" "Herramienta" "Estado" "Versión"
+  printf "  ${C_GRAY}%s${C_RESET}\n" "────────────────────────────────────────────"
+  for bin in "${REQUIRED_BINARIES[@]}"; do
+    if command -v "$bin" >/dev/null 2>&1; then
+      case "$bin" in
+        git)     ver="$(git --version 2>/dev/null | awk '{print $3}')" ;;
+        mvn)     ver="$(mvn -v 2>/dev/null | head -n1 | awk '{print $3}')" ;;
+        java)    ver="$(java -version 2>&1 | head -n1 | awk -F'"' '{print $2}')" ;;
+        node)    ver="$(node -v 2>/dev/null)" ;;
+        npm)     ver="$(npm -v 2>/dev/null)" ;;
+        curl)    ver="$(curl --version 2>/dev/null | head -n1 | awk '{print $2}')" ;;
+        openssl) ver="$(openssl version 2>/dev/null | awk '{print $2}')" ;;
+        *)       ver="" ;;
+      esac
+      printf "  %-12s ${C_GREEN}%-8s${C_RESET} %s\n" "$bin" "OK" "${ver:-—}"
+    else
+      printf "  %-12s ${C_RED}%-8s${C_RESET} %s\n" "$bin" "FALTA" "-"
+      all_ok=false
+    fi
+  done
+  printf '\n'
+  [[ "$all_ok" == true ]]
+}
+
+install_requirements() {
+  section "🔧  Requisitos del sistema"
+
+  if check_requirements_status; then
+    log_ok "Todos los requisitos ya están instalados"
+    return 0
+  fi
+
+  local pm
+  pm="$(detect_pkg_manager)"
+  log_warn "Faltan dependencias — instalando con ${C_BOLD}${pm}${C_RESET}${C_YELLOW}..."
+
+  case "$pm" in
+    pacman)
+      sudo pacman -Sy --needed --noconfirm \
+        git maven curl jdk-openjdk openssl mariadb-clients nodejs npm
+      ;;
+    apt)
+      sudo apt-get update -y
+      sudo apt-get install -y \
+        git maven curl default-jdk openssl mariadb-client nodejs npm
+      ;;
+    dnf)
+      sudo dnf install -y \
+        git maven curl java-17-openjdk openssl mariadb nodejs npm
+      ;;
+    *)
+      log_err "Gestor de paquetes no reconocido; instalá manualmente: ${REQUIRED_BINARIES[*]}"
+      return 1
+      ;;
+  esac
+
+  echo
+  if check_requirements_status; then
+    log_ok "Requisitos instalados correctamente"
+  else
+    log_err "Algunos requisitos siguen faltando — revisá la instalación manual"
+    return 1
+  fi
+}
+
 default_db_port() {
   if [[ -n "$DB_PORT" ]]; then
     printf '%s' "$DB_PORT"
@@ -652,39 +738,51 @@ build_frontend() {
 }
 
 update_system() {
-  require_command git
-  require_command mvn
   require_command find
-  require_command curl
   require_command systemctl
   require_command sudo
-  require_command java
-  require_command openssl
   normalize_db_type
   validate_project_layout
-  ensure_service_exists
 
-  echo "==> Pulling latest changes"
+  install_requirements || return 1
+
+  require_command git
+  require_command mvn
+  require_command curl
+  require_command java
+  require_command openssl
+
+  ensure_service_exists
+  ensure_database_initialized || return 1
+
+  section "⬇️   Código fuente"
+  log_info "Descargando últimos cambios..."
   git -C "$REPO_DIR" pull --ff-only
+  log_ok "Repositorio actualizado"
+
   configure_service_env
   build_frontend
 
-  echo "==> Building Spring Boot JAR"
+  section "🏗️   Compilación"
+  log_info "Compilando el backend (Spring Boot)..."
   mvn -f "$PROJECT_DIR/pom.xml" clean package -DskipTests
+  log_ok "JAR compilado correctamente"
 
   local built_jar
   built_jar="$(find "$PROJECT_DIR/target" -maxdepth 1 -type f -name '*.jar' ! -name 'original-*.jar' | head -n 1)"
   if [[ -z "$built_jar" ]]; then
-    echo "No runnable .jar file found under $PROJECT_DIR/target" >&2
+    log_err "No se encontró un .jar ejecutable en $PROJECT_DIR/target"
     return 1
   fi
 
-  echo "==> Installing artifact in $INSTALL_DIR"
+  section "🚀  Despliegue"
+  log_info "Instalando artefacto en $INSTALL_DIR"
   sudo mkdir -p "$INSTALL_DIR"
   sudo install -o "$APP_USER" -g "$APP_GROUP" -m 644 "$built_jar" "$INSTALL_DIR/$JAR_NAME"
   sudo systemctl restart "$SERVICE_NAME"
+  log_ok "Servicio reiniciado"
 
-  echo "==> Waiting for service to become active"
+  log_info "Esperando a que el servicio quede activo..."
   local waited=0
   while (( waited < STARTUP_TIMEOUT_SECONDS )); do
     if sudo systemctl is-active --quiet "$SERVICE_NAME"; then
@@ -694,24 +792,25 @@ update_system() {
     waited=$((waited + 1))
   done
   if ! sudo systemctl is-active --quiet "$SERVICE_NAME"; then
-    echo "Service did not become active within ${STARTUP_TIMEOUT_SECONDS}s" >&2
+    log_err "El servicio no quedó activo dentro de ${STARTUP_TIMEOUT_SECONDS}s"
     sudo systemctl status "$SERVICE_NAME" --no-pager -l || true
     sudo journalctl -u "$SERVICE_NAME" -n 150 --no-pager || true
     return 1
   fi
+  log_ok "Servicio activo"
 
   local attempt=1
   while (( attempt <= HEALTHCHECK_RETRIES )); do
     if curl -fsS --max-time 5 "$APP_URL" >/dev/null; then
-      echo "==> System updated successfully"
+      log_ok "Health check OK — sistema actualizado con éxito"
       return 0
     fi
-    echo "==> Health check failed on attempt ${attempt}/${HEALTHCHECK_RETRIES}, retrying in ${HEALTHCHECK_DELAY_SECONDS}s..."
+    log_warn "Health check falló (intento ${attempt}/${HEALTHCHECK_RETRIES}), reintentando en ${HEALTHCHECK_DELAY_SECONDS}s..."
     sleep "$HEALTHCHECK_DELAY_SECONDS"
     attempt=$((attempt + 1))
   done
 
-  echo "ERROR: Health check failed after ${HEALTHCHECK_RETRIES} attempts." >&2
+  log_err "Health check falló tras ${HEALTHCHECK_RETRIES} intentos"
   sudo systemctl status "$SERVICE_NAME" --no-pager -l || true
   sudo journalctl -u "$SERVICE_NAME" -n 150 --no-pager || true
   return 1
@@ -864,6 +963,61 @@ load_default_database() {
   echo "==> Default database loaded successfully"
 }
 
+database_exists() {
+  local client config password rc
+  client="$(database_client 2>/dev/null || true)"
+  [[ -z "$client" ]] && return 1
+
+  password="$(get_db_password)"
+  if [[ -z "$password" && -f "$DB_ENV_FILE" ]]; then
+    password="$(read_env_file_value 'SCA_DB_PASSWORD')"
+    [[ -z "$password" ]] && password="$(read_env_file_value 'CTN_DB_PASSWORD')"
+  fi
+
+  config="$(mktemp)"
+  create_database_client_config "$config" "$password"
+  "$client" --defaults-extra-file="$config" -N -e \
+    "SELECT 1 FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='${DB_NAME}';" 2>/dev/null \
+    | grep -q '^1$'
+  rc=$?
+  rm -f "$config"
+  return $rc
+}
+
+ensure_database_initialized() {
+  section "🗄️   Base de datos"
+  normalize_db_type
+
+  local client
+  client="$(database_client 2>/dev/null || true)"
+  if [[ -z "$client" ]]; then
+    log_warn "No hay cliente mysql/mariadb disponible; se omite la verificación de la base de datos"
+    return 0
+  fi
+
+  if database_exists; then
+    log_ok "La base de datos '${DB_NAME}' ya existe"
+    return 0
+  fi
+
+  log_warn "No se encontró la base de datos '${DB_NAME}' — primera instalación detectada"
+
+  local schema_file="$REPO_DIR/database/db-tables-properties.sql"
+  local seed_file="$REPO_DIR/database/ctn-official-seed.sql"
+  if [[ ! -f "$schema_file" || ! -f "$seed_file" ]]; then
+    log_err "No se encontró el esquema/seed oficial en $REPO_DIR/database"
+    return 1
+  fi
+
+  log_info "Creando y cargando la base de datos por primera vez..."
+  if SCA_CONFIRM_DB_RESET=RESET load_default_database; then
+    log_ok "Base de datos '${DB_NAME}' creada y cargada"
+  else
+    log_err "No se pudo crear/cargar la base de datos"
+    return 1
+  fi
+}
+
 edit_linux_service() {
   require_command systemctl
   require_command sudo
@@ -968,23 +1122,27 @@ main_menu() {
     printf '\033[2J\033[H'
     show_banner
     cat <<MENU
-  1) Actualizar sistema
-  2) Cargar base de datos por default
+  1) 🔧 Instalar requisitos del sistema
+  2) 🗄️  Inicializar/verificar base de datos (primera instalación)
+  3) 🔄 Actualizar sistema (completo: requisitos + DB + build + deploy)
+  4) 📦 Cargar base de datos por default
      (db-tables-properties.sql + ctn-official-seed.sql)
-  3) Editar servicio Linux
-  4) Health monitor
-  5) Configurar nginx + SSL
-  6) Salir
+  5) ⚙️  Editar servicio Linux
+  6) ❤️  Health monitor
+  7) 🌐 Configurar nginx + SSL
+  8) 🚪 Salir
 MENU
     echo
-    read -r -p "Select an action [1-6]: " choice
+    read -r -p "Select an action [1-8]: " choice
     case "$choice" in
-      1) if ! update_system; then echo "System update failed."; fi; pause_menu ;;
-      2) if ! load_default_database; then echo "Database load failed."; fi; pause_menu ;;
-      3) if ! edit_linux_service; then echo "Service editor is unavailable."; fi; pause_menu ;;
-      4) if ! health_monitor; then echo "Health monitor failed."; pause_menu; fi ;;
-      5) if ! configure_nginx; then echo "nginx configuration failed."; fi; pause_menu ;;
-      6) echo "Bye."; return 0 ;;
+      1) if ! install_requirements; then echo "Requirement installation failed."; fi; pause_menu ;;
+      2) if ! ensure_database_initialized; then echo "Database initialization failed."; fi; pause_menu ;;
+      3) if ! update_system; then echo "System update failed."; fi; pause_menu ;;
+      4) if ! load_default_database; then echo "Database load failed."; fi; pause_menu ;;
+      5) if ! edit_linux_service; then echo "Service editor is unavailable."; fi; pause_menu ;;
+      6) if ! health_monitor; then echo "Health monitor failed."; pause_menu; fi ;;
+      7) if ! configure_nginx; then echo "nginx configuration failed."; fi; pause_menu ;;
+      8) echo "Bye."; return 0 ;;
       *) echo "Invalid option."; sleep 1 ;;
     esac
   done
@@ -994,21 +1152,27 @@ show_help() {
   cat <<HELP
 Usage: ./deploy.sh [action]
 
-  --menu              Open the interactive CTN console
-  --update            Pull, build, install and verify the system
-  --load-default-db   Replace the database with schema + official seed
-  --edit-service      Open the systemd override editor when the service exists
-  --health            Start the health monitor (single snapshot without a TTY)
-  --configure-nginx   Configure nginx site and obtain TLS via certbot
-  --help              Show this help
+  --menu                  Open the interactive CTN console
+  --install-requirements  Detect and install missing system requirements
+  --init-db               Create and load the database on first install
+                          (no-op if it already exists)
+  --update                Full flow: requirements + DB init + build + deploy
+  --load-default-db       Replace the database with schema + official seed
+  --edit-service          Open the systemd override editor when the service exists
+  --health                Start the health monitor (single snapshot without a TTY)
+  --configure-nginx       Configure nginx site and obtain TLS via certbot
+  --help                  Show this help
 
 Without arguments, an interactive terminal opens the menu. Non-interactive
-execution keeps the historical behavior and updates the system.
+execution keeps the historical behavior and updates the system (which now
+also installs missing requirements and initializes the database on first run).
 HELP
 }
 
 case "${1:-}" in
   --menu) main_menu ;;
+  --install-requirements) install_requirements ;;
+  --init-db) ensure_database_initialized ;;
   --update) update_system ;;
   --load-default-db) load_default_database ;;
   --edit-service) edit_linux_service ;;
