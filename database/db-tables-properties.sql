@@ -363,6 +363,68 @@ ALTER TABLE planilla_rasgo
     ADD CONSTRAINT fk_planilla_rasgo_tema FOREIGN KEY (tema_plan_curricular_id)
         REFERENCES tema_plan_curricular (id) ON UPDATE CASCADE ON DELETE SET NULL;
 
+-- Seguimiento del flujo de verificación curricular y notificaciones persistentes
+ALTER TABLE planilla_rasgo
+    ADD COLUMN justificacion_atraso TEXT NULL AFTER tema_plan_curricular_id;
+
+CREATE TABLE incumplimiento_revision (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    asignacion_id INT NOT NULL,
+    usuario_id INT NOT NULL,
+    tema_plan_curricular_id INT NULL,
+    tipo ENUM('ATRASO','SIN_CUBRIMIENTO','RECHAZO') NOT NULL,
+    descripcion TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_incumplimiento_revision_asignacion (asignacion_id),
+    KEY idx_incumplimiento_revision_usuario (usuario_id),
+    CONSTRAINT fk_incumplimiento_revision_asignacion FOREIGN KEY (asignacion_id)
+        REFERENCES asignacion (id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_incumplimiento_revision_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuario (id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_incumplimiento_revision_tema FOREIGN KEY (tema_plan_curricular_id)
+        REFERENCES tema_plan_curricular (id) ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE notificacion (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT NOT NULL,
+    user_type VARCHAR(20) NOT NULL DEFAULT 'usuario',
+    titulo VARCHAR(180) NOT NULL,
+    cuerpo TEXT NOT NULL,
+    url VARCHAR(255) NULL,
+    leida TINYINT(1) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_notificacion_usuario (usuario_id, user_type),
+    CONSTRAINT fk_notificacion_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuario (id) ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE reclamo_plan_curricular (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    asignacion_id INT NOT NULL,
+    profesor_id INT NOT NULL,
+    evaluador_id INT NULL,
+    motivo TEXT NOT NULL,
+    estado ENUM('PENDIENTE','EN_REVISION','RESUELTO') NOT NULL DEFAULT 'PENDIENTE',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_reclamo_plan_curricular_asignacion (asignacion_id),
+    KEY idx_reclamo_plan_curricular_profesor (profesor_id),
+    CONSTRAINT fk_reclamo_asignacion FOREIGN KEY (asignacion_id)
+        REFERENCES asignacion (id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_reclamo_profesor FOREIGN KEY (profesor_id)
+        REFERENCES usuario (id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_reclamo_evaluador FOREIGN KEY (evaluador_id)
+        REFERENCES usuario (id) ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE configuracion_sistema (
+    clave VARCHAR(120) PRIMARY KEY,
+    valor TEXT NOT NULL,
+    descripcion TEXT NULL,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 -- classroom_sync_log
 CREATE TABLE classroom_sync_log (
     id BIGINT AUTO_INCREMENT,

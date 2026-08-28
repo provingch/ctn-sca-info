@@ -2,17 +2,60 @@ package ctn.informatica.sca.service;
 
 import ctn.informatica.sca.clases.conexion;
 import ctn.informatica.sca.util.AcademicPeriod;
-import ctn.informatica.sca.util.TextSimilarityUtil;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.Normalizer;
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 @Service
 public class TemaVerificacionService extends conexion {
 
-    public static final double UMBRAL_COINCIDENCIA = 0.35;
+    public static String normalizarTema(String tema) {
+        if (tema == null) {
+            return "";
+        }
+        String sinTildes = Normalizer.normalize(tema, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "");
+        String compactado = sinTildes.toLowerCase(Locale.ROOT)
+                .replaceAll("[\\p{Punct}\\p{IsPunctuation}]+", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+        return compactado;
+    }
+
+    public static boolean coincidenTemas(String temaIngresado, String temaEsperado) {
+        if (temaIngresado == null || temaEsperado == null) {
+            return false;
+        }
+
+        String normalizadoIngresado = normalizarTema(temaIngresado);
+        String normalizadoEsperado = normalizarTema(temaEsperado);
+        if (normalizadoIngresado.isBlank() || normalizadoEsperado.isBlank()) {
+            return false;
+        }
+
+        if (normalizadoIngresado.equals(normalizadoEsperado)) {
+            return true;
+        }
+
+        String[] esperados = normalizadoEsperado.split("(?:\\s*[,;\\/]\\s*|\\s+\\&\\s+|\\s*\\|\\s*)");
+        for (String esperado : esperados) {
+            String valor = normalizarTema(esperado);
+            if (valor.isBlank()) {
+                continue;
+            }
+            if (normalizadoIngresado.equals(valor) || normalizadoIngresado.contains(valor) || valor.contains(normalizadoIngresado)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     public VerificacionResultado verificar(int asignacionId, String temaIngresado) throws SQLException {
         int anio = AcademicPeriod.current();
@@ -50,8 +93,7 @@ public class TemaVerificacionService extends conexion {
             return new VerificacionResultado("OK", null);
         }
 
-        double sim = TextSimilarityUtil.similarity(temaIngresado, temasContenidos);
-        if (sim >= UMBRAL_COINCIDENCIA) {
+        if (coincidenTemas(temaIngresado, temasContenidos)) {
             // coincidencia suficiente -> OK, devolver tema candidato (controller marcará como cubierto)
             return new VerificacionResultado("OK", temaId);
         } else {
