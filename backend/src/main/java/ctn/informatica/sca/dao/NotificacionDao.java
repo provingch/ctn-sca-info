@@ -1,6 +1,7 @@
 package ctn.informatica.sca.dao;
 
 import ctn.informatica.sca.clases.conexion;
+import ctn.informatica.sca.model.User;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -13,6 +14,18 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public class NotificacionDao extends conexion {
+
+    public static String resolveUserType(UserDao userDao, int userId) {
+        try {
+            User user = userDao == null ? null : userDao.findById(userId);
+            if (user == null) {
+                return "profesor";
+            }
+            return user.getLevel() == 4 ? "padre" : "profesor";
+        } catch (Exception ex) {
+            return "profesor";
+        }
+    }
 
     public boolean crear(int usuarioId, String userType, String tipo, String titulo, String cuerpo,
             String entidadTipo, Long entidadId) throws SQLException {

@@ -4,7 +4,9 @@ import ctn.informatica.sca.dao.CursoDao;
 import ctn.informatica.sca.dao.EspecialidadDao;
 import ctn.informatica.sca.dao.IncumplimientoRevisionDao;
 import ctn.informatica.sca.dao.InstrumentoDao;
+import ctn.informatica.sca.dao.NotificacionDao;
 import ctn.informatica.sca.dao.RasgoPlanillaDao;
+import ctn.informatica.sca.dao.UserDao;
 import ctn.informatica.sca.model.Curso;
 import ctn.informatica.sca.model.Especialidad;
 import ctn.informatica.sca.model.Instrumento;
@@ -14,6 +16,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.time.LocalDateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -30,11 +35,15 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api")
 public class EvaluacionCatalogController {
 
+    private static final Logger log = LoggerFactory.getLogger(EvaluacionCatalogController.class);
+
     private final CursoDao cursoDao;
     private final EspecialidadDao especialidadDao;
     private final InstrumentoDao instrumentoDao;
     private final RasgoPlanillaDao rasgoPlanillaDao;
     private final IncumplimientoRevisionDao incumplimientoRevisionDao;
+    private final NotificacionDao notificacionDao;
+    private final UserDao userDao;
 
     public EvaluacionCatalogController(
             CursoDao cursoDao,
@@ -42,11 +51,25 @@ public class EvaluacionCatalogController {
             InstrumentoDao instrumentoDao,
             RasgoPlanillaDao rasgoPlanillaDao,
             IncumplimientoRevisionDao incumplimientoRevisionDao) {
+        this(cursoDao, especialidadDao, instrumentoDao, rasgoPlanillaDao, incumplimientoRevisionDao, new NotificacionDao(), new UserDao());
+    }
+
+    @Autowired
+    public EvaluacionCatalogController(
+            CursoDao cursoDao,
+            EspecialidadDao especialidadDao,
+            InstrumentoDao instrumentoDao,
+            RasgoPlanillaDao rasgoPlanillaDao,
+            IncumplimientoRevisionDao incumplimientoRevisionDao,
+            NotificacionDao notificacionDao,
+            UserDao userDao) {
         this.cursoDao = cursoDao;
         this.especialidadDao = especialidadDao;
         this.instrumentoDao = instrumentoDao;
         this.rasgoPlanillaDao = rasgoPlanillaDao;
         this.incumplimientoRevisionDao = incumplimientoRevisionDao == null ? new IncumplimientoRevisionDao() : incumplimientoRevisionDao;
+        this.notificacionDao = notificacionDao == null ? new NotificacionDao() : notificacionDao;
+        this.userDao = userDao == null ? new UserDao() : userDao;
     }
 
     @GetMapping("/instrumentos")
@@ -164,15 +187,50 @@ public class EvaluacionCatalogController {
         if (payload == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Se requiere el estado de resolución.");
         }
-        String estado = payload.get("estado") instanceof String s ? s.trim() : "PERMITIDO";
-        LocalDateTime suspensionDesde = parseDateTime(payload.get("suspensionDesde"));
-        LocalDateTime suspensionHasta = parseDateTime(payload.get("suspensionHasta"));
+        String estado = payload.get("estado") instanceof String s ? s.trim().toUpperCase() : "PERMITIDO";
+        Map<String, Object> incumplimiento = null;
         try {
+            incumplimiento = incumplimientoRevisionDao.findById(id);
+            if (incumplimiento == null) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el incumplimiento a resolver.");
+            }
+
+            LocalDateTime suspensionDesde = parseDateTime(payload.get("suspensionDesde"), "suspensionDesde");
+            LocalDateTime suspensionHasta = parseDateTime(payload.get("suspensionHasta"), "suspensionHasta");
+            if ("RECHAZADO".equals(estado)) {
+                if (suspensionDesde == null || suspensionHasta == null) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Para rechazar un incumplimiento debes indicar suspensión desde y hasta.");
+                }
+                if (!suspensionHasta.isAfter(suspensionDesde)) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La suspensión hasta debe ser posterior a la suspensión desde.");
+                }
+            }
+
             boolean updated = incumplimientoRevisionDao.resolver(id, estado, evaluadorId, suspensionDesde, suspensionHasta);
             if (!updated) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el incumplimiento a resolver.");
             }
-            return Map.of("ok", true, "id", id, "estado", estado.toUpperCase());
+
+            int usuarioId = ((Number) incumplimiento.get("usuarioId")).intValue();
+            String userType = NotificacionDao.resolveUserType(userDao, usuarioId);
+            String cuerpo = "El incumplimiento #" + id + " fue resuelto como " + estado.toLowerCase();
+            if ("RECHAZADO".equals(estado)) {
+                cuerpo += " con suspensión desde " + suspensionDesde + " hasta " + suspensionHasta;
+            }
+            try {
+                notificacionDao.crear(
+                        usuarioId,
+                        userType,
+                        "INCUMPLIMIENTO_RESUELTO",
+                        "Incumplimiento resuelto",
+                        cuerpo,
+                        "INCUMPLIMIENTO_REVISION",
+                        (long) id);
+            } catch (Exception ex) {
+                log.warn("No se pudo notificar la resolución del incumplimiento {}: {}", id, ex.getMessage());
+            }
+
+            return Map.of("ok", true, "id", id, "estado", estado);
         } catch (ResponseStatusException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -180,7 +238,7 @@ public class EvaluacionCatalogController {
         }
     }
 
-    private LocalDateTime parseDateTime(Object raw) {
+    private LocalDateTime parseDateTime(Object raw, String fieldName) {
         if (raw == null || raw.toString().isBlank()) {
             return null;
         }
@@ -191,7 +249,7 @@ public class EvaluacionCatalogController {
             try {
                 return java.time.OffsetDateTime.parse(text).toLocalDateTime();
             } catch (Exception ex) {
-                return null;
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Formato inválido para " + fieldName + ".");
             }
         }
     }

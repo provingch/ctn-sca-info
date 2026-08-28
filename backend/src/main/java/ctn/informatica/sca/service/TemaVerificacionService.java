@@ -119,22 +119,6 @@ public class TemaVerificacionService extends conexion {
         return Math.max(minimo, Math.min(base, maximo));
     }
 
-    public int ordenTemaPendiente(int asignacionId) throws SQLException {
-        Integer planId = buscarPlanCurricularId(asignacionId);
-        if (planId == null) {
-            return 0;
-        }
-        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("SELECT COALESCE(MAX(orden_mes),0) FROM tema_plan_curricular WHERE plan_curricular_id = ? AND estado_cobertura = 'PENDIENTE'")) {
-            ps.setInt(1, planId);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt(1);
-                }
-            }
-        }
-        return 0;
-    }
-
     public VerificacionResultado verificar(int asignacionId, String temaIngresado) throws SQLException {
         Integer planId = buscarPlanCurricularId(asignacionId);
         if (planId == null) {
