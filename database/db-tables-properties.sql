@@ -385,13 +385,24 @@ CREATE TABLE incumplimiento_revision (
         REFERENCES tema_plan_curricular (id) ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+ALTER TABLE incumplimiento_revision
+    ADD COLUMN estado ENUM('PENDIENTE','PERMITIDO','RECHAZADO') NOT NULL DEFAULT 'PENDIENTE' AFTER tipo,
+    ADD COLUMN evaluador_id INT NULL AFTER estado,
+    ADD COLUMN fecha_resolucion DATETIME NULL AFTER evaluador_id,
+    ADD COLUMN suspension_desde DATETIME NULL AFTER fecha_resolucion,
+    ADD COLUMN suspension_hasta DATETIME NULL AFTER suspension_desde,
+    ADD CONSTRAINT fk_incumplimiento_revision_evaluador FOREIGN KEY (evaluador_id)
+        REFERENCES usuario (id) ON UPDATE CASCADE ON DELETE SET NULL;
+
 CREATE TABLE notificacion (
     id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
     user_type VARCHAR(20) NOT NULL DEFAULT 'usuario',
+    tipo VARCHAR(64) NOT NULL DEFAULT 'GENERAL',
     titulo VARCHAR(180) NOT NULL,
     cuerpo TEXT NOT NULL,
-    url VARCHAR(255) NULL,
+    entidad_tipo VARCHAR(64) NULL,
+    entidad_id BIGINT NULL,
     leida TINYINT(1) NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     KEY idx_notificacion_usuario (usuario_id, user_type),
@@ -399,31 +410,32 @@ CREATE TABLE notificacion (
         REFERENCES usuario (id) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE reclamo_plan_curricular (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    asignacion_id INT NOT NULL,
-    profesor_id INT NOT NULL,
-    evaluador_id INT NULL,
+DROP TABLE IF EXISTS reclamo_plan_curricular;
+
+CREATE TABLE IF NOT EXISTS queja (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    profesor_id BIGINT NOT NULL,
+    curso_id BIGINT NOT NULL,
+    especialidad_id INT NOT NULL,
     motivo TEXT NOT NULL,
-    estado ENUM('PENDIENTE','EN_REVISION','RESUELTO') NOT NULL DEFAULT 'PENDIENTE',
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    KEY idx_reclamo_plan_curricular_asignacion (asignacion_id),
-    KEY idx_reclamo_plan_curricular_profesor (profesor_id),
-    CONSTRAINT fk_reclamo_asignacion FOREIGN KEY (asignacion_id)
-        REFERENCES asignacion (id) ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_reclamo_profesor FOREIGN KEY (profesor_id)
-        REFERENCES usuario (id) ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_reclamo_evaluador FOREIGN KEY (evaluador_id)
-        REFERENCES usuario (id) ON UPDATE CASCADE ON DELETE SET NULL
+    creada_por BIGINT NOT NULL COMMENT 'admin/delegado que cargó la queja',
+    creada_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_queja_profesor FOREIGN KEY (profesor_id) REFERENCES usuario(id),
+    CONSTRAINT fk_queja_curso FOREIGN KEY (curso_id) REFERENCES curso(id),
+    CONSTRAINT fk_queja_creada_por FOREIGN KEY (creada_por) REFERENCES usuario(id),
+    CONSTRAINT fk_queja_especialidad FOREIGN KEY (especialidad_id) REFERENCES especialidad(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE configuracion_sistema (
+CREATE TABLE IF NOT EXISTS configuracion_sistema (
     clave VARCHAR(120) PRIMARY KEY,
     valor TEXT NOT NULL,
     descripcion TEXT NULL,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+INSERT IGNORE INTO configuracion_sistema (clave, valor, descripcion) VALUES
+  ('umbral_atrasos_incumplimiento', '3', 'Cantidad de atrasos justificados en una misma asignación antes de generar un incumplimiento_revision'),
+  ('umbral_quejas_coordinacion', '5', 'Cantidad de quejas acumuladas de un profesor antes de notificar a Coordinación Pedagógica');
 
 -- classroom_sync_log
 CREATE TABLE classroom_sync_log (
