@@ -180,8 +180,12 @@ SYSTEMD_DROPIN_DIR="/etc/systemd/system/${SERVICE_NAME}.service.d"
 SYSTEMD_DROPIN_FILE="${SYSTEMD_DROPIN_DIR}/ctn-sca-info.conf"
 
 LOG_DIR="${LOG_DIR:-/var/log/ctn-sca-info}"
-DEPLOY_LOG="${DEPLOY_LOG:-${LOG_DIR}/deploy.log}"
 mkdir -p "$LOG_DIR" 2>/dev/null || true
+if [[ ! -w "$LOG_DIR" ]]; then
+  LOG_DIR="${HOME}/.local/state/ctn-sca-deploy"
+  mkdir -p "$LOG_DIR" 2>/dev/null || true
+fi
+DEPLOY_LOG="${DEPLOY_LOG:-${LOG_DIR}/deploy.log}"
 
 C_RESET='\033[0m'
 C_BOLD='\033[1m'
@@ -196,7 +200,7 @@ C_ORANGE='\033[38;5;208m'
 C_WHITE='\033[38;5;15m'
 C_GRAY='\033[38;5;244m'
 
-_log_to_file() { printf "%b\n" "$1" >> "$DEPLOY_LOG" 2>/dev/null || true; }
+_log_to_file() { printf "%b\n" "$1" 2>/dev/null >> "$DEPLOY_LOG" || true; }
 
 log()     { printf "%b\n" "  ${C_GRAY}[$(date '+%H:%M:%S')]${C_RESET} $*"; _log_to_file "  [$(date '+%H:%M:%S')] $*"; }
 log_ok()  { printf "%b\n" "  ${C_GREEN}✔${C_RESET} $*"; _log_to_file "  OK $*"; }
@@ -1024,6 +1028,46 @@ ensure_database_server_running() {
   return 1
 }
 
+ensure_database_user_exists() {
+  local password client config
+  password="$(get_db_password)"
+  if [[ -z "$password" && -f "$DB_ENV_FILE" ]]; then
+    password="$(read_env_file_value 'SCA_DB_PASSWORD')"
+    [[ -z "$password" ]] && password="$(read_env_file_value 'CTN_DB_PASSWORD')"
+  fi
+
+  client="$(database_client 2>/dev/null || true)"
+  [[ -z "$client" ]] && return 1
+
+  # ¿Ya podemos conectar con el usuario configurado? Si sí, no hay nada que hacer.
+  config="$(mktemp)"
+  create_database_client_config "$config" "$password"
+  if "$client" --defaults-extra-file="$config" -e "SELECT 1;" >/dev/null 2>&1; then
+    rm -f "$config"
+    return 0
+  fi
+  rm -f "$config"
+
+  log_warn "El usuario de base de datos '${DB_USER}' no existe todavía — creándolo vía root local"
+
+  if [[ -z "$password" ]]; then
+    log_err "No hay contraseña definida para '${DB_USER}'. Definí SCA_DB_PASSWORD o corré el script en modo interactivo."
+    return 1
+  fi
+
+  if ! sudo "$client" -e \
+    "CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost' IDENTIFIED BY '${password}';
+     GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'localhost';
+     FLUSH PRIVILEGES;" 2>/tmp/ctn-db-user-err; then
+    log_err "No se pudo crear el usuario '${DB_USER}' vía root (¿root de MariaDB no usa auth por socket?)"
+    cat /tmp/ctn-db-user-err >&2 2>/dev/null || true
+    rm -f /tmp/ctn-db-user-err
+    return 1
+  fi
+  rm -f /tmp/ctn-db-user-err
+  log_ok "Usuario '${DB_USER}' creado con privilegios sobre '${DB_NAME}'"
+}
+
 database_exists() {
   local client config password rc
   client="$(database_client 2>/dev/null || true)"
@@ -1048,6 +1092,7 @@ database_exists() {
 ensure_database_initialized() {
   normalize_db_type
   ensure_database_server_running || return 1
+  ensure_database_user_exists || return 1
 
   section "🗄️   Base de datos"
 
