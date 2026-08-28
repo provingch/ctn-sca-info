@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import ctn.informatica.sca.dao.CursoDao;
 import ctn.informatica.sca.dao.EspecialidadDao;
+import ctn.informatica.sca.dao.IncumplimientoRevisionDao;
 import ctn.informatica.sca.dao.InstrumentoDao;
 import ctn.informatica.sca.dao.RasgoPlanillaDao;
 import ctn.informatica.sca.model.Curso;
@@ -33,7 +34,8 @@ class EvaluacionCatalogControllerTest {
                 cursoDao,
                 especialidadDao,
                 mock(InstrumentoDao.class),
-                mock(RasgoPlanillaDao.class));
+                mock(RasgoPlanillaDao.class),
+                mock(IncumplimientoRevisionDao.class));
     }
 
     @Test
