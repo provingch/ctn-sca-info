@@ -329,21 +329,14 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
   const asignacionActual = asignacionesDisponibles.find((a) => a.id === selectedAsignacionId)
     ?? (asignacionesDisponibles.length === 1 ? asignacionesDisponibles[0] : undefined);
   const estadoPlanActual = asignacionActual?.estadoPlan;
-  const planAprobado = estadoPlanActual === 'APROBADO';
-  const puedeIniciarClase = asignacionesDisponibles.length > 0 && planAprobado;
+  const puedeIniciarClase = asignacionesDisponibles.length > 0 && (!selectedAsignacionId || !!asignacionActual);
 
-  // Mensaje a mostrar cuando el plan no está aprobado
+  // La aprobación del plan no bloquea el inicio de clase; sólo restringe la selección disponible.
   let mensajeBloqueo = '';
   if (asignacionesDisponibles.length === 0) {
     mensajeBloqueo = 'No hay asignaciones disponibles para este curso.';
   } else if (asignacionesDisponibles.length > 1 && !selectedAsignacionId) {
     mensajeBloqueo = 'Elegí primero tu asignación.';
-  } else if (estadoPlanActual === 'NO_CARGADO' || !estadoPlanActual) {
-    mensajeBloqueo = 'Necesitás cargar y que se apruebe tu plan curricular para poder iniciar clases de esta asignación.';
-  } else if (estadoPlanActual === 'PENDIENTE') {
-    mensajeBloqueo = 'Tu plan curricular está en revisión. Vas a poder iniciar clases cuando se apruebe.';
-  } else if (estadoPlanActual === 'RECHAZADO') {
-    mensajeBloqueo = 'Tu plan curricular fue rechazado. Corregilo y volvé a subirlo desde Plan curricular.';
   }
 
   const indiceInicio = HORARIOS_CATEDRA.indexOf(horario);
