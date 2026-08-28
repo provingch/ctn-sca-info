@@ -595,11 +595,38 @@ configure_nginx() {
 
   log_info "Configuring nginx for ${DOMAIN_NAME} -> proxy to 127.0.0.1:${APP_PORT}"
 
-  # Install nginx and certbot (assume apt available)
+  # Install nginx and certbot con el gestor de paquetes que corresponda
   if ! command -v nginx >/dev/null 2>&1 || ! command -v certbot >/dev/null 2>&1; then
-    log_info "Installing nginx and certbot (apt)..."
-    sudo apt-get update -y || true
-    sudo apt-get install -y nginx python3-certbot-nginx || true
+    local pm
+    pm="$(detect_pkg_manager)"
+    log_info "Installing nginx and certbot (${pm})..."
+    case "$pm" in
+      pacman)
+        sudo pacman -Sy --needed --noconfirm nginx certbot certbot-nginx || true
+        ;;
+      apt)
+        sudo apt-get update -y || true
+        sudo apt-get install -y nginx python3-certbot-nginx || true
+        ;;
+      dnf)
+        sudo dnf install -y nginx certbot python3-certbot-nginx || true
+        ;;
+      *)
+        log_err "Gestor de paquetes no reconocido; instalá nginx y certbot manualmente."
+        ;;
+    esac
+    sudo systemctl enable --now nginx 2>/dev/null || true
+  fi
+
+  # Arch/Fedora no traen sites-available/sites-enabled por defecto (eso es
+  # convención de Debian/Ubuntu) — usan /etc/nginx/conf.d/*.conf, incluido
+  # directamente por nginx.conf. Detectamos cuál corresponde.
+  local site_path="$NGINX_SITE_PATH"
+  local use_sites_enabled=true
+  if [[ "$site_path" == "/etc/nginx/sites-available/${SERVICE_NAME}" && ! -d /etc/nginx/sites-available ]]; then
+    site_path="/etc/nginx/conf.d/${SERVICE_NAME}.conf"
+    use_sites_enabled=false
+    log_info "Convención Debian (sites-available) no detectada — usando ${site_path}"
   fi
 
   local server_block tmpfile existing
@@ -623,31 +650,30 @@ server {
 }
 NGINXCONF
 
-  # Ensure sites-available directory exists
-  sudo mkdir -p "$(dirname "$NGINX_SITE_PATH")"
+  sudo mkdir -p "$(dirname "$site_path")"
 
-  if sudo test -f "$NGINX_SITE_PATH"; then
-    existing="$(sudo cat "$NGINX_SITE_PATH")"
+  if sudo test -f "$site_path"; then
+    existing="$(sudo cat "$site_path")"
     if printf '%s' "$existing" | cmp -s - "$tmpfile" 2>/dev/null; then
-      log_ok "Nginx site file at $NGINX_SITE_PATH already up-to-date."
+      log_ok "Nginx site file at $site_path already up-to-date."
       rm -f "$tmpfile"
     else
-      local bak="${NGINX_SITE_PATH}.$(date +%Y%m%d-%H%M%S).bak"
+      local bak="${site_path}.$(date +%Y%m%d-%H%M%S).bak"
       log_warn "Backing up existing nginx site file to $bak"
-      sudo cp -a "$NGINX_SITE_PATH" "$bak"
-      sudo install -o root -g root -m 644 "$tmpfile" "$NGINX_SITE_PATH"
+      sudo cp -a "$site_path" "$bak"
+      sudo install -o root -g root -m 644 "$tmpfile" "$site_path"
       rm -f "$tmpfile"
-      log_ok "Wrote new nginx site file to $NGINX_SITE_PATH"
+      log_ok "Wrote new nginx site file to $site_path"
     fi
   else
-    sudo install -o root -g root -m 644 "$tmpfile" "$NGINX_SITE_PATH"
+    sudo install -o root -g root -m 644 "$tmpfile" "$site_path"
     rm -f "$tmpfile"
-    log_ok "Created nginx site file at $NGINX_SITE_PATH"
+    log_ok "Created nginx site file at $site_path"
   fi
 
-  # Symlink to sites-enabled
-  if [[ ! -L "/etc/nginx/sites-enabled/$(basename "$NGINX_SITE_PATH")" ]]; then
-    sudo ln -sf "$NGINX_SITE_PATH" "/etc/nginx/sites-enabled/$(basename "$NGINX_SITE_PATH")"
+  # Symlink a sites-enabled solo aplica bajo la convención Debian/Ubuntu
+  if [[ "$use_sites_enabled" == true ]] && [[ ! -L "/etc/nginx/sites-enabled/$(basename "$site_path")" ]]; then
+    sudo ln -sf "$site_path" "/etc/nginx/sites-enabled/$(basename "$site_path")"
   fi
 
   # Test and reload nginx
