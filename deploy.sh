@@ -86,25 +86,30 @@ first_run_wizard() {
   rm -f "$tmpcfg"
   log_ok "Wrote user config to $USER_CONFIG_FILE"
 
-  # Idempotent alias block in ~/.bashrc
-  local bashrc="$HOME/.bashrc"
+  # Idempotent alias block in the user's actual shell rc file (zsh or bash)
+  local rc_file rc_shell
+  rc_shell="$(basename "${SHELL:-bash}")"
+  case "$rc_shell" in
+    zsh) rc_file="$HOME/.zshrc" ;;
+    *)   rc_file="$HOME/.bashrc" ;;
+  esac
   local marker_start="# >>> ctn-sca-deploy alias >>>"
   local marker_end="# <<< ctn-sca-deploy alias <<<"
   local tmpbash
   tmpbash="$(mktemp)"
-  if [[ -f "$bashrc" ]]; then
-    awk -v s="$marker_start" -v e="$marker_end" 'BEGIN{skip=0} $0==s{skip=1; next} $0==e{skip=0; next} !skip{print}' "$bashrc" > "$tmpbash"
+  if [[ -f "$rc_file" ]]; then
+    awk -v s="$marker_start" -v e="$marker_end" 'BEGIN{skip=0} $0==s{skip=1; next} $0==e{skip=0; next} !skip{print}' "$rc_file" > "$tmpbash"
   else
     : > "$tmpbash"
   fi
   printf '%s\n' "$marker_start" >> "$tmpbash"
   printf 'alias deploy="%s"\n' "$SCRIPT_DIR/deploy.sh" >> "$tmpbash"
   printf '%s\n' "$marker_end" >> "$tmpbash"
-  install -m 644 "$tmpbash" "$bashrc"
+  install -m 644 "$tmpbash" "$rc_file"
   rm -f "$tmpbash"
 
   echo
-  echo "Alias configurado. Corré 'source ~/.bashrc' (o abrí una terminal nueva) y después podés usar 'deploy' en vez de './deploy.sh'."
+  echo "Alias configurado. Corré 'source ${rc_file}' (o abrí una terminal nueva) y después podés usar 'deploy' en vez de './deploy.sh'."
   exit 0
 }
 
@@ -149,8 +154,8 @@ SERVICE_NAME="$(echo -n "${SERVICE_NAME}" | xargs)"
 DOMAIN_NAME="${DOMAIN_NAME:-}"
 CERTBOT_EMAIL="${CERTBOT_EMAIL:-}"
 NGINX_SITE_PATH="${NGINX_SITE_PATH:-/etc/nginx/sites-available/${SERVICE_NAME}}"
-APP_USER="${APP_USER:-deploy}"
-APP_GROUP="${APP_GROUP:-deploy}"
+APP_USER="${APP_USER:-$(id -un)}"
+APP_GROUP="${APP_GROUP:-$(id -gn)}"
 INSTALL_DIR="${INSTALL_DIR:-/opt/ctn-sca-info/backend}"
 JAR_NAME="${JAR_NAME:-sca-backend.jar}"
 SERVICE_UNIT_PATH="${SERVICE_UNIT_PATH:-/etc/systemd/system/${SERVICE_NAME}.service}"
@@ -689,7 +694,11 @@ service_exists() {
 
 ensure_service_exists() {
   if service_exists; then
-    return 0
+    if sudo test -f "$SERVICE_UNIT_PATH" && ! sudo grep -q "^User=${APP_USER}$" "$SERVICE_UNIT_PATH" 2>/dev/null; then
+      log_warn "El servicio existe pero corre con otro usuario — regenerando la unit para usar '${APP_USER}'"
+    else
+      return 0
+    fi
   fi
 
   echo "==> Service ${SERVICE_NAME}.service not found; creating a systemd unit for this JAR"
