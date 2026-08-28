@@ -567,7 +567,7 @@ INSERT INTO sala (nombre, especialidad_id) VALUES
 -- Usuario - Materia
 INSERT INTO asignacion (usuario_id, materia_id, curso_base_id) VALUES
     -- Informatica
-        (16, 1, 1), (16, 2, 1),
+        (16, 1, 1), (16, 1, 2),
         -- Antropologia 1ro A/B - Emilce Jara
 
         (24, 2, 1), (24, 2, 2), (24, 2, 3),
@@ -813,7 +813,6 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     ('emilce.jara', 1, 1, 'B', 1, 5, 2),
     ('luz.angulo', 14, 1, 'B', 1, 7, 2),           -- Química               [AGREGADO, faltaba]
     ('andres.rojas', 11, 1, 'B', 1, 9, 4),         -- Mate_Común            [FIX dur 2->4]
-    ('emilce.jara', 11, 1, 'B', 1, 5, 2),
     ('graciela.lopez', 41, 1, 'B', 2, 1, 4),
     ('susana.alvarenga', 16, 1, 'B', 2, 5, 2),
     ('mirian.montania', 6, 1, 'B', 2, 7, 2),
