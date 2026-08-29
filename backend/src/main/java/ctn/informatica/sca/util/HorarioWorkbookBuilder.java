@@ -153,7 +153,7 @@ public class HorarioWorkbookBuilder {
         // Intentar colocar logo de especialidad (PNG) si existe. Nombre esperado: /static/logo-especialidad-{normalized}.png
         try {
             String normalized = SpecialtyColors.normalizeSpecialty(curso == null ? null : curso.getEspecialidad());
-            String path = "/static/logo-especialidad-" + normalized + ".png";
+            String path = "/static/assets/png/logo-especialidad-" + normalized + ".png";
             try (InputStream is2 = HorarioWorkbookBuilder.class.getResourceAsStream(path)) {
                 if (is2 != null) {
                     byte[] bytes = IOUtils.toByteArray(is2);
