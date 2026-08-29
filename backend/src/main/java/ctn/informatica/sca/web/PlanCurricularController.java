@@ -144,12 +144,12 @@ public class PlanCurricularController {
     }
 
     @GetMapping("/plantilla")
-    public ResponseEntity<byte[]> plantilla(@RequestParam("asignacionId") int asignacionId) throws Exception {
+    public ResponseEntity<byte[]> plantilla(@RequestParam("asignacionId") int asignacionId, @RequestParam(value = "etapa", required = false) String etapa) throws Exception {
         long userId = getCurrentUserId();
         var asignacion = asignacionDao.findById(asignacionId);
         if (asignacion == null) return ResponseEntity.notFound().build();
         if (asignacion.getProfesorId() != (int)userId) return ResponseEntity.status(403).build();
-        byte[] data = templateBuilder.buildForAsignacion(asignacionId);
+        byte[] data = templateBuilder.buildForAsignacion(asignacionId, etapa);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
         headers.setContentDispositionFormData("attachment", "plan-curricular-plantilla.xlsx");
@@ -260,7 +260,7 @@ public class PlanCurricularController {
     }
 
     @GetMapping("/{id}/documento")
-    public ResponseEntity<byte[]> descargarDocumento(@PathVariable int id) throws Exception {
+    public ResponseEntity<?> descargarDocumento(@PathVariable int id) throws Exception {
         User user = getCurrentUser();
         if (user == null) return ResponseEntity.status(401).build();
         Integer ownerId = dao.findProfesorIdByPlanId(id);
@@ -269,8 +269,8 @@ public class PlanCurricularController {
         }
         
         byte[] content = dao.getArchivoOriginal(id);
-        if (content == null) return ResponseEntity.notFound().build();
-        
+        if (content == null) return ResponseEntity.status(404).body("No existe archivo original para este plan (fue rechazado o nunca se subió).");
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
         headers.setContentDispositionFormData("attachment", "plan-curricular.xlsx");
