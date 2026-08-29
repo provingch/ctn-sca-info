@@ -19,6 +19,8 @@ import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.IndexedColors;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.VerticalAlignment;
@@ -37,7 +39,8 @@ public class HorarioWorkbookBuilder {
 
     public XSSFWorkbook build(CursoBase curso, List<HoraCatedra> horas, List<HorarioSlot> slots) throws IOException {
         XSSFWorkbook workbook = new XSSFWorkbook();
-        Styles styles = new Styles(workbook);
+        String specialty = curso == null ? null : curso.getEspecialidad();
+        Styles styles = new Styles(workbook, specialty);
         createCourseSheet(workbook, styles, "Horario", curso, horas, slots);
         workbook.setActiveSheet(0);
         return workbook;
@@ -45,7 +48,7 @@ public class HorarioWorkbookBuilder {
 
     public XSSFWorkbook buildEspecialidad(String especialidadNombre, List<CursoBase> cursos, List<HoraCatedra> horas, List<HorarioSlot> slots) throws IOException {
         XSSFWorkbook workbook = new XSSFWorkbook();
-        Styles styles = new Styles(workbook);
+        // Styles will be created per-sheet (so receso color can vary por especialidad)
 
         List<CursoBase> safeCourses = cursos == null ? List.of() : cursos;
         Set<String> usedNames = new LinkedHashSet<>();
@@ -63,7 +66,8 @@ public class HorarioWorkbookBuilder {
             Sheet sheet = workbook.createSheet(sheetName);
             usedNames.add(sheetName);
             List<HorarioSlot> courseSlots = filterSlotsForCourse(slots, curso.getId());
-            writeCourseSheet(workbook, sheet, styles, curso, horas, courseSlots);
+            Styles sheetStyles = new Styles(workbook, curso == null ? null : curso.getEspecialidad());
+            writeCourseSheet(workbook, sheet, sheetStyles, curso, horas, courseSlots);
         }
 
         workbook.setActiveSheet(0);
@@ -143,6 +147,28 @@ public class HorarioWorkbookBuilder {
             }
         } catch (Exception ignored) {
             // Si el logo no está disponible, seguimos sin abortar la exportación.
+        }
+
+        // Intentar colocar logo de especialidad (PNG) si existe. Nombre esperado: /static/logo-especialidad-{normalized}.png
+        try {
+            String normalized = SpecialtyColors.normalizeSpecialty(curso == null ? null : curso.getEspecialidad());
+            String path = "/static/logo-especialidad-" + normalized + ".png";
+            try (InputStream is2 = HorarioWorkbookBuilder.class.getResourceAsStream(path)) {
+                if (is2 != null) {
+                    byte[] bytes = IOUtils.toByteArray(is2);
+                    int pictureIdx = workbook.addPicture(bytes, XSSFWorkbook.PICTURE_TYPE_PNG);
+                    CreationHelper helper = workbook.getCreationHelper();
+                    Drawing<?> drawing = sheet.createDrawingPatriarch();
+                    ClientAnchor anchor = helper.createClientAnchor();
+                    anchor.setCol1(lastCol - 1);
+                    anchor.setRow1(titleRow.getRowNum());
+                    anchor.setCol2(lastCol);
+                    anchor.setRow2(subtitleRow.getRowNum() + 1);
+                    drawing.createPicture(anchor, pictureIdx);
+                }
+            }
+        } catch (Exception ignored) {
+            // Silencioso
         }
 
         return rowIndex;
@@ -296,7 +322,7 @@ public class HorarioWorkbookBuilder {
         final CellStyle grid;
         final CellStyle receso;
 
-        Styles(XSSFWorkbook workbook) {
+        Styles(XSSFWorkbook workbook, String specialty) {
             Font titleFont = workbook.createFont();
             titleFont.setBold(true);
             titleFont.setFontHeightInPoints((short) 14);
@@ -349,16 +375,41 @@ public class HorarioWorkbookBuilder {
             Font recesoFont = workbook.createFont();
             recesoFont.setItalic(true);
             recesoFont.setBold(true);
-            receso = workbook.createCellStyle();
-            receso.setFont(recesoFont);
-            receso.setAlignment(HorizontalAlignment.CENTER);
-            receso.setVerticalAlignment(VerticalAlignment.CENTER);
-            receso.setBorderTop(BorderStyle.THIN);
-            receso.setBorderBottom(BorderStyle.THIN);
-            receso.setBorderLeft(BorderStyle.THIN);
-            receso.setBorderRight(BorderStyle.THIN);
-            receso.setFillForegroundColor(IndexedColors.ROSE.getIndex());
-            receso.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            XSSFCellStyle recesoStyle = workbook.createCellStyle();
+            recesoStyle.setFont(recesoFont);
+            recesoStyle.setAlignment(HorizontalAlignment.CENTER);
+            recesoStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+            recesoStyle.setBorderTop(BorderStyle.THIN);
+            recesoStyle.setBorderBottom(BorderStyle.THIN);
+            recesoStyle.setBorderLeft(BorderStyle.THIN);
+            recesoStyle.setBorderRight(BorderStyle.THIN);
+            recesoStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            // Determinar color de receso según especialidad (hex). Si no existe, usar IndexedColors.ROSE
+            String hex = SpecialtyColors.getAccent(specialty);
+            if (hex != null && !hex.isBlank()) {
+                byte[] rgb = hexToRgb(hex);
+                XSSFColor xcolor = new XSSFColor(rgb, null);
+                recesoStyle.setFillForegroundColor(xcolor);
+            } else {
+                recesoStyle.setFillForegroundColor(IndexedColors.ROSE.getIndex());
+            }
+            this.receso = recesoStyle;
         }
+    }
+
+    private static byte[] hexToRgb(String hex) {
+        String clean = hex.replace("#", "");
+        if (clean.length() == 3) {
+            clean = "" + clean.charAt(0) + clean.charAt(0) + clean.charAt(1) + clean.charAt(1) + clean.charAt(2) + clean.charAt(2);
+        }
+        byte[] out = new byte[3];
+        try {
+            out[0] = (byte) Integer.parseInt(clean.substring(0, 2), 16);
+            out[1] = (byte) Integer.parseInt(clean.substring(2, 4), 16);
+            out[2] = (byte) Integer.parseInt(clean.substring(4, 6), 16);
+        } catch (Exception ex) {
+            return new byte[] {(byte) 0xFF, (byte) 0xC0, (byte) 0xCB}; // fallback rosa
+        }
+        return out;
     }
 }

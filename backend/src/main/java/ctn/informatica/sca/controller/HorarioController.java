@@ -307,11 +307,18 @@ public class HorarioController {
             }
             authorizeCourse(cursoId, auth);
             List<HoraCatedra> horas = new HoraCatedraDao().findAll();
-            List<HorarioSlot> slots = new HorarioSlotDao().findByCurso(cursoId);
-            String base = "Horario_" + sanitize(curso.getEspecialidad()) + "_" + curso.getNivel() + curso.getSeccion();
+            // Generar una hoja por cada sección del mismo nivel + especialidad
+            List<CursoBase> cursosMismoNivel = new CursoBaseDao().findAllByEspecialidadId(curso.getEspecialidadId()).stream()
+                    .filter(cb -> cb.getNivel() == curso.getNivel())
+                    .toList();
+            HorarioSlotDao slotDao = new HorarioSlotDao();
+            List<HorarioSlot> slots = new java.util.ArrayList<>();
+            for (CursoBase cb : cursosMismoNivel) slots.addAll(slotDao.findByCurso(cb.getId()));
+
+            String base = "Horario_" + sanitize(curso.getEspecialidad()) + "_" + curso.getNivel();
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + URLEncoder.encode(base + ".xlsx", StandardCharsets.UTF_8).replace("+", "%20"));
-            try (XSSFWorkbook workbook = new HorarioWorkbookBuilder().build(curso, horas, slots)) {
+            try (XSSFWorkbook workbook = new HorarioWorkbookBuilder().buildEspecialidad(curso.getEspecialidad(), cursosMismoNivel, horas, slots)) {
                 workbook.write(response.getOutputStream());
             }
         } catch (ResponseStatusException ex) {
