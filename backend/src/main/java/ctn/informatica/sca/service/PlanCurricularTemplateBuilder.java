@@ -28,11 +28,16 @@ public class PlanCurricularTemplateBuilder {
     @Autowired
     private HorarioSlotDao horarioSlotDao;
 
-    public byte[] buildForAsignacion(int asignacionId) throws Exception {
+    public byte[] buildForAsignacion(int asignacionId, String etapaOverride) throws Exception {
         Asignacion a = asignacionDao.findById(asignacionId);
         if (a == null) throw new IllegalArgumentException("Asignación no encontrada");
 
-        int etapaActual = AcademicPeriod.currentEtapa();
+        int etapaActual;
+        if (etapaOverride != null && ("1".equals(etapaOverride.trim()) || "2".equals(etapaOverride.trim()))) {
+            etapaActual = Integer.parseInt(etapaOverride.trim());
+        } else {
+            etapaActual = AcademicPeriod.currentEtapa();
+        }
         String resourceName = (etapaActual == 2)
                 ? "/plan-curricular-plantilla-etapa2.xlsx"
                 : "/plan-curricular-plantilla.xlsx";

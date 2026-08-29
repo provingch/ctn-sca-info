@@ -49,12 +49,14 @@ function DescargarPlantillaSection({ group }: { group: AssignmentGroup }) {
   const secciones = curso ? unique(group.asignaciones.filter((item) => item.cursoOrdinal === curso), (item) => item.seccion) : [];
   const materias = curso && seccion ? group.asignaciones.filter((item) => item.cursoOrdinal === curso && item.seccion === seccion) : [];
   const asignacion = materias.find((item) => item.materiaId === Number(materiaId));
+  const [etapa, setEtapa] = useState<string | undefined>(undefined);
 
   async function download() {
     if (!asignacion) return;
     setError('');
-    try { await planCurricularApi.downloadPlantilla(asignacion.id); } catch (err) { setError(errorMessage(err, 'No se pudo descargar la plantilla.')); }
+    try { await planCurricularApi.downloadPlantilla(asignacion.id, etapa); } catch (err) { setError(errorMessage(err, 'No se pudo descargar la plantilla.')); }
   }
+
 
   return <section className="class-card" style={{ marginTop: 12 }}>
     <h3 style={{ margin: 0, fontSize: '1.15rem' }}>Descargar plantilla</h3>
@@ -62,6 +64,7 @@ function DescargarPlantillaSection({ group }: { group: AssignmentGroup }) {
       <div className="class-field"><label>Curso</label><AnimatedSelect ariaLabel={`Curso de ${group.nombre}`} value={curso} onChange={(value) => { setCurso(value); setSeccion(''); setMateriaId(''); }} options={[{ value: '', label: 'Seleccione curso' }, ...cursos.map((item) => ({ value: item.cursoOrdinal, label: item.cursoOrdinal }))]} /></div>
       <div className="class-field"><label>Sección</label><AnimatedSelect ariaLabel={`Sección de ${group.nombre}`} value={seccion} disabled={!curso} onChange={(value) => { setSeccion(value); setMateriaId(''); }} options={[{ value: '', label: 'Seleccione sección' }, ...secciones.map((item) => ({ value: item.seccion, label: item.seccion }))]} /></div>
       <div className="class-field"><label>Materia</label><AnimatedSelect ariaLabel={`Materia de ${group.nombre}`} value={materiaId} disabled={!seccion} onChange={setMateriaId} options={[{ value: '', label: 'Seleccione materia' }, ...materias.map((item) => ({ value: item.materiaId, label: item.materiaNombre }))]} /></div>
+      <div className="class-field"><label>Etapa</label><AnimatedSelect ariaLabel={`Etapa de ${group.nombre}`} value={etapa ?? ''} onChange={(v) => setEtapa(v || undefined)} options={[{ value: '', label: 'Etapa (opcional)' }, { value: '1', label: 'Etapa 1' }, { value: '2', label: 'Etapa 2' }]} /></div>
       <div className="class-field" style={{ justifyContent: 'end' }}><button type="button" className="button" disabled={!asignacion} onClick={() => void download()}>Descargar plantilla</button></div>
     </div>
     {asignacion?.estadoPlan === 'APROBADO' && <div className="notice" style={{ margin: 0, background: 'color-mix(in srgb, var(--success) 10%, var(--paper))', borderColor: 'color-mix(in srgb, var(--success) 45%, var(--line))' }}>Esta asignación ya cuenta con un plan aprobado. Podés descargar nuevamente su plantilla si lo necesitás.</div>}

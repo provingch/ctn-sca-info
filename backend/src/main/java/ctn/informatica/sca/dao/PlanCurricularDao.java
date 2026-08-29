@@ -32,6 +32,7 @@ public class PlanCurricularDao extends conexion {
                             existingId = rs.getInt("id");
                             String estado = rs.getString("estado");
                             if ("APROBADO".equalsIgnoreCase(estado)) throw new SQLException("Ya existe un plan aprobado para esta asignación/etapa/año");
+                            if ("PENDIENTE".equalsIgnoreCase(estado)) throw new SQLException("Ya existe un plan pendiente para esta asignación/etapa/año");
                         }
                     }
                 }
@@ -105,7 +106,7 @@ public class PlanCurricularDao extends conexion {
     }
 
     public void rechazar(int id, int evaluadorId, String observaciones) throws SQLException {
-        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("UPDATE plan_curricular SET estado='RECHAZADO', evaluador_id = ?, fecha_revision = CURRENT_TIMESTAMP, observaciones_evaluador = ? WHERE id = ?")) {
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("UPDATE plan_curricular SET estado='RECHAZADO', evaluador_id = ?, fecha_revision = CURRENT_TIMESTAMP, observaciones_evaluador = ?, archivo_contenido = NULL WHERE id = ?")) {
             ps.setInt(1, evaluadorId); ps.setString(2, observaciones); ps.setInt(3, id); ps.executeUpdate();
         }
     }
