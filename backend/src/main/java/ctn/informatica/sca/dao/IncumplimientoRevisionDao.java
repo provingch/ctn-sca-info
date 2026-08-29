@@ -77,6 +77,19 @@ public class IncumplimientoRevisionDao extends conexion {
         return 0L;
     }
 
+    public boolean existePendientePorAsignacionYUsuario(int asignacionId, int usuarioId, String tipo) throws SQLException {
+        String sql = "SELECT EXISTS(SELECT 1 FROM incumplimiento_revision "
+                + "WHERE asignacion_id = ? AND usuario_id = ? AND tipo = ? AND estado = 'PENDIENTE')";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, asignacionId);
+            ps.setInt(2, usuarioId);
+            ps.setString(3, tipo == null || tipo.isBlank() ? "ATRASO" : tipo.trim().toUpperCase());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getBoolean(1);
+            }
+        }
+    }
+
     public List<Map<String, Object>> listarPendientes() throws SQLException {
         String sql = "SELECT ir.id, ir.asignacion_id, ir.usuario_id, ir.tipo, ir.descripcion, ir.estado, ir.created_at, ir.evaluador_id, ir.fecha_resolucion, ir.suspension_desde, ir.suspension_hasta, "
                 + "u.nombre AS usuario_nombre, u.apellido AS usuario_apellido, a.materia_id, a.curso_id "

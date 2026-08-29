@@ -234,6 +234,18 @@ public class RasgoPlanillaDao extends conexion {
         }
     }
 
+    public int contarAtrasosPorAsignacionYUsuario(int asignacionId, int usuarioId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM planilla_rasgo "
+                + "WHERE asignacion_id = ? AND usuario_id = ? AND justificacion_atraso IS NOT NULL";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, asignacionId);
+            ps.setInt(2, usuarioId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        }
+    }
+
     public void actualizarVerificacionPlanilla(int planillaRasgoId, String estado, Integer temaPlanId) throws SQLException {
         String sql = "UPDATE planilla_rasgo SET estado_verificacion_tema = ? , tema_plan_curricular_id = ? WHERE id = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {

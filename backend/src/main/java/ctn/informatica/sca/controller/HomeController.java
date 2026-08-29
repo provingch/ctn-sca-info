@@ -594,11 +594,11 @@ public class HomeController {
         }
     }
 
-    private void registrarIncumplimientoPorAtraso(int asignacionId, int usuarioId, Integer temaPlanCurricularId, String justificacionAtraso) {
+    void registrarIncumplimientoPorAtraso(int asignacionId, int usuarioId, Integer temaPlanCurricularId, String justificacionAtraso) {
         try {
             int umbral = configuracionSistemaDao.getInt("umbral_atrasos_incumplimiento", 3);
-            long count = incumplimientoRevisionDao.contarPorAsignacionYUsuario(asignacionId, usuarioId, "ATRASO");
-            if (count + 1 >= umbral) {
+            int count = rasgoPlanillaDao.contarAtrasosPorAsignacionYUsuario(asignacionId, usuarioId);
+            if (count >= umbral && !incumplimientoRevisionDao.existePendientePorAsignacionYUsuario(asignacionId, usuarioId, "ATRASO")) {
                 incumplimientoRevisionDao.registrar(asignacionId, usuarioId, temaPlanCurricularId, "ATRASO",
                         "Se registró una justificación de atraso y se alcanzó el umbral de incumplimiento", "PENDIENTE", null, null, null);
                 List<User> evaluadores = userDao.findAllByLevel(2);
