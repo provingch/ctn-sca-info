@@ -11,4 +11,6 @@ public class TemaPlanDto {
     public String indicadorConceptual;
     public String indicadorProcedimental;
     public String indicadorActitudinal;
+    public String estadoCobertura;
+    public String fechaCobertura;
 }

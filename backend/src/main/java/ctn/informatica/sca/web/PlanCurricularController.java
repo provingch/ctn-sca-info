@@ -204,6 +204,15 @@ public class PlanCurricularController {
         return ResponseEntity.ok(plans);
     }
 
+    @GetMapping("/aprobados")
+    public ResponseEntity<?> aprobados() throws Exception {
+        User user = getCurrentUser();
+        if (user == null) return ResponseEntity.status(401).build();
+        if (user.getLevel() < 2) return ResponseEntity.status(403).build();
+
+        return ResponseEntity.ok(dao.findAprobados());
+    }
+
     @GetMapping("/verificaciones-dudosas")
     public ResponseEntity<?> verificacionesDudosas() throws Exception {
         User user = getCurrentUser();
