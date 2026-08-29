@@ -53,7 +53,7 @@ public class HorarioWorkbookBuilder {
         List<CursoBase> safeCourses = cursos == null ? List.of() : cursos;
         Set<String> usedNames = new LinkedHashSet<>();
         if (safeCourses.isEmpty()) {
-            createEmptySpecialtySheet(workbook, styles, especialidadNombre);
+            createEmptySpecialtySheet(workbook, especialidadNombre);
             return workbook;
         }
 
@@ -79,12 +79,13 @@ public class HorarioWorkbookBuilder {
         writeCourseSheet(workbook, sheet, styles, curso, horas, slots);
     }
 
-    private void createEmptySpecialtySheet(XSSFWorkbook workbook, Styles styles, String especialidadNombre) {
+    private void createEmptySpecialtySheet(XSSFWorkbook workbook, String especialidadNombre) {
+        Styles localStyles = new Styles(workbook, especialidadNombre);
         Sheet sheet = workbook.createSheet("Sin cursos");
         Row row = sheet.createRow(0);
         Cell cell = row.createCell(0);
         cell.setCellValue("No hay cursos para " + (especialidadNombre == null ? "esta especialidad" : especialidadNombre));
-        cell.setCellStyle(styles.title);
+        cell.setCellStyle(localStyles.title);
         sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 4));
         sheet.setColumnWidth(0, 9000);
     }
