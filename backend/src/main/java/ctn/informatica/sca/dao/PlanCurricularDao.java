@@ -113,7 +113,8 @@ public class PlanCurricularDao extends conexion {
     public PlanCurricularDto findByAsignacion(int asignacionId, String etapa, int anio) throws SQLException {
         String sql = "SELECT p.id, p.estado, p.archivo_nombre, p.fecha_subida, p.fecha_revision, p.observaciones_evaluador, " +
                 "t.id AS tema_id, t.mes, t.orden_mes, t.bloque, t.capacidades, t.temas_contenidos, t.actividades, " +
-                "t.instrumentos_evaluacion, t.indicador_conceptual, t.indicador_procedimental, t.indicador_actitudinal " +
+                "t.instrumentos_evaluacion, t.indicador_conceptual, t.indicador_procedimental, t.indicador_actitudinal, " +
+                "t.estado_cobertura, t.fecha_cobertura " +
                 "FROM plan_curricular p " +
                 "LEFT JOIN tema_plan_curricular t ON t.plan_curricular_id = p.id " +
                 "WHERE p.asignacion_id = ? AND p.etapa = ? AND p.anio_lectivo = ? " +
@@ -150,6 +151,8 @@ public class PlanCurricularDao extends conexion {
                         t.indicadorConceptual = rs.getString("indicador_conceptual");
                         t.indicadorProcedimental = rs.getString("indicador_procedimental");
                         t.indicadorActitudinal = rs.getString("indicador_actitudinal");
+                        t.estadoCobertura = rs.getString("estado_cobertura");
+                        t.fechaCobertura = rs.getString("fecha_cobertura");
                         temas.add(t);
                     }
                 }
@@ -162,7 +165,16 @@ public class PlanCurricularDao extends conexion {
     }
 
     public List<PlanCurricularDto> findPendientes() throws SQLException {
+        return findByEstado("PENDIENTE");
+    }
+
+    public List<PlanCurricularDto> findAprobados() throws SQLException {
+        return findByEstado("APROBADO");
+    }
+
+    private List<PlanCurricularDto> findByEstado(String estado) throws SQLException {
         String sql = "SELECT p.id, p.estado, p.archivo_nombre, p.fecha_subida, p.fecha_revision, p.observaciones_evaluador, " +
+                "p.etapa, p.anio_lectivo, " +
                 "a.id AS asignacion_id, m.nombre AS materia_nombre, u.apellido AS profesor_apellido, u.nombre AS profesor_nombre, " +
                 "cb.nivel, cb.seccion, e.nombre AS especialidad " +
                 "FROM plan_curricular p " +
@@ -171,29 +183,35 @@ public class PlanCurricularDao extends conexion {
                 "JOIN usuario u ON u.id = a.usuario_id " +
                 "JOIN curso_base cb ON cb.id = a.curso_base_id " +
                 "JOIN especialidad e ON e.id = cb.especialidad_id " +
-                "WHERE p.estado = 'PENDIENTE' " +
+                "WHERE p.estado = ? " +
                 "ORDER BY p.fecha_subida ASC";
         List<PlanCurricularDto> result = new ArrayList<>();
-        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                PlanCurricularDto dto = new PlanCurricularDto();
-                dto.id = rs.getInt("id");
-                dto.estado = rs.getString("estado");
-                dto.archivoNombre = rs.getString("archivo_nombre");
-                dto.fechaSubida = rs.getString("fecha_subida");
-                dto.materiaNombre = rs.getString("materia_nombre");
-                String profApellido = rs.getString("profesor_apellido");
-                String profNombre = rs.getString("profesor_nombre");
-                String profNombreCompleto = (profApellido == null ? "" : profApellido) + 
-                        (profNombre == null ? "" : (profNombre.isBlank() ? "" : (" " + profNombre)));
-                dto.profesorNombre = profNombreCompleto;
-                String especialidad = rs.getString("especialidad");
-                String seccion = rs.getString("seccion");
-                String cursoDesc = (especialidad == null ? "" : especialidad) + 
-                        (seccion == null || seccion.isBlank() ? "" : (" " + seccion));
-                dto.cursoDescripcion = cursoDesc;
-                dto.especialidad = especialidad;
-                result.add(dto);
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, estado);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    PlanCurricularDto dto = new PlanCurricularDto();
+                    dto.id = rs.getInt("id");
+                    dto.estado = rs.getString("estado");
+                    dto.archivoNombre = rs.getString("archivo_nombre");
+                    dto.fechaSubida = rs.getString("fecha_subida");
+                    dto.fechaRevision = rs.getString("fecha_revision");
+                    dto.etapa = rs.getString("etapa");
+                    dto.anio = rs.getInt("anio_lectivo");
+                    dto.materiaNombre = rs.getString("materia_nombre");
+                    String profApellido = rs.getString("profesor_apellido");
+                    String profNombre = rs.getString("profesor_nombre");
+                    String profNombreCompleto = (profApellido == null ? "" : profApellido) +
+                            (profNombre == null ? "" : (profNombre.isBlank() ? "" : (" " + profNombre)));
+                    dto.profesorNombre = profNombreCompleto;
+                    String especialidad = rs.getString("especialidad");
+                    String seccion = rs.getString("seccion");
+                    String cursoDesc = (especialidad == null ? "" : especialidad) +
+                            (seccion == null || seccion.isBlank() ? "" : (" " + seccion));
+                    dto.cursoDescripcion = cursoDesc;
+                    dto.especialidad = especialidad;
+                    result.add(dto);
+                }
             }
         }
         return result;
@@ -205,7 +223,8 @@ public class PlanCurricularDao extends conexion {
                 "m.nombre AS materia_nombre, u.apellido AS profesor_apellido, u.nombre AS profesor_nombre, " +
                 "cb.nivel, cb.seccion, e.nombre AS especialidad, " +
                 "t.id AS tema_id, t.mes, t.orden_mes, t.bloque, t.capacidades, t.temas_contenidos, t.actividades, " +
-                "t.instrumentos_evaluacion, t.indicador_conceptual, t.indicador_procedimental, t.indicador_actitudinal " +
+                "t.instrumentos_evaluacion, t.indicador_conceptual, t.indicador_procedimental, t.indicador_actitudinal, " +
+                "t.estado_cobertura, t.fecha_cobertura " +
                 "FROM plan_curricular p " +
                 "JOIN asignacion a ON a.id = p.asignacion_id " +
                 "JOIN materia m ON m.id = a.materia_id " +
@@ -255,6 +274,8 @@ public class PlanCurricularDao extends conexion {
                         t.indicadorConceptual = rs.getString("indicador_conceptual");
                         t.indicadorProcedimental = rs.getString("indicador_procedimental");
                         t.indicadorActitudinal = rs.getString("indicador_actitudinal");
+                        t.estadoCobertura = rs.getString("estado_cobertura");
+                        t.fechaCobertura = rs.getString("fecha_cobertura");
                         temas.add(t);
                     }
                 }

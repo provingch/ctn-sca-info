@@ -6,10 +6,11 @@ import { useSpecialty } from '../../context/SpecialtyContext';
 import { normalizeSpecialty } from '../../theme/theme';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import ReviewPlanesView from './ReviewPlanesView';
+import SeguimientoPlanesView from './SeguimientoPlanesView';
 
 export default function EvaluacionPage() {
   const specialty = useSpecialty();
-  const [view, setView] = useState<'menu' | 'planillas' | 'planes'>('menu');
+  const [view, setView] = useState<'menu' | 'planillas' | 'planes' | 'seguimiento'>('menu');
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [cursos, setCursos] = useState<CursoEvaluacion[]>([]);
   const [especialidadId, setEspecialidadId] = useState(specialty.id ?? 0);
@@ -57,6 +58,7 @@ export default function EvaluacionPage() {
       <div className="choice-grid">
         <button type="button" onClick={() => setView('planillas')}><span>01</span><h2>Descargar planillas</h2><p>Exportá planillas completadas de los cursos.</p></button>
         <button type="button" onClick={() => setView('planes')}><span>02</span><h2>Revisar plan curricular</h2><p>Aprobá o rechazá planes de profesores.</p></button>
+        <button type="button" onClick={() => setView('seguimiento')}><span>03</span><h2>Seguimiento de profesores</h2><p>Consultá cumplimiento de planes y resolvé incumplimientos.</p></button>
       </div>
     </AppShell>;
   }
@@ -65,6 +67,13 @@ export default function EvaluacionPage() {
     return <AppShell title="Revisar Planes Curriculares">
       <button type="button" className="button secondary" onClick={() => setView('menu')} style={{ marginBottom: 16 }}>← Volver</button>
       <ReviewPlanesView />
+    </AppShell>;
+  }
+
+  if (view === 'seguimiento') {
+    return <AppShell title="Seguimiento de Profesores">
+      <button type="button" className="button secondary" onClick={() => setView('menu')} style={{ marginBottom: 16 }}>← Volver</button>
+      <SeguimientoPlanesView />
     </AppShell>;
   }
 

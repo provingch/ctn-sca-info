@@ -18,6 +18,8 @@ export interface TemaPlanDto {
   indicadorConceptual?: string;
   indicadorProcedimental?: string;
   indicadorActitudinal?: string;
+  estadoCobertura?: 'PENDIENTE' | 'CUBIERTO';
+  fechaCobertura?: string;
 }
 
 export interface PlanCurricularEstado {
@@ -27,6 +29,10 @@ export interface PlanCurricularEstado {
   fechaSubida?: string;
   fechaRevision?: string;
   observacionesEvaluador?: string;
+  materiaNombre?: string;
+  profesorNombre?: string;
+  cursoDescripcion?: string;
+  especialidad?: string;
   temas?: TemaPlanDto[];
   etapa?: string;
   anio?: number;
@@ -41,6 +47,9 @@ export interface PlanPendienteResumen {
   profesorNombre: string;
   cursoDescripcion: string;
   especialidad?: string;
+  fechaRevision?: string;
+  etapa?: string;
+  anio?: number;
 }
 
 export interface AsignacionCompleta {
@@ -131,6 +140,10 @@ export function uploadPlanCurricular(asignacionId: number, file: File): Promise<
 
 export function getPendientes(): Promise<PlanPendienteResumen[]> {
   return apiRequest<PlanPendienteResumen[]>('/api/plan-curricular/pendientes');
+}
+
+export function getAprobados(): Promise<PlanPendienteResumen[]> {
+  return apiRequest<PlanPendienteResumen[]>('/api/plan-curricular/aprobados');
 }
 
 export function getPlanDetalle(id: number): Promise<PlanCurricularEstado> {

@@ -78,7 +78,7 @@ public class IncumplimientoRevisionDao extends conexion {
     }
 
     public List<Map<String, Object>> listarPendientes() throws SQLException {
-        String sql = "SELECT ir.id, ir.asignacion_id, ir.usuario_id, ir.tipo, ir.descripcion, ir.estado, ir.evaluador_id, ir.fecha_resolucion, ir.suspension_desde, ir.suspension_hasta, "
+        String sql = "SELECT ir.id, ir.asignacion_id, ir.usuario_id, ir.tipo, ir.descripcion, ir.estado, ir.created_at, ir.evaluador_id, ir.fecha_resolucion, ir.suspension_desde, ir.suspension_hasta, "
                 + "u.nombre AS usuario_nombre, u.apellido AS usuario_apellido, a.materia_id, a.curso_id "
                 + "FROM incumplimiento_revision ir "
                 + "LEFT JOIN usuario u ON u.id = ir.usuario_id "
@@ -94,6 +94,7 @@ public class IncumplimientoRevisionDao extends conexion {
                 row.put("tipo", rs.getString("tipo"));
                 row.put("descripcion", rs.getString("descripcion"));
                 row.put("estado", rs.getString("estado"));
+                row.put("fechaCreacion", rs.getTimestamp("created_at"));
                 row.put("evaluadorId", rs.getObject("evaluador_id", Integer.class));
                 row.put("fechaResolucion", rs.getTimestamp("fecha_resolucion"));
                 row.put("suspensionDesde", rs.getTimestamp("suspension_desde"));
