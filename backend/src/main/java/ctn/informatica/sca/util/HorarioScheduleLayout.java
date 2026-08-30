@@ -66,7 +66,7 @@ final class HorarioScheduleLayout {
             for (int dia = 1; dia <= dayCount; dia++) {
                 HorarioSlot slot = findSlot(slotsPorHora, hora.getId(), dia);
                 if (slot != null) {
-                    row.cells.put(dia, new CellLayout(slot, buildSlotText(slot)));
+                    row.cells.put(dia, new CellLayout(slot, buildMateriaText(slot), buildProfesorText(slot)));
                     if (slot.getSalaNombre() != null && !slot.getSalaNombre().isBlank()) {
                         block.salasPorDia.get(dia).add(slot.getSalaNombre());
                     }
@@ -159,20 +159,46 @@ final class HorarioScheduleLayout {
         if (slot == null) {
             return "";
         }
-        String materia = slot.getMateriaNombre() == null ? "" : slot.getMateriaNombre().trim();
-        String profesor = slot.getProfesorNombre() == null ? "" : slot.getProfesorNombre().trim();
+        String materia = buildMateriaText(slot);
+        String profesor = buildProfesorText(slot);
         String texto = materia.isBlank() ? profesor : (profesor.isBlank() ? materia : materia + "\n" + profesor);
-        if (slot.getSalaNombre() != null && !slot.getSalaNombre().isBlank()) {
-            texto += "\nSala: " + slot.getSalaNombre().trim();
-        }
         return texto;
+    }
+
+    static String buildMateriaText(HorarioSlot slot) {
+        if (slot == null) {
+            return "";
+        }
+        return safeTrim(slot.getMateriaNombre());
+    }
+
+    static String buildProfesorText(HorarioSlot slot) {
+        if (slot == null) {
+            return "";
+        }
+        String profesor = safeTrim(slot.getProfesorNombre());
+        String sala = safeTrim(slot.getSalaNombre());
+        if (!sala.isBlank()) {
+            sala = "Sala: " + sala;
+        }
+        if (profesor.isBlank()) {
+            return sala;
+        }
+        if (sala.isBlank()) {
+            return profesor;
+        }
+        return profesor + "\n" + sala;
+    }
+
+    private static String safeTrim(String value) {
+        return value == null ? "" : value.trim();
     }
 
     private static String buildHoraLabel(int index, HoraCatedra hora) {
         String numero = hora != null && hora.getNumero() > 0 ? String.valueOf(hora.getNumero()) : String.valueOf(index + 1);
         String inicio = hora != null && hora.getHoraInicio() != null ? hora.getHoraInicio().toString() : "";
         String fin = hora != null && hora.getHoraFin() != null ? hora.getHoraFin().toString() : "";
-        return numero + "° " + inicio + " - " + fin;
+        return numero + "°\n" + inicio + " - " + fin;
     }
 
     static boolean isManana(HoraCatedra hora) {
@@ -218,15 +244,17 @@ final class HorarioScheduleLayout {
 
     static final class CellLayout {
         final HorarioSlot slot;
-        final String text;
+        final String materiaText;
+        final String profesorText;
 
-        private CellLayout(HorarioSlot slot, String text) {
+        private CellLayout(HorarioSlot slot, String materiaText, String profesorText) {
             this.slot = slot;
-            this.text = text;
+            this.materiaText = materiaText;
+            this.profesorText = profesorText;
         }
 
         static CellLayout empty() {
-            return new CellLayout(null, "");
+            return new CellLayout(null, "", "");
         }
     }
 

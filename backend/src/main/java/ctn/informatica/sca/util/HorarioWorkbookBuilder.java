@@ -40,11 +40,12 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 public class HorarioWorkbookBuilder {
 
     private static final Logger log = LoggerFactory.getLogger(HorarioWorkbookBuilder.class);
+    private static final HorarioTemplateStyles TEMPLATE = HorarioTemplateStyles.load();
 
     public XSSFWorkbook build(CursoBase curso, List<HoraCatedra> horas, List<HorarioSlot> slots) throws IOException {
         XSSFWorkbook workbook = new XSSFWorkbook();
         String specialty = curso == null ? null : curso.getEspecialidad();
-        Styles styles = new Styles(workbook, specialty);
+        Styles styles = new Styles(workbook, specialty, TEMPLATE);
         createCourseSheet(workbook, styles, "Horario", curso, horas, slots);
         workbook.setActiveSheet(0);
         return workbook;
@@ -70,7 +71,7 @@ public class HorarioWorkbookBuilder {
             Sheet sheet = workbook.createSheet(sheetName);
             usedNames.add(sheetName);
             List<HorarioSlot> courseSlots = filterSlotsForCourse(slots, curso.getId());
-            Styles sheetStyles = new Styles(workbook, curso == null ? null : curso.getEspecialidad());
+            Styles sheetStyles = new Styles(workbook, curso == null ? null : curso.getEspecialidad(), TEMPLATE);
             writeCourseSheet(workbook, sheet, sheetStyles, curso, horas, courseSlots);
         }
 
@@ -84,7 +85,7 @@ public class HorarioWorkbookBuilder {
     }
 
     private void createEmptySpecialtySheet(XSSFWorkbook workbook, String especialidadNombre) {
-        Styles localStyles = new Styles(workbook, especialidadNombre);
+        Styles localStyles = new Styles(workbook, especialidadNombre, TEMPLATE);
         Sheet sheet = workbook.createSheet("Sin cursos");
         Row row = sheet.createRow(0);
         Cell cell = row.createCell(0);
@@ -105,7 +106,7 @@ public class HorarioWorkbookBuilder {
             Row emptyRow = sheet.createRow(rowIndex++);
             Cell emptyCell = emptyRow.createCell(0);
             emptyCell.setCellValue("No hay horario cargado para este curso.");
-            emptyCell.setCellStyle(styles.grid);
+            emptyCell.setCellStyle(styles.banner);
             sheet.addMergedRegion(new CellRangeAddress(emptyRow.getRowNum(), emptyRow.getRowNum(), 0, dayCount));
         } else {
             for (HorarioScheduleLayout.BlockLayout block : blocks) {
@@ -114,9 +115,9 @@ public class HorarioWorkbookBuilder {
             }
         }
 
-        sheet.setColumnWidth(0, 3200);
+        sheet.setColumnWidth(0, TEMPLATE.hourColumnWidth());
         for (int i = 1; i <= dayCount; i++) {
-            sheet.setColumnWidth(i, 6500);
+            sheet.setColumnWidth(i, TEMPLATE.dayColumnWidth());
         }
     }
 
@@ -201,7 +202,7 @@ public class HorarioWorkbookBuilder {
         bloqueTitleRow.setHeightInPoints(20);
         Cell bloqueTitleCell = bloqueTitleRow.createCell(0);
         bloqueTitleCell.setCellValue(block.name);
-        bloqueTitleCell.setCellStyle(styles.bloqueTitle);
+        bloqueTitleCell.setCellStyle(styles.banner);
         sheet.addMergedRegion(new CellRangeAddress(bloqueTitleRow.getRowNum(), bloqueTitleRow.getRowNum(), 0, block.dayCount));
 
         Row headerRow = sheet.createRow(rowIndex++);
@@ -215,13 +216,14 @@ public class HorarioWorkbookBuilder {
             cell.setCellStyle(styles.header);
         }
 
-        int dataStartRow = rowIndex;
+        List<Integer> physicalRowStarts = new ArrayList<>();
         for (int rowOffset = 0; rowOffset < block.rows.size(); rowOffset++) {
             HorarioScheduleLayout.RowLayout rowLayout = block.rows.get(rowOffset);
-            Row row = sheet.createRow(rowIndex++);
-            row.setHeightInPoints(rowLayout.receso ? 18 : 40);
+            physicalRowStarts.add(rowIndex);
 
             if (rowLayout.receso) {
+                Row row = sheet.createRow(rowIndex++);
+                row.setHeightInPoints(18);
                 Cell recesoCell = row.createCell(0);
                 recesoCell.setCellValue("RECESO");
                 recesoCell.setCellStyle(styles.receso);
@@ -233,36 +235,53 @@ public class HorarioWorkbookBuilder {
                 continue;
             }
 
-            Cell hourCell = row.createCell(0);
-            hourCell.setCellValue(rowLayout.horaLabel);
-            hourCell.setCellStyle(styles.grid);
+            Row materiaRow = sheet.createRow(rowIndex++);
+            Row profesorRow = sheet.createRow(rowIndex++);
+            materiaRow.setHeightInPoints(18);
+            profesorRow.setHeightInPoints(18);
+
+            Cell hourTop = materiaRow.createCell(0);
+            hourTop.setCellValue(rowLayout.horaLabel);
+            hourTop.setCellStyle(styles.hourCell);
+            Cell hourBottom = profesorRow.createCell(0);
+            hourBottom.setCellStyle(styles.hourCell);
+            sheet.addMergedRegion(new CellRangeAddress(materiaRow.getRowNum(), profesorRow.getRowNum(), 0, 0));
 
             for (int dia = 1; dia <= block.dayCount; dia++) {
-                Cell cell = row.createCell(dia);
-                cell.setCellStyle(styles.grid);
+                Cell materiaCell = materiaRow.createCell(dia);
+                materiaCell.setCellStyle(styles.materiaCell);
+                Cell profesorCell = profesorRow.createCell(dia);
+                profesorCell.setCellStyle(styles.profesorCell);
                 if (isMergedContinuation(block, rowOffset, dia)) {
                     continue;
                 }
                 HorarioScheduleLayout.CellLayout cellLayout = rowLayout.cells.get(dia);
-                if (cellLayout != null && cellLayout.text != null && !cellLayout.text.isBlank()) {
-                    cell.setCellValue(cellLayout.text);
+                if (cellLayout != null) {
+                    if (cellLayout.materiaText != null && !cellLayout.materiaText.isBlank()) {
+                        materiaCell.setCellValue(cellLayout.materiaText);
+                    }
+                    if (cellLayout.profesorText != null && !cellLayout.profesorText.isBlank()) {
+                        profesorCell.setCellValue(cellLayout.profesorText);
+                    }
                 }
             }
         }
 
         for (HorarioScheduleLayout.MergedRange range : block.mergedRanges) {
-            sheet.addMergedRegion(new CellRangeAddress(dataStartRow + range.startRow, dataStartRow + range.endRow, range.day, range.day));
+            int startRow = physicalRowStarts.get(range.startRow);
+            int endRow = physicalRowStarts.get(range.endRow) + 1;
+            sheet.addMergedRegion(new CellRangeAddress(startRow, endRow, range.day, range.day));
         }
 
         Row salasRow = sheet.createRow(rowIndex++);
         salasRow.setHeightInPoints(22);
         Cell salasHeaderCell = salasRow.createCell(0);
         salasHeaderCell.setCellValue("Salas");
-        salasHeaderCell.setCellStyle(styles.header);
+        salasHeaderCell.setCellStyle(styles.salasLabel);
         for (int dia = 1; dia <= block.dayCount; dia++) {
             Cell cell = salasRow.createCell(dia);
             cell.setCellValue(String.join(" / ", block.salasPorDia.get(dia)));
-            cell.setCellStyle(styles.header);
+            cell.setCellStyle(styles.salasData);
         }
 
         return rowIndex;
@@ -339,99 +358,94 @@ public class HorarioWorkbookBuilder {
     private static final class Styles {
         final CellStyle title;
         final CellStyle subtitle;
-        final CellStyle bloqueTitle;
+        final CellStyle banner;
         final CellStyle header;
-        final CellStyle grid;
+        final CellStyle hourCell;
+        final CellStyle materiaCell;
+        final CellStyle profesorCell;
+        final CellStyle salasLabel;
+        final CellStyle salasData;
         final CellStyle receso;
 
-        Styles(XSSFWorkbook workbook, String specialty) {
-            Font titleFont = workbook.createFont();
-            titleFont.setBold(true);
-            titleFont.setFontHeightInPoints((short) 14);
-            title = workbook.createCellStyle();
-            title.setFont(titleFont);
-            title.setAlignment(HorizontalAlignment.CENTER);
-            title.setVerticalAlignment(VerticalAlignment.CENTER);
+        Styles(XSSFWorkbook workbook, String specialty, HorarioTemplateStyles template) {
+            title = createStyle(workbook, template.title(), null, false);
+            subtitle = createStyle(workbook, template.subtitle(), null, false);
+            banner = createStyle(workbook, template.blockBanner(), null, false);
+            header = createStyle(workbook, template.headerDay(), null, false);
+            hourCell = createStyle(workbook, template.hourCell(), null, false);
+            materiaCell = createStyle(workbook, template.materiaCell(), null, false);
+            profesorCell = createStyle(workbook, template.profesorCell(), null, false);
+            salasLabel = createStyle(workbook, template.salasLabel(), null, false);
+            salasData = createStyle(workbook, template.salasData(), null, false);
+            receso = createStyle(workbook, template.receso(), SpecialtyColors.getAccent(specialty), true);
+        }
 
-            Font subtitleFont = workbook.createFont();
-            subtitleFont.setBold(true);
-            subtitleFont.setFontHeightInPoints((short) 11);
-            subtitle = workbook.createCellStyle();
-            subtitle.setFont(subtitleFont);
-            subtitle.setAlignment(HorizontalAlignment.CENTER);
-            subtitle.setVerticalAlignment(VerticalAlignment.CENTER);
-
-            Font bloqueFont = workbook.createFont();
-            bloqueFont.setBold(true);
-            bloqueFont.setFontHeightInPoints((short) 12);
-            bloqueTitle = workbook.createCellStyle();
-            bloqueTitle.setFont(bloqueFont);
-            bloqueTitle.setAlignment(HorizontalAlignment.CENTER);
-            bloqueTitle.setVerticalAlignment(VerticalAlignment.CENTER);
-            bloqueTitle.setFillForegroundColor(IndexedColors.GREY_40_PERCENT.getIndex());
-            bloqueTitle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-
-            Font headerFont = workbook.createFont();
-            headerFont.setBold(true);
-            header = workbook.createCellStyle();
-            header.setFont(headerFont);
-            header.setAlignment(HorizontalAlignment.CENTER);
-            header.setVerticalAlignment(VerticalAlignment.CENTER);
-            header.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-            header.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            header.setBorderTop(BorderStyle.THIN);
-            header.setBorderBottom(BorderStyle.THIN);
-            header.setBorderLeft(BorderStyle.THIN);
-            header.setBorderRight(BorderStyle.THIN);
-            header.setWrapText(true);
-
-            grid = workbook.createCellStyle();
-            grid.setBorderTop(BorderStyle.THIN);
-            grid.setBorderBottom(BorderStyle.THIN);
-            grid.setBorderLeft(BorderStyle.THIN);
-            grid.setBorderRight(BorderStyle.THIN);
-            grid.setAlignment(HorizontalAlignment.CENTER);
-            grid.setVerticalAlignment(VerticalAlignment.CENTER);
-            grid.setWrapText(true);
-
-            Font recesoFont = workbook.createFont();
-            recesoFont.setItalic(true);
-            recesoFont.setBold(true);
-            XSSFCellStyle recesoStyle = workbook.createCellStyle();
-            recesoStyle.setFont(recesoFont);
-            recesoStyle.setAlignment(HorizontalAlignment.CENTER);
-            recesoStyle.setVerticalAlignment(VerticalAlignment.CENTER);
-            recesoStyle.setBorderTop(BorderStyle.THIN);
-            recesoStyle.setBorderBottom(BorderStyle.THIN);
-            recesoStyle.setBorderLeft(BorderStyle.THIN);
-            recesoStyle.setBorderRight(BorderStyle.THIN);
-            recesoStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            // Determinar color de receso según especialidad (hex). Si no existe, usar IndexedColors.ROSE
-            String hex = SpecialtyColors.getAccent(specialty);
-            if (hex != null && !hex.isBlank()) {
-                byte[] rgb = hexToRgb(hex);
-                XSSFColor xcolor = new XSSFColor(rgb, null);
-                recesoStyle.setFillForegroundColor(xcolor);
-            } else {
-                recesoStyle.setFillForegroundColor(IndexedColors.ROSE.getIndex());
+        private CellStyle createStyle(XSSFWorkbook workbook, HorarioTemplateStyles.CellStyleSpec spec, String fillOverrideHex, boolean overrideFill) {
+            XSSFCellStyle style = workbook.createCellStyle();
+            Font font = workbook.createFont();
+            font.setFontName(spec.fontName());
+            font.setFontHeightInPoints(spec.fontSizePt());
+            font.setBold(spec.bold());
+            font.setItalic(spec.italic());
+            if (spec.fontColorHex() != null && !spec.fontColorHex().isBlank()) {
+                font.setColor(toIndexedFontColor(spec.fontColorHex()));
             }
-            this.receso = recesoStyle;
+            style.setFont(font);
+            style.setAlignment(spec.horizontalAlignment());
+            style.setVerticalAlignment(spec.verticalAlignment());
+            style.setWrapText(spec.wrapText());
+            style.setBorderTop(spec.borderTop());
+            style.setBorderRight(spec.borderRight());
+            style.setBorderBottom(spec.borderBottom());
+            style.setBorderLeft(spec.borderLeft());
+            if (spec.borderColorHex() != null && !spec.borderColorHex().isBlank()) {
+                XSSFColor borderColor = toXssfColor(spec.borderColorHex());
+                style.setTopBorderColor(borderColor);
+                style.setRightBorderColor(borderColor);
+                style.setBottomBorderColor(borderColor);
+                style.setLeftBorderColor(borderColor);
+            }
+            String fillHex = overrideFill ? fillOverrideHex : spec.fillColorHex();
+            if (fillHex != null && !fillHex.isBlank()) {
+                XSSFColor fillColor = toXssfColor(fillHex);
+                style.setFillForegroundColor(fillColor);
+                style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            }
+            return style;
         }
     }
 
-    private static byte[] hexToRgb(String hex) {
-        String clean = hex.replace("#", "");
+    private static XSSFColor toXssfColor(String hex) {
+        String clean = hex == null ? "" : hex.replace("#", "").trim();
         if (clean.length() == 3) {
             clean = "" + clean.charAt(0) + clean.charAt(0) + clean.charAt(1) + clean.charAt(1) + clean.charAt(2) + clean.charAt(2);
         }
-        byte[] out = new byte[3];
-        try {
-            out[0] = (byte) Integer.parseInt(clean.substring(0, 2), 16);
-            out[1] = (byte) Integer.parseInt(clean.substring(2, 4), 16);
-            out[2] = (byte) Integer.parseInt(clean.substring(4, 6), 16);
-        } catch (Exception ex) {
-            return new byte[] {(byte) 0xFF, (byte) 0xC0, (byte) 0xCB}; // fallback rosa
+        if (clean.length() != 6) {
+            return new XSSFColor(new byte[] {(byte) 0, (byte) 0, (byte) 0}, null);
         }
-        return out;
+        try {
+            byte[] rgb = new byte[] {
+                (byte) Integer.parseInt(clean.substring(0, 2), 16),
+                (byte) Integer.parseInt(clean.substring(2, 4), 16),
+                (byte) Integer.parseInt(clean.substring(4, 6), 16)
+            };
+            return new XSSFColor(rgb, null);
+        } catch (Exception ex) {
+            return new XSSFColor(new byte[] {(byte) 0, (byte) 0, (byte) 0}, null);
+        }
+    }
+
+    private static short toIndexedFontColor(String hex) {
+        if (hex == null) {
+            return IndexedColors.AUTOMATIC.getIndex();
+        }
+        String clean = hex.replace("#", "").trim().toUpperCase();
+        return switch (clean) {
+            case "FFFFFF" -> IndexedColors.WHITE.getIndex();
+            case "000000" -> IndexedColors.BLACK.getIndex();
+            case "404040" -> IndexedColors.GREY_50_PERCENT.getIndex();
+            case "BFBFBF", "D9D9D9", "B9BFC7", "999999" -> IndexedColors.GREY_25_PERCENT.getIndex();
+            default -> IndexedColors.AUTOMATIC.getIndex();
+        };
     }
 }
