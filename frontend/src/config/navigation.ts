@@ -34,6 +34,11 @@ export const navigationByRole: Record<number, RoleNavigationConfig> = {
     manualPath: '/pdfs/manual-padres.pdf',
     primaryItems: [{ label: 'Mis hijos', to: '/padre' }, profileItem],
   },
+  5: {
+    roleLabel: 'Coordinación Pedagógica',
+    manualPath: '/pdfs/manual-coordinacion.pdf',
+    primaryItems: [{ label: 'Coordinación', to: '/coordinacion' }, profileItem],
+  },
 };
 
 export function getRoleNavigation(level?: number | null): RoleNavigationConfig {

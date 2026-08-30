@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { getNotificaciones, getNotificacionesContador, marcarNotificacionLeida, type NotificacionItem } from '../api/notificaciones';
 import { useAuth } from '../context/AuthContext';
 import { getRoleNavigation, type NavigationItem } from '../config/navigation';
 import CtnLogo from './CtnLogo';
@@ -19,6 +20,9 @@ export default function AppNavbar() {
   const headerRef = useRef<HTMLElement>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifCount, setNotifCount] = useState(0);
+  const [notifs, setNotifs] = useState<NotificacionItem[]>([]);
   const config = getRoleNavigation(user?.level);
   const displayName = user?.displayName || user?.username || 'Usuario SCA';
   const initials = user?.initials || displayName.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'S';
@@ -26,6 +30,7 @@ export default function AppNavbar() {
   useEffect(() => {
     setUserMenuOpen(false);
     setMobileMenuOpen(false);
+    setNotifOpen(false);
   }, [location.pathname]);
 
   useEffect(() => {
@@ -33,12 +38,14 @@ export default function AppNavbar() {
       if (headerRef.current && !headerRef.current.contains(event.target as Node)) {
         setUserMenuOpen(false);
         setMobileMenuOpen(false);
+        setNotifOpen(false);
       }
     }
     function closeOnEscape(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         setUserMenuOpen(false);
         setMobileMenuOpen(false);
+        setNotifOpen(false);
       }
     }
     document.addEventListener('pointerdown', closeOnOutsideClick);
@@ -56,6 +63,52 @@ export default function AppNavbar() {
     navigate('/login', { replace: true });
   }
 
+  useEffect(() => {
+    let mounted = true;
+    async function loadCount() {
+      try {
+        const n = await getNotificacionesContador();
+        if (mounted) setNotifCount(n);
+      } catch {
+        // ignore
+      }
+    }
+    loadCount();
+    const iv = setInterval(loadCount, 45000);
+    return () => { mounted = false; clearInterval(iv); };
+  }, []);
+
+  async function openNotifications() {
+    if (notifOpen) {
+      setNotifOpen(false);
+      return;
+    }
+    try {
+      const list = await getNotificaciones(false);
+      setNotifs(list);
+      setNotifOpen(true);
+    } catch {
+      setNotifs([]);
+      setNotifOpen(true);
+    }
+  }
+
+  async function handleClickNotif(n: NotificacionItem) {
+    try {
+      await marcarNotificacionLeida(n.id);
+      setNotifCount((c) => Math.max(0, c - 1));
+    } catch {
+      // ignore
+    }
+    // Deep-link basic mapping
+    if (n.tipo === 'QUEJA_ACUMULADA' || n.entidadTipo === 'queja') {
+      navigate('/coordinacion');
+    } else if (n.tipo === 'INCUMPLIMIENTO' || n.entidadTipo === 'incumplimiento') {
+      navigate('/evaluacion');
+    }
+    setNotifOpen(false);
+  }
+
   return <header className="app-header" ref={headerRef}>
     <div className="app-header-inner">
       <NavLink className="brand" to="/" aria-label="Ir al inicio">
@@ -70,6 +123,26 @@ export default function AppNavbar() {
 
       <div className="navbar-desktop-actions">
         <ThemeToggle compact />
+        <div className="navbar-notifications">
+          <button className="navbar-notif-trigger" type="button" aria-haspopup="menu" aria-expanded={notifOpen} onClick={() => void openNotifications()}>
+            <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18"><path d="M12 2a4 4 0 0 0-4 4v1.1A6.002 6.002 0 0 0 6 14v3l-1 1v1h14v-1l-1-1v-3a6.002 6.002 0 0 0-2-6.9V6a4 4 0 0 0-4-4zM8 20a2 2 0 0 0 4 0H8z" /></svg>
+            {notifCount > 0 && <span className="notif-badge" aria-hidden="true">{notifCount}</span>}
+          </button>
+          <div className={`navbar-notif-dropdown${notifOpen ? ' open' : ''}`} role="menu" aria-hidden={!notifOpen}>
+            {notifs.length === 0 ? <div className="panel">No hay notificaciones</div> : (
+              <ul className="notif-list">
+                {notifs.map((n) => (
+                  <li key={n.id} className={`notif-item${n.leida ? '' : ' unread'}`}>
+                    <button type="button" className="notif-link" onClick={() => void handleClickNotif(n)}>
+                      <div className="notif-message">{n.mensaje}</div>
+                      <div className="notif-meta"><small>{n.fecha}</small></div>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
         <div className="navbar-user-menu">
           <button className="navbar-user-trigger" type="button" aria-haspopup="menu" aria-expanded={userMenuOpen} onClick={() => setUserMenuOpen((open) => !open)}>
             {user?.fotoPerfil ? <img className="navbar-avatar" src={user.fotoPerfil} alt="" /> : <span className="navbar-avatar" aria-hidden="true">{initials}</span>}
