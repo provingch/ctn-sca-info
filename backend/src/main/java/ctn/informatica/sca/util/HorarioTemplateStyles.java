@@ -31,7 +31,7 @@ public final class HorarioTemplateStyles {
     private final CellStyleSpec salasLabel;
     private final CellStyleSpec salasData;
     private final CellStyleSpec receso;
-    private final CellStyleSpec blockBanner;
+    private final CellStyleSpec anioBanner;
     private final int hourColumnWidth;
     private final int dayColumnWidth;
 
@@ -45,7 +45,7 @@ public final class HorarioTemplateStyles {
         CellStyleSpec salasLabel,
         CellStyleSpec salasData,
         CellStyleSpec receso,
-        CellStyleSpec blockBanner,
+        CellStyleSpec anioBanner,
         int hourColumnWidth,
         int dayColumnWidth
     ) {
@@ -58,7 +58,7 @@ public final class HorarioTemplateStyles {
         this.salasLabel = salasLabel;
         this.salasData = salasData;
         this.receso = receso;
-        this.blockBanner = blockBanner;
+        this.anioBanner = anioBanner;
         this.hourColumnWidth = hourColumnWidth;
         this.dayColumnWidth = dayColumnWidth;
     }
@@ -123,8 +123,8 @@ public final class HorarioTemplateStyles {
         return receso;
     }
 
-    public CellStyleSpec blockBanner() {
-        return blockBanner;
+    public CellStyleSpec anioBanner() {
+        return anioBanner;
     }
 
     public int hourColumnWidth() {
@@ -141,32 +141,19 @@ public final class HorarioTemplateStyles {
 
     private static HorarioTemplateStyles fromSheet(Sheet sheet) {
         CellStyleSpec title = fromCell(sheet, "C1");
-        CellStyleSpec subtitle = fromCell(sheet, "C2");
-        CellStyleSpec headerDay = fromCell(sheet, "A6");
-        CellStyleSpec hourCell = fromCell(sheet, "A7");
-        CellStyleSpec materiaCell = fromCell(sheet, "B7");
-        CellStyleSpec profesorCell = fromCell(sheet, "B8");
-        CellStyleSpec salasLabel = fromCell(sheet, "A11");
-        CellStyleSpec salasData = fromCell(sheet, "B11");
-        CellStyleSpec receso = fromCell(sheet, "A12");
-
-        CellStyleSpec blockBanner = CellStyleSpec.banner(
-            "Calibri",
-            (short) 12,
-            true,
-            false,
-            "000000",
-            "B9BFC7",
-            "999999",
-            BorderStyle.THIN,
-            HorizontalAlignment.CENTER,
-            VerticalAlignment.CENTER,
-            true
-        );
+        CellStyleSpec subtitle = fromCell(sheet, "C4");
+        CellStyleSpec headerDay = fromCell(sheet, "A7");
+        CellStyleSpec hourCell = fromCell(sheet, "A8");
+        CellStyleSpec materiaCell = fromCell(sheet, "B8");
+        CellStyleSpec profesorCell = fromCell(sheet, "B9");
+        CellStyleSpec salasLabel = fromCell(sheet, "A12");
+        CellStyleSpec salasData = fromCell(sheet, "B12");
+        CellStyleSpec receso = fromCell(sheet, "A13");
+        CellStyleSpec anioBanner = fromCell(sheet, "A6");
 
         int hourColumnWidth = sheet.getColumnWidth(0);
         int dayColumnWidth = sheet.getColumnWidth(1);
-        return new HorarioTemplateStyles(title, subtitle, headerDay, hourCell, materiaCell, profesorCell, salasLabel, salasData, receso, blockBanner, hourColumnWidth, dayColumnWidth);
+        return new HorarioTemplateStyles(title, subtitle, headerDay, hourCell, materiaCell, profesorCell, salasLabel, salasData, receso, anioBanner, hourColumnWidth, dayColumnWidth);
     }
 
     private static CellStyleSpec fromCell(Sheet sheet, String cellRef) {
@@ -262,8 +249,8 @@ public final class HorarioTemplateStyles {
         CellStyleSpec salasLabel = new CellStyleSpec("Calibri", (short) 11, true, false, "000000", "D9D9D9", "999999", BorderStyle.THIN, BorderStyle.THIN, BorderStyle.THIN, BorderStyle.THIN, HorizontalAlignment.CENTER, VerticalAlignment.CENTER, false);
         CellStyleSpec salasData = new CellStyleSpec("Calibri", (short) 9, true, false, "000000", "D9D9D9", "999999", BorderStyle.THIN, BorderStyle.THIN, BorderStyle.THIN, BorderStyle.THIN, HorizontalAlignment.CENTER, VerticalAlignment.CENTER, false);
         CellStyleSpec receso = new CellStyleSpec("Calibri", (short) 11, true, false, "FFFFFF", "BFBFBF", "999999", BorderStyle.THIN, BorderStyle.THIN, BorderStyle.THIN, BorderStyle.THIN, HorizontalAlignment.CENTER, VerticalAlignment.CENTER, false);
-        CellStyleSpec blockBanner = CellStyleSpec.banner("Calibri", (short) 12, true, false, "000000", "B9BFC7", "999999", BorderStyle.THIN, HorizontalAlignment.CENTER, VerticalAlignment.CENTER, true);
-        return new HorarioTemplateStyles(title, subtitle, headerDay, hourCell, materiaCell, profesorCell, salasLabel, salasData, receso, blockBanner, 16 * 256, 20 * 256);
+        CellStyleSpec anioBanner = CellStyleSpec.banner("Calibri", (short) 12, true, false, "000000", "B9BFC7", "999999", BorderStyle.THIN, HorizontalAlignment.CENTER, VerticalAlignment.CENTER, true);
+        return new HorarioTemplateStyles(title, subtitle, headerDay, hourCell, materiaCell, profesorCell, salasLabel, salasData, receso, anioBanner, 16 * 256, 20 * 256);
     }
 
     public static final class CellStyleSpec {

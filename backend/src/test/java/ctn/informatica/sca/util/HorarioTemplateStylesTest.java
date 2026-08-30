@@ -15,6 +15,13 @@ class HorarioTemplateStylesTest {
         assertNotNull(styles);
         assertEquals("Calibri", styles.title().fontName());
         assertEquals(13, styles.title().fontSizePt());
+        assertTrue(styles.title().wrapText());
+        assertEquals("Calibri", styles.subtitle().fontName());
+        assertEquals(11, styles.subtitle().fontSizePt());
+        assertEquals("000000", styles.anioBanner().fontColorHex());
+        assertEquals("B9BFC7", styles.anioBanner().fillColorHex());
+        assertTrue(styles.anioBanner().bold());
+        assertEquals(12, styles.anioBanner().fontSizePt());
         assertEquals("404040", styles.headerDay().fillColorHex());
         assertEquals("FFFFFF", styles.headerDay().fontColorHex());
         assertEquals("D9D9D9", styles.salasLabel().fillColorHex());
