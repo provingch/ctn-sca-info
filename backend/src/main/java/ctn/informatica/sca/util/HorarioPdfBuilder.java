@@ -310,7 +310,7 @@ public class HorarioPdfBuilder {
         }
         float lineHeight = fontSize * 1.15f;
         float totalHeight = lineHeight * lines.size();
-        float startY = y + ((height - totalHeight) / 2f) + (lines.size() > 1 ? lineHeight : 0f);
+        float startY = y + ((height - totalHeight) / 2f) + ((lines.size() - 1) * lineHeight);
         contentStream.beginText();
         contentStream.setNonStrokingColor(color);
         contentStream.setFont(font, fontSize);
