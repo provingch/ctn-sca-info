@@ -11,6 +11,7 @@ import AuthorizeClassroomPage from '../pages/google/AuthorizeClassroomPage';
 import PlanillaPage from '../pages/planilla/PlanillaPage';
 import TareaPage from '../pages/planilla/TareaPage';
 import EvaluacionPage from '../pages/evaluacion/EvaluacionPage';
+import CoordinacionPage from '../pages/coordinacion/CoordinacionPage';
 import LegalPage from '../pages/legal/LegalPage';
 import AdminPage from '../pages/admin/AdminPage';
 import ParentPage from '../pages/parent/ParentPage';
@@ -35,6 +36,7 @@ export default function AppRoutes() {
     <Route path="/planilla/:planillaId/tarea" element={protect(<TareaPage />, [1])} />
     <Route path="/planilla/:planillaId/tarea/:tareaId" element={protect(<TareaPage />, [1])} />
     <Route path="/evaluacion" element={protect(<EvaluacionPage />, [2])} />
+    <Route path="/coordinacion" element={protect(<CoordinacionPage />, [5])} />
     <Route path="/admin" element={protect(<AdminPage />, [3])} />
     <Route path="/admin/materias" element={protect(<AdminPage />, [3])} />
     <Route path="/admin/usuarios" element={protect(<AdminPage />, [3])} />

@@ -18,6 +18,7 @@ export function ProtectedRoute({ children, allowedLevels }: { children: ReactNod
       2: '/evaluacion',
       3: '/admin',
       4: '/padre',
+      5: '/coordinacion',
     };
     return <Navigate to={fallback[user.level] ?? '/profile'} replace />;
   }
