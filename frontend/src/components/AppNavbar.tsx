@@ -67,8 +67,9 @@ export default function AppNavbar() {
     let mounted = true;
     async function loadCount() {
       try {
-        const n = await getNotificacionesContador();
-        if (mounted) setNotifCount(n);
+        const res = await getNotificacionesContador();
+        const count = (res && typeof res === 'object' && 'count' in res) ? (res as any).count : 0;
+        if (mounted) setNotifCount(Number(count || 0));
       } catch {
         // ignore
       }
@@ -134,8 +135,8 @@ export default function AppNavbar() {
                 {notifs.map((n) => (
                   <li key={n.id} className={`notif-item${n.leida ? '' : ' unread'}`}>
                     <button type="button" className="notif-link" onClick={() => void handleClickNotif(n)}>
-                      <div className="notif-message">{n.mensaje}</div>
-                      <div className="notif-meta"><small>{n.fecha}</small></div>
+                      <div className="notif-message"><strong>{n.titulo}</strong><div>{n.cuerpo}</div></div>
+                      <div className="notif-meta"><small>{new Date(n.createdAt).toLocaleString('es-PY')}</small></div>
                     </button>
                   </li>
                 ))}
