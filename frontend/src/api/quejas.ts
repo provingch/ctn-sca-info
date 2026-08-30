@@ -4,13 +4,15 @@ export interface QuejaItem {
   id: number;
   profesorId: number;
   profesorNombre?: string | null;
+  profesorApellido?: string | null;
   cursoId: number;
-  cursoDescripcion?: string | null;
+  cursoEspecialidad?: string | null;
+  cursoSeccion?: string | null;
+  cursoNivel?: number | null;
   especialidadId: number;
-  especialidadNombre?: string | null;
   motivo: string;
-  creadoPor?: string | null;
-  fecha?: string | null;
+  creadaPor: number;
+  creadaEn: string;
 }
 
 export const getAdminQuejas = () => api.get<QuejaItem[]>('/api/admin/quejas');

@@ -16,10 +16,10 @@ export default function CoordinacionPage() {
   }, [view]);
 
   const agrupadas = useMemo(() => {
-    const map = new Map<number, { profesorNombre: string; count: number; quejas: QuejaItem[] }>();
+    const map = new Map<number, { profesorNombre: string; profesorApellido?: string | null; count: number; quejas: QuejaItem[] }>();
     quejas.forEach((q) => {
       const pid = q.profesorId;
-      const cur = map.get(pid) ?? { profesorNombre: q.profesorNombre ?? `Profesor #${pid}`, count: 0, quejas: [] };
+      const cur = map.get(pid) ?? { profesorNombre: q.profesorNombre ?? `Profesor #${pid}`, profesorApellido: q.profesorApellido ?? '', count: 0, quejas: [] };
       cur.count += 1;
       cur.quejas.push(q);
       map.set(pid, cur);
@@ -54,7 +54,7 @@ export default function CoordinacionPage() {
             {agrupadas.map((g) => (
               <article key={g.profesorId} className={`profesor-queue-card${g.count > UMBRAL ? ' flagged' : ''}`}>
                 <header>
-                  <h3>{g.profesorNombre}</h3>
+                  <h3>{`${g.profesorNombre} ${g.profesorApellido ?? ''}`.trim()}</h3>
                   <div className="badge">{g.count}</div>
                 </header>
                 <p>Última: {g.quejas[0]?.motivo ?? '-'}</p>
@@ -76,8 +76,8 @@ export default function CoordinacionPage() {
           {detalleQuejas.map((q) => (
             <li key={q.id} className={`list-item${q.motivo ? '' : ' muted'}`}>
               <p><strong>Motivo:</strong> {q.motivo}</p>
-              <p><strong>Curso:</strong> {q.cursoDescripcion ?? `#${q.cursoId}`} — <strong>Especialidad:</strong> {q.especialidadNombre ?? `#${q.especialidadId}`}</p>
-              <p><small>Cargada por: {q.creadoPor ?? 'Sistema'} — {q.fecha}</small></p>
+              <p><strong>Curso:</strong> {`${q.cursoEspecialidad ?? ''} ${q.cursoNivel ?? ''}° Sección ${q.cursoSeccion ?? ''}`.trim()}</p>
+              <p><small>Cargada por: {`#${q.creadaPor}`} — {new Date(q.creadaEn).toLocaleString('es-PY')}</small></p>
             </li>
           ))}
         </ul>

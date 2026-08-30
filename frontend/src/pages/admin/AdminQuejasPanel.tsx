@@ -81,9 +81,9 @@ export default function AdminQuejasPanel({ data, reload, status }: { data: Admin
         <ul className="list">
           {lista.map((q) => (
             <li key={q.id}>
-              <p><strong>{q.profesorNombre}</strong> — {q.cursoDescripcion}</p>
+              <p><strong>{`${q.profesorNombre ?? ''} ${q.profesorApellido ?? ''}`.trim()}</strong> — {`${q.cursoEspecialidad ?? ''} ${q.cursoNivel ?? ''}° Sección ${q.cursoSeccion ?? ''}`.trim()}</p>
               <p>{q.motivo}</p>
-              <p><small>{q.fecha} — cargada por {q.creadoPor ?? '—'}</small></p>
+              <p><small>{new Date(q.creadaEn).toLocaleString('es-PY')} — cargada por #{q.creadaPor}</small></p>
             </li>
           ))}
         </ul>
