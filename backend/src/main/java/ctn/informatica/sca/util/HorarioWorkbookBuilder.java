@@ -370,7 +370,7 @@ public class HorarioWorkbookBuilder {
         Styles(XSSFWorkbook workbook, String specialty, HorarioTemplateStyles template) {
             title = createStyle(workbook, template.title(), null, false);
             subtitle = createStyle(workbook, template.subtitle(), null, false);
-            banner = createStyle(workbook, template.blockBanner(), null, false);
+            banner = createStyle(workbook, template.anioBanner(), null, false);
             header = createStyle(workbook, template.headerDay(), null, false);
             hourCell = createStyle(workbook, template.hourCell(), null, false);
             materiaCell = createStyle(workbook, template.materiaCell(), null, false);

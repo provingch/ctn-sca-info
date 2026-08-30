@@ -28,7 +28,7 @@ public class HorarioPdfBuilder {
     private static final float MARGIN = 28f;
     private static final float TITLE_SIZE = TEMPLATE.title().fontSizePt();
     private static final float SUBTITLE_SIZE = TEMPLATE.subtitle().fontSizePt();
-    private static final float BLOCK_TITLE_SIZE = TEMPLATE.blockBanner().fontSizePt();
+    private static final float BLOCK_TITLE_SIZE = TEMPLATE.anioBanner().fontSizePt();
     private static final float HEADER_SIZE = TEMPLATE.headerDay().fontSizePt();
     private static final float MATERIA_SIZE = TEMPLATE.materiaCell().fontSizePt();
     private static final float PROFESOR_SIZE = TEMPLATE.profesorCell().fontSizePt();
@@ -114,7 +114,7 @@ public class HorarioPdfBuilder {
         y = drawText(contentStream, pageWidth, y, subtitle, SUBTITLE_SIZE, regularFont, true, Color.BLACK);
         y -= 10f;
 
-        y = drawFilledBanner(contentStream, MARGIN, y, availableWidth, BLOCK_TITLE_HEIGHT, block.name, TEMPLATE.blockBanner());
+        y = drawFilledBanner(contentStream, MARGIN, y, availableWidth, BLOCK_TITLE_HEIGHT, block.name, TEMPLATE.anioBanner());
         y -= 2f;
 
         y = drawHeaderRow(contentStream, y, hourWidth, dayWidth, block.dayCount, TEMPLATE.headerDay());
