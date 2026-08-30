@@ -8,6 +8,7 @@ import ctn.informatica.sca.model.CursoBase;
 import ctn.informatica.sca.model.HoraCatedra;
 import ctn.informatica.sca.model.HorarioSlot;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalTime;
@@ -15,6 +16,9 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.font.PDFont;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.pdfbox.text.TextPosition;
 import org.junit.jupiter.api.Test;
@@ -67,6 +71,59 @@ class HorarioPdfBuilderTest {
         }
     }
 
+    @Test
+    void wrapTextSplitsWordsThatDoNotFit() throws Exception {
+        HorarioPdfBuilder builder = new HorarioPdfBuilder();
+        PDFont font = new PDType1Font(Standard14Fonts.FontName.HELVETICA);
+        Method method = HorarioPdfBuilder.class.getDeclaredMethod("wrapText", PDFont.class, float.class, String.class, float.class);
+        method.setAccessible(true);
+
+        @SuppressWarnings("unchecked")
+        List<String> lines = (List<String>) method.invoke(builder, font, 11f, "Supercalifragilisticexpialidocious", 26f);
+
+        assertTrue(lines.size() > 1, "Una palabra demasiado larga debe partirse en varios fragmentos");
+        for (String line : lines) {
+            assertTrue(measureText(font, 11f, line) <= 26f + 0.01f, "Cada fragmento debe entrar en el ancho disponible");
+        }
+    }
+
+    @Test
+    void rendersMergedCellWithLongTextsWithoutThrowingOrTruncatingExtraction() throws Exception {
+        Path targetDir = Path.of("target");
+        Files.createDirectories(targetDir);
+        Path pdf = targetDir.resolve("horario-merged-long-texts.pdf");
+
+        CursoBase curso = new CursoBase(302, 1, "Informática", 2, "B");
+        List<HoraCatedra> horas = List.of(
+            new HoraCatedra(1, 1, "M", LocalTime.of(7, 0), LocalTime.of(7, 40)),
+            new HoraCatedra(2, 2, "M", LocalTime.of(7, 40), LocalTime.of(8, 20))
+        );
+
+        HorarioSlot slot1 = new HorarioSlot(11, 41, 61, curso.getId(), 1, 1, 501);
+        slot1.setMateriaNombre("Formación Ética y Ciudadana");
+        slot1.setProfesorNombre("Profesora ExtremadamenteLarga");
+        slot1.setSalaNombre("Laboratorio 12");
+
+        HorarioSlot slot2 = new HorarioSlot(12, 41, 61, curso.getId(), 1, 2, 501);
+        slot2.setMateriaNombre("Formación Ética y Ciudadana");
+        slot2.setProfesorNombre("Profesora ExtremadamenteLarga");
+        slot2.setSalaNombre("Laboratorio 12");
+
+        try (PDDocument document = new HorarioPdfBuilder().build(curso, horas, List.of(slot1, slot2));
+             OutputStream out = Files.newOutputStream(pdf)) {
+            document.save(out);
+            assertEquals(1, document.getNumberOfPages(), "El caso con textos largos debe seguir entrando en una página");
+        }
+
+        try (PDDocument document = Loader.loadPDF(pdf.toFile())) {
+            String text = new PDFTextStripper().getText(document);
+            String normalized = text.replaceAll("\\s+", " ");
+            assertTrue(normalized.contains("Formación Ética y Ciudadana"), "La materia debe extraerse completa");
+            assertTrue(normalized.replaceAll("\\s+", "").contains("ProfesoraExtremadamenteLarga"), "El profesor debe extraerse completo (ignora saltos de línea)");
+            assertTrue(normalized.contains("Laboratorio 12"), "La sala vecina debe seguir apareciendo intacta");
+        }
+    }
+
     private static final class CapturingStripper extends PDFTextStripper {
         private final List<TextSample> samples = new ArrayList<>();
 
@@ -93,5 +150,9 @@ class HorarioPdfBuilderTest {
     }
 
     private record TextSample(String text, float fontSize) {
+    }
+
+    private static float measureText(PDFont font, float fontSize, String text) throws Exception {
+        return font.getStringWidth(text) / 1000f * fontSize;
     }
 }
