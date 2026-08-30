@@ -33,10 +33,7 @@ build/
 .vscode/
 
 # Generated frontend assets copied into backend resources
-/src/main/resources/static/assets/
-!/src/main/resources/static/assets/
 /src/main/resources/static/assets/*
-/src/main/resources/static/assets/png/
 !/src/main/resources/static/assets/png/
 !/src/main/resources/static/assets/png/*.png
 /src/main/resources/static/index-*.js
