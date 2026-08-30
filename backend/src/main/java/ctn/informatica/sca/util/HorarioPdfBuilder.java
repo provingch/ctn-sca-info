@@ -171,9 +171,11 @@ public class HorarioPdfBuilder {
                 if (merge != null && merge.startRow == rowIndex) {
                     float spanHeight = sumHeights(block.rows, merge.startRow, merge.endRow, layoutScale);
                     HorarioScheduleLayout.CellLayout cellLayout = row.cells.get(day);
-                    String mergedText = mergeText(cellLayout);
-                    drawMergedCell(contentStream, MARGIN + hourWidth + ((day - 1) * dayWidth), y, dayWidth, spanHeight, mergedText,
-                            materiaSize, colorForHex(TEMPLATE.materiaCell().fillColorHex(), Color.WHITE), colorForHex(TEMPLATE.materiaCell().borderColorHex(), new Color(153, 153, 153)), regularFont, colorForHex(TEMPLATE.materiaCell().fontColorHex(), Color.BLACK));
+                    drawMergedCell(contentStream, MARGIN + hourWidth + ((day - 1) * dayWidth), y, dayWidth, spanHeight,
+                            cellLayout == null ? "" : cellLayout.materiaText, materiaSize, regularFont,
+                            cellLayout == null ? "" : cellLayout.profesorText, profesorSize, italicFont,
+                            colorForHex(TEMPLATE.materiaCell().fillColorHex(), Color.WHITE), colorForHex(TEMPLATE.materiaCell().borderColorHex(), new Color(153, 153, 153)),
+                            colorForHex(TEMPLATE.materiaCell().fontColorHex(), Color.BLACK), colorForHex(TEMPLATE.profesorCell().fontColorHex(), Color.BLACK));
                     continue;
                 }
                 if (isMergedContinuation(block.mergedRanges, rowIndex, day)) {
@@ -253,6 +255,17 @@ public class HorarioPdfBuilder {
         drawTextInBox(contentStream, x, y - height, width, height, text, fontSize, font, centerHorizontally, textColor);
     }
 
+    private void drawMergedCell(PDPageContentStream contentStream, float x, float y, float width, float height,
+            String firstText, float firstFontSize, PDFont firstFont,
+            String secondText, float secondFontSize, PDFont secondFont,
+            Color fill, Color stroke, Color firstTextColor, Color secondTextColor) throws IOException {
+        contentStream.setNonStrokingColor(fill);
+        contentStream.addRect(x, y - height, width, height);
+        contentStream.fill();
+        drawBorder(contentStream, x, y - height, width, height, stroke);
+        drawTextInSplitBox(contentStream, x, y - height, width, height, firstText, firstFontSize, firstFont, secondText, secondFontSize, secondFont, true, firstTextColor, secondTextColor);
+    }
+
     private void drawBorder(PDPageContentStream contentStream, float x, float y, float width, float height) throws IOException {
         drawBorder(contentStream, x, y, width, height, Color.BLACK);
     }
@@ -285,7 +298,11 @@ public class HorarioPdfBuilder {
 
     private void drawTextInBox(PDPageContentStream contentStream, float x, float y, float width, float height, String text, float fontSize, PDFont font, boolean centerHorizontally, Color color) throws IOException {
         List<String> lines = wrapText(font, fontSize, text == null ? "" : text, width - 8f);
-        if (lines.isEmpty()) {
+        drawTextInBox(contentStream, x, y, width, height, lines, fontSize, font, centerHorizontally, color);
+    }
+
+    private void drawTextInBox(PDPageContentStream contentStream, float x, float y, float width, float height, List<String> lines, float fontSize, PDFont font, boolean centerHorizontally, Color color) throws IOException {
+        if (lines == null || lines.isEmpty()) {
             return;
         }
         float lineHeight = fontSize * 1.15f;
@@ -306,6 +323,30 @@ public class HorarioPdfBuilder {
             contentStream.showText(line);
         }
         contentStream.endText();
+    }
+
+    private void drawTextInSplitBox(PDPageContentStream contentStream, float x, float y, float width, float height,
+            String firstText, float firstFontSize, PDFont firstFont,
+            String secondText, float secondFontSize, PDFont secondFont,
+            boolean centerHorizontally, Color firstTextColor, Color secondTextColor) throws IOException {
+        List<String> firstLines = wrapText(firstFont, firstFontSize, firstText == null ? "" : firstText, width - 8f);
+        List<String> secondLines = wrapText(secondFont, secondFontSize, secondText == null ? "" : secondText, width - 8f);
+        if (firstLines.isEmpty() && secondLines.isEmpty()) {
+            return;
+        }
+
+        float firstHeight = textBlockHeight(firstLines, firstFontSize);
+        float secondHeight = textBlockHeight(secondLines, secondFontSize);
+        float gap = firstLines.isEmpty() || secondLines.isEmpty() ? 0f : Math.min(firstFontSize, secondFontSize) * 0.15f;
+        float totalHeight = firstHeight + gap + secondHeight;
+        float startY = y + Math.max(0f, (height - totalHeight) / 2f);
+
+        if (!firstLines.isEmpty()) {
+            drawTextInBox(contentStream, x, startY + secondHeight + gap, width, firstHeight, firstLines, firstFontSize, firstFont, centerHorizontally, firstTextColor);
+        }
+        if (!secondLines.isEmpty()) {
+            drawTextInBox(contentStream, x, startY, width, secondHeight, secondLines, secondFontSize, secondFont, centerHorizontally, secondTextColor);
+        }
     }
 
     private List<String> wrapText(PDFont font, float fontSize, String text, float maxWidth) throws IOException {
@@ -382,23 +423,6 @@ public class HorarioPdfBuilder {
         return colorForHex(resolveRecesoFillHex(specialty), colorForHex(TEMPLATE.receso().fillColorHex(), new Color(191, 191, 191)));
     }
 
-    private String mergeText(HorarioScheduleLayout.CellLayout cellLayout) {
-        if (cellLayout == null) {
-            return "";
-        }
-        StringBuilder sb = new StringBuilder();
-        if (cellLayout.materiaText != null && !cellLayout.materiaText.isBlank()) {
-            sb.append(cellLayout.materiaText.trim());
-        }
-        if (cellLayout.profesorText != null && !cellLayout.profesorText.isBlank()) {
-            if (sb.length() > 0) {
-                sb.append('\n');
-            }
-            sb.append(cellLayout.profesorText.trim());
-        }
-        return sb.toString();
-    }
-
     private HorarioScheduleLayout.MergedRange findMerge(List<HorarioScheduleLayout.MergedRange> merges, int rowIndex, int day) {
         for (HorarioScheduleLayout.MergedRange merge : merges) {
             if (merge.day == day && merge.startRow == rowIndex) {
@@ -456,6 +480,13 @@ public class HorarioPdfBuilder {
             rowsHeight += row.receso ? scaled(RECESO_HEIGHT, layoutScale) : (scaled(DETAIL_ROW_HEIGHT, layoutScale) * 2f);
         }
         return scaled(BLOCK_TITLE_HEIGHT, layoutScale) + scaled(HEADER_HEIGHT, layoutScale) + rowsHeight + 24f;
+    }
+
+    private float textBlockHeight(List<String> lines, float fontSize) {
+        if (lines == null || lines.isEmpty()) {
+            return 0f;
+        }
+        return fontSize * 1.15f * lines.size();
     }
 
     private float computeLayoutScale(float availableHeight, List<HorarioScheduleLayout.BlockLayout> blocks) {
