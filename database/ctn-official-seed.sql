@@ -160,6 +160,7 @@ VALUES
 -- 2 = evaluador
 -- 3 = admin
 -- 4 = padre
+-- 5 = coordinador pedagógico
 
 INSERT INTO usuario (
     id, nombre, apellido, usuario, contrasenia, ci, telefono, celular, correo,
@@ -223,7 +224,13 @@ INSERT INTO usuario (
     (92, 'Evaluador', '2', 'evaluador2', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 12, null, null, null, null, 2, 'evaluador_2.txt', null),
     (93, 'Evaluador', '3', 'evaluador3', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 13, null, null, null, null, 2, 'evaluador_3.txt', null),
     (94, 'Evaluador', '4', 'evaluador4', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 14, null, null, null, null, 2, 'evaluador_4.txt', null),
-    (95, 'Evaluador', '5', 'evaluador5', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 15, null, null, null, null, 2, 'evaluador_5.txt', null)
+    (95, 'Evaluador', '5', 'evaluador5', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 15, null, null, null, null, 2, 'evaluador_5.txt', null),
+
+    (96, 'CoordinadorPedagogico', '1', 'cpdg1', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 16, null, null, null, null, 5, 'coordinadorpedagogico_1.txt', null),
+    (97, 'CoordinadorPedagogico', '2', 'cpdg2', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 17, null, null, null, null, 5, 'coordinadorpedagogico_2.txt', null),
+    (98, 'CoordinadorPedagogico', '3', 'cpdg3', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 18, null, null, null, null, 5, 'coordinadorpedagogico_3.txt', null),
+    (99, 'CoordinadorPedagogico', '4', 'cpdg4', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 19, null, null, null, null, 5, 'coordinadorpedagogico_4.txt', null),
+    (100,'CoordinadorPedagogico', '5', 'cpdg5', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 20, null, null, null, null, 5, 'coordinadorpedagogico_5.txt', null)
 
     -- Padres (deben ser creados a traves del flujo de autenticacion de Google, por lo que no se insertan aca)    
 ON DUPLICATE KEY UPDATE
