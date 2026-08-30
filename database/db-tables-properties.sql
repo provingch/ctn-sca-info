@@ -414,11 +414,11 @@ DROP TABLE IF EXISTS reclamo_plan_curricular;
 
 CREATE TABLE IF NOT EXISTS queja (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    profesor_id BIGINT NOT NULL,
-    curso_id BIGINT NOT NULL,
+    profesor_id INT NOT NULL,
+    curso_id INT NOT NULL,
     especialidad_id INT NOT NULL,
     motivo TEXT NOT NULL,
-    creada_por BIGINT NOT NULL COMMENT 'admin/delegado que cargó la queja',
+    creada_por INT NOT NULL COMMENT 'admin/delegado que cargó la queja',
     creada_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_queja_profesor FOREIGN KEY (profesor_id) REFERENCES usuario(id),
     CONSTRAINT fk_queja_curso FOREIGN KEY (curso_id) REFERENCES curso(id),
