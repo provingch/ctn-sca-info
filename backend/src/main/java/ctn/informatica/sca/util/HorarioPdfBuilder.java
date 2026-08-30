@@ -39,6 +39,7 @@ public class HorarioPdfBuilder {
     private static final float BLOCK_TITLE_HEIGHT = 18f;
     private static final float BLOCK_GAP = 8f;
     private static final float PAGE_BOTTOM_MARGIN = 28f;
+    private static final float MIN_LAYOUT_SCALE = 0.80f;
 
     private final PDFont boldFont = new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
     private final PDFont regularFont = new PDType1Font(Standard14Fonts.FontName.HELVETICA);
@@ -84,19 +85,20 @@ public class HorarioPdfBuilder {
                 float pageWidth = page.getMediaBox().getWidth();
                 float pageHeight = page.getMediaBox().getHeight();
                 float y = drawCourseHeader(document, contentStream, pageWidth, pageHeight, curso);
+                float layoutScale = computeLayoutScale(y - PAGE_BOTTOM_MARGIN, blocks);
 
                 int pageStart = blockIndex;
                 while (blockIndex < blocks.size()) {
                     HorarioScheduleLayout.BlockLayout block = blocks.get(blockIndex);
-                    float requiredHeight = estimateBlockHeight(block);
+                    float requiredHeight = estimateBlockHeight(block, layoutScale);
                     if (blockIndex > pageStart && y - requiredHeight < PAGE_BOTTOM_MARGIN) {
                         break;
                     }
                     if (blockIndex == pageStart && y - requiredHeight < PAGE_BOTTOM_MARGIN) {
                         log.warn("Horario export PDF: el bloque {} no entra completo en una sola página; se renderizará igualmente", block.name);
                     }
-                    y = renderBlock(contentStream, pageWidth, y, curso, block);
-                    y -= BLOCK_GAP;
+                    y = renderBlock(contentStream, pageWidth, y, curso, block, layoutScale);
+                    y -= scaled(BLOCK_GAP, layoutScale);
                     blockIndex++;
                 }
             }
@@ -128,41 +130,50 @@ public class HorarioPdfBuilder {
         return y - 10f;
     }
 
-    private float renderBlock(PDPageContentStream contentStream, float pageWidth, float y, CursoBase curso, HorarioScheduleLayout.BlockLayout block) throws IOException {
+    private float renderBlock(PDPageContentStream contentStream, float pageWidth, float y, CursoBase curso, HorarioScheduleLayout.BlockLayout block, float layoutScale) throws IOException {
         float availableWidth = pageWidth - (MARGIN * 2);
         float templateUnits = TEMPLATE.totalTemplateUnits(block.dayCount);
         float hourWidth = availableWidth * TEMPLATE.hourColumnWidth() / templateUnits;
         float dayWidth = availableWidth * TEMPLATE.dayColumnWidth() / templateUnits;
+        float blockTitleHeight = scaled(BLOCK_TITLE_HEIGHT, layoutScale);
+        float headerHeight = scaled(HEADER_HEIGHT, layoutScale);
+        float detailRowHeight = scaled(DETAIL_ROW_HEIGHT, layoutScale);
+        float recesoHeight = scaled(RECESO_HEIGHT, layoutScale);
+        float blockTitleSize = scaled(BLOCK_TITLE_SIZE, layoutScale);
+        float headerSize = scaled(HEADER_SIZE, layoutScale);
+        float materiaSize = scaled(MATERIA_SIZE, layoutScale);
+        float profesorSize = scaled(PROFESOR_SIZE, layoutScale);
+        float recesoSize = scaled(RECESO_SIZE, layoutScale);
 
-        y = drawFilledBanner(contentStream, MARGIN, y, availableWidth, BLOCK_TITLE_HEIGHT, block.name, TEMPLATE.anioBanner());
-        y -= 2f;
+        y = drawFilledBanner(contentStream, MARGIN, y, availableWidth, blockTitleHeight, block.name, TEMPLATE.anioBanner(), blockTitleSize);
+        y -= scaled(2f, layoutScale);
 
-        y = drawHeaderRow(contentStream, y, hourWidth, dayWidth, block.dayCount, TEMPLATE.headerDay());
-        y -= 1f;
+        y = drawHeaderRow(contentStream, y, hourWidth, dayWidth, block.dayCount, TEMPLATE.headerDay(), headerHeight, headerSize);
+        y -= scaled(1f, layoutScale);
 
         Color recesoFill = resolveRecesoFillColor(curso == null ? null : curso.getEspecialidad());
         Color recesoBorder = colorForHex(TEMPLATE.receso().borderColorHex(), new Color(153, 153, 153));
         Color recesoText = colorForHex(TEMPLATE.receso().fontColorHex(), Color.WHITE);
         for (int rowIndex = 0; rowIndex < block.rows.size(); rowIndex++) {
             HorarioScheduleLayout.RowLayout row = block.rows.get(rowIndex);
-            float rowHeight = row.receso ? RECESO_HEIGHT : (DETAIL_ROW_HEIGHT * 2f);
+            float rowHeight = row.receso ? recesoHeight : (detailRowHeight * 2f);
 
             if (row.receso) {
-                drawMergedCell(contentStream, MARGIN, y, availableWidth, rowHeight, row.horaLabel, RECESO_SIZE, recesoFill, recesoBorder, boldFont, recesoText);
+                drawMergedCell(contentStream, MARGIN, y, availableWidth, rowHeight, row.horaLabel, recesoSize, recesoFill, recesoBorder, boldFont, recesoText);
                 y -= rowHeight;
                 continue;
             }
 
-            drawMergedCell(contentStream, MARGIN, y, hourWidth, rowHeight, row.horaLabel, MATERIA_SIZE, colorForHex(TEMPLATE.hourCell().fillColorHex(), Color.WHITE), colorForHex(TEMPLATE.hourCell().borderColorHex(), new Color(153, 153, 153)), regularFont, colorForHex(TEMPLATE.hourCell().fontColorHex(), Color.BLACK), false);
+            drawMergedCell(contentStream, MARGIN, y, hourWidth, rowHeight, row.horaLabel, materiaSize, colorForHex(TEMPLATE.hourCell().fillColorHex(), Color.WHITE), colorForHex(TEMPLATE.hourCell().borderColorHex(), new Color(153, 153, 153)), regularFont, colorForHex(TEMPLATE.hourCell().fontColorHex(), Color.BLACK), false);
 
             for (int day = 1; day <= block.dayCount; day++) {
                 HorarioScheduleLayout.MergedRange merge = findMerge(block.mergedRanges, rowIndex, day);
                 if (merge != null && merge.startRow == rowIndex) {
-                    float spanHeight = sumHeights(block.rows, merge.startRow, merge.endRow);
+                    float spanHeight = sumHeights(block.rows, merge.startRow, merge.endRow, layoutScale);
                     HorarioScheduleLayout.CellLayout cellLayout = row.cells.get(day);
                     String mergedText = mergeText(cellLayout);
                     drawMergedCell(contentStream, MARGIN + hourWidth + ((day - 1) * dayWidth), y, dayWidth, spanHeight, mergedText,
-                            MATERIA_SIZE, colorForHex(TEMPLATE.materiaCell().fillColorHex(), Color.WHITE), colorForHex(TEMPLATE.materiaCell().borderColorHex(), new Color(153, 153, 153)), regularFont, colorForHex(TEMPLATE.materiaCell().fontColorHex(), Color.BLACK));
+                            materiaSize, colorForHex(TEMPLATE.materiaCell().fillColorHex(), Color.WHITE), colorForHex(TEMPLATE.materiaCell().borderColorHex(), new Color(153, 153, 153)), regularFont, colorForHex(TEMPLATE.materiaCell().fontColorHex(), Color.BLACK));
                     continue;
                 }
                 if (isMergedContinuation(block.mergedRanges, rowIndex, day)) {
@@ -170,12 +181,12 @@ public class HorarioPdfBuilder {
                 }
 
                 HorarioScheduleLayout.CellLayout cellLayout = row.cells.get(day);
-                float topHeight = DETAIL_ROW_HEIGHT;
-                float bottomHeight = DETAIL_ROW_HEIGHT;
+                float topHeight = detailRowHeight;
+                float bottomHeight = detailRowHeight;
                 drawCell(contentStream, MARGIN + hourWidth + ((day - 1) * dayWidth), y, dayWidth, topHeight,
-                        cellLayout == null ? "" : cellLayout.materiaText, MATERIA_SIZE, colorForHex(TEMPLATE.materiaCell().fillColorHex(), Color.WHITE), colorForHex(TEMPLATE.materiaCell().borderColorHex(), new Color(153, 153, 153)), regularFont, colorForHex(TEMPLATE.materiaCell().fontColorHex(), Color.BLACK));
+                        cellLayout == null ? "" : cellLayout.materiaText, materiaSize, colorForHex(TEMPLATE.materiaCell().fillColorHex(), Color.WHITE), colorForHex(TEMPLATE.materiaCell().borderColorHex(), new Color(153, 153, 153)), regularFont, colorForHex(TEMPLATE.materiaCell().fontColorHex(), Color.BLACK));
                 drawCell(contentStream, MARGIN + hourWidth + ((day - 1) * dayWidth), y - topHeight, dayWidth, bottomHeight,
-                        cellLayout == null ? "" : cellLayout.profesorText, PROFESOR_SIZE, colorForHex(TEMPLATE.profesorCell().fillColorHex(), Color.WHITE), colorForHex(TEMPLATE.profesorCell().borderColorHex(), new Color(153, 153, 153)), italicFont, colorForHex(TEMPLATE.profesorCell().fontColorHex(), Color.BLACK));
+                        cellLayout == null ? "" : cellLayout.profesorText, profesorSize, colorForHex(TEMPLATE.profesorCell().fillColorHex(), Color.WHITE), colorForHex(TEMPLATE.profesorCell().borderColorHex(), new Color(153, 153, 153)), italicFont, colorForHex(TEMPLATE.profesorCell().fontColorHex(), Color.BLACK));
             }
 
             y -= rowHeight;
@@ -198,19 +209,19 @@ public class HorarioPdfBuilder {
         return drawText(contentStream, pageWidth, y, sb.toString(), 8.4f, regularFont, false, Color.DARK_GRAY);
     }
 
-    private float drawHeaderRow(PDPageContentStream contentStream, float y, float hourWidth, float dayWidth, int dayCount, HorarioTemplateStyles.CellStyleSpec spec) throws IOException {
+    private float drawHeaderRow(PDPageContentStream contentStream, float y, float hourWidth, float dayWidth, int dayCount, HorarioTemplateStyles.CellStyleSpec spec, float headerHeight, float headerFontSize) throws IOException {
         Color fill = colorForHex(spec.fillColorHex(), new Color(64, 64, 64));
         Color border = colorForHex(spec.borderColorHex(), new Color(153, 153, 153));
         Color text = colorForHex(spec.fontColorHex(), Color.WHITE);
-        drawCell(contentStream, MARGIN, y, hourWidth, HEADER_HEIGHT, "Hora", HEADER_SIZE, fill, border, boldFont, text);
+        drawCell(contentStream, MARGIN, y, hourWidth, headerHeight, "Hora", headerFontSize, fill, border, boldFont, text);
         for (int day = 1; day <= dayCount; day++) {
-            drawCell(contentStream, MARGIN + hourWidth + ((day - 1) * dayWidth), y, dayWidth, HEADER_HEIGHT, HorarioScheduleLayout.DIAS[day - 1],
-                    HEADER_SIZE, fill, border, boldFont, text);
+            drawCell(contentStream, MARGIN + hourWidth + ((day - 1) * dayWidth), y, dayWidth, headerHeight, HorarioScheduleLayout.DIAS[day - 1],
+                    headerFontSize, fill, border, boldFont, text);
         }
-        return y - HEADER_HEIGHT;
+        return y - headerHeight;
     }
 
-    private float drawFilledBanner(PDPageContentStream contentStream, float x, float y, float width, float height, String text, HorarioTemplateStyles.CellStyleSpec spec) throws IOException {
+    private float drawFilledBanner(PDPageContentStream contentStream, float x, float y, float width, float height, String text, HorarioTemplateStyles.CellStyleSpec spec, float fontSize) throws IOException {
         Color fill = colorForHex(spec.fillColorHex(), new Color(185, 191, 199));
         Color border = colorForHex(spec.borderColorHex(), new Color(153, 153, 153));
         Color textColor = colorForHex(spec.fontColorHex(), Color.BLACK);
@@ -218,7 +229,7 @@ public class HorarioPdfBuilder {
         contentStream.addRect(x, y - height, width, height);
         contentStream.fill();
         drawBorder(contentStream, x, y - height, width, height, border);
-        drawTextInBox(contentStream, x, y - height, width, height, text, BLOCK_TITLE_SIZE, boldFont, true, textColor);
+        drawTextInBox(contentStream, x, y - height, width, height, text, fontSize, boldFont, true, textColor);
         return y - height;
     }
 
@@ -406,10 +417,10 @@ public class HorarioPdfBuilder {
         return false;
     }
 
-    private float sumHeights(List<HorarioScheduleLayout.RowLayout> rows, int startRow, int endRow) {
+    private float sumHeights(List<HorarioScheduleLayout.RowLayout> rows, int startRow, int endRow, float layoutScale) {
         float total = 0f;
         for (int i = startRow; i <= endRow; i++) {
-            total += rows.get(i).receso ? RECESO_HEIGHT : (DETAIL_ROW_HEIGHT * 2f);
+            total += rows.get(i).receso ? scaled(RECESO_HEIGHT, layoutScale) : (scaled(DETAIL_ROW_HEIGHT, layoutScale) * 2f);
         }
         return total;
     }
@@ -439,12 +450,33 @@ public class HorarioPdfBuilder {
         return out;
     }
 
-    private float estimateBlockHeight(HorarioScheduleLayout.BlockLayout block) {
+    private float estimateBlockHeight(HorarioScheduleLayout.BlockLayout block, float layoutScale) {
         float rowsHeight = 0f;
         for (HorarioScheduleLayout.RowLayout row : block.rows) {
-            rowsHeight += row.receso ? RECESO_HEIGHT : (DETAIL_ROW_HEIGHT * 2f);
+            rowsHeight += row.receso ? scaled(RECESO_HEIGHT, layoutScale) : (scaled(DETAIL_ROW_HEIGHT, layoutScale) * 2f);
         }
-        return BLOCK_TITLE_HEIGHT + HEADER_HEIGHT + rowsHeight + 24f;
+        return scaled(BLOCK_TITLE_HEIGHT, layoutScale) + scaled(HEADER_HEIGHT, layoutScale) + rowsHeight + 24f;
+    }
+
+    private float computeLayoutScale(float availableHeight, List<HorarioScheduleLayout.BlockLayout> blocks) {
+        if (availableHeight <= 0f || blocks == null || blocks.isEmpty()) {
+            return 1f;
+        }
+        float requiredHeight = 0f;
+        for (HorarioScheduleLayout.BlockLayout block : blocks) {
+            if (block != null) {
+                requiredHeight += estimateBlockHeight(block, 1f);
+            }
+        }
+        requiredHeight += BLOCK_GAP * Math.max(0, blocks.size() - 1);
+        if (requiredHeight <= availableHeight) {
+            return 1f;
+        }
+        return Math.max(MIN_LAYOUT_SCALE, availableHeight / requiredHeight);
+    }
+
+    private float scaled(float value, float layoutScale) {
+        return value * layoutScale;
     }
 
     private PDRectangle portraitA4() {
