@@ -37,6 +37,8 @@ public class HorarioPdfBuilder {
     private static final float DETAIL_ROW_HEIGHT = 18f;
     private static final float RECESO_HEIGHT = 18f;
     private static final float BLOCK_TITLE_HEIGHT = 18f;
+    private static final float BLOCK_GAP = 8f;
+    private static final float PAGE_BOTTOM_MARGIN = 28f;
 
     private final PDFont boldFont = new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
     private final PDFont regularFont = new PDType1Font(Standard14Fonts.FontName.HELVETICA);
@@ -73,35 +75,46 @@ public class HorarioPdfBuilder {
             renderEmptyDocument(document, curso == null ? null : curso.getEspecialidad());
             return;
         }
-        for (HorarioScheduleLayout.BlockLayout block : blocks) {
-            PDPage page = new PDPage(landscapeA4());
+
+        int blockIndex = 0;
+        while (blockIndex < blocks.size()) {
+            PDPage page = new PDPage(portraitA4());
             document.addPage(page);
             try (PDPageContentStream contentStream = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.OVERWRITE, true, true)) {
-                renderPage(document, contentStream, page, curso, block);
+                float pageWidth = page.getMediaBox().getWidth();
+                float pageHeight = page.getMediaBox().getHeight();
+                float y = drawCourseHeader(document, contentStream, pageWidth, pageHeight, curso);
+
+                int pageStart = blockIndex;
+                while (blockIndex < blocks.size()) {
+                    HorarioScheduleLayout.BlockLayout block = blocks.get(blockIndex);
+                    float requiredHeight = estimateBlockHeight(block);
+                    if (blockIndex > pageStart && y - requiredHeight < PAGE_BOTTOM_MARGIN) {
+                        break;
+                    }
+                    if (blockIndex == pageStart && y - requiredHeight < PAGE_BOTTOM_MARGIN) {
+                        log.warn("Horario export PDF: el bloque {} no entra completo en una sola página; se renderizará igualmente", block.name);
+                    }
+                    y = renderBlock(contentStream, pageWidth, y, curso, block);
+                    y -= BLOCK_GAP;
+                    blockIndex++;
+                }
             }
         }
     }
 
     private void renderEmptyDocument(PDDocument document, String label) throws IOException {
-        PDPage page = new PDPage(landscapeA4());
+        PDPage page = new PDPage(portraitA4());
         document.addPage(page);
         try (PDPageContentStream contentStream = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.OVERWRITE, true, true)) {
             float width = page.getMediaBox().getWidth();
             float height = page.getMediaBox().getHeight();
-            float y = height - MARGIN;
-            y = drawText(contentStream, width, y, "HORARIO DE CLASES", TITLE_SIZE, boldFont, true, Color.BLACK);
-            y -= 10f;
+            float y = drawCourseHeader(document, contentStream, width, height, null);
             drawText(contentStream, width, y, "No hay cursos para " + (label == null ? "esta especialidad" : label), SUBTITLE_SIZE, regularFont, true, Color.BLACK);
         }
     }
 
-    private void renderPage(PDDocument document, PDPageContentStream contentStream, PDPage page, CursoBase curso, HorarioScheduleLayout.BlockLayout block) throws IOException {
-        float pageWidth = page.getMediaBox().getWidth();
-        float pageHeight = page.getMediaBox().getHeight();
-        float availableWidth = pageWidth - (MARGIN * 2);
-        float templateUnits = TEMPLATE.totalTemplateUnits(block.dayCount);
-        float hourWidth = availableWidth * TEMPLATE.hourColumnWidth() / templateUnits;
-        float dayWidth = availableWidth * TEMPLATE.dayColumnWidth() / templateUnits;
+    private float drawCourseHeader(PDDocument document, PDPageContentStream contentStream, float pageWidth, float pageHeight, CursoBase curso) throws IOException {
         float y = pageHeight - MARGIN;
 
         drawLogoIfPresent(document, contentStream, "/static/logo-institucional.png", MARGIN, y - 28f, 78f, 28f, "logo institucional");
@@ -112,7 +125,14 @@ public class HorarioPdfBuilder {
         String subtitle = curso == null ? "" : ("Curso: " + curso.getCursoOrdinal() + " " + curso.getEspecialidad()
                 + "    Turno: Mañana - Tarde    Sección: " + curso.getSeccion());
         y = drawText(contentStream, pageWidth, y, subtitle, SUBTITLE_SIZE, regularFont, true, Color.BLACK);
-        y -= 10f;
+        return y - 10f;
+    }
+
+    private float renderBlock(PDPageContentStream contentStream, float pageWidth, float y, CursoBase curso, HorarioScheduleLayout.BlockLayout block) throws IOException {
+        float availableWidth = pageWidth - (MARGIN * 2);
+        float templateUnits = TEMPLATE.totalTemplateUnits(block.dayCount);
+        float hourWidth = availableWidth * TEMPLATE.hourColumnWidth() / templateUnits;
+        float dayWidth = availableWidth * TEMPLATE.dayColumnWidth() / templateUnits;
 
         y = drawFilledBanner(contentStream, MARGIN, y, availableWidth, BLOCK_TITLE_HEIGHT, block.name, TEMPLATE.anioBanner());
         y -= 2f;
@@ -133,7 +153,7 @@ public class HorarioPdfBuilder {
                 continue;
             }
 
-            drawMergedCell(contentStream, MARGIN, y, hourWidth, rowHeight, row.horaLabel, MATERIA_SIZE, colorForHex(TEMPLATE.hourCell().fillColorHex(), Color.WHITE), colorForHex(TEMPLATE.hourCell().borderColorHex(), new Color(153, 153, 153)), regularFont, colorForHex(TEMPLATE.hourCell().fontColorHex(), Color.BLACK));
+            drawMergedCell(contentStream, MARGIN, y, hourWidth, rowHeight, row.horaLabel, MATERIA_SIZE, colorForHex(TEMPLATE.hourCell().fillColorHex(), Color.WHITE), colorForHex(TEMPLATE.hourCell().borderColorHex(), new Color(153, 153, 153)), regularFont, colorForHex(TEMPLATE.hourCell().fontColorHex(), Color.BLACK), false);
 
             for (int day = 1; day <= block.dayCount; day++) {
                 HorarioScheduleLayout.MergedRange merge = findMerge(block.mergedRanges, rowIndex, day);
@@ -161,10 +181,10 @@ public class HorarioPdfBuilder {
             y -= rowHeight;
         }
 
-        drawFooter(contentStream, pageWidth, y - 10f, block);
+        return drawFooter(contentStream, pageWidth, y - 10f, block);
     }
 
-    private void drawFooter(PDPageContentStream contentStream, float pageWidth, float y, HorarioScheduleLayout.BlockLayout block) throws IOException {
+    private float drawFooter(PDPageContentStream contentStream, float pageWidth, float y, HorarioScheduleLayout.BlockLayout block) throws IOException {
         StringBuilder sb = new StringBuilder("Salas: ");
         boolean first = true;
         for (int day = 1; day <= block.dayCount; day++) {
@@ -175,7 +195,7 @@ public class HorarioPdfBuilder {
             sb.append(HorarioScheduleLayout.DIAS[day - 1]).append(": ");
             sb.append(String.join(" / ", block.salasPorDia.get(day)));
         }
-        drawText(contentStream, pageWidth, y, sb.toString(), 8.4f, regularFont, false, Color.DARK_GRAY);
+        return drawText(contentStream, pageWidth, y, sb.toString(), 8.4f, regularFont, false, Color.DARK_GRAY);
     }
 
     private float drawHeaderRow(PDPageContentStream contentStream, float y, float hourWidth, float dayWidth, int dayCount, HorarioTemplateStyles.CellStyleSpec spec) throws IOException {
@@ -211,11 +231,15 @@ public class HorarioPdfBuilder {
     }
 
     private void drawMergedCell(PDPageContentStream contentStream, float x, float y, float width, float height, String text, float fontSize, Color fill, Color stroke, PDFont font, Color textColor) throws IOException {
+        drawMergedCell(contentStream, x, y, width, height, text, fontSize, fill, stroke, font, textColor, true);
+    }
+
+    private void drawMergedCell(PDPageContentStream contentStream, float x, float y, float width, float height, String text, float fontSize, Color fill, Color stroke, PDFont font, Color textColor, boolean centerHorizontally) throws IOException {
         contentStream.setNonStrokingColor(fill);
         contentStream.addRect(x, y - height, width, height);
         contentStream.fill();
         drawBorder(contentStream, x, y - height, width, height, stroke);
-        drawTextInBox(contentStream, x, y - height, width, height, text, fontSize, font, true, textColor);
+        drawTextInBox(contentStream, x, y - height, width, height, text, fontSize, font, centerHorizontally, textColor);
     }
 
     private void drawBorder(PDPageContentStream contentStream, float x, float y, float width, float height) throws IOException {
@@ -415,7 +439,15 @@ public class HorarioPdfBuilder {
         return out;
     }
 
-    private PDRectangle landscapeA4() {
-        return new PDRectangle(PDRectangle.A4.getHeight(), PDRectangle.A4.getWidth());
+    private float estimateBlockHeight(HorarioScheduleLayout.BlockLayout block) {
+        float rowsHeight = 0f;
+        for (HorarioScheduleLayout.RowLayout row : block.rows) {
+            rowsHeight += row.receso ? RECESO_HEIGHT : (DETAIL_ROW_HEIGHT * 2f);
+        }
+        return BLOCK_TITLE_HEIGHT + HEADER_HEIGHT + rowsHeight + 24f;
+    }
+
+    private PDRectangle portraitA4() {
+        return new PDRectangle(PDRectangle.A4.getWidth(), PDRectangle.A4.getHeight());
     }
 }

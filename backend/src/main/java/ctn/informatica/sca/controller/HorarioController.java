@@ -18,7 +18,6 @@ import ctn.informatica.sca.model.HoraCatedra;
 import ctn.informatica.sca.model.HorarioSlot;
 import ctn.informatica.sca.model.Sala;
 import ctn.informatica.sca.util.HorarioPdfBuilder;
-import ctn.informatica.sca.util.HorarioWorkbookBuilder;
 import jakarta.servlet.http.HttpServletResponse;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -28,7 +27,6 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -297,37 +295,6 @@ public class HorarioController {
         }
     }
 
-    @GetMapping("/export")
-    public void export(@RequestParam int cursoId, Authentication auth, HttpServletResponse response) {
-        ApiAuth.requireUserId(auth);
-        try {
-            CursoBase curso = new CursoBaseDao().findById(cursoId);
-            if (curso == null) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Curso no encontrado");
-            }
-            authorizeCourse(cursoId, auth);
-            List<HoraCatedra> horas = new HoraCatedraDao().findAll();
-            // Generar una hoja por cada sección del mismo nivel + especialidad
-            List<CursoBase> cursosMismoNivel = new CursoBaseDao().findAllByEspecialidadId(curso.getEspecialidadId()).stream()
-                    .filter(cb -> cb.getNivel() == curso.getNivel())
-                    .toList();
-            HorarioSlotDao slotDao = new HorarioSlotDao();
-            List<HorarioSlot> slots = new java.util.ArrayList<>();
-            for (CursoBase cb : cursosMismoNivel) slots.addAll(slotDao.findByCurso(cb.getId()));
-
-            String base = "Horario_" + sanitize(curso.getEspecialidad()) + "_" + curso.getNivel();
-            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + URLEncoder.encode(base + ".xlsx", StandardCharsets.UTF_8).replace("+", "%20"));
-            try (XSSFWorkbook workbook = new HorarioWorkbookBuilder().buildEspecialidad(curso.getEspecialidad(), cursosMismoNivel, horas, slots)) {
-                workbook.write(response.getOutputStream());
-            }
-        } catch (ResponseStatusException ex) {
-            throw ex;
-        } catch (Exception ex) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo generar el horario del curso", ex);
-        }
-    }
-
     @GetMapping("/export/pdf")
     public void exportPdf(@RequestParam int cursoId, Authentication auth, HttpServletResponse response) {
         ApiAuth.requireUserId(auth);
@@ -353,7 +320,7 @@ public class HorarioController {
     }
 
     @GetMapping("/export/especialidad")
-    public void exportEspecialidad(@RequestParam int especialidadId, @RequestParam(defaultValue = "xlsx") String formato, Authentication auth, HttpServletResponse response) {
+    public void exportEspecialidad(@RequestParam int especialidadId, Authentication auth, HttpServletResponse response) {
         ApiAuth.requireUserId(auth);
         try {
             var especialidad = new EspecialidadDao().findById(especialidadId);
@@ -374,18 +341,10 @@ public class HorarioController {
             }
 
             String base = "Horario_" + sanitize(especialidad.getNombre()) + "_completo";
-            if ("pdf".equalsIgnoreCase(formato)) {
-                response.setContentType("application/pdf");
-                response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + URLEncoder.encode(base + ".pdf", StandardCharsets.UTF_8).replace("+", "%20"));
-                try (PDDocument document = new HorarioPdfBuilder().buildEspecialidad(especialidad.getNombre(), cursos, horas, slots)) {
-                    document.save(response.getOutputStream());
-                }
-            } else {
-                response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-                response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + URLEncoder.encode(base + ".xlsx", StandardCharsets.UTF_8).replace("+", "%20"));
-                try (XSSFWorkbook workbook = new HorarioWorkbookBuilder().buildEspecialidad(especialidad.getNombre(), cursos, horas, slots)) {
-                    workbook.write(response.getOutputStream());
-                }
+            response.setContentType("application/pdf");
+            response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + URLEncoder.encode(base + ".pdf", StandardCharsets.UTF_8).replace("+", "%20"));
+            try (PDDocument document = new HorarioPdfBuilder().buildEspecialidad(especialidad.getNombre(), cursos, horas, slots)) {
+                document.save(response.getOutputStream());
             }
         } catch (ResponseStatusException ex) {
             throw ex;
