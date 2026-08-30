@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ApiError } from '../../api/client';
-import { downloadHorarioCurso, downloadHorarioCursoPdf, downloadHorarioEspecialidad, getHoraCatedraCatalog, getHorarioResumen, type HorarioResumenCursoItem, type HoraCatedraItem } from '../../api/admin';
+import { downloadHorarioCursoPdf, downloadHorarioEspecialidadPdf, getHoraCatedraCatalog, getHorarioResumen, type HorarioResumenCursoItem, type HoraCatedraItem } from '../../api/admin';
 import ContentState from '../../components/ui/ContentState';
 import { groupSchedulesBySpecialty } from './adminFormatters';
 import HorarioCursoPage from './HorarioCursoPage';
@@ -38,15 +38,11 @@ export default function HorariosPanel({ status }: { status: (message: string) =>
 
   const groups = useMemo(() => groupSchedulesBySpecialty(items ?? []), [items]);
 
-  async function downloadCourse(courseItem: HorarioResumenCursoItem, formato: 'xlsx' | 'pdf') {
-    setDownloadingKey(`course-${courseItem.cursoId}-${formato}`);
+  async function downloadCourse(courseItem: HorarioResumenCursoItem) {
+    setDownloadingKey(`course-${courseItem.cursoId}-pdf`);
     try {
-      if (formato === 'pdf') {
-        await downloadHorarioCursoPdf(courseItem.cursoId);
-      } else {
-        await downloadHorarioCurso(courseItem.cursoId);
-      }
-      status(`Horario de ${courseItem.cursoDescripcion} descargado en ${formato.toUpperCase()}.`);
+      await downloadHorarioCursoPdf(courseItem.cursoId);
+      status(`Horario de ${courseItem.cursoDescripcion} descargado en PDF.`);
     } catch (reason) {
       status(reason instanceof ApiError ? reason.message : 'No se pudo descargar el horario.');
     } finally {
@@ -54,12 +50,12 @@ export default function HorariosPanel({ status }: { status: (message: string) =>
     }
   }
 
-  async function downloadSpecialty(specialtyId: number | null, specialty: string, formato: 'xlsx' | 'pdf') {
+  async function downloadSpecialty(specialtyId: number | null, specialty: string) {
     if (specialtyId == null) return;
-    setDownloadingKey(`specialty-${specialtyId}-${formato}`);
+    setDownloadingKey(`specialty-${specialtyId}-pdf`);
     try {
-      await downloadHorarioEspecialidad(specialtyId, formato);
-      status(`Horario de ${specialty} descargado en ${formato.toUpperCase()}.`);
+      await downloadHorarioEspecialidadPdf(specialtyId);
+      status(`Horario de ${specialty} descargado en PDF.`);
     } catch (reason) {
       status(reason instanceof ApiError ? reason.message : 'No se pudo descargar el horario.');
     } finally {
@@ -90,10 +86,7 @@ export default function HorariosPanel({ status }: { status: (message: string) =>
             </div>
             <div className="admin-actions">
               <strong>{group.courses.length} {group.courses.length === 1 ? 'curso' : 'cursos'}</strong>
-              <button className="button secondary" type="button" disabled={group.specialtyId == null || downloadingKey === `specialty-${group.specialtyId}-xlsx`} onClick={() => void downloadSpecialty(group.specialtyId, group.specialty, 'xlsx')}>
-                {downloadingKey === `specialty-${group.specialtyId}-xlsx` ? 'Descargando…' : 'Excel'}
-              </button>
-              <button className="button secondary" type="button" disabled={group.specialtyId == null || downloadingKey === `specialty-${group.specialtyId}-pdf`} onClick={() => void downloadSpecialty(group.specialtyId, group.specialty, 'pdf')}>
+              <button className="button secondary" type="button" disabled={group.specialtyId == null || downloadingKey === `specialty-${group.specialtyId}-pdf`} onClick={() => void downloadSpecialty(group.specialtyId, group.specialty)}>
                 {downloadingKey === `specialty-${group.specialtyId}-pdf` ? 'Descargando…' : 'PDF'}
               </button>
             </div>
@@ -107,10 +100,7 @@ export default function HorariosPanel({ status }: { status: (message: string) =>
                 </span>
                 <span className="admin-actions">
                   <Link className="button secondary" to={`/admin/horarios/${courseItem.cursoId}`}>Abrir horario</Link>
-                  <button className="button secondary" type="button" disabled={downloadingKey === `course-${courseItem.cursoId}-xlsx`} onClick={() => void downloadCourse(courseItem, 'xlsx')}>
-                    {downloadingKey === `course-${courseItem.cursoId}-xlsx` ? 'Descargando…' : 'Excel'}
-                  </button>
-                  <button className="button secondary" type="button" disabled={downloadingKey === `course-${courseItem.cursoId}-pdf`} onClick={() => void downloadCourse(courseItem, 'pdf')}>
+                  <button className="button secondary" type="button" disabled={downloadingKey === `course-${courseItem.cursoId}-pdf`} onClick={() => void downloadCourse(courseItem)}>
                     {downloadingKey === `course-${courseItem.cursoId}-pdf` ? 'Descargando…' : 'PDF'}
                   </button>
                 </span>

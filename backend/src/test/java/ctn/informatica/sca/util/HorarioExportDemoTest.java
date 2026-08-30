@@ -1,5 +1,6 @@
 package ctn.informatica.sca.util;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import ctn.informatica.sca.model.CursoBase;
@@ -11,24 +12,25 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalTime;
 import java.util.List;
+import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.junit.jupiter.api.Test;
 
 class HorarioExportDemoTest {
 
     @Test
-    void generatesDemoExcelAndPdfInTarget() throws Exception {
+    void generatesDemoPdfInTarget() throws Exception {
         Path targetDir = Path.of("target");
         Files.createDirectories(targetDir);
-        Path xlsx = targetDir.resolve("demo-horario.xlsx");
         Path pdf = targetDir.resolve("demo-horario.pdf");
 
         CursoBase curso = new CursoBase(101, 1, "Informática", 1, "A");
         List<HoraCatedra> horas = List.of(
             new HoraCatedra(1, 1, "M", LocalTime.of(7, 0), LocalTime.of(7, 40)),
             new HoraCatedra(2, 2, "M", LocalTime.of(7, 40), LocalTime.of(8, 20)),
-            new HoraCatedra(3, 4, "M", LocalTime.of(8, 30), LocalTime.of(9, 10))
+            new HoraCatedra(3, 4, "M", LocalTime.of(8, 30), LocalTime.of(9, 10)),
+            new HoraCatedra(4, 1, "T", LocalTime.of(13, 0), LocalTime.of(13, 40))
         );
 
         HorarioSlot slot1 = new HorarioSlot(1, 11, 21, 101, 1, 1, 301);
@@ -46,19 +48,24 @@ class HorarioExportDemoTest {
         slot3.setProfesorNombre("Grace Hopper");
         slot3.setSalaNombre("Lab 2");
 
-        List<HorarioSlot> slots = List.of(slot1, slot2, slot3);
+        HorarioSlot slot4 = new HorarioSlot(4, 11, 23, 101, 1, 4, 303);
+        slot4.setMateriaNombre("Redes");
+        slot4.setProfesorNombre("Alan Turing");
+        slot4.setSalaNombre("Lab 3");
 
-        try (XSSFWorkbook workbook = new HorarioWorkbookBuilder().build(curso, horas, slots);
-             OutputStream out = Files.newOutputStream(xlsx)) {
-            workbook.write(out);
-        }
+        List<HorarioSlot> slots = List.of(slot1, slot2, slot3, slot4);
 
         try (PDDocument document = new HorarioPdfBuilder().build(curso, horas, slots);
              OutputStream out = Files.newOutputStream(pdf)) {
             document.save(out);
+            assertEquals(1, document.getNumberOfPages(), "El demo debe quedar en una sola página");
         }
 
-        assertTrue(Files.size(xlsx) > 0, "El XLSX demo debe generarse");
         assertTrue(Files.size(pdf) > 0, "El PDF demo debe generarse");
+        try (PDDocument document = Loader.loadPDF(pdf.toFile())) {
+            String text = new PDFTextStripper().getText(document);
+            assertTrue(text.contains("MAÑANA"), "El PDF debe incluir el bloque de mañana");
+            assertTrue(text.contains("T.O."), "El PDF debe incluir el bloque de tarde");
+        }
     }
 }
