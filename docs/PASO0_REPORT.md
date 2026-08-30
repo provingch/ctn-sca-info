@@ -7,7 +7,7 @@ Hallazgos principales:
 - El export actual está implementado por `HorarioController` y `HorarioWorkbookBuilder` (generación programática via Apache POI).
 - La tabla `sala` existe y `horario_slot` ya contiene `sala_id` con FK (ver `database/db-tables-properties.sql`). No se necesita migración DB.
 - La paleta de colores por especialidad vive en `frontend/src/index.css` como variables CSS (`--accent`, `--hero-tone`).
-- Los logos están en SVG en `backend/src/main/resources/static/assets/` y en el frontend; para incrustarlos en XLSX via POI se requiere PNGs raster. Decidimos convertir SVG→PNG y colocarlos en `backend/src/main/resources/static/assets/png/` con nombres `logo-especialidad-{normalized}.png`.
+- Los logos fuente se centralizaron en `backend/src/main/resources/logos-source/` para no depender de hashes de build de Vite. Para incrustarlos en XLSX via POI se convierten a PNG raster y se colocan en `backend/src/main/resources/static/assets/png/` con nombres estables `logo-especialidad-{normalized}.png`, además de `backend/src/main/resources/static/logo-institucional.png`.
 
 Decisiones de implementación:
 
@@ -17,7 +17,7 @@ Decisiones de implementación:
    - Intentar insertar `logo-institucional.png` y, si existe, `logo-especialidad-{normalized}.png` en la cabecera.
    - Mantener la generación programática de filas/columnas, pero reutilizando estilos (ahora por hoja) en vez de valores hardcodeados.
 3. `HorarioController.export` fue modificado para que, al pedir exportar un `cursoId`, el endpoint genere una hoja por cada `curso_base` que tenga la misma `especialidad_id` y `nivel` (es decir, todas las secciones del mismo curso). Para esto reutiliza `HorarioWorkbookBuilder.buildEspecialidad(...)`.
-4. Añadí un script `scripts/convert-logos.sh` que intenta convertir todos los SVGs en `backend/src/main/resources/static/assets/` a PNGs normalizados, escribiendo los PNGs en `backend/src/main/resources/static/assets/png/` con nombres `logo-especialidad-{normalized}.png`.
+4. Añadí un script `scripts/convert-logos.sh` que toma los SVGs estables desde `backend/src/main/resources/logos-source/`, escribe `backend/src/main/resources/static/logo-institucional.png` para el logo institucional y genera `backend/src/main/resources/static/assets/png/logo-especialidad-*.png` para las especialidades.
 
 Archivos nuevos/modificados importantes:
 
@@ -40,7 +40,7 @@ chmod +x scripts/convert-logos.sh
 ./scripts/convert-logos.sh
 ```
 
-2. Verificar que los PNGs resultantes estén en `backend/src/main/resources/static/assets/png/` con nombres `logo-especialidad-{normalized}.png`. El export buscará `logo-especialidad-{normalized}.png`.
+2. Verificar que los PNGs resultantes estén en `backend/src/main/resources/static/assets/png/` con nombres `logo-especialidad-{normalized}.png` y que exista `backend/src/main/resources/static/logo-institucional.png`. El export buscará esas rutas.
 
 3. Revisar y correr tests/build:
 

@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -36,6 +38,8 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
  * usados por día.
  */
 public class HorarioWorkbookBuilder {
+
+    private static final Logger log = LoggerFactory.getLogger(HorarioWorkbookBuilder.class);
 
     public XSSFWorkbook build(CursoBase curso, List<HoraCatedra> horas, List<HorarioSlot> slots) throws IOException {
         XSSFWorkbook workbook = new XSSFWorkbook();
@@ -133,46 +137,63 @@ public class HorarioWorkbookBuilder {
         subtitleCell.setCellStyle(styles.subtitle);
         sheet.addMergedRegion(new CellRangeAddress(subtitleRow.getRowNum(), subtitleRow.getRowNum(), 0, lastCol));
 
-        try (InputStream is = HorarioWorkbookBuilder.class.getResourceAsStream("/static/logo-institucional.png")) {
-            if (is != null) {
-                byte[] bytes = IOUtils.toByteArray(is);
-                int pictureIdx = workbook.addPicture(bytes, XSSFWorkbook.PICTURE_TYPE_PNG);
-                CreationHelper helper = workbook.getCreationHelper();
-                Drawing<?> drawing = sheet.createDrawingPatriarch();
-                ClientAnchor anchor = helper.createClientAnchor();
-                anchor.setCol1(0);
-                anchor.setRow1(titleRow.getRowNum());
-                anchor.setCol2(1);
-                anchor.setRow2(subtitleRow.getRowNum() + 1);
-                drawing.createPicture(anchor, pictureIdx);
-            }
-        } catch (Exception ignored) {
-            // Si el logo no está disponible, seguimos sin abortar la exportación.
-        }
+        addPictureIfPresent(
+            workbook,
+            sheet,
+            "/static/logo-institucional.png",
+            0,
+            titleRow.getRowNum(),
+            1,
+            subtitleRow.getRowNum() + 1,
+            "logo institucional"
+        );
 
-        // Intentar colocar logo de especialidad (PNG) si existe. Nombre esperado: /static/logo-especialidad-{normalized}.png
-        try {
-            String normalized = SpecialtyColors.normalizeSpecialty(curso == null ? null : curso.getEspecialidad());
-            String path = "/static/assets/png/logo-especialidad-" + normalized + ".png";
-            try (InputStream is2 = HorarioWorkbookBuilder.class.getResourceAsStream(path)) {
-                if (is2 != null) {
-                    byte[] bytes = IOUtils.toByteArray(is2);
-                    int pictureIdx = workbook.addPicture(bytes, XSSFWorkbook.PICTURE_TYPE_PNG);
-                    CreationHelper helper = workbook.getCreationHelper();
-                    Drawing<?> drawing = sheet.createDrawingPatriarch();
-                    ClientAnchor anchor = helper.createClientAnchor();
-                    anchor.setCol1(lastCol - 1);
-                    anchor.setRow1(titleRow.getRowNum());
-                    anchor.setCol2(lastCol);
-                    anchor.setRow2(subtitleRow.getRowNum() + 1);
-                    drawing.createPicture(anchor, pictureIdx);
-                }
-            }
-        } catch (Exception ignored) {
-            // Silencioso
-        }
+        // Logo de especialidad: el nombre ya viene normalizado por SpecialtyColors.
+        String normalized = SpecialtyColors.normalizeSpecialty(curso == null ? null : curso.getEspecialidad());
+        String specialtyPath = "/static/assets/png/logo-especialidad-" + normalized + ".png";
+        addPictureIfPresent(
+            workbook,
+            sheet,
+            specialtyPath,
+            Math.max(0, lastCol - 1),
+            titleRow.getRowNum(),
+            Math.max(1, lastCol),
+            subtitleRow.getRowNum() + 1,
+            "logo de especialidad " + normalized
+        );
 
         return rowIndex;
+    }
+
+    private void addPictureIfPresent(
+        XSSFWorkbook workbook,
+        Sheet sheet,
+        String resourcePath,
+        int col1,
+        int row1,
+        int col2,
+        int row2,
+        String label
+    ) {
+        try (InputStream is = HorarioWorkbookBuilder.class.getResourceAsStream(resourcePath)) {
+            if (is == null) {
+                log.warn("Horario export: no se encontró {} en {}", label, resourcePath);
+                return;
+            }
+
+            byte[] bytes = IOUtils.toByteArray(is);
+            int pictureIdx = workbook.addPicture(bytes, XSSFWorkbook.PICTURE_TYPE_PNG);
+            CreationHelper helper = workbook.getCreationHelper();
+            Drawing<?> drawing = sheet.createDrawingPatriarch();
+            ClientAnchor anchor = helper.createClientAnchor();
+            anchor.setCol1(col1);
+            anchor.setRow1(row1);
+            anchor.setCol2(col2);
+            anchor.setRow2(row2);
+            drawing.createPicture(anchor, pictureIdx);
+        } catch (Exception ex) {
+            log.warn("Horario export: no se pudo insertar {} desde {}", label, resourcePath, ex);
+        }
     }
 
     private int writeBlock(Sheet sheet, Styles styles, HorarioScheduleLayout.BlockLayout block, int rowIndex) {
