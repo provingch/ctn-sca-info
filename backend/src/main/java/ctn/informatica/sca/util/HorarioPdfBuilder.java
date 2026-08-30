@@ -120,12 +120,15 @@ public class HorarioPdfBuilder {
         y = drawHeaderRow(contentStream, y, hourWidth, dayWidth, block.dayCount, TEMPLATE.headerDay());
         y -= 1f;
 
+        Color recesoFill = resolveRecesoFillColor(curso == null ? null : curso.getEspecialidad());
+        Color recesoBorder = colorForHex(TEMPLATE.receso().borderColorHex(), new Color(153, 153, 153));
+        Color recesoText = colorForHex(TEMPLATE.receso().fontColorHex(), Color.WHITE);
         for (int rowIndex = 0; rowIndex < block.rows.size(); rowIndex++) {
             HorarioScheduleLayout.RowLayout row = block.rows.get(rowIndex);
             float rowHeight = row.receso ? RECESO_HEIGHT : (DETAIL_ROW_HEIGHT * 2f);
 
             if (row.receso) {
-                drawMergedCell(contentStream, MARGIN, y, availableWidth, rowHeight, row.horaLabel, RECESO_SIZE, colorForHex(TEMPLATE.receso().fillColorHex(), new Color(191, 191, 191)), colorForHex(TEMPLATE.receso().borderColorHex(), new Color(153, 153, 153)), boldFont, colorForHex(TEMPLATE.receso().fontColorHex(), Color.WHITE));
+                drawMergedCell(contentStream, MARGIN, y, availableWidth, rowHeight, row.horaLabel, RECESO_SIZE, recesoFill, recesoBorder, boldFont, recesoText);
                 y -= rowHeight;
                 continue;
             }
@@ -321,7 +324,7 @@ public class HorarioPdfBuilder {
         }
     }
 
-    private Color colorForHex(String hex, Color fallback) {
+    private static Color colorForHex(String hex, Color fallback) {
         if (hex == null || hex.isBlank()) {
             return fallback;
         }
@@ -334,6 +337,14 @@ public class HorarioPdfBuilder {
         } catch (Exception ex) {
             return fallback;
         }
+    }
+
+    static String resolveRecesoFillHex(String specialty) {
+        return SpecialtyColors.getAccent(specialty);
+    }
+
+    static Color resolveRecesoFillColor(String specialty) {
+        return colorForHex(resolveRecesoFillHex(specialty), colorForHex(TEMPLATE.receso().fillColorHex(), new Color(191, 191, 191)));
     }
 
     private String mergeText(HorarioScheduleLayout.CellLayout cellLayout) {
