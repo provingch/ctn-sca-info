@@ -37,14 +37,14 @@ public class HorarioSlotDao extends conexion {
 
     private String buildFullName(String apellido, String nombre) {
         StringBuilder sb = new StringBuilder();
-        if (apellido != null && !apellido.isBlank()) {
-            sb.append(apellido.trim());
-        }
         if (nombre != null && !nombre.isBlank()) {
-            if (!sb.isEmpty()) {
+            sb.append(nombre.trim());
+        }
+        if (apellido != null && !apellido.isBlank()) {
+            if (sb.length() > 0) {
                 sb.append(" ");
             }
-            sb.append(nombre.trim());
+            sb.append(apellido.trim());
         }
         return sb.toString();
     }

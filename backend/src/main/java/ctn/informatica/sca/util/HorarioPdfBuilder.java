@@ -240,7 +240,8 @@ public class HorarioPdfBuilder {
         contentStream.addRect(x, y - height, width, height);
         contentStream.fill();
         drawBorder(contentStream, x, y - height, width, height, stroke);
-        drawTextInBox(contentStream, x, y - height, width, height, text, fontSize, font, false, textColor);
+        drawClippedText(contentStream, x, y - height, width, height,
+                () -> drawTextInBox(contentStream, x, y - height, width, height, text, fontSize, font, false, textColor));
     }
 
     private void drawMergedCell(PDPageContentStream contentStream, float x, float y, float width, float height, String text, float fontSize, Color fill, Color stroke, PDFont font, Color textColor) throws IOException {
@@ -252,7 +253,8 @@ public class HorarioPdfBuilder {
         contentStream.addRect(x, y - height, width, height);
         contentStream.fill();
         drawBorder(contentStream, x, y - height, width, height, stroke);
-        drawTextInBox(contentStream, x, y - height, width, height, text, fontSize, font, centerHorizontally, textColor);
+        drawClippedText(contentStream, x, y - height, width, height,
+                () -> drawTextInBox(contentStream, x, y - height, width, height, text, fontSize, font, centerHorizontally, textColor));
     }
 
     private void drawMergedCell(PDPageContentStream contentStream, float x, float y, float width, float height,
@@ -263,7 +265,8 @@ public class HorarioPdfBuilder {
         contentStream.addRect(x, y - height, width, height);
         contentStream.fill();
         drawBorder(contentStream, x, y - height, width, height, stroke);
-        drawTextInSplitBox(contentStream, x, y - height, width, height, firstText, firstFontSize, firstFont, secondText, secondFontSize, secondFont, true, firstTextColor, secondTextColor);
+        drawClippedText(contentStream, x, y - height, width, height,
+                () -> drawTextInSplitBox(contentStream, x, y - height, width, height, firstText, firstFontSize, firstFont, secondText, secondFontSize, secondFont, true, firstTextColor, secondTextColor));
     }
 
     private void drawBorder(PDPageContentStream contentStream, float x, float y, float width, float height) throws IOException {
@@ -329,24 +332,26 @@ public class HorarioPdfBuilder {
             String firstText, float firstFontSize, PDFont firstFont,
             String secondText, float secondFontSize, PDFont secondFont,
             boolean centerHorizontally, Color firstTextColor, Color secondTextColor) throws IOException {
-        List<String> firstLines = wrapText(firstFont, firstFontSize, firstText == null ? "" : firstText, width - 8f);
-        List<String> secondLines = wrapText(secondFont, secondFontSize, secondText == null ? "" : secondText, width - 8f);
-        if (firstLines.isEmpty() && secondLines.isEmpty()) {
-            return;
-        }
+        drawClippedText(contentStream, x, y, width, height, () -> {
+            List<String> firstLines = wrapText(firstFont, firstFontSize, firstText == null ? "" : firstText, width - 8f);
+            List<String> secondLines = wrapText(secondFont, secondFontSize, secondText == null ? "" : secondText, width - 8f);
+            if (firstLines.isEmpty() && secondLines.isEmpty()) {
+                return;
+            }
 
-        float firstHeight = textBlockHeight(firstLines, firstFontSize);
-        float secondHeight = textBlockHeight(secondLines, secondFontSize);
-        float gap = firstLines.isEmpty() || secondLines.isEmpty() ? 0f : Math.min(firstFontSize, secondFontSize) * 0.15f;
-        float totalHeight = firstHeight + gap + secondHeight;
-        float startY = y + Math.max(0f, (height - totalHeight) / 2f);
+            float firstHeight = textBlockHeight(firstLines, firstFontSize);
+            float secondHeight = textBlockHeight(secondLines, secondFontSize);
+            float gap = firstLines.isEmpty() || secondLines.isEmpty() ? 0f : Math.min(firstFontSize, secondFontSize) * 0.15f;
+            float totalHeight = firstHeight + gap + secondHeight;
+            float startY = y + Math.max(0f, (height - totalHeight) / 2f);
 
-        if (!firstLines.isEmpty()) {
-            drawTextInBox(contentStream, x, startY + secondHeight + gap, width, firstHeight, firstLines, firstFontSize, firstFont, centerHorizontally, firstTextColor);
-        }
-        if (!secondLines.isEmpty()) {
-            drawTextInBox(contentStream, x, startY, width, secondHeight, secondLines, secondFontSize, secondFont, centerHorizontally, secondTextColor);
-        }
+            if (!firstLines.isEmpty()) {
+                drawTextInBox(contentStream, x, startY + secondHeight + gap, width, firstHeight, firstLines, firstFontSize, firstFont, centerHorizontally, firstTextColor);
+            }
+            if (!secondLines.isEmpty()) {
+                drawTextInBox(contentStream, x, startY, width, secondHeight, secondLines, secondFontSize, secondFont, centerHorizontally, secondTextColor);
+            }
+        });
     }
 
     private List<String> wrapText(PDFont font, float fontSize, String text, float maxWidth) throws IOException {
@@ -363,13 +368,19 @@ public class HorarioPdfBuilder {
             StringBuilder line = new StringBuilder();
             for (String word : words) {
                 String candidate = line.isEmpty() ? word : line + " " + word;
-                if (measureText(font, fontSize, candidate) <= maxWidth || line.isEmpty()) {
+                if (measureText(font, fontSize, candidate) <= maxWidth) {
                     line.setLength(0);
                     line.append(candidate);
                 } else {
-                    out.add(line.toString());
-                    line.setLength(0);
-                    line.append(word);
+                    if (!line.isEmpty()) {
+                        out.add(line.toString());
+                        line.setLength(0);
+                    }
+                    if (measureText(font, fontSize, word) <= maxWidth) {
+                        line.append(word);
+                    } else {
+                        out.addAll(splitLongWord(font, fontSize, word, maxWidth));
+                    }
                 }
             }
             if (!line.isEmpty()) {
@@ -384,6 +395,56 @@ public class HorarioPdfBuilder {
             return 0f;
         }
         return font.getStringWidth(text) / 1000f * fontSize;
+    }
+
+    private List<String> splitLongWord(PDFont font, float fontSize, String word, float maxWidth) throws IOException {
+        if (word == null || word.isEmpty()) {
+            return List.of();
+        }
+        List<String> parts = new ArrayList<>();
+        String remaining = word;
+        while (!remaining.isEmpty()) {
+            int cut = fitPrefixLength(font, fontSize, remaining, maxWidth);
+            if (cut <= 0) {
+                cut = 1;
+            }
+            parts.add(remaining.substring(0, cut));
+            remaining = remaining.substring(cut);
+        }
+        return parts;
+    }
+
+    private int fitPrefixLength(PDFont font, float fontSize, String word, float maxWidth) throws IOException {
+        int low = 1;
+        int high = word.length();
+        int best = 1;
+        while (low <= high) {
+            int mid = (low + high) / 2;
+            String prefix = word.substring(0, mid);
+            if (measureText(font, fontSize, prefix) <= maxWidth) {
+                best = mid;
+                low = mid + 1;
+            } else {
+                high = mid - 1;
+            }
+        }
+        return best;
+    }
+
+    private void drawClippedText(PDPageContentStream contentStream, float x, float y, float width, float height, IOExceptionRunnable runnable) throws IOException {
+        contentStream.saveGraphicsState();
+        try {
+            contentStream.addRect(x, y, width, height);
+            contentStream.clip();
+            runnable.run();
+        } finally {
+            contentStream.restoreGraphicsState();
+        }
+    }
+
+    @FunctionalInterface
+    private interface IOExceptionRunnable {
+        void run() throws IOException;
     }
 
     private void drawLogoIfPresent(PDDocument document, PDPageContentStream contentStream, String resourcePath, float x, float y, float width, float height, String label) {
