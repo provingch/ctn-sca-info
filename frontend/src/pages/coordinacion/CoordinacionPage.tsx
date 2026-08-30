@@ -2,18 +2,29 @@ import { useEffect, useMemo, useState } from 'react';
 import AppShell from '../../components/AppShell';
 import ContentState from '../../components/ui/ContentState';
 import { getAdminQuejas, type QuejaItem } from '../../api/quejas';
+import { getAdminCatalog } from '../../api/admin';
 
 export default function CoordinacionPage() {
   const [view, setView] = useState<'menu' | 'quejas' | 'detalle'>('menu');
   const [status, setStatus] = useState('');
   const [quejas, setQuejas] = useState<QuejaItem[]>([]);
+  const [usuariosPorId, setUsuariosPorId] = useState<Map<number, string>>(new Map());
   const [selectedProfesorId, setSelectedProfesorId] = useState<number | null>(null);
   const UMBRAL = 5; // valor visual por defecto si backend no expone el umbral
 
   useEffect(() => {
     if (view !== 'quejas') return;
     getAdminQuejas().then(setQuejas).catch((err) => setStatus((err as any)?.message || 'No se pudieron cargar las quejas.'));
+    getAdminCatalog().then((catalog) => {
+      const map = new Map<number, string>();
+      catalog.usuarios.forEach((u) => map.set(u.id, `${u.nombre} ${u.apellido}`.trim()));
+      setUsuariosPorId(map);
+    }).catch(() => { /* el nombre de quien cargó la queja queda con fallback */ });
   }, [view]);
+
+  function nombreCreador(creadaPor: number): string {
+    return usuariosPorId.get(creadaPor) ?? `Usuario #${creadaPor}`;
+  }
 
   const agrupadas = useMemo(() => {
     const map = new Map<number, { profesorNombre: string; profesorApellido?: string | null; count: number; quejas: QuejaItem[] }>();
@@ -77,7 +88,7 @@ export default function CoordinacionPage() {
             <li key={q.id} className={`list-item${q.motivo ? '' : ' muted'}`}>
               <p><strong>Motivo:</strong> {q.motivo}</p>
               <p><strong>Curso:</strong> {`${q.cursoEspecialidad ?? ''} ${q.cursoNivel ?? ''}° Sección ${q.cursoSeccion ?? ''}`.trim()}</p>
-              <p><small>Cargada por: {`#${q.creadaPor}`} — {new Date(q.creadaEn).toLocaleString('es-PY')}</small></p>
+              <p><small>Cargada por: {nombreCreador(q.creadaPor)} — {new Date(q.creadaEn).toLocaleString('es-PY')}</small></p>
             </li>
           ))}
         </ul>

@@ -15,6 +15,16 @@ export default function AdminQuejasPanel({ data, reload, status }: { data: Admin
   const cursos = data.cursos;
   const asignaciones = data.asignaciones;
 
+  const usuariosPorId = useMemo(() => {
+    const map = new Map<number, string>();
+    data.usuarios.forEach((u) => map.set(u.id, `${u.nombre} ${u.apellido}`.trim()));
+    return map;
+  }, [data.usuarios]);
+
+  function nombreCreador(creadaPor: number): string {
+    return usuariosPorId.get(creadaPor) ?? `Usuario #${creadaPor}`;
+  }
+
   const profesoresForCurso = useMemo(() => {
     if (!cursoId) return [] as { id: number; nombre: string }[];
     const items = asignaciones.filter((a) => a.cursoId === Number(cursoId)).map((a) => ({ id: a.profesorId, nombre: a.profesor }));
@@ -83,7 +93,7 @@ export default function AdminQuejasPanel({ data, reload, status }: { data: Admin
             <li key={q.id}>
               <p><strong>{`${q.profesorNombre ?? ''} ${q.profesorApellido ?? ''}`.trim()}</strong> — {`${q.cursoEspecialidad ?? ''} ${q.cursoNivel ?? ''}° Sección ${q.cursoSeccion ?? ''}`.trim()}</p>
               <p>{q.motivo}</p>
-              <p><small>{new Date(q.creadaEn).toLocaleString('es-PY')} — cargada por #{q.creadaPor}</small></p>
+              <p><small>{new Date(q.creadaEn).toLocaleString('es-PY')} — cargada por {nombreCreador(q.creadaPor)}</small></p>
             </li>
           ))}
         </ul>
