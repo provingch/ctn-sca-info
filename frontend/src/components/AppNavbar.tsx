@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { getNotificaciones, getNotificacionesContador, marcarNotificacionLeida, marcarTodasNotificacionesLeidas, type NotificacionItem } from '../api/notificaciones';
 import { useAuth } from '../context/AuthContext';
@@ -20,7 +20,10 @@ function NotificationTrigger({ count, open, mobile = false, onClick }: { count: 
     aria-expanded={open}
     onClick={(event) => onClick(event.currentTarget)}
   >
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a4 4 0 0 0-4 4v1.1A6.002 6.002 0 0 0 6 14v3l-1 1v1h14v-1l-1-1v-3a6.002 6.002 0 0 0-2-6.9V6a4 4 0 0 0-4-4zM8 20a2 2 0 0 0 4 0H8z" /></svg>
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 4h16a1 1 0 0 1 1 1v6.5h-5.17a1 1 0 0 0-.95.68L14.02 15H9.98l-.86-2.82a1 1 0 0 0-.95-.68H3V5a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M3 11.5v6a1.5 1.5 0 0 0 1.5 1.5h15a1.5 1.5 0 0 0 1.5-1.5v-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
     {count > 0 && <span className="notif-badge" aria-hidden="true">{count > 99 ? '99+' : count}</span>}
   </button>;
 }
@@ -46,6 +49,7 @@ export default function AppNavbar() {
   const [notifError, setNotifError] = useState('');
   const [markingAll, setMarkingAll] = useState(false);
   const notificationTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const [notifAnchor, setNotifAnchor] = useState<{ top: number; right: number } | null>(null);
   const config = getRoleNavigation(user?.level);
   const displayName = user?.displayName || user?.username || 'Usuario SCA';
   const initials = user?.initials || displayName.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'S';
@@ -134,6 +138,8 @@ export default function AppNavbar() {
       setNotifOpen(false);
       return;
     }
+    const rect = trigger.getBoundingClientRect();
+    setNotifAnchor({ top: rect.bottom + 9, right: window.innerWidth - rect.right });
     setUserMenuOpen(false);
     setMobileMenuOpen(false);
     setNotifOpen(true);
@@ -226,7 +232,14 @@ export default function AppNavbar() {
         </div>
       </div>
 
-      <section id="notification-inbox" className={`navbar-notif-dropdown${notifOpen ? ' open' : ''}`} role="dialog" aria-labelledby="notification-inbox-title" aria-hidden={!notifOpen}>
+      <section
+        id="notification-inbox"
+        className={`navbar-notif-dropdown${notifOpen ? ' open' : ''}`}
+        role="dialog"
+        aria-labelledby="notification-inbox-title"
+        aria-hidden={!notifOpen}
+        style={notifAnchor ? { '--notif-anchor-top': `${notifAnchor.top}px`, '--notif-anchor-right': `${notifAnchor.right}px` } as CSSProperties : undefined}
+      >
         <header className="notif-header">
           <div>
             <span>Bandeja de entrada</span>
