@@ -111,14 +111,14 @@ public class ProfileController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('LEVEL_1','LEVEL_2','LEVEL_3','LEVEL_4')")
+    @PreAuthorize("hasAnyRole('LEVEL_1','LEVEL_2','LEVEL_3','LEVEL_4','LEVEL_5')")
     public ProfileResponse getProfile(Authentication authentication) {
         User user = requireUser(authentication);
         Profesor profesor = null;
         Padre padre = null;
         boolean isProfessorProfile = user.getLevel() == 1;
         boolean showSignaturePanel = user.getLevel() == 1 || user.getLevel() == 2;
-        boolean isStaffProfile = user.getLevel() >= 1 && user.getLevel() <= 3;
+        boolean isStaffProfile = user.getLevel() >= 1 && user.getLevel() <= 3 || user.getLevel() == 5;
         boolean isParentProfile = user.getLevel() == 4;
 
         if (isStaffProfile) {
@@ -207,7 +207,7 @@ public class ProfileController {
     }
 
     @PostMapping("/select-ui-specialty")
-    @PreAuthorize("hasAnyRole('LEVEL_1','LEVEL_2','LEVEL_3','LEVEL_4')")
+    @PreAuthorize("hasAnyRole('LEVEL_1','LEVEL_2','LEVEL_3','LEVEL_4','LEVEL_5')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void selectUiSpecialty(
             @RequestBody SelectUiSpecialtyRequest request,
@@ -242,7 +242,7 @@ public class ProfileController {
     }
 
     @PostMapping("/prepare-totp")
-    @PreAuthorize("hasAnyRole('LEVEL_1','LEVEL_2','LEVEL_3','LEVEL_4')")
+    @PreAuthorize("hasAnyRole('LEVEL_1','LEVEL_2','LEVEL_3','LEVEL_4','LEVEL_5')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void prepareTotp(Authentication authentication) {
         User user = requireUser(authentication);
@@ -251,7 +251,7 @@ public class ProfileController {
     }
 
     @PostMapping("/confirm-totp")
-    @PreAuthorize("hasAnyRole('LEVEL_1','LEVEL_2','LEVEL_3','LEVEL_4')")
+    @PreAuthorize("hasAnyRole('LEVEL_1','LEVEL_2','LEVEL_3','LEVEL_4','LEVEL_5')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void confirmTotp(
             @RequestBody ConfirmTotpRequest request,
@@ -298,7 +298,7 @@ public class ProfileController {
     }
 
     @PostMapping("/change-password")
-    @PreAuthorize("hasAnyRole('LEVEL_1','LEVEL_2','LEVEL_3','LEVEL_4')")
+    @PreAuthorize("hasAnyRole('LEVEL_1','LEVEL_2','LEVEL_3','LEVEL_4','LEVEL_5')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void changePassword(
             @RequestBody ChangePasswordRequest request,
@@ -337,7 +337,7 @@ public class ProfileController {
         User user = requireUser(authentication);
         try {
             boolean passwordUpdated = false;
-            if (user.getLevel() >= 1 && user.getLevel() <= 3) {
+            if (user.getLevel() >= 1 && user.getLevel() <= 3 || user.getLevel() == 5) {
                 Profesor profesor = profesorDao.findById(user.getId());
                 if (profesor != null && profesor.getContrasenia() != null && PasswordUtil.matches(request.currentPassword(), profesor.getContrasenia())) {
                     profesor.setContrasenia(request.newPassword());
@@ -370,7 +370,7 @@ public class ProfileController {
     }
 
     @PostMapping("/save-profile")
-    @PreAuthorize("hasAnyRole('LEVEL_1','LEVEL_2','LEVEL_3','LEVEL_4')")
+    @PreAuthorize("hasAnyRole('LEVEL_1','LEVEL_2','LEVEL_3','LEVEL_4','LEVEL_5')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void saveProfile(
             @RequestBody SaveProfileRequest request,
@@ -392,6 +392,14 @@ public class ProfileController {
                 if (padre == null) {
                     throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se pudo cargar el perfil del usuario.");
                 }
+
+                String previousCorreo = padre.getCorreo();
+                String previousTelefono = padre.getTelefono();
+                String previousUsuario = padre.getUsuario();
+                String previousNombre = padre.getNombre();
+                String previousApellido = padre.getApellido();
+                Integer previousCi = padre.getCi();
+
                 padre.setUsuario(request.usuario().trim());
                 padre.setCorreo(request.correo() == null ? null : request.correo().trim());
                 padre.setTelefono(request.telefono() == null ? null : request.telefono().trim());
@@ -427,13 +435,14 @@ public class ProfileController {
                 if (!padreDao.update(padre)) {
                     throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudieron guardar los datos. Intente de nuevo más tarde.");
                 }
-                try {
-                    if (activityLogService != null) {
-                        activityLogService.registrar(user.getId(), "Actualizó datos de perfil");
-                    }
-                } catch (Exception ex) {
-                    log.warn("No se pudo registrar actividad para usuario {}: {}", user.getId(), ex.getMessage());
-                }
+                registrarCambiosPerfil(user.getId(), List.of(
+                        detalleCambio("correo", previousCorreo, padre.getCorreo()),
+                        detalleCambio("telefono", previousTelefono, padre.getTelefono()),
+                        detalleCambio("usuario", previousUsuario, padre.getUsuario()),
+                        detalleCambio("nombre", previousNombre, padre.getNombre()),
+                        detalleCambio("apellido", previousApellido, padre.getApellido()),
+                        detalleCambio("ci", previousCi, padre.getCi())
+                ));
                 return;
             }
 
@@ -441,6 +450,15 @@ public class ProfileController {
             if (profesor == null) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se pudo cargar el perfil del usuario.");
             }
+
+            String previousCorreo = profesor.getCorreo();
+            String previousTelefono = profesor.getTelefono() == null ? null : String.valueOf(profesor.getTelefono());
+            String previousCelular = profesor.getCelular() == null ? null : String.valueOf(profesor.getCelular());
+            String previousUsuario = profesor.getUsuario();
+            String previousNombre = profesor.getNombre();
+            String previousApellido = profesor.getApellido();
+            Integer previousCi = profesor.getCi();
+            Integer previousNivel = profesor.getNivel();
 
             if (request.telefono() != null && !request.telefono().trim().isEmpty()) {
                 try {
@@ -493,20 +511,27 @@ public class ProfileController {
                     errors.add("Solo el administrador puede modificar el nivel.");
                 }
             }
+            boolean firmaCambiada = false;
+            boolean fotoCambiada = false;
             if (user.getLevel() == 3 && request.firmaImagen() != null) {
                 // Los administradores no gestionan la firma del docente/evaluador.
             } else if (request.firmaImagen() != null) {
                 String raw = request.firmaImagen().trim();
                 if (raw.isEmpty()) {
+                    if (profesor.getFirmaImagen() != null) {
+                        firmaCambiada = true;
+                    }
                     profesor.setFirmaImagen(null);
                 } else {
-                    // Validate approximate size of base64 payload to avoid DB errors
                     int idx = raw.indexOf(',');
                     String payload = idx >= 0 ? raw.substring(idx + 1) : raw;
                     int approxBytes = Math.round((float) payload.length() * 3f / 4f);
-                    int maxBytes = 1_500_000; // ~1.5MB
+                    int maxBytes = 1_500_000;
                     if (approxBytes > maxBytes) {
                         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La imagen de firma es demasiado grande. Reduce el tamaño antes de guardar.");
+                    }
+                    if (!Objects.equals(profesor.getFirmaImagen(), raw)) {
+                        firmaCambiada = true;
                     }
                     profesor.setFirmaImagen(raw);
                 }
@@ -514,14 +539,20 @@ public class ProfileController {
             if (request.fotoPerfil() != null) {
                 String raw = request.fotoPerfil().trim();
                 if (raw.isEmpty()) {
+                    if (profesor.getFotoPerfil() != null) {
+                        fotoCambiada = true;
+                    }
                     profesor.setFotoPerfil(null);
                 } else {
                     int idx = raw.indexOf(',');
                     String payload = idx >= 0 ? raw.substring(idx + 1) : raw;
                     int approxBytes = Math.round((float) payload.length() * 3f / 4f);
-                    int maxBytes = 1_500_000; // reuse same limit for avatars
+                    int maxBytes = 1_500_000;
                     if (approxBytes > maxBytes) {
                         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La foto de perfil es demasiado grande. Reduce el tamaño antes de guardar.");
+                    }
+                    if (!Objects.equals(profesor.getFotoPerfil(), raw)) {
+                        fotoCambiada = true;
                     }
                     profesor.setFotoPerfil(raw);
                 }
@@ -534,15 +565,23 @@ public class ProfileController {
                 if (!profesorDao.update(profesor)) {
                     throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudieron guardar los datos. Intente de nuevo más tarde.");
                 }
-                try {
-                    if (activityLogService != null) {
-                        activityLogService.registrar(user.getId(), "Actualizó datos de perfil");
-                    }
-                } catch (Exception ex) {
-                    log.warn("No se pudo registrar actividad para usuario {}: {}", user.getId(), ex.getMessage());
+                List<String> cambios = new ArrayList<>();
+                addCambio(cambios, "correo", previousCorreo, profesor.getCorreo());
+                addCambio(cambios, "telefono", previousTelefono, profesor.getTelefono() == null ? null : String.valueOf(profesor.getTelefono()));
+                addCambio(cambios, "celular", previousCelular, profesor.getCelular() == null ? null : String.valueOf(profesor.getCelular()));
+                addCambio(cambios, "usuario", previousUsuario, profesor.getUsuario());
+                addCambio(cambios, "nombre", previousNombre, profesor.getNombre());
+                addCambio(cambios, "apellido", previousApellido, profesor.getApellido());
+                addCambio(cambios, "ci", previousCi, profesor.getCi());
+                addCambio(cambios, "nivel", previousNivel, profesor.getNivel());
+                if (firmaCambiada) {
+                    cambios.add("firma del docente actualizada");
                 }
+                if (fotoCambiada) {
+                    cambios.add("foto de perfil actualizada");
+                }
+                registrarCambiosPerfil(user.getId(), cambios);
             } catch (RuntimeException ex) {
-                // Detect SQL data-too-long scenarios to return a 400 with a helpful message.
                 Throwable cause = ex.getCause();
                 if (cause != null && cause instanceof SQLException && cause.getMessage() != null && cause.getMessage().toLowerCase().contains("data too long")) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La imagen de firma es demasiado grande. Reduce el tamaño o sube una imagen más pequeña.", ex);
@@ -552,6 +591,35 @@ public class ProfileController {
         } catch (SQLException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al guardar el perfil.", ex);
         }
+    }
+
+    private void registrarCambiosPerfil(int userId, List<String> cambios) {
+        List<String> cambiosValidos = cambios.stream()
+                .filter(Objects::nonNull)
+                .filter(cambio -> !cambio.isBlank())
+                .collect(Collectors.toList());
+        if (cambiosValidos.isEmpty() || activityLogService == null) {
+            return;
+        }
+        try {
+            activityLogService.registrar(userId, "Actualizó perfil: " + String.join("; ", cambiosValidos));
+        } catch (Exception ex) {
+            log.warn("No se pudo registrar actividad para usuario {}: {}", userId, ex.getMessage());
+        }
+    }
+
+    private void addCambio(List<String> cambios, String campo, Object antes, Object despues) {
+        String cambio = detalleCambio(campo, antes, despues);
+        if (cambio != null && !cambio.isBlank()) {
+            cambios.add(cambio);
+        }
+    }
+
+    private String detalleCambio(String campo, Object antes, Object despues) {
+        if (Objects.equals(antes, despues)) {
+            return null;
+        }
+        return campo + ": '" + String.valueOf(antes == null ? "null" : antes) + "' → '" + String.valueOf(despues == null ? "null" : despues) + "'";
     }
 
     private ProfileOwnerDto toProfileOwnerDto(Profesor profesor, Padre padre) {
@@ -629,6 +697,7 @@ public class ProfileController {
             case 2 -> "Evaluador";
             case 3 -> "Administrador";
             case 4 -> "Familia";
+            case 5 -> "Coordinación Pedagógica";
             default -> "Usuario";
         };
     }
@@ -639,8 +708,7 @@ public class ProfileController {
         }
         return switch (user.getLevel()) {
             case 1 -> "Podés editar tus datos de contacto, usuario y conexión con Google Classroom.";
-            case 2, 3 -> "Podés editar tus datos de contacto y cuenta desde este perfil.";
-            case 4 -> "Podés editar tus datos de contacto y cuenta desde este perfil.";
+            case 2, 3, 4, 5 -> "Podés editar tus datos de contacto y cuenta desde este perfil.";
             default -> "Tu perfil se muestra en modo lectura.";
         };
     }
