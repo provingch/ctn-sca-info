@@ -26,10 +26,16 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<ApiError> handleResponseStatus(ResponseStatusException ex) {
-        // Expected client errors (400/404/etc). Log as warn and preserve message.
         String reason = ex.getReason();
         HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
-        log.warn("Request rejected: {} - {}", status, reason != null ? reason : "");
+
+        if (status.is5xxServerError()) {
+            Throwable cause = ex.getCause() != null ? ex.getCause() : ex;
+            log.error("Request failed: {} - {}", status, reason != null ? reason : "", cause);
+        } else {
+            log.warn("Request rejected: {} - {}", status, reason != null ? reason : "");
+        }
+
         ApiError body = new ApiError(status.value(), status.getReasonPhrase(), reason != null ? reason : status.getReasonPhrase());
         return ResponseEntity.status(status).body(body);
     }
