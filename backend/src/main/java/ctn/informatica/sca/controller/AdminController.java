@@ -27,6 +27,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ctn.informatica.sca.service.ActivityLogService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -63,6 +64,7 @@ public class AdminController {
         this(tareaDao, gradeDao, planillaDao, quejaDao, new ActivityLogService());
     }
 
+    @Autowired
     public AdminController(TareaDao tareaDao, GradeDao gradeDao, PlanillaDao planillaDao, QuejaDao quejaDao, ActivityLogService activityLogService) {
         this.tareaDao = tareaDao;
         this.gradeDao = gradeDao;
@@ -220,6 +222,11 @@ public class AdminController {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Materia no encontrada");
             }
             materiaDao.replaceEspecialidades(id, input.especialidadIds() == null ? java.util.List.of() : input.especialidadIds());
+            try {
+                activityLogService.registrar(ApiAuth.requireUserId(auth), "Editó materia " + input.nombre().trim());
+            } catch (Exception ex) {
+                log.warn("No se pudo registrar actividad para usuario {}: {}", ApiAuth.requireUserId(auth), ex.getMessage());
+            }
         } catch (ResponseStatusException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -369,6 +376,11 @@ public class AdminController {
             updated.setTotpSecret(existing.getTotpSecret());
             updated.setEspecialidadId(normalizeAdminEspecialidadId(existing.getNivel(), input.especialidadId()));
             if (!profesorDao.update(updated)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado");
+            try {
+                activityLogService.registrar(actingUserId, "Editó usuario " + updated.getNombre() + " " + updated.getApellido());
+            } catch (Exception ex) {
+                log.warn("No se pudo registrar actividad para usuario {}: {}", actingUserId, ex.getMessage());
+            }
         } catch (ResponseStatusException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -524,6 +536,11 @@ public class AdminController {
             if (!dao.actualizar(id, input.materiaId(), input.cursoId())) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Asignación no encontrada");
             }
+            try {
+                activityLogService.registrar(ApiAuth.requireUserId(auth), "Editó asignación #" + id + " (materia " + input.materiaId() + ", curso " + input.cursoId() + ")");
+            } catch (Exception ex) {
+                log.warn("No se pudo registrar actividad para usuario {}: {}", ApiAuth.requireUserId(auth), ex.getMessage());
+            }
         } catch (ResponseStatusException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -585,6 +602,11 @@ public class AdminController {
             }
             if (!alumnoDao.update(id, input.nombre().trim(), input.apellido().trim(), input.cursoId(), input.ci(), input.correoEncargado(), input.correoEncargado2())) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Alumno no encontrado");
+            }
+            try {
+                activityLogService.registrar(ApiAuth.requireUserId(auth), "Editó alumno " + input.nombre().trim() + " " + input.apellido().trim() + " (curso " + input.cursoId() + ")");
+            } catch (Exception ex) {
+                log.warn("No se pudo registrar actividad para usuario {}: {}", ApiAuth.requireUserId(auth), ex.getMessage());
             }
         } catch (ResponseStatusException ex) {
             throw ex;
