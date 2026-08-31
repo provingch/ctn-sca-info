@@ -37,9 +37,13 @@ public class PlanCurricularParserRealTemplateTest {
                 setCell(sh, 8, 22, "Especialidad: Informática");
 
                 // four bloques at rows 15,21,28,35 -> indexes 14,20,27,34
+                setCell(sh, 14, 2, "Capacidad A");
                 setCell(sh, 14, 11, "Tema A");
+                setCell(sh, 20, 2, "Capacidad B");
                 setCell(sh, 20, 11, "Tema B");
+                setCell(sh, 27, 2, "Capacidad C");
                 setCell(sh, 27, 11, "Tema C");
+                setCell(sh, 34, 2, "Capacidad D");
                 setCell(sh, 34, 11, "Tema D");
 
                 wb.write(bos);
