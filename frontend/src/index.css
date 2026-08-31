@@ -145,7 +145,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .navbar-notif-trigger:hover, .navbar-notif-trigger[aria-expanded="true"] { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); background: var(--accent-soft); color: var(--accent-deep); }
 .navbar-notif-trigger svg { width: 20px; height: 20px; fill: currentColor; }
 .notif-badge { position: absolute; top: -5px; right: -6px; min-width: 19px; height: 19px; display: grid; place-items: center; padding: 0 5px; border: 2px solid var(--paper); border-radius: 999px; background: var(--danger); color: #fff; font-size: .62rem; font-weight: 900; line-height: 1; }
-.navbar-notif-dropdown { position: absolute; top: calc(100% + 9px); right: 10px; z-index: 60; width: min(430px, calc(100vw - 24px)); max-height: min(650px, calc(100vh - var(--app-header-h) - 22px)); display: grid; grid-template-rows: auto auto auto minmax(0, 1fr); overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: var(--paper-raised); color: var(--ink); box-shadow: var(--shadow-md); opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-7px) scale(.985); transform-origin: top right; transition: opacity .16s ease, visibility .16s ease, transform .16s ease; }
+.navbar-notif-dropdown { position: fixed; top: var(--notif-anchor-top, calc(var(--app-header-h) + 9px)); right: var(--notif-anchor-right, 10px); z-index: 60; width: min(430px, calc(100vw - 24px)); max-height: min(650px, calc(100vh - var(--app-header-h) - 22px)); display: grid; grid-template-rows: auto auto auto minmax(0, 1fr); overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: var(--paper-raised); color: var(--ink); box-shadow: var(--shadow-md); opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-7px) scale(.985); transform-origin: top right; transition: opacity .16s ease, visibility .16s ease, transform .16s ease; }
 .navbar-notif-dropdown.open { opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(0) scale(1); }
 .notif-header { min-width: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 17px 18px 12px; }
 .notif-header > div { min-width: 0; }
@@ -500,7 +500,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
   .brand-copy, .navbar-primary, .navbar-desktop-actions { display: none; }
   .navbar-mobile-actions { display: flex; align-items: center; gap: 7px; }
   .navbar-notif-trigger.mobile { width: 40px; height: 40px; }
-  .navbar-notif-dropdown { top: calc(100% + 8px); right: 0; left: 0; width: auto; max-height: calc(100dvh - var(--app-header-h) - 18px); border-radius: 15px; transform-origin: top center; }
+  .navbar-notif-dropdown { top: calc(var(--app-header-h) + 8px); right: 0; left: 0; width: auto; max-height: calc(100dvh - var(--app-header-h) - 18px); border-radius: 15px; transform-origin: top center; }
   .notif-header { padding: 15px 15px 11px; }
   .notif-toolbar { align-items: flex-start; padding-inline: 11px; }
   .notif-toolbar > div { flex-wrap: wrap; }
