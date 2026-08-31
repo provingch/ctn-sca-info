@@ -302,24 +302,23 @@ export default function PlanillaPage() {
             <tr>
               <th className="planilla-number-heading">#</th>
               <th className="planilla-student-heading">Alumno</th>
-              {data.tareas.map((task, taskIndex) => {
+              {data.tareas.map((task) => {
                 const isClassroomTask = Boolean(task.googleCourseworkId?.trim());
                 return (
-                  <th key={task.id} className="planilla-task-heading">
-                    <span className="planilla-task-number">T{taskIndex + 1}</span>
+                  <th key={task.id} className={`planilla-task-heading${isClassroomTask ? ' planilla-task-heading--classroom' : ''}`}>
                     {isClassroomTask ? (
-                      <>
-                        {task.googleCourseworkUrl ? (
-                          <a className="planilla-task-link" href={task.googleCourseworkUrl} target="_blank" rel="noopener noreferrer" aria-label={`${task.titulo}, abrir en Classroom en una pestaña nueva`}>{task.titulo}</a>
-                        ) : (
-                          <span className="planilla-task-link readonly">{task.titulo}</span>
-                        )}
-                        <ClassroomBadge className="planilla-task-classroom-badge" label="Classroom" />
-                      </>
+                      task.googleCourseworkUrl ? (
+                        <a className="planilla-task-link" href={task.googleCourseworkUrl} target="_blank" rel="noopener noreferrer" aria-label={`${task.titulo}, abrir en Classroom en una pestaña nueva`}>{task.titulo}</a>
+                      ) : (
+                        <span className="planilla-task-link readonly">{task.titulo}</span>
+                      )
                     ) : (
                       <Link className="planilla-task-link" to={`/planilla/${id}/tarea/${task.id}`}>{task.titulo}</Link>
                     )}
-                    <small>TP: {task.total}{task.fechaInicio ? ` · ${formatShortDate(task.fechaInicio)}` : ''}</small>
+                    <small className="planilla-task-tp">
+                      TP: {task.total}{task.fechaInicio ? ` · ${formatShortDate(task.fechaInicio)}` : ''}
+                      {isClassroomTask && <ClassroomBadge className="planilla-task-classroom-icon" label="Importada de Google Classroom" iconOnly />}
+                    </small>
                     {!isClassroomTask && <Link className="planilla-task-edit" to={`/planilla/${id}/tarea/${task.id}`}>Editar</Link>}
                   </th>
                 );
@@ -341,7 +340,8 @@ export default function PlanillaPage() {
               <th className="planilla-student-name" scope="row">{row.alumnoNombre}</th>
               {data.tareas.map((task) => {
                 const grade = values[`${row.alumnoId}:${task.id}`];
-                return <td key={task.id} className="planilla-task-grade" aria-label={`${row.alumnoNombre}, ${task.titulo}: ${grade === '' || grade == null ? 'sin calificación' : `${grade} puntos`}`}>
+                const isClassroomTask = Boolean(task.googleCourseworkId?.trim());
+                return <td key={task.id} className={`planilla-task-grade${isClassroomTask ? ' planilla-task-grade--classroom' : ''}`} aria-label={`${row.alumnoNombre}, ${task.titulo}: ${grade === '' || grade == null ? 'sin calificación' : `${grade} puntos`}`}>
                   <span>{grade === '' || grade == null ? '—' : grade}</span>
                 </td>;
               })}
