@@ -786,11 +786,11 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .planilla-grade-table { width: max-content; min-width: 100%; }
 .planilla-grade-table thead th { background: var(--bg-soft); color: var(--ink); }
 .planilla-grade-table thead th { position: sticky; top: 0; z-index: 3; box-shadow: inset 0 -1px var(--line); }
-.planilla-grade-table th:first-child { min-width: 50px; width: 50px; text-align: center; }
+.planilla-grade-table th:first-child { min-width: 50px; width: 50px; text-align: center; position: static; left: auto; }
 .planilla-grade-table .planilla-student-heading,
 .planilla-grade-table .planilla-student-name { min-width: 230px; max-width: 280px; text-align: left; }
 .planilla-grade-table-wrap.freeze-students .planilla-row-number { position: sticky; left: 0; z-index: 4; background: var(--paper); }
-.planilla-grade-table-wrap.freeze-students .planilla-number-heading { z-index: 6; background: var(--bg-soft); }
+.planilla-grade-table-wrap.freeze-students .planilla-number-heading { position: sticky; left: 0; z-index: 6; background: var(--bg-soft); }
 .planilla-grade-table-wrap.freeze-students .planilla-student-heading,
 .planilla-grade-table-wrap.freeze-students .planilla-student-name { position: sticky; left: 50px; z-index: 4; background: var(--paper); box-shadow: 1px 0 var(--line); }
 .planilla-grade-table-wrap.freeze-students .planilla-student-heading { z-index: 6; background: var(--bg-soft); }
@@ -800,15 +800,23 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .planilla-task-heading { min-width: 142px; max-width: 190px; }
 .planilla-task-heading .planilla-task-link { display: block; overflow: hidden; color: var(--accent-deep); text-overflow: ellipsis; white-space: nowrap; }
 .planilla-task-heading .planilla-task-link.readonly { color: var(--ink); cursor: default; }
-.planilla-task-heading .planilla-task-number { display: block; margin-bottom: 5px; color: var(--muted); font-size: .68rem; letter-spacing: .08em; }
 .planilla-task-heading .planilla-task-edit { margin-top: 5px; color: var(--muted); font-size: .68rem; font-weight: 700; }
 .planilla-task-heading .planilla-task-classroom-badge { margin-top: 4px; }
+.planilla-task-tp { display: flex; align-items: center; gap: 5px; }
+.planilla-task-heading--classroom { background: color-mix(in srgb, var(--success) 16%, var(--bg-soft)); color: var(--success); }
+.planilla-grade-table thead th.planilla-task-heading--classroom { background: color-mix(in srgb, var(--success) 16%, var(--bg-soft)); color: var(--success); }
+.planilla-grade-table tbody td.planilla-task-grade--classroom { background: color-mix(in srgb, var(--success) 7%, var(--paper)); }
+.planilla-grade-table tbody tr:hover > td.planilla-task-grade--classroom { background: color-mix(in srgb, var(--success) 15%, var(--paper)); }
 .classroom-badge { display: inline-flex; align-items: center; gap: 6px; width: fit-content; padding: 4px 8px; border: 1px solid color-mix(in srgb, var(--success) 30%, var(--line)); border-radius: 999px; background: color-mix(in srgb, var(--success) 10%, var(--paper)); color: var(--success); font-size: .68rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.classroom-badge--icon-only { padding: 3px; }
 .classroom-badge svg { width: 12px; height: 12px; fill: currentColor; }
+.classroom-badge--icon-only svg { width: 11px; height: 11px; }
 .origin-badge { display: inline-flex; align-items: center; gap: 6px; width: fit-content; padding: 4px 8px; border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--line)); border-radius: 999px; background: var(--accent-soft); color: var(--accent-deep); font-size: .68rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
 .classroom-link-row { display: flex; justify-content: flex-end; }
 .classroom-link-row a { color: var(--accent-deep); font-weight: 700; }
 .planilla-task-grade span { min-width: 46px; display: inline-flex; align-items: center; justify-content: center; padding: 7px 9px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-soft); color: var(--ink); font-weight: 800; font-variant-numeric: tabular-nums; }
+.planilla-grade-table th, .planilla-grade-table td { border-right: 1px solid var(--line); }
+.planilla-grade-table th:last-child, .planilla-grade-table td:last-child { border-right: 0; }
 .planilla-grade-table .sortable-grade-heading { padding: 0; }
 .sortable-grade-heading button { min-width: 72px; min-height: 54px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 12px; border: 0; background: transparent; color: inherit; font-weight: 850; box-shadow: none; }
 .sortable-grade-heading button:hover,
