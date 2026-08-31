@@ -28,8 +28,8 @@ export default function AppRoutes() {
     <Route path="/" element={<RoleLanding />} />
     <Route path="/home" element={protect(<HomePage />, [1])} />
     <Route path="/inicio" element={protect(<HomePage />, [1])} />
-    <Route path="/profile" element={protect(<ProfilePage />, [1, 2, 3, 4])} />
-    <Route path="/perfil" element={protect(<ProfilePage />, [1, 2, 3, 4])} />
+    <Route path="/profile" element={protect(<ProfilePage />, [1, 2, 3, 4, 5])} />
+    <Route path="/perfil" element={protect(<ProfilePage />, [1, 2, 3, 4, 5])} />
     <Route path="/google/callback" element={protect(<GoogleCallbackPage />, [1, 2, 3, 4])} />
     <Route path="/google/authorize" element={protect(<AuthorizeClassroomPage />, [1, 2, 3, 4])} />
     <Route path="/planilla/:planillaId" element={protect(<PlanillaPage />, [1])} />

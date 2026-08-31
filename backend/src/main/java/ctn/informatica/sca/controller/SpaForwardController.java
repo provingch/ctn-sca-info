@@ -18,11 +18,11 @@ public class SpaForwardController {
 
     @GetMapping({
             "/", "/login", "/home", "/inicio", "/profile", "/perfil",
-            "/evaluacion", "/admin", "/admin/{section}", "/padre", "/styleguide",
+            "/evaluacion", "/coordinacion", "/admin", "/admin/{section}", "/padre", "/styleguide",
             "/privacidad", "/terminos", "/planilla/{planillaId}",
             "/planilla/{planillaId}/tarea", "/planilla/{planillaId}/tarea/{tareaId}",
-            "/admin/horarios/{cursoId}",
-            "/google/callback"
+            "/admin/horarios/{cursoId}", "/offline",
+            "/google/callback", "/google/authorize"
     })
     public String forwardToIndex() {
         return "forward:/index.html";
