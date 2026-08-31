@@ -14,6 +14,18 @@ npm run build
 
 `npm test` ejecuta Vitest y Testing Library en modo no interactivo. Para desarrollar una prueba mientras cambia el código, usar `npm run test:watch`.
 
+### Generación manual de PNG de logos
+
+Los PNG que usa el PDF de horario se generan desde los SVG fuente de `backend/src/main/resources/logos-source/` y se escriben en `backend/src/main/resources/static/` y `backend/src/main/resources/static/assets/png/`.
+
+Ese paso es manual y no forma parte del build automatizado de Vite porque `emptyOutDir` queda desactivado para evitar borrar esos assets del backend.
+
+```bash
+bash ../scripts/convert-logos.sh
+```
+
+Ejecutarlo solo cuando se modifiquen los SVG fuentes de logos.
+
 ## Componentes compartidos
 
 - `src/components/ui/ContentState.tsx`: carga, error y ausencia de datos.
