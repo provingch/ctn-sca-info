@@ -26,10 +26,10 @@ export default defineConfig({
     },
   },
   build: {
-    // El build final se sirve directo desde el jar de Spring Boot
-    // (ver contexto de sesión: "Deploy propuesto"). deploy.sh no se toca;
-    // sigue empaquetando lo que encuentre en resources/static tal cual.
+    // El build final se sirve directo desde el jar de Spring Boot.
+    // No se borra el contenido de resources/static porque ese directorio
+    // también incluye assets estáticos del backend (logos PNG, plantillas, etc.).
     outDir: '../backend/src/main/resources/static',
-    emptyOutDir: true,
+    emptyOutDir: false,
   },
 });
