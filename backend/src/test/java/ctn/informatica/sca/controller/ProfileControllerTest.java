@@ -14,6 +14,7 @@ import ctn.informatica.sca.dto.SaveProfileRequest;
 import ctn.informatica.sca.model.Padre;
 import ctn.informatica.sca.model.Profesor;
 import ctn.informatica.sca.model.User;
+import ctn.informatica.sca.service.ActivityLogService;
 import ctn.informatica.sca.util.PasswordUtil;
 import java.sql.SQLException;
 import java.util.Collections;
@@ -63,6 +64,9 @@ class ProfileControllerTest {
 
     @Mock
     private UserDao userDao;
+
+    @Mock
+    private ActivityLogService activityLogService;
 
     @InjectMocks
     private ProfileController controller;
@@ -167,6 +171,71 @@ class ProfileControllerTest {
         assertEquals("Juan", captor.getValue().getNombre());
         assertEquals("Perez", captor.getValue().getApellido());
         assertEquals("profesor@example.com", captor.getValue().getCorreo());
+    }
+
+    @Test
+    void shouldLoadCoordinacionPedagogicaProfileAndRole() throws Exception {
+        User user = new User(42, "coordinacion", "Coordinación Uno", 5);
+        Authentication authentication = authentication(user.getId(), user.getLevel());
+
+        Profesor profesor = new Profesor();
+        profesor.setId(42);
+        profesor.setUsuario("coordinacion");
+        profesor.setNombre("Coordinación");
+        profesor.setApellido("Uno");
+        profesor.setCorreo("coord@example.com");
+
+        when(userDao.findByIdAndLevel(42, 5)).thenReturn(user);
+        when(profesorDao.findById(42)).thenReturn(profesor);
+        when(especialidadDao.findAll()).thenReturn(Collections.emptyList());
+        when(materiaDao.listByProfesor(42)).thenReturn(Collections.emptyList());
+        when(materiaDao.listAvailableForProfesor(42)).thenReturn(Collections.emptyList());
+        when(asignacionDao.findByProfesor(42)).thenReturn(Collections.emptyList());
+        when(profesorDao.findManualSubjectsText(42)).thenReturn("");
+        when(pushSubscriptionDao.findByUser(42, "profesor")).thenReturn(Collections.emptyList());
+
+        ProfileResponse response = controller.getProfile(authentication);
+
+        assertTrue(response.isStaffProfile());
+        assertEquals("Coordinación Pedagógica", response.profileRoleLabel());
+        assertNotNull(response.profileOwner());
+        assertEquals("coordinacion", response.profileOwner().usuario());
+    }
+
+    @Test
+    void shouldLogDetailedFieldChangesForCoordinacionPedagogicaProfile() throws Exception {
+        User user = new User(43, "coord", "Coord", 5);
+        Authentication authentication = authentication(user.getId(), user.getLevel());
+
+        Profesor profesor = new Profesor();
+        profesor.setId(43);
+        profesor.setUsuario("coord");
+        profesor.setCorreo("coord@viejo.com");
+        profesor.setNombre("Coord");
+        profesor.setApellido("Viejo");
+        profesor.setCi(1234567);
+
+        when(userDao.findByIdAndLevel(43, 5)).thenReturn(user);
+        when(profesorDao.findById(43)).thenReturn(profesor);
+        when(profesorDao.update(any())).thenReturn(true);
+
+        SaveProfileRequest request = new SaveProfileRequest(
+                "coord@nuevo.com",
+                null,
+                null,
+                "coord-nuevo",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+
+        controller.saveProfile(request, authentication);
+
+        verify(activityLogService).registrar(eq(43), contains("correo: 'coord@viejo.com' → 'coord@nuevo.com'"));
+        verify(activityLogService).registrar(eq(43), contains("usuario: 'coord' → 'coord-nuevo'"));
     }
 
     @Test
