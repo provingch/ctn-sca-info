@@ -26,8 +26,8 @@ function messageFor(error: unknown, fallback: string): string {
   return error.message;
 }
 
-export default function SeguimientoPlanesView() {
-  const [tab, setTab] = useState<Tab>('planes');
+export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initialTab?: Tab }) {
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [planes, setPlanes] = useState<planCurricularApi.PlanPendienteResumen[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<planCurricularApi.PlanCurricularEstado | null>(null);
@@ -41,6 +41,10 @@ export default function SeguimientoPlanesView() {
   const [resolving, setResolving] = useState(false);
   const [status, setStatus] = useState('');
   const [statusTone, setStatusTone] = useState<StatusTone>('info');
+
+  useEffect(() => {
+    setTab(initialTab);
+  }, [initialTab]);
 
   useEffect(() => {
     Promise.all([planCurricularApi.getAprobados(), evaluacionApi.getIncumplimientos()])

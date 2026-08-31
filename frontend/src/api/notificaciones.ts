@@ -13,6 +13,16 @@ export interface NotificacionItem {
   createdAt: string;
 }
 
+export interface NotificacionesContador {
+  count: number;
+}
+
+export interface NotificacionesLecturaResultado {
+  ok: boolean;
+  actualizadas?: number;
+}
+
 export const getNotificaciones = (soloNoLeidas = false) => api.get<NotificacionItem[]>(`/api/notificaciones${soloNoLeidas ? '?soloNoLeidas=true' : ''}`);
-export const getNotificacionesContador = () => api.get<{ count: number }>('/api/notificaciones/contador');
-export const marcarNotificacionLeida = (id: number) => api.post<void>(`/api/notificaciones/${id}/leer`);
+export const getNotificacionesContador = () => api.get<NotificacionesContador>('/api/notificaciones/contador');
+export const marcarNotificacionLeida = (id: number) => api.post<NotificacionesLecturaResultado>(`/api/notificaciones/${id}/leer`);
+export const marcarTodasNotificacionesLeidas = () => api.post<NotificacionesLecturaResultado>('/api/notificaciones/leer-todas');

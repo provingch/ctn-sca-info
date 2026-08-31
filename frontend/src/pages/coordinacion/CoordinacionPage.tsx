@@ -3,14 +3,25 @@ import AppShell from '../../components/AppShell';
 import ContentState from '../../components/ui/ContentState';
 import { getAdminQuejas, type QuejaItem } from '../../api/quejas';
 import { getAdminCatalog } from '../../api/admin';
+import { useSearchParams } from 'react-router-dom';
 
 export default function CoordinacionPage() {
-  const [view, setView] = useState<'menu' | 'quejas' | 'detalle'>('menu');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [view, setView] = useState<'menu' | 'quejas' | 'detalle'>(() => searchParams.get('view') === 'quejas' ? 'quejas' : 'menu');
   const [status, setStatus] = useState('');
   const [quejas, setQuejas] = useState<QuejaItem[]>([]);
   const [usuariosPorId, setUsuariosPorId] = useState<Map<number, string>>(new Map());
   const [selectedProfesorId, setSelectedProfesorId] = useState<number | null>(null);
   const UMBRAL = 5; // valor visual por defecto si backend no expone el umbral
+
+  useEffect(() => {
+    setView(searchParams.get('view') === 'quejas' ? 'quejas' : 'menu');
+  }, [searchParams]);
+
+  function changeView(nextView: 'menu' | 'quejas') {
+    setView(nextView);
+    setSearchParams(nextView === 'quejas' ? { view: 'quejas' } : {});
+  }
 
   useEffect(() => {
     if (view !== 'quejas') return;
@@ -48,14 +59,14 @@ export default function CoordinacionPage() {
   if (view === 'menu') {
     return <AppShell title="Coordinación Pedagógica">
       <div className="choice-grid">
-        <button type="button" onClick={() => setView('quejas')}><span>01</span><h2>Quejas por profesor</h2><p>Ver y revisar quejas cargadas por la administración.</p></button>
+        <button type="button" onClick={() => changeView('quejas')}><span>01</span><h2>Quejas por profesor</h2><p>Ver y revisar quejas cargadas por la administración.</p></button>
       </div>
     </AppShell>;
   }
 
   if (view === 'quejas') {
     return <AppShell title="Quejas por Profesor">
-      <button type="button" className="button secondary" onClick={() => setView('menu')} style={{ marginBottom: 16 }}>← Volver</button>
+      <button type="button" className="button secondary" onClick={() => changeView('menu')} style={{ marginBottom: 16 }}>← Volver</button>
       {status && <div className="notice error" role="alert">{status}</div>}
       {quejas.length === 0 ? (
         <ContentState title="No hay quejas" detail="No se registraron quejas en este alcance." tone="empty" />
@@ -79,7 +90,7 @@ export default function CoordinacionPage() {
   }
 
   return <AppShell title="Detalle de Quejas">
-    <button type="button" className="button secondary" onClick={() => setView('quejas')} style={{ marginBottom: 16 }}>← Volver</button>
+    <button type="button" className="button secondary" onClick={() => changeView('quejas')} style={{ marginBottom: 16 }}>← Volver</button>
     <h2>Quejas del profesor</h2>
     {detalleQuejas.length === 0 ? <ContentState title="Sin quejas" detail="No se encontraron quejas para este profesor." tone="empty" /> : (
       <div className="panel">

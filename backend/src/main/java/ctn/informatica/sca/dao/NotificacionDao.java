@@ -86,6 +86,15 @@ public class NotificacionDao extends conexion {
         }
     }
 
+    public int marcarTodasLeidas(int usuarioId, String userType) throws SQLException {
+        String sql = "UPDATE notificacion SET leida = 1 WHERE usuario_id = ? AND user_type = ? AND leida = 0";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, usuarioId);
+            ps.setString(2, userType == null || userType.isBlank() ? "profesor" : userType.trim());
+            return ps.executeUpdate();
+        }
+    }
+
     public long contarNoLeidas(int usuarioId, String userType) throws SQLException {
         String sql = "SELECT COUNT(*) FROM notificacion WHERE usuario_id = ? AND user_type = ? AND leida = 0";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {

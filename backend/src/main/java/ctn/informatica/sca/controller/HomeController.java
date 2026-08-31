@@ -560,7 +560,7 @@ public class HomeController {
             }
             long total = quejaDao.contarPorProfesor(profesorId);
                 int umbral = configuracionSistemaDao.getInt("umbral_quejas_coordinacion", 5);
-                if (total >= umbral) {
+                if (total == umbral) {
                     List<User> coordinadores = userDao.findAllByLevel(5);
                     for (User coordinador : coordinadores) {
                         if (coordinador == null) continue;

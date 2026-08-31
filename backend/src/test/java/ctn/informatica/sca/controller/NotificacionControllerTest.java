@@ -46,4 +46,21 @@ class NotificacionControllerTest {
         assertEquals(7L, result.get("count"));
         verify(notificacionDao).contarNoLeidas(12, "profesor");
     }
+
+    @Test
+    void marcarTodasLeidas_deberiaActualizarSoloLasDelUsuarioAutenticado() throws Exception {
+        NotificacionDao notificacionDao = mock(NotificacionDao.class);
+        UserDao userDao = mock(UserDao.class);
+        when(userDao.findById(44)).thenReturn(new User(44, "padre", "Padre Uno", 4));
+        when(notificacionDao.marcarTodasLeidas(44, "padre")).thenReturn(3);
+
+        NotificacionController controller = new NotificacionController(notificacionDao, userDao);
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(44L, null, List.of());
+
+        Map<String, Object> result = controller.marcarTodasLeidas(authentication);
+
+        assertEquals(true, result.get("ok"));
+        assertEquals(3, result.get("actualizadas"));
+        verify(notificacionDao).marcarTodasLeidas(44, "padre");
+    }
 }

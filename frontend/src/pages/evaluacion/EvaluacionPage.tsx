@@ -7,10 +7,18 @@ import { normalizeSpecialty } from '../../theme/theme';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import ReviewPlanesView from './ReviewPlanesView';
 import SeguimientoPlanesView from './SeguimientoPlanesView';
+import { useSearchParams } from 'react-router-dom';
+
+type EvaluationView = 'menu' | 'planillas' | 'planes' | 'seguimiento';
+
+function requestedView(value: string | null): EvaluationView {
+  return value === 'planillas' || value === 'planes' || value === 'seguimiento' ? value : 'menu';
+}
 
 export default function EvaluacionPage() {
   const specialty = useSpecialty();
-  const [view, setView] = useState<'menu' | 'planillas' | 'planes' | 'seguimiento'>('menu');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [view, setView] = useState<EvaluationView>(() => requestedView(searchParams.get('view')));
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [cursos, setCursos] = useState<CursoEvaluacion[]>([]);
   const [especialidadId, setEspecialidadId] = useState(specialty.id ?? 0);
@@ -19,6 +27,16 @@ export default function EvaluacionPage() {
   const [etapa, setEtapa] = useState('primera');
   const [periodo, setPeriodo] = useState(new Date().getFullYear());
   const [status, setStatus] = useState('');
+
+  useEffect(() => {
+    setView(requestedView(searchParams.get('view')));
+  }, [searchParams]);
+
+  function changeView(nextView: EvaluationView) {
+    setView(nextView);
+    if (nextView === 'menu') setSearchParams({});
+    else setSearchParams({ view: nextView, ...(nextView === 'seguimiento' && searchParams.get('tab') ? { tab: searchParams.get('tab')! } : {}) });
+  }
 
   useEffect(() => {
     getEspecialidades().then((items) => {
@@ -56,29 +74,29 @@ export default function EvaluacionPage() {
   if (view === 'menu') {
     return <AppShell title="Panel de Evaluación">
       <div className="choice-grid">
-        <button type="button" onClick={() => setView('planillas')}><span>01</span><h2>Descargar planillas</h2><p>Exportá planillas completadas de los cursos.</p></button>
-        <button type="button" onClick={() => setView('planes')}><span>02</span><h2>Revisar plan curricular</h2><p>Aprobá o rechazá planes de profesores.</p></button>
-        <button type="button" onClick={() => setView('seguimiento')}><span>03</span><h2>Seguimiento de profesores</h2><p>Consultá cumplimiento de planes y resolvé incumplimientos.</p></button>
+        <button type="button" onClick={() => changeView('planillas')}><span>01</span><h2>Descargar planillas</h2><p>Exportá planillas completadas de los cursos.</p></button>
+        <button type="button" onClick={() => changeView('planes')}><span>02</span><h2>Revisar plan curricular</h2><p>Aprobá o rechazá planes de profesores.</p></button>
+        <button type="button" onClick={() => changeView('seguimiento')}><span>03</span><h2>Seguimiento de profesores</h2><p>Consultá cumplimiento de planes y resolvé incumplimientos.</p></button>
       </div>
     </AppShell>;
   }
 
   if (view === 'planes') {
     return <AppShell title="Revisar Planes Curriculares">
-      <button type="button" className="button secondary" onClick={() => setView('menu')} style={{ marginBottom: 16 }}>← Volver</button>
+      <button type="button" className="button secondary" onClick={() => changeView('menu')} style={{ marginBottom: 16 }}>← Volver</button>
       <ReviewPlanesView />
     </AppShell>;
   }
 
   if (view === 'seguimiento') {
     return <AppShell title="Seguimiento de Profesores">
-      <button type="button" className="button secondary" onClick={() => setView('menu')} style={{ marginBottom: 16 }}>← Volver</button>
-      <SeguimientoPlanesView />
+      <button type="button" className="button secondary" onClick={() => changeView('menu')} style={{ marginBottom: 16 }}>← Volver</button>
+      <SeguimientoPlanesView initialTab={searchParams.get('tab') === 'incumplimientos' ? 'incumplimientos' : 'planes'} />
     </AppShell>;
   }
 
   return <AppShell title="Descargar planillas">
-    <button type="button" className="button secondary" onClick={() => setView('menu')} style={{ marginBottom: 16 }}>← Volver</button>
+    <button type="button" className="button secondary" onClick={() => changeView('menu')} style={{ marginBottom: 16 }}>← Volver</button>
     <section className="panel form-grid evaluation-filters">
       <p className="lead">Elegí la especialidad, el curso, la sección y el período académico para generar sus planillas.</p>
       {status && <div className="notice error" role="alert">{status}</div>}
