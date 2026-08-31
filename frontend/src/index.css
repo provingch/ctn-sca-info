@@ -105,7 +105,7 @@ button { cursor: pointer; }
 h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sans-serif; letter-spacing: -.035em; }
 .page-loading { padding: 4rem; text-align: center; }
 
-.app-frame { min-height: 100vh; display: grid; grid-template-rows: auto 1fr auto; }
+.app-frame { min-height: 100vh; display: grid; grid-template-rows: auto 1fr auto; grid-template-columns: minmax(0, 1fr); }
 :root { --app-header-h: 64px; --app-footer-h: 56px; }
 .app-header { position: fixed; inset: 0 0 auto; z-index: 40; height: var(--app-header-h); width: 100%; display: flex; align-items: center; border-bottom: 2px solid var(--accent); background: color-mix(in srgb, var(--paper) 96%, transparent); box-shadow: var(--shadow-sm); backdrop-filter: blur(18px); }
 .app-header .app-header-inner { position: relative; width: min(1320px, calc(100% - 32px)); height: 100%; margin: 0 auto; padding: 0 10px; display: grid; grid-template-columns: minmax(230px, 1fr) auto minmax(230px, 1fr); align-items: center; gap: 18px; }
