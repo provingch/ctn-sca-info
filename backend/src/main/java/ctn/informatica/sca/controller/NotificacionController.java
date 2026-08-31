@@ -78,4 +78,16 @@ public class NotificacionController {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo marcar la notificación como leída", ex);
         }
     }
+
+    @PostMapping("/leer-todas")
+    @PreAuthorize("hasAnyRole('LEVEL_1','LEVEL_2','LEVEL_3','LEVEL_4','LEVEL_5')")
+    public Map<String, Object> marcarTodasLeidas(Authentication authentication) {
+        int userId = ApiAuth.requireUserId(authentication);
+        try {
+            int actualizadas = notificacionDao.marcarTodasLeidas(userId, NotificacionDao.resolveUserType(userDao, userId));
+            return Map.of("ok", true, "actualizadas", actualizadas);
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudieron marcar las notificaciones como leídas", ex);
+        }
+    }
 }
