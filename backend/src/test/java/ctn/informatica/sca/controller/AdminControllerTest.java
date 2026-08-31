@@ -108,9 +108,17 @@ public class AdminControllerTest {
                 () -> AdminController.validateAdminRoleAssignment(7, 3, 5));
         assertEquals(403, ex.getStatusCode().value());
 
+        ResponseStatusException coordinationEx = assertThrows(ResponseStatusException.class,
+                () -> AdminController.validateAdminRoleAssignment(7, 5, null));
+        assertEquals(403, coordinationEx.getStatusCode().value());
+
         ResponseStatusException editEx = assertThrows(ResponseStatusException.class,
                 () -> AdminController.validateAdminMutationAccess(7, 5, 3));
         assertEquals(403, editEx.getStatusCode().value());
+
+        ResponseStatusException coordinationEditEx = assertThrows(ResponseStatusException.class,
+                () -> AdminController.validateAdminMutationAccess(7, null, 5));
+        assertEquals(403, coordinationEditEx.getStatusCode().value());
 
         ResponseStatusException selfEditEx = assertThrows(ResponseStatusException.class,
                 () -> AdminController.validateAdminMutationAccess(7, 7, 3));

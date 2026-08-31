@@ -709,11 +709,16 @@ public class AdminController {
         if (actingSpecialtyId == null) {
             return;
         }
-        if (targetLevel == 3) {
-            if (targetSpecialtyId == null || !targetSpecialtyId.equals(actingSpecialtyId)) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Un administrador por especialidad solo puede crear administradores de su misma especialidad");
+        if (targetLevel == 3 || targetLevel == 5) {
+            if (targetLevel == 3) {
+                if (targetSpecialtyId == null || !targetSpecialtyId.equals(actingSpecialtyId)) {
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Un administrador por especialidad solo puede crear administradores de su misma especialidad");
+                }
+                return;
             }
-            return;
+
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Un administrador por especialidad no puede crear cuentas de Coordinación Pedagógica");
         }
         if (targetLevel == 1 || targetLevel == 2 || targetLevel == 4) {
             if (targetSpecialtyId != null && !targetSpecialtyId.equals(actingSpecialtyId)) {
@@ -729,8 +734,9 @@ public class AdminController {
             }
             return;
         }
-        if (targetLevel == 3) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Un administrador por especialidad no puede editar ni eliminar a otros administradores");
+        if (targetLevel == 3 || targetLevel == 5) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Un administrador por especialidad no puede editar ni eliminar a Coordinación Pedagógica ni otros administradores");
         }
         if (targetSpecialtyId != null && !targetSpecialtyId.equals(actingSpecialtyId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes modificar usuarios fuera de tu especialidad");

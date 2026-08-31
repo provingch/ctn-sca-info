@@ -16,6 +16,7 @@ const USER_LEVELS = [
   { value: 2, label: 'Evaluador' },
   { value: 3, label: 'Administrador' },
   { value: 4, label: 'Padre' },
+  { value: 5, label: 'Coordinación Pedagógica' },
 ];
 
 const EMPTY_FORM = { nombre: '', apellido: '', ci: '', usuario: '', nivel: '1', correo: '', especialidadId: '' };
@@ -84,7 +85,8 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
     { key: 2, title: 'Evaluadores', users: data.usuarios.filter((user) => user.nivel === 2) },
     { key: 3, title: 'Administradores', users: data.usuarios.filter((user) => user.nivel === 3) },
     { key: 4, title: 'Padres', users: data.usuarios.filter((user) => user.nivel === 4) },
-  ];
+    { key: 5, title: 'Coordinación Pedagógica', users: data.usuarios.filter((user) => user.nivel === 5) },
+  ].filter((section) => isGlobalAdmin || section.key !== 5);
 
   return (
     <>
@@ -108,7 +110,7 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
                     <th>Cédula</th>
                     <th>Usuario</th>
                     {section.key === 3 && <th>Especialidad</th>}
-                    {(section.key !== 3 || isGlobalAdmin) && <th>Acciones</th>}
+                    {((section.key !== 3 && section.key !== 5) || isGlobalAdmin) && <th>Acciones</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -119,7 +121,7 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
                       <td>{user.ci ?? '—'}</td>
                       <td>{user.usuario}</td>
                       {section.key === 3 && <td>{specialtyLabel(user)}</td>}
-                      {(section.key !== 3 || isGlobalAdmin) && (
+                      {((section.key !== 3 && section.key !== 5) || isGlobalAdmin) && (
                         <td>
                           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                             <button type="button" className="button secondary" onClick={() => openEdit(user)}>Editar</button>
@@ -184,7 +186,7 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
             </label>
             <label>
               Rol
-              <AnimatedSelect ariaLabel="Rol del usuario" value={form.nivel} onChange={(value) => setForm({ ...form, nivel: value, especialidadId: value === '3' ? form.especialidadId : '' })} options={USER_LEVELS.filter((level) => isGlobalAdmin || level.value !== 3)} />
+              <AnimatedSelect ariaLabel="Rol del usuario" value={form.nivel} onChange={(value) => setForm({ ...form, nivel: value, especialidadId: value === '3' ? form.especialidadId : '' })} options={USER_LEVELS.filter((level) => isGlobalAdmin || (level.value !== 3 && level.value !== 5))} />
             </label>
             {isGlobalAdmin && form.nivel === '3' && <label>
               Especialidad
