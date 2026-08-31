@@ -184,6 +184,7 @@ VAPID_PRIVATE_KEY="${CTN_VAPID_PRIVATE_KEY:-}"
 SYSTEMD_DROPIN_DIR="/etc/systemd/system/${SERVICE_NAME}.service.d"
 SYSTEMD_DROPIN_FILE="${SYSTEMD_DROPIN_DIR}/ctn-sca-info.conf"
 
+ACTIVITY_LOGS_DIR="${ACTIVITY_LOGS_DIR:-/var/lib/ctn/activity-logs}"
 LOG_DIR="${LOG_DIR:-/var/log/ctn-sca-info}"
 mkdir -p "$LOG_DIR" 2>/dev/null || true
 if [[ ! -w "$LOG_DIR" ]]; then
@@ -212,6 +213,13 @@ log_ok()  { printf "%b\n" "  ${C_GREEN}✔${C_RESET} $*"; _log_to_file "  OK $*"
 log_err() { printf "%b\n" "  ${C_RED}✘${C_RESET} $*"; _log_to_file "  ERROR $*"; }
 log_warn(){ printf "%b\n" "  ${C_YELLOW}▲${C_RESET} $*"; _log_to_file "  WARN $*"; }
 log_info(){ printf "%b\n" "  ${C_CYAN}ℹ${C_RESET} $*"; _log_to_file "  INFO $*"; }
+
+ensure_activity_logs_dir() {
+  log_info "Verificando directorio de logs de actividad ($ACTIVITY_LOGS_DIR)..."
+  sudo mkdir -p "$ACTIVITY_LOGS_DIR"
+  sudo chown "$APP_USER:$APP_GROUP" "$ACTIVITY_LOGS_DIR"
+  log_ok "Directorio de logs de actividad listo"
+}
 
 section() {
   local title="$1"
@@ -870,6 +878,7 @@ update_system() {
   section "🚀  Despliegue"
   log_info "Instalando artefacto en $INSTALL_DIR"
   sudo mkdir -p "$INSTALL_DIR"
+  ensure_activity_logs_dir
   sudo install -o "$APP_USER" -g "$APP_GROUP" -m 644 "$built_jar" "$INSTALL_DIR/$JAR_NAME"
   sudo systemctl restart "$SERVICE_NAME"
   log_ok "Servicio reiniciado"
