@@ -67,8 +67,8 @@ public class AuthController {
                     int userId = jwtService.extractUserId(response.accessToken()).intValue();
                     activityLogService.registrar(userId, "Inició sesión");
                 }
-            } catch (Exception ignored) {
-                // No bloquear el login si falla el registro del historial.
+            } catch (Exception ex) {
+                LOGGER.log(Level.WARNING, "No se pudo registrar el login para el usuario", ex);
             }
             return ResponseEntity.ok(response);
         } catch (AuthService.AuthException e) {
@@ -92,8 +92,8 @@ public class AuthController {
                     int userId = jwtService.extractUserId(response.accessToken()).intValue();
                     activityLogService.registrar(userId, "Inició sesión");
                 }
-            } catch (Exception ignored) {
-                // No bloquear el login si falla el registro del historial.
+            } catch (Exception ex) {
+                LOGGER.log(Level.WARNING, "No se pudo registrar el login para el usuario: {0}", ex.getMessage());
             }
             return ResponseEntity.ok(response);
         } catch (AuthService.AuthException e) {

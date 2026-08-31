@@ -106,6 +106,7 @@ public class ProfileController {
         try {
             return activityLogService.leerUltimas(userId, 50);
         } catch (Exception ex) {
+            log.warn("No se pudo leer el historial de actividad para usuario {}: {}", userId, ex.getMessage());
             return Collections.emptyList();
         }
     }

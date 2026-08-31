@@ -270,6 +270,13 @@ public class PlanillaController {
         int userId = ApiAuth.requireUserId(authentication);
         try {
             Planilla planilla = requireOwnedPlanillaById(planillaId, userId);
+            try {
+                if (activityLogService != null) {
+                    activityLogService.registrar(userId, "Descargó planilla — " + planillaId);
+                }
+            } catch (Exception ex) {
+                log.warn("No se pudo registrar actividad para usuario {}: {}", userId, ex.getMessage());
+            }
             Curso curso = new CursoDao().findById(planilla.getCursoId());
             Materia materia = null;
             String disciplina = "";
