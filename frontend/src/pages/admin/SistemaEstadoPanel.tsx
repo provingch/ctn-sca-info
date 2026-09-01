@@ -21,7 +21,7 @@ export default function SistemaEstadoPanel() {
     } finally {
       setRefreshing(false);
     }
-  }, []);
+  }, [setError]);
 
   useEffect(() => { void load(); }, [load]);
   const migrations = useMemo(() => [...(data?.migraciones ?? [])].sort((first, second) => (second.appliedAt ?? '').localeCompare(first.appliedAt ?? '')), [data]);

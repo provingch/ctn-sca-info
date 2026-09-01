@@ -43,7 +43,7 @@ export default function AdminPage() {
     } catch (error) {
       setStatus(error instanceof ApiError ? error.message : 'No se pudo cargar el catálogo.');
     }
-  }, []);
+  }, [setStatus]);
 
   useEffect(() => { void load(); }, [load]);
 

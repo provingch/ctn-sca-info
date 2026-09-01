@@ -1,7 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { apiRequest, getAccessToken, setAccessToken, setOnAuthExpired } from './client';
+import { apiRequest, extractErrorMessage, getAccessToken, setAccessToken, setOnAuthExpired } from './client';
 
 describe('client refresh deduplication', () => {
+  it('prefers the backend JSON message over the generic fallback', () => {
+    expect(extractErrorMessage({ message: 'La contraseña actual es incorrecta.' }, '400', '/api/auth/change-password')).toBe('La contraseña actual es incorrecta.');
+    expect(extractErrorMessage({ error: 'No autorizado' }, '401', '/api/secure')).toBe('No autorizado');
+  });
+
   beforeEach(() => {
     setAccessToken('expired-token');
     setOnAuthExpired(null);

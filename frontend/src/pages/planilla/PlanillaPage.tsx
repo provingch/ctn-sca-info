@@ -80,7 +80,7 @@ export default function PlanillaPage() {
       if (active) setStatus(e instanceof ApiError ? e.message : 'No se pudo cargar la planilla.');
     });
     return () => { active = false; };
-  }, [applyPlanillaData, id]);
+  }, [applyPlanillaData, id, setStatus]);
 
   const performClassroomSync = useCallback(async (planillaId: number, automatic = false) => {
     setSyncingClassroom(true);
@@ -109,7 +109,7 @@ export default function PlanillaPage() {
     } finally {
       if (activePlanillaIdRef.current === planillaId) setSyncingClassroom(false);
     }
-  }, [applyPlanillaData, navigate]);
+  }, [applyPlanillaData, navigate, setStatus]);
 
   // Se sincroniza una vez por cada planilla/etapa visitada. Un ref booleano
   // impedía sincronizar la segunda etapa al navegar sin desmontar la página.
