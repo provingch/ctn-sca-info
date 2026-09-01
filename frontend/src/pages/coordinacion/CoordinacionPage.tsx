@@ -75,14 +75,26 @@ export default function CoordinacionPage() {
         <section>
           <div className="card-grid">
             {agrupadas.map((g) => (
-              <article key={g.profesorId} className={`profesor-queue-card${g.count > UMBRAL ? ' flagged' : ''}`}>
-                <header>
-                  <h3>{`${g.profesorNombre} ${g.profesorApellido ?? ''}`.trim()}</h3>
-                  <div className="badge">{g.count}</div>
-                </header>
-                <p>Última: {g.quejas[0]?.motivo ?? '-'}</p>
-                <button className="button" type="button" onClick={() => openDetalle(g.profesorId)}>Ver detalle</button>
-              </article>
+              <button
+                key={g.profesorId}
+                type="button"
+                className={`nav-card${g.count > UMBRAL ? ' flagged' : ''}`}
+                onClick={() => openDetalle(g.profesorId)}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div className="avatar" style={{ width: 44, height: 44, borderRadius: 999, fontSize: '0.95rem' }}>{(g.profesorNombre || 'P').slice(0, 1)}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <h2 style={{ margin: 0, fontSize: '1.05rem' }}>{`${g.profesorNombre} ${g.profesorApellido ?? ''}`.trim()}</h2>
+                    <p style={{ margin: '4px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Última: {g.quejas[0]?.motivo ?? '-'}</p>
+                  </div>
+                  <span
+                    className="badge"
+                    style={g.count > UMBRAL ? { borderColor: 'var(--danger)', background: 'color-mix(in srgb, var(--danger) 16%, var(--paper))', color: 'var(--danger)' } : undefined}
+                  >
+                    {g.count}
+                  </span>
+                </div>
+              </button>
             ))}
           </div>
         </section>
@@ -92,19 +104,36 @@ export default function CoordinacionPage() {
 
   return <AppShell title="Detalle de Quejas">
     <button type="button" className="button secondary" onClick={() => changeView('quejas')} style={{ marginBottom: 16 }}>← Volver</button>
-    <h2>Quejas del profesor</h2>
-    {detalleQuejas.length === 0 ? <ContentState title="Sin quejas" detail="No se encontraron quejas para este profesor." tone="empty" /> : (
-      <div className="panel">
-        <ul className="list">
+    <section className="panel">
+      <header className="planilla-table-heading" style={{ borderLeftColor: 'var(--accent)' }}>
+        <div>
+          <span>Detalle</span>
+          <h2>Quejas del profesor</h2>
+        </div>
+        <small className="muted-copy">{detalleQuejas.length} queja(s) registrada(s)</small>
+      </header>
+      {detalleQuejas.length === 0 ? (
+        <ContentState title="Sin quejas" detail="No se encontraron quejas para este profesor." tone="empty" />
+      ) : (
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
           {detalleQuejas.map((q) => (
-            <li key={q.id} className={`list-item${q.motivo ? '' : ' muted'}`}>
-              <p><strong>Motivo:</strong> {q.motivo}</p>
-              <p><strong>Curso:</strong> {`${q.cursoEspecialidad ?? ''} ${q.cursoNivel ?? ''}° Sección ${q.cursoSeccion ?? ''}`.trim()}</p>
-              <p><small>Cargada por: {nombreCreador(q.creadaPor)} — {formatSqlDateTime(q.creadaEn)}</small></p>
+            <li key={q.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: 12, borderBottom: '1px solid var(--line)' }}>
+              <div className="avatar" style={{ width: 40, height: 40, borderRadius: 999, fontSize: '0.85rem', display: 'grid', placeItems: 'center', background: 'var(--bg-soft)', color: 'var(--muted)' }}>{(q.cursoEspecialidad ?? 'C').slice(0, 1)}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <strong>{q.motivo}</strong>
+                  <span className="badge" style={{ marginLeft: 'auto' }}>{`${q.cursoEspecialidad ?? ''} ${q.cursoNivel ?? ''}° ${q.cursoSeccion ?? ''}`.trim()}</span>
+                </div>
+                <div style={{ marginTop: 6 }}>
+                  <small style={{ color: 'var(--muted)' }}>
+                    Cargada por {nombreCreador(q.creadaPor)} — {formatSqlDateTime(q.creadaEn)}
+                  </small>
+                </div>
+              </div>
             </li>
           ))}
         </ul>
-      </div>
-    )}
+      )}
+    </section>
   </AppShell>;
 }

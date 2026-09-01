@@ -258,6 +258,10 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 }
 .notice.error, .form-error { color: var(--danger); border-color: var(--danger); }
 .notice.success { color: var(--success); border-color: var(--success); background: color-mix(in srgb, var(--success) 9%, var(--paper)); }
+
+/* Highlighted nav-card for flagged/urgent items */
+.nav-card.flagged { border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); }
+.nav-card.flagged::before { background: var(--danger); }
 .empty-state { padding: 54px 28px; text-align: center; color: var(--muted); }
 .empty-state h2 { color: var(--ink); }
 .empty-icon { font-size: 3rem; color: var(--accent); }
