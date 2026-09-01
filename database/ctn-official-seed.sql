@@ -168,69 +168,69 @@ INSERT INTO usuario (
 ) VALUES
     -- Administrador global
     (1, 'Administrador', 'Global', 'global_admin', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1, null, null, null,
-    null, 3, 'admin_global.txt', null),
+    null, 3, NULL, null),
     
     -- Administradores de especialidad
     (2, 'Administracion', 'Construcciones Civiles', 'admin_cc', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 2, null, null, null,
-    null, 3, 'admin_construcciones_civiles.txt', 1),
+    null, 3, NULL, 1),
     (3, 'Administracion', 'Electricidad', 'admin_electricidad', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 3, null, null, null,
-    null, 3, 'admin_electricidad.txt', 2),
+    null, 3, NULL, 2),
     (4, 'Administracion', 'Electronica', 'admin_electronica', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 4, null, null, null,
-    null, 3, 'admin_electronica.txt', 3),
+    null, 3, NULL, 3),
     (5, 'Administracion', 'Electromecanica', 'admin_electromecanica', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 5, null, null, null,
-    null, 3, 'admin_electromecanica.txt', 4),
+    null, 3, NULL, 4),
     (6, 'Administracion', 'Informatica', 'admin_informatica', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 6, null, null, null,
-    null, 3, 'admin_informatica.txt', 5),
+    null, 3, NULL, 5),
     (7, 'Administracion', 'Mecanica General', 'admin_mecanica_general', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 7, null, null, null,
-    null, 3, 'admin_mecanica_general.txt', 6),
+    null, 3, NULL, 6),
     (8, 'Administracion', 'Mecanica Automotriz', 'admin_mecanica_automotriz', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 8, null, null, null,
-    null, 3, 'admin_mecanica_automotriz.txt', 7),
+    null, 3, NULL, 7),
     (9, 'Administracion', 'Quimica Industrial', 'admin_quimica_industrial', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 9, null, null, null,
-    null, 3, 'admin_quimica_industrial.txt', 8),
+    null, 3, NULL, 8),
     
     -- Profesores
     -- Hasta ahora solo disponemos los profes que van en informatica, pero se pueden agregar los de las otras especialidades si se desea.
-    (10, 'Abner', 'Alcaraz', 'abner.alcaraz', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'abner_alcaraz.txt', null),
-    (11, 'Alcira', 'Cáceres', 'alcira.caceres', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'alcira_caceres.txt', null),
-    (12, 'Andres', 'Rojas', 'andres.rojas', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'andres_rojas.txt', null),
-    (13, 'Claudia', 'Burgos', 'claudia.burgos', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'claudia_burgos.txt', null),
-    (14, 'Cristian', 'Delgado', 'cristian.delgado', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'cristian_delgado.txt', null),
-    (15, 'Daniel', 'Lenguaza', 'daniel.lenguaza', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'daniel_lenguaza.txt', null),
-    (16, 'Emilce', 'Jara', 'emilce.jara', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'emilce_jara.txt', null),
-    (17, 'Federico', 'González', 'federico.gonzalez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'federico_gonzalez.txt', null),
-    (18, 'Gerardo', 'Ovelar', 'gerardo.ovelar', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'gerardo_ovelar.txt', null),
-    (19, 'Graciela', 'López', 'graciela.lopez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'graciela_lopez.txt', null),
-    (20, 'Graciela', 'Maidana', 'graciela.maidana', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'graciela_maidana.txt', null),
-    (21, 'Gustavo', 'Ramirez', 'gustavo.ramirez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'gustavo_ramirez.txt', null),
-    (22, 'Irma', 'Cardozo', 'irma.cardozo', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'irma_cardozo.txt', null),
-    (23, 'Juan', 'Acosta', 'juan.acosta', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'juan_acosta.txt', null),
-    (24, 'Laura', 'Rivas', 'laura.rivas', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'laura_rivas.txt', null),
-    (25, 'Lourdes', 'Galeano', 'lourdes.galeano', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'lourdes_galeano.txt', null),
-    (26, 'Luz', 'Angulo', 'luz.angulo', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'luz_angulo.txt', null),
-    (27, 'Mirian', 'Montania', 'mirian.montania', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'mirian_montania.txt', null),
-    (28, 'Oscar', 'Ibarrola', 'oscar.ibarrola', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'oscar_ibarrola.txt', null),
-    (29, 'Oscar', 'Villasanti', 'oscar.villasanti', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'oscar_villasanti.txt', null),
-    (30, 'Romy', 'Aguilera', 'romy.aguilera', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'romy_aguilera.txt', null),
-    (31, 'Ruth', 'Estigarribia', 'ruth.estigarribia', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'ruth_estigarribia.txt', null),
-    (32, 'Ruth', 'Román', 'ruth.roman', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'ruth_roman.txt', null),
-    (33, 'Susana', 'Alvarenga', 'susana.alvarenga', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'susana_alvarenga.txt', null),
-    (34, 'Zully', 'Nuñez', 'zully.nunez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'zully_nunez.txt', null),
-    (35, null, 'Chavez', 'null.chavez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'null_chavez.txt', null),
-    (36, null, 'Mequer', 'null.mequer', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, 'null_mequer.txt', null),
+    (10, 'Abner', 'Alcaraz', 'abner.alcaraz', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
+    (11, 'Alcira', 'Cáceres', 'alcira.caceres', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
+    (12, 'Andres', 'Rojas', 'andres.rojas', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
+    (13, 'Claudia', 'Burgos', 'claudia.burgos', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
+    (14, 'Cristian', 'Delgado', 'cristian.delgado', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
+    (15, 'Daniel', 'Lenguaza', 'daniel.lenguaza', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
+    (16, 'Emilce', 'Jara', 'emilce.jara', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
+    (17, 'Federico', 'González', 'federico.gonzalez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
+    (18, 'Gerardo', 'Ovelar', 'gerardo.ovelar', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
+    (19, 'Graciela', 'López', 'graciela.lopez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
+    (20, 'Graciela', 'Maidana', 'graciela.maidana', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
+    (21, 'Gustavo', 'Ramirez', 'gustavo.ramirez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
+    (22, 'Irma', 'Cardozo', 'irma.cardozo', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
+    (23, 'Juan', 'Acosta', 'juan.acosta', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
+    (24, 'Laura', 'Rivas', 'laura.rivas', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
+    (25, 'Lourdes', 'Galeano', 'lourdes.galeano', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
+    (26, 'Luz', 'Angulo', 'luz.angulo', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
+    (27, 'Mirian', 'Montania', 'mirian.montania', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
+    (28, 'Oscar', 'Ibarrola', 'oscar.ibarrola', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
+    (29, 'Oscar', 'Villasanti', 'oscar.villasanti', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
+    (30, 'Romy', 'Aguilera', 'romy.aguilera', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
+    (31, 'Ruth', 'Estigarribia', 'ruth.estigarribia', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
+    (32, 'Ruth', 'Román', 'ruth.roman', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
+    (33, 'Susana', 'Alvarenga', 'susana.alvarenga', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
+    (34, 'Zully', 'Nuñez', 'zully.nunez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
+    (35, null, 'Chavez', 'null.chavez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
+    (36, null, 'Mequer', 'null.mequer', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
     -- Reservado hasta 90...
 
     -- Evaluadores
-    (91, 'Evaluador', '1', 'evaluador1', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 11, null, null, null, null, 2, 'evaluador_1.txt', null),
-    (92, 'Evaluador', '2', 'evaluador2', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 12, null, null, null, null, 2, 'evaluador_2.txt', null),
-    (93, 'Evaluador', '3', 'evaluador3', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 13, null, null, null, null, 2, 'evaluador_3.txt', null),
-    (94, 'Evaluador', '4', 'evaluador4', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 14, null, null, null, null, 2, 'evaluador_4.txt', null),
-    (95, 'Evaluador', '5', 'evaluador5', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 15, null, null, null, null, 2, 'evaluador_5.txt', null),
+    (91, 'Evaluador', '1', 'evaluador1', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 11, null, null, null, null, 2, NULL, null),
+    (92, 'Evaluador', '2', 'evaluador2', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 12, null, null, null, null, 2, NULL, null),
+    (93, 'Evaluador', '3', 'evaluador3', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 13, null, null, null, null, 2, NULL, null),
+    (94, 'Evaluador', '4', 'evaluador4', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 14, null, null, null, null, 2, NULL, null),
+    (95, 'Evaluador', '5', 'evaluador5', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 15, null, null, null, null, 2, NULL, null),
 
-    (96, 'CoordinadorPedagogico', '1', 'cpdg1', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 16, null, null, null, null, 5, 'coordinadorpedagogico_1.txt', null),
-    (97, 'CoordinadorPedagogico', '2', 'cpdg2', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 17, null, null, null, null, 5, 'coordinadorpedagogico_2.txt', null),
-    (98, 'CoordinadorPedagogico', '3', 'cpdg3', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 18, null, null, null, null, 5, 'coordinadorpedagogico_3.txt', null),
-    (99, 'CoordinadorPedagogico', '4', 'cpdg4', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 19, null, null, null, null, 5, 'coordinadorpedagogico_4.txt', null),
-    (100,'CoordinadorPedagogico', '5', 'cpdg5', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 20, null, null, null, null, 5, 'coordinadorpedagogico_5.txt', null)
+    (96, 'CoordinadorPedagogico', '1', 'cpdg1', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 16, null, null, null, null, 5, NULL, null),
+    (97, 'CoordinadorPedagogico', '2', 'cpdg2', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 17, null, null, null, null, 5, NULL, null),
+    (98, 'CoordinadorPedagogico', '3', 'cpdg3', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 18, null, null, null, null, 5, NULL, null),
+    (99, 'CoordinadorPedagogico', '4', 'cpdg4', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 19, null, null, null, null, 5, NULL, null),
+    (100,'CoordinadorPedagogico', '5', 'cpdg5', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 20, null, null, null, null, 5, NULL, null)
 
     -- Padres (deben ser creados a traves del flujo de autenticacion de Google, por lo que no se insertan aca)    
 ON DUPLICATE KEY UPDATE
@@ -246,6 +246,11 @@ ON DUPLICATE KEY UPDATE
     nivel = VALUES(nivel),
     activity_log_path = VALUES(activity_log_path),
     especialidad_id = VALUES(especialidad_id);
+
+UPDATE usuario
+SET activity_log_path = CONCAT('usuario-', id, '.txt')
+WHERE activity_log_path IS NOT NULL
+  AND activity_log_path <> CONCAT('usuario-', id, '.txt');
 
 -- Todas las contraseñas de los usuarios son "password" y estan encriptadas con BCrypt.
 

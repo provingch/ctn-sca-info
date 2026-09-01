@@ -57,10 +57,10 @@ public class ActivityLogService {
                 StandardOpenOption.CREATE,
                 StandardOpenOption.APPEND);
 
+        String canonicalPath = "usuario-" + usuarioId + ".txt";
         String storedPath = userDao.findActivityLogPathById(usuarioId);
-        if (storedPath == null || storedPath.isBlank()) {
-            String relativePath = "usuario-" + usuarioId + ".txt";
-            userDao.updateActivityLogPath(usuarioId, relativePath);
+        if (!canonicalPath.equals(storedPath)) {
+            userDao.updateActivityLogPath(usuarioId, canonicalPath);
         }
     }
 
