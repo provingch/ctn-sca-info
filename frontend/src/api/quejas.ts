@@ -16,4 +16,4 @@ export interface QuejaItem {
 }
 
 export const getAdminQuejas = () => api.get<QuejaItem[]>('/api/admin/quejas');
-export const createQueja = (payload: { profesorId: number; cursoId: number; especialidadId: number; motivo: string }) => api.post<{ id: number }>('/quejas', payload);
+export const createQueja = (payload: { profesorId: number; cursoId: number; especialidadId: number; motivo: string }) => api.post<{ id: number }>('/api/home/quejas', payload);
