@@ -16,6 +16,7 @@
  */
 
 let accessToken: string | null = null;
+let refreshInFlight: Promise<boolean> | null = null;
 
 export function setAccessToken(token: string | null): void {
   accessToken = token;
@@ -86,23 +87,33 @@ async function rawRequest(path: string, options: RequestOptions = {}): Promise<R
 
 /** Intenta renovar el access token usando la cookie httpOnly. Devuelve true si tuvo éxito. */
 async function tryRefresh(): Promise<boolean> {
-  try {
-    const response = await rawRequest('/api/auth/refresh', {
-      method: 'POST',
-      allowRefreshRetry: false,
-    });
-    if (!response.ok) {
-      return false;
-    }
-    const data = (await parseBody(response)) as { accessToken?: string } | null;
-    if (!data?.accessToken) {
-      return false;
-    }
-    setAccessToken(data.accessToken);
-    return true;
-  } catch {
-    return false;
+  if (refreshInFlight) {
+    return refreshInFlight;
   }
+
+  refreshInFlight = (async () => {
+    try {
+      const response = await rawRequest('/api/auth/refresh', {
+        method: 'POST',
+        allowRefreshRetry: false,
+      });
+      if (!response.ok) {
+        return false;
+      }
+      const data = (await parseBody(response)) as { accessToken?: string } | null;
+      if (!data?.accessToken) {
+        return false;
+      }
+      setAccessToken(data.accessToken);
+      return true;
+    } catch {
+      return false;
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+
+  return refreshInFlight;
 }
 
 /**

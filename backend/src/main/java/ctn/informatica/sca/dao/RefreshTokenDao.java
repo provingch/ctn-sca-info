@@ -94,7 +94,7 @@ public class RefreshTokenDao extends conexion {
         }
     }
 
-    public void rotate(String oldHash, String newHash, Instant newExpiresAt, String userAgent, String ipAddress) throws SQLException {
+    public boolean rotate(String oldHash, String newHash, Instant newExpiresAt, String userAgent, String ipAddress) throws SQLException {
         String updateOld = "UPDATE refresh_token SET revoked_at = CURRENT_TIMESTAMP, replaced_by_hash = ? WHERE token_hash = ? AND revoked_at IS NULL";
         String insertNew = "INSERT INTO refresh_token (token_hash, user_id, user_level, expires_at, user_agent, ip_address) "
                 + "SELECT ?, user_id, user_level, ?, ?, ? FROM refresh_token WHERE token_hash = ? LIMIT 1";
@@ -111,7 +111,8 @@ public class RefreshTokenDao extends conexion {
                 }
 
                 if (updated == 0) {
-                    throw new SQLException("Refresh token no activo o no encontrado");
+                    con.rollback();
+                    return false;
                 }
 
                 try (PreparedStatement ps = con.prepareStatement(insertNew)) {
@@ -127,6 +128,7 @@ public class RefreshTokenDao extends conexion {
                 }
 
                 con.commit();
+                return true;
             } catch (SQLException ex) {
                 con.rollback();
                 throw ex;

@@ -130,6 +130,7 @@ public class AuthController {
         } catch (ResponseStatusException ex) {
             throw ex;
         } catch (Exception ex) {
+            LOGGER.log(Level.SEVERE, "Error en /api/auth/refresh", ex);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al refrescar sesión", ex);
         }
     }
