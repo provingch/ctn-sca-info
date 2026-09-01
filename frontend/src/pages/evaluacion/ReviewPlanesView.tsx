@@ -1,46 +1,40 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState } from 'react';
 import { ApiError } from '../../api/client';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../context/toast';
 import * as planCurricularApi from '../../api/planCurricular';
-
-interface PlanPendiente {
-  id: number;
-  estado: string;
-  archivoNombre: string;
-  fechaSubida: string;
-  materiaNombre: string;
-  profesorNombre: string;
-  cursoDescripcion: string;
-  especialidad?: string;
-}
+import { formatSqlDateTime } from '../../utils/date';
 
 // StatusTone removed; toasts replace local status state
 
 export default function ReviewPlanesView() {
-  const [planes, setPlanes] = useState<PlanPendiente[]>([]);
+  const [planes, setPlanes] = useState<planCurricularApi.PlanPendienteResumen[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
-  const [selectedPlan, setSelectedPlan] = useState<any | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<planCurricularApi.PlanCurricularEstado | null>(null);
   const [loadingDetalle, setLoadingDetalle] = useState(false);
   const [observaciones, setObservaciones] = useState('');
   const { showToast } = useToast();
   const [procesing, setProcessing] = useState(false);
 
   useEffect(() => {
+    let active = true;
     (async () => {
       try {
         setLoading(true);
         const result = await planCurricularApi.getPendientes();
-        setPlanes(result);
+        if (active) setPlanes(result);
       } catch (err) {
         const msg = err instanceof ApiError ? err.message : 'No se pudieron cargar los planes.';
-        showToast(msg, { tone: 'error' });
-        setPlanes([]);
+        if (active) {
+          showToast(msg, { tone: 'error' });
+          setPlanes([]);
+        }
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     })();
-  }, []);
+    return () => { active = false; };
+  }, [showToast]);
 
   useEffect(() => {
     if (!selectedPlanId) {
@@ -49,23 +43,26 @@ export default function ReviewPlanesView() {
       return;
     }
 
+    let active = true;
     setLoadingDetalle(true);
     (async () => {
       try {
         const plan = await planCurricularApi.getPlanDetalle(selectedPlanId);
-        setSelectedPlan(plan);
+        if (active) setSelectedPlan(plan);
       } catch (err) {
         const msg = err instanceof ApiError ? err.message : 'No se pudo cargar el detalle del plan.';
-        showToast(msg, { tone: 'error' });
-        setSelectedPlan(null);
+        if (active) {
+          showToast(msg, { tone: 'error' });
+          setSelectedPlan(null);
+        }
       } finally {
-        setLoadingDetalle(false);
+        if (active) setLoadingDetalle(false);
       }
     })();
-  }, [selectedPlanId]);
+    return () => { active = false; };
+  }, [selectedPlanId, showToast]);
 
-  async function handleDescargarDocumento(e: FormEvent) {
-    e.preventDefault();
+  async function handleDescargarDocumento() {
     if (!selectedPlanId) return;
     try {
       await planCurricularApi.descargarDocumentoOriginal(selectedPlanId);
@@ -75,8 +72,7 @@ export default function ReviewPlanesView() {
     }
   }
 
-  async function handleAprobar(e: FormEvent) {
-    e.preventDefault();
+  async function handleAprobar() {
     if (!selectedPlanId) return;
     const confirmed = window.confirm('¿Aprobar este plan curricular? La decisión se notificará al profesor.');
     if (!confirmed) return;
@@ -96,8 +92,7 @@ export default function ReviewPlanesView() {
     }
   }
 
-  async function handleRechazar(e: FormEvent) {
-    e.preventDefault();
+  async function handleRechazar() {
     if (!selectedPlanId || !observaciones.trim()) {
       showToast('Las observaciones son requeridas para rechazar.', { tone: 'error' });
       return;
@@ -119,7 +114,7 @@ export default function ReviewPlanesView() {
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 20 }}>
+    <div className="evaluation-split-layout">
       <div className="panel">
         <h3>Planes pendientes de revisión ({planes.length})</h3>
         {loading ? (
@@ -128,7 +123,7 @@ export default function ReviewPlanesView() {
           <p style={{ color: 'var(--muted)' }}>No hay planes pendientes de revisión.</p>
         ) : (
           <div style={{ display: 'grid', gap: 8 }}>
-            {planes.map((plan: any) => (
+            {planes.map((plan) => (
               <button
                 key={plan.id}
                 type="button"
@@ -146,7 +141,7 @@ export default function ReviewPlanesView() {
               >
                 <strong>{plan.materiaNombre}</strong>
                 <div style={{ fontSize: '0.9rem', color: 'var(--muted)', marginTop: 4 }}>{plan.profesorNombre}</div>
-                <div style={{ fontSize: '0.85rem', color: 'var(--muted)', marginTop: 2 }}>{plan.cursoDescripcion}<br />{plan.especialidad && (<><br /><span style={{ color: 'var(--accent-deep)', fontWeight: 750 }}>{plan.especialidad}</span></>) }<br />{new Date(plan.fechaSubida).toLocaleDateString('es-AR')}</div>
+                <div style={{ fontSize: '0.85rem', color: 'var(--muted)', marginTop: 2 }}>{plan.cursoDescripcion}<br />{plan.especialidad && (<><span style={{ color: 'var(--accent-deep)', fontWeight: 750 }}>{plan.especialidad}</span><br /></>)}{formatSqlDateTime(plan.fechaSubida, { dateStyle: 'short' })}</div>
               </button>
             ))}
           </div>
@@ -171,7 +166,7 @@ export default function ReviewPlanesView() {
                   <table className="table table-striped" style={{ fontSize: '0.85rem' }}>
                     <caption className="visually-hidden">Temas del plan curricular por mes</caption>
                     <thead><tr><th>Mes</th><th>Tema/Contenido</th><th>Capacidades</th><th>Actividades</th></tr></thead>
-                    <tbody>{selectedPlan.temas.map((tema: any, idx: number) => <tr key={idx}><td>{tema.mes}</td><td>{tema.temasContenidos}</td><td>{tema.capacidades || '—'}</td><td>{tema.actividades || '—'}</td></tr>)}</tbody>
+                    <tbody>{selectedPlan.temas.map((tema, index) => <tr key={`${tema.ordenMes}-${index}`}><td>{tema.mes}</td><td>{tema.temasContenidos}</td><td>{tema.capacidades || '—'}</td><td>{tema.actividades || '—'}</td></tr>)}</tbody>
                   </table>
                 </div>
               </div>
@@ -183,9 +178,9 @@ export default function ReviewPlanesView() {
                 <textarea id="observaciones" value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Ingresá observaciones (requerido para rechazar)" rows={4} style={{ width: '100%', resize: 'none' }} />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                <button type="button" className="button" disabled={procesing} onClick={handleAprobar}>{procesing ? 'Procesando...' : 'Aprobar'}</button>
-                <button type="button" className="button secondary" disabled={procesing || !observaciones.trim()} onClick={handleRechazar}>{procesing ? 'Procesando...' : 'Rechazar'}</button>
+              <div className="decision-actions">
+                <button type="button" className="button" disabled={procesing} onClick={() => void handleAprobar()}>{procesing ? 'Procesando...' : 'Aprobar'}</button>
+                <button type="button" className="button secondary" disabled={procesing || !observaciones.trim()} onClick={() => void handleRechazar()}>{procesing ? 'Procesando...' : 'Rechazar'}</button>
               </div>
             </form>
           </>

@@ -15,6 +15,7 @@ import ctn.informatica.sca.model.Padre;
 import ctn.informatica.sca.model.Profesor;
 import ctn.informatica.sca.model.User;
 import ctn.informatica.sca.service.ActivityLogService;
+import ctn.informatica.sca.service.RefreshTokenService;
 import ctn.informatica.sca.util.PasswordUtil;
 import java.sql.SQLException;
 import java.util.Collections;
@@ -69,6 +70,9 @@ class ProfileControllerTest {
     @Mock
     private ActivityLogService activityLogService;
 
+    @Mock
+    private RefreshTokenService refreshTokenService;
+
     @InjectMocks
     private ProfileController controller;
 
@@ -83,13 +87,12 @@ class ProfileControllerTest {
 
         when(userDao.findByIdAndLevel(1, 1)).thenReturn(user);
         when(profesorDao.findById(1)).thenReturn(profesor);
-        when(profesorDao.update(any())).thenReturn(true);
+        when(userDao.updatePasswordAndIncrementSessionVersion(1, 1, "nuevo123")).thenReturn(true);
 
         controller.changePassword(new ChangePasswordRequest("actual", "nuevo123", "nuevo123"), authentication);
 
-        ArgumentCaptor<Profesor> captor = ArgumentCaptor.forClass(Profesor.class);
-        verify(profesorDao, times(1)).update(captor.capture());
-        assertEquals("nuevo123", captor.getValue().getContrasenia());
+        verify(userDao).updatePasswordAndIncrementSessionVersion(1, 1, "nuevo123");
+        verify(refreshTokenService).revokeAllForUser(1);
     }
 
     @Test
@@ -103,13 +106,12 @@ class ProfileControllerTest {
 
         when(userDao.findByIdAndLevel(2, 4)).thenReturn(user);
         when(padreDao.findById(2)).thenReturn(padre);
-        when(padreDao.update(any())).thenReturn(true);
+        when(userDao.updatePasswordAndIncrementSessionVersion(2, 4, "nuevo-padre")).thenReturn(true);
 
         controller.changePassword(new ChangePasswordRequest("actualpadre", "nuevo-padre", "nuevo-padre"), authentication);
 
-        ArgumentCaptor<Padre> captor = ArgumentCaptor.forClass(Padre.class);
-        verify(padreDao, times(1)).update(captor.capture());
-        assertEquals("nuevo-padre", captor.getValue().getContrasenia());
+        verify(userDao).updatePasswordAndIncrementSessionVersion(2, 4, "nuevo-padre");
+        verify(refreshTokenService).revokeAllForUser(2);
     }
 
     @Test
@@ -123,7 +125,7 @@ class ProfileControllerTest {
 
         when(userDao.findByIdAndLevel(1, 1)).thenReturn(user);
         when(profesorDao.findById(1)).thenReturn(profesor);
-        when(profesorDao.update(any())).thenReturn(true);
+        when(userDao.updatePasswordAndIncrementSessionVersion(1, 1, "nuevo123")).thenReturn(true);
 
         controller.changePassword(new ChangePasswordRequest("actual", "nuevo123", "nuevo123"), authentication);
 

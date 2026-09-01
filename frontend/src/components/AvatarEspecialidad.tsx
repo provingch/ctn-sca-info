@@ -1,6 +1,6 @@
 import React from 'react';
 import CtnLogo from './CtnLogo';
-import { iconUrlForSpecialtyName } from '../utils/specialtyIcons';
+import { iconUrlForSpecialtyName } from '../utils/specialtyIconData';
 
 export default function AvatarEspecialidad({ name, size = 40, className = '' }: { name?: string | null; size?: number; className?: string }) {
   const url = iconUrlForSpecialtyName(name);

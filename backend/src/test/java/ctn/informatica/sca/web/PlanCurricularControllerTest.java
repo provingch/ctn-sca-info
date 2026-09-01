@@ -10,6 +10,15 @@ import ctn.informatica.sca.model.Asignacion;
 
 public class PlanCurricularControllerTest {
 
+    @org.junit.jupiter.api.Test
+    void onlyEvaluatorAndAdministratorCanReviewPlans() {
+        org.junit.jupiter.api.Assertions.assertFalse(PlanCurricularController.canReviewLevel(1));
+        org.junit.jupiter.api.Assertions.assertTrue(PlanCurricularController.canReviewLevel(2));
+        org.junit.jupiter.api.Assertions.assertTrue(PlanCurricularController.canReviewLevel(3));
+        org.junit.jupiter.api.Assertions.assertFalse(PlanCurricularController.canReviewLevel(4));
+        org.junit.jupiter.api.Assertions.assertFalse(PlanCurricularController.canReviewLevel(5));
+    }
+
     @Test
     public void autodeteccion_debeElegirElOrdinalCorrecto() {
         PlanCurricularDto dto = new PlanCurricularDto();

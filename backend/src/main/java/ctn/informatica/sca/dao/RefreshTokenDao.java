@@ -146,6 +146,14 @@ public class RefreshTokenDao extends conexion {
         }
     }
 
+    public int revokeAllByUserId(int userId) throws SQLException {
+        String sql = "UPDATE refresh_token SET revoked_at = CURRENT_TIMESTAMP WHERE user_id = ? AND revoked_at IS NULL";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            return ps.executeUpdate();
+        }
+    }
+
     private String trimNullable(String value, int maxLen) {
         if (value == null || value.isBlank()) {
             return null;

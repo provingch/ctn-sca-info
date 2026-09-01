@@ -16,12 +16,18 @@ public class User extends conexion {
     private String username;
     private String fullName;
     private int level;
+    private int sessionVersion;
 
     public User(int id, String username, String fullName, int level) {
+        this(id, username, fullName, level, 0);
+    }
+
+    public User(int id, String username, String fullName, int level, int sessionVersion) {
         this.id = id;
         this.username = username;
         this.fullName = fullName;
         this.level = level;
+        this.sessionVersion = sessionVersion;
     }
 
     // getters/setters
@@ -55,6 +61,10 @@ public class User extends conexion {
 
     public void setLevel(int level) {
         this.level = level;
+    }
+
+    public int getSessionVersion() {
+        return sessionVersion;
     }
 
     public String getSpecialtyName() {

@@ -50,9 +50,10 @@ import ctn.informatica.sca.model.Padre;
 import ctn.informatica.sca.model.Profesor;
 import ctn.informatica.sca.model.User;
 import ctn.informatica.sca.service.ActivityLogService;
+import ctn.informatica.sca.service.RefreshTokenService;
+import ctn.informatica.sca.dao.RefreshTokenDao;
 import ctn.informatica.sca.util.PasswordUtil;
 import ctn.informatica.sca.util.PushNotificationService;
-import ctn.informatica.sca.util.RememberMeTokenStore;
 import ctn.informatica.sca.util.ScaUiContext;
 import ctn.informatica.sca.util.TotpUtils;
 
@@ -73,9 +74,10 @@ public class ProfileController {
     private final PushSubscriptionDao pushSubscriptionDao;
     private final UserDao userDao;
     private final ActivityLogService activityLogService;
+    private final RefreshTokenService refreshTokenService;
 
     public ProfileController() {
-        this(new AsignacionDao(), new CursoDao(), new EspecialidadDao(), new MateriaDao(), new PadreDao(), new ProfesorDao(), new PushSubscriptionDao(), new UserDao(), new ActivityLogService());
+        this(new AsignacionDao(), new CursoDao(), new EspecialidadDao(), new MateriaDao(), new PadreDao(), new ProfesorDao(), new PushSubscriptionDao(), new UserDao(), new ActivityLogService(), new RefreshTokenService(new RefreshTokenDao()));
     }
 
     @Autowired
@@ -88,7 +90,8 @@ public class ProfileController {
             ProfesorDao profesorDao,
             PushSubscriptionDao pushSubscriptionDao,
             UserDao userDao,
-            ActivityLogService activityLogService) {
+            ActivityLogService activityLogService,
+            RefreshTokenService refreshTokenService) {
         this.asignacionDao = asignacionDao;
         this.cursoDao = cursoDao;
         this.especialidadDao = especialidadDao;
@@ -98,6 +101,7 @@ public class ProfileController {
         this.pushSubscriptionDao = pushSubscriptionDao;
         this.userDao = userDao;
         this.activityLogService = activityLogService;
+        this.refreshTokenService = refreshTokenService;
     }
 
     private List<String> readActivityLog(int userId) {
@@ -342,16 +346,14 @@ public class ProfileController {
             if (user.getLevel() >= 1 && user.getLevel() <= 3 || user.getLevel() == 5) {
                 Profesor profesor = profesorDao.findById(user.getId());
                 if (profesor != null && profesor.getContrasenia() != null && PasswordUtil.matches(request.currentPassword(), profesor.getContrasenia())) {
-                    profesor.setContrasenia(request.newPassword());
-                    passwordUpdated = profesorDao.update(profesor);
+                    passwordUpdated = userDao.updatePasswordAndIncrementSessionVersion(user.getId(), user.getLevel(), request.newPassword());
                 } else {
                     errors.add("La contraseña actual es incorrecta.");
                 }
             } else if (user.getLevel() == 4) {
                 Padre padre = padreDao.findById(user.getId());
                 if (padre != null && padre.getContrasenia() != null && PasswordUtil.matches(request.currentPassword(), padre.getContrasenia())) {
-                    padre.setContrasenia(request.newPassword());
-                    passwordUpdated = padreDao.update(padre);
+                    passwordUpdated = userDao.updatePasswordAndIncrementSessionVersion(user.getId(), user.getLevel(), request.newPassword());
                 } else {
                     errors.add("La contraseña actual es incorrecta.");
                 }
@@ -365,7 +367,7 @@ public class ProfileController {
             if (!passwordUpdated) {
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al actualizar la contraseña.");
             }
-            RememberMeTokenStore.invalidateUserTokens(user.getId());
+            refreshTokenService.revokeAllForUser(user.getId());
             if (activityLogService != null) {
                 activityLogService.registrar(user.getId(), "Cambió su contraseña");
             }

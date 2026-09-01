@@ -92,7 +92,7 @@ class AuthControllerTest {
         when(refreshTokenService.rotate("session-token", null, "127.0.0.1"))
                 .thenReturn(new RefreshTokenService.RotationResult("rotated-token", 7, 1));
         when(userDao.findByIdAndLevel(7, 1)).thenReturn(new User(7, "usuario", "Usuario", 1));
-        when(jwtService.generateAccessToken(7L, 1)).thenReturn("new-access-token");
+        when(jwtService.generateAccessToken(7L, 1, 0)).thenReturn("new-access-token");
 
         controller.refresh(request, response);
 

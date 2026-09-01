@@ -114,9 +114,12 @@ export default function LoginPage() {
         <form onSubmit={handle2faSubmit} className="auth-form">
           <h1>Verificación en dos pasos</h1>
           <p>Ingresá el código de tu app de autenticación.</p>
-          <label>
+          <label htmlFor="totp-code">
             Código
             <input
+              id="totp-code"
+              name="totp-code"
+              autoComplete="one-time-code"
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
               inputMode="numeric"
@@ -139,20 +142,23 @@ export default function LoginPage() {
       <div className="auth-brand-panel"><span className="auth-brand-mark"><CtnLogo variant="full" /></span><p>Sistema de Carpetas Académicas</p><h2>La gestión académica, clara y conectada.</h2><small>Colegio Técnico Nacional · Asunción</small></div>
       <form onSubmit={handleCredentialsSubmit} className="auth-form">
         <h1>Iniciar sesión</h1>
-        <label>
+        <label htmlFor="login-username">
           Usuario o Cédula
-          <input value={username} onChange={(e) => setUsername(e.target.value)} autoFocus required />
+          <input id="login-username" name="username" autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} autoFocus required />
         </label>
-        <label>
-          Contraseña
-          <PasswordInput
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-          />
-        </label>
-        <label className="checkbox-label">
+        <label htmlFor="login-password">Contraseña</label>
+        <PasswordInput
+          id="login-password"
+          name="password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+        <label className="checkbox-label" htmlFor="remember-me">
           <input
+            id="remember-me"
+            name="remember-me"
             type="checkbox"
             checked={rememberMe}
             onChange={(e) => setRememberMe(e.target.checked)}

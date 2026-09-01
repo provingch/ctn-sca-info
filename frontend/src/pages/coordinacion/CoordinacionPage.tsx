@@ -4,6 +4,7 @@ import ContentState from '../../components/ui/ContentState';
 import { getAdminQuejas, type QuejaItem } from '../../api/quejas';
 import { getAdminCatalog } from '../../api/admin';
 import { useSearchParams } from 'react-router-dom';
+import { formatSqlDateTime } from '../../utils/date';
 
 export default function CoordinacionPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -25,7 +26,7 @@ export default function CoordinacionPage() {
 
   useEffect(() => {
     if (view !== 'quejas') return;
-    getAdminQuejas().then(setQuejas).catch((err) => setStatus((err as any)?.message || 'No se pudieron cargar las quejas.'));
+    getAdminQuejas().then(setQuejas).catch((error: unknown) => setStatus(error instanceof Error ? error.message : 'No se pudieron cargar las quejas.'));
     getAdminCatalog().then((catalog) => {
       const map = new Map<number, string>();
       catalog.usuarios.forEach((u) => map.set(u.id, `${u.nombre} ${u.apellido}`.trim()));
@@ -99,7 +100,7 @@ export default function CoordinacionPage() {
             <li key={q.id} className={`list-item${q.motivo ? '' : ' muted'}`}>
               <p><strong>Motivo:</strong> {q.motivo}</p>
               <p><strong>Curso:</strong> {`${q.cursoEspecialidad ?? ''} ${q.cursoNivel ?? ''}° Sección ${q.cursoSeccion ?? ''}`.trim()}</p>
-              <p><small>Cargada por: {nombreCreador(q.creadaPor)} — {new Date(q.creadaEn).toLocaleString('es-PY')}</small></p>
+              <p><small>Cargada por: {nombreCreador(q.creadaPor)} — {formatSqlDateTime(q.creadaEn)}</small></p>
             </li>
           ))}
         </ul>

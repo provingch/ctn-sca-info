@@ -79,7 +79,7 @@ public class AuthService {
 
         try {
             loginAttemptService.clear(usernameKey, ipKey);
-            String accessToken = jwtService.generateAccessToken((long) user.getId(), user.getLevel());
+            String accessToken = jwtService.generateAccessToken((long) user.getId(), user.getLevel(), user.getSessionVersion());
             return new LoginResponse(false, null, accessToken, user.getLevel());
         } catch (Exception e) {
             log.error("[AUTH] Error generando access token para usuario {}", user.getId(), e);
@@ -118,7 +118,7 @@ public class AuthService {
 
         try {
             loginAttemptService.clear(userKey, ipKey);
-            String accessToken = jwtService.generateAccessToken((long) user.getId(), user.getLevel());
+            String accessToken = jwtService.generateAccessToken((long) user.getId(), user.getLevel(), user.getSessionVersion());
             return new LoginResponse(false, null, accessToken, user.getLevel());
         } catch (Exception e) {
             log.error("[AUTH] Error generando access token para usuario {}", user.getId(), e);
@@ -183,13 +183,20 @@ public class AuthService {
         try {
             if (user.getLevel() == 4) {
                 var padre = padreDao.findById(user.getId());
-                return padre != null ? padre.getTotpSecret() : null;
+                if (padre == null) {
+                    throw new IllegalStateException("No existe el perfil familiar asociado");
+                }
+                return padre.getTotpSecret();
             } else {
                 var profesor = profesorDao.findById(user.getId());
-                return profesor != null ? profesor.getTotpSecret() : null;
+                if (profesor == null) {
+                    throw new IllegalStateException("No existe el perfil institucional asociado");
+                }
+                return profesor.getTotpSecret();
             }
         } catch (Exception e) {
-            return null; // igual que el original: si falla la búsqueda del secreto, sigue sin 2FA
+            log.error("[AUTH] No se pudo verificar la configuración 2FA del usuario {}", user.getId(), e);
+            throw new AuthException("No se pudo validar la configuración de seguridad. Intentá nuevamente más tarde.", 503, 0);
         }
     }
 }

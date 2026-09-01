@@ -140,7 +140,7 @@ public class UserDao {
     }
 
     private User findParentUser(String username, String password) throws Exception {
-        String sql = "select id, nombre, apellido, usuario, contrasenia, nivel from usuario where nivel = 4 and (usuario = ? OR ci = ?)";
+        String sql = "select id, nombre, apellido, usuario, contrasenia, nivel, session_version from usuario where nivel = 4 and (usuario = ? OR ci = ?)";
         try (Connection con = new conexion().getCon();
                 PreparedStatement stm = con.prepareStatement(sql)) {
 
@@ -170,7 +170,7 @@ public class UserDao {
     }
 
     private User findParentUserById(int id) throws Exception {
-        String sql = "select id, nombre, apellido, usuario, contrasenia, nivel from usuario where nivel = 4 and id = ?";
+        String sql = "select id, nombre, apellido, usuario, contrasenia, nivel, session_version from usuario where nivel = 4 and id = ?";
         try (Connection con = new conexion().getCon();
                 PreparedStatement stm = con.prepareStatement(sql)) {
             stm.setInt(1, id);
@@ -194,7 +194,7 @@ public class UserDao {
                 ? user
                 : ((firstName == null ? "" : firstName) + " " + (lastName == null ? "" : lastName)).trim();
         int level = rs.getInt("nivel");
-        return new User(id, user, fullName, level);
+        return new User(id, user, fullName, level, rs.getInt("session_version"));
     }
 
     private User mapParentUser(ResultSet rs) throws java.sql.SQLException {
@@ -202,6 +202,28 @@ public class UserDao {
         String username = rs.getString("usuario");
         String fullName = ((rs.getString("nombre") == null ? "" : rs.getString("nombre")) + " "
                 + (rs.getString("apellido") == null ? "" : rs.getString("apellido"))).trim();
-        return new User(id, username, fullName, PARENT_LEVEL);
+        return new User(id, username, fullName, PARENT_LEVEL, rs.getInt("session_version"));
     }
+
+    public SessionState findSessionState(int id) throws SQLException {
+        String sql = "SELECT nivel, session_version FROM usuario WHERE id = ?";
+        try (Connection con = new conexion().getCon(); PreparedStatement stm = con.prepareStatement(sql)) {
+            stm.setInt(1, id);
+            try (ResultSet rs = stm.executeQuery()) {
+                return rs.next() ? new SessionState(rs.getInt("nivel"), rs.getInt("session_version")) : null;
+            }
+        }
+    }
+
+    public boolean updatePasswordAndIncrementSessionVersion(int id, int level, String plainPassword) throws SQLException {
+        String sql = "UPDATE usuario SET contrasenia = ?, session_version = session_version + 1 WHERE id = ? AND nivel = ?";
+        try (Connection con = new conexion().getCon(); PreparedStatement stm = con.prepareStatement(sql)) {
+            stm.setString(1, PasswordUtil.hash(plainPassword));
+            stm.setInt(2, id);
+            stm.setInt(3, level);
+            return stm.executeUpdate() == 1;
+        }
+    }
+
+    public record SessionState(int level, int version) {}
 }

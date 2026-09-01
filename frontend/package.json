@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "rm -rf ../backend/src/main/resources/static/assets/*.js ../backend/src/main/resources/static/assets/*.css ../backend/src/main/resources/static/assets/*.svg ../backend/src/main/resources/static/index.html && tsc -b && vite build",
+    "build": "node scripts/clean-static.mjs && tsc -b && vite build",
     "lint": "oxlint",
     "test": "vitest run",
     "test:watch": "vitest",

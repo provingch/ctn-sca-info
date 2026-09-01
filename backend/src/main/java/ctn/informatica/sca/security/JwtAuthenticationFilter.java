@@ -1,5 +1,6 @@
 package ctn.informatica.sca.security;
 
+import ctn.informatica.sca.dao.UserDao;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,9 +18,11 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final UserDao userDao;
 
-    public JwtAuthenticationFilter(JwtService jwtService) {
+    public JwtAuthenticationFilter(JwtService jwtService, UserDao userDao) {
         this.jwtService = jwtService;
+        this.userDao = userDao;
     }
 
     @Override
@@ -41,6 +44,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         Long userId = jwtService.extractUserId(token);
         Integer level = jwtService.extractLevel(token);
+        Integer sessionVersion = jwtService.extractSessionVersion(token);
+
+        try {
+            UserDao.SessionState state = userDao.findSessionState(userId.intValue());
+            if (state == null || level == null || sessionVersion == null
+                    || state.level() != level || state.version() != sessionVersion) {
+                chain.doFilter(request, response);
+                return;
+            }
+        } catch (Exception ignored) {
+            chain.doFilter(request, response);
+            return;
+        }
 
         var authorities = List.of(new SimpleGrantedAuthority("ROLE_LEVEL_" + level));
         var authToken = new UsernamePasswordAuthenticationToken(userId, null, authorities);

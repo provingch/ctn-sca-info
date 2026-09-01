@@ -3,13 +3,16 @@ import { ApiError } from '../../api/client';
 import { getSistemaEstado, type SistemaEstadoResponse } from '../../api/admin';
 import ConnectionState from '../../components/ui/ConnectionState';
 import ContentState from '../../components/ui/ContentState';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../context/toast';
 import { formatBytes, formatRelativeDate } from './adminFormatters';
+import { formatSqlDateTime } from '../../utils/date';
 
 export default function SistemaEstadoPanel() {
   const [data, setData] = useState<SistemaEstadoResponse | null>(null);
   const { showToast } = useToast();
-  const setError = (msg: string) => { if (msg) showToast(msg, { tone: 'error', autoDismiss: false }); };
+  const setError = useCallback((msg: string) => {
+    if (msg) showToast(msg, { tone: 'error', autoDismiss: false });
+  }, [showToast]);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
@@ -41,7 +44,7 @@ export default function SistemaEstadoPanel() {
     <section className="panel system-migrations-panel">
       <header className="admin-summary-heading"><div><span>Base de datos</span><h2>Migraciones aplicadas</h2></div><strong>{migrations.length}</strong></header>
       {migrations.length === 0 ? <ContentState compact title="Sin migraciones registradas" detail="El servidor no informó migraciones aplicadas." /> : <div className="admin-list system-migrations-list">
-        {migrations.map((migration, index) => <div key={`${migration.version}-${migration.appliedAt ?? index}`}><span><strong>{migration.version}</strong><small>{migration.appliedAt ? new Date(migration.appliedAt.replace(' ', 'T')).toLocaleString('es-PY', { dateStyle: 'medium', timeStyle: 'short' }) : 'Fecha no disponible'}</small></span>{index === 0 && <em>Más reciente</em>}</div>)}
+        {migrations.map((migration, index) => <div key={`${migration.version}-${migration.appliedAt ?? index}`}><span><strong>{migration.version}</strong><small>{formatSqlDateTime(migration.appliedAt, { dateStyle: 'medium', timeStyle: 'short' })}</small></span>{index === 0 && <em>Más reciente</em>}</div>)}
       </div>}
     </section>
   </div>;
