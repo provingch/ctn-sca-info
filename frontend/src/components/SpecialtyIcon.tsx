@@ -18,7 +18,23 @@ function iconFor(name: string) {
 export default function SpecialtyIcon({ name, className = '' }: { name: string; className?: string }) {
   const iconUrl = iconFor(name);
   if (!iconUrl) return <span className={`specialty-icon specialty-icon-fallback ${className}`.trim()} role="img" aria-label={`Especialidad ${name}`}>{name.trim().charAt(0).toUpperCase() || '?'}</span>;
-  return <span className={`specialty-icon ${className}`.trim()} role="img" aria-label={`Especialidad ${name}`}>
-    <img src={iconUrl} alt="" loading="lazy" decoding="async" />
-  </span>;
+  return (
+    <span className={`specialty-icon ${className}`.trim()} role="img" aria-label={`Especialidad ${name}`}>
+      <span
+        className="specialty-icon-mask"
+        style={{
+          display: 'block',
+          width: '100%',
+          height: '100%',
+          WebkitMaskImage: `url(${iconUrl})`,
+          maskImage: `url(${iconUrl})`,
+          WebkitMaskRepeat: 'no-repeat',
+          maskRepeat: 'no-repeat',
+          WebkitMaskSize: 'contain',
+          maskSize: 'contain',
+          backgroundColor: 'currentColor'
+        }}
+      />
+    </span>
+  );
 }
