@@ -519,6 +519,11 @@ public class PlanillaProcesoWorkbookBuilder {
         int specialtyMinCols = computeMinimumColumnsForText(specialtyText, 2);
         int courseMinCols = computeMinimumColumnsForText(courseText, 2);
 
+        // Read the year text from the template BEFORE computing its target width
+        Cell originalYearCellForWidth = getOrCreateCell(getOrCreateRow(sheet, 4), yearOrigStart);
+        String yearText = getCellText(originalYearCellForWidth);
+        int yearMinCols = computeMinimumColumnsForText(yearText, 1);
+
         int newSpecEnd = Math.max(targetLastCol, specialtyMinCols);
         int newCourseEnd = Math.max(targetLastCol, courseMinCols);
 
@@ -526,11 +531,10 @@ public class PlanillaProcesoWorkbookBuilder {
         int newYearStart = yearOrigStart;
         int newYearEnd = yearOrigEnd;
         // Reposition year block so it sits immediately after the course block
-        // when it would otherwise be located beyond the real course end.
-        if (newYearStart != newCourseEnd + 1) {
+        // and size it based on the actual text (but keep a small floor).
+        if (newYearStart != newCourseEnd + 1 || (newYearEnd - newYearStart + 1) != yearMinCols) {
             newYearStart = newCourseEnd + 1;
-            int width = Math.max(4, yearOrigEnd - yearOrigStart + 1);
-            newYearEnd = newYearStart + width - 1;
+            newYearEnd = newYearStart + Math.max(2, yearMinCols) - 1;
         }
 
         // Apply merges for row 3 (Especialidad)
@@ -568,8 +572,6 @@ public class PlanillaProcesoWorkbookBuilder {
                 sheet.addMergedRegion(new CellRangeAddress(4, 4, newYearStart, newYearEnd));
             }
             Cell yc = getOrCreateCell(getOrCreateRow(sheet, 4), newYearStart);
-            Cell originalYearCell = getOrCreateCell(getOrCreateRow(sheet, 4), yearOrigStart);
-            String yearText = getCellText(originalYearCell);
             if (yearText == null || yearText.isBlank()) {
                 yearText = getCellText(yc);
             }
