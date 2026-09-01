@@ -45,19 +45,17 @@ function DescargarPlantillaSection({ group }: { group: AssignmentGroup }) {
   const [curso, setCurso] = useState('');
   const [seccion, setSeccion] = useState('');
   const [materiaId, setMateriaId] = useState('');
-  const [error, setError] = useState('');
   const cursos = unique(group.asignaciones, (item) => item.cursoOrdinal);
   const secciones = curso ? unique(group.asignaciones.filter((item) => item.cursoOrdinal === curso), (item) => item.seccion) : [];
   const materias = curso && seccion ? group.asignaciones.filter((item) => item.cursoOrdinal === curso && item.seccion === seccion) : [];
   const asignacion = materias.find((item) => item.materiaId === Number(materiaId));
   const [etapa, setEtapa] = useState<string | undefined>(undefined);
+  const { showToast } = useToast();
 
   async function download() {
     if (!asignacion) return;
-    setError('');
-    try { await planCurricularApi.downloadPlantilla(asignacion.id, etapa); } catch (err) { setError(errorMessage(err, 'No se pudo descargar la plantilla.')); }
+    try { await planCurricularApi.downloadPlantilla(asignacion.id, etapa); } catch (err) { showToast(errorMessage(err, 'No se pudo descargar la plantilla.'), { tone: 'error' }); }
   }
-
 
   return <section className="class-card" style={{ marginTop: 12 }}>
     <h3 style={{ margin: 0, fontSize: '1.15rem' }}>Descargar plantilla</h3>
@@ -69,7 +67,6 @@ function DescargarPlantillaSection({ group }: { group: AssignmentGroup }) {
       <div className="class-field" style={{ justifyContent: 'end' }}><button type="button" className="button" disabled={!asignacion} onClick={() => void download()}>Descargar plantilla</button></div>
     </div>
     {asignacion?.estadoPlan === 'APROBADO' && <div className="notice" style={{ margin: 0, background: 'color-mix(in srgb, var(--success) 10%, var(--paper))', borderColor: 'color-mix(in srgb, var(--success) 45%, var(--line))' }}>Esta asignación ya cuenta con un plan aprobado. Podés descargar nuevamente su plantilla si lo necesitás.</div>}
-    {/* operational errors are shown via global toasts */}
   </section>;
 }
 
@@ -81,7 +78,7 @@ export default function PlanCurricularView() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const { showToast } = useToast();
-  const setUploadMessage = (msg: string) => { if (msg) showToast(msg, { tone: 'success', autoDismiss: true }); };
+  const setUploadMessage = (msg: string) => { if (msg) showToast(msg, { tone: 'success' }); };
   const setUploadError = (msg: string) => { if (msg) showToast(msg, { tone: 'error', autoDismiss: false }); };
   const [candidatas, setCandidatas] = useState<planCurricularApi.AsignacionCandidata[]>([]);
   const [candidataId, setCandidataId] = useState('');
@@ -145,7 +142,7 @@ export default function PlanCurricularView() {
       ) : groups.length === 0 ? <p>No tenés asignaciones disponibles.</p> : groups.map((group) => <div key={group.id}><h4 style={{ margin: '0 0 8px' }}>{groups.length > 1 ? group.nombre : 'Mis asignaciones'}</h4><DescargarPlantillaSection group={group} /></div>)}
     </section>
 
-    <section className="class-card"><h3 style={{ margin: 0 }}>Subir plan</h3><p style={{ margin: 0, color: 'var(--muted)' }}>El sistema identifica automáticamente la asignación a partir de la plantilla.</p><input ref={fileRef} type="file" accept=".xlsx" aria-label="Seleccionar archivo del plan curricular" disabled={uploading} onChange={(event) => { setSelectedFile(event.target.files?.[0] ?? null); setUploadError(''); setUploadMessage(''); }} /><button type="button" className="button" disabled={!selectedFile || uploading} onClick={() => selectedFile && void upload(selectedFile)}>{uploading ? 'Subiendo…' : 'Subir plan curricular'}</button>{uploadMessage && <div className="notice">{uploadMessage}</div>}{uploadError && <div className="notice error">{uploadError}</div>}
+    <section className="class-card"><h3 style={{ margin: 0 }}>Subir plan</h3><p style={{ margin: 0, color: 'var(--muted)' }}>El sistema identifica automáticamente la asignación a partir de la plantilla.</p><input ref={fileRef} type="file" accept=".xlsx" aria-label="Seleccionar archivo del plan curricular" disabled={uploading} onChange={(event) => { setSelectedFile(event.target.files?.[0] ?? null); }} /><button type="button" className="button" disabled={!selectedFile || uploading} onClick={() => selectedFile && void upload(selectedFile)}>{uploading ? 'Subiendo…' : 'Subir plan curricular'}</button>
       {candidatas.length > 0 && pendingFile && <div className="notice"><p>Se encontraron varias asignaciones compatibles. Elegí la correcta para continuar.</p><AnimatedSelect ariaLabel="Asignación compatible" value={candidataId} onChange={setCandidataId} options={[{ value: '', label: 'Seleccione una asignación' }, ...candidatas.map((candidate) => ({ value: candidate.id, label: candidate.descripcion }))]} /><button type="button" className="button" disabled={!candidataId || uploading} onClick={() => void upload(pendingFile, Number(candidataId))}>Confirmar asignación</button></div>}</section>
 
     <section className="class-card" style={{ gridColumn: '1 / -1' }}><div className="class-card-head"><h3>Entregas realizadas</h3><button type="button" className="button secondary" onClick={() => void loadPlanes()}>Actualizar</button></div>{errorPlanes ? <div className="notice error">{errorPlanes}</div> : planes === null ? (
