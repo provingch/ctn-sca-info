@@ -46,7 +46,7 @@ export default function ProfilePage() {
     } catch (error) {
       setStatus(message(error, 'Error al cargar el perfil.'));
     }
-  }, []);
+  }, [setStatus]);
   useEffect(() => { void load(); }, [load]);
   // ResizeObserver and dynamic --profile-identity-height removed: obsolete with fixed flex layout
 
