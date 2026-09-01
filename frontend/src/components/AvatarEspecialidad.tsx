@@ -1,5 +1,5 @@
 import React from 'react';
-import CtnLogo from './CtnLogo';
+import ScaLogo from './ScaLogo';
 import { iconUrlForSpecialtyName } from '../utils/specialtyIconData';
 
 export default function AvatarEspecialidad({ name, size = 40, className = '' }: { name?: string | null; size?: number; className?: string }) {
@@ -26,7 +26,7 @@ export default function AvatarEspecialidad({ name, size = 40, className = '' }: 
           }}
         />
       ) : (
-        <CtnLogo />
+        <ScaLogo />
       )}
     </span>
   );

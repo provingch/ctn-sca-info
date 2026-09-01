@@ -535,7 +535,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
           <section className="panel" style={{ width: 'min(620px, 100%)', maxHeight: '80vh', overflow: 'auto' }} onClick={(e) => e.stopPropagation()}>
             <div className="class-card-head"><h3 id="code-help-title">Significado de códigos</h3><button type="button" className="button secondary" data-dialog-initial-focus onClick={() => setShowCodeHelp(false)}>Cerrar</button></div>
             <table className="table table-striped"><caption className="visually-hidden">Códigos de rasgos conductuales</caption><thead><tr><th>Código</th><th>Significado</th></tr></thead><tbody>{RASGO_CODIGOS.map(([codigo, significado]) => <tr key={codigo}><td><strong>{codigo}</strong></td><td>{significado}</td></tr>)}</tbody></table>
-          </section>
+  |          </section>
         </div>}
 
         <div className="class-card">
