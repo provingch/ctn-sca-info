@@ -1,5 +1,5 @@
 const CACHE_NAME = 'ctn-sca-react-v1';
-const CORE_ASSETS = ['/', '/offline.html', '/manifest.webmanifest', '/favicon.svg', '/icons/pwa/icon-192.png'];
+const CORE_ASSETS = ['/', '/offline.html', '/manifest.webmanifest', '/favicon.svg'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -71,8 +71,8 @@ self.addEventListener('push', (event) => {
 
   event.waitUntil(self.registration.showNotification(payload.title, {
     body: payload.body,
-    icon: '/icons/pwa/icon-192.png',
-    badge: '/icons/pwa/icon-192.png',
+    icon: '/favicon.svg',
+    badge: '/favicon.svg',
     data: { url: payload.url || '/' },
   }));
 });

@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import ThemeToggle from '../../components/ThemeToggle';
-import CtnLogo from '../../components/CtnLogo';
+import ScaLogo from '../../components/ScaLogo';
 import PasswordInput from '../../components/PasswordInput';
 import { applyTheme, getInitialTheme } from '../../theme/theme';
 import { authFeedback, formatRetryTime, type AuthFeedback } from './loginLockout';
@@ -110,7 +110,7 @@ export default function LoginPage() {
     return (
       <div className="auth-page" data-specialty="general">
         <div className="public-theme-toggle"><ThemeToggle /></div>
-        <div className="auth-brand-panel"><span className="auth-brand-mark"><CtnLogo variant="full" /></span><p>Sistema de Carpetas Académicas</p><h2>La gestión académica, clara y conectada.</h2><small>Colegio Técnico Nacional · Asunción</small></div>
+        <div className="auth-brand-panel"><span className="auth-brand-mark"><ScaLogo /></span><p>Sistema de Carpetas Académicas</p><h2>La gestión académica, clara y conectada.</h2><small>Colegio Técnico Nacional · Asunción</small></div>
         <form onSubmit={handle2faSubmit} className="auth-form">
           <h1>Verificación en dos pasos</h1>
           <p>Ingresá el código de tu app de autenticación.</p>
@@ -139,7 +139,7 @@ export default function LoginPage() {
   return (
     <div className="auth-page" data-specialty="general">
       <div className="public-theme-toggle"><ThemeToggle /></div>
-      <div className="auth-brand-panel"><span className="auth-brand-mark"><CtnLogo variant="full" /></span><p>Sistema de Carpetas Académicas</p><h2>La gestión académica, clara y conectada.</h2><small>Colegio Técnico Nacional · Asunción</small></div>
+      <div className="auth-brand-panel"><span className="auth-brand-mark"><ScaLogo /></span><p>Sistema de Carpetas Académicas</p><h2>La gestión académica, clara y conectada.</h2><small>Colegio Técnico Nacional · Asunción</small></div>
       <form onSubmit={handleCredentialsSubmit} className="auth-form">
         <h1>Iniciar sesión</h1>
         <label htmlFor="login-username">

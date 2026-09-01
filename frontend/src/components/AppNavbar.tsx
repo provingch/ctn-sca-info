@@ -3,7 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { getNotificaciones, getNotificacionesContador, marcarNotificacionLeida, marcarTodasNotificacionesLeidas, type NotificacionItem } from '../api/notificaciones';
 import { useAuth } from '../context/AuthContext';
 import { getRoleNavigation, type NavigationItem } from '../config/navigation';
-import CtnLogo from './CtnLogo';
+import ScaLogo from './ScaLogo';
 import ThemeToggle from './ThemeToggle';
 import AvatarEspecialidad from './AvatarEspecialidad';
 import { formatNotificationDate, notificationDestination } from './notificationUtils';
@@ -184,7 +184,7 @@ export default function AppNavbar() {
   return <header className="app-header" ref={headerRef}>
     <div className="app-header-inner">
       <NavLink className="brand" to="/" aria-label="Ir al inicio">
-        <span className="brand-mark"><CtnLogo /></span>
+        <span className="brand-mark"><ScaLogo /></span>
         <span className="brand-copy">
           <span className="brand-title">Sistema de Carpeta Académica</span>
           <small className="brand-sub">Colegio Técnico Nacional de Asunción</small>
