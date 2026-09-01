@@ -11,7 +11,7 @@ function Trigger({ message, opts }: { message: string; opts?: any }) {
 describe('ToastProvider', () => {
   afterEach(() => vi.useRealTimers());
 
-  it('auto-dismisses toasts after 4000ms', () => {
+    it('auto-dismisses toasts after 4250ms', async () => {
     vi.useFakeTimers();
     render(
       <ToastProvider>
@@ -22,7 +22,8 @@ describe('ToastProvider', () => {
     act(() => { screen.getByText('Trigger').click(); });
     expect(screen.getByText('Hello')).toBeInTheDocument();
 
-    act(() => { vi.advanceTimersByTime(4000); });
+      // advance timers past visible + fade duration
+      act(() => { vi.advanceTimersByTime(4000 + 250); });
     expect(screen.queryByText('Hello')).toBeNull();
   });
 
@@ -56,7 +57,7 @@ describe('ToastProvider', () => {
     const items = screen.getAllByText('Dup');
     expect(items.length).toBe(1);
 
-    act(() => { vi.advanceTimersByTime(4000); });
+      act(() => { vi.advanceTimersByTime(4000 + 250); });
     expect(screen.queryByText('Dup')).toBeNull();
   });
 });

@@ -27,6 +27,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const timers = useRef<Record<string, number | null>>({});
   const exitTimers = useRef<Record<string, number | null>>({});
   const nextId = useRef(1);
+  const FADE_MS = 240;
 
   const finalizeRemove = useCallback((id: string) => {
     setToasts((current) => current.filter((t) => t.id !== id));
@@ -79,14 +80,16 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         window.clearTimeout(timer);
       }
       if (autoDismiss) {
-        timers.current[existingId] = window.setTimeout(() => startExit(existingId!), 4000);
+        const delay = Math.max(0, 4000 - FADE_MS);
+        timers.current[existingId] = window.setTimeout(() => startExit(existingId!), delay);
       }
       return existingId;
     }
 
     const id = String(nextId.current - 1);
     if (autoDismiss) {
-      const timer = window.setTimeout(() => startExit(id), 4000);
+      const delay = Math.max(0, 4000 - FADE_MS);
+      const timer = window.setTimeout(() => startExit(id), delay);
       timers.current[id] = timer;
     }
     return id;
