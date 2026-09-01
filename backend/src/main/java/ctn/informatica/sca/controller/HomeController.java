@@ -38,6 +38,7 @@ import ctn.informatica.sca.model.Profesor;
 import ctn.informatica.sca.model.RasgoAsistencia;
 import ctn.informatica.sca.model.RasgoPlanilla;
 import ctn.informatica.sca.model.User;
+import ctn.informatica.sca.util.PushNotificationService;
 import ctn.informatica.sca.util.ScaUiContext;
 import ctn.informatica.sca.service.ActivityLogService;
 import ctn.informatica.sca.service.TemaVerificacionService;
@@ -561,23 +562,33 @@ public class HomeController {
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo registrar la queja");
             }
             long total = quejaDao.contarPorProfesor(profesorId);
-                int umbral = configuracionSistemaDao.getInt("umbral_quejas_coordinacion", 5);
-                if (total == umbral) {
-                    List<User> coordinadores = userDao.findAllByLevel(5);
-                    for (User coordinador : coordinadores) {
-                        if (coordinador == null) continue;
-                        notificacionDao.crear(
-                                coordinador.getId(),
-                                NotificacionDao.resolveUserType(userDao, coordinador.getId()),
-                                "COORDINACION",
-                                "Profesor con quejas acumuladas",
-                                "El profesor " + profesorId + " alcanzó " + total + " quejas. Requiere revisión de coordinación pedagógica.",
-                                "QUEJA",
-                                (long) profesorId);
+            int umbral = configuracionSistemaDao.getInt("umbral_quejas_coordinacion", 5);
+            if (total >= umbral && !notificacionDao.existePendientePorTipoEntidad(profesorId, "QUEJA", "COORDINACION")) {
+                List<User> coordinadores = userDao.findAllByLevel(5);
+                for (User coordinador : coordinadores) {
+                    if (coordinador == null) continue;
+                    String userType = NotificacionDao.resolveUserType(userDao, coordinador.getId());
+                    String titulo = "Profesor con quejas acumuladas";
+                    String cuerpo = "El profesor " + profesorId + " alcanzó " + total + " quejas. Requiere revisión de coordinación pedagógica.";
+                    boolean created = notificacionDao.crear(
+                            coordinador.getId(),
+                            userType,
+                            "COORDINACION",
+                            titulo,
+                            cuerpo,
+                            "QUEJA",
+                            (long) profesorId);
+                    if (created) {
+                        try {
+                            PushNotificationService.sendToUser(coordinador.getId(), userType, titulo, cuerpo, "/coordinacion");
+                        } catch (Exception ex) {
+                            log.warn("No se pudo enviar push a coordinador {} por queja del profesor {}: {}", coordinador.getId(), profesorId, ex.getMessage());
+                        }
                     }
                 }
-            } catch (SQLException ex) {
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo registrar la queja", ex);
+            }
+        } catch (SQLException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo registrar la queja", ex);
         } catch (Exception ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo registrar la queja", ex);
         }
@@ -644,14 +655,24 @@ public class HomeController {
                 List<User> evaluadores = userDao.findAllByLevel(2);
                 for (User evaluador : evaluadores) {
                     if (evaluador == null) continue;
-                    notificacionDao.crear(
+                    String userType = NotificacionDao.resolveUserType(userDao, evaluador.getId());
+                    String titulo = "Incumplimiento por atraso";
+                    String cuerpo = "Asignación " + asignacionId + " alcanzó el umbral de atrasos justificados.";
+                    boolean created = notificacionDao.crear(
                             evaluador.getId(),
-                            NotificacionDao.resolveUserType(userDao, evaluador.getId()),
+                            userType,
                             "INCUMPLIMIENTO",
-                            "Incumplimiento por atraso",
-                            "Asignación " + asignacionId + " alcanzó el umbral de atrasos justificados.",
+                            titulo,
+                            cuerpo,
                             "INCUMPLIMIENTO_REVISION",
                             (long) asignacionId);
+                    if (created) {
+                        try {
+                            PushNotificationService.sendToUser(evaluador.getId(), userType, titulo, cuerpo, "/evaluacion");
+                        } catch (Exception ex) {
+                            log.warn("No se pudo enviar push a evaluador {} por incumplimiento de asignación {}: {}", evaluador.getId(), asignacionId, ex.getMessage());
+                        }
+                    }
                 }
             }
         } catch (Exception ex) {

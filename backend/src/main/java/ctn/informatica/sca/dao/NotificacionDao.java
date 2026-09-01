@@ -108,4 +108,19 @@ public class NotificacionDao extends conexion {
         }
         return 0L;
     }
+
+    public boolean existePendientePorTipoEntidad(int entidadId, String entidadTipo, String tipo) throws SQLException {
+        String sql = "SELECT EXISTS(SELECT 1 FROM notificacion WHERE entidad_id = ? AND entidad_tipo = ? AND tipo = ? AND leida = 0)";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setLong(1, entidadId);
+            ps.setString(2, entidadTipo == null || entidadTipo.isBlank() ? "GENERAL" : entidadTipo.trim());
+            ps.setString(3, tipo == null || tipo.isBlank() ? "GENERAL" : tipo.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getBoolean(1);
+                }
+            }
+        }
+        return false;
+    }
 }
