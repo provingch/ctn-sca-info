@@ -1,7 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import CtnLogo from './CtnLogo';
 import { normalizeSpecialty } from '../theme/theme';
 import { useSpecialty } from '../context/SpecialtyContext';
 import AppNavbar from './AppNavbar';
@@ -27,13 +26,12 @@ export default function AppShell({ children, title, subtitle, specialty }: { chi
       <a className="skip-link" href="#main-content">Saltar al contenido principal</a>
       <AppNavbar />
       <main id="main-content" className="app-main" tabIndex={-1}>
-        {title && <section className="page-hero"><div className="hero-content"><span className="hero-kicker"><i />{user ? getRoleNavigation(user.level).roleLabel : 'SCA'}</span><h1>{title}</h1><p>{subtitle || 'Sistema de Carpetas Académicas del Colegio Técnico Nacional'}</p></div><div className="hero-emblem"><CtnLogo variant="full" /></div></section>}
+        {title && <section className="page-hero"><div className="hero-content"><span className="hero-kicker"><i />{user ? getRoleNavigation(user.level).roleLabel : 'SCA'}</span><h1>{title}</h1><p>{subtitle || 'Sistema de Carpetas Académicas del Colegio Técnico Nacional'}</p></div><div className="hero-emblem"></div></section>}
         {children}
       </main>
       <footer className="app-footer">
         <div className="app-footer-inner">
           <div className="app-footer-brand" aria-hidden="true">
-            <img className="footer-institutional-logo" src="/logo-institucional.png" alt="Logo institucional" />
             <span><strong>Colegio Técnico Nacional</strong></span>
           </div>
           <span><NavLink to="/privacidad">Privacidad</NavLink> · <NavLink to="/terminos">Términos</NavLink></span>
