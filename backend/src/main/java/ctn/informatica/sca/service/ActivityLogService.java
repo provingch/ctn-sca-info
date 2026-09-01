@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 public class ActivityLogService {
 
     private static final Logger log = LoggerFactory.getLogger(ActivityLogService.class);
+    private static final ZoneId ZONA_PARAGUAY = ZoneId.of("America/Asuncion");
     private static final DateTimeFormatter LINE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @Value("${sca.activity-logs.dir}")
@@ -50,7 +52,7 @@ public class ActivityLogService {
         Files.createDirectories(directory);
 
         Path path = resolveUserLogPath(usuarioId);
-        String linea = "[" + LocalDateTime.now().format(LINE_FORMATTER) + "] " + accionNormalizada;
+        String linea = "[" + LocalDateTime.now(ZONA_PARAGUAY).format(LINE_FORMATTER) + "] " + accionNormalizada;
         Files.write(path,
                 List.of(linea),
                 StandardCharsets.UTF_8,
