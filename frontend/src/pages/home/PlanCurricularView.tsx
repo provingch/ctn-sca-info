@@ -3,7 +3,7 @@ import { ApiError } from '../../api/client';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import * as planCurricularApi from '../../api/planCurricular';
 import useAccessibleDialog from '../../hooks/useAccessibleDialog';
-import { useAutoDismissStatus } from '../../hooks/useAutoDismissStatus';
+import { useToast } from '../../context/ToastContext';
 
 type AssignmentGroup = { id: number; nombre: string; asignaciones: planCurricularApi.AsignacionCompleta[] };
 
@@ -69,7 +69,7 @@ function DescargarPlantillaSection({ group }: { group: AssignmentGroup }) {
       <div className="class-field" style={{ justifyContent: 'end' }}><button type="button" className="button" disabled={!asignacion} onClick={() => void download()}>Descargar plantilla</button></div>
     </div>
     {asignacion?.estadoPlan === 'APROBADO' && <div className="notice" style={{ margin: 0, background: 'color-mix(in srgb, var(--success) 10%, var(--paper))', borderColor: 'color-mix(in srgb, var(--success) 45%, var(--line))' }}>Esta asignación ya cuenta con un plan aprobado. Podés descargar nuevamente su plantilla si lo necesitás.</div>}
-    {error && <div className="notice error">{error}</div>}
+    {/* operational errors are shown via global toasts */}
   </section>;
 }
 
@@ -80,8 +80,9 @@ export default function PlanCurricularView() {
   const [errorPlanes, setErrorPlanes] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const { status: uploadMessage, setStatus: setUploadMessage } = useAutoDismissStatus('');
-  const { status: uploadError, setStatus: setUploadError } = useAutoDismissStatus('', { autoDismiss: false });
+  const { showToast } = useToast();
+  const setUploadMessage = (msg: string) => { if (msg) showToast(msg, { tone: 'success', autoDismiss: true }); };
+  const setUploadError = (msg: string) => { if (msg) showToast(msg, { tone: 'error', autoDismiss: false }); };
   const [candidatas, setCandidatas] = useState<planCurricularApi.AsignacionCandidata[]>([]);
   const [candidataId, setCandidataId] = useState('');
   const [pendingFile, setPendingFile] = useState<File | null>(null);
@@ -109,7 +110,7 @@ export default function PlanCurricularView() {
   }, new Map<number, AssignmentGroup>()).values()) : [];
 
   async function upload(file: File, asignacionId?: number) {
-    setUploading(true); setUploadError(''); setUploadMessage('');
+    setUploading(true);
     try {
       const result = await planCurricularApi.subirPlanAutoDetectado(file, asignacionId);
       setUploadMessage(result?.materiaNombre ? `Plan subido para ${result.especialidadNombre} · ${result.cursoOrdinal} ${result.seccion} · ${result.materiaNombre}.` : 'Plan curricular subido correctamente.');

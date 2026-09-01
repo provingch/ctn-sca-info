@@ -17,7 +17,7 @@ import SpecialtyIcon from '../../components/SpecialtyIcon';
 import SistemaEstadoPanel from './SistemaEstadoPanel';
 import SalasPanel from './SalasPanel';
 import AdminQuejasPanel from './AdminQuejasPanel';
-import { useAutoDismissStatus } from '../../hooks/useAutoDismissStatus';
+import { useToast } from '../../context/ToastContext';
 
 const modules = [
   { path: '/admin/materias', key: 'materias', title: 'Materias', detail: 'Catálogo, categorías y especialidades', globalOnly: true },
@@ -35,7 +35,8 @@ export default function AdminPage() {
   const { user, identityStatus, refreshUserIdentity } = useAuth();
   const selected = modules.find((module) => location.pathname === module.path || location.pathname.startsWith(`${module.path}/`)) ?? null;
   const [data, setData] = useState<AdminCatalog | null>(null);
-  const { status, setStatus } = useAutoDismissStatus('');
+  const { showToast } = useToast();
+  const setStatus = (text: string) => { if (text) showToast(text); };
 
   const load = useCallback(async () => {
     try {
@@ -48,7 +49,7 @@ export default function AdminPage() {
   useEffect(() => { void load(); }, [load]);
 
   if (!data) {
-    return <AppShell title={selected?.title || 'Panel general'}><ContentState tone={status ? 'error' : 'loading'} title={status || 'Cargando administración…'} detail={status ? 'Recargá la página para volver a intentarlo.' : 'Estamos preparando el catálogo del sistema.'} /></AppShell>;
+    return <AppShell title={selected?.title || 'Panel general'}><ContentState tone={'loading'} title={'Cargando administración…'} detail={'Estamos preparando el catálogo del sistema.'} /></AppShell>;
   }
 
   if (identityStatus === 'idle' || identityStatus === 'loading') {
@@ -66,7 +67,7 @@ export default function AdminPage() {
 
   return <AppShell title={selected?.title || 'Panel general'} subtitle={scopeName ? `Administración de ${scopeName}` : 'Administración global del sistema'} specialty={scopeName}>
     <AdminToolbar data={data} showBack={Boolean(selected)} scopeName={scopeName} />
-    {status && <div className="notice" role="status">{status}</div>}
+    {/* toasts shown globally via ToastProvider */}
     {selectedIsRestricted ? (
       <ContentState tone="error" title="Módulo reservado al administrador global" detail="Tu cuenta administra una especialidad y no tiene acceso a esta herramienta del sistema." actions={<Link className="button" to="/admin">Volver al panel</Link>} />
     ) : !selected ? (

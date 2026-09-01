@@ -3,12 +3,13 @@ import { ApiError } from '../../api/client';
 import { getSistemaEstado, type SistemaEstadoResponse } from '../../api/admin';
 import ConnectionState from '../../components/ui/ConnectionState';
 import ContentState from '../../components/ui/ContentState';
-import { useAutoDismissStatus } from '../../hooks/useAutoDismissStatus';
+import { useToast } from '../../context/ToastContext';
 import { formatBytes, formatRelativeDate } from './adminFormatters';
 
 export default function SistemaEstadoPanel() {
   const [data, setData] = useState<SistemaEstadoResponse | null>(null);
-  const { status: error, setStatus: setError } = useAutoDismissStatus('', { autoDismiss: false });
+  const { showToast } = useToast();
+  const setError = (msg: string) => { if (msg) showToast(msg, { tone: 'error', autoDismiss: false }); };
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
@@ -27,11 +28,11 @@ export default function SistemaEstadoPanel() {
   const migrations = useMemo(() => [...(data?.migraciones ?? [])].sort((first, second) => (second.appliedAt ?? '').localeCompare(first.appliedAt ?? '')), [data]);
 
   if (!data && refreshing) return <ContentState tone="loading" title="Consultando el sistema…" detail="Estamos verificando servicios y migraciones." />;
-  if (!data) return <ContentState tone="error" title={error || 'No se pudo consultar el sistema'} detail="Usá Actualizar para volver a intentarlo." actions={<button className="button" type="button" onClick={() => void load()}>Actualizar</button>} />;
+  if (!data) return <ContentState tone="error" title={'No se pudo consultar el sistema'} detail="Usá Actualizar para volver a intentarlo." actions={<button className="button" type="button" onClick={() => void load()}>Actualizar</button>} />;
 
   return <div className="system-status-layout">
     <div className="toolbar system-status-toolbar"><p>Información operativa actual del servidor.</p><button className="button secondary" type="button" disabled={refreshing} onClick={() => void load()}>{refreshing ? 'Actualizando…' : 'Actualizar'}</button></div>
-    {error && <div className="notice" role="alert">{error}</div>}
+    {/* operational errors are shown as persistent toasts via ToastProvider */}
     <section className="system-status-grid" aria-label="Resumen del sistema">
       <article className={`panel system-db-card ${data.dbConectada ? 'is-connected' : 'is-disconnected'}`}><span>Base de datos</span><ConnectionState active={data.dbConectada} title={data.dbConectada ? 'Conectada' : 'Sin conexión'} detail={data.dbConectada ? 'El servicio responde correctamente.' : 'Requiere revisión del servidor.'} /></article>
       <article className="panel"><span>Classroom</span><strong>{formatRelativeDate(data.ultimaSyncClassroom)}</strong><small>Última sincronización registrada</small></article>

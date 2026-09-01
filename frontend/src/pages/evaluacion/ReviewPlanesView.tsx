@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { ApiError } from '../../api/client';
+import { useToast } from '../../context/ToastContext';
 import * as planCurricularApi from '../../api/planCurricular';
 
 interface PlanPendiente {
@@ -24,6 +25,7 @@ export default function ReviewPlanesView() {
   const [observaciones, setObservaciones] = useState('');
   const [status, setStatus] = useState('');
   const [statusTone, setStatusTone] = useState<StatusTone>('info');
+  const { showToast } = useToast();
   const [procesing, setProcessing] = useState(false);
 
   // Cargar lista de planes pendientes
@@ -36,8 +38,8 @@ export default function ReviewPlanesView() {
         setStatus('');
         setStatusTone('info');
       } catch (err) {
-        setStatus(err instanceof ApiError ? err.message : 'No se pudieron cargar los planes.');
-        setStatusTone('error');
+        const msg = err instanceof ApiError ? err.message : 'No se pudieron cargar los planes.';
+        showToast(msg, { tone: 'error', autoDismiss: false });
         setPlanes([]);
       } finally {
         setLoading(false);
@@ -59,8 +61,8 @@ export default function ReviewPlanesView() {
         const plan = await planCurricularApi.getPlanDetalle(selectedPlanId);
         setSelectedPlan(plan);
       } catch (err) {
-        setStatus(err instanceof ApiError ? err.message : 'No se pudo cargar el detalle del plan.');
-        setStatusTone('error');
+        const msg = err instanceof ApiError ? err.message : 'No se pudo cargar el detalle del plan.';
+        showToast(msg, { tone: 'error', autoDismiss: false });
         setSelectedPlan(null);
       } finally {
         setLoadingDetalle(false);
@@ -74,8 +76,8 @@ export default function ReviewPlanesView() {
     try {
       await planCurricularApi.descargarDocumentoOriginal(selectedPlanId);
     } catch (err) {
-      setStatus(err instanceof ApiError ? err.message : 'No se pudo descargar el documento.');
-      setStatusTone('error');
+      const msg = err instanceof ApiError ? err.message : 'No se pudo descargar el documento.';
+      showToast(msg, { tone: 'error', autoDismiss: false });
     }
   }
 
@@ -87,15 +89,14 @@ export default function ReviewPlanesView() {
     setProcessing(true);
     try {
       await planCurricularApi.aprobarPlan(selectedPlanId);
-      setStatus('Plan aprobado correctamente.');
-      setStatusTone('success');
+      showToast('Plan aprobado correctamente.', { tone: 'success', autoDismiss: true });
       setPlanes((current) => current.filter((p) => p.id !== selectedPlanId));
       setSelectedPlanId(null);
       setSelectedPlan(null);
       setObservaciones('');
     } catch (err) {
-      setStatus(err instanceof ApiError ? err.message : 'No se pudo aprobar el plan.');
-      setStatusTone('error');
+      const msg = err instanceof ApiError ? err.message : 'No se pudo aprobar el plan.';
+      showToast(msg, { tone: 'error', autoDismiss: false });
     } finally {
       setProcessing(false);
     }
@@ -111,15 +112,14 @@ export default function ReviewPlanesView() {
     setProcessing(true);
     try {
       await planCurricularApi.rechazarPlan(selectedPlanId, observaciones);
-      setStatus('Plan rechazado correctamente.');
-      setStatusTone('success');
+      showToast('Plan rechazado correctamente.', { tone: 'success', autoDismiss: true });
       setPlanes((current) => current.filter((p) => p.id !== selectedPlanId));
       setSelectedPlanId(null);
       setSelectedPlan(null);
       setObservaciones('');
     } catch (err) {
-      setStatus(err instanceof ApiError ? err.message : 'No se pudo rechazar el plan.');
-      setStatusTone('error');
+      const msg = err instanceof ApiError ? err.message : 'No se pudo rechazar el plan.';
+      showToast(msg, { tone: 'error', autoDismiss: false });
     } finally {
       setProcessing(false);
     }
@@ -267,15 +267,7 @@ export default function ReviewPlanesView() {
           </>
         )}
 
-        {status && (
-          <div
-            className={`notice ${statusTone}`}
-            style={{ marginTop: 12 }}
-            role={statusTone === 'error' ? 'alert' : 'status'}
-          >
-            {status}
-          </div>
-        )}
+        {/* status messages moved to global toast provider */}
       </div>
     </div>
   );
