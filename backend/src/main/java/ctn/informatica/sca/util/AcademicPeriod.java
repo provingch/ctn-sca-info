@@ -13,8 +13,21 @@ public final class AcademicPeriod {
     }
 
     public static int currentEtapa() {
-        int currentYear = current();
-        LocalDate transition = LocalDate.of(currentYear, 7, 15);
-        return LocalDate.now().isBefore(transition) ? 1 : 2;
+        return etapaAt(LocalDate.now());
+    }
+
+    public static int etapaAt(LocalDate date) {
+        if (date == null) {
+            return 1;
+        }
+        return date.isBefore(etapaStartDate(date.getYear(), 2)) ? 1 : 2;
+    }
+
+    public static LocalDate etapaStartDate(int year, int etapa) {
+        return switch (etapa) {
+            case 1 -> LocalDate.of(year, 2, 23);
+            case 2 -> LocalDate.of(year, 6, 22);
+            default -> throw new IllegalArgumentException("La etapa debe ser 1 o 2");
+        };
     }
 }

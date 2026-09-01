@@ -45,6 +45,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import ctn.informatica.sca.util.PlanillaProcesoWorkbookBuilder;
+import ctn.informatica.sca.util.AcademicPeriod;
 
 @RestController
 @RequestMapping("/api/planillas")
@@ -444,7 +445,6 @@ public class PlanillaController {
         List<Tarea> tareas = filterTasksByEtapa(new TareaDao().consultarTarea(planilla.getId()), planilla.getEtapaIndex());
         Map<Integer, Integer> tareaMax = new LinkedHashMap<>();
         int totalPossiblePoints = 0;
-        LocalDate minStart = null;
         LocalDate maxEnd = null;
 
         List<TareaDto> tareasDto = new ArrayList<>();
@@ -463,9 +463,6 @@ public class PlanillaController {
             tareaMax.put(t.getId(), t.getTotal());
             totalPossiblePoints += t.getTotal();
 
-            if (t.getFechaInicio() != null && (minStart == null || t.getFechaInicio().isBefore(minStart))) {
-                minStart = t.getFechaInicio();
-            }
             if (t.getFechaLimite() != null && (maxEnd == null || t.getFechaLimite().isAfter(maxEnd))) {
                 maxEnd = t.getFechaLimite();
             }
@@ -517,7 +514,9 @@ public class PlanillaController {
                 planilla.getProfesorId(),
                 (int) Math.round(100 * planilla.getExigencia()),
                 totalPossiblePoints,
-                minStart,
+                AcademicPeriod.etapaStartDate(
+                        planilla.getPeriodo() > 0 ? planilla.getPeriodo() : AcademicPeriod.current(),
+                        planilla.getEtapaIndex()),
                 maxEnd,
                 planilla.getGoogleCourseId());
 
@@ -549,11 +548,7 @@ public class PlanillaController {
     }
 
     private int resolveDefaultEtapa(LocalDate today) {
-        if (today == null) {
-            return 1;
-        }
-        LocalDate transition = LocalDate.of(today.getYear(), 7, 15);
-        return today.isBefore(transition) ? 1 : 2;
+        return AcademicPeriod.etapaAt(today);
     }
 
     public record ResolvePlanillaRequest(Integer cursoId, Integer materiaId, Integer etapa) {
