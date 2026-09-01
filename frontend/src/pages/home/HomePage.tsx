@@ -11,6 +11,15 @@ import { useSpecialty } from '../../context/SpecialtyContext';
 import PlanCurricularView from './PlanCurricularView';
 import useAccessibleDialog from '../../hooks/useAccessibleDialog';
 
+const normalizeSpecialtyName = (value: string) => value
+  .trim()
+  .toLowerCase()
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/[\-_]+/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim();
+
 const HORARIOS_CATEDRA = ['7:00', '7:35', '8:10', '8:45', '9:40', '10:15', '10:50', '11:25', '13:00', '13:35', '14:10', '14:45', '15:40', '16:15', '16:50', '17:25'];
 const RASGO_CODIGOS = [
   ['N1', 'Llegada tardia a clase'],
@@ -66,21 +75,46 @@ export default function HomePage() {
   }, [cursoId, etapa, subview, view]);
 
   useEffect(() => {
-    void getEspecialidades().then(setEspecialidades).catch(() => setEspecialidades([]));
-  }, []);
+    let active = true;
 
-  // If admin catalog doesn't provide especialidades (e.g. network/auth),
-  // derive a fallback list from the cursos returned by getHome so the
-  // select always shows options for the user to pick.
-  useEffect(() => {
-    if (especialidades.length === 0 && data) {
-      const names = Array.from(new Set(data.cursos.map((c) => c.especialidad).filter(Boolean)));
-      if (names.length > 0) {
-        const fallback = names.map((nombre, i) => ({ id: 100000 + i, nombre } as Especialidad));
-        setEspecialidades(fallback);
-      }
-    }
-  }, [data, especialidades.length]);
+    void getEspecialidades()
+      .then((catalog) => {
+        if (!active) return;
+
+        const scopedNames = Array.from(new Set((data?.cursos ?? []).map((curso) => curso.especialidad).filter((nombre): nombre is string => !!nombre && nombre.trim().length > 0)));
+
+        // Always derive the combo from the specialties present in `data.cursos` when available.
+        // Cross-match by normalized name against the official catalog to preserve real ids
+        // and only create synthetic entries when no match exists for a given name.
+        if (scopedNames.length > 0) {
+          const catalogByName = new Map(catalog.map((item) => [normalizeSpecialtyName(item.nombre), item]));
+          const derived = scopedNames
+            .map((nombre, idx) => {
+              const normalized = normalizeSpecialtyName(nombre);
+              const match = catalogByName.get(normalized);
+              return { id: match?.id ?? (Number.MIN_SAFE_INTEGER + idx), nombre } as Especialidad;
+            })
+            .filter((item, index, items) => items.findIndex((candidate) => normalizeSpecialtyName(candidate.nombre) === normalizeSpecialtyName(item.nombre)) === index);
+
+          setEspecialidades(derived);
+          return;
+        }
+
+        // If there are no specialties derived from courses, fall back to full catalog.
+        setEspecialidades(catalog);
+      })
+      .catch(() => {
+        if (!active) return;
+        const scopedNames = Array.from(new Set((data?.cursos ?? []).map((curso) => curso.especialidad).filter((nombre): nombre is string => !!nombre && nombre.trim().length > 0)));
+        setEspecialidades(scopedNames.length > 0
+          ? scopedNames.map((nombre, index) => ({ id: 100000 + index, nombre } as Especialidad))
+          : []);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [data]);
 
   // Sync application palette with selected especialidad in query
   useEffect(() => {

@@ -20,9 +20,12 @@ import ctn.informatica.sca.model.User;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import ctn.informatica.sca.dao.AsignacionDao;
+import ctn.informatica.sca.model.Asignacion;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.server.ResponseStatusException;
 
 class EvaluacionCatalogControllerTest {
@@ -64,6 +67,47 @@ class EvaluacionCatalogControllerTest {
 
         assertEquals(2, result.size());
         verify(cursoDao).findAll();
+    }
+
+    @Test
+    void profesorConAsignacionesVeSoloSusEspecialidadesYCursos() throws Exception {
+        ArrayList<Curso> cursos = new ArrayList<>(List.of(
+                new Curso(1, "Informática", 2027, "A"),
+                new Curso(2, "Informática", 2027, "B"),
+                new Curso(3, "Construcciones Civiles", 2027, "C")));
+        when(cursoDao.findAll()).thenReturn(cursos);
+        when(especialidadDao.findAll()).thenReturn(List.of(
+                new Especialidad(1, "Informática"),
+                new Especialidad(2, "Construcciones Civiles")));
+        List<Asignacion> asignaciones = List.of(
+                new Asignacion(11, 14, 1, 1),
+                new Asignacion(12, 14, 2, 2));
+        asignaciones.get(0).setEspecialidadId(1);
+        asignaciones.get(0).setEspecialidad("Informática");
+        asignaciones.get(1).setEspecialidadId(2);
+        asignaciones.get(1).setEspecialidad("Construcciones Civiles");
+        var teacherAuth = new UsernamePasswordAuthenticationToken(14L, null, List.of(new SimpleGrantedAuthority("ROLE_LEVEL_3")));
+
+        List<EvaluacionCatalogController.EspecialidadDto> especialidades = controller.listEspecialidades(teacherAuth);
+        List<EvaluacionCatalogController.CursoEvaluacionDto> cursosResult = controller.listCursos(null, teacherAuth);
+
+        assertEquals(List.of("Informática", "Construcciones Civiles"), especialidades.stream().map(EvaluacionCatalogController.EspecialidadDto::nombre).toList());
+        assertEquals(List.of(1, 2), cursosResult.stream().map(EvaluacionCatalogController.CursoEvaluacionDto::id).toList());
+    }
+
+    @Test
+    void coordinacionMantieneCatalogoInstitucionalCompleto() throws Exception {
+        ArrayList<Curso> cursos = new ArrayList<>(List.of(
+                new Curso(1, "Informática", 2027, "A"),
+                new Curso(2, "Construcciones Civiles", 2027, "C")));
+        when(cursoDao.findAll()).thenReturn(cursos);
+        when(especialidadDao.findAll()).thenReturn(List.of(
+                new Especialidad(1, "Informática"),
+                new Especialidad(2, "Construcciones Civiles")));
+        var coordAuth = new UsernamePasswordAuthenticationToken(99L, null, List.of(new SimpleGrantedAuthority("ROLE_LEVEL_5")));
+
+        assertEquals(2, controller.listEspecialidades(coordAuth).size());
+        assertEquals(2, controller.listCursos(null, coordAuth).size());
     }
 
     @Test
