@@ -422,7 +422,7 @@ CREATE TABLE IF NOT EXISTS queja (
     creada_por INT NOT NULL COMMENT 'admin/delegado que cargó la queja',
     creada_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_queja_profesor FOREIGN KEY (profesor_id) REFERENCES usuario(id),
-    CONSTRAINT fk_queja_curso FOREIGN KEY (curso_id) REFERENCES curso(id),
+    CONSTRAINT fk_queja_curso FOREIGN KEY (curso_id) REFERENCES curso_base(id),
     CONSTRAINT fk_queja_creada_por FOREIGN KEY (creada_por) REFERENCES usuario(id),
     CONSTRAINT fk_queja_especialidad FOREIGN KEY (especialidad_id) REFERENCES especialidad(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

@@ -48,20 +48,19 @@ public class QuejaDao extends conexion {
 
     public List<Map<String, Object>> listar() throws SQLException {
         String sql = "SELECT q.id, q.profesor_id, q.curso_id, q.especialidad_id, q.motivo, q.creada_por, q.creada_en, "
-            + "u.nombre AS profesor_nombre, u.apellido AS profesor_apellido, "
-            + "cb.seccion AS curso_seccion, cb.nivel AS curso_nivel, "
-            + "e.nombre AS curso_especialidad "
-            + "FROM queja q "
-            + "LEFT JOIN usuario u ON u.id = q.profesor_id "
-            + "LEFT JOIN curso_base cb ON cb.id = q.curso_id "
-            + "LEFT JOIN especialidad e ON e.id = cb.especialidad_id "
-            + "ORDER BY q.creada_en DESC";
+                + "u.nombre AS profesor_nombre, u.apellido AS profesor_apellido, "
+                + "cb.seccion AS curso_seccion, cb.nivel AS curso_nivel, "
+                + "e.nombre AS curso_especialidad "
+                + "FROM queja q "
+                + "LEFT JOIN usuario u ON u.id = q.profesor_id "
+                + "LEFT JOIN curso_base cb ON cb.id = q.curso_id "
+                + "LEFT JOIN especialidad e ON e.id = cb.especialidad_id "
+                + "ORDER BY q.creada_en DESC";
+
         List<Map<String, Object>> items = new ArrayList<>();
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 Map<String, Object> row = new HashMap<>();
-                Object nivelObj = rs.getObject("curso_nivel");
-                Integer nivel = nivelObj == null ? null : ((Number) nivelObj).intValue();
 
                 row.put("id", rs.getLong("id"));
                 row.put("profesorId", rs.getLong("profesor_id"));
@@ -74,7 +73,7 @@ public class QuejaDao extends conexion {
                 row.put("profesorApellido", rs.getString("profesor_apellido"));
                 row.put("cursoEspecialidad", rs.getString("curso_especialidad"));
                 row.put("cursoSeccion", rs.getString("curso_seccion"));
-                row.put("cursoNivel", nivel);
+                row.put("cursoNivel", (Integer) rs.getObject("curso_nivel"));
                 items.add(row);
             }
         }
