@@ -4,6 +4,7 @@
  */
 package ctn.informatica.sca.model;
 
+import ctn.informatica.sca.util.AcademicPeriod;
 import java.time.LocalDate;
 
 /**
@@ -92,11 +93,7 @@ public class Tarea {
     }
 
     public static int resolveEtapaIndexByPublicationDate(LocalDate publicationDate) {
-        if (publicationDate == null) {
-            return 1;
-        }
-        LocalDate transition = LocalDate.of(publicationDate.getYear(), 7, 15);
-        return publicationDate.isBefore(transition) ? 1 : 2;
+        return AcademicPeriod.etapaAt(publicationDate);
     }
 
     public void setId(int id) {
