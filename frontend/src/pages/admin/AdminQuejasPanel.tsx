@@ -67,37 +67,59 @@ export default function AdminQuejasPanel({ data, reload, status }: { data: Admin
   }
 
   return <div>
-    <section className="panel form-grid">
-      <p className="lead">Registrar una queja por un profesor en tu especialidad.</p>
-      <form onSubmit={submit}>
-        <label>Curso
-          <AnimatedSelect ariaLabel="Curso" value={cursoId || ''} onChange={(v) => { setCursoId(Number(v)); setProfesorId(''); }} options={cursos.map((c) => ({ value: c.id, label: `${c.especialidad} ${c.nivel}° Sección ${c.seccion}` }))} />
-        </label>
-        <label>Profesor
-          <AnimatedSelect ariaLabel="Profesor" value={profesorId || ''} onChange={(v) => setProfesorId(Number(v))} disabled={!cursoId || profesoresForCurso.length === 0} options={profesoresForCurso.map((p) => ({ value: p.id, label: p.nombre }))} />
-        </label>
-        <label>Motivo<textarea value={motivo} onChange={(e) => setMotivo(e.target.value)} required /></label>
-        <div>
-          <button className="button" type="submit" disabled={loading}>Registrar queja</button>
-          <button type="button" className="button secondary" onClick={() => void loadList()} style={{ marginLeft: 8 }}>Refrescar lista</button>
-        </div>
-      </form>
-    </section>
+    <section className="panel">
+      <header className="planilla-table-heading" style={{ borderLeftColor: 'var(--accent)' }}>
+        <div><span>Registrar</span><h2>Registrar queja</h2></div>
+        <small>Registrar una queja por un profesor en tu especialidad.</small>
+      </header>
+      <div className="panel form-grid" style={{ paddingTop: 18 }}>
+        <form onSubmit={submit}>
+          <label>
+            <div className="form-label">Curso</div>
+            <AnimatedSelect ariaLabel="Curso" value={cursoId || ''} onChange={(v) => { setCursoId(Number(v)); setProfesorId(''); }} options={cursos.map((c) => ({ value: c.id, label: `${c.especialidad} ${c.nivel}° Sección ${c.seccion}` }))} />
+          </label>
+          <label>
+            <div className="form-label">Profesor</div>
+            <AnimatedSelect ariaLabel="Profesor" value={profesorId || ''} onChange={(v) => setProfesorId(Number(v))} disabled={!cursoId || profesoresForCurso.length === 0} options={profesoresForCurso.map((p) => ({ value: p.id, label: p.nombre }))} />
+          </label>
+          <label>
+            <div className="form-label">Motivo</div>
+            <textarea placeholder="Describa brevemente el motivo de la queja" value={motivo} onChange={(e) => setMotivo(e.target.value)} required />
+          </label>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button className="button" type="submit" disabled={loading}><svg viewBox="0 0 20 20" aria-hidden="true" style={{ width: 16, height: 16, marginRight: 8 }}><path d="M2 11v5h5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>Registrar queja</button>
+            <button type="button" className="button secondary" onClick={() => void loadList()} style={{ marginLeft: 'auto' }}><svg viewBox="0 0 20 20" aria-hidden="true" style={{ width: 14, height: 14, marginRight: 6 }}><path d="M3 10a7 7 0 0112.12-4.95L17 5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>Refrescar lista</button>
+          </div>
+        </form>
+      </div>
 
-    <section className="panel" style={{ marginTop: 16 }}>
-      <h3>Quejas en este alcance</h3>
-      <button className="button secondary" type="button" onClick={() => void loadList()} style={{ marginBottom: 8 }}>Refrescar</button>
-      {lista.length === 0 ? <p>No hay quejas registradas.</p> : (
-        <ul className="list">
-          {lista.map((q) => (
-            <li key={q.id}>
-              <p><strong>{`${q.profesorNombre ?? ''} ${q.profesorApellido ?? ''}`.trim()}</strong> — {`${q.cursoEspecialidad ?? ''} ${q.cursoNivel ?? ''}° Sección ${q.cursoSeccion ?? ''}`.trim()}</p>
-              <p>{q.motivo}</p>
-              <p><small>{new Date(q.creadaEn).toLocaleString('es-PY')} — cargada por {nombreCreador(q.creadaPor)}</small></p>
-            </li>
-          ))}
-        </ul>
-      )}
+      <header className="planilla-table-heading" style={{ borderLeftColor: 'var(--muted)', marginTop: 16 }}>
+        <div><span>Listado</span><h2>Quejas en este alcance</h2></div>
+        <small className="muted-copy">Registros cargados para la especialidad actual.</small>
+      </header>
+      <div className="panel" style={{ marginTop: 0, paddingTop: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button className="button secondary" type="button" onClick={() => void loadList()} style={{ marginBottom: 8 }}><svg viewBox="0 0 20 20" aria-hidden="true" style={{ width: 14, height: 14, marginRight: 6 }}><path d="M3 10a7 7 0 0112.12-4.95L17 5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>Refrescar</button>
+        </div>
+        {lista.length === 0 ? <p>No hay quejas registradas.</p> : (
+          <ul className="list" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            {lista.map((q) => (
+              <li key={q.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: 12, borderBottom: '1px solid var(--line)' }}>
+                <div className="avatar" style={{ width: 44, height: 44, borderRadius: 999, fontSize: '0.95rem', fontWeight: 900, display: 'grid', placeItems: 'center', background: 'var(--bg-soft)', color: 'var(--muted)' }}>{(q.profesorNombre ?? 'P').slice(0,1)}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <strong style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{`${q.profesorNombre ?? ''} ${q.profesorApellido ?? ''}`.trim()}</strong>
+                    <small style={{ color: 'var(--muted)', marginLeft: 6 }}>{`${q.cursoEspecialidad ?? ''} ${q.cursoNivel ?? ''}° ${q.cursoSeccion ?? ''}`.trim()}</small>
+                    <div style={{ marginLeft: 'auto' }}><span className={`badge`} style={{ borderColor: 'color-mix(in srgb, var(--accent) 32%, var(--line))' }}>{'Pendiente'}</span></div>
+                  </div>
+                  <div style={{ color: 'var(--muted)', marginTop: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.motivo}</div>
+                  <div style={{ marginTop: 8 }}><small style={{ color: 'var(--muted)' }}>{new Date(q.creadaEn).toLocaleString('es-PY')} — cargada por {nombreCreador(q.creadaPor)}</small></div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </section>
   </div>;
 }
