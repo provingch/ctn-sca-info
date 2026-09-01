@@ -1,3 +1,8 @@
+/* Admin Quejas: form label and textarea enhancements */
+.form-grid textarea { width: 100%; min-height: 80px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); padding: 11px 12px; background: var(--paper-raised); color: var(--ink); resize: vertical; }
+.form-grid textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent); }
+.form-label { font-size: .75rem; color: var(--muted); font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+
 :root {
   color-scheme: light;
   font-family: Inter, Aptos, "Segoe UI", system-ui, sans-serif;
