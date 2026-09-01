@@ -110,7 +110,7 @@ public class AdminController {
                 if (byApellido != 0) return byApellido;
                 return Integer.compare(a.id(), b.id());
             });
-            List<Asignacion> asignacionesDb = actingSpecialtyId == null ? new AsignacionDao().findAll() : List.of();
+            List<Asignacion> asignacionesDb = actingSpecialtyId == null ? new AsignacionDao().findAll() : new AsignacionDao().findByEspecialidad(actingSpecialtyId);
             List<AssignmentItem> asignaciones = asignacionesDb.stream().map(a -> new AssignmentItem(a.getId(), a.getProfesorId(), a.getMateriaId(), a.getCursoId(), a.getProfesorNombre(), a.getMateriaNombre(), a.getCursoDescripcion())).toList();
             List<Alumno> alumnosDb = new AlumnoDao().findAll();
             if (actingSpecialtyId != null) {

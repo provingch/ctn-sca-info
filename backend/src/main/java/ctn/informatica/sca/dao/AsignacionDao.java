@@ -52,6 +52,44 @@ public class AsignacionDao extends conexion {
         return out;
     }
 
+        public List<Asignacion> findByEspecialidad(int especialidadId) throws SQLException {
+            String sql = "SELECT a.id, a.usuario_id AS profesor_id, a.materia_id, a.curso_base_id AS curso_id, "
+                    + "u.nombre AS profesor_nombre, u.apellido AS profesor_apellido, "
+                    + "m.nombre AS materia_nombre, e.id AS especialidad_id, e.nombre AS especialidad, cb.nivel, cb.seccion "
+                    + "FROM asignacion a "
+                    + "JOIN usuario u ON u.id = a.usuario_id "
+                    + "JOIN materia m ON m.id = a.materia_id "
+                    + "JOIN curso_base cb ON cb.id = a.curso_base_id "
+                    + "JOIN especialidad e ON e.id = cb.especialidad_id "
+                    + "WHERE cb.especialidad_id = ? "
+                    + "ORDER BY u.apellido, m.nombre, e.nombre, cb.nivel DESC, cb.seccion";
+            List<Asignacion> out = new ArrayList<>();
+            try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
+                ps.setInt(1, especialidadId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        Asignacion a = new Asignacion();
+                        a.setId(rs.getInt("id"));
+                        a.setProfesorId(rs.getInt("profesor_id"));
+                        a.setMateriaId(rs.getInt("materia_id"));
+                        a.setCursoId(rs.getInt("curso_id"));
+                        String profName = rs.getString("profesor_nombre");
+                        String profLast = rs.getString("profesor_apellido");
+                        a.setProfesorNombre((profLast == null ? "" : profLast) + (profName == null ? "" : (profName.isBlank() ? "" : (" " + profName))));
+                        a.setMateriaNombre(rs.getString("materia_nombre"));
+                        String especialidad = rs.getString("especialidad");
+                        int nivel = rs.getInt("nivel");
+                        String seccion = rs.getString("seccion");
+                        String cursoDesc = (especialidad == null ? "" : especialidad) + (seccion == null || seccion.isBlank() ? "" : (" " + seccion));
+                        a.setCursoDescripcion(cursoDesc);
+                        setCourseFields(a, rs.getInt("especialidad_id"), especialidad, nivel, seccion);
+                        out.add(a);
+                    }
+                }
+            }
+            return out;
+        }
+
     public Asignacion findById(int id) throws SQLException {
         String sql = "SELECT a.id, a.usuario_id AS profesor_id, a.materia_id, a.curso_base_id AS curso_id, "
                 + "u.nombre AS profesor_nombre, u.apellido AS profesor_apellido, "
