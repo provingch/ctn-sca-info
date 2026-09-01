@@ -525,7 +525,9 @@ public class PlanillaProcesoWorkbookBuilder {
         // If year area falls beyond targetLastCol, reposition it immediately after course block
         int newYearStart = yearOrigStart;
         int newYearEnd = yearOrigEnd;
-        if (newYearStart <= newCourseEnd) {
+        // Reposition year block so it sits immediately after the course block
+        // when it would otherwise be located beyond the real course end.
+        if (newYearStart != newCourseEnd + 1) {
             newYearStart = newCourseEnd + 1;
             int width = Math.max(4, yearOrigEnd - yearOrigStart + 1);
             newYearEnd = newYearStart + width - 1;
@@ -1109,10 +1111,29 @@ public class PlanillaProcesoWorkbookBuilder {
             }
         }
 
-        // Do not change column widths or hidden state: collapsing columns
-        // caused merged header areas to visually truncate in generated files.
-        // Leave column sizing as defined by the template or earlier logic so
-        // merged headers retain their intended width.
+        // Do not change column widths: collapsing columns caused merged
+        // header areas to visually truncate in generated files. However,
+        // as a safety net hide any trailing columns to the right of the
+        // allowed range so Excel doesn't show a long run of empty columns
+        // (they remain present but are hidden from view).
+        if (sheet instanceof XSSFSheet) {
+            XSSFSheet xssf = (XSSFSheet) sheet;
+            int lastCol = 0;
+            Row headerRow = sheet.getRow(MONTH_HEADER_ROW);
+            if (headerRow != null) {
+                short lc = headerRow.getLastCellNum();
+                if (lc > 0) lastCol = Math.max(lastCol, lc - 1);
+            }
+            // Provide a reasonable upper bound if headerRow is sparse
+            lastCol = Math.max(lastCol, lastAllowedColumn + 200);
+            for (int c = lastAllowedColumn + 1; c <= lastCol; c++) {
+                try {
+                    xssf.setColumnHidden(c, true);
+                } catch (Exception ignore) {
+                    // ignore any columns that cannot be hidden
+                }
+            }
+        }
     }
 
     private void insertSignatureImage(Sheet sheet, Cell targetCell, String firmaImagen) throws IOException {
