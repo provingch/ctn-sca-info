@@ -17,6 +17,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getPushSubscriptionStatus, removePushSubscription, savePushSubscription, sendPushTest, toPushPayload, urlBase64ToUint8Array } from '../../api/push';
 import { getPwaInstallSnapshot, promptPwaInstall, registerPwaServiceWorker, subscribePwaInstall } from '../../pwa/pwa';
 import useAccessibleDialog from '../../hooks/useAccessibleDialog';
+import { useAutoDismissStatus } from '../../hooks/useAutoDismissStatus';
 import { normalizeSpecialty } from '../../theme/theme';
 
 type ProfileTab = 'profile' | 'security' | 'subjects' | 'app' | 'activity';
@@ -25,7 +26,7 @@ const message = (error: unknown, fallback: string) => error instanceof ApiError 
 export default function ProfilePage() {
   const { refreshUserIdentity } = useAuth();
   const [data, setData] = useState<ProfileResponse | null>(null);
-  const [status, setStatus] = useState('');
+  const { status, setStatus } = useAutoDismissStatus('');
   const [tab, setTab] = useState<ProfileTab>('profile');
   const profilePageRef = useRef<HTMLDivElement>(null);
   const profileContentRef = useRef<HTMLDivElement>(null);

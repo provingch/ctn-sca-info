@@ -3,6 +3,7 @@ import { ApiError } from '../../api/client';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import * as planCurricularApi from '../../api/planCurricular';
 import useAccessibleDialog from '../../hooks/useAccessibleDialog';
+import { useAutoDismissStatus } from '../../hooks/useAutoDismissStatus';
 
 type AssignmentGroup = { id: number; nombre: string; asignaciones: planCurricularApi.AsignacionCompleta[] };
 
@@ -79,8 +80,8 @@ export default function PlanCurricularView() {
   const [errorPlanes, setErrorPlanes] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [uploadMessage, setUploadMessage] = useState('');
-  const [uploadError, setUploadError] = useState('');
+  const { status: uploadMessage, setStatus: setUploadMessage } = useAutoDismissStatus('');
+  const { status: uploadError, setStatus: setUploadError } = useAutoDismissStatus('', { autoDismiss: false });
   const [candidatas, setCandidatas] = useState<planCurricularApi.AsignacionCandidata[]>([]);
   const [candidataId, setCandidataId] = useState('');
   const [pendingFile, setPendingFile] = useState<File | null>(null);

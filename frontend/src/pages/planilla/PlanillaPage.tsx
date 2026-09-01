@@ -7,6 +7,7 @@ import ContentState from '../../components/ui/ContentState';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import { getPlanilla, resolvePlanilla, syncClassroom, confirmClassroomMapping, type PlanillaDetail } from '../../api/academics';
 import { ApiError, apiDownload } from '../../api/client';
+import { useAutoDismissStatus } from '../../hooks/useAutoDismissStatus';
 
 // Etiquetas de nota en orden descendente (5 -> 1), igual que el JSP legacy
 // (Planilla.jsp: chips grade-chip--five..one). "1" no tiene rango propio en
@@ -49,7 +50,7 @@ export default function PlanillaPage() {
   const navigate = useNavigate();
   const [data, setData] = useState<PlanillaDetail | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
-  const [status, setStatus] = useState('');
+  const { status, setStatus } = useAutoDismissStatus('');
   const [resolvedCourse, setResolvedCourse] = useState<{ googleCourseId?: string | null; classroomCourseMapped?: boolean; courseName?: string | null; courseSection?: string | null; courseAlternateLink?: string | null; message?: string } | null>(null);
   const [switchingEtapa, setSwitchingEtapa] = useState(false);
   const [syncingClassroom, setSyncingClassroom] = useState(false);

@@ -17,6 +17,7 @@ import SpecialtyIcon from '../../components/SpecialtyIcon';
 import SistemaEstadoPanel from './SistemaEstadoPanel';
 import SalasPanel from './SalasPanel';
 import AdminQuejasPanel from './AdminQuejasPanel';
+import { useAutoDismissStatus } from '../../hooks/useAutoDismissStatus';
 
 const modules = [
   { path: '/admin/materias', key: 'materias', title: 'Materias', detail: 'Catálogo, categorías y especialidades', globalOnly: true },
@@ -34,7 +35,7 @@ export default function AdminPage() {
   const { user, identityStatus, refreshUserIdentity } = useAuth();
   const selected = modules.find((module) => location.pathname === module.path || location.pathname.startsWith(`${module.path}/`)) ?? null;
   const [data, setData] = useState<AdminCatalog | null>(null);
-  const [status, setStatus] = useState('');
+  const { status, setStatus } = useAutoDismissStatus('');
 
   const load = useCallback(async () => {
     try {
