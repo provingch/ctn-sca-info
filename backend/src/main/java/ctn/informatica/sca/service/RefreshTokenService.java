@@ -46,7 +46,10 @@ public class RefreshTokenService {
         String newRaw = generateOpaqueToken();
         String newHash = sha256Hex(newRaw);
         Instant newExpiresAt = Instant.now().plus(REFRESH_TTL);
-        refreshTokenDao.rotate(oldHash, newHash, newExpiresAt, userAgent, ipAddress);
+        boolean rotated = refreshTokenDao.rotate(oldHash, newHash, newExpiresAt, userAgent, ipAddress);
+        if (!rotated) {
+            return null;
+        }
 
         return new RotationResult(newRaw, record.userId(), record.userLevel());
     }
