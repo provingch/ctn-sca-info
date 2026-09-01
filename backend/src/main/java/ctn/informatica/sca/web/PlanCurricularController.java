@@ -65,9 +65,23 @@ public class PlanCurricularController {
         return userDao.findById((int) userId);
     }
 
+    private boolean canReviewPlans(User user) {
+        return user != null && canReviewLevel(user.getLevel());
+    }
+
+    static boolean canReviewLevel(int level) {
+        return level == 2 || level == 3;
+    }
+
+    private boolean isProfessor(User user) {
+        return user != null && user.getLevel() == 1;
+    }
+
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> upload(@RequestParam(value = "asignacionId", required = false) Integer asignacionId,
             @RequestParam("file") MultipartFile file) throws Exception {
+        User currentUser = getCurrentUser();
+        if (!isProfessor(currentUser)) return ResponseEntity.status(403).build();
         if (file == null || file.isEmpty()) return ResponseEntity.badRequest().body("Archivo requerido");
         int profesorId = (int) getCurrentUserId();
         PlanCurricularDto dto;
@@ -145,6 +159,7 @@ public class PlanCurricularController {
 
     @GetMapping("/plantilla")
     public ResponseEntity<byte[]> plantilla(@RequestParam("asignacionId") int asignacionId, @RequestParam(value = "etapa", required = false) String etapa) throws Exception {
+        if (!isProfessor(getCurrentUser())) return ResponseEntity.status(403).build();
         long userId = getCurrentUserId();
         var asignacion = asignacionDao.findById(asignacionId);
         if (asignacion == null) return ResponseEntity.notFound().build();
@@ -158,6 +173,7 @@ public class PlanCurricularController {
 
     @GetMapping("/mi-plan")
     public ResponseEntity<?> miPlan(@RequestParam("asignacionId") int asignacionId, @RequestParam("etapa") String etapa, @RequestParam("anio") int anio) throws Exception {
+        if (!isProfessor(getCurrentUser())) return ResponseEntity.status(403).build();
         long userId = getCurrentUserId();
         var asignacion = asignacionDao.findById(asignacionId);
         if (asignacion == null) return ResponseEntity.badRequest().body("Asignación inexistente");
@@ -172,6 +188,7 @@ public class PlanCurricularController {
 
     @GetMapping("/asignaciones-disponibles")
     public ResponseEntity<?> asignacionesDisponibles(@RequestParam("cursoId") int cursoId) throws Exception {
+        if (!isProfessor(getCurrentUser())) return ResponseEntity.status(403).build();
         long userId = getCurrentUserId();
         var list = asignacionDao.findByProfesorAndCurso((int)userId, cursoId);
         return ResponseEntity.ok(list);
@@ -197,8 +214,7 @@ public class PlanCurricularController {
     public ResponseEntity<?> pendientes() throws Exception {
         User user = getCurrentUser();
         if (user == null) return ResponseEntity.status(401).build();
-        // Only levels 2 (evaluador) and 3 (admin) can access this
-        if (user.getLevel() < 2) return ResponseEntity.status(403).build();
+        if (!canReviewPlans(user)) return ResponseEntity.status(403).build();
         
         List<PlanCurricularDto> plans = dao.findPendientes();
         return ResponseEntity.ok(plans);
@@ -208,7 +224,7 @@ public class PlanCurricularController {
     public ResponseEntity<?> aprobados() throws Exception {
         User user = getCurrentUser();
         if (user == null) return ResponseEntity.status(401).build();
-        if (user.getLevel() < 2) return ResponseEntity.status(403).build();
+        if (!canReviewPlans(user)) return ResponseEntity.status(403).build();
 
         return ResponseEntity.ok(dao.findAprobados());
     }
@@ -217,7 +233,7 @@ public class PlanCurricularController {
     public ResponseEntity<?> verificacionesDudosas() throws Exception {
         User user = getCurrentUser();
         if (user == null) return ResponseEntity.status(401).build();
-        if (user.getLevel() < 2) return ResponseEntity.status(403).build();
+        if (!canReviewPlans(user)) return ResponseEntity.status(403).build();
         var list = rasgoPlanillaDao.listarVerificacionesDudosas();
         return ResponseEntity.ok(list);
     }
@@ -226,7 +242,7 @@ public class PlanCurricularController {
     public ResponseEntity<?> confirmarVerificacion(@PathVariable int planillaRasgoId) throws Exception {
         User user = getCurrentUser();
         if (user == null) return ResponseEntity.status(401).build();
-        if (user.getLevel() < 2) return ResponseEntity.status(403).build();
+        if (!canReviewPlans(user)) return ResponseEntity.status(403).build();
         Integer temaPlanId = rasgoPlanillaDao.findTemaPlanIdByPlanillaId(planillaRasgoId);
         // marcar cubierto si hay tema candidato
         if (temaPlanId != null) dao.marcarCubierto(temaPlanId, planillaRasgoId);
@@ -238,7 +254,7 @@ public class PlanCurricularController {
     public ResponseEntity<?> descartarVerificacion(@PathVariable int planillaRasgoId) throws Exception {
         User user = getCurrentUser();
         if (user == null) return ResponseEntity.status(401).build();
-        if (user.getLevel() < 2) return ResponseEntity.status(403).build();
+        if (!canReviewPlans(user)) return ResponseEntity.status(403).build();
         Integer temaPlanId = rasgoPlanillaDao.findTemaPlanIdByPlanillaId(planillaRasgoId);
         // no tocar tema_plan_curricular (permanece PENDIENTE)
         rasgoPlanillaDao.actualizarVerificacionPlanilla(planillaRasgoId, "NO_COINCIDE", temaPlanId);
@@ -250,7 +266,8 @@ public class PlanCurricularController {
         User user = getCurrentUser();
         if (user == null) return ResponseEntity.status(401).build();
         Integer ownerId = dao.findProfesorIdByPlanId(id);
-        if (user.getLevel() < 2 && (ownerId == null || ownerId != (int) getCurrentUserId())) {
+        boolean ownsPlanAsProfessor = isProfessor(user) && ownerId != null && ownerId == (int) getCurrentUserId();
+        if (!canReviewPlans(user) && !ownsPlanAsProfessor) {
             return ResponseEntity.status(403).build();
         }
         
@@ -264,7 +281,8 @@ public class PlanCurricularController {
         User user = getCurrentUser();
         if (user == null) return ResponseEntity.status(401).build();
         Integer ownerId = dao.findProfesorIdByPlanId(id);
-        if (user.getLevel() < 2 && (ownerId == null || ownerId != (int) getCurrentUserId())) {
+        boolean ownsPlanAsProfessor = isProfessor(user) && ownerId != null && ownerId == (int) getCurrentUserId();
+        if (!canReviewPlans(user) && !ownsPlanAsProfessor) {
             return ResponseEntity.status(403).build();
         }
         
@@ -281,8 +299,7 @@ public class PlanCurricularController {
     public ResponseEntity<?> aprobar(@PathVariable int id) throws Exception {
         User user = getCurrentUser();
         if (user == null) return ResponseEntity.status(401).build();
-        // Only levels 2 (evaluador) and 3 (admin) can access this
-        if (user.getLevel() < 2) return ResponseEntity.status(403).build();
+        if (!canReviewPlans(user)) return ResponseEntity.status(403).build();
         
         dao.aprobar(id, (int) getCurrentUserId());
         try {
@@ -317,8 +334,7 @@ public class PlanCurricularController {
     public ResponseEntity<?> rechazar(@PathVariable int id, @RequestParam("observaciones") String observaciones) throws Exception {
         User user = getCurrentUser();
         if (user == null) return ResponseEntity.status(401).build();
-        // Only levels 2 (evaluador) and 3 (admin) can access this
-        if (user.getLevel() < 2) return ResponseEntity.status(403).build();
+        if (!canReviewPlans(user)) return ResponseEntity.status(403).build();
         
         if (observaciones == null || observaciones.isBlank()) return ResponseEntity.badRequest().body("Observaciones requeridas");
         dao.rechazar(id, (int) getCurrentUserId(), observaciones);

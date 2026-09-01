@@ -939,3 +939,12 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
   margin: 0;
 }
 .grade-table input[type=number] { -moz-appearance: textfield; }
+/* Evaluación: panel maestro/detalle adaptable sin depender de estilos inline. */
+.evaluation-split-layout { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(0, 2fr); gap: 20px; }
+.evaluation-split-layout.equal-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.decision-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 760px) {
+  .evaluation-split-layout,
+  .evaluation-split-layout.equal-columns { grid-template-columns: minmax(0, 1fr); }
+  .decision-actions { grid-template-columns: minmax(0, 1fr); }
+}

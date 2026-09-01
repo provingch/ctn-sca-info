@@ -19,8 +19,8 @@ export default function GoogleCallbackPage() {
         setStatus(res?.message || 'Cuenta vinculada correctamente.');
         // después de un corto delay, volver al perfil
         setTimeout(() => navigate('/profile', { replace: true }), 1200);
-      } catch (err: any) {
-        setStatus(err?.message || 'Error al completar la conexión con Google.');
+      } catch (err: unknown) {
+        setStatus(err instanceof Error ? err.message : 'Error al completar la conexión con Google.');
       }
     })();
   }, [navigate]);

@@ -124,7 +124,7 @@ public class AuthController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no válido para refresh token");
             }
 
-            String accessToken = jwtService.generateAccessToken((long) user.getId(), user.getLevel());
+            String accessToken = jwtService.generateAccessToken((long) user.getId(), user.getLevel(), user.getSessionVersion());
             setRefreshCookie(response, rotated.refreshToken(), request.isSecure(), refreshCookie.persistent());
             return ResponseEntity.ok(new RefreshResponse(accessToken, user.getLevel()));
         } catch (ResponseStatusException ex) {

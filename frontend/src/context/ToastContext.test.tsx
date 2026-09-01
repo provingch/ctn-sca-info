@@ -1,7 +1,8 @@
 // React import not required in modern JSX runtimes
 import { render, screen, act } from '@testing-library/react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { ToastProvider, useToast } from './ToastContext';
+import { ToastProvider } from './ToastContext';
+import { useToast } from './toast';
 
 function Trigger({ message, opts }: { message: string; opts?: any }) {
   const { showToast } = useToast();

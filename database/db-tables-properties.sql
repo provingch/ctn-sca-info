@@ -71,6 +71,7 @@ CREATE TABLE usuario (
     -- `nivel` es la única fuente de verdad para el rol del usuario
     nivel TINYINT NOT NULL DEFAULT 0,
     activity_log_path VARCHAR(255) NULL,
+    session_version INT NOT NULL DEFAULT 0,
     especialidad_id INT NULL,
     PRIMARY KEY (id),
     CONSTRAINT fk_usuario_especialidad FOREIGN KEY (especialidad_id)

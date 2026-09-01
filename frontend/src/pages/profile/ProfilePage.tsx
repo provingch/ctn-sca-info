@@ -17,17 +17,19 @@ import { useAuth } from '../../context/AuthContext';
 import { getPushSubscriptionStatus, removePushSubscription, savePushSubscription, sendPushTest, toPushPayload, urlBase64ToUint8Array } from '../../api/push';
 import { getPwaInstallSnapshot, promptPwaInstall, registerPwaServiceWorker, subscribePwaInstall } from '../../pwa/pwa';
 import useAccessibleDialog from '../../hooks/useAccessibleDialog';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../context/toast';
 import { normalizeSpecialty } from '../../theme/theme';
+import { useNavigate } from 'react-router-dom';
 
 type ProfileTab = 'profile' | 'security' | 'subjects' | 'app' | 'activity';
 const message = (error: unknown, fallback: string) => error instanceof ApiError ? error.message : fallback;
 
 export default function ProfilePage() {
-  const { refreshUserIdentity } = useAuth();
+  const { refreshUserIdentity, logout } = useAuth();
+  const navigate = useNavigate();
   const [data, setData] = useState<ProfileResponse | null>(null);
   const { showToast } = useToast();
-  const setStatus = (text: string) => { if (text) showToast(text); };
+  const setStatus = useCallback((text: string) => { if (text) showToast(text); }, [showToast]);
   const [tab, setTab] = useState<ProfileTab>('profile');
   const profilePageRef = useRef<HTMLDivElement>(null);
   const profileContentRef = useRef<HTMLDivElement>(null);
@@ -49,6 +51,11 @@ export default function ProfilePage() {
     }
   }, [setStatus]);
   useEffect(() => { void load(); }, [load]);
+  const finishPasswordChange = useCallback(async () => {
+    showToast('Contraseña actualizada. Se cerraron las sesiones activas.', { tone: 'success' });
+    await logout();
+    navigate('/login', { replace: true });
+  }, [logout, navigate, showToast]);
   // ResizeObserver and dynamic --profile-identity-height removed: obsolete with fixed flex layout
 
   if (!data) return <AppShell><ContentState tone={'loading'} title={'Cargando perfil…'} detail={'Estamos preparando los datos de tu cuenta.'} /></AppShell>;
@@ -70,7 +77,7 @@ export default function ProfilePage() {
         <div className="profile-content" ref={profileContentRef}>
           {/* toasts shown globally via ToastProvider */}
           {tab === 'profile' && <ProfileForm data={data} done={finish} setStatus={setStatus} />}
-          {tab === 'security' && <Security data={data} done={finish} />}
+          {tab === 'security' && <Security data={data} done={finish} onPasswordChanged={finishPasswordChange} />}
           {tab === 'subjects' && <Subjects data={data} />}
           {tab === 'app' && <AppStatus data={data} />}
           {tab === 'activity' && <Activity entries={data.activityLog} />}
@@ -520,7 +527,7 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
           try {
             const res = await getGoogleAuthorizeUrl();
             if (res?.url) window.location.href = res.url;
-          } catch (err: any) {
+          } catch (err: unknown) {
             setStatus(err instanceof ApiError ? err.message : 'No se pudo iniciar el flujo de Google.');
           }
         }}>Conectar con Google</button>}
@@ -601,14 +608,14 @@ function TOTPSetupCard({ provisioningUri, secret, code, onCodeChange, onConfirm 
   </>;
 }
 
-function Security({ data, done }: { data: ProfileResponse; done: (text: string) => Promise<void> }) {
+function Security({ data, done, onPasswordChanged }: { data: ProfileResponse; done: (text: string) => Promise<void>; onPasswordChanged: () => Promise<void> }) {
   const [passwords, setPasswords] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [code, setCode] = useState('');
-  async function password(e: FormEvent) { e.preventDefault(); try { await changePassword(passwords); setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' }); await done('Contraseña actualizada.'); } catch (error) { setStatusWithFallback(error, done, 'No se pudo actualizar la contraseña.'); } }
+  async function password(e: FormEvent) { e.preventDefault(); try { await changePassword(passwords); setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' }); await onPasswordChanged(); } catch (error) { setStatusWithFallback(error, done, 'No se pudo actualizar la contraseña.'); } }
   async function start2fa() { try { await prepareTotp(); await done('Clave de configuración generada.'); } catch (error) { setStatusWithFallback(error, done, 'No se pudo preparar 2FA.'); } }
   async function verify2fa() { try { await confirmTotp(code); await done('Verificación en dos pasos activada.'); } catch (error) { setStatusWithFallback(error, done, 'Código inválido.'); } }
   async function turnOff() { try { await disableTotp(); await done('Verificación en dos pasos desactivada.'); } catch (error) { setStatusWithFallback(error, done, 'No se pudo desactivar 2FA.'); } }
-  return <div className="two-column"><form className="panel form-grid" onSubmit={password}><SectionHeading number="01" title="Cambiar contraseña" detail="Usá al menos seis caracteres." /><label>Contraseña actual<PasswordInput required value={passwords.currentPassword} onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })} /></label><label>Nueva contraseña<PasswordInput required minLength={6} value={passwords.newPassword} onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })} /></label><label>Confirmar nueva contraseña<PasswordInput required value={passwords.confirmPassword} onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })} /></label><button className="button">Actualizar contraseña</button></form><section className="panel form-grid security-2fa-panel"><SectionHeading number="02" title="Verificación en dos pasos" detail="Protegé el acceso con tu app autenticadora." /><div className="security-2fa-status"><ConnectionState active={data.totpEnabled} title={data.totpEnabled ? 'Activa' : 'Inactiva'} /></div>{data.pendingTotpSecret && <TOTPSetupCard provisioningUri={data.totpProvisioningUri} secret={data.pendingTotpSecret} code={code} onCodeChange={setCode} onConfirm={verify2fa} />}{data.totpEnabled ? <button className="button danger security-2fa-action" type="button" onClick={turnOff}>Desactivar 2FA</button> : !data.pendingTotpSecret && <button className="button secondary security-2fa-action" type="button" onClick={start2fa}>Configurar 2FA</button>}</section></div>;
+  return <div className="two-column"><form className="panel form-grid" onSubmit={password}><SectionHeading number="01" title="Cambiar contraseña" detail="Usá al menos seis caracteres. Al actualizarla se cerrarán todas las sesiones." /><label>Contraseña actual<PasswordInput required autoComplete="current-password" value={passwords.currentPassword} onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })} /></label><label>Nueva contraseña<PasswordInput required minLength={6} autoComplete="new-password" value={passwords.newPassword} onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })} /></label><label>Confirmar nueva contraseña<PasswordInput required autoComplete="new-password" value={passwords.confirmPassword} onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })} /></label><button className="button">Actualizar contraseña</button></form><section className="panel form-grid security-2fa-panel"><SectionHeading number="02" title="Verificación en dos pasos" detail="Protegé el acceso con tu app autenticadora." /><div className="security-2fa-status"><ConnectionState active={data.totpEnabled} title={data.totpEnabled ? 'Activa' : 'Inactiva'} /></div>{data.pendingTotpSecret && <TOTPSetupCard provisioningUri={data.totpProvisioningUri} secret={data.pendingTotpSecret} code={code} onCodeChange={setCode} onConfirm={verify2fa} />}{data.totpEnabled ? <button className="button danger security-2fa-action" type="button" onClick={turnOff}>Desactivar 2FA</button> : !data.pendingTotpSecret && <button className="button secondary security-2fa-action" type="button" onClick={start2fa}>Configurar 2FA</button>}</section></div>;
 }
 
 function AppStatus({ data }: { data: ProfileResponse }) {

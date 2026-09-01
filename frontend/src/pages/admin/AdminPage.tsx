@@ -18,7 +18,7 @@ import { SpecialtyDecorative } from '../../utils/specialtyIcons';
 import SistemaEstadoPanel from './SistemaEstadoPanel';
 import SalasPanel from './SalasPanel';
 import AdminQuejasPanel from './AdminQuejasPanel';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../context/toast';
 
 const modules = [
   { path: '/admin/materias', key: 'materias', title: 'Materias', detail: 'Catálogo, categorías y especialidades', globalOnly: true },
@@ -37,7 +37,7 @@ export default function AdminPage() {
   const selected = modules.find((module) => location.pathname === module.path || location.pathname.startsWith(`${module.path}/`)) ?? null;
   const [data, setData] = useState<AdminCatalog | null>(null);
   const { showToast } = useToast();
-  const setStatus = (text: string) => { if (text) showToast(text); };
+  const setStatus = useCallback((text: string) => { if (text) showToast(text); }, [showToast]);
 
   const load = useCallback(async () => {
     try {

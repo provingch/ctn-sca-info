@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react';
 import { ApiError } from '../../api/client';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../context/toast';
+import AnimatedSelect from '../../components/AnimatedSelect';
 import * as evaluacionApi from '../../api/evaluacion';
 import * as planCurricularApi from '../../api/planCurricular';
+import { formatSqlDateTime } from '../../utils/date';
 
 type Tab = 'planes' | 'incumplimientos';
 // Local status/state removed; toasts are used instead
 
 function formatDate(value?: string): string {
   if (!value) return 'Pendiente';
-  const date = new Date(value.replace(' ', 'T'));
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString('es-PY', { dateStyle: 'short', timeStyle: 'short' });
+  return formatSqlDateTime(value, { dateStyle: 'short', timeStyle: 'short' }, 'Pendiente');
 }
 
 function professorName(item: evaluacionApi.IncumplimientoPendiente): string {
@@ -48,33 +49,41 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
   }, [initialTab]);
 
   useEffect(() => {
+    let active = true;
     Promise.all([planCurricularApi.getAprobados(), evaluacionApi.getIncumplimientos()])
       .then(([approvedPlans, pendingIncumplimientos]) => {
-        setPlanes(approvedPlans);
-        setIncumplimientos(pendingIncumplimientos);
+        if (active) {
+          setPlanes(approvedPlans);
+          setIncumplimientos(pendingIncumplimientos);
+        }
       })
       .catch((error) => {
         const msg = messageFor(error, 'No se pudo cargar el seguimiento de profesores.');
-        showToast(msg, { tone: 'error' });
+        if (active) showToast(msg, { tone: 'error' });
       })
-      .finally(() => setLoading(false));
-  }, []);
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [showToast]);
 
   useEffect(() => {
     if (selectedPlanId == null) {
       setSelectedPlan(null);
       return;
     }
+    let active = true;
     setLoadingDetail(true);
     planCurricularApi.getPlanDetalle(selectedPlanId)
-      .then(setSelectedPlan)
+      .then((plan) => { if (active) setSelectedPlan(plan); })
       .catch((error) => {
-        setSelectedPlan(null);
-        const msg = messageFor(error, 'No se pudo cargar el detalle del plan.');
-        showToast(msg, { tone: 'error' });
+        if (active) {
+          setSelectedPlan(null);
+          const msg = messageFor(error, 'No se pudo cargar el detalle del plan.');
+          showToast(msg, { tone: 'error' });
+        }
       })
-      .finally(() => setLoadingDetail(false));
-  }, [selectedPlanId]);
+      .finally(() => { if (active) setLoadingDetail(false); });
+    return () => { active = false; };
+  }, [selectedPlanId, showToast]);
 
   function selectIncumplimiento(id: number) {
     setSelectedIncumplimientoId(id);
@@ -85,6 +94,16 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
 
   async function handleResolver() {
     if (selectedIncumplimientoId == null) return;
+    if (estadoResolucion === 'RECHAZADO') {
+      if (!suspensionDesde || !suspensionHasta) {
+        showToast('Indicá el inicio y el fin de la suspensión.', { tone: 'error' });
+        return;
+      }
+      if (new Date(suspensionHasta).getTime() <= new Date(suspensionDesde).getTime()) {
+        showToast('El fin de la suspensión debe ser posterior al inicio.', { tone: 'error' });
+        return;
+      }
+    }
     setResolving(true);
     try {
       await evaluacionApi.resolverIncumplimiento(selectedIncumplimientoId, {
@@ -110,7 +129,7 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
       <button type="button" className={tab === 'incumplimientos' ? 'active' : ''} onClick={() => setTab('incumplimientos')}>Incumplimientos ({incumplimientos.length})</button>
     </div>
 
-    {tab === 'planes' && <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 20 }}>
+    {tab === 'planes' && <div className="evaluation-split-layout">
       <div className="panel">
         <h3>Planes aprobados ({planes.length})</h3>
         {loading ? <p>Cargando planes...</p> : planes.length === 0 ? <p style={{ color: 'var(--muted)' }}>No hay planes aprobados para seguimiento.</p> : <div style={{ display: 'grid', gap: 8 }}>
@@ -136,7 +155,7 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
       </div>
     </div>}
 
-    {tab === 'incumplimientos' && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+    {tab === 'incumplimientos' && <div className="evaluation-split-layout equal-columns">
       <div className="panel">
         <h3>Casos pendientes ({incumplimientos.length})</h3>
         {loading ? <p>Cargando incumplimientos...</p> : incumplimientos.length === 0 ? <p style={{ color: 'var(--muted)' }}>No hay incumplimientos pendientes de resolución.</p> : <div style={{ display: 'grid', gap: 8 }}>
@@ -154,16 +173,18 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
           <p className="lead">{selectedIncumplimiento.descripcion}</p>
           <div className="form-grid">
             <label>Resolución
-              <select value={estadoResolucion} onChange={(event) => setEstadoResolucion(event.target.value as 'PERMITIDO' | 'RECHAZADO')}>
-                <option value="PERMITIDO">Permitido</option>
-                <option value="RECHAZADO">Rechazado</option>
-              </select>
+              <AnimatedSelect
+                ariaLabel="Resolución del incumplimiento"
+                value={estadoResolucion}
+                onChange={(value) => setEstadoResolucion(value as 'PERMITIDO' | 'RECHAZADO')}
+                options={[{ value: 'PERMITIDO', label: 'Permitido' }, { value: 'RECHAZADO', label: 'Rechazado' }]}
+              />
             </label>
             {estadoResolucion === 'RECHAZADO' && <>
               <label>Suspensión desde<input type="datetime-local" value={suspensionDesde} onChange={(event) => setSuspensionDesde(event.target.value)} /></label>
               <label>Suspensión hasta<input type="datetime-local" value={suspensionHasta} onChange={(event) => setSuspensionHasta(event.target.value)} /></label>
             </>}
-            <button type="button" className="button" disabled={resolving} onClick={() => void handleResolver()}>{resolving ? 'Resolviendo...' : 'Resolver incumplimiento'}</button>
+            <button type="button" className="button" disabled={resolving || (estadoResolucion === 'RECHAZADO' && (!suspensionDesde || !suspensionHasta))} onClick={() => void handleResolver()}>{resolving ? 'Resolviendo...' : 'Resolver incumplimiento'}</button>
           </div>
         </>}
       </div>

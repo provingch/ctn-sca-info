@@ -1,4 +1,5 @@
 import type { NotificacionItem } from '../api/notificaciones';
+import { formatSqlDateTime } from '../utils/date';
 
 function normalized(value?: string | null): string {
   return value?.trim().toLocaleUpperCase('es') ?? '';
@@ -21,9 +22,5 @@ export function notificationDestination(notification: NotificacionItem, userLeve
 }
 
 export function formatNotificationDate(value?: string | null): string {
-  if (!value) return 'Fecha no disponible';
-  const normalizedValue = value.includes(' ') && !value.includes('T') ? value.replace(' ', 'T') : value;
-  const date = new Date(normalizedValue);
-  if (Number.isNaN(date.getTime())) return value || 'Fecha no disponible';
-  return date.toLocaleString('es-PY', { dateStyle: 'short', timeStyle: 'short' });
+  return formatSqlDateTime(value);
 }

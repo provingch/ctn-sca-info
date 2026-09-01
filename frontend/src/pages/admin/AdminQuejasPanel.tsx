@@ -4,6 +4,7 @@ import { ApiError } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import type { AdminCatalog } from '../../api/admin';
 import { createQueja, getAdminQuejas, type QuejaItem } from '../../api/quejas';
+import { formatSqlDateTime } from '../../utils/date';
 
 export default function AdminQuejasPanel({ data, reload, status }: { data: AdminCatalog; reload: () => Promise<void>; status: (s: string) => void }) {
   const [cursoId, setCursoId] = useState<number | ''>('');
@@ -113,7 +114,7 @@ export default function AdminQuejasPanel({ data, reload, status }: { data: Admin
                     <div style={{ marginLeft: 'auto' }}><span className={`badge`} style={{ borderColor: 'color-mix(in srgb, var(--accent) 32%, var(--line))' }}>{'Pendiente'}</span></div>
                   </div>
                   <div style={{ color: 'var(--muted)', marginTop: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.motivo}</div>
-                  <div style={{ marginTop: 8 }}><small style={{ color: 'var(--muted)' }}>{new Date(q.creadaEn).toLocaleString('es-PY')} — cargada por {nombreCreador(q.creadaPor)}</small></div>
+                  <div style={{ marginTop: 8 }}><small style={{ color: 'var(--muted)' }}>{formatSqlDateTime(q.creadaEn)} — cargada por {nombreCreador(q.creadaPor)}</small></div>
                 </div>
               </li>
             ))}

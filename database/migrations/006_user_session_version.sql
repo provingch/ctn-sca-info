@@ -1,0 +1,2 @@
+ALTER TABLE usuario
+    ADD COLUMN IF NOT EXISTS session_version INT NOT NULL DEFAULT 0;

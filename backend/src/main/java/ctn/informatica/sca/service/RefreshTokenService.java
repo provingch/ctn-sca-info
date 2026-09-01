@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
@@ -60,6 +61,10 @@ public class RefreshTokenService {
         }
         String hash = sha256Hex(rawToken.trim());
         refreshTokenDao.revoke(hash);
+    }
+
+    public int revokeAllForUser(int userId) throws SQLException {
+        return refreshTokenDao.revokeAllByUserId(userId);
     }
 
     private String generateOpaqueToken() {
