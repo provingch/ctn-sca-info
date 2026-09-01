@@ -201,6 +201,8 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 
 .app-footer-brand { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; }
 .app-footer .footer-mark { display: inline-grid; place-items: center; width: 36px; height: 36px; background: transparent; border-radius: 6px; font-weight: 900; color: var(--accent); font-size: .95rem; }
+.footer-institutional-logo { width: 36px; height: 36px; object-fit: contain; border-radius: 6px; }
+.app-footer .app-footer-inner span small { display: none; }
 .app-footer .app-footer-inner a { color: var(--muted); }
 
 .panel, .nav-card, .metric, .choice-grid button { border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); box-shadow: var(--shadow-sm); color: var(--ink); }
