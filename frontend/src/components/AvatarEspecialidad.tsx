@@ -2,9 +2,10 @@ import React from 'react';
 import ScaLogo from './ScaLogo';
 import { iconUrlForSpecialtyName } from '../utils/specialtyIconData';
 
-export default function AvatarEspecialidad({ name, size = 40, className = '' }: { name?: string | null; size?: number; className?: string }) {
+export default function AvatarEspecialidad({ name, size = '100%', className = '' }: { name?: string | null; size?: number | string; className?: string }) {
   const url = iconUrlForSpecialtyName(name);
-  const style: React.CSSProperties = { width: size, height: size, display: 'inline-grid', placeItems: 'center', overflow: 'hidden' };
+  const dimension: number | string = typeof size === 'number' ? size : size;
+  const style: React.CSSProperties = { width: dimension, height: dimension, display: 'inline-grid', placeItems: 'center', overflow: 'hidden' };
   return (
     <span className={`avatar-specialty ${className}`} style={style} aria-hidden={!name} title={name ?? 'Especialidad'}>
       {url ? (
