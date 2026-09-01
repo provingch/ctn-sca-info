@@ -247,6 +247,12 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .content-state-copy h2 { margin: 0; font-size: 1.18rem; }
 .content-state-copy p { max-width: 520px; margin: 7px 0 0; color: var(--muted); line-height: 1.55; }
 .content-state-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 9px; margin-top: 4px; }
+
+/* Decorative specialty image used in Admin panel header */
+.admin-panel-decorative-left { position: absolute; left: 24px; top: 36px; opacity: .08; pointer-events: none; width: 160px; height: 160px; display: grid; place-items: center; }
+.admin-panel-decorative-left img.specialty-decorative { width: 140px; height: 140px; object-fit: contain; }
+
+.navbar-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .content-state--compact { min-height: 136px; margin: 0; padding: 24px; background: var(--bg-soft); box-shadow: none; }
 .content-state--compact .content-state-icon { width: 34px; height: 34px; border-radius: 10px; }
 .content-state--error { border-color: color-mix(in srgb, var(--danger) 42%, var(--line)); }

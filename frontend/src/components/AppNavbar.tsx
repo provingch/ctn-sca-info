@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { getRoleNavigation, type NavigationItem } from '../config/navigation';
 import CtnLogo from './CtnLogo';
 import ThemeToggle from './ThemeToggle';
+import { SpecialtyAvatar } from '../utils/specialtyIcons';
 import { formatNotificationDate, notificationDestination } from './notificationUtils';
 
 type NotificationStatus = 'idle' | 'loading' | 'ready' | 'error';
@@ -199,7 +200,7 @@ export default function AppNavbar() {
         </div>
         <div className="navbar-user-menu">
           <button className="navbar-user-trigger" type="button" aria-haspopup="menu" aria-expanded={userMenuOpen} onClick={() => { setNotifOpen(false); setUserMenuOpen((open) => !open); }}>
-            {user?.fotoPerfil ? <img className="navbar-avatar" src={user.fotoPerfil} alt="" /> : <span className="navbar-avatar" aria-hidden="true">{initials}</span>}
+            {user?.fotoPerfil ? <img className="navbar-avatar" src={user.fotoPerfil} alt="" /> : (user?.especialidadNombre ? <span className="navbar-avatar" aria-hidden="true"><SpecialtyAvatar name={user.especialidadNombre} size={40} /></span> : <span className="navbar-avatar" aria-hidden="true">{initials}</span>)}
             <span className="navbar-user-copy"><strong>{displayName}</strong><small>{config.roleLabel}</small></span>
             <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m6 8 4 4 4-4" /></svg>
           </button>
