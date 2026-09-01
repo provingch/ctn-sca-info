@@ -14,6 +14,7 @@ import AsignacionesPanel from './AsignacionesPanel';
 import AlumnosPanel from './AlumnosPanel';
 import HorariosPanel from './HorariosPanel';
 import SpecialtyIcon from '../../components/SpecialtyIcon';
+import { SpecialtyDecorative } from '../../utils/specialtyIcons';
 import SistemaEstadoPanel from './SistemaEstadoPanel';
 import SalasPanel from './SalasPanel';
 import AdminQuejasPanel from './AdminQuejasPanel';
@@ -82,7 +83,10 @@ export default function AdminPage() {
         </section>}
       </div>
     ) : (
-      <AdminModule module={selected} data={data} reload={load} status={setStatus} isGlobalAdmin={!isScopedAdmin} />
+      <div style={{ position: 'relative' }}>
+        {isScopedAdmin && <div className="admin-panel-decorative-left"><SpecialtyDecorative name={scopeName ?? undefined} /></div>}
+        <AdminModule module={selected} data={data} reload={load} status={setStatus} isGlobalAdmin={!isScopedAdmin} />
+      </div>
     )}
 
   </AppShell>;
