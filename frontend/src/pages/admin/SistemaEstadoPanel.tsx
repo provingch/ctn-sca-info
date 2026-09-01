@@ -3,11 +3,12 @@ import { ApiError } from '../../api/client';
 import { getSistemaEstado, type SistemaEstadoResponse } from '../../api/admin';
 import ConnectionState from '../../components/ui/ConnectionState';
 import ContentState from '../../components/ui/ContentState';
+import { useAutoDismissStatus } from '../../hooks/useAutoDismissStatus';
 import { formatBytes, formatRelativeDate } from './adminFormatters';
 
 export default function SistemaEstadoPanel() {
   const [data, setData] = useState<SistemaEstadoResponse | null>(null);
-  const [error, setError] = useState('');
+  const { status: error, setStatus: setError } = useAutoDismissStatus('', { autoDismiss: false });
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {

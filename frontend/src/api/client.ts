@@ -35,6 +35,28 @@ export function setOnAuthExpired(handler: (() => void) | null): void {
 
 const API_BASE = ''; // same-origin: '' + '/api/...' resuelve contra el propio host
 
+export function extractErrorMessage(body: unknown, fallback: string, path?: string): string {
+  if (typeof body === 'string' && body.trim().length > 0) {
+    return body;
+  }
+
+  if (body && typeof body === 'object') {
+    const candidate = body as Record<string, unknown>;
+    if (typeof candidate.message === 'string' && candidate.message.trim().length > 0) {
+      return candidate.message;
+    }
+    if (typeof candidate.error === 'string' && candidate.error.trim().length > 0) {
+      return candidate.error;
+    }
+  }
+
+  if (path) {
+    return `Error ${fallback} en ${path}`;
+  }
+
+  return fallback;
+}
+
 interface RequestOptions extends Omit<RequestInit, 'body'> {
   body?: unknown;
   /** Si es false, no intenta refresh automático en un 401 (usado por /auth/refresh mismo). */
@@ -137,10 +159,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
   if (!response.ok) {
     const body = await parseBody(response);
-    const message =
-      typeof body === 'string' && body.length > 0
-        ? body
-        : `Error ${response.status} en ${path}`;
+    const message = extractErrorMessage(body, `${response.status}`, path);
     throw new ApiError(response.status, message, body);
   }
 
@@ -180,7 +199,7 @@ export async function apiDownload(path: string, fallbackFilename = 'download.bin
 
   if (!response.ok) {
     const body = await parseBody(response);
-    const message = typeof body === 'string' && body.length > 0 ? body : `Error ${response.status} en ${path}`;
+    const message = extractErrorMessage(body, `${response.status}`, path);
     throw new ApiError(response.status, message, body);
   }
 
