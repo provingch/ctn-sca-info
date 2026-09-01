@@ -1,5 +1,6 @@
 package ctn.informatica.sca.controller;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -365,7 +366,10 @@ public class ProfileController {
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al actualizar la contraseña.");
             }
             RememberMeTokenStore.invalidateUserTokens(user.getId());
-        } catch (SQLException ex) {
+            if (activityLogService != null) {
+                activityLogService.registrar(user.getId(), "Cambió su contraseña");
+            }
+        } catch (SQLException | IOException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al actualizar la contraseña.", ex);
         }
     }

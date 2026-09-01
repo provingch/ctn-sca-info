@@ -27,6 +27,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.web.server.ResponseStatusException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -109,6 +110,42 @@ class ProfileControllerTest {
         ArgumentCaptor<Padre> captor = ArgumentCaptor.forClass(Padre.class);
         verify(padreDao, times(1)).update(captor.capture());
         assertEquals("nuevo-padre", captor.getValue().getContrasenia());
+    }
+
+    @Test
+    void shouldLogPasswordChangeWhenCurrentPasswordMatches() throws Exception {
+        User user = new User(1, "profesor", "Profesor Uno", 1);
+        Authentication authentication = authentication(user.getId(), user.getLevel());
+
+        Profesor profesor = new Profesor();
+        profesor.setId(1);
+        profesor.setContrasenia(PasswordUtil.hash("actual"));
+
+        when(userDao.findByIdAndLevel(1, 1)).thenReturn(user);
+        when(profesorDao.findById(1)).thenReturn(profesor);
+        when(profesorDao.update(any())).thenReturn(true);
+
+        controller.changePassword(new ChangePasswordRequest("actual", "nuevo123", "nuevo123"), authentication);
+
+        verify(activityLogService).registrar(eq(1), eq("Cambió su contraseña"));
+    }
+
+    @Test
+    void shouldNotLogPasswordChangeWhenCurrentPasswordIsWrong() throws Exception {
+        User user = new User(1, "profesor", "Profesor Uno", 1);
+        Authentication authentication = authentication(user.getId(), user.getLevel());
+
+        Profesor profesor = new Profesor();
+        profesor.setId(1);
+        profesor.setContrasenia(PasswordUtil.hash("otra"));
+
+        when(userDao.findByIdAndLevel(1, 1)).thenReturn(user);
+        when(profesorDao.findById(1)).thenReturn(profesor);
+
+        assertThrows(ResponseStatusException.class, () ->
+                controller.changePassword(new ChangePasswordRequest("actual", "nuevo123", "nuevo123"), authentication));
+
+        verify(activityLogService, never()).registrar(anyInt(), anyString());
     }
 
     @Test
