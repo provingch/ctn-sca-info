@@ -17,7 +17,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getPushSubscriptionStatus, removePushSubscription, savePushSubscription, sendPushTest, toPushPayload, urlBase64ToUint8Array } from '../../api/push';
 import { getPwaInstallSnapshot, promptPwaInstall, registerPwaServiceWorker, subscribePwaInstall } from '../../pwa/pwa';
 import useAccessibleDialog from '../../hooks/useAccessibleDialog';
-import { useAutoDismissStatus } from '../../hooks/useAutoDismissStatus';
+import { useToast } from '../../context/ToastContext';
 import { normalizeSpecialty } from '../../theme/theme';
 
 type ProfileTab = 'profile' | 'security' | 'subjects' | 'app' | 'activity';
@@ -26,7 +26,8 @@ const message = (error: unknown, fallback: string) => error instanceof ApiError 
 export default function ProfilePage() {
   const { refreshUserIdentity } = useAuth();
   const [data, setData] = useState<ProfileResponse | null>(null);
-  const { status, setStatus } = useAutoDismissStatus('');
+  const { showToast } = useToast();
+  const setStatus = (text: string) => { if (text) showToast(text); };
   const [tab, setTab] = useState<ProfileTab>('profile');
   const profilePageRef = useRef<HTMLDivElement>(null);
   const profileContentRef = useRef<HTMLDivElement>(null);
@@ -50,11 +51,11 @@ export default function ProfilePage() {
   useEffect(() => { void load(); }, [load]);
   // ResizeObserver and dynamic --profile-identity-height removed: obsolete with fixed flex layout
 
-  if (!data) return <AppShell><ContentState tone={status ? 'error' : 'loading'} title={status || 'Cargando perfil…'} detail={status ? 'Recargá la página para volver a intentarlo.' : 'Estamos preparando los datos de tu cuenta.'} /></AppShell>;
+  if (!data) return <AppShell><ContentState tone={'loading'} title={'Cargando perfil…'} detail={'Estamos preparando los datos de tu cuenta.'} /></AppShell>;
 
   const owner = data.profileOwner;
   // `completion` removed — progress UI was eliminated from the profile header
-  const finish = async (text: string) => { setStatus(text); await Promise.all([load(), refreshUserIdentity()]); };
+  const finish = async (text: string) => { if (text) showToast(text, { tone: 'success' }); await Promise.all([load(), refreshUserIdentity()]); };
 
   return <AppShell subtitle={`Cuenta de ${owner.usuario || 'usuario'} · ${data.profileRoleLabel}`}>
     <div className="profile-page" ref={profilePageRef}>
@@ -67,7 +68,7 @@ export default function ProfilePage() {
           {data.showActivityPanel && <Tab active={tab === 'activity'} onClick={() => setTab('activity')} title="Registros" detail="Actividad" />}
         </aside>
         <div className="profile-content" ref={profileContentRef}>
-          {status && <div className="notice" role="status">{status}</div>}
+          {/* toasts shown globally via ToastProvider */}
           {tab === 'profile' && <ProfileForm data={data} done={finish} setStatus={setStatus} />}
           {tab === 'security' && <Security data={data} done={finish} />}
           {tab === 'subjects' && <Subjects data={data} />}

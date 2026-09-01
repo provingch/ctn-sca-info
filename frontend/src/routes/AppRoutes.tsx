@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from '../context/AuthContext';
 import { SpecialtyProvider } from '../context/SpecialtyContext';
+import { ToastProvider } from '../context/ToastContext';
 import { ProtectedRoute } from './ProtectedRoute';
 import RoleLanding from './RoleLanding';
 import LoginPage from '../pages/auth/LoginPage';
@@ -21,7 +22,7 @@ import OfflinePage from '../pages/OfflinePage';
 const protect = (element: React.ReactNode, allowedLevels?: number[]) => <ProtectedRoute allowedLevels={allowedLevels}>{element}</ProtectedRoute>;
 
 export default function AppRoutes() {
-  return <BrowserRouter><SpecialtyProvider><AuthProvider><Routes>
+  return <BrowserRouter><SpecialtyProvider><ToastProvider><AuthProvider><Routes>
     <Route path="/login" element={<LoginPage />} />
     <Route path="/privacidad" element={<LegalPage />} />
     <Route path="/terminos" element={<LegalPage />} />
@@ -52,5 +53,5 @@ export default function AppRoutes() {
     <Route path="/styleguide" element={protect(<StyleguidePage />, [3])} />
     <Route path="/offline" element={<OfflinePage />} />
     <Route path="*" element={<RoleLanding />} />
-  </Routes></AuthProvider></SpecialtyProvider></BrowserRouter>;
+  </Routes></AuthProvider></ToastProvider></SpecialtyProvider></BrowserRouter>;
 }

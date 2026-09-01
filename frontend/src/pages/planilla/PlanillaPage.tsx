@@ -7,7 +7,7 @@ import ContentState from '../../components/ui/ContentState';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import { getPlanilla, resolvePlanilla, syncClassroom, confirmClassroomMapping, type PlanillaDetail } from '../../api/academics';
 import { ApiError, apiDownload } from '../../api/client';
-import { useAutoDismissStatus } from '../../hooks/useAutoDismissStatus';
+import { useToast } from '../../context/ToastContext';
 
 // Etiquetas de nota en orden descendente (5 -> 1), igual que el JSP legacy
 // (Planilla.jsp: chips grade-chip--five..one). "1" no tiene rango propio en
@@ -50,7 +50,8 @@ export default function PlanillaPage() {
   const navigate = useNavigate();
   const [data, setData] = useState<PlanillaDetail | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
-  const { status, setStatus } = useAutoDismissStatus('');
+  const { showToast } = useToast();
+  const setStatus = (text: string) => { if (text) showToast(text); };
   const [resolvedCourse, setResolvedCourse] = useState<{ googleCourseId?: string | null; classroomCourseMapped?: boolean; courseName?: string | null; courseSection?: string | null; courseAlternateLink?: string | null; message?: string } | null>(null);
   const [switchingEtapa, setSwitchingEtapa] = useState(false);
   const [syncingClassroom, setSyncingClassroom] = useState(false);
@@ -183,7 +184,7 @@ export default function PlanillaPage() {
     });
   }
 
-  if (!data) return <AppShell title="Planilla"><ContentState tone={status ? 'error' : 'loading'} title={status || 'Cargando planilla…'} detail={status ? 'Volvé al inicio o recargá la página para intentarlo nuevamente.' : 'Estamos preparando alumnos, tareas y calificaciones.'} /></AppShell>;
+  if (!data) return <AppShell title="Planilla"><ContentState tone={'loading'} title={'Cargando planilla…'} detail={'Estamos preparando alumnos, tareas y calificaciones.'} /></AppShell>;
 
   const gr = data.gradeRanges;
   const classroomTaskCount = data.tareas.filter((task) => Boolean(task.googleCourseworkId?.trim())).length;
@@ -268,7 +269,7 @@ export default function PlanillaPage() {
           Inmovilizar alumnos
         </label>
       </section>
-      {status && <div className="notice">{status}</div>}
+      {/* toasts shown globally via ToastProvider */}
       <section className="planilla-student-tools" role="search" aria-label="Buscar alumnos en la planilla">
         <label className="planilla-student-search">
           Buscar alumno

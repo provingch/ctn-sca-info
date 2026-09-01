@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ApiError } from '../../api/client';
+import { useToast } from '../../context/ToastContext';
 import * as evaluacionApi from '../../api/evaluacion';
 import * as planCurricularApi from '../../api/planCurricular';
 
@@ -41,6 +42,7 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
   const [resolving, setResolving] = useState(false);
   const [status, setStatus] = useState('');
   const [statusTone, setStatusTone] = useState<StatusTone>('info');
+  const { showToast } = useToast();
 
   useEffect(() => {
     setTab(initialTab);
@@ -53,8 +55,8 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
         setIncumplimientos(pendingIncumplimientos);
       })
       .catch((error) => {
-        setStatus(messageFor(error, 'No se pudo cargar el seguimiento de profesores.'));
-        setStatusTone('error');
+        const msg = messageFor(error, 'No se pudo cargar el seguimiento de profesores.');
+        showToast(msg, { tone: 'error', autoDismiss: false });
       })
       .finally(() => setLoading(false));
   }, []);
@@ -69,8 +71,8 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
       .then(setSelectedPlan)
       .catch((error) => {
         setSelectedPlan(null);
-        setStatus(messageFor(error, 'No se pudo cargar el detalle del plan.'));
-        setStatusTone('error');
+        const msg = messageFor(error, 'No se pudo cargar el detalle del plan.');
+        showToast(msg, { tone: 'error', autoDismiss: false });
       })
       .finally(() => setLoadingDetail(false));
   }, [selectedPlanId]);
@@ -93,11 +95,10 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
       });
       setIncumplimientos((items) => items.filter((item) => item.id !== selectedIncumplimientoId));
       setSelectedIncumplimientoId(null);
-      setStatus('Incumplimiento resuelto y notificado al profesor.');
-      setStatusTone('success');
+      showToast('Incumplimiento resuelto y notificado al profesor.', { tone: 'success', autoDismiss: true });
     } catch (error) {
-      setStatus(messageFor(error, 'No se pudo resolver el incumplimiento.'));
-      setStatusTone('error');
+      const msg = messageFor(error, 'No se pudo resolver el incumplimiento.');
+      showToast(msg, { tone: 'error', autoDismiss: false });
     } finally {
       setResolving(false);
     }
@@ -170,6 +171,6 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
       </div>
     </div>}
 
-    {status && <div className={`notice ${statusTone}`} style={{ marginTop: 16 }} role={statusTone === 'error' ? 'alert' : 'status'}>{status}</div>}
+    {/* status messages moved to global toasts */}
   </>;
 }
