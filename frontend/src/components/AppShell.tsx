@@ -33,8 +33,8 @@ export default function AppShell({ children, title, subtitle, specialty }: { chi
       <footer className="app-footer">
         <div className="app-footer-inner">
           <div className="app-footer-brand" aria-hidden="true">
-            <span className="footer-mark">CTN</span>
-            <span><strong>Colegio Técnico Nacional</strong><small>Sistema de Carpetas Académicas</small></span>
+            <img className="footer-institutional-logo" src="/logo-institucional.png" alt="Logo institucional" />
+            <span><strong>Colegio Técnico Nacional</strong></span>
           </div>
           <span><NavLink to="/privacidad">Privacidad</NavLink> · <NavLink to="/terminos">Términos</NavLink></span>
         </div>
