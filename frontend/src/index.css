@@ -101,9 +101,9 @@ button { cursor: pointer; }
 .skip-link { position: fixed; z-index: 2000; top: 10px; left: 10px; padding: 10px 14px; border-radius: var(--radius-sm); background: var(--ink); color: var(--paper); font-weight: 800; text-decoration: none; transform: translateY(-150%); transition: transform .16s ease; }
 .skip-link:focus { transform: translateY(0); }
 :where(a, button, input, textarea, [tabindex]:not([tabindex="-1"])):focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 48%, transparent); outline-offset: 2px; }
-.password-field { position: relative; width: 100%; }
-.password-field > input { padding-right: 44px; }
-.password-toggle, .auth-form .password-toggle { position: absolute; top: 50%; right: 11px; width: 30px; height: 30px; min-height: 0; display: grid; place-items: center; padding: 0; border: 0; border-radius: 7px; background: transparent; color: var(--muted); box-shadow: none; transform: translateY(-50%); }
+.password-field { position: relative; width: 100%; min-width: 0; }
+.password-field > input { width: 100%; min-width: 0; padding-right: 48px; }
+.password-toggle, .auth-form .password-toggle { position: absolute; top: 50%; right: 8px; z-index: 1; width: 34px; height: 34px; min-height: 0; display: grid; place-items: center; padding: 0; border: 0; border-radius: 7px; background: transparent; color: var(--muted); box-shadow: none; transform: translateY(-50%); }
 .password-toggle:hover, .auth-form .password-toggle:hover { background: var(--accent-soft); color: var(--accent-deep); }
 .password-toggle:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 38%, transparent); outline-offset: 1px; }
 .password-toggle svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -333,7 +333,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 @media (max-height: 720px) {
   .auth-page { align-items: stretch; }
 }
-.auth-form { align-self: center; width: min(430px, 100%); display: grid; gap: 17px; margin: 0 auto; padding: 38px; border: 1px solid color-mix(in srgb, var(--line) 82%, #fff); border-top: 5px solid var(--accent); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--paper) 96%, transparent); color: var(--ink); box-shadow: 0 28px 70px rgba(42, 58, 82, .16); backdrop-filter: blur(16px); }.auth-form h1 { margin: 0; font-size: 2rem; }.auth-form p { color: var(--muted); }.auth-form input { border: 1px solid var(--line-strong); border-radius: 9px; padding: 11px; background: color-mix(in srgb, var(--paper-raised) 88%, #e8eff8); color: var(--ink); }.checkbox-label { display: flex !important; align-items: center; }.checkbox-label input { width: auto; accent-color: var(--accent); }.auth-form button { padding: 12px; border: 0; border-radius: 9px; color: var(--accent-contrast); background: var(--accent); font-weight: 800; }.auth-form button:disabled { cursor: wait; opacity: .62; }.auth-feedback { display: grid; gap: 4px; margin: 0; padding: 13px 14px; border: 1px solid color-mix(in srgb, var(--danger) 30%, var(--line)); border-left: 4px solid var(--danger); border-radius: 8px; background: color-mix(in srgb, var(--danger) 7%, var(--paper)); color: var(--ink); font-size: .84rem; line-height: 1.4; }.auth-feedback strong { color: var(--danger); font-size: .78rem; letter-spacing: .02em; }.auth-feedback span { color: var(--muted); }.auth-feedback.is-locked { border-color: color-mix(in srgb, var(--warning) 48%, var(--line)); border-left-color: var(--warning); background: color-mix(in srgb, var(--warning) 10%, var(--paper)); }.auth-feedback.is-locked strong { color: color-mix(in srgb, var(--warning) 78%, #111); }.public-theme-toggle { position: absolute; top: 24px; right: 24px; z-index: 2; }.public-theme-toggle .theme-toggle { border-color: color-mix(in srgb, var(--line) 78%, transparent); background: rgba(255,255,255,.58); color: var(--ink); box-shadow: var(--shadow-sm); backdrop-filter: blur(12px); }
+.auth-form { align-self: center; width: min(430px, 100%); min-width: 0; display: grid; gap: 17px; margin: 0 auto; padding: 38px; border: 1px solid color-mix(in srgb, var(--line) 82%, #fff); border-top: 5px solid var(--accent); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--paper) 96%, transparent); color: var(--ink); box-shadow: 0 28px 70px rgba(42, 58, 82, .16); backdrop-filter: blur(16px); }.auth-form h1 { margin: 0; font-size: 2rem; text-align: center; }.auth-form > p { margin-inline: auto; color: var(--muted); text-align: center; }.auth-form input { border: 1px solid var(--line-strong); border-radius: 9px; padding: 11px; background: color-mix(in srgb, var(--paper-raised) 88%, #e8eff8); color: var(--ink); }.checkbox-label { display: flex !important; align-items: center; }.checkbox-label input { width: auto; accent-color: var(--accent); }.auth-form button { padding: 12px; border: 0; border-radius: 9px; color: var(--accent-contrast); background: var(--accent); font-weight: 800; }.auth-form button:disabled { cursor: wait; opacity: .62; }.auth-feedback { display: grid; gap: 4px; margin: 0; padding: 13px 14px; border: 1px solid color-mix(in srgb, var(--danger) 30%, var(--line)); border-left: 4px solid var(--danger); border-radius: 8px; background: color-mix(in srgb, var(--danger) 7%, var(--paper)); color: var(--ink); font-size: .84rem; line-height: 1.4; }.auth-feedback strong { color: var(--danger); font-size: .78rem; letter-spacing: .02em; }.auth-feedback span { color: var(--muted); }.auth-feedback.is-locked { border-color: color-mix(in srgb, var(--warning) 48%, var(--line)); border-left-color: var(--warning); background: color-mix(in srgb, var(--warning) 10%, var(--paper)); }.auth-feedback.is-locked strong { color: color-mix(in srgb, var(--warning) 78%, #111); }.public-theme-toggle { position: absolute; top: 24px; right: 24px; z-index: 2; }.public-theme-toggle .theme-toggle { border-color: color-mix(in srgb, var(--line) 78%, transparent); background: rgba(255,255,255,.58); color: var(--ink); box-shadow: var(--shadow-sm); backdrop-filter: blur(12px); }
 @media (max-width: 900px) {
   .auth-page { grid-template-columns: 1fr; padding: 22px; }
   .auth-brand-panel { padding: 60px 30px 10px; }
@@ -492,8 +492,8 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
   .profile-identity { align-items: flex-start; flex-wrap: wrap; }.profile-completion { width: 100%; margin-left: 96px; }.profile-workspace { grid-template-columns: 1fr; }.profile-menu { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); }.profile-card-grid { grid-template-columns: 1fr; }.profile-list > div { grid-template-columns: 1fr; gap: 5px; }
 }
 
-/* Identidad institucional: usa los SVG oficiales incluidos en el frontend legado. */
-.ctn-logo { display: block; width: 100%; height: 100%; object-fit: contain; }
+/* Identidad del sistema: un único SVG optimizado en navegación, acceso y estados. */
+.sca-logo { display: block; width: 100%; height: 100%; object-fit: contain; }
 .app-footer-brand { display: inline-flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; }
 .app-footer .app-footer-inner { justify-content: space-between; }
 .app-footer-brand > span { display: grid; gap: 2px; }
@@ -507,9 +507,9 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
   .app-footer-logo { width: 36px; height: 36px; flex-basis: 36px; }
 }
 .hero-emblem { padding: 12px; }
-.hero-emblem .ctn-logo { filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .2)); transform: rotate(-4deg); }
+.hero-emblem .sca-logo { filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .2)); transform: rotate(-4deg); }
 .auth-brand-mark { width: 112px; height: 112px; border: 0; border-radius: 0; background: transparent; backdrop-filter: none; }
-.auth-brand-mark .ctn-logo { filter: drop-shadow(0 12px 22px rgba(0, 0, 0, .32)); }
+.auth-brand-mark .sca-logo { filter: drop-shadow(0 12px 22px rgba(0, 0, 0, .32)); }
 
 @media (max-width: 1100px) {
   .app-main { width: min(100% - 32px, 1180px); }
@@ -532,7 +532,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
   .profile-menu button { min-width: 140px; }
   .profile-card-grid { grid-template-columns: 1fr 1fr; }
   .profile-form-actions { grid-column: 1 / -1; }
-  .auth-brand-panel { max-width: none; }
+  .auth-brand-panel { max-width: none; align-items: center; text-align: center; }
 }
 
 @media (max-width: 680px) {
@@ -567,10 +567,13 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
   .navbar-mobile-account > a, .navbar-mobile-account > button { width: 100%; min-height: 42px; display: flex; align-items: center; justify-content: flex-start; gap: 9px; padding: 0 12px; border: 0; border-radius: 9px; background: transparent; color: var(--ink); text-decoration: none; box-shadow: none; font-size: .82rem; font-weight: 750; }
   .navbar-mobile-account > a:hover, .navbar-mobile-account > button:hover { background: var(--accent-soft); color: var(--accent-deep); }
   .app-main { width: calc(100% - 20px); }
-  .page-hero { min-height: 142px; padding: 22px 20px; border-radius: 16px; }
+  .page-hero { min-height: 142px; justify-content: center; padding: 22px 20px; border-radius: 16px; text-align: center; }
+  .hero-content { width: 100%; }
+  .hero-kicker { justify-content: center; }
   .page-hero h1 { margin-top: 10px; font-size: clamp(1.8rem, 10vw, 2.4rem); }
-  .page-hero p { font-size: .92rem; }
+  .page-hero p { margin-inline: auto; font-size: .92rem; }
   .panel, .nav-card { padding: 20px; }
+  .class-card-head { align-items: center; flex-direction: column; text-align: center; }
   .profile-identity { gap: 14px; padding: 18px; }
   .avatar { width: 60px; height: 60px; flex-basis: 60px; border-radius: 18px; font-size: 1.3rem; }
   .profile-identity-copy h2 { font-size: 1.25rem; }
