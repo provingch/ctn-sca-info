@@ -87,7 +87,7 @@ export default function ProfilePage() {
           <div className="avatar">
             {owner.fotoPerfil
               ? <img src={owner.fotoPerfil} alt="Foto de perfil" />
-              : <AvatarEspecialidad name={data.especialidades.find((s) => s.id === owner.especialidadId)?.nombre ?? null} size={96} className="avatar-specialty-icon" />}
+              : <AvatarEspecialidad name={data.especialidades.find((s) => s.id === owner.especialidadId)?.nombre ?? null} className="avatar-specialty-icon" />}
           </div>
           <div className="profile-identity-copy">
             <span className="badge">{data.profileRoleLabel}</span>
