@@ -524,8 +524,8 @@ public class PlanillaProcesoWorkbookBuilder {
 
         // If year area falls beyond targetLastCol, reposition it immediately after course block
         int newYearStart = yearOrigStart;
-        int newYearEnd = Math.min(yearOrigEnd, newCourseEnd);
-        if (newYearStart > newCourseEnd) {
+        int newYearEnd = yearOrigEnd;
+        if (newYearStart <= newCourseEnd) {
             newYearStart = newCourseEnd + 1;
             int width = Math.max(4, yearOrigEnd - yearOrigStart + 1);
             newYearEnd = newYearStart + width - 1;

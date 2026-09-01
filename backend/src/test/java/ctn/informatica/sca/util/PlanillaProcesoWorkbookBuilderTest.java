@@ -516,4 +516,94 @@ class PlanillaProcesoWorkbookBuilderTest {
             assertEquals(expectedYearLabel, yearCell.getStringCellValue(), "La celda de Año debe conservar el período de la planilla");
         }
     }
+
+    @Test
+    void buildSingleWorkbook_withManyTasksThatExpandCourseBlock_noMergedRegionOverlap() throws IOException {
+        // Regression test for the geometric logic bug in resizeHeaderBanner:
+        // When many tasks force the course block to expand beyond column 19 (where "Año" normally starts),
+        // the year block must be repositioned after the course block to avoid merged region overlap.
+        
+        Planilla planilla = new Planilla(201, 1, 1, "comun", "Muchas Tareas", 2026, "primera", 1);
+        List<Tarea> tareas = new java.util.ArrayList<>();
+        
+        // Create enough tasks (distributed across months) to expand course block beyond column 19
+        // With 13 tasks in different months, the course block will be stretched significantly
+        int taskCounter = 2001;
+        for (int month = 2; month <= 6; month++) {  // Feb to Jun
+            for (int i = 0; i < 3; i++) {
+                Tarea t = new Tarea();
+                t.setId(taskCounter++);
+                t.setFecha(LocalDate.of(2026, month, 5 + i * 5));
+                t.setTitulo("Task-M" + month + "-" + (i+1));
+                t.setTotal(10);
+                tareas.add(t);
+            }
+        }
+        // Add extra tasks in February to ensure even wider course block (using valid days)
+        for (int i = 0; i < 3; i++) {
+            Tarea t = new Tarea();
+            t.setId(taskCounter++);
+            t.setFecha(LocalDate.of(2026, 2, 20 + i));
+            t.setTitulo("ExtraTask-" + (i+1));
+            t.setTotal(10);
+            tareas.add(t);
+        }
+        
+        StudentRow row = new StudentRow();
+        row.setAlumnoId(1);
+        row.setAlumnoNombre("Test Student");
+        Map<Integer, Integer> grades = new HashMap<>();
+        for (Tarea t : tareas) {
+            grades.put((int)t.getId(), 5);
+        }
+        row.setGrades(grades);
+        row.setTotal(tareas.size() * 5);
+        
+        PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                planilla,
+                new ctn.informatica.sca.model.Curso(201, "Muchas Tareas", 2026, "A"),
+                "Muchas Tareas",
+                "Prof Test",
+                "Mañana",
+                tareas,
+                List.of(row),
+                Map.of(),
+                null
+        );
+        
+        // This should not throw IllegalStateException about overlapping merged regions
+        try (XSSFWorkbook workbook = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(data, "ManyTasks")) {
+            Sheet sheet = workbook.getSheetAt(0);
+            assertNotNull(sheet, "Sheet debe existir");
+            
+            // Verify that merged regions in rows 3 and 4 (0-based, i.e., rows 4 and 5 in Excel 1-based)
+            // do not overlap within the same row
+            java.util.List<CellRangeAddress> mergedRegions = sheet.getMergedRegions();
+            
+            for (int row4or5 : new int[]{3, 4}) {
+                java.util.List<CellRangeAddress> regionsInRow = new java.util.ArrayList<>();
+                for (CellRangeAddress merge : mergedRegions) {
+                    if (merge.getFirstRow() == row4or5) {
+                        regionsInRow.add(merge);
+                    }
+                }
+                
+                // Check no overlaps within row 4 and row 5
+                for (int i = 0; i < regionsInRow.size(); i++) {
+                    for (int j = i + 1; j < regionsInRow.size(); j++) {
+                        CellRangeAddress r1 = regionsInRow.get(i);
+                        CellRangeAddress r2 = regionsInRow.get(j);
+                        
+                        boolean overlap = !(r1.getLastColumn() < r2.getFirstColumn() || r2.getLastColumn() < r1.getFirstColumn());
+                        assertFalse(overlap, 
+                            "Merged regions in row " + (row4or5+1) + " must not overlap: [" + 
+                            r1.getFirstColumn() + "-" + r1.getLastColumn() + "] and [" + 
+                            r2.getFirstColumn() + "-" + r2.getLastColumn() + "]");
+                    }
+                }
+            }
+            
+            System.out.println("\n>>> Regression test passed: No merged region overlap detected <<<");
+        }
+    }
 }
