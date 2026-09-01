@@ -1,27 +1,23 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { ApiError } from '../../api/client';
 import ThemeToggle from '../../components/ThemeToggle';
 import CtnLogo from '../../components/CtnLogo';
 import PasswordInput from '../../components/PasswordInput';
 import { applyTheme, getInitialTheme } from '../../theme/theme';
+import { authFeedback, formatRetryTime, type AuthFeedback } from './loginLockout';
 
 type Step = 'credentials' | 'twofactor';
-type AuthFeedback = { message: string; locked: boolean };
 
-function authFeedback(error: unknown, fallback: string): AuthFeedback {
-  if (!(error instanceof ApiError)) return { message: fallback, locked: false };
-  const body = error.body;
-  if (body && typeof body === 'object' && 'code' in body && 'message' in body) {
-    const authBody = body as { code?: unknown; message?: unknown };
-    const locked = authBody.code === 'AUTH_LOCKED' || error.status === 429;
-    return {
-      message: typeof authBody.message === 'string' ? authBody.message : error.message,
-      locked,
-    };
-  }
-  return { message: error.message, locked: error.status === 429 };
+function AuthFeedbackNotice({ feedback, remainingSeconds, title }: { feedback: AuthFeedback; remainingSeconds: number; title: string }) {
+  const countingDown = feedback.locked && remainingSeconds > 0;
+  return <div className={`auth-feedback${feedback.locked ? ' is-locked' : ''}`} role="alert">
+    <strong>{feedback.locked ? 'Acceso temporalmente pausado' : title}</strong>
+    {countingDown ? <>
+      <span aria-hidden="true">Demasiados intentos. Volvé a intentar en <time dateTime={`PT${remainingSeconds}S`}>{formatRetryTime(remainingSeconds)}</time>.</span>
+      <span className="visually-hidden">Demasiados intentos. El acceso se habilitará automáticamente cuando finalice la pausa.</span>
+    </> : <span>{feedback.message}</span>}
+  </div>;
 }
 
 export default function LoginPage() {
@@ -36,14 +32,49 @@ export default function LoginPage() {
   const [code, setCode] = useState('');
   const [error, setError] = useState<AuthFeedback | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [lockExpiresAt, setLockExpiresAt] = useState<number | null>(null);
+  const [remainingLockSeconds, setRemainingLockSeconds] = useState(0);
 
   useEffect(() => {
     applyTheme(getInitialTheme());
   }, []);
 
+  useEffect(() => {
+    if (lockExpiresAt === null) return;
+    const updateCountdown = () => {
+      const remaining = Math.max(0, Math.ceil((lockExpiresAt - Date.now()) / 1000));
+      setRemainingLockSeconds(remaining);
+      if (remaining === 0) {
+        setLockExpiresAt(null);
+        setError((current) => current?.locked ? null : current);
+      }
+    };
+    updateCountdown();
+    const interval = window.setInterval(updateCountdown, 250);
+    return () => window.clearInterval(interval);
+  }, [lockExpiresAt]);
+
+  function clearFeedback() {
+    setError(null);
+    setLockExpiresAt(null);
+    setRemainingLockSeconds(0);
+  }
+
+  function showAuthError(cause: unknown, fallback: string) {
+    const feedback = authFeedback(cause, fallback);
+    setError(feedback);
+    if (feedback.locked && feedback.retryAfterSeconds > 0) {
+      setRemainingLockSeconds(feedback.retryAfterSeconds);
+      setLockExpiresAt(Date.now() + feedback.retryAfterSeconds * 1000);
+    } else {
+      setRemainingLockSeconds(0);
+      setLockExpiresAt(null);
+    }
+  }
+
   async function handleCredentialsSubmit(e: FormEvent) {
     e.preventDefault();
-    setError(null);
+    clearFeedback();
     setSubmitting(true);
     try {
       const res = await login(username.trim(), password, rememberMe);
@@ -54,7 +85,7 @@ export default function LoginPage() {
         navigate('/', { replace: true });
       }
     } catch (err) {
-      setError(authFeedback(err, 'No se pudo iniciar sesión.'));
+      showAuthError(err, 'No se pudo iniciar sesión.');
     } finally {
       setSubmitting(false);
     }
@@ -63,13 +94,13 @@ export default function LoginPage() {
   async function handle2faSubmit(e: FormEvent) {
     e.preventDefault();
     if (!tempToken) return;
-    setError(null);
+    clearFeedback();
     setSubmitting(true);
     try {
       await verify2fa(tempToken, code, rememberMe);
       navigate('/', { replace: true });
     } catch (err) {
-      setError(authFeedback(err, 'Código inválido.'));
+      showAuthError(err, 'Código inválido.');
     } finally {
       setSubmitting(false);
     }
@@ -93,8 +124,8 @@ export default function LoginPage() {
               required
             />
           </label>
-          {error && <div className={`auth-feedback${error.locked ? ' is-locked' : ''}`} role="alert"><strong>{error.locked ? 'Acceso temporalmente pausado' : 'No pudimos verificar el código'}</strong><span>{error.message}</span></div>}
-          <button type="submit" disabled={submitting}>
+          {error && <AuthFeedbackNotice feedback={error} remainingSeconds={remainingLockSeconds} title="No pudimos verificar el código" />}
+          <button type="submit" disabled={submitting || remainingLockSeconds > 0}>
             {submitting ? 'Verificando…' : 'Verificar'}
           </button>
         </form>
@@ -128,8 +159,8 @@ export default function LoginPage() {
           />
           Recordarme en este dispositivo
         </label>
-        {error && <div className={`auth-feedback${error.locked ? ' is-locked' : ''}`} role="alert"><strong>{error.locked ? 'Acceso temporalmente pausado' : 'No se pudo iniciar sesión'}</strong><span>{error.message}</span></div>}
-        <button type="submit" disabled={submitting}>
+        {error && <AuthFeedbackNotice feedback={error} remainingSeconds={remainingLockSeconds} title="No se pudo iniciar sesión" />}
+        <button type="submit" disabled={submitting || remainingLockSeconds > 0}>
           {submitting ? 'Ingresando…' : 'Ingresar'}
         </button>
       </form>
