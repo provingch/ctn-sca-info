@@ -1,15 +1,19 @@
 package ctn.informatica.sca.controller;
 
+import ctn.informatica.sca.dao.AsignacionDao;
 import ctn.informatica.sca.dao.CursoDao;
 import ctn.informatica.sca.dao.EspecialidadDao;
 import ctn.informatica.sca.dao.IncumplimientoRevisionDao;
 import ctn.informatica.sca.dao.InstrumentoDao;
 import ctn.informatica.sca.dao.NotificacionDao;
+import ctn.informatica.sca.dao.ProfesorDao;
 import ctn.informatica.sca.dao.RasgoPlanillaDao;
 import ctn.informatica.sca.dao.UserDao;
+import ctn.informatica.sca.model.Asignacion;
 import ctn.informatica.sca.model.Curso;
 import ctn.informatica.sca.model.Especialidad;
 import ctn.informatica.sca.model.Instrumento;
+import ctn.informatica.sca.model.Profesor;
 import ctn.informatica.sca.model.RasgoPlanilla;
 import ctn.informatica.sca.util.ScaUiContext;
 import java.util.ArrayList;
@@ -37,6 +41,7 @@ public class EvaluacionCatalogController {
 
     private static final Logger log = LoggerFactory.getLogger(EvaluacionCatalogController.class);
 
+    private final AsignacionDao asignacionDao;
     private final CursoDao cursoDao;
     private final EspecialidadDao especialidadDao;
     private final InstrumentoDao instrumentoDao;
@@ -51,7 +56,26 @@ public class EvaluacionCatalogController {
             InstrumentoDao instrumentoDao,
             RasgoPlanillaDao rasgoPlanillaDao,
             IncumplimientoRevisionDao incumplimientoRevisionDao) {
-        this(cursoDao, especialidadDao, instrumentoDao, rasgoPlanillaDao, incumplimientoRevisionDao, new NotificacionDao(), new UserDao());
+        this(cursoDao, especialidadDao, instrumentoDao, rasgoPlanillaDao, incumplimientoRevisionDao, new AsignacionDao(), new NotificacionDao(), new UserDao());
+    }
+
+    public EvaluacionCatalogController(
+            CursoDao cursoDao,
+            EspecialidadDao especialidadDao,
+            InstrumentoDao instrumentoDao,
+            RasgoPlanillaDao rasgoPlanillaDao,
+            IncumplimientoRevisionDao incumplimientoRevisionDao,
+            AsignacionDao asignacionDao,
+            NotificacionDao notificacionDao,
+            UserDao userDao) {
+        this.cursoDao = cursoDao;
+        this.especialidadDao = especialidadDao;
+        this.instrumentoDao = instrumentoDao;
+        this.rasgoPlanillaDao = rasgoPlanillaDao;
+        this.incumplimientoRevisionDao = incumplimientoRevisionDao == null ? new IncumplimientoRevisionDao() : incumplimientoRevisionDao;
+        this.asignacionDao = asignacionDao == null ? new AsignacionDao() : asignacionDao;
+        this.notificacionDao = notificacionDao == null ? new NotificacionDao() : notificacionDao;
+        this.userDao = userDao == null ? new UserDao() : userDao;
     }
 
     @Autowired
@@ -63,13 +87,7 @@ public class EvaluacionCatalogController {
             IncumplimientoRevisionDao incumplimientoRevisionDao,
             NotificacionDao notificacionDao,
             UserDao userDao) {
-        this.cursoDao = cursoDao;
-        this.especialidadDao = especialidadDao;
-        this.instrumentoDao = instrumentoDao;
-        this.rasgoPlanillaDao = rasgoPlanillaDao;
-        this.incumplimientoRevisionDao = incumplimientoRevisionDao == null ? new IncumplimientoRevisionDao() : incumplimientoRevisionDao;
-        this.notificacionDao = notificacionDao == null ? new NotificacionDao() : notificacionDao;
-        this.userDao = userDao == null ? new UserDao() : userDao;
+        this(cursoDao, especialidadDao, instrumentoDao, rasgoPlanillaDao, incumplimientoRevisionDao, new AsignacionDao(), notificacionDao, userDao);
     }
 
     @GetMapping("/instrumentos")
@@ -89,8 +107,22 @@ public class EvaluacionCatalogController {
 
     @GetMapping("/evaluacion/especialidades")
     public List<EspecialidadDto> listEspecialidades(Authentication authentication) {
-        ApiAuth.requireUserId(authentication);
+        int userId = ApiAuth.requireUserId(authentication);
         try {
+            if (shouldUseTeacherAssignmentsScope(authentication)) {
+                List<Integer> allowedEspecialidadIds = asignacionDao.findByProfesor(userId).stream()
+                        .map(Asignacion::getEspecialidadId)
+                        .filter(java.util.Objects::nonNull)
+                        .distinct()
+                        .toList();
+                if (allowedEspecialidadIds.isEmpty()) {
+                    return List.of();
+                }
+                return especialidadDao.findAll().stream()
+                        .filter(especialidad -> allowedEspecialidadIds.contains(especialidad.getId()))
+                        .map(especialidad -> new EspecialidadDto(especialidad.getId(), especialidad.getNombre()))
+                        .toList();
+            }
             List<Especialidad> especialidades = especialidadDao.findAll();
             List<EspecialidadDto> response = new ArrayList<>();
             for (Especialidad especialidad : especialidades) {
@@ -106,11 +138,21 @@ public class EvaluacionCatalogController {
     public List<CursoEvaluacionDto> listCursos(
             @RequestParam(required = false) Integer especialidadId,
             Authentication authentication) {
-        ApiAuth.requireUserId(authentication);
+        int userId = ApiAuth.requireUserId(authentication);
         try {
-            // Evaluación es un módulo institucional: el evaluador necesita ver
-            // todos los cursos, no solo los vinculados como si fuera profesor.
-            List<Curso> cursos = cursoDao.findAll();
+            boolean useScope = shouldUseTeacherAssignmentsScope(authentication);
+            List<Curso> cursos;
+            if (useScope) {
+                java.util.Set<Integer> allowedIds = allowedCursoIdsForUser(userId);
+                if (allowedIds == null || allowedIds.isEmpty()) {
+                    return List.of();
+                }
+                cursos = cursoDao.findAll().stream()
+                        .filter(curso -> allowedIds.contains(curso.getId()))
+                        .toList();
+            } else {
+                cursos = cursoDao.findAll();
+            }
 
             String selectedEspecialidad = null;
             if (especialidadId != null) {
@@ -137,6 +179,35 @@ public class EvaluacionCatalogController {
         } catch (Exception ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al listar cursos", ex);
         }
+    }
+
+    private boolean shouldUseTeacherAssignmentsScope(Authentication authentication) {
+        int userLevel = ApiAuth.requireUserLevel(authentication);
+        if (userLevel != 3) {
+            return false;
+        }
+        int userId = ApiAuth.requireUserId(authentication);
+        Profesor profesor = new ProfesorDao().findById(userId);
+        if (profesor == null) return false;
+
+        // If the professor is an administrator for a specialty (perfil especialidad != null),
+        // keep the institutional view (no scoping).
+        if (profesor.getEspecialidadId() != null) return false;
+
+        // Otherwise, use the professor's real assignments to determine scope: if the
+        // professor has at least one assignment, limit lists to those assignments.
+        try {
+            return !asignacionDao.findByProfesor(userId).isEmpty();
+        } catch (Exception ex) {
+            return false;
+        }
+    }
+
+    private java.util.Set<Integer> allowedCursoIdsForUser(int userId) throws Exception {
+        return asignacionDao.findByProfesor(userId).stream()
+                .map(Asignacion::getCursoId)
+                .filter(id -> id > 0)
+                .collect(java.util.stream.Collectors.toSet());
     }
 
     @GetMapping("/evaluacion/cursos/{cursoId}/clases")
