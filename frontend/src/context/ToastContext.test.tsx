@@ -1,4 +1,4 @@
-import React from 'react';
+// React import not required in modern JSX runtimes
 import { render, screen, act } from '@testing-library/react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { ToastProvider, useToast } from './ToastContext';

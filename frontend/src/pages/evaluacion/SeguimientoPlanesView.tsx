@@ -5,7 +5,7 @@ import * as evaluacionApi from '../../api/evaluacion';
 import * as planCurricularApi from '../../api/planCurricular';
 
 type Tab = 'planes' | 'incumplimientos';
-type StatusTone = 'info' | 'success' | 'error';
+// Local status/state removed; toasts are used instead
 
 function formatDate(value?: string): string {
   if (!value) return 'Pendiente';
@@ -40,8 +40,7 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
   const [loading, setLoading] = useState(true);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [resolving, setResolving] = useState(false);
-  const [status, setStatus] = useState('');
-  const [statusTone, setStatusTone] = useState<StatusTone>('info');
+  // removed unused local status state
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -56,7 +55,7 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
       })
       .catch((error) => {
         const msg = messageFor(error, 'No se pudo cargar el seguimiento de profesores.');
-        showToast(msg, { tone: 'error', autoDismiss: false });
+        showToast(msg, { tone: 'error' });
       })
       .finally(() => setLoading(false));
   }, []);
@@ -72,7 +71,7 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
       .catch((error) => {
         setSelectedPlan(null);
         const msg = messageFor(error, 'No se pudo cargar el detalle del plan.');
-        showToast(msg, { tone: 'error', autoDismiss: false });
+        showToast(msg, { tone: 'error' });
       })
       .finally(() => setLoadingDetail(false));
   }, [selectedPlanId]);
@@ -82,7 +81,6 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
     setEstadoResolucion('PERMITIDO');
     setSuspensionDesde('');
     setSuspensionHasta('');
-    setStatus('');
   }
 
   async function handleResolver() {
@@ -98,7 +96,7 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
       showToast('Incumplimiento resuelto y notificado al profesor.', { tone: 'success', autoDismiss: true });
     } catch (error) {
       const msg = messageFor(error, 'No se pudo resolver el incumplimiento.');
-      showToast(msg, { tone: 'error', autoDismiss: false });
+      showToast(msg, { tone: 'error' });
     } finally {
       setResolving(false);
     }
@@ -116,7 +114,7 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
       <div className="panel">
         <h3>Planes aprobados ({planes.length})</h3>
         {loading ? <p>Cargando planes...</p> : planes.length === 0 ? <p style={{ color: 'var(--muted)' }}>No hay planes aprobados para seguimiento.</p> : <div style={{ display: 'grid', gap: 8 }}>
-          {planes.map((plan) => <button key={plan.id} type="button" onClick={() => { setSelectedPlanId(plan.id); setStatus(''); }} style={{ padding: 12, background: selectedPlanId === plan.id ? 'var(--accent-strong)' : 'var(--paper-raised)', border: selectedPlanId === plan.id ? '2px solid var(--accent)' : '1px solid var(--line)', borderRadius: 4, cursor: 'pointer', textAlign: 'left', color: 'var(--ink)' }}>
+          {planes.map((plan) => <button key={plan.id} type="button" onClick={() => { setSelectedPlanId(plan.id); }} style={{ padding: 12, background: selectedPlanId === plan.id ? 'var(--accent-strong)' : 'var(--paper-raised)', border: selectedPlanId === plan.id ? '2px solid var(--accent)' : '1px solid var(--line)', borderRadius: 4, cursor: 'pointer', textAlign: 'left', color: 'var(--ink)' }}>
             <strong>{plan.materiaNombre}</strong>
             <div style={{ fontSize: '0.9rem', color: 'var(--muted)', marginTop: 4 }}>{plan.profesorNombre}</div>
             <div style={{ fontSize: '0.85rem', color: 'var(--muted)', marginTop: 2 }}>{plan.cursoDescripcion}<br />Aprobado: {formatDate(plan.fechaRevision)}</div>
