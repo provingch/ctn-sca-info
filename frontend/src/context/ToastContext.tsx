@@ -6,6 +6,7 @@ export interface ToastItem {
   message: string;
   tone: ToastTone;
   autoDismiss: boolean;
+  exiting?: boolean;
 }
 
 interface ToastContextValue {
@@ -24,16 +25,36 @@ export function useToast() {
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const timers = useRef<Record<string, number | null>>({});
+  const exitTimers = useRef<Record<string, number | null>>({});
   const nextId = useRef(1);
 
-  const removeToast = useCallback((id: string) => {
+  const finalizeRemove = useCallback((id: string) => {
     setToasts((current) => current.filter((t) => t.id !== id));
     const timer = timers.current[id];
     if (timer) {
       window.clearTimeout(timer);
       timers.current[id] = null;
     }
+    const exitTimer = exitTimers.current[id];
+    if (exitTimer) {
+      window.clearTimeout(exitTimer);
+      exitTimers.current[id] = null;
+    }
   }, []);
+
+  const startExit = useCallback((id: string) => {
+    // mark toast as exiting so CSS can animate out
+    setToasts((current) => current.map((t) => (t.id === id ? { ...t, exiting: true } : t)));
+    // clear any auto-dismiss timer
+    const timer = timers.current[id];
+    if (timer) {
+      window.clearTimeout(timer);
+      timers.current[id] = null;
+    }
+    // schedule final removal after fade duration
+    const FADE_MS = 240;
+    exitTimers.current[id] = window.setTimeout(() => finalizeRemove(id), FADE_MS);
+  }, [finalizeRemove]);
 
   const showToast = useCallback((message: string, opts?: { tone?: ToastTone; autoDismiss?: boolean }) => {
     const tone = opts?.tone ?? 'warning';
@@ -52,30 +73,34 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (existingId) {
-      // reset timer for existing
+      // reset timer for existing (restart auto-dismiss)
       const timer = timers.current[existingId];
       if (timer) {
         window.clearTimeout(timer);
-        timers.current[existingId] = window.setTimeout(() => removeToast(existingId!), 4000);
+      }
+      if (autoDismiss) {
+        timers.current[existingId] = window.setTimeout(() => startExit(existingId!), 4000);
       }
       return existingId;
     }
 
     const id = String(nextId.current - 1);
     if (autoDismiss) {
-      const timer = window.setTimeout(() => removeToast(id), 4000);
+      const timer = window.setTimeout(() => startExit(id), 4000);
       timers.current[id] = timer;
     }
     return id;
-  }, [removeToast]);
+  }, [startExit]);
 
-  const dismissToast = useCallback((id: string) => removeToast(id), [removeToast]);
+  const dismissToast = useCallback((id: string) => startExit(id), [startExit]);
 
   useEffect(() => {
     return () => {
       // cleanup timers
       Object.values(timers.current).forEach((t) => { if (t) window.clearTimeout(t); });
+      Object.values(exitTimers.current).forEach((t) => { if (t) window.clearTimeout(t); });
       timers.current = {};
+      exitTimers.current = {};
     };
   }, []);
 
@@ -86,10 +111,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         <div style={{ width: 'min(900px, calc(100% - 24px))', display: 'grid', gap: 8 }}>
           {toasts.map((t) => (
             <div key={t.id} style={{ pointerEvents: 'auto' }}>
-              <div className={`notice ${t.tone === 'error' ? 'error' : t.tone === 'success' ? 'success' : ''}`} role={t.tone === 'error' ? 'alert' : 'status'}>
+              <div className={`notice ${t.tone === 'error' ? 'error' : t.tone === 'success' ? 'success' : ''} ${t.exiting ? 'exiting' : ''}`} role={t.tone === 'error' ? 'alert' : 'status'}>
                 <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ flex: 1 }}>{t.message}</div>
-                  {!t.autoDismiss && <button type="button" aria-label="Cerrar" onClick={() => removeToast(t.id)} className="button secondary" style={{ marginLeft: 12 }}>×</button>}
+                  {!t.autoDismiss && <button type="button" aria-label="Cerrar" onClick={() => startExit(t.id)} className="button secondary" style={{ marginLeft: 12 }}>×</button>}
                 </div>
               </div>
             </div>
