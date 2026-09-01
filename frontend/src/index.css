@@ -604,6 +604,11 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .profile-preview { display: flex; flex-direction: column; align-items: center; gap: 15px; padding: 24px 18px; border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--line)); border-top: 4px solid var(--accent); border-radius: var(--radius); background: linear-gradient(180deg, var(--accent-soft), var(--paper) 56%); box-shadow: var(--shadow-sm); text-align: center; }
 .profile-preview-kicker { color: var(--accent-deep); font-size: .68rem; font-weight: 900; letter-spacing: .11em; text-transform: uppercase; }
 .profile-preview .avatar { width: 96px !important; height: 96px !important; flex-basis: 96px !important; border-radius: 28px !important; box-shadow: 0 12px 28px color-mix(in srgb, var(--accent) 28%, transparent); }
+/* AvatarEspecialidad styles: soft background and colored icon */
+.avatar-specialty { background: var(--accent-soft); color: var(--accent-deep); display: inline-grid; place-items: center; }
+.avatar-specialty-img { display: block; width: 72%; height: 72%; object-fit: contain; }
+.navbar-avatar .avatar-specialty { width: 100%; height: 100%; border-radius: 10px; }
+.profile-preview .avatar .avatar-specialty { border-radius: 28px; }
 .profile-preview .profile-identity-copy { width: 100%; }
 .profile-preview .profile-identity-copy h2 { margin: 10px 0 5px; font-size: 1.22rem; overflow-wrap: anywhere; }
 .profile-preview .profile-identity-copy > strong { font-size: .86rem; overflow-wrap: anywhere; }

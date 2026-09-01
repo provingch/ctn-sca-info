@@ -7,7 +7,7 @@ const PHOTO_PERSISTENCE_MAX_BYTES = 1_500_000;
 const SIGNATURE_MOBILE_MEDIA_QUERY = '(max-width: 680px), (max-height: 680px) and (pointer: coarse)';
 import { ApiError } from '../../api/client';
 import AppShell from '../../components/AppShell';
-import CtnLogo from '../../components/CtnLogo';
+import AvatarEspecialidad from '../../components/AvatarEspecialidad';
 import PasswordInput from '../../components/PasswordInput';
 import SpecialtyIcon from '../../components/SpecialtyIcon';
 import ConnectionState from '../../components/ui/ConnectionState';
@@ -80,7 +80,7 @@ export default function ProfilePage() {
           <div className="avatar">
             {owner.fotoPerfil
               ? <img src={owner.fotoPerfil} alt="Foto de perfil" />
-              : <CtnLogo className="avatar-specialty-icon" />}
+              : <AvatarEspecialidad name={data.especialidades.find((s) => s.id === owner.especialidadId)?.nombre ?? null} size={96} className="avatar-specialty-icon" />}
           </div>
           <div className="profile-identity-copy">
             <span className="badge">{data.profileRoleLabel}</span>
