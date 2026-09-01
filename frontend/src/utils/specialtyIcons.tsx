@@ -1,9 +1,9 @@
-import CtnLogo from '../components/CtnLogo';
+import ScaLogo from '../components/ScaLogo';
 import { iconUrlForSpecialtyName } from './specialtyIconData';
 
 export function SpecialtyAvatar({ name, size = 36 }: { name?: string | null; size?: number }) {
   const url = iconUrlForSpecialtyName(name);
-  if (!url) return <span style={{ width: size, height: size, display: 'inline-grid', placeItems: 'center', borderRadius: '50%', background: 'var(--paper)', color: 'var(--accent)' }}><CtnLogo /></span>;
+  if (!url) return <span style={{ width: size, height: size, display: 'inline-grid', placeItems: 'center', borderRadius: '50%', background: 'var(--paper)', color: 'var(--accent)' }}><ScaLogo /></span>;
   return <span style={{ width: size, height: size, display: 'inline-grid', placeItems: 'center', borderRadius: '50%', overflow: 'hidden', background: 'var(--paper)' }} aria-hidden="true"><img src={url} alt="" style={{ width: '70%', height: '70%', objectFit: 'contain' }} /></span>;
 }
 
