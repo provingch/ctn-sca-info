@@ -1,6 +1,7 @@
 package ctn.informatica.sca.controller;
 
 import ctn.informatica.sca.dao.AlumnoDao;
+import ctn.informatica.sca.dao.AsignacionDao;
 import ctn.informatica.sca.dao.ConfiguracionSistemaDao;
 import ctn.informatica.sca.dao.CursoBaseDao;
 import ctn.informatica.sca.dao.CursoDao;
@@ -29,6 +30,7 @@ import ctn.informatica.sca.dto.SubmitRasgoAsistenciaRequest;
 import ctn.informatica.sca.dto.UpdateRasgoCodigosRequest;
 import ctn.informatica.sca.google.GoogleClassroomService;
 import ctn.informatica.sca.model.Alumno;
+import ctn.informatica.sca.model.Asignacion;
 import ctn.informatica.sca.model.Curso;
 import ctn.informatica.sca.model.Instrumento;
 import ctn.informatica.sca.model.Planilla;
@@ -76,6 +78,7 @@ public class HomeController {
 
     private final CursoDao cursoDao;
     private final CursoBaseDao cursoBaseDao;
+    private final AsignacionDao asignacionDao;
     private final ProfesorDao profesorDao;
     private final PlanillaDao planillaDao;
     private final MateriaDao materiaDao;
@@ -92,13 +95,14 @@ public class HomeController {
     private final QuejaDao quejaDao;
 
     public HomeController() {
-        this(new CursoDao(), new CursoBaseDao(), new ProfesorDao(), new PlanillaDao(), new MateriaDao(), new AlumnoDao(), new RasgoPlanillaDao(), new InstrumentoDao(), new UserDao(), new PlanCurricularDao(), new TemaVerificacionService(), new ActivityLogService(), new ConfiguracionSistemaDao(), new IncumplimientoRevisionDao(), new NotificacionDao(), new QuejaDao());
+        this(new CursoDao(), new CursoBaseDao(), new AsignacionDao(), new ProfesorDao(), new PlanillaDao(), new MateriaDao(), new AlumnoDao(), new RasgoPlanillaDao(), new InstrumentoDao(), new UserDao(), new PlanCurricularDao(), new TemaVerificacionService(), new ActivityLogService(), new ConfiguracionSistemaDao(), new IncumplimientoRevisionDao(), new NotificacionDao(), new QuejaDao());
     }
 
     @Autowired
     public HomeController(
             CursoDao cursoDao,
             CursoBaseDao cursoBaseDao,
+            AsignacionDao asignacionDao,
             ProfesorDao profesorDao,
             PlanillaDao planillaDao,
             MateriaDao materiaDao,
@@ -115,6 +119,7 @@ public class HomeController {
             QuejaDao quejaDao) {
         this.cursoDao = cursoDao;
         this.cursoBaseDao = cursoBaseDao;
+        this.asignacionDao = asignacionDao;
         this.profesorDao = profesorDao;
         this.planillaDao = planillaDao;
         this.materiaDao = materiaDao;
@@ -361,6 +366,8 @@ public class HomeController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El tema es requerido.");
         }
 
+        validateOwnedAssignment(user, cursoId, request.asignacionId());
+
         List<Alumno> alumnos;
         try {
             alumnos = alumnoDao.findByCursoId(cursoId);
@@ -468,13 +475,16 @@ public class HomeController {
     public void submitRasgoAsistencia(
             @RequestBody SubmitRasgoAsistenciaRequest request,
             Authentication authentication) {
-        ApiAuth.requireUserId(authentication);
+        User user = requireUser(authentication);
         if (request == null || request.asistenciaId() == null || request.asistenciaId() <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El id de asistencia es requerido.");
         }
         String estado = "presente".equalsIgnoreCase(request.estado()) ? "presente" : "ausente";
         try {
+            requireOwnedAttendance(request.asistenciaId(), user);
             rasgoPlanillaDao.registrarRespuesta(request.asistenciaId(), estado);
+        } catch (ResponseStatusException ex) {
+            throw ex;
         } catch (SQLException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo registrar la asistencia", ex);
         }
@@ -491,14 +501,7 @@ public class HomeController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El id de asistencia es requerido.");
         }
         try {
-            RasgoAsistencia asistencia = rasgoPlanillaDao.findAsistenciaById(request.asistenciaId());
-            if (asistencia == null) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Asistencia no encontrada");
-            }
-            RasgoPlanilla planilla = rasgoPlanillaDao.findPlanillaById(asistencia.getPlanillaRasgoId());
-            if (planilla == null || planilla.getProfesorId() != user.getId()) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes acceso a esta clase");
-            }
+            requireOwnedAttendance(request.asistenciaId(), user);
             rasgoPlanillaDao.reemplazarCodigos(request.asistenciaId(), request.codigos());
         } catch (ResponseStatusException ex) {
             throw ex;
@@ -515,16 +518,13 @@ public class HomeController {
     public void assignFaltaCodigo(
             @RequestBody AssignFaltaCodigoRequest request,
             Authentication authentication) {
-        ApiAuth.requireUserId(authentication);
+        User user = requireUser(authentication);
         if (request == null || request.asistenciaId() == null || request.asistenciaId() <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El id de asistencia es requerido.");
         }
 
         try {
-            RasgoAsistencia asistencia = rasgoPlanillaDao.findAsistenciaById(request.asistenciaId());
-            if (asistencia == null) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Asistencia no encontrada");
-            }
+            RasgoAsistencia asistencia = requireOwnedAttendance(request.asistenciaId(), user);
             String estado = asistencia.getEstado();
             if (estado == null || estado.isBlank()) {
                 estado = "pendiente";
@@ -534,6 +534,8 @@ public class HomeController {
             } else {
                 rasgoPlanillaDao.registrarRespuesta(request.asistenciaId(), estado, request.faltaCodigo(), request.faltaObservacion());
             }
+        } catch (ResponseStatusException ex) {
+            throw ex;
         } catch (SQLException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo asignar el código de falta", ex);
         }
@@ -589,9 +591,47 @@ public class HomeController {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado");
             }
             return user;
+        } catch (ResponseStatusException ex) {
+            throw ex;
         } catch (Exception ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al cargar el usuario", ex);
         }
+    }
+
+    private void validateOwnedAssignment(User user, int cursoId, Integer asignacionId) {
+        if (asignacionId == null || asignacionId <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La asignación es requerida para registrar la clase.");
+        }
+        try {
+            Asignacion asignacion = asignacionDao.findById(asignacionId);
+            Curso curso = cursoDao.findById(cursoId);
+            if (asignacion == null || curso == null || asignacion.getProfesorId() != user.getId()) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes acceso a esta asignación o curso");
+            }
+            int especialidadId = cursoDao.findEspecialidadId(cursoId);
+            Integer cursoBaseId = especialidadId <= 0
+                    ? null
+                    : cursoBaseDao.findId(especialidadId, curso.getNivel(), curso.getSeccion());
+            if (cursoBaseId == null || asignacion.getCursoId() != cursoBaseId) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "La asignación no corresponde al curso indicado");
+            }
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (SQLException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo validar la asignación", ex);
+        }
+    }
+
+    private RasgoAsistencia requireOwnedAttendance(int asistenciaId, User user) throws SQLException {
+        RasgoAsistencia asistencia = rasgoPlanillaDao.findAsistenciaById(asistenciaId);
+        if (asistencia == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Asistencia no encontrada");
+        }
+        RasgoPlanilla planilla = rasgoPlanillaDao.findPlanillaById(asistencia.getPlanillaRasgoId());
+        if (planilla == null || planilla.getProfesorId() != user.getId()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes acceso a esta clase");
+        }
+        return asistencia;
     }
 
     void registrarIncumplimientoPorAtraso(int asignacionId, int usuarioId, Integer temaPlanCurricularId, String justificacionAtraso) {
