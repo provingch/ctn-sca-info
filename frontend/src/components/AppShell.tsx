@@ -32,10 +32,10 @@ export default function AppShell({ children, title, subtitle, specialty }: { chi
       </main>
       <footer className="app-footer">
         <div className="app-footer-inner">
-          <NavLink className="app-footer-brand" to="/" aria-label="Colegio Técnico Nacional — ir al inicio">
-            <CtnLogo variant="full" className="app-footer-logo" />
+          <div className="app-footer-brand" aria-hidden="true">
+            <span className="footer-mark">CTN</span>
             <span><strong>Colegio Técnico Nacional</strong><small>Sistema de Carpetas Académicas</small></span>
-          </NavLink>
+          </div>
           <span><NavLink to="/privacidad">Privacidad</NavLink> · <NavLink to="/terminos">Términos</NavLink></span>
         </div>
       </footer>
