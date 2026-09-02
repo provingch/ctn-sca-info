@@ -120,6 +120,9 @@ public class AdminController {
             List<CursoBase> cursosDb = actingSpecialtyId == null ? new CursoBaseDao().findAll() : new CursoBaseDao().findAllByEspecialidadId(actingSpecialtyId);
             List<CourseItem> cursos = cursosDb.stream()
                     .map(c -> new CourseItem(c.getId(), c.getEspecialidad(), c.getNivel(), c.getSeccion())).toList();
+            List<Curso> cursosAlumnosDb = actingSpecialtyId == null ? new CursoDao().findAll() : new CursoDao().findAllByEspecialidadId(actingSpecialtyId);
+            List<CourseItem> cursosAlumnos = cursosAlumnosDb.stream()
+                    .map(c -> new CourseItem(c.getId(), c.getEspecialidad(), c.getNivel(), c.getSeccion())).toList();
             List<Especialidad> especialidadesDb;
             if (actingSpecialtyId == null) {
                 especialidadesDb = especialidadDao.findAll();
@@ -130,7 +133,7 @@ public class AdminController {
             List<SpecialtyItem> especialidades = especialidadesDb.stream()
                     .map(e -> new SpecialtyItem(e.getId(), e.getNombre()))
                     .toList();
-            return new CatalogResponse(materias, usuarios, asignaciones, alumnos, cursos, especialidades);
+            return new CatalogResponse(materias, usuarios, asignaciones, alumnos, cursos, cursosAlumnos, especialidades);
         } catch (Exception ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo cargar el panel administrativo", ex);
         }
@@ -787,7 +790,7 @@ public class AdminController {
     private boolean canAccessAsignacion(Integer actingSpecialtyId, int cursoId) {
         if (actingSpecialtyId == null) return true;
         try {
-            Integer cursoEspecialidadId = getEspecialidadIdForCurso(cursoId);
+            Integer cursoEspecialidadId = getEspecialidadIdForCursoBase(cursoId);
             return cursoEspecialidadId != null && cursoEspecialidadId.equals(actingSpecialtyId);
         } catch (Exception ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo validar el alcance por especialidad de la asignación", ex);
@@ -797,16 +800,25 @@ public class AdminController {
     private boolean canAccessAlumno(Integer actingSpecialtyId, int cursoId) {
         if (actingSpecialtyId == null) return true;
         try {
-            Integer cursoEspecialidadId = getEspecialidadIdForCurso(cursoId);
+            Integer cursoEspecialidadId = getEspecialidadIdForCursoAlumno(cursoId);
             return cursoEspecialidadId != null && cursoEspecialidadId.equals(actingSpecialtyId);
         } catch (Exception ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo validar el alcance por especialidad del alumno", ex);
         }
     }
 
-    private Integer getEspecialidadIdForCurso(int cursoId) {
+    private Integer getEspecialidadIdForCursoBase(int cursoBaseId) {
         try {
-            return new CursoBaseDao().findEspecialidadId(cursoId);
+            return new CursoBaseDao().findEspecialidadId(cursoBaseId);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private Integer getEspecialidadIdForCursoAlumno(int cursoId) {
+        try {
+            int especialidadId = new CursoDao().findEspecialidadId(cursoId);
+            return especialidadId < 0 ? null : especialidadId;
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
@@ -879,7 +891,7 @@ public class AdminController {
     }
     private ResponseStatusException failure(String message, Exception ex) { return new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, ex); }
 
-    public record CatalogResponse(List<MateriaItem> materias, List<UserItem> usuarios, List<AssignmentItem> asignaciones, List<StudentItem> alumnos, List<CourseItem> cursos, List<SpecialtyItem> especialidades) {}
+    public record CatalogResponse(List<MateriaItem> materias, List<UserItem> usuarios, List<AssignmentItem> asignaciones, List<StudentItem> alumnos, List<CourseItem> cursos, List<CourseItem> cursosAlumnos, List<SpecialtyItem> especialidades) {}
     public record MateriaItem(int id, String nombre, String categoria, List<Integer> especialidadIds) {}
     public record PadreSummary(int id, String nombre, String apellido, Integer ci, String usuario) {}
     public record UserItem(int id, String nombre, String apellido, String usuario, int nivel, String correo, Integer ci, Integer especialidadId, String especialidadNombre) {

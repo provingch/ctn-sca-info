@@ -126,6 +126,7 @@ export interface AdminCatalog {
   asignaciones: AssignmentItem[];
   alumnos: StudentItem[];
   cursos: CourseItem[];
+  cursosAlumnos: CourseItem[];
   especialidades: SpecialtyItem[];
 }
 

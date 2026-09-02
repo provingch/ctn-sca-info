@@ -32,19 +32,19 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
   const cursosByEspecialidad = useMemo(() => {
     return new Map(
       especialidades.map((specialty) => {
-        const cursos = data.cursos.filter((course) => course.especialidad === specialty.nombre);
+        const cursos = data.cursosAlumnos.filter((course) => course.especialidad === specialty.nombre);
         return [specialty.id, cursos];
       }),
     );
-  }, [data.cursos, especialidades]);
+  }, [data.cursosAlumnos, especialidades]);
 
   const rows = useMemo(() => {
     if (selectedEspecialidadId === null || selectedNivel === null || selectedSeccion === null) return [];
     return data.alumnos.filter((student) => {
-      const course = data.cursos.find((item) => item.id === student.cursoId);
+      const course = data.cursosAlumnos.find((item) => item.id === student.cursoId);
       return course && course.especialidad === especialidades.find((e) => e.id === selectedEspecialidadId)?.nombre && course.nivel === selectedNivel && course.seccion === selectedSeccion;
     });
-  }, [data.alumnos, data.cursos, especialidades, selectedNivel, selectedEspecialidadId, selectedSeccion]);
+  }, [data.alumnos, data.cursosAlumnos, especialidades, selectedNivel, selectedEspecialidadId, selectedSeccion]);
 
   const openCreate = () => {
     setEditingId(null);
@@ -71,7 +71,7 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
   }, [status]);
 
   const openEdit = async (student: AdminCatalog['alumnos'][number]) => {
-    const course = data.cursos.find((item) => item.id === student.cursoId);
+    const course = data.cursosAlumnos.find((item) => item.id === student.cursoId);
     setEditingId(student.id);
     setForm({
       nombre: student.nombre,
@@ -149,7 +149,7 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
   };
 
   const currentEspecialidad = especialidades.find((item) => item.id === selectedEspecialidadId)?.nombre ?? null;
-  const currentCurso = data.cursos.find((item) => item.especialidad === currentEspecialidad && item.nivel === selectedNivel && item.seccion === selectedSeccion) ?? null;
+  const currentCurso = data.cursosAlumnos.find((item) => item.especialidad === currentEspecialidad && item.nivel === selectedNivel && item.seccion === selectedSeccion) ?? null;
 
   useEffect(() => {
     if (!isFormOpen || !editingId) {
@@ -180,7 +180,7 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
       {step === 'especialidades' && (
         <div className="card-grid">
           {especialidades.map((specialty) => {
-            const totals = data.alumnos.filter((student) => data.cursos.find((course) => course.id === student.cursoId)?.especialidad === specialty.nombre).length;
+            const totals = data.alumnos.filter((student) => data.cursosAlumnos.find((course) => course.id === student.cursoId)?.especialidad === specialty.nombre).length;
             return (
               <button type="button" key={specialty.id} className="nav-card" data-specialty={normalizeSpecialty(specialty.nombre)} onClick={() => goToCursos(specialty.id)}>
                 <span>Especialidad</span>
@@ -222,9 +222,9 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
             <button type="button" className="button secondary" onClick={goToEspecialidades}>Inicio</button>
           </div>
           <div className="card-grid">
-            {Array.from(new Set((data.cursos.filter((course) => course.especialidad === currentEspecialidad && course.nivel === selectedNivel).map((course) => course.seccion)))).map((section) => {
+            {Array.from(new Set((data.cursosAlumnos.filter((course) => course.especialidad === currentEspecialidad && course.nivel === selectedNivel).map((course) => course.seccion)))).map((section) => {
               const totals = data.alumnos.filter((student) => {
-                const course = data.cursos.find((item) => item.id === student.cursoId);
+                const course = data.cursosAlumnos.find((item) => item.id === student.cursoId);
                 return course && course.especialidad === currentEspecialidad && course.nivel === selectedNivel && course.seccion === section;
               }).length;
               return (
@@ -332,7 +332,7 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
                   value={form.cursoId}
                   placeholder="Seleccione…"
                   onChange={(value) => setForm({ ...form, cursoId: value })}
-                  options={data.cursos.map((course) => ({ value: course.id, label: `${course.nivel}° ${course.seccion} · ${course.especialidad}` }))}
+                  options={data.cursosAlumnos.map((course) => ({ value: course.id, label: `${course.nivel}° ${course.seccion} · ${course.especialidad}` }))}
                 />
               </label>
             )}
