@@ -525,17 +525,14 @@ public class PlanillaProcesoWorkbookBuilder {
         int yearMinCols = computeMinimumColumnsForText(yearText, 1);
 
         int newSpecEnd = Math.max(targetLastCol, specialtyMinCols);
-        int newCourseEnd = Math.max(targetLastCol, courseMinCols);
+        // Reserve yearWidth columns for the year INSIDE the targetLastCol area
+        int yearWidth = Math.max(2, yearMinCols);
+        int newCourseEnd = Math.max(courseMinCols, targetLastCol - yearWidth);
 
-        // If year area falls beyond targetLastCol, reposition it immediately after course block
-        int newYearStart = yearOrigStart;
-        int newYearEnd = yearOrigEnd;
-        // Reposition year block so it sits immediately after the course block
-        // and size it based on the actual text (but keep a small floor).
-        if (newYearStart != newCourseEnd + 1 || (newYearEnd - newYearStart + 1) != yearMinCols) {
-            newYearStart = newCourseEnd + 1;
-            newYearEnd = newYearStart + Math.max(2, yearMinCols) - 1;
-        }
+        // Place the year block immediately after the course block but never
+        // beyond targetLastCol (i.e. keep it contained within targetLastCol).
+        int newYearStart = newCourseEnd + 1;
+        int newYearEnd = targetLastCol;
 
         // Apply merges for row 3 (Especialidad)
         int specStart = 2;
@@ -691,6 +688,23 @@ public class PlanillaProcesoWorkbookBuilder {
         // Remove merged regions inherited from template that overlap header rows
         removeHeaderMerges(sheet, layout);
 
+        // Reference styles from the template to normalize cell styles before writing
+        XSSFSheet templateSheet = (XSSFSheet) sheet.getWorkbook().getSheet(layout.templateSheetName());
+        org.apache.poi.ss.usermodel.CellStyle instrumentRefStyle = null;
+        org.apache.poi.ss.usermodel.CellStyle tpRefStyle = null;
+        if (templateSheet != null) {
+            Row refTitleRow = templateSheet.getRow(INSTRUMENT_TITLE_ROW);
+            Row refTpRow = templateSheet.getRow(TP_ROW);
+            if (refTitleRow != null) {
+                Cell ref = refTitleRow.getCell(layout.firstMonthColumn());
+                if (ref != null) instrumentRefStyle = ref.getCellStyle();
+            }
+            if (refTpRow != null) {
+                Cell ref = refTpRow.getCell(layout.firstMonthColumn());
+                if (ref != null) tpRefStyle = ref.getCellStyle();
+            }
+        }
+
         for (int monthBlockIndex = 0; monthBlockIndex < MONTH_BLOCK_COUNT; monthBlockIndex++) {
             Row monthHeaderRow = getOrCreateRow(sheet, MONTH_HEADER_ROW);
             Row titleRow = getOrCreateRow(sheet, INSTRUMENT_TITLE_ROW);
@@ -716,6 +730,25 @@ public class PlanillaProcesoWorkbookBuilder {
                 Cell titleCell = getOrCreateCell(titleRow, colIndex);
                 Cell tpCell = getOrCreateCell(tpRow, colIndex);
                 Tarea tarea = tareasMes.get(instrumentIndex);
+
+                // Normalize/reset styles from a neutral template cell to avoid
+                // inheriting the 'Subtotal' boxed style from the original template.
+                org.apache.poi.ss.usermodel.Workbook wb = sheet.getWorkbook();
+                if (instrumentRefStyle != null) {
+                    org.apache.poi.ss.usermodel.CellStyle cloned = wb.createCellStyle();
+                    try { cloned.cloneStyleFrom(instrumentRefStyle); } catch (Exception ignore) {}
+                    titleCell.setCellStyle(cloned);
+                } else {
+                    titleCell.setCellStyle(wb.createCellStyle());
+                }
+                if (tpRefStyle != null) {
+                    org.apache.poi.ss.usermodel.CellStyle cloned = wb.createCellStyle();
+                    try { cloned.cloneStyleFrom(tpRefStyle); } catch (Exception ignore) {}
+                    tpCell.setCellStyle(cloned);
+                } else {
+                    tpCell.setCellStyle(wb.createCellStyle());
+                }
+
                 titleCell.setCellValue(safeString(tarea.getTitulo()));
                 int tlen = tarea.getTitulo() == null ? 0 : tarea.getTitulo().length();
                 maxTitleLen = Math.max(maxTitleLen, tlen);
@@ -734,8 +767,25 @@ public class PlanillaProcesoWorkbookBuilder {
             int reserved = reservedSlotsForMonth(tareasMes);
             for (int instrumentIndex = tareasMes.size(); instrumentIndex < reserved; instrumentIndex++) {
                 int colIndex = firstCol + instrumentIndex;
-                getOrCreateCell(titleRow, colIndex).setBlank();
-                getOrCreateCell(tpRow, colIndex).setBlank();
+                Cell blankTitle = getOrCreateCell(titleRow, colIndex);
+                Cell blankTp = getOrCreateCell(tpRow, colIndex);
+                org.apache.poi.ss.usermodel.Workbook wb = sheet.getWorkbook();
+                if (instrumentRefStyle != null) {
+                    org.apache.poi.ss.usermodel.CellStyle cloned = wb.createCellStyle();
+                    try { cloned.cloneStyleFrom(instrumentRefStyle); } catch (Exception ignore) {}
+                    blankTitle.setCellStyle(cloned);
+                } else {
+                    blankTitle.setCellStyle(wb.createCellStyle());
+                }
+                if (tpRefStyle != null) {
+                    org.apache.poi.ss.usermodel.CellStyle cloned = wb.createCellStyle();
+                    try { cloned.cloneStyleFrom(tpRefStyle); } catch (Exception ignore) {}
+                    blankTp.setCellStyle(cloned);
+                } else {
+                    blankTp.setCellStyle(wb.createCellStyle());
+                }
+                blankTitle.setBlank();
+                blankTp.setBlank();
                 if (sheet instanceof XSSFSheet) {
                     ((XSSFSheet) sheet).setColumnWidth(colIndex, INSTRUMENT_COLUMN_WIDTH_CHARS * 256);
                 }
@@ -1279,7 +1329,8 @@ public class PlanillaProcesoWorkbookBuilder {
         org.apache.poi.ss.usermodel.CellStyle newStyle = wb.createCellStyle();
         newStyle.cloneStyleFrom(existingStyle);
         newStyle.setFont(scaledFont);
-        newStyle.setRotation((short) 0);
+        // Rotate instrument title 90° so text renders vertically in the column
+        newStyle.setRotation((short) 90);
         cell.setCellStyle(newStyle);
     }
 
