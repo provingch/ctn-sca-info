@@ -1,3 +1,7 @@
+> **Nota: este reporte describe el diseño original del export de horario a Excel
+> (`HorarioWorkbookBuilder`), que fue reemplazado por el export a PDF. Se conserva
+> solo como referencia histórica.
+
 > **Nota:*** este reporte describe el diseño original del export de horario a Excel
 > (`HorarioWorkbookBuilder`), que fue reemplazado por el export a PDF. Se conserva
 > solo como referencia histórica.
