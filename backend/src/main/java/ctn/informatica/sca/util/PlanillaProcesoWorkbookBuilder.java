@@ -48,7 +48,8 @@ public class PlanillaProcesoWorkbookBuilder {
     private static final int FIXED_TASK_COLUMNS_PER_MONTH = 5;
     private static final int INSTRUMENTS_PER_MONTH = 12;
     private static final int MONTH_BLOCK_WIDTH = 13;
-    private static final int INSTRUMENT_COLUMN_WIDTH_CHARS = 8;
+    // Reduced instrument column width to 4.5 characters (was 8)
+    private static final double INSTRUMENT_COLUMN_WIDTH_CHARS = 4.5;
     private static final int MIN_HEADER_COLUMNS = 15;
     private static final int MONTH_HEADER_ROW = 5;
     private static final int INSTRUMENT_TITLE_ROW = 6;
@@ -331,6 +332,47 @@ public class PlanillaProcesoWorkbookBuilder {
             nextAvailable + 6        // regularizationColumn
         );
 
+        // Ensure TP row contains numeric literal values for each instrument
+        // (overwrite any leftover template formulas) and place Subtotal/Total
+        // formulas on the TP row mirroring the pattern used for student rows.
+        Row tpRowRuntime = getOrCreateRow(sheet, TP_ROW);
+        java.util.List<String> tpSubtotalAddresses = new java.util.ArrayList<>();
+        for (Map.Entry<YearMonth, List<Tarea>> entry : tareasPorMes.entrySet()) {
+            List<Tarea> tareasMes = entry.getValue();
+            if (tareasMes == null || tareasMes.isEmpty()) continue;
+            Integer firstTaskId = tareasMes.get(0).getId();
+            Integer firstCol = taskColumnById.get(firstTaskId);
+            if (firstCol == null) continue;
+
+            // Overwrite individual instrument TP cells with numeric literals
+            for (int i = 0; i < tareasMes.size(); i++) {
+                Tarea tarea = tareasMes.get(i);
+                int colIndex = firstCol + i;
+                Cell tpCell = getOrCreateCell(tpRowRuntime, colIndex);
+                setNumericCell(tpCell, tarea.getTotal());
+            }
+
+            int lastInstrument = firstCol + Math.max(0, tareasMes.size() - 1);
+            int subtotalCol = firstCol + reservedSlotsForMonth(tareasMes);
+            String firstColRef = CellReference.convertNumToColString(firstCol);
+            String lastColRef = CellReference.convertNumToColString(lastInstrument);
+            int excelRowIndex = tpRowRuntime.getRowNum() + 1; // 1-based
+            Cell subtotalCell = getOrCreateCell(tpRowRuntime, subtotalCol);
+            // If there are no instruments (shouldn't happen here) leave blank
+            if (lastInstrument >= firstCol) {
+                subtotalCell.setCellFormula("SUM(" + firstColRef + excelRowIndex + ":" + lastColRef + excelRowIndex + ")");
+            } else {
+                subtotalCell.setBlank();
+            }
+            tpSubtotalAddresses.add(CellReference.convertNumToColString(subtotalCol) + excelRowIndex);
+        }
+
+        // Total General on TP row: SUM of monthly subtotal TP cells
+        if (!tpSubtotalAddresses.isEmpty()) {
+            Cell totalTpCell = getOrCreateCell(getOrCreateRow(sheet, TP_ROW), computed.totalGeneralColumn());
+            totalTpCell.setCellFormula("SUM(" + String.join(",", tpSubtotalAddresses) + ")");
+        }
+
         // Ensure final-column headers are written at their computed positions.
         // Read original header texts from template positions (if present) and
         // write them into the computed columns so labels follow the values.
@@ -491,7 +533,7 @@ public class PlanillaProcesoWorkbookBuilder {
         for (int titleRow = 0; titleRow <= 2; titleRow++) {
             sheet.addMergedRegion(new CellRangeAddress(titleRow, titleRow, 0, targetLastCol));
             Cell c = getOrCreateCell(getOrCreateRow(sheet, titleRow), 0);
-            int availableChars = (targetLastCol - 0 + 1) * INSTRUMENT_COLUMN_WIDTH_CHARS;
+            int availableChars = (int) Math.round((targetLastCol - 0 + 1) * INSTRUMENT_COLUMN_WIDTH_CHARS);
             applyAdaptiveFontSizeToFitWidth(wb, c, c.getCellType() == CellType.STRING ? c.getStringCellValue() : c.getStringCellValue(), availableChars);
         }
 
@@ -541,7 +583,7 @@ public class PlanillaProcesoWorkbookBuilder {
                 sheet.addMergedRegion(new CellRangeAddress(3, 3, specStart, newSpecEnd));
             }
             Cell sc = getOrCreateCell(getOrCreateRow(sheet, 3), specStart);
-            int avail = (newSpecEnd - specStart + 1) * INSTRUMENT_COLUMN_WIDTH_CHARS;
+            int avail = (int) Math.round((newSpecEnd - specStart + 1) * INSTRUMENT_COLUMN_WIDTH_CHARS);
             if (needsWrapForText(sc, avail, specialtyText)) {
                 applyWrappedTextStyle(wb, sc, specialtyText, avail, 3);
             } else {
@@ -556,7 +598,7 @@ public class PlanillaProcesoWorkbookBuilder {
                 sheet.addMergedRegion(new CellRangeAddress(4, 4, courseStart, newCourseEnd));
             }
             Cell cc = getOrCreateCell(getOrCreateRow(sheet, 4), courseStart);
-            int avail = (newCourseEnd - courseStart + 1) * INSTRUMENT_COLUMN_WIDTH_CHARS;
+            int avail = (int) Math.round((newCourseEnd - courseStart + 1) * INSTRUMENT_COLUMN_WIDTH_CHARS);
             if (needsWrapForText(cc, avail, courseText)) {
                 applyWrappedTextStyle(wb, cc, courseText, avail, 4);
             } else {
@@ -573,7 +615,7 @@ public class PlanillaProcesoWorkbookBuilder {
                 yearText = getCellText(yc);
             }
             setStringCell(yc, yearText);
-            int avail = (newYearEnd - newYearStart + 1) * INSTRUMENT_COLUMN_WIDTH_CHARS;
+            int avail = (int) Math.round((newYearEnd - newYearStart + 1) * INSTRUMENT_COLUMN_WIDTH_CHARS);
             if (needsWrapForText(yc, avail, yearText)) {
                 applyWrappedTextStyle(wb, yc, yearText, avail, 4);
             } else {
@@ -757,7 +799,7 @@ public class PlanillaProcesoWorkbookBuilder {
 
                 // fixed column width — font size scales down instead (see applyTitleFontSize)
                 if (sheet instanceof XSSFSheet) {
-                    ((XSSFSheet) sheet).setColumnWidth(colIndex, INSTRUMENT_COLUMN_WIDTH_CHARS * 256);
+                    ((XSSFSheet) sheet).setColumnWidth(colIndex, (int) Math.round(INSTRUMENT_COLUMN_WIDTH_CHARS * 256));
                 }
                 int titleLen = tarea.getTitulo() == null ? 0 : tarea.getTitulo().length();
                 applyTitleFontSize(sheet.getWorkbook(), titleCell, titleLen);
@@ -787,7 +829,7 @@ public class PlanillaProcesoWorkbookBuilder {
                 blankTitle.setBlank();
                 blankTp.setBlank();
                 if (sheet instanceof XSSFSheet) {
-                    ((XSSFSheet) sheet).setColumnWidth(colIndex, INSTRUMENT_COLUMN_WIDTH_CHARS * 256);
+                    ((XSSFSheet) sheet).setColumnWidth(colIndex, (int) Math.round(INSTRUMENT_COLUMN_WIDTH_CHARS * 256));
                 }
             }
 
@@ -801,7 +843,7 @@ public class PlanillaProcesoWorkbookBuilder {
             if (lastInstrumentCol > firstCol) {
                 sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, MONTH_HEADER_ROW, firstCol, lastInstrumentCol));
             }
-            int monthBlockWidthChars = reservedSlotsForMonth(tareasMes) * INSTRUMENT_COLUMN_WIDTH_CHARS;
+            int monthBlockWidthChars = (int) Math.round(reservedSlotsForMonth(tareasMes) * INSTRUMENT_COLUMN_WIDTH_CHARS);
             applyAdaptiveFontSizeToFitWidth(sheet.getWorkbook(), monthCell, monthLabel, monthBlockWidthChars);
             monthCell.getCellStyle().setRotation((short) 0);
             // set and merge subtotal header vertically (header -> title row)

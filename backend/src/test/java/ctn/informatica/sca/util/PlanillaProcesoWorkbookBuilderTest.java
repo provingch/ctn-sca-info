@@ -607,4 +607,295 @@ class PlanillaProcesoWorkbookBuilderTest {
             System.out.println("\n>>> Regression test passed: No merged region overlap detected <<<");
         }
     }
+
+    @Test
+    void tpRowContainsNumericInstrumentValues_and_subtotalsAreFormulas_and_columnWidthsReduced() throws IOException {
+        // Build a planilla with at least 2 months and one month with multiple instruments
+        Planilla planilla = new Planilla(300, 1, 1, "comun", "TPTest", 2026, "primera", 7);
+
+        // Month A: 3 tasks
+        Tarea a1 = new Tarea(); a1.setId(4001); a1.setFecha(LocalDate.of(2026, 2, 5)); a1.setTitulo("A1"); a1.setTotal(2);
+        Tarea a2 = new Tarea(); a2.setId(4002); a2.setFecha(LocalDate.of(2026, 2, 15)); a2.setTitulo("A2"); a2.setTotal(3);
+        Tarea a3 = new Tarea(); a3.setId(4003); a3.setFecha(LocalDate.of(2026, 2, 25)); a3.setTitulo("A3"); a3.setTotal(4);
+
+        // Month B: 1 task
+        Tarea b1 = new Tarea(); b1.setId(4101); b1.setFecha(LocalDate.of(2026, 4, 10)); b1.setTitulo("B1"); b1.setTotal(5);
+
+        StudentRow s = new StudentRow(); s.setAlumnoId(1); s.setAlumnoNombre("X"); s.setGrades(Map.of(4001,2,4002,3,4003,4,4101,5)); s.setTotal(14);
+
+        PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                planilla,
+                new ctn.informatica.sca.model.Curso(300, "TPTest", 2026, "Z"),
+                "TPTest",
+                "Prof",
+                "Mañana",
+                List.of(a1,a2,a3,b1),
+                List.of(s),
+                Map.of(),
+                null
+        );
+
+        try (XSSFWorkbook workbook = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(data, "TPChecks")) {
+            Sheet sheet = workbook.getSheetAt(0);
+
+            // Find instrument columns by scanning INSTRUMENT_TITLE_ROW (row 6)
+            Row titleRow = sheet.getRow(6);
+            java.util.List<Integer> instrumentCols = new java.util.ArrayList<>();
+            for (int c = 0; c < 200; c++) {
+                Cell cell = titleRow == null ? null : titleRow.getCell(c);
+                if (cell != null && cell.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING
+                        && !cell.getStringCellValue().isBlank()) {
+                    instrumentCols.add(c);
+                }
+            }
+            assertTrue(instrumentCols.size() >= 4, "Debe detectarse al menos 4 columnas de instrumento");
+
+            // Verify TP row instrument cells are numeric literals (not formulas)
+            Row tpRow = sheet.getRow(7);
+            for (Integer col : instrumentCols) {
+                Cell tpCell = tpRow == null ? null : tpRow.getCell(col);
+                assertNotNull(tpCell, "Celda TP debe existir en columna " + col);
+                assertEquals(org.apache.poi.ss.usermodel.CellType.NUMERIC, tpCell.getCellType(), "Celda TP no debe ser fórmula en columna " + col);
+            }
+
+            // Find subtotal columns by header label in MONTH_HEADER_ROW (row 5)
+            Row headerRow = sheet.getRow(5);
+            java.util.List<Integer> subtotalCols = new java.util.ArrayList<>();
+            for (int c = 0; c < 200; c++) {
+                Cell hh = headerRow == null ? null : headerRow.getCell(c);
+                if (hh != null && hh.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING
+                        && hh.getStringCellValue() != null && hh.getStringCellValue().toLowerCase().contains("subtotal")) {
+                    subtotalCols.add(c);
+                }
+            }
+            assertTrue(subtotalCols.size() >= 2, "Debe existir al menos 2 columnas Subtotal (por mes)");
+
+            // For each subtotal column, the student row has a SUM formula and TP row must have the same formula
+            Row studentRow = sheet.getRow(8);
+            for (Integer sc : subtotalCols) {
+                Cell studentSubtotal = studentRow == null ? null : studentRow.getCell(sc);
+                Cell tpSubtotal = tpRow == null ? null : tpRow.getCell(sc);
+                assertNotNull(studentSubtotal, "Subtotal en fila alumno debe existir en col " + sc);
+                assertNotNull(tpSubtotal, "Subtotal en fila TP debe existir en col " + sc);
+                assertEquals(org.apache.poi.ss.usermodel.CellType.FORMULA, studentSubtotal.getCellType(), "Subtotal alumno debe ser fórmula");
+                assertEquals(org.apache.poi.ss.usermodel.CellType.FORMULA, tpSubtotal.getCellType(), "Subtotal TP debe ser fórmula");
+                String studentFormula = studentSubtotal.getCellFormula();
+                int studentExcelRow = studentRow.getRowNum() + 1;
+                int tpExcelRow = tpRow.getRowNum() + 1;
+                String expectedTpFormula = studentFormula.replace(String.valueOf(studentExcelRow), String.valueOf(tpExcelRow));
+                assertEquals(expectedTpFormula, tpSubtotal.getCellFormula(), "Fórmula subtotal TP debe coincidir (mismo rango, fila TP)");
+            }
+
+            // Verify Total General on TP row matches student Total General formula
+            int totalGeneralCol = -1;
+            for (int c = 0; c < 200; c++) {
+                Cell hh = headerRow == null ? null : headerRow.getCell(c);
+                if (hh != null && hh.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING
+                        && hh.getStringCellValue() != null && hh.getStringCellValue().toLowerCase().contains("total general")) {
+                    totalGeneralCol = c; break;
+                }
+            }
+            assertTrue(totalGeneralCol >= 0, "Debe hallarse columna Total General");
+            Cell stuTotal = studentRow.getCell(totalGeneralCol);
+            Cell tpTotal = tpRow.getCell(totalGeneralCol);
+            assertNotNull(stuTotal);
+            assertNotNull(tpTotal);
+            assertEquals(org.apache.poi.ss.usermodel.CellType.FORMULA, stuTotal.getCellType());
+            assertEquals(org.apache.poi.ss.usermodel.CellType.FORMULA, tpTotal.getCellType());
+            String studentTotalFormula = stuTotal.getCellFormula();
+            int studentExcelRow = studentRow.getRowNum() + 1;
+            int tpExcelRow = tpRow.getRowNum() + 1;
+            String expectedTpTotalFormula = studentTotalFormula.replace(String.valueOf(studentExcelRow), String.valueOf(tpExcelRow));
+            assertEquals(expectedTpTotalFormula, tpTotal.getCellFormula(), "Fórmula Total General en TP debe coincidir (mismos subtotales, fila TP)");
+
+            // Verify instrument column widths are reduced (between 4.0 and 5.0 characters)
+            int minWidth = (int) Math.round(4.0 * 256);
+            int maxWidth = (int) Math.round(5.0 * 256);
+            for (Integer col : instrumentCols) {
+                int width = sheet.getColumnWidth(col);
+                assertTrue(width >= minWidth && width <= maxWidth, "Ancho de columna de instrumento fuera de rango: " + (double)width/256.0 + " chars");
+            }
+        }
+    }
+
+    @Test
+    void tpRowHasNumericInstruments_and_subtotalsAndTotalAreFormulas_and_instrumentWidthsReduced() throws IOException {
+        Planilla planilla = new Planilla(300, 1, 1, "comun", "TPChecks", 2026, "primera", 7);
+
+        // Month A: 2 tasks
+        Tarea a1 = new Tarea(); a1.setId(4001); a1.setFecha(LocalDate.of(2026, 2, 5)); a1.setTitulo("A1"); a1.setTotal(3);
+        Tarea a2 = new Tarea(); a2.setId(4002); a2.setFecha(LocalDate.of(2026, 2, 12)); a2.setTitulo("A2"); a2.setTotal(7);
+
+        // Month B: 1 task
+        Tarea b1 = new Tarea(); b1.setId(5001); b1.setFecha(LocalDate.of(2026, 4, 10)); b1.setTitulo("B1"); b1.setTotal(5);
+
+        StudentRow s = new StudentRow(); s.setAlumnoId(1); s.setAlumnoNombre("Alumno"); s.setGrades(Map.of(4001,2,4002,6,5001,5)); s.setTotal(13);
+
+        PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                planilla,
+                new ctn.informatica.sca.model.Curso(300, "TPChecks", 2026, "A"),
+                "TPChecks",
+                "Prof",
+                "Mañana",
+                List.of(a1, a2, b1),
+                List.of(s),
+                Map.of(),
+                null
+        );
+
+        try (XSSFWorkbook workbook = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(data, "TPChecks")) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Row titleRow = sheet.getRow(6); // INSTRUMENT_TITLE_ROW
+            Row tpRow = sheet.getRow(7); // TP_ROW
+            Row studentRow = sheet.getRow(8); // FIRST_STUDENT_ROW
+
+            // Collect instrument columns by scanning titleRow for non-empty strings
+            java.util.List<Integer> instrumentCols = new java.util.ArrayList<>();
+            for (int c = 0; c < 200; c++) {
+                Cell tc = titleRow.getCell(c);
+                if (tc != null && tc.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING && !tc.getStringCellValue().isBlank()) {
+                    instrumentCols.add(c);
+                }
+            }
+            assertTrue(instrumentCols.size() >= 3, "Debe encontrar al menos 3 columnas de instrumento");
+
+            // 1) Verify instrument TP cells are numeric (no formulas)
+            for (int col : instrumentCols) {
+                Cell tpCell = tpRow.getCell(col);
+                assertNotNull(tpCell, "TP cell must exist for instrument col " + col);
+                assertEquals(org.apache.poi.ss.usermodel.CellType.NUMERIC, tpCell.getCellType(), "TP instrument cell debe ser NUMERIC en col " + col);
+            }
+
+            // 2) Find subtotal columns by locating "Subtotal" label in header row (MONTH_HEADER_ROW = 5)
+            Row headerRow = sheet.getRow(5);
+            java.util.List<Integer> subtotalCols = new java.util.ArrayList<>();
+            for (int c = 0; c < 200; c++) {
+                Cell hc = headerRow.getCell(c);
+                if (hc != null && hc.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING && hc.getStringCellValue() != null
+                        && hc.getStringCellValue().toLowerCase().contains("subtotal")) {
+                    subtotalCols.add(c);
+                }
+            }
+            assertTrue(subtotalCols.size() >= 2, "Debe encontrarse al menos 2 columnas Subtotal");
+
+            // Compare formulas: student subtotal formula vs TP subtotal formula (should be SUM of same columns)
+            for (int sc : subtotalCols) {
+                Cell studentSubtotal = studentRow.getCell(sc);
+                Cell tpSubtotal = tpRow.getCell(sc);
+                assertNotNull(studentSubtotal, "Student subtotal debe existir en col " + sc);
+                assertNotNull(tpSubtotal, "TP subtotal debe existir en col " + sc);
+                assertEquals(org.apache.poi.ss.usermodel.CellType.FORMULA, studentSubtotal.getCellType(), "Student subtotal debe ser fórmula");
+                assertEquals(org.apache.poi.ss.usermodel.CellType.FORMULA, tpSubtotal.getCellType(), "TP subtotal debe ser fórmula");
+                assertEquals(studentSubtotal.getCellFormula(), tpSubtotal.getCellFormula(), "La fórmula de subtotal en TP debe coincidir con la de estudiante");
+            }
+
+            // Total General column: locate by header containing "Total General"
+            int totalGenCol = -1;
+            for (int c = 0; c < 400; c++) {
+                Cell hc = headerRow.getCell(c);
+                if (hc != null && hc.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING
+                        && hc.getStringCellValue() != null && hc.getStringCellValue().toLowerCase().contains("total general")) {
+                    totalGenCol = c;
+                    break;
+                }
+            }
+            assertTrue(totalGenCol >= 0, "Debe encontrarse la columna Total General");
+            Cell studentTotal = studentRow.getCell(totalGenCol);
+            Cell tpTotal = tpRow.getCell(totalGenCol);
+            assertNotNull(studentTotal);
+            assertNotNull(tpTotal);
+            assertEquals(org.apache.poi.ss.usermodel.CellType.FORMULA, studentTotal.getCellType());
+            assertEquals(org.apache.poi.ss.usermodel.CellType.FORMULA, tpTotal.getCellType());
+            assertEquals(studentTotal.getCellFormula(), tpTotal.getCellFormula(), "La fórmula de Total General en TP debe coincidir con la del estudiante");
+
+            // 3) Verify instrument column widths are in 4.0..5.0 chars
+            for (int col : instrumentCols) {
+                int widthUnits = sheet.getColumnWidth(col); // units of 1/256th of char
+                double chars = (double) widthUnits / 256.0;
+                assertTrue(chars >= 4.0 && chars <= 5.0, "El ancho de columna de instrumento debe estar entre 4.0 y 5.0 chars; col " + col + " tiene " + chars);
+            }
+        }
+    }
+
+    @Test
+    void tpRow_hasNumericInstruments_and_subtotalsAndTotalAreFormulas_and_instrumentWidthsReduced() throws IOException {
+        // Planilla with multiple months and at least one month with >1 instrument
+        Planilla planilla = new Planilla(300, 1, 1, "comun", "TPTest", 2026, "primera", 7);
+        List<Tarea> tareas = new java.util.ArrayList<>();
+        // Month A: 2 tasks
+        Tarea a1 = new Tarea(); a1.setId(4001); a1.setFecha(LocalDate.of(2026, 2, 5)); a1.setTitulo("A1"); a1.setTotal(3);
+        Tarea a2 = new Tarea(); a2.setId(4002); a2.setFecha(LocalDate.of(2026, 2, 15)); a2.setTitulo("A2"); a2.setTotal(7);
+        tareas.add(a1); tareas.add(a2);
+        // Month B: 1 task
+        Tarea b1 = new Tarea(); b1.setId(5001); b1.setFecha(LocalDate.of(2026, 4, 10)); b1.setTitulo("B1"); b1.setTotal(5);
+        tareas.add(b1);
+
+        PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                planilla,
+                new ctn.informatica.sca.model.Curso(300, "TPTest", 2026, "A"),
+                "TPTest",
+                "Prof",
+                "Mañana",
+                tareas,
+                List.of(new StudentRow()),
+                Map.of(),
+                null
+        );
+
+        try (XSSFWorkbook workbook = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(data, "TPTest")) {
+            org.apache.poi.xssf.usermodel.XSSFSheet xs = (org.apache.poi.xssf.usermodel.XSSFSheet) workbook.getSheetAt(0);
+            Sheet sheet = workbook.getSheetAt(0);
+            Row tpRow = sheet.getRow(7); // TP row index
+
+            // Find subtotal columns by scanning header row for 'Subtotal'
+            Row headerRow = sheet.getRow(5);
+            java.util.List<Integer> subtotalCols = new java.util.ArrayList<>();
+            int totalGeneralCol = -1;
+            for (Cell c : headerRow) {
+                if (c != null && c.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING) {
+                    String v = c.getStringCellValue();
+                    if (v != null && v.toLowerCase().contains("subtotal")) subtotalCols.add(c.getColumnIndex());
+                    if (v != null && v.toLowerCase().contains("total general")) totalGeneralCol = c.getColumnIndex();
+                }
+            }
+
+            assertTrue(subtotalCols.size() >= 2, "Debe haber al menos 2 columnas Subtotal");
+            assertTrue(totalGeneralCol >= 0, "Debe encontrarse Total General");
+
+            // Verify instrument TP cells are numeric and not formulas
+            // Identify instrument columns by scanning instrument title row
+            Row titleRow = sheet.getRow(6);
+            for (Cell c : titleRow) {
+                if (c != null && c.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING) {
+                    String v = c.getStringCellValue();
+                    if (v != null && !v.isBlank() && !v.toLowerCase().contains("subtotal")) {
+                        int col = c.getColumnIndex();
+                        Cell tpCell = tpRow.getCell(col);
+                        assertNotNull(tpCell, "TP cell debe existir para columna instrumento " + col);
+                        assertEquals(org.apache.poi.ss.usermodel.CellType.NUMERIC, tpCell.getCellType(), "La celda TP de instrumento debe ser NUMERIC (literal)");
+                        // Width check (in character units)
+                        double widthChars = (double) xs.getColumnWidth(col) / 256.0;
+                        assertTrue(widthChars >= 4.0 && widthChars <= 5.0, "Ancho de columna de instrumento fuera del rango: " + widthChars);
+                    }
+                }
+            }
+
+            // Verify each Subtotal cell in TP row is a SUM formula referencing TP row
+            for (int sc : subtotalCols) {
+                Cell scCell = tpRow.getCell(sc);
+                assertNotNull(scCell, "Celda Subtotal en TP debe existir: col " + sc);
+                assertEquals(org.apache.poi.ss.usermodel.CellType.FORMULA, scCell.getCellType(), "Subtotal en TP debe ser fórmula");
+                String formula = scCell.getCellFormula();
+                assertTrue(formula.toUpperCase().contains("SUM("), "Subtotal TP debe usar SUM: " + formula);
+                assertTrue(formula.contains(String.valueOf(tpRow.getRowNum() + 1)), "Subtotal TP debe apuntar a la fila TP");
+            }
+
+            // Verify Total General cell in TP row is a SUM of subtotals
+            Cell totalTp = tpRow.getCell(totalGeneralCol);
+            assertNotNull(totalTp, "Celda Total General en TP debe existir");
+            assertEquals(org.apache.poi.ss.usermodel.CellType.FORMULA, totalTp.getCellType(), "Total General en TP debe ser fórmula");
+            String totalFormula = totalTp.getCellFormula();
+            assertTrue(totalFormula.toUpperCase().contains("SUM("), "Total General TP debe usar SUM: " + totalFormula);
+        }
+    }
 }
