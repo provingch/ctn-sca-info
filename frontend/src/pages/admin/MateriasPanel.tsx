@@ -115,7 +115,7 @@ export default function MateriasPanel({ data, reload, status }: MateriasPanelPro
       </div>
 
       {isOpen && (
-        <div ref={formDialogRef} className="signature-modal" role="dialog" aria-modal="true" aria-labelledby="materia-form-title" tabIndex={-1} style={{ display: 'grid' }}>
+        <div ref={formDialogRef} className="data-modal" role="dialog" aria-modal="true" aria-labelledby="materia-form-title" tabIndex={-1}>
           <div className="signature-modal-header">
             <div>
               <span>Materias</span>

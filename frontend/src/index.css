@@ -325,6 +325,31 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .signature-modal-actions { display: grid; grid-template-columns: 1fr 1fr 1.25fr; gap: 9px; }
 .signature-modal-actions .button { width: 100%; min-width: 0; padding-inline: 10px; }
 
+/* Formularios administrativos: diálogo centrado, contextual y desplazable. */
+.data-modal { position: fixed; top: 50%; left: 50%; z-index: 1000; width: min(760px, calc(100vw - 32px)); max-height: min(86dvh, 860px); overflow-x: hidden; overflow-y: auto; display: grid; gap: 0; transform: translate(-50%, -50%); overscroll-behavior: contain; scrollbar-gutter: stable; border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line)); border-top: 4px solid var(--accent); border-radius: 20px; background: var(--paper); color: var(--ink); box-shadow: 0 0 0 100vmax rgba(12, 20, 36, .5), 0 28px 80px rgba(12, 20, 36, .28); animation: data-modal-enter .2s ease-out; }
+.data-modal .signature-modal-header { position: sticky; top: 0; z-index: 5; padding: 21px 24px 18px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--paper) 96%, transparent); backdrop-filter: blur(14px); }
+.data-modal .signature-modal-header h2 { font-size: clamp(1.25rem, 3vw, 1.6rem); }
+.data-modal .signature-modal-close { transition: border-color .16s ease, background .16s ease, color .16s ease, transform .16s ease; }
+.data-modal .signature-modal-close:hover { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-deep); transform: rotate(4deg); }
+.data-modal > .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 17px 18px; padding: 22px 24px 24px; }
+.data-modal > .form-grid > fieldset { grid-column: 1 / -1; margin: 0; }
+.data-modal .check-list { max-height: 240px; overflow-y: auto; padding-right: 4px; overscroll-behavior: contain; scrollbar-width: thin; }
+.data-modal .signature-modal-actions { grid-column: 1 / -1; display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 4px; padding-top: 18px; border-top: 1px solid var(--line); }
+.data-modal .signature-modal-actions .button { width: auto; min-width: 120px; }
+.data-modal-section { padding: 0 24px 24px; }
+.data-modal:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 38%, transparent); outline-offset: 3px; }
+@keyframes data-modal-enter { from { opacity: 0; transform: translate(-50%, -47%) scale(.985); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+@media (prefers-reduced-motion: reduce) { .data-modal { animation: none; } .data-modal .signature-modal-close { transition: none; } }
+@media (max-width: 680px) {
+  .data-modal { width: calc(100vw - 20px); max-height: calc(100dvh - 20px); border-radius: 16px; scrollbar-gutter: auto; }
+  .data-modal .signature-modal-header { padding: 17px 18px 15px; }
+  .data-modal > .form-grid { grid-template-columns: 1fr; padding: 18px; }
+  .data-modal > .form-grid > * { grid-column: 1 / -1 !important; }
+  .data-modal .signature-modal-actions { position: sticky; bottom: -18px; z-index: 4; margin: 4px -18px -18px; padding: 14px 18px max(14px, env(safe-area-inset-bottom)); background: color-mix(in srgb, var(--paper) 96%, transparent); backdrop-filter: blur(14px); }
+  .data-modal .signature-modal-actions .button { flex: 1 1 0; min-width: 0; }
+  .data-modal-section { padding: 0 18px 18px; }
+}
+
 @media (min-width: 901px) {
   /* Old sticky layout removed: replaced by fixed flex layout further below. */
 }

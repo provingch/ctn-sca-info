@@ -298,7 +298,7 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
       )}
 
       {isFormOpen && (
-        <div ref={formDialogRef} className="signature-modal" role="dialog" aria-modal="true" aria-labelledby="alumno-form-title" tabIndex={-1} style={{ display: 'grid' }}>
+        <div ref={formDialogRef} className="data-modal" role="dialog" aria-modal="true" aria-labelledby="alumno-form-title" tabIndex={-1}>
           <div className="signature-modal-header">
             <div>
               <span>Alumnos</span>

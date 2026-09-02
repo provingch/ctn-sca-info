@@ -159,7 +159,7 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
       ))}
 
       {isOpen && (
-        <div ref={formDialogRef} className="signature-modal" role="dialog" aria-modal="true" aria-labelledby="usuario-form-title" tabIndex={-1} style={{ display: 'grid' }}>
+        <div ref={formDialogRef} className="data-modal" role="dialog" aria-modal="true" aria-labelledby="usuario-form-title" tabIndex={-1}>
           <div className="signature-modal-header">
             <div>
               <span>Usuarios</span>
