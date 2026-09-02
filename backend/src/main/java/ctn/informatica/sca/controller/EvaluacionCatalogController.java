@@ -8,6 +8,7 @@ import ctn.informatica.sca.dao.InstrumentoDao;
 import ctn.informatica.sca.dao.NotificacionDao;
 import ctn.informatica.sca.dao.ProfesorDao;
 import ctn.informatica.sca.dao.RasgoPlanillaDao;
+import ctn.informatica.sca.dao.PlanillaDao;
 import ctn.informatica.sca.dao.UserDao;
 import ctn.informatica.sca.model.Asignacion;
 import ctn.informatica.sca.model.Curso;
@@ -383,5 +384,37 @@ public class EvaluacionCatalogController {
             String tema,
             java.sql.Date fechaClase,
             java.sql.Timestamp createdAt) {
+    }
+
+    public record MateriaEvaluacionDto(int id, String nombre) {
+    }
+
+    @GetMapping("/evaluacion/cursos/{cursoId}/materias")
+    public List<MateriaEvaluacionDto> listMaterias(@PathVariable int cursoId, @RequestParam int periodo, Authentication authentication) {
+        int userId = ApiAuth.requireUserId(authentication);
+        try {
+            boolean useScope = shouldUseTeacherAssignmentsScope(authentication);
+            if (useScope) {
+                java.util.Set<Integer> allowedIds = allowedCursoIdsForUser(userId);
+                if (allowedIds == null || !allowedIds.contains(cursoId)) {
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes acceso a este curso");
+                }
+            } else {
+                boolean exists = cursoDao.findAll().stream().anyMatch(c -> c.getId() == cursoId);
+                if (!exists) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Curso no encontrado");
+            }
+
+            PlanillaDao planillaDao = new PlanillaDao();
+            List<ctn.informatica.sca.model.Materia> materias = planillaDao.findMateriasWithPlanilla(cursoId, periodo);
+            List<MateriaEvaluacionDto> response = new ArrayList<>();
+            for (ctn.informatica.sca.model.Materia m : materias) {
+                response.add(new MateriaEvaluacionDto(m.getId(), m.getNombre()));
+            }
+            return response;
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al listar materias", ex);
+        }
     }
 }

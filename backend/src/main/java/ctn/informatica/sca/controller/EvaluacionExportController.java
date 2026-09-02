@@ -32,10 +32,11 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api/evaluacion")
 public class EvaluacionExportController {
     @GetMapping("/export")
-    public void export(
+        public void export(
             @RequestParam int cursoId,
             @RequestParam String etapa,
             @RequestParam int periodo,
+            @RequestParam(required = false) Integer materiaId,
             Authentication authentication,
             HttpServletResponse response) {
         ApiAuth.requireUserId(authentication);
@@ -52,6 +53,7 @@ public class EvaluacionExportController {
             for (PlanillaDao.PlanillaInfo info : planillaDao.findPlanillasByCourse(especialidadId, curso.getPromocion(), curso.getSeccion(), periodo)) {
                 Planilla planilla = planillaDao.findById(info.getPlanilla().getId());
                 if (planilla == null || planilla.getEtapaIndex() != etapaIndex) continue;
+                if (materiaId != null && materiaId.intValue() > 0 && planilla.getMateriaId() != materiaId.intValue()) continue;
                 List<Tarea> tareas = PlanillaProcesoWorkbookBuilder.filterTasksByEtapa(new TareaDao().consultarTarea(planilla.getId()), etapaIndex);
                 Map<Integer, Integer> maxima = new HashMap<>(); int total = 0;
                 for (Tarea tarea : tareas) { maxima.put(tarea.getId(), tarea.getTotal()); total += tarea.getTotal(); }
@@ -72,6 +74,12 @@ public class EvaluacionExportController {
             }
             if (sheets.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No hay planillas para los filtros seleccionados");
             String base = "Planillas_" + curso.getEspecialidad().replaceAll("[^A-Za-z0-9_-]", "_") + "_" + curso.getNivel() + curso.getSeccion() + "_" + periodo;
+            if (materiaId != null && materiaId.intValue() > 0 && sheets.size() == 1) {
+                String materiaName = sheets.get(0).disciplina();
+                if (materiaName != null && !materiaName.isBlank()) {
+                    base = base + "_" + materiaName.replaceAll("[^A-Za-z0-9_-]", "_");
+                }
+            }
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + URLEncoder.encode(base + ".xlsx", StandardCharsets.UTF_8).replace("+", "%20"));
             try (XSSFWorkbook workbook = new PlanillaProcesoWorkbookBuilder().buildCourseWorkbook(sheets)) { workbook.write(response.getOutputStream()); }

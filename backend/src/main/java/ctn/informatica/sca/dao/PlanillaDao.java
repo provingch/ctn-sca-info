@@ -272,6 +272,25 @@ public class PlanillaDao extends conexion {
         return materias;
     }
 
+    public List<Materia> findMateriasWithPlanilla(int cursoId, int periodo) throws SQLException {
+        String sql = "SELECT DISTINCT m.id, m.nombre, m.categoria "
+                + "FROM planilla p "
+                + "JOIN materia m ON p.materia_id = m.id "
+                + "WHERE p.curso_id = ? AND p.periodo = ? "
+                + "ORDER BY m.nombre";
+        List<Materia> materias = new ArrayList<>();
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, cursoId);
+            ps.setInt(2, periodo);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    materias.add(new Materia(rs.getInt("id"), rs.getString("nombre"), rs.getString("categoria")));
+                }
+            }
+        }
+        return materias;
+    }
+
     public boolean updateClassroomCourseId(int planillaId, String classroomCourseId) throws SQLException {
         try (Connection con = getCon()) {
             DatabaseMetaData metaData = con.getMetaData();
