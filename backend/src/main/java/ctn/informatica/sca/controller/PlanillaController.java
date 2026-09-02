@@ -325,7 +325,7 @@ public class PlanillaController {
                     profesor == null ? null : profesor.getFirmaImagen()
             );
 
-            String base = "Planilla_" + (disciplina.isBlank() ? planilla.getId() : disciplina.replaceAll("[^A-Za-z0-9_-]", "_")) + "_" + planilla.getPeriodo();
+            String base = buildExportBaseFilename(planilla, curso, disciplina);
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + URLEncoder.encode(base + ".xlsx", StandardCharsets.UTF_8).replace("+", "%20"));
 
@@ -413,6 +413,24 @@ public class PlanillaController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes acceso a esta planilla");
         }
         return planilla;
+    }
+
+    // Visible for testing: build the sanitized base filename used on export
+    public static String buildExportBaseFilename(Planilla planilla, Curso curso, String disciplina) {
+        String disciplinaPart = disciplina == null ? "" : disciplina;
+        String cursoOrdinal = "";
+        String seccion = "";
+        if (curso != null) {
+            cursoOrdinal = curso.getCursoOrdinal() == null ? "" : curso.getCursoOrdinal();
+            seccion = curso.getSeccion() == null ? "" : curso.getSeccion();
+        }
+        String cursoSeccion = cursoOrdinal + "-" + seccion;
+        String base = "Planilla_"
+                + (disciplinaPart.isBlank() ? String.valueOf(planilla.getId()) : disciplinaPart)
+                + "_" + cursoSeccion
+                + "_" + planilla.getPeriodo();
+        base = base.replaceAll("[^A-Za-z0-9_-]", "_");
+        return base;
     }
 
     private Planilla requireOwnedPlanillaByComposite(Integer cursoId, Integer materiaId, int etapa, int userId) throws SQLException {
