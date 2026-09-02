@@ -91,7 +91,8 @@ public class ClassroomSyncOrchestratorHappyPathTest {
         assertNotNull(result);
         assertEquals("C-1", result.googleCourseId());
         assertTrue(result.classroomCourseMapped());
-        assertEquals(1, result.importedCourseworks());
+        // No se importa tarea porque ya existe una con googleCourseworkId="cw-1"
+        assertEquals(0, result.importedCourseworks());
         assertEquals(1, result.linkedStudents());
         // La tarea mockeada tiene googleCourseworkId="cw-1", que matchea el CourseWork mockeado,
         // así que el submission con assignedGrade=8.0 debe importarse como 1 nota.

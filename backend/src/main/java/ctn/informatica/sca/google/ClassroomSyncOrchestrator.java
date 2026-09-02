@@ -123,7 +123,10 @@ public class ClassroomSyncOrchestrator {
         String classroomCourseId = classroomCourse.getId();
         boolean mapped = classroomCourseId != null && !classroomCourseId.isBlank();
 
-        int importedCourseworks = importCourseworkForPlanilla(profesor, planilla, classroomCourse);
+        int[] courseworksResult = importCourseworkForPlanilla(profesor, planilla, classroomCourse);
+        int importedCourseworks = courseworksResult[0];
+        int updatedCourseworks = courseworksResult[1];
+        int deletedCourseworks = courseworksResult[2];
         List<Alumno> alumnos = alumnoDao.findByCursoId(planilla.getCursoId());
         int linkedStudents = classroomAdapter.syncStudentIdentities(profesor, classroomCourseId, alumnos);
         int importedGrades = importGradesForPlanilla(profesor, planilla, classroomCourse, alumnos);
@@ -136,6 +139,12 @@ public class ClassroomSyncOrchestrator {
         }
         if (importedCourseworks > 0) {
             message.append(" ").append(importedCourseworks).append(" tarea(s) importada(s)");
+        }
+        if (updatedCourseworks > 0) {
+            message.append(" ").append(updatedCourseworks).append(" tarea(s) actualizada(s)");
+        }
+        if (deletedCourseworks > 0) {
+            message.append(" ").append(deletedCourseworks).append(" tarea(s) eliminada(s) por Classroom");
         }
         if (linkedStudents > 0) {
             if (message.length() > 0) {
@@ -161,49 +170,125 @@ public class ClassroomSyncOrchestrator {
         return new ClassroomSyncResult(classroomCourseId, mapped, importedCourseworks, linkedStudents, importedGrades, courseName, courseSection, courseAlternateLink, message.toString());
     }
 
-    private int importCourseworkForPlanilla(Profesor profesor, Planilla planilla, Course classroomCourse) {
+    private int[] importCourseworkForPlanilla(Profesor profesor, Planilla planilla, Course classroomCourse) {
+        // returns int[]{imported, updated, deleted}
         if (profesor == null || planilla == null || classroomCourse == null) {
-            return 0;
+            return new int[]{0, 0, 0};
         }
 
         try {
             TareaDao tareaDao = this.tareaDao;
-            Set<String> existingCourseworkIds = tareaDao.getGoogleCourseworkIdsForPlanilla(planilla.getId());
+            List<Tarea> existingTareas = tareaDao.consultarTarea(planilla.getId());
+            Map<String, Tarea> existingByGoogleId = new HashMap<>();
+            for (Tarea t : existingTareas) {
+                if (t.getGoogleCourseworkId() != null && !t.getGoogleCourseworkId().isBlank()) {
+                    existingByGoogleId.put(t.getGoogleCourseworkId(), t);
+                }
+            }
+
             List<CourseWork> courseWorks = classroomAdapter.listCourseWorkForCourse(profesor, classroomCourse.getId());
             if (courseWorks.isEmpty()) {
-                return 0;
+                return new int[]{0, 0, 0};
             }
 
             int imported = 0;
+            int updated = 0;
+            int deleted = 0;
             int defaultInstrumentId = selectDefaultInstrumentId();
+
+            Set<String> seenGoogleIds = new HashSet<>();
             for (CourseWork courseWork : courseWorks) {
-                if (courseWork == null || courseWork.getId() == null) {
+                if (courseWork == null || courseWork.getId() == null || courseWork.getId().isBlank()) {
                     continue;
                 }
-                if (existingCourseworkIds.contains(courseWork.getId())) {
-                    continue;
+                String cwId = courseWork.getId();
+                seenGoogleIds.add(cwId);
+
+                if (existingByGoogleId.containsKey(cwId)) {
+                    Tarea existing = existingByGoogleId.get(cwId);
+                    boolean changed = false;
+                    String newTitle = courseWork.getTitle() != null && !courseWork.getTitle().isBlank() ? courseWork.getTitle() : "Tarea Classroom";
+                    LocalDate newFecha = resolveCourseWorkDate(courseWork);
+                    LocalDate newFechaInicio = resolveCourseWorkStartDate(courseWork);
+                    LocalDate newFechaLimite = resolveCourseWorkDueDate(courseWork);
+                    int newTotal = resolveCourseWorkTotal(courseWork);
+
+                    if (!newTitle.equals(existing.getTitulo())) {
+                        existing.setTitulo(newTitle);
+                        changed = true;
+                    }
+                    if ((newFecha != null && !newFecha.equals(existing.getFecha())) || (newFecha == null && existing.getFecha() != null)) {
+                        existing.setFecha(newFecha);
+                        changed = true;
+                    }
+                    if ((newFechaInicio != null && !newFechaInicio.equals(existing.getFechaInicio())) || (newFechaInicio == null && existing.getFechaInicio() != null)) {
+                        existing.setFechaInicio(newFechaInicio);
+                        changed = true;
+                    }
+                    if ((newFechaLimite != null && !newFechaLimite.equals(existing.getFechaLimite())) || (newFechaLimite == null && existing.getFechaLimite() != null)) {
+                        existing.setFechaLimite(newFechaLimite);
+                        changed = true;
+                    }
+                    if (newTotal != existing.getTotal()) {
+                        existing.setTotal(newTotal);
+                        changed = true;
+                    }
+                    if (!cwId.equals(existing.getGoogleCourseworkId())) {
+                        existing.setGoogleCourseworkId(cwId);
+                        changed = true;
+                    }
+                    String newUrl = resolveCourseWorkUrl(courseWork);
+                    if ((newUrl != null && !newUrl.equals(existing.getGoogleCourseworkUrl())) || (newUrl == null && existing.getGoogleCourseworkUrl() != null)) {
+                        existing.setGoogleCourseworkUrl(newUrl);
+                        changed = true;
+                    }
+
+                    if (changed) {
+                        try {
+                            boolean gradesCleared = tareaDao.update(existing);
+                            updated++;
+                        } catch (SQLException ex) {
+                            System.err.println("Error updating tarea from Classroom coursework " + cwId + ": " + ex.getMessage());
+                        }
+                    }
+                } else {
+                    Tarea tarea = new Tarea();
+                    tarea.setPlanillaId(planilla.getId());
+                    tarea.setInstrumentoId(defaultInstrumentId);
+                    tarea.setTitulo(courseWork.getTitle() != null && !courseWork.getTitle().isBlank() ? courseWork.getTitle() : "Tarea Classroom");
+                    tarea.setFecha(resolveCourseWorkDate(courseWork));
+                    tarea.setFechaInicio(resolveCourseWorkStartDate(courseWork));
+                    tarea.setFechaLimite(resolveCourseWorkDueDate(courseWork));
+                    tarea.setTotal(resolveCourseWorkTotal(courseWork));
+                    tarea.setGoogleCourseworkId(cwId);
+                    tarea.setGoogleCourseworkUrl(resolveCourseWorkUrl(courseWork));
+
+                    try {
+                        tareaDao.insertarTarea(tarea);
+                        imported++;
+                    } catch (SQLException ex) {
+                        System.err.println("Error inserting tarea from Classroom coursework " + cwId + ": " + ex.getMessage());
+                    }
                 }
-
-                Tarea tarea = new Tarea();
-                tarea.setPlanillaId(planilla.getId());
-                tarea.setInstrumentoId(defaultInstrumentId);
-                tarea.setTitulo(courseWork.getTitle() != null && !courseWork.getTitle().isBlank()
-                        ? courseWork.getTitle()
-                        : "Tarea Classroom");
-                tarea.setFecha(resolveCourseWorkDate(courseWork));
-                tarea.setFechaInicio(resolveCourseWorkStartDate(courseWork));
-                tarea.setFechaLimite(resolveCourseWorkDueDate(courseWork));
-                tarea.setTotal(resolveCourseWorkTotal(courseWork));
-                tarea.setGoogleCourseworkId(courseWork.getId());
-                tarea.setGoogleCourseworkUrl(resolveCourseWorkUrl(courseWork));
-
-                tareaDao.insertarTarea(tarea);
-                imported++;
             }
-            return imported;
+
+            // Detect deletions: existing tasks with googleCourseworkId not present in seenGoogleIds
+            for (Map.Entry<String, Tarea> e : existingByGoogleId.entrySet()) {
+                if (!seenGoogleIds.contains(e.getKey())) {
+                    Tarea toDelete = e.getValue();
+                    try {
+                        tareaDao.delete(toDelete.getId());
+                        deleted++;
+                    } catch (SQLException ex) {
+                        System.err.println("Error deleting tarea no presente en Classroom " + e.getKey() + ": " + ex.getMessage());
+                    }
+                }
+            }
+
+            return new int[]{imported, updated, deleted};
         } catch (IOException | SQLException ex) {
             System.err.println("Error importing Classroom coursework for planilla " + planilla.getId() + ": " + ex.getMessage());
-            return 0;
+            return new int[]{0, 0, 0};
         }
     }
 
