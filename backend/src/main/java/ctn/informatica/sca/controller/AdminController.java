@@ -20,13 +20,16 @@ import ctn.informatica.sca.model.CursoBase;
 import ctn.informatica.sca.model.Especialidad;
 import ctn.informatica.sca.model.Materia;
 import ctn.informatica.sca.model.Padre;
+import ctn.informatica.sca.model.Planilla;
 import ctn.informatica.sca.model.Profesor;
 import ctn.informatica.sca.model.Sala;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ctn.informatica.sca.service.ActivityLogService;
+import ctn.informatica.sca.service.PlanillaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -930,6 +933,39 @@ public class AdminController {
             long expiry = p.getGcTokenExpiry();
             return new GoogleTokenInfo(p.getGoogleEmail(), hasAccess, hasRefresh, expiry);
         } catch (ResponseStatusException ex) { throw ex; } catch (Exception ex) { throw failure("No se pudo obtener info de tokens de Google", ex); }
+    }
+
+    @PostMapping("/planillas/{id}/etapa1/reformatear")
+    public Map<String, Object> reformatearEtapa1(@PathVariable int id, Authentication auth) {
+        ApiAuth.requireUserId(auth);
+        requireGlobalAdmin(auth);
+        try {
+            Planilla planilla = planillaDao.findById(id);
+            if (planilla == null) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Planilla no encontrada");
+            }
+            if (planilla.getFechaCierreEtapa1() == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La planilla no tiene fecha de cierre de Etapa 1");
+            }
+            int reclassified = new PlanillaService(planillaDao, new TareaDao()).reclasificarEtapas(id);
+            if (activityLogService != null) {
+                try {
+                    activityLogService.registrar(ApiAuth.requireUserId(auth), "Reformateó etapas de la planilla " + id + " (" + reclassified + " cambios)");
+                } catch (Exception ignored) {
+                    log.warn("No se pudo registrar el log de reformateo para la planilla {}: {}", id, ignored.getMessage());
+                }
+            }
+            Map<String, Object> response = new java.util.HashMap<>();
+            response.put("planillaId", id);
+            response.put("etapasReclasificadas", reclassified);
+            response.put("fechaCierreEtapa1", planilla.getFechaCierreEtapa1());
+            response.put("etapa1Confirmada", planilla.getEtapa1Confirmada());
+            return response;
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (SQLException ex) {
+            throw failure("No se pudo reformatear Etapa 1", ex);
+        }
     }
 
     @PostMapping("/cursos/sincronizar")

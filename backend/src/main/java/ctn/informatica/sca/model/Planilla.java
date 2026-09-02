@@ -6,6 +6,7 @@ package ctn.informatica.sca.model;
 
 import ctn.informatica.sca.dao.CursoDao;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -29,6 +30,8 @@ public class Planilla{
     private String categoria;
     private double exigencia;
     private String googleCourseId;
+    private LocalDate fechaCierreEtapa1;
+    private boolean etapa1Confirmada;
 
     private Map<Integer, int[]> gradeRanges;
     private int limiteInferior;   // li
@@ -69,6 +72,20 @@ public class Planilla{
             default ->
                 1;
         };
+    }
+
+    public int getEtapaSugerida() {
+        return sugerirEtapaParaTarea(LocalDate.now());
+    }
+
+    public int sugerirEtapaParaTarea(LocalDate fechaPublicacion) {
+        if (fechaPublicacion == null) {
+            return 1;
+        }
+        if (fechaCierreEtapa1 == null || !fechaPublicacion.isAfter(fechaCierreEtapa1)) {
+            return 1;
+        }
+        return 2;
     }
 
     public double getExigencia(String categoria) {
@@ -326,8 +343,28 @@ public class Planilla{
         return googleCourseId;
     }
 
+    public LocalDate getFechaCierreEtapa1() {
+        return fechaCierreEtapa1;
+    }
+
+    public boolean isEtapa1Confirmada() {
+        return etapa1Confirmada;
+    }
+
+    public boolean getEtapa1Confirmada() {
+        return etapa1Confirmada;
+    }
+
     public void setGoogleCourseId(String googleCourseId) {
         this.googleCourseId = googleCourseId;
+    }
+
+    public void setFechaCierreEtapa1(LocalDate fechaCierreEtapa1) {
+        this.fechaCierreEtapa1 = fechaCierreEtapa1;
+    }
+
+    public void setEtapa1Confirmada(boolean etapa1Confirmada) {
+        this.etapa1Confirmada = etapa1Confirmada;
     }
 
     public void setGradeRanges(Map<Integer, int[]> gradeRanges) {

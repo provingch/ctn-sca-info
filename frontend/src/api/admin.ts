@@ -175,3 +175,4 @@ export const unlinkPadreAlumno = (alumnoId: number, padreId: number) => adminReq
 export const wipePlanillaSyncImports = (planillaId: number) => adminRequest(() => api.post<{ message: string; deletedGrades: number; deletedTasks: number; clearedGoogleCourseIds: number }>(`/api/admin/planillas/${planillaId}/sync/wipe`));
 export const wipeAllClassroomSync = () => adminRequest(() => api.post<{ message: string; deletedGrades: number; deletedTasks: number; clearedGoogleCourseIds: number }>(`/api/admin/sync/wipe-all`));
 export const clearUserGoogleTokens = (userId: number) => adminRequest(() => api.post<{ message: string }>(`/api/admin/usuarios/${userId}/google/clear`));
+export const reformatearEtapa1 = (planillaId: number) => adminRequest(() => api.post<{ planillaId: number; etapasReclasificadas: number; fechaCierreEtapa1: string | null; etapa1Confirmada: boolean }>(`/api/admin/planillas/${planillaId}/etapa1/reformatear`, {}));

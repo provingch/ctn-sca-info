@@ -7,7 +7,7 @@ export interface Tarea {
   googleCourseworkUrl: string | null; gradesCleared?: boolean; warning?: string | null;
 }
 export interface PlanillaDetail {
-  planilla: { id: number; cursoId: number; materiaId: number; materiaNombre: string; categoria: string; etapa: string; etapaIndex: number; periodo: number; exigenciaPorcentaje: number; totalPossiblePoints: number; planillaDesde: string | null; planillaHasta: string | null; googleCourseId?: string | null };
+  planilla: { id: number; cursoId: number; materiaId: number; materiaNombre: string; categoria: string; etapa: string; etapaIndex: number; etapaSugerida: number; periodo: number; exigenciaPorcentaje: number; totalPossiblePoints: number; planillaDesde: string | null; planillaHasta: string | null; fechaCierreEtapa1: string | null; etapa1Confirmada: boolean; googleCourseId?: string | null };
   curso: { id: number; especialidad: string; seccion: string; nivel: number } | null;
   tareas: Tarea[];
   rows: Array<{ registroId: number; alumnoId: number; alumnoNombre: string; grades: Array<{ tareaId: number; puntos: number | null }>; total: number; porcentaje: number; nota: number }>;
@@ -20,6 +20,8 @@ export interface Especialidad { id: number; nombre: string }
 export const getPlanilla = (id: number) => api.get<PlanillaDetail>(`/api/planillas/${id}`);
 export const resolvePlanilla = (cursoId: number, materiaId: number, etapa: number) => api.post<{ planillaId: number }>('/api/planillas/resolve', { cursoId, materiaId, etapa });
 export const saveGrades = (id: number, grades: unknown[]) => api.post<{ message: string; warnings: string[] }>(`/api/planillas/${id}/notas`, { grades });
+export const saveEtapa1FechaCierre = (planillaId: number, fecha: string) => api.put<void>(`/api/planillas/${planillaId}/etapa1/fecha-cierre`, fecha);
+export const confirmEtapa1 = (planillaId: number) => api.post<void>(`/api/planillas/${planillaId}/etapa1/confirmar`, {});
 export interface ClassroomSyncResponse { planillaId: number; googleCourseId?: string | null; classroomCourseMapped: boolean; importedCourseworks: number; linkedStudents: number; importedGrades: number; courseName?: string | null; courseSection?: string | null; courseAlternateLink?: string | null; message: string }
 export const syncClassroom = (id: number) => api.post<ClassroomSyncResponse>(`/api/planillas/${id}/sync/classroom`);
 export const confirmClassroomMapping = (planillaId: number, googleCourseId: string) => api.post<{ message: string }>(`/api/planillas/${planillaId}/classroom`, { googleCourseId });
