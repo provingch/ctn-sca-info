@@ -494,7 +494,8 @@ class PlanillaProcesoWorkbookBuilderTest {
             Cell titleCell = sheet.getRow(6).getCell(2);
             assertNotNull(titleCell, "Debe existir la celda del instrumento Repaso");
             assertEquals("Repaso", titleCell.getStringCellValue(), "Debe renderizar el título del instrumento");
-            assertEquals(0, titleCell.getCellStyle().getRotation(), "El texto del instrumento debe mantenerse horizontal");
+            // Instrument titles are rendered vertically (90°)
+            assertEquals(90, titleCell.getCellStyle().getRotation(), "El texto del instrumento debe renderizarse en 90°");
 
             String expectedYearLabel = "Año: " + planilla.getPeriodo();
             Cell yearCell = null;
