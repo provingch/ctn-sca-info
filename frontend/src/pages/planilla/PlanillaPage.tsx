@@ -5,8 +5,10 @@ import ClassroomBadge from '../../components/ClassroomBadge';
 import GradeChip from '../../components/ui/GradeChip';
 import ContentState from '../../components/ui/ContentState';
 import AnimatedSelect from '../../components/AnimatedSelect';
-import { getPlanilla, resolvePlanilla, syncClassroom, confirmClassroomMapping, saveGrades, type PlanillaDetail } from '../../api/academics';
+import { getPlanilla, resolvePlanilla, syncClassroom, confirmClassroomMapping, saveGrades, saveEtapa1FechaCierre, confirmEtapa1, type PlanillaDetail } from '../../api/academics';
+import { reformatearEtapa1 } from '../../api/admin';
 import { ApiError, apiDownload } from '../../api/client';
+import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/toast';
 
 // Etiquetas de nota en orden descendente (5 -> 1), igual que el JSP legacy
@@ -50,6 +52,11 @@ export default function PlanillaPage() {
   const navigate = useNavigate();
   const [data, setData] = useState<PlanillaDetail | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
+  const [etapa1Date, setEtapa1Date] = useState('');
+  const [savingEtapa1Date, setSavingEtapa1Date] = useState(false);
+  const [confirmingEtapa1, setConfirmingEtapa1] = useState(false);
+  const [reformattingEtapa1, setReformattingEtapa1] = useState(false);
+  const { user } = useAuth();
   const { showToast } = useToast();
   const setStatus = useCallback((text: string) => { if (text) showToast(text); }, [showToast]);
   const [resolvedCourse, setResolvedCourse] = useState<{ googleCourseId?: string | null; classroomCourseMapped?: boolean; courseName?: string | null; courseSection?: string | null; courseAlternateLink?: string | null; message?: string } | null>(null);
@@ -66,6 +73,7 @@ export default function PlanillaPage() {
   const applyPlanillaData = useCallback((result: PlanillaDetail) => {
     setData(result);
     setValues(createGradeValues(result));
+    setEtapa1Date(result.planilla.fechaCierreEtapa1 ?? '');
   }, []);
 
   useEffect(() => {
@@ -189,7 +197,12 @@ export default function PlanillaPage() {
   // y navega a su id. resolvePlanilla ya existe en la API (usado también
   // desde HomePage al abrir una materia por primera vez).
   async function changeEtapa(nuevaEtapa: number) {
-    if (!data || nuevaEtapa === data.planilla.etapaIndex) return;
+    if (!data) return;
+    if (data.planilla.etapa1Confirmada) {
+      setStatus('Etapa 1 cerrada, no se pueden modificar sus datos');
+      return;
+    }
+    if (nuevaEtapa === data.planilla.etapaIndex) return;
     setSwitchingEtapa(true); setStatus('');
     try {
       const result = await resolvePlanilla(data.planilla.cursoId, data.planilla.materiaId, nuevaEtapa);
@@ -206,6 +219,60 @@ export default function PlanillaPage() {
     } finally {
       // asegurar que el selector quede usable en todos los caminos
       setSwitchingEtapa(false);
+    }
+  }
+
+  async function guardarFechaCierreEtapa1() {
+    if (!data) return;
+    if (!etapa1Date) {
+      setStatus('La fecha de cierre de Etapa 1 es requerida');
+      return;
+    }
+    setSavingEtapa1Date(true);
+    try {
+      await saveEtapa1FechaCierre(id, etapa1Date);
+      setStatus('Fecha de cierre de Etapa 1 guardada.');
+      applyPlanillaData(await getPlanilla(id));
+    } catch (e) {
+      setStatus(e instanceof ApiError ? e.message : 'No se pudo guardar la fecha de cierre.');
+    } finally {
+      setSavingEtapa1Date(false);
+    }
+  }
+
+  async function confirmarEtapa1Accion() {
+    if (!data) return;
+    if (data.planilla.etapa1Confirmada) {
+      setStatus('Etapa 1 cerrada, no se pueden modificar sus datos');
+      return;
+    }
+    if (!etapa1Date) {
+      setStatus('Debe indicar la fecha de cierre de Etapa 1 antes de confirmar');
+      return;
+    }
+    setConfirmingEtapa1(true);
+    try {
+      await confirmEtapa1(id);
+      setStatus('Etapa 1 confirmada.');
+      applyPlanillaData(await getPlanilla(id));
+    } catch (e) {
+      setStatus(e instanceof ApiError ? e.message : 'No se pudo confirmar Etapa 1.');
+    } finally {
+      setConfirmingEtapa1(false);
+    }
+  }
+
+  async function reformatearEtapa1Accion() {
+    if (!data) return;
+    setReformattingEtapa1(true);
+    try {
+      await reformatearEtapa1(id);
+      setStatus('Etapa 1 reformateada.');
+      applyPlanillaData(await getPlanilla(id));
+    } catch (e) {
+      setStatus(e instanceof ApiError ? e.message : 'No se pudo reformatear Etapa 1.');
+    } finally {
+      setReformattingEtapa1(false);
     }
   }
 
@@ -227,6 +294,8 @@ export default function PlanillaPage() {
   const gr = data.gradeRanges;
   const classroomTaskCount = data.tareas.filter((task) => Boolean(task.googleCourseworkId?.trim())).length;
   const localTaskCount = data.tareas.length - classroomTaskCount;
+  const isEtapa1Locked = Boolean(data.planilla.etapa1Confirmada);
+  const isGlobalAdmin = user?.level === 3 && user.especialidadId === null;
   // Piso de "1": todo lo que caiga por debajo del mínimo de "2" (igual que
   // en Planilla.jsp: "${gradeRanges['2'][0] - 1} o menos").
   const onePointCeiling = gr['2'] ? gr['2'].minInclusive - 1 : null;
@@ -240,6 +309,10 @@ export default function PlanillaPage() {
             <span className="badge">Profesor · {data.curso?.especialidad || 'Planilla'}</span>
             <h1>{data.planilla.materiaNombre}</h1>
             <p>{data.curso ? `${data.curso.nivel}° ${data.curso.seccion}` : 'Curso'} · {data.planilla.etapa}</p>
+            <div className="planilla-stage-closure-summary" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+              <span className="badge">Etapa sugerida: {data.planilla.etapaSugerida}</span>
+              {isEtapa1Locked ? <span className="badge" style={{ background: '#e8f5e9', color: '#1b5e20' }}>Etapa 1 cerrada</span> : <span className="badge" style={{ background: '#fff3e0', color: '#e65100' }}>Abierta para edición</span>}
+            </div>
           </div>
           <div className="planilla-hero-actions">
             <Link className="button secondary" to="/home">← Volver</Link>
@@ -255,12 +328,18 @@ export default function PlanillaPage() {
         <div className="planilla-legacy-toolbar">
           <div className="inline-filter">
             <span>Etapa</span>
-            <StageCombobox value={data.planilla.etapaIndex} disabled={switchingEtapa} onChange={changeEtapa} />
+            <StageCombobox value={data.planilla.etapaIndex} disabled={switchingEtapa || isEtapa1Locked} onChange={changeEtapa} />
           </div>
-          <p className="planilla-date-range"><strong>Desde:</strong> {formatShortDate(data.planilla.planillaDesde)} <strong>Hasta:</strong> {formatShortDate(data.planilla.planillaHasta)}</p>
+          <label className="inline-filter">
+            <span>Cierre Etapa 1</span>
+            <input type="date" value={etapa1Date} disabled={isEtapa1Locked || savingEtapa1Date} onChange={(event) => setEtapa1Date(event.target.value)} />
+          </label>
           <div className="planilla-toolbar-actions">
+            <button className="button" type="button" disabled={!etapa1Date || isEtapa1Locked || savingEtapa1Date} onClick={() => void guardarFechaCierreEtapa1()}>{savingEtapa1Date ? 'Guardando…' : 'Guardar fecha'}</button>
+            <button className="button secondary" type="button" disabled={!etapa1Date || isEtapa1Locked || confirmingEtapa1} onClick={() => void confirmarEtapa1Accion()}>{confirmingEtapa1 ? 'Confirmando…' : 'Confirmar Etapa 1'}</button>
+            {isGlobalAdmin && <button className="button secondary" type="button" disabled={reformattingEtapa1 || !data.planilla.fechaCierreEtapa1} onClick={() => void reformatearEtapa1Accion()}>{reformattingEtapa1 ? 'Reformateando…' : 'Reformatear etapa'}</button>}
             <button className="button secondary" type="button" disabled={syncingClassroom} onClick={() => void performClassroomSync(id)}>{syncingClassroom ? 'Sincronizando…' : 'Sincronizar Classroom'}</button>
-            <Link className="button" to={`/planilla/${id}/tarea`}>Agregar tarea</Link>
+            {!isEtapa1Locked && <Link className="button" to={`/planilla/${id}/tarea`}>Agregar tarea</Link>}
           </div>
         </div>
       </section>
@@ -269,6 +348,11 @@ export default function PlanillaPage() {
         <span><strong>{syncSummary.created}</strong> tareas creadas</span>
         <span><strong>{syncSummary.updated}</strong> calificaciones actualizadas</span>
       </div>}
+      {isEtapa1Locked && (
+        <div className="notice" role="status">
+          <strong>Etapa 1 cerrada, no se pueden modificar sus datos.</strong>
+        </div>
+      )}
       {resolvedCourse && resolvedCourse.classroomCourseMapped && resolvedCourse.googleCourseId && data.planilla.googleCourseId !== resolvedCourse.googleCourseId && (
         <div className="notice">
           <div>
@@ -359,7 +443,7 @@ export default function PlanillaPage() {
                       TP: {task.total}{task.fechaInicio ? ` · ${formatShortDate(task.fechaInicio)}` : ''}
                       {isClassroomTask && <ClassroomBadge className="planilla-task-classroom-icon" label="Importada de Google Classroom" iconOnly />}
                     </small>
-                    {!isClassroomTask && <Link className="planilla-task-edit" to={`/planilla/${id}/tarea/${task.id}`}>Editar</Link>}
+                    {!isClassroomTask && !isEtapa1Locked && <Link className="planilla-task-edit" to={`/planilla/${id}/tarea/${task.id}`}>Editar</Link>}
                   </th>
                 );
               })}
@@ -390,6 +474,7 @@ export default function PlanillaPage() {
                       min={0}
                       max={task.total}
                       value={grade ?? ''}
+                      disabled={isEtapa1Locked}
                       onChange={(e) => handleGradeChange(`${row.alumnoId}:${task.id}`, e.target.value)}
                       onBlur={() => void handleGradeBlur(row.alumnoId, task.id, task.total)}
                       aria-label={`Nota para ${row.alumnoNombre} en ${task.titulo}`}

@@ -11,6 +11,7 @@ import ctn.informatica.sca.dao.TareaDao;
 import ctn.informatica.sca.google.ClassroomSyncOrchestrator;
 import ctn.informatica.sca.dao.ClassroomSyncLogDao;
 import ctn.informatica.sca.service.ActivityLogService;
+import ctn.informatica.sca.service.PlanillaService;
 import ctn.informatica.sca.google.GoogleClassroomService;
 import ctn.informatica.sca.model.Curso;
 import ctn.informatica.sca.model.Materia;
@@ -35,6 +36,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -404,6 +406,53 @@ public class PlanillaController {
         }
     }
 
+    @PutMapping("/{planillaId}/etapa1/fecha-cierre")
+    public void guardarFechaCierreEtapa1(@PathVariable int planillaId, @RequestBody(required = false) LocalDate fecha, Authentication authentication) {
+        int userId = ApiAuth.requireUserId(authentication);
+        try {
+            Planilla planilla = requireOwnedPlanillaById(planillaId, userId);
+            if (planilla.getEtapa1Confirmada()) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Etapa 1 cerrada, no se pueden modificar sus datos");
+            }
+            if (fecha == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La fecha de cierre de Etapa 1 es requerida");
+            }
+            boolean updated = planillaDao.updateFechaCierreEtapa1(planillaId, fecha);
+            if (!updated) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Planilla no encontrada");
+            }
+            planilla.setFechaCierreEtapa1(fecha);
+            new PlanillaService(planillaDao, new TareaDao()).reclasificarEtapas(planillaId);
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (SQLException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al guardar la fecha de cierre de Etapa 1", ex);
+        }
+    }
+
+    @PostMapping("/{planillaId}/etapa1/confirmar")
+    public void confirmarEtapa1(@PathVariable int planillaId, Authentication authentication) {
+        int userId = ApiAuth.requireUserId(authentication);
+        try {
+            Planilla planilla = requireOwnedPlanillaById(planillaId, userId);
+            if (planilla.getEtapa1Confirmada()) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Etapa 1 cerrada, no se pueden modificar sus datos");
+            }
+            if (planilla.getFechaCierreEtapa1() == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe indicar la fecha de cierre de Etapa 1 antes de confirmar");
+            }
+            boolean updated = planillaDao.updateEtapa1Confirmada(planillaId, true);
+            if (!updated) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Planilla no encontrada");
+            }
+            planilla.setEtapa1Confirmada(true);
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (SQLException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al confirmar Etapa 1", ex);
+        }
+    }
+
     private Planilla requireOwnedPlanillaById(int planillaId, int userId) throws SQLException {
         Planilla planilla = planillaDao.findById(planillaId);
         if (planilla == null) {
@@ -528,6 +577,7 @@ public class PlanillaController {
                 planilla.getCategoria(),
                 planilla.getEtapa(),
                 planilla.getEtapaIndex(),
+                planilla.getEtapaSugerida(),
                 planilla.getPeriodo(),
                 planilla.getProfesorId(),
                 (int) Math.round(100 * planilla.getExigencia()),
@@ -536,6 +586,8 @@ public class PlanillaController {
                         planilla.getPeriodo() > 0 ? planilla.getPeriodo() : AcademicPeriod.current(),
                         planilla.getEtapaIndex()),
                 maxEnd,
+                planilla.getFechaCierreEtapa1(),
+                planilla.getEtapa1Confirmada(),
                 planilla.getGoogleCourseId());
 
         CursoDto cursoDto = curso == null
@@ -622,12 +674,15 @@ public class PlanillaController {
             String categoria,
             String etapa,
             int etapaIndex,
+            int etapaSugerida,
             int periodo,
             int profesorId,
             int exigenciaPorcentaje,
             int totalPossiblePoints,
             LocalDate planillaDesde,
             LocalDate planillaHasta,
+            LocalDate fechaCierreEtapa1,
+            boolean etapa1Confirmada,
             String googleCourseId) {
     }
 

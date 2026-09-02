@@ -291,6 +291,28 @@ public class PlanillaDao extends conexion {
         return materias;
     }
 
+    public boolean updateFechaCierreEtapa1(int planillaId, java.time.LocalDate fecha) throws SQLException {
+        String sql = "UPDATE planilla SET fecha_cierre_etapa1 = ? WHERE id = ?";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            if (fecha == null) {
+                ps.setNull(1, java.sql.Types.DATE);
+            } else {
+                ps.setDate(1, java.sql.Date.valueOf(fecha));
+            }
+            ps.setInt(2, planillaId);
+            return ps.executeUpdate() == 1;
+        }
+    }
+
+    public boolean updateEtapa1Confirmada(int planillaId, boolean confirmed) throws SQLException {
+        String sql = "UPDATE planilla SET etapa1_confirmada = ? WHERE id = ?";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setBoolean(1, confirmed);
+            ps.setInt(2, planillaId);
+            return ps.executeUpdate() == 1;
+        }
+    }
+
     public boolean updateClassroomCourseId(int planillaId, String classroomCourseId) throws SQLException {
         try (Connection con = getCon()) {
             DatabaseMetaData metaData = con.getMetaData();
@@ -336,14 +358,31 @@ public class PlanillaDao extends conexion {
             String etapa = rs.getString("etapa");// NOTE might cause problems in the future
             int profesor_id = rs.getInt("profesor_id");
             String googleCourseId = null;
+            java.time.LocalDate fechaCierreEtapa1 = null;
+            boolean etapa1Confirmada = false;
             try {
                 googleCourseId = rs.getString("google_course_id");
+            } catch (SQLException ex) {
+                // older schema may not include this column
+            }
+            try {
+                java.sql.Date cierre = rs.getDate("fecha_cierre_etapa1");
+                if (cierre != null) {
+                    fechaCierreEtapa1 = cierre.toLocalDate();
+                }
+            } catch (SQLException ex) {
+                // older schema may not include this column
+            }
+            try {
+                etapa1Confirmada = rs.getBoolean("etapa1_confirmada");
             } catch (SQLException ex) {
                 // older schema may not include this column
             }
 
             Planilla p = new Planilla(planilla_id, curso_id, materia_id, categoria, nombre, periodo, etapa, profesor_id);
             p.setGoogleCourseId(googleCourseId);
+            p.setFechaCierreEtapa1(fechaCierreEtapa1);
+            p.setEtapa1Confirmada(etapa1Confirmada);
             return p;
         } else {
             return null;

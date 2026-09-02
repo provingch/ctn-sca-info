@@ -5,6 +5,7 @@ public record PlanillaDto(
         String nombre,
         int periodo,
         int tareasCount,
-        int materiaId
+        int materiaId,
+        int etapaSugerida
 ) {
 }

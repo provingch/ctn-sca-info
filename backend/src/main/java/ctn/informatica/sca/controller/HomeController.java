@@ -698,7 +698,13 @@ public class HomeController {
     }
 
     private PlanillaDto toPlanillaDto(Planilla planilla) {
-        return new PlanillaDto(planilla.getId(), planilla.getNombre(), planilla.getPeriodo(), planilla.getTareasCount(), planilla.getMateriaId());
+        return new PlanillaDto(
+                planilla.getId(),
+                planilla.getNombre(),
+                planilla.getPeriodo(),
+                planilla.getTareasCount(),
+                planilla.getMateriaId(),
+                planilla.getEtapaSugerida());
     }
 
     private HomeGoogleClassroomCourseDto toGoogleClassroomCourseDto(Course course) {
