@@ -32,6 +32,25 @@ public class StudentRowDao extends conexion {
         return puntos == null ? 0 : puntos;
     }
 
+    static void addGradeIfRelevant(StudentRow row, int tareaId, Integer puntos, Map<Integer, Integer> tareaMax) {
+        if (row == null || tareaMax == null || tareaId <= 0 || !tareaMax.containsKey(tareaId)) {
+            return;
+        }
+        row.getGrades().put(tareaId, puntos);
+    }
+
+    static int sumRelevantGrades(Map<Integer, Integer> grades, Map<Integer, Integer> tareaMax) {
+        if (grades == null || tareaMax == null || tareaMax.isEmpty()) {
+            return 0;
+        }
+        int sum = 0;
+        for (Integer tareaId : tareaMax.keySet()) {
+            Integer puntos = grades.get(tareaId);
+            sum += normalizeGradeValue(puntos);
+        }
+        return sum;
+    }
+
     public List<StudentRow> loadRowsForPlanilla(Planilla planilla,
             Map<Integer, Integer> tareaMax,
             int totalPossiblePoints) throws SQLException {
@@ -77,20 +96,14 @@ public class StudentRowDao extends conexion {
                     // tarea_id may be NULL due to LEFT JOIN; getInt + wasNull works but we'll use getObject for puntos
                     int tareaId = rs.getInt("tarea_id");
                     if (!rs.wasNull() && tareaId > 0) {
-                        // use getObject to obtain an Integer that is null for SQL NULL
                         Integer puntos = rs.getObject("puntos", Integer.class);
-                        // Put the puntos value (may be null) into the map
-                        row.getGrades().put(tareaId, puntos);
+                        addGradeIfRelevant(row, tareaId, puntos, tareaMax);
                     }
                 }
 
                 // compute totals & percentages for each row
                 for (StudentRow r : map.values()) {
-                    int sum = 0;
-                    for (Map.Entry<Integer, Integer> e : r.getGrades().entrySet()) {
-                        Integer puntos = e.getValue();
-                        sum += normalizeGradeValue(puntos);
-                    }
+                    int sum = sumRelevantGrades(r.getGrades(), tareaMax);
                     r.setTotal(sum);
                     // compute porcentaje = round(sum * 100 / totalPossiblePoints)
                     int porcentaje = 0;
