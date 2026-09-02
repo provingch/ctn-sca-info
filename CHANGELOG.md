@@ -6,6 +6,42 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato se basa en [Mantener un Registro de Cambios](https://keepachangelog.com/es/1.0.0/),
 y este proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-09-01
+
+### Añadido
+
+- **Administrador por especialidad**: nuevo alcance de administrador limitado a su propia especialidad (Alumnos, Horarios y Quejas), separado del administrador global (único con acceso a Materias, Usuarios, Asignaciones, Estado del sistema y Salas); protecciones de alcance e inmutabilidad en todos los endpoints del panel.
+- **Control académico — reforma completa**: comparación directa del tema desarrollado contra el plan curricular (ya no por similitud aproximada), justificación obligatoria cuando un tema se desarrolla fuera de fecha, revisión de incumplimientos por evaluación a partir de 3 atrasos acumulados en la misma asignación con posibilidad de suspender al profesor por un período concreto, plantilla de plan curricular descargable para ambas etapas lectivas (Marzo–Junio y Julio–Noviembre), y seguimiento por evaluación de los planes ya aprobados con fecha de cumplimiento por tema.
+- **Sistema de quejas**: la administración de cada especialidad puede cargar quejas contra un profesor indicando curso y motivo; quedan agrupadas por profesor con umbral de alerta.
+- **Coordinación Pedagógica** (nuevo rol, nivel 5): revisa las quejas cargadas por especialidad para evaluar el desempeño de cada profesor.
+- **Bandeja de notificaciones**: además de las notificaciones push, cada usuario puede revisar sus notificaciones anteriores, marcarlas como leídas (individualmente o todas a la vez) y acceder directamente al lugar donde se originó cada una.
+- **Catálogo de salas**: alta de salas comunes y por pabellón de especialidad, con validación de conflicto de horario por sala además del conflicto por profesor y por curso.
+- **Rediseño completo de la exportación de horarios a PDF**: layout ajustado al formato real del colegio, dos logos en el encabezado (institucional y de la especialidad), color de fila de receso según la especialidad, fila de salas al pie de cada bloque de horas, y manejo de nombres/materias largos sin desbordar la tabla.
+- **Creación automática de cursos**: al pasar de año lectivo, se generan automáticamente las filas de curso faltantes para la nueva promoción de cada especialidad, sin necesidad de carga manual.
+- **Registro de actividad**: cobertura ampliada a más acciones (cambio de contraseña, entre otras) en todos los controladores relevantes.
+- **Bloqueo de inicio de sesión tras intentos fallidos**: el backend limita los reintentos y devuelve un tiempo de espera, mostrado como cuenta regresiva en el login.
+- **Invalidación de sesión al cambiar la contraseña**: un cambio de contraseña invalida automáticamente las sesiones activas anteriores.
+- **Notificaciones flotantes (toasts)**: los avisos temporales ahora flotan sobre todo el contenido y no se ven afectados por el scroll de la página; los mensajes de error muestran el detalle real devuelto por el backend en lugar de un texto genérico.
+- **Identidad visual por especialidad**: ícono y color propios por especialidad en horarios, tarjetas del panel de administración y avatar del usuario.
+
+### Cambiado
+
+- **Modelo de cursos**: se separó el curso "abstracto" (especialidad + nivel + sección, sin año) del curso concreto ligado a una promoción y sus alumnos; las asignaciones y el horario ahora se vinculan al curso abstracto.
+- **Exportación de horarios**: pasa a generarse una sola página por curso (antes se partía en dos), con la columna de horas realineada.
+
+### Eliminado
+
+- **Exportación de horarios a Excel**: se retiró por completo; la exportación de horarios queda únicamente en PDF.
+
+### Corregido
+
+- **Error 500 intermitente al refrescar sesión**: las llamadas concurrentes de renovación de token ya no compiten entre sí por el mismo token de un solo uso.
+- **Encabezado del Excel de planillas**: se corrigió un error de geometría que podía posicionar mal los bloques de Especialidad/Curso/Año en algunas planillas.
+- **Envío de notificaciones y umbral de quejas**: se corrigió un caso en el que no se disparaban correctamente.
+- **Datos de quejas**: se corrigieron tipos de datos inconsistentes y el cálculo del nivel/curso asociado a cada queja.
+
+---
+
 ## [1.0.0] - 2026-08-24
 
 Primera versión estable de la base **Spring Boot + React**. Cierra la migración completa desde el stack legado (Servlets/JSP) y consolida todas las funcionalidades desarrolladas durante el proceso como release 1.0. La numeración se reinicia respecto del historial de la aplicación legada (ver versiones 2.0.0 y anteriores más abajo, correspondientes al sistema JSP ya retirado).
@@ -46,7 +82,6 @@ Proyecto desarrollado por:
 * [@Sh1b0] [https://github.com/Sh1b0](https://github.com/Sh1b0)
 * [@schmidtsamuel626] [https://github.com/schmidtsamuel626](https://github.com/schmidtsamuel626)
 * [@Macrosss] [https://github.com/tukp5678](https://github.com/tukp5678)
-
 
 Inicio del desarrollo: 18 de junio de 2026.
 Propuesta aceptada: 29 de junio de 2026.

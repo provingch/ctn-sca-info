@@ -1,3 +1,7 @@
+> **Nota:*** este reporte describe el diseño original del export de horario a Excel
+> (`HorarioWorkbookBuilder`), que fue reemplazado por el export a PDF. Se conserva
+> solo como referencia histórica.
+
 # Paso 0 — Investigación y decisiones (resumen)
 
 Fecha: 2026-08-29
