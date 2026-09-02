@@ -89,6 +89,35 @@ class GoogleClassroomServiceFindCourseTest {
     }
 
     @Test
+    void eligeLaClaseCorrectaCuandoHayDosMateriasEspecificasEnElMismoCursoYUnaSalaEstaVacia() {
+        Course laboratorioJava = new Course()
+                .setId("c-lab-java")
+                .setName("Laboratorio Java 3ro A")
+                .setSection(String.valueOf(CURRENT_PERIOD))
+                .setRoom("Informática");
+
+        Course laboratorioAndroid = new Course()
+                .setId("c-lab-android")
+                .setName("Laboratorio Android 3ro A")
+                .setSection(String.valueOf(CURRENT_PERIOD))
+                .setRoom("");
+
+        Curso curso3roAInformatica = new Curso(1, "Informática", CURRENT_PERIOD, "A");
+
+        Planilla planillaJava = new Planilla(30, 0, 0, "Laboratorio Java", CURRENT_PERIOD, "primera", 0, 0, "");
+        Optional<Course> chosenJava = GoogleClassroomService.chooseCourseFromList(
+                List.of(laboratorioJava, laboratorioAndroid), curso3roAInformatica, planillaJava);
+        assertTrue(chosenJava.isPresent());
+        assertEquals("c-lab-java", chosenJava.get().getId());
+
+        Planilla planillaAndroid = new Planilla(31, 0, 0, "Laboratorio Android", CURRENT_PERIOD, "primera", 0, 0, "");
+        Optional<Course> chosenAndroid = GoogleClassroomService.chooseCourseFromList(
+                List.of(laboratorioJava, laboratorioAndroid), curso3roAInformatica, planillaAndroid);
+        assertTrue(chosenAndroid.isPresent());
+        assertEquals("c-lab-android", chosenAndroid.get().getId());
+    }
+
+    @Test
     void ignoraUnCursoGuardadoObsoletoCuandoLaMateriaYaNoCoincide() {
         Course laboratorioRedes = new Course()
                 .setId("c-lab-redes")

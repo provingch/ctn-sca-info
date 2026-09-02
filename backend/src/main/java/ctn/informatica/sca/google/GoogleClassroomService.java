@@ -645,6 +645,30 @@ public final class GoogleClassroomService {
         MateriaCore materiaCore = stripEspecialidadSuffix(planilla.getNombre(), curso.getEspecialidad());
         String normalizedMateria = GoogleClassroomUtils.normalizeSubjectName(materiaCore.core());
 
+        int sameNameMatches = 0;
+        for (Course course : courses) {
+            String name = course.getName();
+            String room = course.getRoom();
+            String section = course.getSection();
+
+            Optional<GoogleClassroomUtils.CourseKey> key = GoogleClassroomUtils.parseCourseKey(name, room, section, curso.getPeriod());
+            if (key.isEmpty()) {
+                continue;
+            }
+            boolean sameLevel = curso.getNivel() == key.get().getNivel();
+            boolean sameSection = curso.getSeccion() != null && curso.getSeccion().equalsIgnoreCase(key.get().getSeccion());
+            if (!(sameLevel && sameSection)) {
+                continue;
+            }
+
+            boolean subjectMatches = !normalizedMateria.isBlank()
+                    && (GoogleClassroomUtils.containsNormalizedPhrase(name, normalizedMateria)
+                    || GoogleClassroomUtils.containsNormalizedPhrase(room, normalizedMateria));
+            if (subjectMatches) {
+                sameNameMatches++;
+            }
+        }
+
         List<Course> identityCandidates = new ArrayList<>();
 
         for (Course course : courses) {
@@ -666,8 +690,12 @@ public final class GoogleClassroomService {
                     && (GoogleClassroomUtils.containsNormalizedPhrase(name, normalizedMateria)
                     || GoogleClassroomUtils.containsNormalizedPhrase(room, normalizedMateria));
 
+            // Para materias específicas sin sufijo de especialidad, un único match
+            // de nombre dentro del mismo nivel+sección es evidencia suficiente; no
+            // debe depender de que la Sala esté bien cargada cuando no hay ambigüedad.
             boolean specialtyConfirmed = roomStatesSpecialty(room, curso)
-                    || (materiaCore.especialidadEraSufijo() && subjectMatches);
+                    || (materiaCore.especialidadEraSufijo() && subjectMatches)
+                    || (subjectMatches && sameNameMatches == 1);
 
             if (!specialtyConfirmed) {
                 continue;
