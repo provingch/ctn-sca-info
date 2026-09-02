@@ -31,3 +31,5 @@ export const updateTarea = (id: number, body: { instrumentoId: number; fecha: st
 export const deleteTarea = (id: number) => api.delete<void>(`/api/tareas/${id}`);
 export const getEspecialidades = () => api.get<Especialidad[]>('/api/evaluacion/especialidades');
 export const getCursosEvaluacion = (especialidadId?: number) => api.get<CursoEvaluacion[]>(`/api/evaluacion/cursos${especialidadId ? `?especialidadId=${especialidadId}` : ''}`);
+export interface MateriaEvaluacion { id: number; nombre: string }
+export const getMateriasEvaluacion = (cursoId: number, periodo: number) => api.get<MateriaEvaluacion[]>(`/api/evaluacion/cursos/${cursoId}/materias?periodo=${periodo}`);
