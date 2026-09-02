@@ -356,7 +356,7 @@ public class PlanillaProcesoWorkbookBuilder {
             int subtotalCol = firstCol + reservedSlotsForMonth(tareasMes);
             String firstColRef = CellReference.convertNumToColString(firstCol);
             String lastColRef = CellReference.convertNumToColString(lastInstrument);
-            int excelRowIndex = tpRowRuntime.getRowNum() + 1; // 1-based
+            int excelRowIndex = tpRowRuntime.getRowNum() + 1; // TP row formula must reference the TP row, not the student row.
             Cell subtotalCell = getOrCreateCell(tpRowRuntime, subtotalCol);
             // If there are no instruments (shouldn't happen here) leave blank
             if (lastInstrument >= firstCol) {

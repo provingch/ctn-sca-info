@@ -16,7 +16,7 @@ const normalizeSpecialtyName = (value: string) => value
   .toLowerCase()
   .normalize('NFD')
   .replace(/[\u0300-\u036f]/g, '')
-  .replace(/[\-_]+/g, ' ')
+  .replace(/[-_]+/g, ' ')
   .replace(/\s+/g, ' ')
   .trim();
 

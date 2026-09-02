@@ -49,6 +49,7 @@ public class EvaluacionCatalogController {
     private final IncumplimientoRevisionDao incumplimientoRevisionDao;
     private final NotificacionDao notificacionDao;
     private final UserDao userDao;
+    private final ProfesorDao profesorDao;
 
     public EvaluacionCatalogController(
             CursoDao cursoDao,
@@ -56,7 +57,8 @@ public class EvaluacionCatalogController {
             InstrumentoDao instrumentoDao,
             RasgoPlanillaDao rasgoPlanillaDao,
             IncumplimientoRevisionDao incumplimientoRevisionDao) {
-        this(cursoDao, especialidadDao, instrumentoDao, rasgoPlanillaDao, incumplimientoRevisionDao, new AsignacionDao(), new NotificacionDao(), new UserDao());
+        this(cursoDao, especialidadDao, instrumentoDao, rasgoPlanillaDao, incumplimientoRevisionDao,
+                new AsignacionDao(), new NotificacionDao(), new UserDao(), new ProfesorDao());
     }
 
     public EvaluacionCatalogController(
@@ -68,14 +70,8 @@ public class EvaluacionCatalogController {
             AsignacionDao asignacionDao,
             NotificacionDao notificacionDao,
             UserDao userDao) {
-        this.cursoDao = cursoDao;
-        this.especialidadDao = especialidadDao;
-        this.instrumentoDao = instrumentoDao;
-        this.rasgoPlanillaDao = rasgoPlanillaDao;
-        this.incumplimientoRevisionDao = incumplimientoRevisionDao == null ? new IncumplimientoRevisionDao() : incumplimientoRevisionDao;
-        this.asignacionDao = asignacionDao == null ? new AsignacionDao() : asignacionDao;
-        this.notificacionDao = notificacionDao == null ? new NotificacionDao() : notificacionDao;
-        this.userDao = userDao == null ? new UserDao() : userDao;
+        this(cursoDao, especialidadDao, instrumentoDao, rasgoPlanillaDao, incumplimientoRevisionDao,
+                asignacionDao, notificacionDao, userDao, new ProfesorDao());
     }
 
     @Autowired
@@ -87,7 +83,42 @@ public class EvaluacionCatalogController {
             IncumplimientoRevisionDao incumplimientoRevisionDao,
             NotificacionDao notificacionDao,
             UserDao userDao) {
-        this(cursoDao, especialidadDao, instrumentoDao, rasgoPlanillaDao, incumplimientoRevisionDao, new AsignacionDao(), notificacionDao, userDao);
+        this(cursoDao, especialidadDao, instrumentoDao, rasgoPlanillaDao, incumplimientoRevisionDao,
+                new AsignacionDao(), notificacionDao, userDao, new ProfesorDao());
+    }
+
+    public EvaluacionCatalogController(
+            CursoDao cursoDao,
+            EspecialidadDao especialidadDao,
+            InstrumentoDao instrumentoDao,
+            RasgoPlanillaDao rasgoPlanillaDao,
+            IncumplimientoRevisionDao incumplimientoRevisionDao,
+            AsignacionDao asignacionDao,
+            NotificacionDao notificacionDao,
+            UserDao userDao,
+            ProfesorDao profesorDao) {
+        this.cursoDao = cursoDao;
+        this.especialidadDao = especialidadDao;
+        this.instrumentoDao = instrumentoDao;
+        this.rasgoPlanillaDao = rasgoPlanillaDao;
+        this.incumplimientoRevisionDao = incumplimientoRevisionDao == null ? new IncumplimientoRevisionDao() : incumplimientoRevisionDao;
+        this.asignacionDao = asignacionDao == null ? new AsignacionDao() : asignacionDao;
+        this.notificacionDao = notificacionDao == null ? new NotificacionDao() : notificacionDao;
+        this.userDao = userDao == null ? new UserDao() : userDao;
+        this.profesorDao = profesorDao == null ? new ProfesorDao() : profesorDao;
+    }
+
+    public EvaluacionCatalogController(
+            CursoDao cursoDao,
+            EspecialidadDao especialidadDao,
+            InstrumentoDao instrumentoDao,
+            RasgoPlanillaDao rasgoPlanillaDao,
+            IncumplimientoRevisionDao incumplimientoRevisionDao,
+            NotificacionDao notificacionDao,
+            UserDao userDao,
+            ProfesorDao profesorDao) {
+        this(cursoDao, especialidadDao, instrumentoDao, rasgoPlanillaDao, incumplimientoRevisionDao,
+                new AsignacionDao(), notificacionDao, userDao, profesorDao);
     }
 
     @GetMapping("/instrumentos")
@@ -182,23 +213,34 @@ public class EvaluacionCatalogController {
     }
 
     private boolean shouldUseTeacherAssignmentsScope(Authentication authentication) {
-        int userLevel = ApiAuth.requireUserLevel(authentication);
-        if (userLevel != 3) {
+        if (authentication == null) {
             return false;
         }
-        int userId = ApiAuth.requireUserId(authentication);
-        Profesor profesor = new ProfesorDao().findById(userId);
-        if (profesor == null) return false;
 
-        // If the professor is an administrator for a specialty (perfil especialidad != null),
-        // keep the institutional view (no scoping).
-        if (profesor.getEspecialidadId() != null) return false;
-
-        // Otherwise, use the professor's real assignments to determine scope: if the
-        // professor has at least one assignment, limit lists to those assignments.
         try {
+            int userLevel = ApiAuth.requireUserLevel(authentication);
+            if (userLevel != 3) {
+                return false;
+            }
+        } catch (ResponseStatusException ex) {
+            return false;
+        }
+
+        int userId = ApiAuth.requireUserId(authentication);
+
+        try {
+            Profesor profesor = profesorDao.findById(userId);
+            if (profesor == null) return false;
+
+            // If the professor is an administrator for a specialty (perfil especialidad != null),
+            // keep the institutional view (no scoping).
+            if (profesor.getEspecialidadId() != null) return false;
+
+            // Otherwise, use the professor's real assignments to determine scope: if the
+            // professor has at least one assignment, limit lists to those assignments.
             return !asignacionDao.findByProfesor(userId).isEmpty();
         } catch (Exception ex) {
+            log.warn("No se pudo resolver el alcance por asignaciones del profesor {}: {}", userId, ex.getMessage());
             return false;
         }
     }
