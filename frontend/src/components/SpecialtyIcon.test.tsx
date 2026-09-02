@@ -6,7 +6,10 @@ describe('SpecialtyIcon', () => {
   it('matches known specialty variants without accents', () => {
     render(<SpecialtyIcon name="Mecánica General" />);
 
-    expect(screen.getByRole('img', { name: 'Especialidad Mecánica General' }).querySelector('img')).not.toBeNull();
+    const icon = screen.getByRole('img', { name: 'Especialidad Mecánica General' });
+    const mask = icon.querySelector('.specialty-icon-mask') as HTMLElement | null;
+    expect(mask).not.toBeNull();
+    expect(mask?.style.maskImage || mask?.style.webkitMaskImage).toContain('mecanica-industrial');
   });
 
   it('uses an initial fallback for an unknown specialty', () => {
