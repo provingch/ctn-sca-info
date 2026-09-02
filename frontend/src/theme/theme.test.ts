@@ -3,6 +3,20 @@ import { applyTheme, getInitialTheme, normalizeSpecialty, persistTheme, THEME_CH
 
 describe('theme', () => {
   beforeEach(() => {
+    if (typeof localStorage === 'undefined' || localStorage === null) {
+      // minimal in-memory localStorage shim for test environment
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      global.localStorage = (() => {
+        let store: Record<string, string> = {};
+        return {
+          getItem: (k: string) => (Object.prototype.hasOwnProperty.call(store, k) ? store[k] : null),
+          setItem: (k: string, v: string) => { store[k] = String(v); },
+          removeItem: (k: string) => { delete store[k]; },
+          clear: () => { store = {}; },
+        };
+      })();
+    }
     localStorage.clear();
     document.documentElement.removeAttribute('data-theme');
     document.head.innerHTML = '<meta name="theme-color" content="">';
