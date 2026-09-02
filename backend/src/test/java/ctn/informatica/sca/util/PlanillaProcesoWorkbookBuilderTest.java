@@ -778,7 +778,7 @@ class PlanillaProcesoWorkbookBuilderTest {
             }
             assertTrue(subtotalCols.size() >= 2, "Debe encontrarse al menos 2 columnas Subtotal");
 
-            // Compare formulas: student subtotal formula vs TP subtotal formula (should be SUM of same columns)
+            // Compare formulas: student subtotal formula vs TP subtotal formula, preserving the TP-row row number offset.
             for (int sc : subtotalCols) {
                 Cell studentSubtotal = studentRow.getCell(sc);
                 Cell tpSubtotal = tpRow.getCell(sc);
@@ -786,7 +786,11 @@ class PlanillaProcesoWorkbookBuilderTest {
                 assertNotNull(tpSubtotal, "TP subtotal debe existir en col " + sc);
                 assertEquals(org.apache.poi.ss.usermodel.CellType.FORMULA, studentSubtotal.getCellType(), "Student subtotal debe ser fórmula");
                 assertEquals(org.apache.poi.ss.usermodel.CellType.FORMULA, tpSubtotal.getCellType(), "TP subtotal debe ser fórmula");
-                assertEquals(studentSubtotal.getCellFormula(), tpSubtotal.getCellFormula(), "La fórmula de subtotal en TP debe coincidir con la de estudiante");
+                String studentFormula = studentSubtotal.getCellFormula();
+                int studentExcelRow = studentRow.getRowNum() + 1;
+                int tpExcelRow = tpRow.getRowNum() + 1;
+                String expectedTpFormula = studentFormula.replace(String.valueOf(studentExcelRow), String.valueOf(tpExcelRow));
+                assertEquals(expectedTpFormula, tpSubtotal.getCellFormula(), "La fórmula de subtotal en TP debe coincidir con la de estudiante, ajustando la fila TP");
             }
 
             // Total General column: locate by header containing "Total General"
@@ -806,7 +810,11 @@ class PlanillaProcesoWorkbookBuilderTest {
             assertNotNull(tpTotal);
             assertEquals(org.apache.poi.ss.usermodel.CellType.FORMULA, studentTotal.getCellType());
             assertEquals(org.apache.poi.ss.usermodel.CellType.FORMULA, tpTotal.getCellType());
-            assertEquals(studentTotal.getCellFormula(), tpTotal.getCellFormula(), "La fórmula de Total General en TP debe coincidir con la del estudiante");
+            String studentTotalFormula = studentTotal.getCellFormula();
+            int studentExcelRow = studentRow.getRowNum() + 1;
+            int tpExcelRow = tpRow.getRowNum() + 1;
+            String expectedTpTotalFormula = studentTotalFormula.replace(String.valueOf(studentExcelRow), String.valueOf(tpExcelRow));
+            assertEquals(expectedTpTotalFormula, tpTotal.getCellFormula(), "La fórmula de Total General en TP debe coincidir con la del estudiante, ajustando la fila TP");
 
             // 3) Verify instrument column widths are in 4.0..5.0 chars
             for (int col : instrumentCols) {

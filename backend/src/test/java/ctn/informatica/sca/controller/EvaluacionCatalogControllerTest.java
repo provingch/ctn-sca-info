@@ -21,7 +21,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import ctn.informatica.sca.dao.AsignacionDao;
+import ctn.informatica.sca.dao.ProfesorDao;
 import ctn.informatica.sca.model.Asignacion;
+import ctn.informatica.sca.model.Profesor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -35,25 +37,42 @@ class EvaluacionCatalogControllerTest {
     private IncumplimientoRevisionDao incumplimientoRevisionDao;
     private NotificacionDao notificacionDao;
     private UserDao userDao;
+    private AsignacionDao asignacionDao;
+    private ProfesorDao profesorDao;
     private EvaluacionCatalogController controller;
     private final UsernamePasswordAuthenticationToken authentication =
             new UsernamePasswordAuthenticationToken(14L, null, List.of());
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         cursoDao = mock(CursoDao.class);
         especialidadDao = mock(EspecialidadDao.class);
         incumplimientoRevisionDao = mock(IncumplimientoRevisionDao.class);
         notificacionDao = mock(NotificacionDao.class);
         userDao = mock(UserDao.class);
+        asignacionDao = mock(AsignacionDao.class);
+        profesorDao = mock(ProfesorDao.class);
         controller = new EvaluacionCatalogController(
                 cursoDao,
                 especialidadDao,
                 mock(InstrumentoDao.class),
                 mock(RasgoPlanillaDao.class),
                 incumplimientoRevisionDao,
+                asignacionDao,
                 notificacionDao,
-                userDao);
+                userDao,
+                profesorDao);
+
+        Profesor teacher = new Profesor();
+        teacher.setId(14);
+        teacher.setNombre("Ana");
+        teacher.setApellido("Pérez");
+        teacher.setNivel(3);
+        teacher.setEspecialidadId(null);
+        when(profesorDao.findById(14)).thenReturn(teacher);
+        when(asignacionDao.findByProfesor(14)).thenReturn(List.of(
+                new Asignacion(11, 14, 1, 1),
+                new Asignacion(12, 14, 2, 2)));
     }
 
     @Test
@@ -86,6 +105,7 @@ class EvaluacionCatalogControllerTest {
         asignaciones.get(0).setEspecialidad("Informática");
         asignaciones.get(1).setEspecialidadId(2);
         asignaciones.get(1).setEspecialidad("Construcciones Civiles");
+        when(asignacionDao.findByProfesor(14)).thenReturn(asignaciones);
         var teacherAuth = new UsernamePasswordAuthenticationToken(14L, null, List.of(new SimpleGrantedAuthority("ROLE_LEVEL_3")));
 
         List<EvaluacionCatalogController.EspecialidadDto> especialidades = controller.listEspecialidades(teacherAuth);
