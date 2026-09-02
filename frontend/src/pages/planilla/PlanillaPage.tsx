@@ -5,7 +5,7 @@ import ClassroomBadge from '../../components/ClassroomBadge';
 import GradeChip from '../../components/ui/GradeChip';
 import ContentState from '../../components/ui/ContentState';
 import AnimatedSelect from '../../components/AnimatedSelect';
-import { getPlanilla, resolvePlanilla, syncClassroom, confirmClassroomMapping, type PlanillaDetail } from '../../api/academics';
+import { getPlanilla, resolvePlanilla, syncClassroom, confirmClassroomMapping, saveGrades, type PlanillaDetail } from '../../api/academics';
 import { ApiError, apiDownload } from '../../api/client';
 import { useToast } from '../../context/toast';
 
@@ -129,6 +129,44 @@ export default function PlanillaPage() {
       return { row, originalIndex, total, percentage };
     });
   }, [data, values]);
+
+  const handleGradeChange = useCallback((key: string, next: string) => {
+    setValues((prev) => ({ ...prev, [key]: next }));
+  }, []);
+
+  const handleGradeBlur = useCallback(async (alumnoId: number, tareaId: number, taskTotal: number) => {
+    const key = `${alumnoId}:${tareaId}`;
+    let raw = values[key];
+    let puntos: number | null = null;
+    if (raw == null || raw === '') {
+      puntos = null;
+    } else {
+      const n = Number(raw);
+      if (Number.isNaN(n)) {
+        showToast('Valor inválido');
+        return;
+      }
+      puntos = Math.max(0, Math.min(taskTotal, Math.round(n)));
+    }
+
+    // if nothing to save (null treated as 0 in backend), still send to persist
+    try {
+      setStatus('Guardando calificación…');
+      const payload = [{ alumnoId, items: [{ tareaId, puntos: puntos == null ? 0 : puntos }] }];
+      const body = await saveGrades(id, payload);
+      if (body) {
+        if ((body as any).message) showToast((body as any).message);
+        if (Array.isArray((body as any).warnings) && (body as any).warnings.length > 0) {
+          (body as any).warnings.forEach((w: string) => showToast(w));
+        }
+      }
+      // refrescar la planilla para recalcular totales/notas
+      const refreshed = await getPlanilla(id);
+      applyPlanillaData(refreshed);
+    } catch (e) {
+      setStatus(e instanceof ApiError ? e.message : 'No se pudo guardar la nota.');
+    }
+  }, [applyPlanillaData, id, setStatus, showToast, values]);
 
   const visibleRows = useMemo(() => {
     const query = normalizeStudentName(studentSearch.trim());
@@ -344,7 +382,19 @@ export default function PlanillaPage() {
                 const grade = values[`${row.alumnoId}:${task.id}`];
                 const isClassroomTask = Boolean(task.googleCourseworkId?.trim());
                 return <td key={task.id} className={`planilla-task-grade${isClassroomTask ? ' planilla-task-grade--classroom' : ''}`} aria-label={`${row.alumnoNombre}, ${task.titulo}: ${grade === '' || grade == null ? 'sin calificación' : `${grade} puntos`}`}>
-                  <span>{grade === '' || grade == null ? '—' : grade}</span>
+                  {isClassroomTask ? (
+                    <span>{grade === '' || grade == null ? '—' : grade}</span>
+                  ) : (
+                    <input
+                      type="number"
+                      min={0}
+                      max={task.total}
+                      value={grade ?? ''}
+                      onChange={(e) => handleGradeChange(`${row.alumnoId}:${task.id}`, e.target.value)}
+                      onBlur={() => void handleGradeBlur(row.alumnoId, task.id, task.total)}
+                      aria-label={`Nota para ${row.alumnoNombre} en ${task.titulo}`}
+                    />
+                  )}
                 </td>;
               })}
               <td className="student-total-cell">{total}<small>de {data.planilla.totalPossiblePoints}</small></td>
