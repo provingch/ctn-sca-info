@@ -312,7 +312,7 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
       </div>
 
       {isFormOpen && (
-        <div ref={formDialogRef} className="signature-modal" role="dialog" aria-modal="true" aria-labelledby="asignacion-form-title" tabIndex={-1} style={{ display: 'grid' }}>
+        <div ref={formDialogRef} className="data-modal" role="dialog" aria-modal="true" aria-labelledby="asignacion-form-title" tabIndex={-1}>
           <div className="signature-modal-header">
             <div>
               <span>Asignaciones</span>
@@ -360,7 +360,7 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
       )}
 
       {horarioPopup && (
-        <div ref={scheduleDialogRef} className="signature-modal" role="dialog" aria-modal="true" aria-labelledby="horario-panel-title" tabIndex={-1} style={{ display: 'grid', maxWidth: 700 }}>
+        <div ref={scheduleDialogRef} className="data-modal" role="dialog" aria-modal="true" aria-labelledby="horario-panel-title" tabIndex={-1} style={{ maxWidth: 700 }}>
           <div className="signature-modal-header">
             <div>
               <span>Horario</span>
@@ -404,7 +404,7 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
             </div>
           </div>
 
-          <div style={{ marginTop: 20 }}>
+          <div className="data-modal-section">
             <h3>Slots cargados</h3>
             {horarioPopup.slots.length === 0 ? (
               <p>No hay slots cargados para esta asignación.</p>
