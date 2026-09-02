@@ -119,13 +119,23 @@ export default function HomePage() {
   // Sync application palette with selected especialidad in query
   useEffect(() => {
     const id = Number(search.get('especialidadId') || 0);
+
+    if (!id && especialidades.length === 1) {
+      setSearch((prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('especialidadId', String(especialidades[0].id));
+        return next;
+      });
+      return;
+    }
+
     if (id) {
       const s = especialidades.find((item) => item.id === id);
       if (s) selectSpecialty(s.nombre, s.id);
     } else {
       resetSpecialty();
     }
-  }, [search, especialidades, selectSpecialty, resetSpecialty]);
+  }, [search, especialidades, selectSpecialty, resetSpecialty, setSearch]);
 
   useEffect(() => { void load(); }, [load]);
 
