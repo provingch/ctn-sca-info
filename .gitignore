@@ -30,3 +30,6 @@ nginx/*.local
 
 # Backend packaged static assets from previous builds
 /backend/target/classes/static/assets/
+
+# Salida accidental de build/IDE en backend/
+/backend/bin/
