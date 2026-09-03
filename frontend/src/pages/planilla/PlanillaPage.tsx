@@ -10,6 +10,7 @@ import { reformatearEtapa1 } from '../../api/admin';
 import { ApiError, apiDownload } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/toast';
+import { normalizeGradeInput } from './gradeValidation';
 
 // Etiquetas de nota en orden descendente (5 -> 1), igual que el JSP legacy
 // (Planilla.jsp: chips grade-chip--five..one). "1" no tiene rango propio en
@@ -137,8 +138,8 @@ export default function PlanillaPage() {
     });
   }, [data, values]);
 
-  const handleGradeChange = useCallback((key: string, next: string) => {
-    setValues((prev) => ({ ...prev, [key]: next }));
+  const handleGradeChange = useCallback((key: string, next: string, taskTotal: number) => {
+    setValues((prev) => ({ ...prev, [key]: normalizeGradeInput(next, taskTotal) }));
   }, []);
 
   const handleGradeBlur = useCallback(async (alumnoId: number, tareaId: number, taskTotal: number) => {
@@ -469,7 +470,7 @@ export default function PlanillaPage() {
                       max={task.total}
                       value={grade ?? ''}
                       disabled={isEtapa1Locked}
-                      onChange={(e) => handleGradeChange(`${row.alumnoId}:${task.id}`, e.target.value)}
+                      onChange={(e) => handleGradeChange(`${row.alumnoId}:${task.id}`, e.target.value, task.total)}
                       onBlur={() => void handleGradeBlur(row.alumnoId, task.id, task.total)}
                       aria-label={`Nota para ${row.alumnoNombre} en ${task.titulo}`}
                     />
