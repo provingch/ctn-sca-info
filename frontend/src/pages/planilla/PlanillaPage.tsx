@@ -56,6 +56,7 @@ export default function PlanillaPage() {
   const [etapa1Date, setEtapa1Date] = useState('');
   const [confirmingEtapa1, setConfirmingEtapa1] = useState(false);
   const [reformattingEtapa1, setReformattingEtapa1] = useState(false);
+  const [selectedEtapa, setSelectedEtapa] = useState<number>(1);
   const { user } = useAuth();
   const { showToast } = useToast();
   const setStatus = useCallback((text: string) => { if (text) showToast(text); }, [showToast]);
@@ -74,6 +75,8 @@ export default function PlanillaPage() {
     setData(result);
     setValues(createGradeValues(result));
     setEtapa1Date(result.planilla.fechaCierreEtapa1 ?? '');
+    // Inicializar el selector de etapa con la "etapa sugerida" al cargar
+    setSelectedEtapa(result.planilla.etapaSugerida ?? result.planilla.etapaIndex ?? 1);
   }, []);
 
   useEffect(() => {
@@ -198,11 +201,14 @@ export default function PlanillaPage() {
   // desde HomePage al abrir una materia por primera vez).
   async function changeEtapa(nuevaEtapa: number) {
     if (!data) return;
-    if (data.planilla.etapa1Confirmada) {
-      setStatus('Etapa 1 cerrada, no se pueden modificar sus datos');
+    // permitir que el usuario cambie la etapa siempre; el backend y la lógica de
+    // bloqueo de edición de datos por etapa cerrada se mantienen por separado.
+    if (nuevaEtapa === data.planilla.etapaIndex) {
+      setSelectedEtapa(nuevaEtapa);
       return;
     }
-    if (nuevaEtapa === data.planilla.etapaIndex) return;
+    // reflejar el cambio inmediatamente en el control para mejor UX
+    setSelectedEtapa(nuevaEtapa);
     setSwitchingEtapa(true); setStatus('');
     try {
       const result = await resolvePlanilla(data.planilla.cursoId, data.planilla.materiaId, nuevaEtapa);
@@ -320,7 +326,7 @@ export default function PlanillaPage() {
         <div className="planilla-legacy-toolbar">
           <div className="inline-filter">
             <span>Etapa</span>
-            <StageCombobox value={data.planilla.etapaIndex} disabled={switchingEtapa || isEtapa1Locked} onChange={changeEtapa} />
+            <StageCombobox value={selectedEtapa} disabled={switchingEtapa} onChange={changeEtapa} />
           </div>
           {data.planilla.etapaIndex === 1 && (
             <>
