@@ -61,7 +61,7 @@ public class PlanillaDao extends conexion {
             placeholders.add("?");
         }
 
-        String sql = "SELECT p.id, m.nombre AS nombre, curso_id, materia_id, periodo, etapa, p.usuario_id AS profesor_id, p.google_course_id, COUNT(DISTINCT t.id) AS tareas_count "
+        String sql = "SELECT p.id, m.nombre AS nombre, curso_id, materia_id, periodo, etapa, p.usuario_id AS profesor_id, p.google_course_id, p.fecha_cierre_etapa1, p.etapa1_confirmada, COUNT(DISTINCT t.id) AS tareas_count "
                 + "FROM planilla p "
                 + "JOIN materia m ON p.materia_id = m.id "
                 + "LEFT JOIN tarea t ON t.planilla_id = p.id "
@@ -109,7 +109,7 @@ public class PlanillaDao extends conexion {
             placeholders.add("?");
         }
 
-        String sql = "SELECT p.id, m.nombre AS nombre, curso_id, materia_id, categoria, periodo, etapa, p.usuario_id AS profesor_id "
+        String sql = "SELECT p.id, m.nombre AS nombre, curso_id, materia_id, categoria, periodo, etapa, p.usuario_id AS profesor_id, p.fecha_cierre_etapa1, p.etapa1_confirmada "
                 + "FROM planilla p "
                 + "JOIN materia m ON p.materia_id = m.id "
                 + "WHERE p.usuario_id = ? AND etapa = ? AND periodo = ? AND p.materia_id IN (" + String.join(", ", placeholders) + ") "
@@ -170,7 +170,7 @@ public class PlanillaDao extends conexion {
     }
 
     public Planilla findById(int id) throws SQLException {// could create an interface
-        String sql = "SELECT p.id, m.nombre AS nombre, curso_id, materia_id, categoria, periodo, etapa, p.usuario_id AS profesor_id, p.google_course_id "
+        String sql = "SELECT p.id, m.nombre AS nombre, curso_id, materia_id, categoria, periodo, etapa, p.usuario_id AS profesor_id, p.google_course_id, p.fecha_cierre_etapa1, p.etapa1_confirmada "
                 + "FROM planilla p JOIN materia m ON p.materia_id = m.id "
                 + "WHERE p.id = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -183,7 +183,7 @@ public class PlanillaDao extends conexion {
     }
 
     public Planilla findByCompositeKey(int cursoId, int materiaId, int etapa) throws SQLException {
-        String sql = "SELECT p.id, m.nombre AS nombre, curso_id, materia_id, categoria, periodo, etapa, p.usuario_id AS profesor_id, p.google_course_id "
+        String sql = "SELECT p.id, m.nombre AS nombre, curso_id, materia_id, categoria, periodo, etapa, p.usuario_id AS profesor_id, p.google_course_id, p.fecha_cierre_etapa1, p.etapa1_confirmada "
                 + "FROM planilla p JOIN materia m ON p.materia_id = m.id "
                 + "WHERE curso_id = ? AND materia_id = ? AND periodo = ? AND etapa = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
