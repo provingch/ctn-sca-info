@@ -115,8 +115,29 @@ public class ClassroomSyncOrchestrator {
 
         Optional<Course> resolvedCourse = classroomAdapter.resolveCourseForPlanilla(profesor, curso, planilla);
         if (resolvedCourse.isEmpty()) {
-            return new ClassroomSyncResult(planilla.getGoogleCourseId(), false, 0, 0, 0, null, null, null,
-                "No se encontró un curso de Classroom compatible con esta planilla.");
+            // No se encontró curso en Classroom: limpiar tareas que fueron importadas
+            int orphanDeleted = 0;
+            try {
+                List<Tarea> existingTareas = tareaDao.consultarTarea(planilla.getId());
+                for (Tarea t : existingTareas) {
+                    if (t.getGoogleCourseworkId() != null && !t.getGoogleCourseworkId().isBlank()) {
+                        try {
+                            tareaDao.delete(t.getId());
+                            orphanDeleted++;
+                        } catch (SQLException ex) {
+                            System.err.println("Error eliminando tarea huérfana " + t.getId() + ": " + ex.getMessage());
+                        }
+                    }
+                }
+            } catch (SQLException ex) {
+                System.err.println("Error consultando tareas para limpieza de huérfanos: " + ex.getMessage());
+            }
+
+            String message = "No se encontró un curso de Classroom compatible con esta planilla.";
+            if (orphanDeleted > 0) {
+                message += " " + orphanDeleted + " tarea(s) importada(s) de Classroom eliminada(s).";
+            }
+            return new ClassroomSyncResult(planilla.getGoogleCourseId(), false, 0, 0, 0, null, null, null, message);
         }
 
         Course classroomCourse = resolvedCourse.get();
