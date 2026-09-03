@@ -53,7 +53,6 @@ export default function PlanillaPage() {
   const [data, setData] = useState<PlanillaDetail | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
   const [etapa1Date, setEtapa1Date] = useState('');
-  const [savingEtapa1Date, setSavingEtapa1Date] = useState(false);
   const [confirmingEtapa1, setConfirmingEtapa1] = useState(false);
   const [reformattingEtapa1, setReformattingEtapa1] = useState(false);
   const { user } = useAuth();
@@ -222,24 +221,7 @@ export default function PlanillaPage() {
     }
   }
 
-  async function guardarFechaCierreEtapa1() {
-    if (!data) return;
-    if (!etapa1Date) {
-      setStatus('La fecha de cierre de Etapa 1 es requerida');
-      return;
-    }
-    setSavingEtapa1Date(true);
-    try {
-      await saveEtapa1FechaCierre(id, etapa1Date);
-      setStatus('Fecha de cierre de Etapa 1 guardada.');
-      applyPlanillaData(await getPlanilla(id));
-    } catch (e) {
-      setStatus(e instanceof ApiError ? e.message : 'No se pudo guardar la fecha de cierre.');
-    } finally {
-      setSavingEtapa1Date(false);
-    }
-  }
-
+  // Unificado: guardar fecha y confirmar en una sola acción si el usuario acepta
   async function confirmarEtapa1Accion() {
     if (!data) return;
     if (data.planilla.etapa1Confirmada) {
@@ -250,8 +232,15 @@ export default function PlanillaPage() {
       setStatus('Debe indicar la fecha de cierre de Etapa 1 antes de confirmar');
       return;
     }
+
+    const ok = window.confirm(`¿Confirmar el cierre de la Etapa 1 con fecha ${etapa1Date}? No se podrá editar después.`);
+    if (!ok) return;
+
     setConfirmingEtapa1(true);
     try {
+      // primero guardar la fecha (backend requiere fecha al confirmar)
+      await saveEtapa1FechaCierre(id, etapa1Date);
+      // luego confirmar
       await confirmEtapa1(id);
       setStatus('Etapa 1 confirmada.');
       applyPlanillaData(await getPlanilla(id));
@@ -261,6 +250,8 @@ export default function PlanillaPage() {
       setConfirmingEtapa1(false);
     }
   }
+
+
 
   async function reformatearEtapa1Accion() {
     if (!data) return;
@@ -330,18 +321,21 @@ export default function PlanillaPage() {
             <span>Etapa</span>
             <StageCombobox value={data.planilla.etapaIndex} disabled={switchingEtapa || isEtapa1Locked} onChange={changeEtapa} />
           </div>
-          <label className="inline-filter">
-            <span>Cierre Etapa 1</span>
-            <input type="date" value={etapa1Date} disabled={isEtapa1Locked || savingEtapa1Date} onChange={(event) => setEtapa1Date(event.target.value)} />
-          </label>
-          <div className="planilla-toolbar-actions">
-            <button className="button" type="button" disabled={!etapa1Date || isEtapa1Locked || savingEtapa1Date} onClick={() => void guardarFechaCierreEtapa1()}>{savingEtapa1Date ? 'Guardando…' : 'Guardar fecha'}</button>
-            <button className="button secondary" type="button" disabled={!etapa1Date || isEtapa1Locked || confirmingEtapa1} onClick={() => void confirmarEtapa1Accion()}>{confirmingEtapa1 ? 'Confirmando…' : 'Confirmar Etapa 1'}</button>
-            {isGlobalAdmin && <button className="button secondary" type="button" disabled={reformattingEtapa1 || !data.planilla.fechaCierreEtapa1} onClick={() => void reformatearEtapa1Accion()}>{reformattingEtapa1 ? 'Reformateando…' : 'Reformatear etapa'}</button>}
-            <button className="button secondary" type="button" disabled={syncingClassroom} onClick={() => void performClassroomSync(id)}>{syncingClassroom ? 'Sincronizando…' : 'Sincronizar Classroom'}</button>
-            {!isEtapa1Locked && <Link className="button" to={`/planilla/${id}/tarea`}>Agregar tarea</Link>}
+          {data.planilla.etapaIndex === 1 && (
+            <>
+              <label className="inline-filter">
+                <span>Cierre Etapa 1</span>
+                <input type="date" value={etapa1Date} disabled={isEtapa1Locked || confirmingEtapa1} onChange={(event) => setEtapa1Date(event.target.value)} />
+              </label>
+              <div className="planilla-toolbar-actions">
+                <button className="button secondary" type="button" disabled={!etapa1Date || isEtapa1Locked || confirmingEtapa1} onClick={() => void confirmarEtapa1Accion()}>{confirmingEtapa1 ? 'Confirmando…' : 'Confirmar Etapa 1'}</button>
+                {isGlobalAdmin && <button className="button secondary" type="button" disabled={reformattingEtapa1 || !data.planilla.fechaCierreEtapa1} onClick={() => void reformatearEtapa1Accion()}>{reformattingEtapa1 ? 'Reformateando…' : 'Reformatear etapa'}</button>}
+                <button className="button secondary" type="button" disabled={syncingClassroom} onClick={() => void performClassroomSync(id)}>{syncingClassroom ? 'Sincronizando…' : 'Sincronizar Classroom'}</button>
+                {!isEtapa1Locked && <Link className="button" to={`/planilla/${id}/tarea`}>Agregar tarea</Link>}
+              </div>
+            </>
+          )}
           </div>
-        </div>
       </section>
       {lastClassroomSync && <p className="sync-meta" role="status">Última sincronización: {lastClassroomSync.toLocaleString('es-AR', { dateStyle: 'medium', timeStyle: 'short' })}</p>}
       {syncSummary && <div className="sync-summary" aria-label="Resultado de la sincronización">
