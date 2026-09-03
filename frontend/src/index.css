@@ -837,7 +837,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .planilla-hero-header p { margin: 0; color: var(--muted); }
 .planilla-hero-actions, .planilla-toolbar-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
 .planilla-legacy-toolbar { position: relative; display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 13px 18px; border-top: 1px solid var(--line); background: var(--bg-soft); }
-.planilla-legacy-toolbar .inline-filter { min-width: 0; margin-left: 0; }
+.planilla-legacy-toolbar .inline-filter { min-width: 0; margin-left: 0; grid-template-columns: auto minmax(0, 1fr); }
 .planilla-date-range { margin: 0; color: var(--muted); font-size: .82rem; }
 .planilla-date-range strong { color: var(--ink); }
 .planilla-toolbar-actions { margin-left: auto; }
