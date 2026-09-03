@@ -145,4 +145,28 @@ class GoogleClassroomServiceFindCourseTest {
         assertTrue(GoogleClassroomService.isCourseCompatibleWithPlanilla(orientacion, curso3roAInformatica, planillaOrientacion, courses));
         assertTrue(!GoogleClassroomService.isCourseCompatibleWithPlanilla(laboratorioRedes, curso3roAInformatica, planillaOrientacion, courses));
     }
+
+    @Test
+    void noAdivinaCuandoSoloExisteOtraMateriaEnClassroom() {
+        // Solo existe en Classroom la clase de Laboratorio Java; no hay clase de Laboratorio Android
+        Course laboratorioJava = new Course()
+                .setId("c-lab-java")
+                .setName("Laboratorio Java 3ro A")
+                .setSection(String.valueOf(CURRENT_PERIOD))
+                .setRoom("Informática");
+
+        Curso curso3roAInformatica = new Curso(1, "Informática", CURRENT_PERIOD, "A");
+
+        Planilla planillaJava = new Planilla(40, 0, 0, "Laboratorio Java", CURRENT_PERIOD, "primera", 0, 0, "");
+        Optional<Course> chosenJava = GoogleClassroomService.chooseCourseFromList(
+                List.of(laboratorioJava), curso3roAInformatica, planillaJava);
+        assertTrue(chosenJava.isPresent());
+        assertEquals("c-lab-java", chosenJava.get().getId());
+
+        Planilla planillaAndroid = new Planilla(41, 0, 0, "Laboratorio Android", CURRENT_PERIOD, "primera", 0, 0, "");
+        Optional<Course> chosenAndroid = GoogleClassroomService.chooseCourseFromList(
+                List.of(laboratorioJava), curso3roAInformatica, planillaAndroid);
+        // No debe adivinar: como no existe una clase que coincida por materia, debe devolver vacío
+        assertTrue(chosenAndroid.isEmpty());
+    }
 }

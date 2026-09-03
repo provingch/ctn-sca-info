@@ -669,8 +669,6 @@ public final class GoogleClassroomService {
             }
         }
 
-        List<Course> identityCandidates = new ArrayList<>();
-
         for (Course course : courses) {
             String name = course.getName();
             String room = course.getRoom();
@@ -690,26 +688,24 @@ public final class GoogleClassroomService {
                     && (GoogleClassroomUtils.containsNormalizedPhrase(name, normalizedMateria)
                     || GoogleClassroomUtils.containsNormalizedPhrase(room, normalizedMateria));
 
+            if (!subjectMatches) {
+                continue;
+            }
+
             // Para materias específicas sin sufijo de especialidad, un único match
             // de nombre dentro del mismo nivel+sección es evidencia suficiente; no
             // debe depender de que la Sala esté bien cargada cuando no hay ambigüedad.
             boolean specialtyConfirmed = roomStatesSpecialty(room, curso)
-                    || (materiaCore.especialidadEraSufijo() && subjectMatches)
-                    || (subjectMatches && sameNameMatches == 1);
+                    || materiaCore.especialidadEraSufijo()
+                    || sameNameMatches == 1;
 
             if (!specialtyConfirmed) {
                 continue;
             }
 
-            if (subjectMatches) {
-                return Optional.of(course);
-            }
-            identityCandidates.add(course);
+            return Optional.of(course);
         }
 
-        if (identityCandidates.size() == 1) {
-            return Optional.of(identityCandidates.get(0));
-        }
         return Optional.empty();
     }
 
