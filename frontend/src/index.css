@@ -20,6 +20,7 @@
   --accent-soft: #eef0ff;
   --accent-strong: #dce1ff;
   --accent-contrast: #ffffff;
+  --logo-contrast: var(--accent-deep);
   --hero-tone: #5267f7;
   --hero-contrast: #ffffff;
   --success: #28784a;
@@ -52,6 +53,7 @@
   --accent-soft: #222c53;
   --accent-strong: #2c3869;
   --accent-contrast: #11162a;
+  --logo-contrast: var(--accent-deep);
   --hero-tone: #5267f7;
   --hero-contrast: #ffffff;
   --success: #65c58d;

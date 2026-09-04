@@ -86,13 +86,28 @@ export default function PlanillaPage() {
     setResolvedCourse(null);
     setStudentSearch('');
     setStudentSort(null);
-    getPlanilla(id).then((result) => {
-      if (active) applyPlanillaData(result);
+    getPlanilla(id).then(async (result) => {
+      if (!active) return;
+
+      const suggestedEtapa = result.planilla.etapaSugerida ?? result.planilla.etapaIndex;
+      if (suggestedEtapa !== result.planilla.etapaIndex) {
+        try {
+          const resolved = await resolvePlanilla(result.planilla.cursoId, result.planilla.materiaId, suggestedEtapa);
+          if (resolved.planillaId && resolved.planillaId !== id) {
+            navigate(`/planilla/${resolved.planillaId}`, { replace: true });
+            return;
+          }
+        } catch (e) {
+          setStatus(e instanceof ApiError ? e.message : 'No se pudo resolver la etapa sugerida.');
+        }
+      }
+
+      applyPlanillaData(result);
     }).catch((e) => {
       if (active) setStatus(e instanceof ApiError ? e.message : 'No se pudo cargar la planilla.');
     });
     return () => { active = false; };
-  }, [applyPlanillaData, id, setStatus]);
+  }, [applyPlanillaData, id, navigate, setStatus]);
 
   const performClassroomSync = useCallback(async (planillaId: number, automatic = false) => {
     setSyncingClassroom(true);
