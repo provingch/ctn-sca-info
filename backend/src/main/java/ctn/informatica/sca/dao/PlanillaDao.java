@@ -381,6 +381,35 @@ public class PlanillaDao extends conexion {
 
             Planilla p = new Planilla(planilla_id, curso_id, materia_id, categoria, nombre, periodo, etapa, profesor_id);
             p.setGoogleCourseId(googleCourseId);
+            // Si estamos cargando la fila de Segunda Etapa y la fecha de cierre
+            // de Etapa 1 viene nula (porque en la fila de segunda no se persiste),
+            // intentar recuperar la fecha real desde la fila de Primera Etapa
+            // para el mismo curso+materia. Esto garantiza que el cálculo de
+            // `etapaSugerida` sea consistente sin importar qué fila se consulte.
+            if (fechaCierreEtapa1 == null && "segunda".equalsIgnoreCase(etapa)) {
+                String sqlPrimera = "SELECT fecha_cierre_etapa1, etapa1_confirmada FROM planilla WHERE curso_id = ? AND materia_id = ? AND periodo = ? AND etapa = 'primera' LIMIT 1";
+                try (Connection con2 = getCon(); PreparedStatement ps2 = con2.prepareStatement(sqlPrimera)) {
+                    ps2.setInt(1, curso_id);
+                    ps2.setInt(2, materia_id);
+                    ps2.setInt(3, periodo);
+                    try (ResultSet rs2 = ps2.executeQuery()) {
+                        if (rs2.next()) {
+                            java.sql.Date cierre2 = rs2.getDate("fecha_cierre_etapa1");
+                            if (cierre2 != null) {
+                                fechaCierreEtapa1 = cierre2.toLocalDate();
+                            }
+                            try {
+                                etapa1Confirmada = rs2.getBoolean("etapa1_confirmada");
+                            } catch (SQLException ex) {
+                                // ignore
+                            }
+                        }
+                    }
+                } catch (SQLException ex) {
+                    // best-effort: if this lookup fails, keep original null/flag
+                }
+            }
+
             p.setFechaCierreEtapa1(fechaCierreEtapa1);
             p.setEtapa1Confirmada(etapa1Confirmada);
             return p;
