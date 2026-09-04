@@ -70,6 +70,7 @@ export default function PlanillaPage() {
   const [freezeStudents, setFreezeStudents] = useState(() => localStorage.getItem('planilla-freeze-students') !== 'false');
   const activePlanillaIdRef = useRef(id);
   activePlanillaIdRef.current = id;
+  const autoRedirectTriedRef = useRef<Set<number>>(new Set());
 
   const applyPlanillaData = useCallback((result: PlanillaDetail) => {
     setData(result);
@@ -86,14 +87,38 @@ export default function PlanillaPage() {
     setResolvedCourse(null);
     setStudentSearch('');
     setStudentSort(null);
+
     getPlanilla(id).then(async (result) => {
       if (!active) return;
 
       const suggestedEtapa = result.planilla.etapaSugerida ?? result.planilla.etapaIndex;
-      if (suggestedEtapa !== result.planilla.etapaIndex) {
+
+      // Si la etapa sugerida difiere de la que estamos viendo, intentar resolver
+      // y navegar a la planilla real de la etapa sugerida. Solo hacerlo una vez
+      // por planilla origen para evitar rebotes infinitos entre IDs.
+      if (suggestedEtapa !== result.planilla.etapaIndex && !autoRedirectTriedRef.current.has(id)) {
+        autoRedirectTriedRef.current.add(id);
         try {
           const resolved = await resolvePlanilla(result.planilla.cursoId, result.planilla.materiaId, suggestedEtapa);
           if (resolved.planillaId && resolved.planillaId !== id) {
+            // Antes de navegar, intentar cargar la planilla resuelta para comparar
+            // la `etapaSugerida` entre ambas respuestas y así detectar si la
+            // sugerencia depende de la planilla mostrada (posible bug de raíz).
+            try {
+              const resolvedDetail = await getPlanilla(resolved.planillaId);
+              const suggestedFromResolved = resolvedDetail.planilla.etapaSugerida ?? resolvedDetail.planilla.etapaIndex;
+              if (suggestedFromResolved !== suggestedEtapa) {
+                // No corregimos aquí la lógica que calcula `etapaSugerida` (está
+                // probablemente en otra parte del backend/servicio), pero lo
+                // dejamos evidente en consola y en toast para que el dev lo vea.
+                console.warn('etapaSugerida mismatch between initial and resolved planilla', { initialId: id, resolvedId: resolved.planillaId, initialSuggested: suggestedEtapa, resolvedSuggested: suggestedFromResolved });
+                setStatus('Advertencia: la etapa sugerida difiere entre respuestas (ver consola).');
+              }
+            } catch (e) {
+              // no bloqueante: si falla el fetch comparativo seguimos y navegamos
+              // para mostrar la planilla resuelta.
+            }
+
             navigate(`/planilla/${resolved.planillaId}`, { replace: true });
             return;
           }
