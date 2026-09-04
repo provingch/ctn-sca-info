@@ -1,1 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path fill="#14233b" d="M12 4h40a8 8 0 0 1 8 8v40a8 8 0 0 1-8 8H12a8 8 0 0 1-8-8V12a8 8 0 0 1 8-8Z"/><path fill="#5267f7" d="M10 21a5 5 0 0 1 5-5h11l5 6h18a5 5 0 0 1 5 5v23H10Z"/><path fill="#fff" d="M16 29h32v15H16z"/><path fill="#dfe6ff" d="M20 33h17v3H20zm0 6h12v3H20z"/><path fill="none" stroke="#eda906" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="m37 39 4 4 8-10"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="SCA favicon">
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="#0f172a"/>
+  <path d="M16 21.5h16l6 8h18a6 6 0 0 1 6 6V41a6 6 0 0 1-6 6H16a6 6 0 0 1-6-6V27.5a6 6 0 0 1 6-6Z" fill="none" stroke="#f8fafc" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M11 27.5h42l-6.5 12.5H17.5L11 27.5Z" fill="#5267f7"/>
+  <path d="M18 35h18" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round"/>
+  <path d="M25 26l8 8 15-18" fill="none" stroke="#facc15" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+

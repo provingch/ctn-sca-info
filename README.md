@@ -1,6 +1,8 @@
 
 # SCA — Sistema de Carpetas Académicas
 
+![SCA Logo](frontend/public/favicon.svg)
+
 Sistema de gestión académica del **Colegio Técnico Nacional (CTN)**: administra especialidades, cursos, materias, horarios, planillas de evaluación y notas, plan curricular con aprobación y verificación de tema por clase, control académico (incumplimientos, quejas y Coordinación Pedagógica), integración con **Google Classroom**, portal para padres/encargados, notificaciones push y soporte de **PWA** (instalable en el celular).
 
 - Inicio del desarrollo: 18/06/2026
