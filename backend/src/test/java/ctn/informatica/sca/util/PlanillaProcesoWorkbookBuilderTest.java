@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.FillPatternType;
 
 class PlanillaProcesoWorkbookBuilderTest {
 
@@ -42,6 +43,67 @@ class PlanillaProcesoWorkbookBuilderTest {
 
         try (XSSFWorkbook workbook = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(data, "Planilla")) {
             assertNotNull(workbook.getSheetAt(0));
+        }
+    }
+
+    @Test
+    void buildSingleWorkbook_appliesFreezePaneAndVisualStyles() throws IOException {
+        Planilla planilla = new Planilla(200, 1, 1, "comun", "Visual", 2026, "primera", 7);
+        Tarea feb1 = new Tarea();
+        feb1.setId(201);
+        feb1.setFecha(LocalDate.of(2026, 2, 5));
+        feb1.setTitulo("Quiz");
+        feb1.setTotal(5);
+
+        Tarea feb2 = new Tarea();
+        feb2.setId(202);
+        feb2.setFecha(LocalDate.of(2026, 2, 15));
+        feb2.setTitulo("Trabajo grupal");
+        feb2.setTotal(10);
+
+        StudentRow row = new StudentRow();
+        row.setAlumnoId(1);
+        row.setAlumnoNombre("Ana López");
+        Map<Integer, Integer> grades = new HashMap<>();
+        grades.put(201, 5);
+        grades.put(202, 8);
+        row.setGrades(grades);
+        row.setTotal(13);
+
+        PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                planilla,
+                new ctn.informatica.sca.model.Curso(200, "Informática", 2026, "A"),
+                "Visual",
+                "Profe",
+                "Mañana",
+                List.of(feb1, feb2),
+                List.of(row),
+                Map.of(),
+                null
+        );
+
+        try (XSSFWorkbook workbook = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(data, "Visual")) {
+            Sheet sheet = workbook.getSheetAt(0);
+            assertNotNull(sheet.getPaneInformation());
+            assertEquals(2, sheet.getPaneInformation().getVerticalSplitLeftColumn());
+            assertEquals(7, sheet.getPaneInformation().getHorizontalSplitTopRow());
+
+            Cell subtotal = null;
+            for (int r = 0; r <= sheet.getLastRowNum(); r++) {
+                Row rowCandidate = sheet.getRow(r);
+                if (rowCandidate == null) continue;
+                for (Cell cell : rowCandidate) {
+                    if (cell.getCellType() == CellType.FORMULA && cell.getCellFormula().startsWith("SUM(")) {
+                        subtotal = cell;
+                        break;
+                    }
+                }
+                if (subtotal != null) break;
+            }
+
+            assertNotNull(subtotal, "Debe existir al menos una celda de subtotal");
+            assertEquals(FillPatternType.SOLID_FOREGROUND, subtotal.getCellStyle().getFillPattern());
+            assertTrue(subtotal.getCellStyle().getFillForegroundColor() != 0, "El subtotal debe tener relleno visual");
         }
     }
 
