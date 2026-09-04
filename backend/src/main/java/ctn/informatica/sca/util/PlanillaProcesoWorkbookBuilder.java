@@ -17,24 +17,32 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import javax.imageio.ImageIO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellCopyPolicy;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.ClientAnchor;
 import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.Drawing;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellAddress;
 import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
@@ -42,8 +50,10 @@ public class PlanillaProcesoWorkbookBuilder {
 
     private static final Logger log = LoggerFactory.getLogger(PlanillaProcesoWorkbookBuilder.class);
 
-    private static final String TEMPLATE_RESOURCE = "templates/PLANTILLA_PLANILLA_PROCESO_CTN.xlsx";
+    private static final String TEMPLATE_RESOURCE = "templates/PLANTILLA_PLANILLA_PROCESO_CTN_v2.xlsx";
     private static final String LEGEND_SHEET = "LEYENDA_PARA_DESARROLLO";
+    private static final String INSTITUTION_LOGO_PATH = "/static/logo-institucional.png";
+    private static final short BLOCK_BORDER_COLOR = IndexedColors.GREY_50_PERCENT.getIndex();
     private static final int MONTH_BLOCK_COUNT = 5;
     private static final int FIXED_TASK_COLUMNS_PER_MONTH = 5;
     private static final int INSTRUMENTS_PER_MONTH = 12;
@@ -69,7 +79,7 @@ public class PlanillaProcesoWorkbookBuilder {
     private static final Locale SPANISH = Locale.forLanguageTag("es-PY");
 
     private static final StageLayout STAGE_1 = new StageLayout(
-            "PLANTILLA_ETAPA_1",
+            "Planilla",
             2,
             CellReference.convertColStringToIndex("BP"),
             CellReference.convertColStringToIndex("BQ"),
@@ -81,7 +91,7 @@ public class PlanillaProcesoWorkbookBuilder {
     );
 
     private static final StageLayout STAGE_2 = new StageLayout(
-            "PLANTILLA_ETAPA_2",
+            "Planilla",
             3,
             CellReference.convertColStringToIndex("BQ"),
             CellReference.convertColStringToIndex("BR"),
@@ -139,6 +149,15 @@ public class PlanillaProcesoWorkbookBuilder {
 
     private XSSFSheet cloneTemplateSheet(XSSFWorkbook workbook, StageLayout layout, String desiredName) {
         int templateIndex = workbook.getSheetIndex(layout.templateSheetName());
+        if (templateIndex < 0) {
+            templateIndex = workbook.getSheetIndex("Planilla");
+        }
+        if (templateIndex < 0 && workbook.getNumberOfSheets() > 0) {
+            templateIndex = 0;
+        }
+        if (templateIndex < 0) {
+            throw new IllegalStateException("No se encontró ninguna hoja base de plantilla disponible para clonar.");
+        }
         workbook.cloneSheet(templateIndex);
         int clonedIndex = workbook.getNumberOfSheets() - 1;
         String safeName = uniqueSheetName(workbook, desiredName, clonedIndex);
@@ -152,6 +171,7 @@ public class PlanillaProcesoWorkbookBuilder {
         removeSheetIfPresent(workbook, LEGEND_SHEET);
         removeSheetIfPresent(workbook, STAGE_1.templateSheetName());
         removeSheetIfPresent(workbook, STAGE_2.templateSheetName());
+        removeSheetIfPresent(workbook, "Planilla");
     }
 
     private void removeSheetIfPresent(XSSFWorkbook workbook, String sheetName) {
@@ -467,11 +487,13 @@ public class PlanillaProcesoWorkbookBuilder {
         fillStudentRows(sheet, data, taskColumnById, computed, monthBlocks);
         clearTemplatePlaceholders(sheet);
 
+        int lastStudentRow = FIRST_STUDENT_ROW + Math.max(0, data.rows() == null ? 0 : data.rows().size()) - 1;
+        applyNavigationAndVisualDesign(sheet, monthBlocks, lastStudentRow, data.curso() == null ? null : data.curso().getEspecialidad());
+
         // Compute the signature row to place the teacher signature a couple of
         // rows below the last student row so it's always inside the area we
         // preserve from cleanColumnsAfter(). Place the signature in a fixed
         // early column (column index 1) to avoid landing beyond lastRealColumn.
-        int lastStudentRow = FIRST_STUDENT_ROW + Math.max(0, data.rows() == null ? 0 : data.rows().size()) - 1;
         int signatureRow = lastStudentRow + 3; // three rows below last student (extra margin)
 
         // Determine the last column actually written for this planilla instance.
@@ -1159,6 +1181,144 @@ public class PlanillaProcesoWorkbookBuilder {
         // Label beneath the line
         Cell labelCell = getOrCreateCell(labelRow, targetColumnIndex);
         labelCell.setCellValue("Firma del Docente");
+    }
+
+    private void applyNavigationAndVisualDesign(Sheet sheet, java.util.List<MonthBlock> monthBlocks, int lastStudentRow, String specialtyName) {
+        if (sheet == null) return;
+        Workbook workbook = sheet.getWorkbook();
+
+        sheet.createFreezePane(2, TP_ROW);
+        sheet.setActiveCell(new CellAddress("A1"));
+        sheet.setZoom(90);
+
+        CellStyle subtotalStyle = workbook.createCellStyle();
+        subtotalStyle.setFillForegroundColor(new XSSFColor(new byte[]{(byte) 0xDC, (byte) 0xE6, (byte) 0xF1}, null));
+        subtotalStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        CellStyle zebraStyle = workbook.createCellStyle();
+        zebraStyle.setFillForegroundColor(new XSSFColor(new byte[]{(byte) 0xF5, (byte) 0xF5, (byte) 0xF5}, null));
+        zebraStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        Set<Integer> subtotalCols = new HashSet<>();
+        for (MonthBlock block : monthBlocks) {
+            if (block == null) continue;
+            subtotalCols.add(block.subtotalCol());
+            sheet.groupColumn(block.firstInstrumentCol(), block.subtotalCol());
+            applyBlockBorder(sheet, MONTH_HEADER_ROW, lastStudentRow, block.firstInstrumentCol(), block.subtotalCol());
+
+            for (int r = TP_ROW; r <= lastStudentRow; r++) {
+                Row row = sheet.getRow(r);
+                if (row == null) continue;
+                Cell cell = row.getCell(block.subtotalCol());
+                if (cell != null) {
+                    CellStyle merged = mergeStyle(workbook, cell.getCellStyle(), subtotalStyle);
+                    cell.setCellStyle(merged);
+                }
+            }
+
+            for (int c = block.firstInstrumentCol(); c < block.subtotalCol(); c++) {
+                sheet.setColumnWidth(c, widthChars(6.5));
+            }
+            sheet.setColumnWidth(block.subtotalCol(), widthChars(7.5));
+        }
+
+        int lastCol = monthBlocks.stream().mapToInt(block -> block == null ? 0 : block.subtotalCol()).max().orElse(0);
+        lastCol = Math.max(lastCol, columnIndexFromLetter("AC"));
+        for (int r = FIRST_STUDENT_ROW, i = 0; r <= lastStudentRow; r++, i++) {
+            if (i % 2 == 0) continue;
+            Row row = sheet.getRow(r);
+            if (row == null) continue;
+            for (int c = 0; c <= lastCol; c++) {
+                if (subtotalCols.contains(c)) continue;
+                Cell cell = row.getCell(c);
+                if (cell != null) {
+                    CellStyle merged = mergeStyle(workbook, cell.getCellStyle(), zebraStyle);
+                    cell.setCellStyle(merged);
+                }
+            }
+        }
+
+        String specialtyLogoPath = resolveSpecialtyLogoResourcePath(specialtyName);
+        if (specialtyLogoPath != null) {
+            insertLogo(sheet, specialtyLogoPath, Math.max(0, lastCol - 1), 0, Math.max(1, lastCol), 3);
+        }
+        insertLogo(sheet, INSTITUTION_LOGO_PATH, 0, 0, 1, 3);
+    }
+
+    private void applyBlockBorder(Sheet sheet, int firstRow, int lastRow, int firstCol, int lastCol) {
+        for (int r = firstRow; r <= lastRow; r++) {
+            Row row = sheet.getRow(r);
+            if (row == null) continue;
+            for (int c = firstCol; c <= lastCol; c++) {
+                Cell cell = row.getCell(c);
+                if (cell == null) continue;
+                CellStyle style = cloneStyle(sheet.getWorkbook(), cell.getCellStyle());
+                if (c == firstCol) style.setBorderLeft(BorderStyle.MEDIUM);
+                if (c == lastCol) style.setBorderRight(BorderStyle.MEDIUM);
+                if (r == firstRow) style.setBorderTop(BorderStyle.MEDIUM);
+                if (r == lastRow) style.setBorderBottom(BorderStyle.MEDIUM);
+                style.setTopBorderColor(BLOCK_BORDER_COLOR);
+                style.setBottomBorderColor(BLOCK_BORDER_COLOR);
+                style.setLeftBorderColor(BLOCK_BORDER_COLOR);
+                style.setRightBorderColor(BLOCK_BORDER_COLOR);
+                cell.setCellStyle(style);
+            }
+        }
+    }
+
+    private CellStyle mergeStyle(Workbook workbook, CellStyle baseStyle, CellStyle overlayStyle) {
+        CellStyle merged = cloneStyle(workbook, baseStyle);
+        if (overlayStyle == null) return merged;
+        merged.setFillForegroundColor(overlayStyle.getFillForegroundColor());
+        merged.setFillPattern(overlayStyle.getFillPattern());
+        return merged;
+    }
+
+    private CellStyle cloneStyle(Workbook workbook, CellStyle style) {
+        if (style == null) return workbook.createCellStyle();
+        CellStyle cloned = workbook.createCellStyle();
+        cloned.cloneStyleFrom(style);
+        return cloned;
+    }
+
+    private int widthChars(double chars) {
+        return (int) Math.round((chars + 0.72) * 256);
+    }
+
+    private int columnIndexFromLetter(String letter) {
+        return CellReference.convertColStringToIndex(letter);
+    }
+
+    private String resolveSpecialtyLogoResourcePath(String specialty) {
+        if (specialty == null || specialty.isBlank()) {
+            return null;
+        }
+        String normalized = SpecialtyColors.normalizeSpecialty(specialty);
+        String path = "/static/assets/png/logo-especialidad-" + normalized + ".png";
+        if (getClass().getResourceAsStream(path) == null) {
+            log.warn("No se encontró el logo de especialidad para '{}' en la ruta '{}'; omitiendo el logo.", specialty, path);
+            return null;
+        }
+        return path;
+    }
+
+    private void insertLogo(Sheet sheet, String resourcePath, int col1, int row1, int col2, int row2) {
+        try (InputStream is = getClass().getResourceAsStream(resourcePath)) {
+            if (is == null) return;
+            byte[] bytes = is.readAllBytes();
+            Workbook workbook = sheet.getWorkbook();
+            int pictureIdx = workbook.addPicture(bytes, Workbook.PICTURE_TYPE_PNG);
+            Drawing<?> drawing = sheet.createDrawingPatriarch();
+            ClientAnchor anchor = workbook.getCreationHelper().createClientAnchor();
+            anchor.setCol1(col1);
+            anchor.setRow1(row1);
+            anchor.setCol2(col2);
+            anchor.setRow2(row2);
+            anchor.setAnchorType(ClientAnchor.AnchorType.MOVE_DONT_RESIZE);
+            drawing.createPicture(anchor, pictureIdx);
+        } catch (IOException e) {
+            log.warn("No se pudo insertar logo {}: {}", resourcePath, e.getMessage(), e);
+        }
     }
 
     private void cleanColumnsAfter(Sheet sheet, int lastAllowedColumn, int firstRowToProtect, int signatureStartCol) {
