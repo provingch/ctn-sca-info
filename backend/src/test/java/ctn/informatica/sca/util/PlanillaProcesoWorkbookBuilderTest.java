@@ -132,7 +132,7 @@ class PlanillaProcesoWorkbookBuilderTest {
 
             // Verify at least institutional + specialty logo were added to the workbook
             int pictures = workbook.getAllPictures() == null ? 0 : workbook.getAllPictures().size();
-            assertTrue(pictures >= 1, "Debe insertarse al menos el logo institucional");
+            assertEquals(2, pictures, "Deben insertarse exactamente 2 imágenes (institucional + especialidad)");
         }
     }
 
@@ -157,7 +157,7 @@ class PlanillaProcesoWorkbookBuilderTest {
 
         try (XSSFWorkbook w1 = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(d1, "Et1")) {
             int pics1 = w1.getAllPictures() == null ? 0 : w1.getAllPictures().size();
-            assertTrue(pics1 >= 1, "Debe insertarse al menos el logo institucional en planilla de etapa 1");
+            assertEquals(2, pics1, "Deben insertarse exactamente 2 imágenes (institucional + especialidad) en etapa 1");
         }
 
         // Stage 1 with Electricidad specialty
@@ -176,7 +176,7 @@ class PlanillaProcesoWorkbookBuilderTest {
 
         try (XSSFWorkbook w2 = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(d2, "Et1b")) {
             int pics2 = w2.getAllPictures() == null ? 0 : w2.getAllPictures().size();
-            assertTrue(pics2 >= 1, "Debe insertarse al menos el logo institucional en planilla con otra especialidad");
+            assertEquals(2, pics2, "Deben insertarse exactamente 2 imágenes (institucional + especialidad) en otra especialidad");
         }
     }
 
