@@ -474,15 +474,19 @@ public class PlanillaProcesoWorkbookBuilder {
         int lastStudentRow = FIRST_STUDENT_ROW + Math.max(0, data.rows() == null ? 0 : data.rows().size()) - 1;
         int signatureRow = lastStudentRow + 3; // three rows below last student (extra margin)
 
-        // Determine the last column that was actually written for this planilla
-        // instance: if the layout declares first-stage columns (etapa 2) we
-        // consider the regularization column; otherwise the current stage
-        // grade column is the last real column for etapa 1. Clean everything
-        // to the right of that column so we don't leave template styling
-        // remnants on sheets that don't use the full theoretical layout.
-        int lastRealColumn = layout.firstStageGradeColumn() >= 0
-            ? computed.regularizationColumn()
-            : computed.currentStageGradeColumn();
+        // Determine the last column actually written for this planilla instance.
+        // When the template provides the final-column labels (the branch that is
+        // effectively always used), the real right edge is the last final label
+        // written after Total General. The 7-column fallback is kept only for
+        // templates that do not include these labels.
+        int lastRealColumn;
+        if (!finalColumnLabels.isEmpty()) {
+            lastRealColumn = computed.totalGeneralColumn() + finalColumnLabels.size() - 1;
+        } else if (layout.firstStageGradeColumn() >= 0) {
+            lastRealColumn = computed.regularizationColumn();
+        } else {
+            lastRealColumn = computed.currentStageGradeColumn();
+        }
         int signatureColumn = 0;
         setTeacherSignature(sheet, data, signatureRow, signatureColumn);
 
