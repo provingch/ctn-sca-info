@@ -332,7 +332,7 @@ export default function PlanillaPage() {
   const gr = data.gradeRanges;
   const classroomTaskCount = data.tareas.filter((task) => Boolean(task.googleCourseworkId?.trim())).length;
   const localTaskCount = data.tareas.length - classroomTaskCount;
-  const isEtapa1Locked = Boolean(data.planilla.etapa1Confirmada);
+  const isEtapa1Locked = data.planilla.etapaIndex === 1 && Boolean(data.planilla.etapa1Confirmada);
   const isGlobalAdmin = user?.level === 3 && user.especialidadId === null;
   // Piso de "1": todo lo que caiga por debajo del mínimo de "2" (igual que
   // en Planilla.jsp: "${gradeRanges['2'][0] - 1} o menos").

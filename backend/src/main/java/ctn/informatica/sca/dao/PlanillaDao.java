@@ -398,11 +398,8 @@ public class PlanillaDao extends conexion {
                             if (cierre2 != null) {
                                 fechaCierreEtapa1 = cierre2.toLocalDate();
                             }
-                            try {
-                                etapa1Confirmada = rs2.getBoolean("etapa1_confirmada");
-                            } catch (SQLException ex) {
-                                // ignore
-                            }
+                            // No copiar `etapa1_confirmada` desde la fila de Primera Etapa:
+                            // dejar el valor original que vino en la fila cargada.
                         }
                     }
                 } catch (SQLException ex) {
