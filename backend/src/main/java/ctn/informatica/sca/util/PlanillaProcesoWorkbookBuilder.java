@@ -50,7 +50,7 @@ public class PlanillaProcesoWorkbookBuilder {
 
     private static final Logger log = LoggerFactory.getLogger(PlanillaProcesoWorkbookBuilder.class);
 
-    private static final String TEMPLATE_RESOURCE = "templates/PLANTILLA_PLANILLA_PROCESO_CTN_v2.xlsx";
+    private static final String TEMPLATE_RESOURCE = "templates/PLANTILLA_PLANILLA_PROCESO_CTN_v4.xlsx";
     private static final String LEGEND_SHEET = "LEYENDA_PARA_DESARROLLO";
     private static final String INSTITUTION_LOGO_PATH = "/static/logo-institucional.png";
     private static final short BLOCK_BORDER_COLOR = IndexedColors.GREY_50_PERCENT.getIndex();
@@ -78,29 +78,38 @@ public class PlanillaProcesoWorkbookBuilder {
     private static final float SIGNATURE_LABEL_ROW_HEIGHT = 15f;
     private static final Locale SPANISH = Locale.forLanguageTag("es-PY");
 
-    private static final StageLayout STAGE_1 = new StageLayout(
-            "Planilla",
+        // Note: in v4 templates the authoritative final-column positions are
+        // discovered at runtime by scanning the header for literal labels
+        // (see finalColumnLabels). The numeric fields below are kept only as
+        // feature flags (-1 = this stage does not expose that final column)
+        // and to carry per-stage metadata such as frozen/trailing fixed counts.
+        private static final StageLayout STAGE_1 = new StageLayout(
+            "PLANTILLA_ETAPA_1",
             2,
-            CellReference.convertColStringToIndex("BP"),
-            CellReference.convertColStringToIndex("BQ"),
             -1,
             -1,
             -1,
             -1,
-            -1
-    );
+            -1,
+            -1,
+            -1,
+            2, // trailingFixedColumns (Total General + Calificación Final 1ª Etapa)
+            2  // frozenColumns (A:B fixed)
+        );
 
-    private static final StageLayout STAGE_2 = new StageLayout(
-            "Planilla",
+        private static final StageLayout STAGE_2 = new StageLayout(
+            "PLANTILLA_ETAPA_2",
             3,
-            CellReference.convertColStringToIndex("BQ"),
-            CellReference.convertColStringToIndex("BR"),
-            CellReference.convertColStringToIndex("C"),
-            CellReference.convertColStringToIndex("BS"),
-            CellReference.convertColStringToIndex("BT"),
-            CellReference.convertColStringToIndex("BU"),
-            CellReference.convertColStringToIndex("BV")
-    );
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            6, // trailingFixedColumns (Total General + Calificación Final 2ª Etapa + cola propia)
+            3  // frozenColumns (A:C fixed to include Calificación Final 1ª Etapa)
+        );
 
     public XSSFWorkbook buildSingleWorkbook(PlanillaSheetData data, String sheetName) throws IOException {
         XSSFWorkbook workbook = loadTemplateWorkbook();
@@ -108,7 +117,9 @@ public class PlanillaProcesoWorkbookBuilder {
             XSSFSheet sheet = cloneTemplateSheet(workbook, layoutFor(data.planilla()), sheetName);
             populateSheet(sheet, data);
             removeTemplateSheets(workbook);
-            workbook.setActiveSheet(0);
+            if (workbook.getNumberOfSheets() > 0) {
+                workbook.setActiveSheet(0);
+            }
             workbook.setForceFormulaRecalculation(true);
             return workbook;
         } catch (RuntimeException ex) {
@@ -128,7 +139,9 @@ public class PlanillaProcesoWorkbookBuilder {
                 populateSheet(sheet, data);
             }
             removeTemplateSheets(workbook);
-            workbook.setActiveSheet(0);
+            if (workbook.getNumberOfSheets() > 0) {
+                workbook.setActiveSheet(0);
+            }
             workbook.setForceFormulaRecalculation(true);
             return workbook;
         } catch (RuntimeException ex) {
@@ -149,6 +162,10 @@ public class PlanillaProcesoWorkbookBuilder {
 
     private XSSFSheet cloneTemplateSheet(XSSFWorkbook workbook, StageLayout layout, String desiredName) {
         int templateIndex = workbook.getSheetIndex(layout.templateSheetName());
+        log.info("cloneTemplateSheet: workbook has {} sheets before clone", workbook.getNumberOfSheets());
+        for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
+            log.info(" cloneTemplateSheet: sheet[{}] = {}", i, workbook.getSheetName(i));
+        }
         if (templateIndex < 0) {
             templateIndex = workbook.getSheetIndex("Planilla");
         }
@@ -160,9 +177,11 @@ public class PlanillaProcesoWorkbookBuilder {
         }
         workbook.cloneSheet(templateIndex);
         int clonedIndex = workbook.getNumberOfSheets() - 1;
+        log.info("cloneTemplateSheet: cloned index {} -> name before rename: {}", clonedIndex, workbook.getSheetName(clonedIndex));
         String safeName = uniqueSheetName(workbook, desiredName, clonedIndex);
         workbook.setSheetName(clonedIndex, safeName);
         XSSFSheet sheet = workbook.getSheetAt(clonedIndex);
+        log.info("cloneTemplateSheet: cloned sheet now at index {} with name {}", clonedIndex, workbook.getSheetName(clonedIndex));
         sheet.setForceFormulaRecalculation(true);
         return sheet;
     }
@@ -171,7 +190,6 @@ public class PlanillaProcesoWorkbookBuilder {
         removeSheetIfPresent(workbook, LEGEND_SHEET);
         removeSheetIfPresent(workbook, STAGE_1.templateSheetName());
         removeSheetIfPresent(workbook, STAGE_2.templateSheetName());
-        removeSheetIfPresent(workbook, "Planilla");
     }
 
     private void removeSheetIfPresent(XSSFWorkbook workbook, String sheetName) {
@@ -273,9 +291,6 @@ public class PlanillaProcesoWorkbookBuilder {
             requiredRightmost += reservedSlotsForMonth(tareasMes) + 1; // instruments + subtotal
         }
         requiredRightmost = requiredRightmost - 1;
-        if (layout.totalGeneralColumn() >= 0 && requiredRightmost >= layout.totalGeneralColumn()) {
-            throw new IllegalStateException("La plantilla oficial no tiene suficiente ancho para reservar " + FIXED_TASK_COLUMNS_PER_MONTH + " columnas por mes para " + tareasPorMes.size() + " meses. Amplía la plantilla antes de generar la planilla.");
-        }
         resizeStudentArea(sheet, data.rows().size());
         replaceCommonMarkers(sheet, data);
         fillMonthBlocks(sheet, tareasPorMes, taskColumnById, layout);
@@ -488,7 +503,7 @@ public class PlanillaProcesoWorkbookBuilder {
         clearTemplatePlaceholders(sheet);
 
         int lastStudentRow = FIRST_STUDENT_ROW + Math.max(0, data.rows() == null ? 0 : data.rows().size()) - 1;
-        applyNavigationAndVisualDesign(sheet, monthBlocks, lastStudentRow, data.curso() == null ? null : data.curso().getEspecialidad());
+        applyNavigationAndVisualDesign(sheet, monthBlocks, lastStudentRow, data.curso() == null ? null : data.curso().getEspecialidad(), layout);
 
         // Compute the signature row to place the teacher signature a couple of
         // rows below the last student row so it's always inside the area we
@@ -525,6 +540,28 @@ public class PlanillaProcesoWorkbookBuilder {
         }
 
         cleanColumnsAfter(sheet, lastRealColumn, signatureRow, signatureColumn);
+        // Diagnostic logging: inspect TP row and a sample of cells after cleanup
+        try {
+            Row tp = sheet.getRow(TP_ROW);
+            if (tp != null) {
+                StringBuilder sb = new StringBuilder();
+                int inspectCols = Math.max(lastRealColumn + 5, Math.min(120, sheet.getRow(MONTH_HEADER_ROW) == null ? 40 : sheet.getRow(MONTH_HEADER_ROW).getLastCellNum()));
+                for (int c = 0; c <= inspectCols; c++) {
+                    Cell cell = tp.getCell(c);
+                    if (cell == null) {
+                        sb.append(String.format("[%d:NULL]", c));
+                    } else {
+                        sb.append(String.format("[%d:%s]", c, cell.getCellType()));
+                        if (cell.getCellType() == CellType.FORMULA) {
+                            sb.append("(").append(cell.getCellFormula()).append(")");
+                        }
+                    }
+                }
+                log.info("TP row after cleanColumnsAfter: {}", sb.toString());
+            }
+        } catch (Exception ex) {
+            log.warn("Error logging TP row diagnostics: {}", ex.getMessage());
+        }
     }
 
     /**
@@ -1183,11 +1220,13 @@ public class PlanillaProcesoWorkbookBuilder {
         labelCell.setCellValue("Firma del Docente");
     }
 
-    private void applyNavigationAndVisualDesign(Sheet sheet, java.util.List<MonthBlock> monthBlocks, int lastStudentRow, String specialtyName) {
+    private void applyNavigationAndVisualDesign(Sheet sheet, java.util.List<MonthBlock> monthBlocks, int lastStudentRow, String specialtyName, StageLayout layout) {
         if (sheet == null) return;
         Workbook workbook = sheet.getWorkbook();
 
-        sheet.createFreezePane(2, TP_ROW);
+        // Set freeze pane based on stage-specific frozen column count
+        int frozen = layout == null ? 2 : Math.max(1, layout.frozenColumns());
+        sheet.createFreezePane(frozen, TP_ROW);
         sheet.setActiveCell(new CellAddress("A1"));
         sheet.setZoom(90);
 
@@ -1216,14 +1255,16 @@ public class PlanillaProcesoWorkbookBuilder {
                 }
             }
 
-            for (int c = block.firstInstrumentCol(); c < block.subtotalCol(); c++) {
-                sheet.setColumnWidth(c, widthChars(6.5));
-            }
-            sheet.setColumnWidth(block.subtotalCol(), widthChars(7.5));
+                // Do not override instrument column widths here: widths are set
+                // when month blocks are populated (to the reduced character
+                // width required by v4 templates). Overwriting them here caused
+                // instrument columns to become wider than intended.
         }
 
         int lastCol = monthBlocks.stream().mapToInt(block -> block == null ? 0 : block.subtotalCol()).max().orElse(0);
-        lastCol = Math.max(lastCol, columnIndexFromLetter("AC"));
+        // compute right edge as last subtotal + trailing fixed columns for the stage
+        int trailing = layout == null ? 2 : Math.max(0, layout.trailingFixedColumns());
+        lastCol = lastCol + trailing;
         for (int r = FIRST_STUDENT_ROW, i = 0; r <= lastStudentRow; r++, i++) {
             if (i % 2 == 0) continue;
             Row row = sheet.getRow(r);
@@ -1614,7 +1655,7 @@ public class PlanillaProcesoWorkbookBuilder {
         cell.setCellStyle(newStyle);
     }
 
-    private record StageLayout(
+        private record StageLayout(
             String templateSheetName,
             int firstMonthColumn,
             int totalGeneralColumn,
@@ -1623,8 +1664,10 @@ public class PlanillaProcesoWorkbookBuilder {
             int stageSumColumn,
             int finalAverageColumn,
             int complementaryColumn,
-            int regularizationColumn) {
-    }
+            int regularizationColumn,
+            int trailingFixedColumns,
+            int frozenColumns) {
+        }
 
     public record PlanillaSheetData(
             Planilla planilla,

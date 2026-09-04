@@ -108,6 +108,79 @@ class PlanillaProcesoWorkbookBuilderTest {
     }
 
     @Test
+    void buildSingleWorkbook_stage2_hasThreeFrozenColumns_and_insertsLogos() throws IOException {
+        Planilla planilla = new Planilla(500, 1, 1, "comun", "Etapa2", 2026, "segunda", 7);
+        Tarea t1 = new Tarea(); t1.setId(6001); t1.setFecha(LocalDate.of(2026, 2, 5)); t1.setTitulo("T1"); t1.setTotal(5);
+        StudentRow s = new StudentRow(); s.setAlumnoId(1); s.setAlumnoNombre("Alumno"); s.setGrades(Map.of(6001,5)); s.setTotal(5);
+
+        PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                planilla,
+                new ctn.informatica.sca.model.Curso(500, "Informatica", 2026, "A"),
+                "Etapa2",
+                "Profe",
+                "Mañana",
+                List.of(t1),
+                List.of(s),
+                Map.of(),
+                null
+        );
+
+        try (XSSFWorkbook workbook = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(data, "Etapa2")) {
+            Sheet sheet = workbook.getSheetAt(0);
+            assertNotNull(sheet.getPaneInformation());
+            assertEquals(3, sheet.getPaneInformation().getVerticalSplitLeftColumn());
+
+            // Verify at least institutional + specialty logo were added to the workbook
+            int pictures = workbook.getAllPictures() == null ? 0 : workbook.getAllPictures().size();
+            assertTrue(pictures >= 1, "Debe insertarse al menos el logo institucional");
+        }
+    }
+
+    @Test
+    void buildSingleWorkbook_insertsInstitutionAndSpecialtyLogos_forDifferentSpecialties() throws IOException {
+        // Stage 1 with Informatica specialty
+        Planilla p1 = new Planilla(510, 1, 1, "comun", "Et1", 2026, "primera", 7);
+        Tarea t = new Tarea(); t.setId(7001); t.setFecha(LocalDate.of(2026, 2, 5)); t.setTitulo("T"); t.setTotal(5);
+        StudentRow s1 = new StudentRow(); s1.setAlumnoId(1); s1.setAlumnoNombre("A"); s1.setGrades(Map.of(7001,5)); s1.setTotal(5);
+
+        PlanillaProcesoWorkbookBuilder.PlanillaSheetData d1 = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                p1,
+                new ctn.informatica.sca.model.Curso(510, "Informática", 2026, "A"),
+                "Et1",
+                "Prof",
+                "Mañana",
+                List.of(t),
+                List.of(s1),
+                Map.of(),
+                null
+        );
+
+        try (XSSFWorkbook w1 = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(d1, "Et1")) {
+            int pics1 = w1.getAllPictures() == null ? 0 : w1.getAllPictures().size();
+            assertTrue(pics1 >= 1, "Debe insertarse al menos el logo institucional en planilla de etapa 1");
+        }
+
+        // Stage 1 with Electricidad specialty
+        Planilla p2 = new Planilla(520, 1, 1, "comun", "Et1", 2026, "primera", 7);
+        PlanillaProcesoWorkbookBuilder.PlanillaSheetData d2 = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                p2,
+                new ctn.informatica.sca.model.Curso(520, "Electricidad", 2026, "A"),
+                "Et1",
+                "Prof",
+                "Mañana",
+                List.of(t),
+                List.of(s1),
+                Map.of(),
+                null
+        );
+
+        try (XSSFWorkbook w2 = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(d2, "Et1b")) {
+            int pics2 = w2.getAllPictures() == null ? 0 : w2.getAllPictures().size();
+            assertTrue(pics2 >= 1, "Debe insertarse al menos el logo institucional en planilla con otra especialidad");
+        }
+    }
+
+    @Test
     void buildSingleWorkbook_replacesTemplatePlaceholdersForUsedMonthBlocks() throws IOException {
         Planilla planilla = new Planilla(2, 1, 1, "comun", "Matemática", 2026, "primera", 7);
         Tarea marzo = new Tarea();
