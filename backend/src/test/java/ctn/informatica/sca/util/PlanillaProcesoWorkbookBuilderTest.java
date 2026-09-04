@@ -20,6 +20,8 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.junit.jupiter.api.Test;
 import java.io.FileOutputStream;
+import java.util.ArrayList;
+import org.apache.poi.ss.usermodel.CellType;
 
 class PlanillaProcesoWorkbookBuilderTest {
 
