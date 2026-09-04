@@ -519,6 +519,76 @@ class PlanillaProcesoWorkbookBuilderTest {
     }
 
     @Test
+    void finalColumnsDoNotLeaveGhostVisibleColumn_whenMonthHasMoreThanFiveTasks() throws IOException {
+        Planilla planilla = new Planilla(310, 1, 1, "comun", "MasDeCincoTareas", 2026, "primera", 7);
+
+        List<Tarea> tareas = new ArrayList<>();
+        for (int i = 1; i <= 7; i++) {
+            Tarea tarea = new Tarea();
+            tarea.setId(5000 + i);
+            tarea.setFecha(LocalDate.of(2026, 8, 2 + i));
+            tarea.setTitulo("Tarea " + i);
+            tarea.setTotal(10);
+            tareas.add(tarea);
+        }
+
+        StudentRow row = new StudentRow();
+        row.setAlumnoId(1);
+        row.setAlumnoNombre("Alumno Test");
+        Map<Integer, Integer> grades = new HashMap<>();
+        for (Tarea tarea : tareas) {
+            grades.put((int) tarea.getId(), 5);
+        }
+        row.setGrades(grades);
+        row.setTotal(35);
+
+        PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                planilla,
+                new ctn.informatica.sca.model.Curso(310, "MasDeCincoTareas", 2026, "A"),
+                "MasDeCincoTareas",
+                "Prof Test",
+                "Mañana",
+                tareas,
+                List.of(row),
+                Map.of(),
+                null
+        );
+
+        try (XSSFWorkbook workbook = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(data, "ManyTasksGhostColumn")) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Row headerRow = sheet.getRow(5);
+
+            int totalGeneralCol = -1;
+            int lastFinalLabelCol = -1;
+            for (int c = 0; c < 400; c++) {
+                Cell cell = headerRow == null ? null : headerRow.getCell(c);
+                if (cell == null || cell.getCellType() != CellType.STRING) {
+                    continue;
+                }
+                String value = cell.getStringCellValue();
+                if (value != null && value.equalsIgnoreCase("Total General")) {
+                    totalGeneralCol = c;
+                }
+                if (totalGeneralCol >= 0 && value != null && !value.isBlank()) {
+                    lastFinalLabelCol = c;
+                }
+            }
+
+            assertTrue(totalGeneralCol >= 0, "Debe encontrarse la columna Total General");
+            assertTrue(lastFinalLabelCol >= totalGeneralCol, "Debe detectarse la última etiqueta real del bloque final");
+
+            int firstGhostColumn = lastFinalLabelCol + 1;
+            assertTrue(sheet.isColumnHidden(firstGhostColumn),
+                    "La columna fantasma al final del bloque final debe quedar oculta cuando hay más de 5 tareas");
+
+            for (int c = firstGhostColumn; c <= firstGhostColumn + 3; c++) {
+                assertTrue(sheet.isColumnHidden(c),
+                        "No deben quedar columnas visibles vacías entre la última etiqueta real y las columnas ocultas");
+            }
+        }
+    }
+
+    @Test
     void buildSingleWorkbook_withManyTasksThatExpandCourseBlock_noMergedRegionOverlap() throws IOException {
         // Regression test for the geometric logic bug in resizeHeaderBanner:
         // When many tasks force the course block to expand beyond column 19 (where "Año" normally starts),
