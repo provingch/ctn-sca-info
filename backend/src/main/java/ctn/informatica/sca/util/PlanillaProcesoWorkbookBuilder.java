@@ -266,37 +266,7 @@ public class PlanillaProcesoWorkbookBuilder {
             dest.setRightToLeft(src.isRightToLeft());
         } catch (Throwable ignore) {}
 
-        // Diagnostic debug: compare header row (MONTH_HEADER_ROW) between src and dest
-        try {
-            Row sHeader = src.getRow(MONTH_HEADER_ROW);
-            Row dHeader = dest.getRow(MONTH_HEADER_ROW);
-            int maxCheck = 200;
-            for (int c = 0; c <= maxCheck; c++) {
-                String sTxt = "";
-                String dTxt = "";
-                String sType = "null";
-                String dType = "null";
-                if (sHeader != null) {
-                    Cell sc = sHeader.getCell(c);
-                    if (sc != null) {
-                        sType = String.valueOf(sc.getCellType());
-                        sTxt = sc.getCellType() == CellType.STRING ? (sc.getStringCellValue() == null ? "" : sc.getStringCellValue()) : sc.toString();
-                    }
-                }
-                if (dHeader != null) {
-                    Cell dc = dHeader.getCell(c);
-                    if (dc != null) {
-                        dType = String.valueOf(dc.getCellType());
-                        dTxt = dc.getCellType() == CellType.STRING ? (dc.getStringCellValue() == null ? "" : dc.getStringCellValue()) : dc.toString();
-                    }
-                }
-                if (!sTxt.equals(dTxt) || !sType.equals(dType)) {
-                    log.debug("copy-check header col={} srcType={} src='{}' destType={} dest='{}'", c, sType, sTxt, dType, dTxt);
-                    // Visible fallback for test output while diagnosing
-                    log.warn("COPY-CHECK-MISMATCH col={} srcType={} src='{}' destType={} dest='{}'", c, sType, sTxt, dType, dTxt);
-                }
-            }
-        } catch (Throwable ignore) {}
+        // header comparison diagnostics removed
     }
 
     private void removeTemplateImages(XSSFWorkbook workbook, java.util.Set<String> specialtiesToPreserve) {
@@ -333,7 +303,7 @@ public class PlanillaProcesoWorkbookBuilder {
                     } catch (Throwable ignore) {}
                 }
             } catch (Throwable sheetEx) {
-                log.debug("No se pudo limpiar dibujos de la hoja template {}: {}", name, sheetEx.getMessage());
+                // silently ignore drawing cleanup failures
             }
         }
     }
@@ -361,18 +331,7 @@ public class PlanillaProcesoWorkbookBuilder {
             XSSFSheet tmpl = workbook.getSheetAt(templateIndex);
             Row sHeader = tmpl.getRow(MONTH_HEADER_ROW);
             Row cHeader = sheet.getRow(MONTH_HEADER_ROW);
-            for (int c = 0; c < 200; c++) {
-                String sTxt = "";
-                String cTxt = "";
-                String sType = "null";
-                String cType = "null";
-                if (sHeader != null) { Cell sc = sHeader.getCell(c); if (sc != null) { sType=String.valueOf(sc.getCellType()); sTxt = sc.getCellType()==CellType.STRING? (sc.getStringCellValue()==null?"":sc.getStringCellValue()) : sc.toString(); }}
-                if (cHeader != null) { Cell cc = cHeader.getCell(c); if (cc != null) { cType=String.valueOf(cc.getCellType()); cTxt = cc.getCellType()==CellType.STRING? (cc.getStringCellValue()==null?"":cc.getStringCellValue()) : cc.toString(); }}
-                if (!sTxt.equals(cTxt) || !sType.equals(cType)) {
-                    log.warn("CLONE-MISMATCH col={} tmplType={} tmpl='{}' cloneType={} clone='{}'", c, sType, sTxt, cType, cTxt);
-                    log.debug("CLONE-MISMATCH col={} tmplType={} tmpl='{}' cloneType={} clone='{}'", c, sType, sTxt, cType, cTxt);
-                }
-            }
+            // clone mismatch diagnostics removed
         } catch (Throwable ignore) {}
         // Ensure the newly cloned sheet appears first (index 0) so callers
         // that access `getSheetAt(0)` receive the freshly created sheet.
@@ -393,7 +352,7 @@ public class PlanillaProcesoWorkbookBuilder {
         try {
             removeTemplateImages(workbook, specialtiesToPreserve == null ? java.util.Collections.emptySet() : specialtiesToPreserve);
         } catch (Throwable t) {
-            log.debug("No se pudo limpiar imágenes huérfanas tras remover hojas template: {}", t.getMessage());
+            // ignore orphan image cleanup failures
         }
     }
 
@@ -489,12 +448,7 @@ public class PlanillaProcesoWorkbookBuilder {
 
         Map<Integer, Integer> taskColumnById = allocateTaskColumns(tareasPorMes, layout, data.planilla().getId());
             // DIAGNOSTIC: dump taskColumnById mapping
-            try {
-                for (Map.Entry<Integer, Integer> e : taskColumnById.entrySet()) {
-                    log.debug("TASKCOLMAP id={} col={}", e.getKey(), e.getValue());
-                    log.warn("TASKCOLMAP id={} col={}", e.getKey(), e.getValue());
-                }
-            } catch (Throwable ignore) {}
+            // taskColumnById diagnostics removed
         // Ensure template has enough room to render reserved slots for months
         int requiredRightmost = layout.firstMonthColumn();
         for (Map.Entry<YearMonth, List<Tarea>> entry : tareasPorMes.entrySet()) {
@@ -550,12 +504,7 @@ public class PlanillaProcesoWorkbookBuilder {
             }
         } catch (Throwable ignore) {}
             // DIAGNOSTIC: dump monthBlocks
-            try {
-                for (MonthBlock mb : monthBlocks) {
-                    log.debug("MONTHBLOCK first={} last={} subtotal={}", mb.firstInstrumentCol(), mb.lastInstrumentCol(), mb.subtotalCol());
-                    log.warn("MONTHBLOCK first={} last={} subtotal={}", mb.firstInstrumentCol(), mb.lastInstrumentCol(), mb.subtotalCol());
-                }
-            } catch (Throwable ignore) {}
+            // monthBlocks diagnostics removed
 
         // Hide any trailing empty columns immediately to the right of the
         // last instrument column so downstream logic/tests observe a clean
@@ -638,7 +587,6 @@ public class PlanillaProcesoWorkbookBuilder {
                 int actualLastInstrument = firstCol + tareasMes.size() - 1;
                 String actualLastRef = CellReference.convertNumToColString(actualLastInstrument);
                 subtotalCell.setCellFormula("SUM(" + firstColRef + excelRowIndex + ":" + actualLastRef + excelRowIndex + ")");
-                    log.debug("DEBUG-TP-SET: sheet={} col={} formula={}", sheet.getSheetName(), subtotalCol, subtotalCell.getCellFormula());
             } else {
                 subtotalCell.setBlank();
             }
@@ -646,10 +594,9 @@ public class PlanillaProcesoWorkbookBuilder {
         }
 
         // Total General on TP row: SUM of monthly subtotal TP cells
-        if (!tpSubtotalAddresses.isEmpty()) {
+            if (!tpSubtotalAddresses.isEmpty()) {
             Cell totalTpCell = getOrCreateCell(getOrCreateRow(sheet, TP_ROW), computed.totalGeneralColumn());
             totalTpCell.setCellFormula("SUM(" + String.join(",", tpSubtotalAddresses) + ")");
-            log.debug("DEBUG-TOTAL-SET: sheet={} totalCol={} formula={}", sheet.getSheetName(), computed.totalGeneralColumn(), totalTpCell.getCellFormula());
         }
 
         // Ensure final-column headers are written at their computed positions.
@@ -746,38 +693,9 @@ public class PlanillaProcesoWorkbookBuilder {
 
         fillStudentRows(sheet, data, taskColumnById, computed, monthBlocks);
         // Diagnostic: inspect Total General cell on student and TP rows
-        try {
-            Row studentRowDiagTotal = getOrCreateRow(sheet, FIRST_STUDENT_ROW);
-            Row tpRowDiagTotal = getOrCreateRow(sheet, TP_ROW);
-            Cell stuTotalCell = studentRowDiagTotal.getCell(computed.totalGeneralColumn());
-            Cell tpTotalCell = tpRowDiagTotal.getCell(computed.totalGeneralColumn());
-            String stuType = stuTotalCell == null ? "null" : String.valueOf(stuTotalCell.getCellType());
-            String tpType = tpTotalCell == null ? "null" : String.valueOf(tpTotalCell.getCellType());
-            String stuFormula = (stuTotalCell != null && stuTotalCell.getCellType() == CellType.FORMULA) ? stuTotalCell.getCellFormula() : "-";
-            String tpFormula = (tpTotalCell != null && tpTotalCell.getCellType() == CellType.FORMULA) ? tpTotalCell.getCellFormula() : "-";
-            log.debug("DEBUG-TOTAL-POST-FILL: sheet={} totalCol={} stuType={} tpType={} stuFormula={} tpFormula={}", sheet.getSheetName(), computed.totalGeneralColumn(), stuType, tpType, stuFormula, tpFormula);
-        } catch (Exception ignore) {}
+            // total-post-fill diagnostic removed
         // Diagnostic: inspect student and TP subtotal cells immediately after writing
-        try {
-            Row headerRowDiag = getOrCreateRow(sheet, MONTH_HEADER_ROW);
-            Row studentRowDiag = getOrCreateRow(sheet, FIRST_STUDENT_ROW);
-            Row tpRowDiag = getOrCreateRow(sheet, TP_ROW);
-            for (MonthBlock mb : monthBlocks) {
-                if (mb == null) continue;
-                int col = mb.subtotalCol();
-                Cell h = headerRowDiag.getCell(col);
-                Cell stu = studentRowDiag.getCell(col);
-                Cell tp = tpRowDiag.getCell(col);
-                String htxt = h == null ? "" : (h.getCellType() == CellType.STRING ? h.getStringCellValue() : h.toString());
-                String stuType = stu == null ? "null" : String.valueOf(stu.getCellType());
-                String tpType = tp == null ? "null" : String.valueOf(tp.getCellType());
-                String stuFormula = (stu != null && stu.getCellType() == CellType.FORMULA) ? stu.getCellFormula() : "-";
-                String tpFormula = (tp != null && tp.getCellType() == CellType.FORMULA) ? tp.getCellFormula() : "-";
-                            log.debug("DEBUG-POST-FILL: col={} header='{}' stuType={} stuFormula={} tpType={} tpFormula={}", col, htxt, stuType, stuFormula, tpType, tpFormula);
-            }
-        } catch (Exception e) {
-            log.warn("Error asegurando fórmulas TP (copiado): {}", e.getMessage(), e);
-        }
+            // post-fill diagnostics removed
         // (TP subtotal copy and assertion diagnostics temporarily removed for root-cause diagnosis)
         clearTemplatePlaceholders(sheet);
 
@@ -848,25 +766,7 @@ public class PlanillaProcesoWorkbookBuilder {
             } catch (Exception ignore) {}
             cleanColumnsAfter(sheet, lastRealColumn, signatureRow, signatureColumn);
             // DIAGNOSTIC: log subtotal cell types after cleanColumnsAfter to detect unexpected clearing
-            try {
-                Row headerAfterClean = getOrCreateRow(sheet, MONTH_HEADER_ROW);
-                Row studentAfterClean = getOrCreateRow(sheet, FIRST_STUDENT_ROW);
-                Row tpAfterClean = getOrCreateRow(sheet, TP_ROW);
-                for (MonthBlock mb : monthBlocks) {
-                    if (mb == null) continue;
-                    int col = mb.subtotalCol();
-                    Cell h = headerAfterClean.getCell(col);
-                    Cell stu = studentAfterClean.getCell(col);
-                    Cell tp = tpAfterClean.getCell(col);
-                    String htxt = h == null ? "" : (h.getCellType() == CellType.STRING ? h.getStringCellValue() : h.toString());
-                    String stuType = stu == null ? "null" : String.valueOf(stu.getCellType());
-                    String tpType = tp == null ? "null" : String.valueOf(tp.getCellType());
-                    String stuF = (stu != null && stu.getCellType() == CellType.FORMULA) ? stu.getCellFormula() : "-";
-                    String tpF = (tp != null && tp.getCellType() == CellType.FORMULA) ? tp.getCellFormula() : "-";
-                    log.debug("POST-CLEAN: col={} header='{}' stuType={} stuFormula={} tpType={} tpFormula={}", col, htxt, stuType, stuF, tpType, tpF);
-                    log.warn("POST-CLEAN: col={} header='{}' stuType={} tpType={} stuFormula={} tpFormula={}", col, htxt, stuType, tpType, stuF, tpF);
-                }
-            } catch (Throwable ignore) {}
+            // post-clean diagnostics removed
             for (MonthBlock mb : monthBlocks) {
                 if (mb == null) continue;
                 for (int c = mb.firstInstrumentCol(); c <= mb.lastInstrumentCol(); c++) {
