@@ -561,7 +561,7 @@ class PlanillaProcesoWorkbookBuilderTest {
         String professorText = "Profesor/a: Ana María de la Cruz Pérez del Valle";
         PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
                 planilla,
-                new ctn.informatica.sca.model.Curso(201, "NarrowLong", 2026, "A"),
+                new ctn.informatica.sca.model.Curso(201, specialtyText, 2026, "A"),
                 "NarrowLong",
                 professorText,
                 "Mañana",
