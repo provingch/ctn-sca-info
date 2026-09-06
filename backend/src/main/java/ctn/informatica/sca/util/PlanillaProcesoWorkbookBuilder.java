@@ -515,7 +515,7 @@ public class PlanillaProcesoWorkbookBuilder {
                 }
             }
             int startHide = Math.max(lastInstrumentGlobal, lastHeaderMergeCol) + 1;
-            final int MAX_SCAN = startHide + 120; // upper safety bound
+            final int MAX_SCAN = Math.min(startHide + 120, nextAvailable);
             for (int c = startHide; c < MAX_SCAN; c++) {
                 boolean hasContent = false;
                 for (int r : new int[]{MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, TP_ROW}) {
@@ -558,16 +558,22 @@ public class PlanillaProcesoWorkbookBuilder {
             Integer firstCol = taskColumnById.get(firstTaskId);
             if (firstCol == null) continue;
 
-            // Overwrite individual instrument TP cells with numeric literals
-            for (int i = 0; i < tareasMes.size(); i++) {
-                Tarea tarea = tareasMes.get(i);
+            // Overwrite individual instrument TP cells with numeric literals and
+            // blank out any reserved slots that are not actually used in this month.
+            int reserved = reservedSlotsForMonth(tareasMes);
+            for (int i = 0; i < reserved; i++) {
                 int colIndex = firstCol + i;
                 Cell tpCell = getOrCreateCell(tpRowRuntime, colIndex);
-                setNumericCell(tpCell, tarea.getTotal());
+                if (i < tareasMes.size()) {
+                    Tarea tarea = tareasMes.get(i);
+                    setNumericCell(tpCell, tarea.getTotal());
+                } else {
+                    tpCell.setBlank();
+                }
             }
 
             int lastInstrument = firstCol + Math.max(0, tareasMes.size() - 1);
-            int subtotalCol = firstCol + reservedSlotsForMonth(tareasMes);
+            int subtotalCol = firstCol + reserved;
             String firstColRef = CellReference.convertNumToColString(firstCol);
             String lastColRef = CellReference.convertNumToColString(lastInstrument);
             int excelRowIndex = tpRowRuntime.getRowNum() + 1; // TP row formula must reference the TP row, not the student row.
@@ -1309,6 +1315,7 @@ public class PlanillaProcesoWorkbookBuilder {
                 String range = firstColRef + excelRowIndex + ":" + lastColRef + excelRowIndex;
                 Cell subtotalCell = getOrCreateCell(excelRow, mb.subtotalCol());
                 subtotalCell.setCellFormula("SUM(" + range + ")");
+                setCenterAlignment(sheet.getWorkbook(), subtotalCell);
                 subtotalAddresses.add(CellReference.convertNumToColString(mb.subtotalCol()) + excelRowIndex);
             }
 
@@ -1317,6 +1324,7 @@ public class PlanillaProcesoWorkbookBuilder {
                 String totalFormula = "SUM(" + String.join(",", subtotalAddresses) + ")";
                 Cell totalCell = getOrCreateCell(excelRow, layout.totalGeneralColumn());
                 totalCell.setCellFormula(totalFormula);
+                setCenterAlignment(sheet.getWorkbook(), totalCell);
             }
 
             int currentStageGrade = data.planilla().getNotaForSum(studentRow.getTotal());
@@ -1526,7 +1534,7 @@ public class PlanillaProcesoWorkbookBuilder {
 
         // Set freeze pane based on stage-specific frozen column count
         int frozen = layout == null ? 2 : Math.max(1, layout.frozenColumns());
-        sheet.createFreezePane(frozen, TP_ROW);
+        sheet.createFreezePane(frozen, TP_ROW + 1);
         sheet.setActiveCell(new CellAddress("A1"));
         sheet.setZoom(90);
 
@@ -1623,6 +1631,15 @@ public class PlanillaProcesoWorkbookBuilder {
         CellStyle cloned = workbook.createCellStyle();
         cloned.cloneStyleFrom(style);
         return cloned;
+    }
+
+    private void setCenterAlignment(Workbook workbook, Cell cell) {
+        if (cell == null || workbook == null) return;
+        CellStyle current = cell.getCellStyle();
+        CellStyle cloned = cloneStyle(workbook, current);
+        cloned.setAlignment(org.apache.poi.ss.usermodel.HorizontalAlignment.CENTER);
+        cloned.setVerticalAlignment(org.apache.poi.ss.usermodel.VerticalAlignment.CENTER);
+        cell.setCellStyle(cloned);
     }
 
     private int widthChars(double chars) {
@@ -1780,7 +1797,7 @@ public class PlanillaProcesoWorkbookBuilder {
                     }
                 }
             }
-            lastCol = Math.max(lastActualContentCol + 10, lastAllowedColumn + 200);
+            lastCol = lastActualContentCol + 10;
             // Determine the last non-blank header label so we can prefer hiding
             // immediately after visible final labels (this prevents leaving a
             // single visible ghost column when the template reserved extra slots).
