@@ -563,6 +563,7 @@ public class PlanillaProcesoWorkbookBuilder {
                 int actualLastInstrument = firstCol + tareasMes.size() - 1;
                 String actualLastRef = CellReference.convertNumToColString(actualLastInstrument);
                 subtotalCell.setCellFormula("SUM(" + firstColRef + excelRowIndex + ":" + actualLastRef + excelRowIndex + ")");
+                    System.out.println("DEBUG-TP-SET: sheet=" + sheet.getSheetName() + " col=" + subtotalCol + " formula=" + subtotalCell.getCellFormula());
             } else {
                 subtotalCell.setBlank();
             }
@@ -573,6 +574,7 @@ public class PlanillaProcesoWorkbookBuilder {
         if (!tpSubtotalAddresses.isEmpty()) {
             Cell totalTpCell = getOrCreateCell(getOrCreateRow(sheet, TP_ROW), computed.totalGeneralColumn());
             totalTpCell.setCellFormula("SUM(" + String.join(",", tpSubtotalAddresses) + ")");
+            System.out.println("DEBUG-TOTAL-SET: sheet=" + sheet.getSheetName() + " totalCol=" + computed.totalGeneralColumn() + " formula=" + totalTpCell.getCellFormula());
         }
 
         // Ensure final-column headers are written at their computed positions.
@@ -668,6 +670,18 @@ public class PlanillaProcesoWorkbookBuilder {
         }
 
         fillStudentRows(sheet, data, taskColumnById, computed, monthBlocks);
+        // Diagnostic: inspect Total General cell on student and TP rows
+        try {
+            Row studentRowDiagTotal = getOrCreateRow(sheet, FIRST_STUDENT_ROW);
+            Row tpRowDiagTotal = getOrCreateRow(sheet, TP_ROW);
+            Cell stuTotalCell = studentRowDiagTotal.getCell(computed.totalGeneralColumn());
+            Cell tpTotalCell = tpRowDiagTotal.getCell(computed.totalGeneralColumn());
+            String stuType = stuTotalCell == null ? "null" : String.valueOf(stuTotalCell.getCellType());
+            String tpType = tpTotalCell == null ? "null" : String.valueOf(tpTotalCell.getCellType());
+            String stuFormula = (stuTotalCell != null && stuTotalCell.getCellType() == CellType.FORMULA) ? stuTotalCell.getCellFormula() : "-";
+            String tpFormula = (tpTotalCell != null && tpTotalCell.getCellType() == CellType.FORMULA) ? tpTotalCell.getCellFormula() : "-";
+            System.out.println("DEBUG-TOTAL-POST-FILL: sheet=" + sheet.getSheetName() + " totalCol=" + computed.totalGeneralColumn() + " stuType=" + stuType + " tpType=" + tpType + " stuFormula=" + stuFormula + " tpFormula=" + tpFormula);
+        } catch (Exception ignore) {}
         // Diagnostic: inspect student and TP subtotal cells immediately after writing
         try {
             Row headerRowDiag = getOrCreateRow(sheet, MONTH_HEADER_ROW);
@@ -675,10 +689,16 @@ public class PlanillaProcesoWorkbookBuilder {
             Row tpRowDiag = getOrCreateRow(sheet, TP_ROW);
             for (MonthBlock mb : monthBlocks) {
                 if (mb == null) continue;
-                Cell h = headerRowDiag.getCell(mb.subtotalCol());
-                Cell stu = studentRowDiag.getCell(mb.subtotalCol());
-                Cell tp = tpRowDiag.getCell(mb.subtotalCol());
-                        // POST-FILL diagnostics removed
+                int col = mb.subtotalCol();
+                Cell h = headerRowDiag.getCell(col);
+                Cell stu = studentRowDiag.getCell(col);
+                Cell tp = tpRowDiag.getCell(col);
+                String htxt = h == null ? "" : (h.getCellType() == CellType.STRING ? h.getStringCellValue() : h.toString());
+                String stuType = stu == null ? "null" : String.valueOf(stu.getCellType());
+                String tpType = tp == null ? "null" : String.valueOf(tp.getCellType());
+                String stuFormula = (stu != null && stu.getCellType() == CellType.FORMULA) ? stu.getCellFormula() : "-";
+                String tpFormula = (tp != null && tp.getCellType() == CellType.FORMULA) ? tp.getCellFormula() : "-";
+                System.out.println("DEBUG-POST-FILL: col=" + col + " header='" + htxt + "' stuType=" + stuType + " stuFormula=" + stuFormula + " tpType=" + tpType + " tpFormula=" + tpFormula);
             }
         } catch (Exception e) {
             log.warn("Error asegurando fórmulas TP (copiado): {}", e.getMessage(), e);
@@ -688,6 +708,23 @@ public class PlanillaProcesoWorkbookBuilder {
             Row headerRowClean = getOrCreateRow(sheet, MONTH_HEADER_ROW);
             Row studentRowClean = getOrCreateRow(sheet, FIRST_STUDENT_ROW);
             Row tpRowClean = getOrCreateRow(sheet, TP_ROW);
+                // Debug: list all header 'Subtotal' occurrences before copying
+                int hdrLast = 200; // force diagnostic scan up to 200 columns to match tests
+                for (int hc = 0; hc < hdrLast; hc++) {
+                    Cell hh = headerRowClean.getCell(hc);
+                    if (hh != null && hh.getCellType() == CellType.STRING) {
+                        String txt = hh.getStringCellValue();
+                        if (txt != null && txt.toLowerCase().contains("subtotal")) {
+                            Cell stu = studentRowClean.getCell(hc);
+                            Cell tp = tpRowClean.getCell(hc);
+                            String stuT = stu == null ? "null" : String.valueOf(stu.getCellType());
+                            String tpT = tp == null ? "null" : String.valueOf(tp.getCellType());
+                            String stuF = (stu != null && stu.getCellType() == CellType.FORMULA) ? stu.getCellFormula() : "-";
+                            String tpF = (tp != null && tp.getCellType() == CellType.FORMULA) ? tp.getCellFormula() : "-";
+                            System.out.println("DEBUG-HEADER-SCAN: col=" + hc + " header='" + txt + "' stuType=" + stuT + " stuFormula=" + stuF + " tpType=" + tpT + " tpFormula=" + tpF);
+                        }
+                    }
+                }
             int headerLast = headerRowClean.getLastCellNum();
             int lastColScan = headerLast <= 0 ? 64 : headerLast;
             for (int c = 0; c < lastColScan; c++) {
@@ -705,8 +742,10 @@ public class PlanillaProcesoWorkbookBuilder {
                             int tpExcelRow = tpRowClean.getRowNum() + 1;
                             String tpFormula = stuFormula.replace(String.valueOf(stuExcelRow), String.valueOf(tpExcelRow));
                             Cell newTp = tp == null ? tpRowClean.createCell(c) : tp;
+                            System.out.println("DEBUG-TP-COPY: sheet=" + sheet.getSheetName() + " col=" + c + " stuFormula=" + stuFormula + " tpBefore=" + (tp==null?"null":tp.getCellType()));
                             newTp.setCellFormula(tpFormula);
                             log.debug("COPIED TP subtotal formula on sheet {} col {} -> {}", sheet.getSheetName(), c, tpFormula);
+                            System.out.println("DEBUG-TP-COPIED: sheet=" + sheet.getSheetName() + " col=" + c + " tpAfter=" + newTp.getCellType() + " formula=" + newTp.getCellFormula());
                         } catch (Exception e) {
                             log.warn("Failed copying TP subtotal formula at col {}: {}", c, e.getMessage());
                         }
@@ -716,6 +755,31 @@ public class PlanillaProcesoWorkbookBuilder {
         } catch (Exception e) {
             log.warn("Error asegurando fórmulas TP (scan/copy): {}", e.getMessage(), e);
         }
+            // Diagnostic assertion check: identify any subtotal header where student has formula but TP is not a formula
+            try {
+                Row headerRowCheck = getOrCreateRow(sheet, MONTH_HEADER_ROW);
+                Row studentRowCheck = getOrCreateRow(sheet, FIRST_STUDENT_ROW);
+                Row tpRowCheck = getOrCreateRow(sheet, TP_ROW);
+                for (int c = 0; c < 200; c++) {
+                    Cell hh = headerRowCheck.getCell(c);
+                    if (hh == null || hh.getCellType() != CellType.STRING) continue;
+                    String txt = hh.getStringCellValue();
+                    if (txt == null || !txt.toLowerCase().contains("subtotal")) continue;
+                    Cell stu = studentRowCheck.getCell(c);
+                    Cell tp = tpRowCheck.getCell(c);
+                    boolean stuIsFormula = stu != null && stu.getCellType() == CellType.FORMULA;
+                    boolean tpIsFormula = tp != null && tp.getCellType() == CellType.FORMULA;
+                    if (stuIsFormula && !tpIsFormula) {
+                        String stuF = stu == null ? "null" : stu.getCellFormula();
+                        String tpF = tp == null ? "null" : (tp.getCellType()==CellType.FORMULA?tp.getCellFormula():"<"+tp.getCellType()+">");
+                        System.out.println("DEBUG-ASSERT-FAIL-CANDIDATE: col=" + c + " header='" + txt + "' stuFormula=" + stuF + " tp=" + tpF);
+                        throw new IllegalStateException("Detected subtotal with missing TP formula at col=" + c);
+                    }
+                }
+            } catch (IllegalStateException e) {
+                // Re-throw to fail fast so test output shows the diagnostic
+                throw e;
+            } catch (Exception ignore) {}
         clearTemplatePlaceholders(sheet);
 
         int lastStudentRow = FIRST_STUDENT_ROW + Math.max(0, data.rows() == null ? 0 : data.rows().size()) - 1;
@@ -816,6 +880,33 @@ public class PlanillaProcesoWorkbookBuilder {
                     }
                 }
             } catch (Exception ignore) {}
+        // Defensive: ensure Total General formula on TP row matches student Total General
+        try {
+            Row headerRowFinal = getOrCreateRow(sheet, MONTH_HEADER_ROW);
+            int totalCol = -1;
+            for (int c = 0; c < 200; c++) {
+                Cell hh = headerRowFinal.getCell(c);
+                if (hh != null && hh.getCellType() == CellType.STRING) {
+                    String v = hh.getStringCellValue();
+                    if (v != null && v.toLowerCase().contains("total general")) { totalCol = c; break; }
+                }
+            }
+            if (totalCol >= 0) {
+                Row studentRowFinal = getOrCreateRow(sheet, FIRST_STUDENT_ROW);
+                Row tpRowFinal = getOrCreateRow(sheet, TP_ROW);
+                Cell stuTotal = studentRowFinal.getCell(totalCol);
+                Cell tpTotal = tpRowFinal.getCell(totalCol);
+                if (stuTotal != null && stuTotal.getCellType() == CellType.FORMULA && (tpTotal == null || tpTotal.getCellType() != CellType.FORMULA)) {
+                    String stuFormula = stuTotal.getCellFormula();
+                    int stuExcelRow = studentRowFinal.getRowNum() + 1;
+                    int tpExcelRow = tpRowFinal.getRowNum() + 1;
+                    String tpFormula = stuFormula.replace(String.valueOf(stuExcelRow), String.valueOf(tpExcelRow));
+                    Cell newTp = tpTotal == null ? tpRowFinal.createCell(totalCol) : tpTotal;
+                    newTp.setCellFormula(tpFormula);
+                    System.out.println("DEBUG-TOTAL-FORCE-COPY: sheet=" + sheet.getSheetName() + " col=" + totalCol + " tpFormula=" + tpFormula);
+                }
+            }
+        } catch (Exception ignore) {}
         }
 
     /**
