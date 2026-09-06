@@ -872,15 +872,15 @@ public class PlanillaProcesoWorkbookBuilder {
         // the tests use (ceil(len/8.0) + 2) columns. Guarantee the merged
         // region covers that width to avoid test flakiness on narrow sheets.
         int requiredByTests = (int) Math.ceil((double) (specialtyText == null ? 0 : specialtyText.length()) / 8.0) + 2;
-        // Conservative minimum allocation: ensure specialty gets at least
-        // `specialtyMinCols` OR 12 columns (whichever is larger). This
-        // is a safe heuristic for narrow planillas with long text and
-        // matches unit test expectations for edge cases.
-        int minimumAlloc = Math.max(Math.max(11, specialtyMinCols), requiredByTests);
+        // Derive the minimum span from the actual text width instead of a
+        // hardcoded constant. The existing `computeMinimumColumnsForText(...)`
+        // helper is the real signal for how wide the specialty/course blocks
+        // must be when the planilla is narrow.
+        int minimumAlloc = Math.max(specialtyMinCols, requiredByTests);
         newSpecEnd = Math.max(newSpecEnd, specStart + minimumAlloc - 1);
         // Reserve yearWidth columns for the year INSIDE the targetLastCol area
         int yearWidth = Math.max(2, yearMinCols);
-        int minimumCourseEnd = Math.max(Math.max(9, courseMinCols), specStart + computeMinimumColumnsForText(courseText, 2));
+        int minimumCourseEnd = Math.max(courseMinCols, specStart + computeMinimumColumnsForText(courseText, 2));
         int newCourseEnd = Math.max(minimumCourseEnd, Math.min(targetLastCol - yearWidth, targetLastCol - 1));
 
         // Place the year block immediately after the course block but never
