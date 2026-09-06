@@ -65,7 +65,7 @@ public class PlanillaProcesoWorkbookBuilder {
     private static final int INSTRUMENT_TITLE_ROW = 6;
     private static final int TP_ROW = 7;
     private static final int FIRST_STUDENT_ROW = 8;
-    private static final int TEMPLATE_STUDENT_COUNT = 3;
+    private static final int TEMPLATE_STUDENT_COUNT = 5;
     // Ancho del bloque de firma en columnas (antes 4 -> abarcaba la columna
     // "Nombre" que mide 30 de ancho y hacía la línea desproporcionadamente
     // larga). Con 2 alcanza para la línea y el texto "Firma del Docente".
@@ -582,10 +582,11 @@ public class PlanillaProcesoWorkbookBuilder {
             // the subtotal formula. Reserved empty slots should remain blank
             // but the subtotal column must contain the SUM of the actual
             // instrument range.
-                if (tareasMes.size() > 0) {
+            if (tareasMes.size() > 0) {
                 int actualLastInstrument = firstCol + tareasMes.size() - 1;
                 String actualLastRef = CellReference.convertNumToColString(actualLastInstrument);
                 subtotalCell.setCellFormula("SUM(" + firstColRef + excelRowIndex + ":" + actualLastRef + excelRowIndex + ")");
+                setCenterAlignment(sheet.getWorkbook(), subtotalCell);
             } else {
                 subtotalCell.setBlank();
             }
