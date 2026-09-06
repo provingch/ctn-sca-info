@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import ctn.informatica.sca.model.Planilla;
 import ctn.informatica.sca.model.StudentRow;
@@ -133,6 +134,42 @@ class PlanillaProcesoWorkbookBuilderTest {
             // Verify at least institutional + specialty logo were added to the workbook
             int pictures = workbook.getAllPictures() == null ? 0 : workbook.getAllPictures().size();
             assertTrue(pictures >= 2, "Deben insertarse al menos 2 imágenes (institucional + especialidad)");
+
+            // Regression: when stage 2 template exposes a leading fixed column
+            // (column index 2, i.e. Excel column C) it must contain firstStageGrades
+            // passed in the PlanillaSheetData. Build a new data set with explicit
+            // firstStageGrades and verify they appear in column index 2 for the
+            // first student row.
+            Map<Integer, Integer> firstStageMap = new HashMap<>();
+            firstStageMap.put(1, 7); // alumnoId 1 -> grade 7
+            Planilla plan2 = new Planilla(501, 1, 1, "comun", "Etapa2B", 2026, "segunda", 7);
+            PlanillaProcesoWorkbookBuilder.PlanillaSheetData data2 = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                    plan2,
+                    new ctn.informatica.sca.model.Curso(501, "Informatica", 2026, "A"),
+                    "Etapa2B",
+                    "Profe",
+                    "Mañana",
+                    List.of(t1),
+                    List.of(s),
+                    firstStageMap,
+                    null
+            );
+
+            try (XSSFWorkbook wb2 = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(data2, "Etapa2B")) {
+                Sheet sh2 = wb2.getSheetAt(0);
+                Row studentRow = sh2.getRow(8); // FIRST_STUDENT_ROW
+                Cell fixedCell = studentRow.getCell(2); // column C
+                assertNotNull(fixedCell, "La celda fija (col C) debe existir");
+                if (fixedCell.getCellType() == org.apache.poi.ss.usermodel.CellType.NUMERIC) {
+                    assertEquals(7, (int) fixedCell.getNumericCellValue(), "La celda fija debe contener el valor de firstStageGrades");
+                } else if (fixedCell.getCellType() == org.apache.poi.ss.usermodel.CellType.FORMULA) {
+                    org.apache.poi.ss.usermodel.CellType cached = fixedCell.getCachedFormulaResultType();
+                    assertEquals(org.apache.poi.ss.usermodel.CellType.NUMERIC, cached, "El resultado en caché de la fórmula debe ser numérico");
+                    assertEquals(7, (int) fixedCell.getNumericCellValue(), "La celda fija (fórmula) debe haber almacenado en caché el valor esperado");
+                } else {
+                    fail("La celda fija debe ser numérica o fórmula que evalúe a numérico");
+                }
+            }
         }
     }
 
@@ -1051,6 +1088,142 @@ class PlanillaProcesoWorkbookBuilderTest {
             for (Integer col : instrumentCols) {
                 int width = sheet.getColumnWidth(col);
                 assertTrue(width >= minWidth && width <= maxWidth, "Ancho de columna de instrumento fuera de rango: " + (double)width/256.0 + " chars");
+            }
+        }
+    }
+
+    @Test
+    void etapa2_threeMonths_finalColumnsPlacedAfterInstruments_and_firstStageColumnPreserved() throws IOException {
+        // Build a stage 2 planilla with three months having tasks to stress final-column placement
+        Planilla planilla = new Planilla(600, 2, 1, "comun", "Etapa2Three", 2026, "segunda", 7);
+
+        // Month 1: 2 tasks
+        Tarea m1a = new Tarea(); m1a.setId(6001); m1a.setFecha(LocalDate.of(2026, 2, 5)); m1a.setTitulo("M1A"); m1a.setTotal(5);
+        Tarea m1b = new Tarea(); m1b.setId(6002); m1b.setFecha(LocalDate.of(2026, 2, 15)); m1b.setTitulo("M1B"); m1b.setTotal(6);
+
+        // Month 2: 3 tasks
+        Tarea m2a = new Tarea(); m2a.setId(6101); m2a.setFecha(LocalDate.of(2026, 3, 5)); m2a.setTitulo("M2A"); m2a.setTotal(4);
+        Tarea m2b = new Tarea(); m2b.setId(6102); m2b.setFecha(LocalDate.of(2026, 3, 15)); m2b.setTitulo("M2B"); m2b.setTotal(4);
+        Tarea m2c = new Tarea(); m2c.setId(6103); m2c.setFecha(LocalDate.of(2026, 3, 25)); m2c.setTitulo("M2C"); m2c.setTotal(4);
+
+        // Month 3: 1 task
+        Tarea m3a = new Tarea(); m3a.setId(6201); m3a.setFecha(LocalDate.of(2026, 4, 10)); m3a.setTitulo("M3A"); m3a.setTotal(7);
+
+        List<Tarea> tareas = List.of(m1a, m1b, m2a, m2b, m2c, m3a);
+
+        StudentRow s = new StudentRow(); s.setAlumnoId(42); s.setAlumnoNombre("AlumnoX"); s.setGrades(Map.of(6001,5,6002,6,6101,4,6102,4,6103,4,6201,7)); s.setTotal(30);
+
+        Map<Integer,Integer> firstStage = new HashMap<>(); firstStage.put(42, 8);
+
+        PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                planilla,
+                new ctn.informatica.sca.model.Curso(600, "Etapa2Three", 2026, "A"),
+                "Etapa2Three",
+                "Profe",
+                "Mañana",
+                tareas,
+                List.of(s),
+                firstStage,
+                null
+        );
+
+        try (XSSFWorkbook wb = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(data, "Et2_3months")) {
+            Sheet sh = wb.getSheetAt(0);
+            // Find last instrument column: prefer INSTRUMENT_TITLE_ROW scan,
+            // fallback to parsing TP row SUM(...) formulas to extract the range.
+            Row titleRow = sh.getRow(6);
+            int lastInstrument = -1;
+            if (titleRow != null) {
+                for (int c = 0; c < 300; c++) {
+                    Cell cell = titleRow.getCell(c);
+                    if (cell != null && cell.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING
+                            && !cell.getStringCellValue().isBlank()) {
+                        lastInstrument = Math.max(lastInstrument, c);
+                    }
+                }
+            }
+            if (lastInstrument < 0) {
+                Row tp = sh.getRow(7);
+                if (tp != null) {
+                    for (int c = 0; c < 300; c++) {
+                        Cell cell = tp.getCell(c);
+                        if (cell != null && cell.getCellType() == org.apache.poi.ss.usermodel.CellType.FORMULA) {
+                            String f = cell.getCellFormula();
+                            if (f != null && f.contains("SUM(") && f.contains(":")) {
+                                int p1 = f.indexOf('(');
+                                int p2 = f.indexOf(')');
+                                if (p1 >= 0 && p2 > p1) {
+                                    String inside = f.substring(p1 + 1, p2);
+                                    if (inside.contains(":")) {
+                                        String[] parts = inside.split(":");
+                                        String lastRef = parts[1].replaceAll("\\d", "");
+                                        lastInstrument = Math.max(lastInstrument, org.apache.poi.ss.util.CellReference.convertColStringToIndex(lastRef));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (!(lastInstrument >= 0)) {
+                System.out.println("DEBUG: header row contents (cols 0..50):");
+                for (int r : new int[]{5,6,7}) {
+                    Row rr = sh.getRow(r);
+                    System.out.print("ROW " + r + ":");
+                    for (int c = 0; c < 50; c++) {
+                        Cell cell = rr == null ? null : rr.getCell(c);
+                        String val = cell == null ? "" : (cell.getCellType()==org.apache.poi.ss.usermodel.CellType.STRING?cell.getStringCellValue():cell.toString());
+                        System.out.print("|" + (val==null?"":val));
+                    }
+                    System.out.println();
+                }
+            }
+            assertTrue(lastInstrument >= 0, "Debe detectarse al menos un instrumento");
+
+            // Locate Total General column and other final labels
+            Row header = sh.getRow(5);
+            int totalGeneralCol = -1;
+            int currentStageCol = -1;
+            int firstStageCol = -1;
+            for (int c = lastInstrument + 1; c < lastInstrument + 20; c++) {
+                Cell hh = header == null ? null : header.getCell(c);
+                if (hh == null || hh.getCellType() != org.apache.poi.ss.usermodel.CellType.STRING) continue;
+                String v = hh.getStringCellValue();
+                if (v == null) continue;
+                String lower = v.toLowerCase();
+                if (lower.contains("total general")) totalGeneralCol = c;
+                if (lower.contains("calificación final 2") || lower.contains("calificacion final 2")) currentStageCol = c;
+                if (lower.contains("calificación final 1") || lower.contains("calificacion final 1")) firstStageCol = c;
+            }
+
+            System.out.println("DEBUG: lastInstrument=" + lastInstrument + " totalGeneralCol=" + totalGeneralCol + " currentStageCol=" + currentStageCol + " firstStageCol=" + firstStageCol);
+            // Ensure at least the current-stage final column lands after instruments
+            assertTrue(currentStageCol > lastInstrument, "Calificación final debe ubicarse a la derecha de los instrumentos");
+            if (firstStageCol < 0) {
+                // fallback: the first-stage fixed column may be left of the instruments
+                for (int c = 0; c <= lastInstrument; c++) {
+                    Cell hh = header == null ? null : header.getCell(c);
+                    if (hh != null && hh.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING) {
+                        String v = hh.getStringCellValue();
+                        if (v != null && (v.toLowerCase().contains("calificación final 1") || v.toLowerCase().contains("calificacion final 1"))) {
+                            firstStageCol = c; break;
+                        }
+                    }
+                }
+            }
+            assertTrue(firstStageCol >= 0, "Debe encontrarse la columna fija de primera etapa");
+
+            // Verify firstStageCol contains the expected cached value for student
+            Row studentRow = sh.getRow(8);
+            Cell firstCell = studentRow.getCell(firstStageCol);
+            assertNotNull(firstCell, "Celda primera etapa debe existir");
+            if (firstCell.getCellType() == org.apache.poi.ss.usermodel.CellType.NUMERIC) {
+                assertEquals(8, (int) firstCell.getNumericCellValue());
+            } else if (firstCell.getCellType() == org.apache.poi.ss.usermodel.CellType.FORMULA) {
+                assertEquals(org.apache.poi.ss.usermodel.CellType.NUMERIC, firstCell.getCachedFormulaResultType());
+                assertEquals(8, (int) firstCell.getNumericCellValue());
+            } else {
+                fail("La celda de primera etapa debe ser numérica o fórmula con resultado numérico");
             }
         }
     }

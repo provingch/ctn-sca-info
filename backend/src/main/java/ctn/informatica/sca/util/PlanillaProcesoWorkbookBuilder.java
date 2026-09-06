@@ -591,6 +591,36 @@ public class PlanillaProcesoWorkbookBuilder {
             );
         }
 
+        // Adjust computed layout if it would overlap instruments: ensure final
+        // columns are placed to the right of the last instrument column.
+        int lastInstrumentGlobal = monthBlocks.stream().mapToInt(mb -> mb == null ? layout.firstMonthColumn()-1 : mb.lastInstrumentCol()).max().orElse(layout.firstMonthColumn()-1);
+        if (computed.totalGeneralColumn() <= lastInstrumentGlobal) {
+            int shift = lastInstrumentGlobal - computed.totalGeneralColumn() + 1;
+            if (layout.leadingFixedColumn() >= 0) {
+                computed = new ComputedLayout(
+                        computed.firstMonthColumn(),
+                        computed.totalGeneralColumn() + shift,
+                        computed.currentStageGradeColumn() + shift,
+                        computed.firstStageGradeColumn(),
+                        computed.stageSumColumn() + shift,
+                        computed.finalAverageColumn() + shift,
+                        computed.complementaryColumn() + shift,
+                        computed.regularizationColumn() + shift
+                );
+            } else {
+                computed = new ComputedLayout(
+                        computed.firstMonthColumn(),
+                        computed.totalGeneralColumn() + shift,
+                        computed.currentStageGradeColumn() + shift,
+                        computed.firstStageGradeColumn() >= 0 ? computed.firstStageGradeColumn() + shift : -1,
+                        computed.stageSumColumn() + shift,
+                        computed.finalAverageColumn() + shift,
+                        computed.complementaryColumn() + shift,
+                        computed.regularizationColumn() + shift
+                );
+            }
+        }
+
         // Ensure TP row contains numeric literal values for each instrument
         // (overwrite any leftover template formulas) and place Subtotal/Total
         // formulas on the TP row mirroring the pattern used for student rows.
@@ -662,6 +692,38 @@ public class PlanillaProcesoWorkbookBuilder {
             }
             return null;
         };
+
+        // final columns: ensure they start to the right of the last instrument
+        // to avoid accidental overlap with instrument columns. If needed,
+        // shift the computed layout to the right and then write labels.
+        int lastInstrumentForFinals = monthBlocks.stream().mapToInt(mb -> mb == null ? layout.firstMonthColumn()-1 : mb.lastInstrumentCol()).max().orElse(layout.firstMonthColumn()-1);
+        int targetTotalStart = Math.max(computed.totalGeneralColumn(), lastInstrumentForFinals + 1);
+        if (targetTotalStart != computed.totalGeneralColumn()) {
+            int delta = targetTotalStart - computed.totalGeneralColumn();
+            if (layout.leadingFixedColumn() >= 0) {
+                computed = new ComputedLayout(
+                        computed.firstMonthColumn(),
+                        computed.totalGeneralColumn() + delta,
+                        computed.currentStageGradeColumn() + delta,
+                        computed.firstStageGradeColumn(),
+                        computed.stageSumColumn() + delta,
+                        computed.finalAverageColumn() + delta,
+                        computed.complementaryColumn() + delta,
+                        computed.regularizationColumn() + delta
+                );
+            } else {
+                computed = new ComputedLayout(
+                        computed.firstMonthColumn(),
+                        computed.totalGeneralColumn() + delta,
+                        computed.currentStageGradeColumn() + delta,
+                        computed.firstStageGradeColumn() >= 0 ? computed.firstStageGradeColumn() + delta : -1,
+                        computed.stageSumColumn() + delta,
+                        computed.finalAverageColumn() + delta,
+                        computed.complementaryColumn() + delta,
+                        computed.regularizationColumn() + delta
+                );
+            }
+        }
 
         // final columns: write labels and clone styles from template's row 6 entries (if found)
         org.apache.poi.ss.usermodel.Workbook wb = sheet.getWorkbook();
@@ -1328,14 +1390,39 @@ public class PlanillaProcesoWorkbookBuilder {
             maxColumn = Math.max(maxColumn, col);
         }
 
+        // Pre-fetch template sample rows to clone styles from
+        Row[] templateSampleRows = new Row[TEMPLATE_STUDENT_COUNT];
+        for (int i = 0; i < TEMPLATE_STUDENT_COUNT; i++) {
+            templateSampleRows[i] = sheet.getRow(FIRST_STUDENT_ROW + i);
+        }
+
         for (int rowOffset = 0; rowOffset < data.rows().size(); rowOffset++) {
             StudentRow studentRow = data.rows().get(rowOffset);
             Row excelRow = getOrCreateRow(sheet, FIRST_STUDENT_ROW + rowOffset);
-            setNumericCell(getOrCreateCell(excelRow, 0), rowOffset + 1);
-            setStringCell(excelRow, 1, studentRow.getAlumnoNombre());
+            int templateIndex = rowOffset < TEMPLATE_STUDENT_COUNT ? rowOffset : (rowOffset % TEMPLATE_STUDENT_COUNT);
+            Row templateRow = templateSampleRows[templateIndex];
+
+            Cell cell0 = getOrCreateCell(excelRow, 0);
+            setNumericCell(cell0, rowOffset + 1);
+            if (templateRow != null) {
+                Cell tpl = templateRow.getCell(0);
+                if (tpl != null && tpl.getCellStyle() != null) cell0.setCellStyle(cloneStyle(sheet.getWorkbook(), tpl.getCellStyle()));
+            }
+
+            Cell nameCell = getOrCreateCell(excelRow, 1);
+            setStringCell(nameCell, studentRow.getAlumnoNombre());
+            if (templateRow != null) {
+                Cell tpl = templateRow.getCell(1);
+                if (tpl != null && tpl.getCellStyle() != null) nameCell.setCellStyle(cloneStyle(sheet.getWorkbook(), tpl.getCellStyle()));
+            }
 
             for (int col = layout.firstMonthColumn(); col <= maxColumn; col++) {
-                getOrCreateCell(excelRow, col).setBlank();
+                Cell c = getOrCreateCell(excelRow, col);
+                c.setBlank();
+                if (templateRow != null) {
+                    Cell tpl = templateRow.getCell(col);
+                    if (tpl != null && tpl.getCellStyle() != null) c.setCellStyle(cloneStyle(sheet.getWorkbook(), tpl.getCellStyle()));
+                }
             }
 
             Map<Integer, Integer> grades = studentRow.getGrades();
@@ -1351,6 +1438,10 @@ public class PlanillaProcesoWorkbookBuilder {
                     } else {
                         setNumericCell(gradeCell, entry.getValue());
                     }
+                    if (templateRow != null) {
+                        Cell tpl = templateRow.getCell(columnIndex);
+                        if (tpl != null && tpl.getCellStyle() != null) gradeCell.setCellStyle(cloneStyle(sheet.getWorkbook(), tpl.getCellStyle()));
+                    }
                 }
             }
 
@@ -1364,6 +1455,10 @@ public class PlanillaProcesoWorkbookBuilder {
                 Cell subtotalCell = getOrCreateCell(excelRow, mb.subtotalCol());
                 subtotalCell.setCellFormula("SUM(" + range + ")");
                 setCenterAlignment(sheet.getWorkbook(), subtotalCell);
+                if (templateRow != null) {
+                    Cell tpl = templateRow.getCell(mb.subtotalCol());
+                    if (tpl != null && tpl.getCellStyle() != null) subtotalCell.setCellStyle(cloneStyle(sheet.getWorkbook(), tpl.getCellStyle()));
+                }
                 subtotalAddresses.add(CellReference.convertNumToColString(mb.subtotalCol()) + excelRowIndex);
             }
 
@@ -1373,10 +1468,19 @@ public class PlanillaProcesoWorkbookBuilder {
                 Cell totalCell = getOrCreateCell(excelRow, layout.totalGeneralColumn());
                 totalCell.setCellFormula(totalFormula);
                 setCenterAlignment(sheet.getWorkbook(), totalCell);
+                if (templateRow != null) {
+                    Cell tpl = templateRow.getCell(layout.totalGeneralColumn());
+                    if (tpl != null && tpl.getCellStyle() != null) totalCell.setCellStyle(cloneStyle(sheet.getWorkbook(), tpl.getCellStyle()));
+                }
             }
 
             int currentStageGrade = data.planilla().getNotaForSum(studentRow.getTotal());
-            setNumericCell(getOrCreateCell(excelRow, layout.currentStageGradeColumn()), currentStageGrade);
+            Cell currCell = getOrCreateCell(excelRow, layout.currentStageGradeColumn());
+            setNumericCell(currCell, currentStageGrade);
+            if (templateRow != null) {
+                Cell tpl = templateRow.getCell(layout.currentStageGradeColumn());
+                if (tpl != null && tpl.getCellStyle() != null) currCell.setCellStyle(cloneStyle(sheet.getWorkbook(), tpl.getCellStyle()));
+            }
 
             if (layout.firstStageGradeColumn() >= 0) {
                 Integer firstStageGrade = data.firstStageGrades().get(studentRow.getAlumnoId());
@@ -1386,8 +1490,22 @@ public class PlanillaProcesoWorkbookBuilder {
                 } else {
                     setNumericCell(firstStageCell, firstStageGrade);
                 }
-                getOrCreateCell(excelRow, layout.complementaryColumn()).setBlank();
-                getOrCreateCell(excelRow, layout.regularizationColumn()).setBlank();
+                if (templateRow != null) {
+                    Cell tpl = templateRow.getCell(layout.firstStageGradeColumn());
+                    if (tpl != null && tpl.getCellStyle() != null) firstStageCell.setCellStyle(cloneStyle(sheet.getWorkbook(), tpl.getCellStyle()));
+                }
+                Cell comp = getOrCreateCell(excelRow, layout.complementaryColumn());
+                comp.setBlank();
+                if (templateRow != null) {
+                    Cell tpl2 = templateRow.getCell(layout.complementaryColumn());
+                    if (tpl2 != null && tpl2.getCellStyle() != null) comp.setCellStyle(cloneStyle(sheet.getWorkbook(), tpl2.getCellStyle()));
+                }
+                Cell reg = getOrCreateCell(excelRow, layout.regularizationColumn());
+                reg.setBlank();
+                if (templateRow != null) {
+                    Cell tpl3 = templateRow.getCell(layout.regularizationColumn());
+                    if (tpl3 != null && tpl3.getCellStyle() != null) reg.setCellStyle(cloneStyle(sheet.getWorkbook(), tpl3.getCellStyle()));
+                }
             }
         }
     }
