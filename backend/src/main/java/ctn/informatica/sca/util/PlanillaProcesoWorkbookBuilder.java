@@ -715,33 +715,24 @@ public class PlanillaProcesoWorkbookBuilder {
         clearTemplatePlaceholders(sheet);
 
         int lastStudentRow = FIRST_STUDENT_ROW + Math.max(0, data.rows() == null ? 0 : data.rows().size()) - 1;
-        // Testing hook: allow skipping the visual/navigation pass when the
-        // system property 'skip.apply.nav' is set to true. This is intended
-        // for temporary diagnostic tests only and will be removed after root
-        // cause analysis.
-        boolean skipNav = Boolean.getBoolean("skip.apply.nav");
-        if (!skipNav) {
-            applyNavigationAndVisualDesign(sheet, monthBlocks, lastStudentRow, data.curso() == null ? null : data.curso().getEspecialidad(), layout);
-        }
+        applyNavigationAndVisualDesign(sheet, monthBlocks, lastStudentRow, data.curso() == null ? null : data.curso().getEspecialidad(), layout);
 
-        /*
-         // Final cleanup: ensure only the computed Total General header remains
-         try {
-             Row hdr = sheet.getRow(MONTH_HEADER_ROW);
-             if (hdr != null) {
-                 for (int c = 0; c < 400; c++) {
-                     if (c == computed.totalGeneralColumn()) continue;
-                     Cell h = hdr.getCell(c);
-                     if (h != null && h.getCellType() == CellType.STRING) {
-                         String v = h.getStringCellValue();
-                         if (v != null && v.equalsIgnoreCase("Total General")) {
-                             h.setBlank();
-                         }
-                     }
-                 }
-             }
-         } catch (Exception ignore) {}
-        */
+        // Final cleanup: ensure only the computed Total General header remains
+        try {
+            Row hdr = sheet.getRow(MONTH_HEADER_ROW);
+            if (hdr != null) {
+                for (int c = 0; c < 400; c++) {
+                    if (c == computed.totalGeneralColumn()) continue;
+                    Cell h = hdr.getCell(c);
+                    if (h != null && h.getCellType() == CellType.STRING) {
+                        String v = h.getStringCellValue();
+                        if (v != null && v.equalsIgnoreCase("Total General")) {
+                            h.setBlank();
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignore) {}
 
         // Compute the signature row to place the teacher signature a couple of
         // rows below the last student row so it's always inside the area we
@@ -779,10 +770,7 @@ public class PlanillaProcesoWorkbookBuilder {
         setTeacherSignature(sheet, data, signatureRow, signatureColumn);
 
         if (sheet instanceof XSSFSheet) {
-            boolean skipResizeBanner = Boolean.getBoolean("skip.resize.banner");
-            if (!skipResizeBanner) {
-                resizeHeaderBanner((XSSFSheet) sheet, layout, lastRealColumn);
-            }
+            resizeHeaderBanner((XSSFSheet) sheet, layout, lastRealColumn);
             java.util.List<CellRangeAddress> dynamicHeaderMerges = ((XSSFSheet) sheet).getMergedRegions();
             int protectedHeaderRightEdge = lastRealColumn;
             for (CellRangeAddress ca : dynamicHeaderMerges) {
