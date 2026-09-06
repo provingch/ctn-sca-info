@@ -116,7 +116,10 @@ public class PlanillaProcesoWorkbookBuilder {
         try {
             XSSFSheet sheet = cloneTemplateSheet(workbook, layoutFor(data.planilla()), sheetName);
             populateSheet(sheet, data);
-            removeTemplateSheets(workbook);
+            java.util.Set<String> preserves = new java.util.HashSet<>();
+            String esp = data.curso() == null ? null : data.curso().getEspecialidad();
+            if (esp != null && !esp.isBlank()) preserves.add(esp);
+            removeTemplateSheets(workbook, preserves);
             if (workbook.getNumberOfSheets() > 0) {
                 workbook.setActiveSheet(0);
             }
@@ -138,7 +141,12 @@ public class PlanillaProcesoWorkbookBuilder {
                 XSSFSheet sheet = cloneTemplateSheet(workbook, layoutFor(data.planilla()), uniqueSheetName(workbook, desiredName));
                 populateSheet(sheet, data);
             }
-            removeTemplateSheets(workbook);
+            java.util.Set<String> preserves = new java.util.HashSet<>();
+            for (PlanillaSheetData d : sheets) {
+                String e = d.curso() == null ? null : d.curso().getEspecialidad();
+                if (e != null && !e.isBlank()) preserves.add(e);
+            }
+            removeTemplateSheets(workbook, preserves);
             if (workbook.getNumberOfSheets() > 0) {
                 workbook.setActiveSheet(0);
             }
@@ -157,12 +165,11 @@ public class PlanillaProcesoWorkbookBuilder {
         }
         try (InputStream in = stream) {
             XSSFWorkbook workbook = new XSSFWorkbook(in);
-            removeTemplateImages(workbook);
             return workbook;
         }
     }
 
-    private void removeTemplateImages(XSSFWorkbook workbook) {
+    private void removeTemplateImages(XSSFWorkbook workbook, java.util.Set<String> specialtiesToPreserve) {
         if (workbook == null) {
             return;
         }
@@ -170,20 +177,47 @@ public class PlanillaProcesoWorkbookBuilder {
         // freshly generated sheet. Only remove drawing relations from template sheets
         // and leave the generated sheet's images intact.
         try {
+            org.apache.poi.openxml4j.opc.OPCPackage pkg = workbook.getPackage();
+            java.util.Set<org.apache.poi.openxml4j.opc.PackagePartName> partsToRemove = new java.util.HashSet<>();
             for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
                 org.apache.poi.ss.usermodel.Sheet s = workbook.getSheetAt(i);
                 String name = s == null ? "" : s.getSheetName();
                 if (!(s instanceof XSSFSheet xs)) {
                     continue;
                 }
+                boolean isTemplateSheet = LEGEND_SHEET.equals(name)
+                        || STAGE_1.templateSheetName().equals(name)
+                        || STAGE_2.templateSheetName().equals(name)
+                        || "Planilla".equals(name);
+                if (!isTemplateSheet) {
+                    continue;
+                }
                 try {
-                    boolean isTemplateSheet = LEGEND_SHEET.equals(name)
-                            || STAGE_1.templateSheetName().equals(name)
-                            || STAGE_2.templateSheetName().equals(name)
-                            || "Planilla".equals(name);
-                    if (!isTemplateSheet) {
-                        continue;
-                    }
+                    // If there is a drawing, collect the package parts used by its shapes
+                    try {
+                        org.apache.poi.xssf.usermodel.XSSFDrawing drawing = xs.getDrawingPatriarch();
+                        if (drawing != null) {
+                            java.util.List<?> shapes = drawing.getShapes();
+                            if (shapes != null) {
+                                for (Object shape : shapes) {
+                                    if (shape instanceof org.apache.poi.xssf.usermodel.XSSFPicture) {
+                                        org.apache.poi.xssf.usermodel.XSSFPicture pic = (org.apache.poi.xssf.usermodel.XSSFPicture) shape;
+                                        try {
+                                            org.apache.poi.openxml4j.opc.PackagePart pp = pic.getPictureData().getPackagePart();
+                                            if (pp != null) partsToRemove.add(pp.getPartName());
+                                        } catch (Throwable ignore) {}
+                                    }
+                                }
+                            }
+                            // also mark the drawing part itself for removal
+                            try {
+                                org.apache.poi.openxml4j.opc.PackagePart drawingPart = drawing.getPackagePart();
+                                if (drawingPart != null) partsToRemove.add(drawingPart.getPartName());
+                            } catch (Throwable ignore) {}
+                        }
+                    } catch (Throwable ignore) {}
+
+                    // finally unset the drawing relation from the sheet XML
                     try {
                         java.lang.reflect.Method getCt = xs.getClass().getMethod("getCTWorksheet");
                         Object ctWorksheet = getCt.invoke(xs);
@@ -204,8 +238,102 @@ public class PlanillaProcesoWorkbookBuilder {
                     log.debug("No se pudo limpiar dibujos de la hoja template {}: {}", name, sheetEx.getMessage());
                 }
             }
+
+            // Remove the collected parts from the package (drawing parts and referenced images)
+            for (org.apache.poi.openxml4j.opc.PackagePartName ppn : partsToRemove) {
+                try {
+                    pkg.removePart(ppn);
+                } catch (Throwable ignore) {
+                    // ignore failures to remove individual parts
+                }
+            }
+            // Additionally perform a best-effort sweep: find any /xl/media/ parts
+            // that are not referenced by any package relationship and remove them.
+            try {
+                java.util.Set<org.apache.poi.openxml4j.opc.PackagePartName> referenced = new java.util.HashSet<>();
+                for (org.apache.poi.openxml4j.opc.PackagePart part : pkg.getParts()) {
+                    try {
+                        for (org.apache.poi.openxml4j.opc.PackageRelationship rel : part.getRelationships()) {
+                            try {
+                                String base = part.getPartName().getName();
+                                java.net.URI target = rel.getTargetURI();
+                                try {
+                                    java.net.URI baseUri = new java.net.URI(base);
+                                    java.net.URI resolvedUri = baseUri.resolve(target);
+                                    String resolvedName = resolvedUri.getPath();
+                                    org.apache.poi.openxml4j.opc.PackagePartName resolved = org.apache.poi.openxml4j.opc.PackagingURIHelper.createPartName(resolvedName);
+                                    referenced.add(resolved);
+                                } catch (Throwable ignore) {}
+                            } catch (Throwable ignore) {}
+                        }
+                    } catch (Throwable ignore) {}
+                }
+                for (org.apache.poi.openxml4j.opc.PackagePart part : pkg.getParts()) {
+                    try {
+                        String name = part.getPartName().getName();
+                        if (name != null && name.startsWith("/xl/media/") && !referenced.contains(part.getPartName())) {
+                            try {
+                                pkg.removePart(part.getPartName());
+                            } catch (Throwable ignore) {}
+                        }
+                    } catch (Throwable ignore) {}
+                }
+            } catch (Throwable ignore) {}
         } catch (Throwable ex) {
             log.warn("No se pudo limpiar por completo las imágenes de la plantilla: {}", ex.getMessage());
+        }
+        // Finally, remove any /xl/media parts that don't match known logos
+        try {
+            org.apache.poi.openxml4j.opc.OPCPackage pkg = workbook.getPackage();
+            java.util.Set<String> keepDigests = new java.util.HashSet<>();
+            // institutional logo
+            try (java.io.InputStream is = getClass().getResourceAsStream(INSTITUTION_LOGO_PATH)) {
+                if (is != null) keepDigests.add(sha256Hex(is));
+            } catch (Throwable ignore) {}
+            // specialty logos
+            if (specialtiesToPreserve != null) {
+                for (String esp : specialtiesToPreserve) {
+                    try {
+                        String p = resolveSpecialtyLogoResourcePath(esp);
+                        if (p == null) continue;
+                        try (java.io.InputStream is = getClass().getResourceAsStream(p)) {
+                            if (is != null) keepDigests.add(sha256Hex(is));
+                        }
+                    } catch (Throwable ignore) {}
+                }
+            }
+            for (org.apache.poi.openxml4j.opc.PackagePart part : pkg.getParts()) {
+                try {
+                    String name = part.getPartName().getName();
+                    if (name != null && name.startsWith("/xl/media/")) {
+                        try (java.io.InputStream pis = part.getInputStream()) {
+                            String d = sha256Hex(pis);
+                            if (!keepDigests.contains(d)) {
+                                try {
+                                    pkg.removePart(part.getPartName());
+                                } catch (Throwable ignore) {}
+                            }
+                        }
+                    }
+                } catch (Throwable ignore) {}
+            }
+        } catch (Throwable ignore) {}
+    }
+
+    private static String sha256Hex(java.io.InputStream is) {
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] buf = new byte[8192];
+            int r;
+            while ((r = is.read(buf)) > 0) {
+                md.update(buf, 0, r);
+            }
+            byte[] dig = md.digest();
+            StringBuilder sb = new StringBuilder(dig.length * 2);
+            for (byte b : dig) sb.append(String.format("%02x", b & 0xff));
+            return sb.toString();
+        } catch (Throwable t) {
+            return "";
         }
     }
 
@@ -232,7 +360,7 @@ public class PlanillaProcesoWorkbookBuilder {
         return sheet;
     }
 
-    private void removeTemplateSheets(XSSFWorkbook workbook) {
+    private void removeTemplateSheets(XSSFWorkbook workbook, java.util.Set<String> specialtiesToPreserve) {
         removeSheetIfPresent(workbook, LEGEND_SHEET);
         removeSheetIfPresent(workbook, STAGE_1.templateSheetName());
         removeSheetIfPresent(workbook, STAGE_2.templateSheetName());
@@ -242,7 +370,7 @@ public class PlanillaProcesoWorkbookBuilder {
         // the template and ensures removed template pictures do not remain
         // in the workbook's picture registry.
         try {
-            removeTemplateImages(workbook);
+            removeTemplateImages(workbook, specialtiesToPreserve == null ? java.util.Collections.emptySet() : specialtiesToPreserve);
         } catch (Throwable t) {
             log.debug("No se pudo limpiar imágenes huérfanas tras remover hojas template: {}", t.getMessage());
         }
@@ -688,7 +816,6 @@ public class PlanillaProcesoWorkbookBuilder {
                 }
             }
         // Re-ensure TP subtotal and total formulas persist after any cleanup
-            Row tpRowAfter = getOrCreateRow(sheet, TP_ROW);
             // TP re-write blocks removed: cleanColumnsAfter protects TP row.
         // Removed TP final diagnostic logs
         // Final defensive pass: re-scan instrument title row and enforce
