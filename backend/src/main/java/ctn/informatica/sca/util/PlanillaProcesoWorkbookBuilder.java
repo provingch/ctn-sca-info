@@ -587,6 +587,10 @@ public class PlanillaProcesoWorkbookBuilder {
                 int actualLastInstrument = firstCol + tareasMes.size() - 1;
                 String actualLastRef = CellReference.convertNumToColString(actualLastInstrument);
                 subtotalCell.setCellFormula("SUM(" + firstColRef + excelRowIndex + ":" + actualLastRef + excelRowIndex + ")");
+                // TEMP CHECK: record that we set this subtotal formula
+                try {
+                    System.out.println("[DEBUG-TP] WROTE TP subtotal at r=" + (tpRowRuntime.getRowNum()+1) + " c=" + subtotalCol + " formula=" + subtotalCell.getCellFormula());
+                } catch (Exception ignore) {}
             } else {
                 subtotalCell.setBlank();
             }
@@ -595,9 +599,12 @@ public class PlanillaProcesoWorkbookBuilder {
 
         // Total General on TP row: SUM of monthly subtotal TP cells
             if (!tpSubtotalAddresses.isEmpty()) {
-            Cell totalTpCell = getOrCreateCell(getOrCreateRow(sheet, TP_ROW), computed.totalGeneralColumn());
-            totalTpCell.setCellFormula("SUM(" + String.join(",", tpSubtotalAddresses) + ")");
-        }
+                Cell totalTpCell = getOrCreateCell(getOrCreateRow(sheet, TP_ROW), computed.totalGeneralColumn());
+                totalTpCell.setCellFormula("SUM(" + String.join(",", tpSubtotalAddresses) + ")");
+                try {
+                    System.out.println("[DEBUG-TP] WROTE TP total at r=" + (TP_ROW+1) + " c=" + computed.totalGeneralColumn() + " formula=" + totalTpCell.getCellFormula());
+                } catch (Exception ignore) {}
+            }
 
         // Ensure final-column headers are written at their computed positions.
         // Read original header texts from template positions (if present) and
@@ -689,11 +696,24 @@ public class PlanillaProcesoWorkbookBuilder {
                 setStringCell(getOrCreateCell(headerRow, computed.regularizationColumn()), regLabel);
                 sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, computed.regularizationColumn(), computed.regularizationColumn()));
             }
+
+            // Remove any leftover template 'Total General' labels that may remain
+            // elsewhere in the header row so tests locate the computed column.
+            try {
+                for (int c = 0; c < 400; c++) {
+                    if (c == computed.totalGeneralColumn()) continue;
+                    Cell h = headerRow.getCell(c);
+                    if (h != null && h.getCellType() == CellType.STRING) {
+                        String v = h.getStringCellValue();
+                        if (v != null && v.equalsIgnoreCase("Total General")) {
+                            h.setBlank();
+                        }
+                    }
+                }
+            } catch (Exception ignore) {}
         }
 
         fillStudentRows(sheet, data, taskColumnById, computed, monthBlocks);
-        // Diagnostic: inspect Total General cell on student and TP rows
-            // total-post-fill diagnostic removed
         // Diagnostic: inspect student and TP subtotal cells immediately after writing
             // post-fill diagnostics removed
         // (TP subtotal copy and assertion diagnostics temporarily removed for root-cause diagnosis)
@@ -701,6 +721,23 @@ public class PlanillaProcesoWorkbookBuilder {
 
         int lastStudentRow = FIRST_STUDENT_ROW + Math.max(0, data.rows() == null ? 0 : data.rows().size()) - 1;
         applyNavigationAndVisualDesign(sheet, monthBlocks, lastStudentRow, data.curso() == null ? null : data.curso().getEspecialidad(), layout);
+
+        // Final cleanup: ensure only the computed Total General header remains
+        try {
+            Row hdr = sheet.getRow(MONTH_HEADER_ROW);
+            if (hdr != null) {
+                for (int c = 0; c < 400; c++) {
+                    if (c == computed.totalGeneralColumn()) continue;
+                    Cell h = hdr.getCell(c);
+                    if (h != null && h.getCellType() == CellType.STRING) {
+                        String v = h.getStringCellValue();
+                        if (v != null && v.equalsIgnoreCase("Total General")) {
+                            h.setBlank();
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignore) {}
 
         // Compute the signature row to place the teacher signature a couple of
         // rows below the last student row so it's always inside the area we
@@ -765,8 +802,23 @@ public class PlanillaProcesoWorkbookBuilder {
                 }
             } catch (Exception ignore) {}
             cleanColumnsAfter(sheet, lastRealColumn, signatureRow, signatureColumn);
-            // DIAGNOSTIC: log subtotal cell types after cleanColumnsAfter to detect unexpected clearing
-            // post-clean diagnostics removed
+            // TEMP CHECK: dump TP subtotal and total cell status right after cleanColumnsAfter
+            try {
+                Row tpRowPost = getOrCreateRow(sheet, TP_ROW);
+                for (MonthBlock mb : monthBlocks) {
+                    if (mb == null) continue;
+                    Cell sc = tpRowPost.getCell(mb.subtotalCol());
+                    String type = sc == null ? "null" : sc.getCellType().name();
+                    String formula = "";
+                    try { if (sc != null && sc.getCellType() == CellType.FORMULA) formula = sc.getCellFormula(); } catch (Exception ignore){}
+                    System.out.println("[DEBUG-TP] POST-CLEAN subtotal at c=" + mb.subtotalCol() + " type=" + type + " formula=" + formula);
+                }
+                Cell totalPost = tpRowPost.getCell(computed.totalGeneralColumn());
+                String ttype = totalPost == null ? "null" : totalPost.getCellType().name();
+                String tformula = "";
+                try { if (totalPost != null && totalPost.getCellType() == CellType.FORMULA) tformula = totalPost.getCellFormula(); } catch (Exception ignore){}
+                System.out.println("[DEBUG-TP] POST-CLEAN total at c=" + computed.totalGeneralColumn() + " type=" + ttype + " formula=" + tformula);
+            } catch (Exception ignore) {}
             for (MonthBlock mb : monthBlocks) {
                 if (mb == null) continue;
                 for (int c = mb.firstInstrumentCol(); c <= mb.lastInstrumentCol(); c++) {
