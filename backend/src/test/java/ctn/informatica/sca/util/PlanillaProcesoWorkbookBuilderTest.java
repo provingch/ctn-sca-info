@@ -554,6 +554,55 @@ class PlanillaProcesoWorkbookBuilderTest {
     }
 
     @Test
+    void resize_withMoreThanFiveStudents_createsAllStudentRows() throws IOException {
+        Planilla planilla = new Planilla(777, 1, 1, "comun", "ManyStudents", 2026, "primera", 7);
+        Tarea t1 = new Tarea(); t1.setId(9001); t1.setFecha(LocalDate.of(2026, 2, 5)); t1.setTitulo("T1"); t1.setTotal(5);
+
+        List<StudentRow> students = new ArrayList<>();
+        for (int i = 1; i <= 8; i++) {
+            StudentRow s = new StudentRow();
+            s.setAlumnoId(i);
+            s.setAlumnoNombre("Alumno " + i);
+            s.setGrades(Map.of(9001, Math.min(5, i)));
+            s.setTotal(Math.min(5, i));
+            students.add(s);
+        }
+
+        PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                planilla,
+                new ctn.informatica.sca.model.Curso(777, "ManyStudents", 2026, "A"),
+                "ManyStudents",
+                "Prof",
+                "Mañana",
+                List.of(t1),
+                students,
+                Map.of(),
+                null
+        );
+
+        try (XSSFWorkbook workbook = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(data, "ManyStudents")) {
+            Sheet sheet = workbook.getSheetAt(0);
+            // Count rows that contain our student name pattern starting at the expected student area
+            int studentAreaStart = 8; // FIRST_STUDENT_ROW in builder
+            int found = 0;
+            for (int r = studentAreaStart; r <= sheet.getLastRowNum(); r++) {
+                Row rr = sheet.getRow(r);
+                if (rr == null) continue;
+                for (Cell c : rr) {
+                    if (c != null && c.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING) {
+                        String v = c.getStringCellValue();
+                        if (v != null && v.startsWith("Alumno ")) {
+                            found++;
+                            break;
+                        }
+                    }
+                }
+            }
+            assertEquals(8, found, "Deben generarse las 8 filas de alumnos solicitadas (no debe lanzarse excepción) ");
+        }
+    }
+
+    @Test
     void headerRowHasSingleTotalGeneralAndHeaderBandStaysMergedInNarrowPlanilla() throws IOException {
         Planilla planilla = new Planilla(201, 1, 1, "comun", "NarrowLong", 2026, "primera", 7);
         Tarea t1 = new Tarea(); t1.setId(9002); t1.setFecha(LocalDate.of(2026, 2, 5)); t1.setTitulo("S1"); t1.setTotal(5);
