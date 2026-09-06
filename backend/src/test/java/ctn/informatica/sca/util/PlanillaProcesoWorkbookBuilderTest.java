@@ -554,6 +554,81 @@ class PlanillaProcesoWorkbookBuilderTest {
     }
 
     @Test
+    void headerRowHasSingleTotalGeneralAndHeaderBandStaysMergedInNarrowPlanilla() throws IOException {
+        Planilla planilla = new Planilla(201, 1, 1, "comun", "NarrowLong", 2026, "primera", 7);
+        Tarea t1 = new Tarea(); t1.setId(9002); t1.setFecha(LocalDate.of(2026, 2, 5)); t1.setTitulo("S1"); t1.setTotal(5);
+        String specialtyText = "Especialidad: Ciencias Sociales y Humanidades con orientación en Historia";
+        String professorText = "Profesor/a: Ana María de la Cruz Pérez del Valle";
+        PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                planilla,
+                new ctn.informatica.sca.model.Curso(201, specialtyText, 2026, "A"),
+                "NarrowLong",
+                professorText,
+                "Mañana",
+                List.of(t1),
+                List.of(new StudentRow()),
+                Map.of(),
+                null
+        );
+
+        try (XSSFWorkbook workbook = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(data, "NarrowLongRegression")) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Row headerRow = sheet.getRow(5);
+            assertNotNull(headerRow, "Debe existir la fila de encabezado del mes");
+
+            int totalGeneralCount = 0;
+            int totalGeneralCol = -1;
+            for (int c = 0; c < 200; c++) {
+                Cell cell = headerRow.getCell(c);
+                if (cell != null && cell.getCellType() == CellType.STRING) {
+                    String value = cell.getStringCellValue();
+                    if (value != null && value.equalsIgnoreCase("Total General")) {
+                        totalGeneralCount++;
+                        totalGeneralCol = c;
+                    }
+                }
+            }
+
+            assertEquals(1, totalGeneralCount, "Debe existir exactamente una etiqueta Total General en el header");
+            assertTrue(totalGeneralCol >= 0, "Debe encontrarse la columna del Total General");
+
+            int formulaTotalGeneralCol = -1;
+            for (int rowIndex : new int[]{7, 8}) {
+                Row row = sheet.getRow(rowIndex);
+                if (row == null) continue;
+                Cell formulaCell = row.getCell(totalGeneralCol);
+                if (formulaCell != null && formulaCell.getCellType() == CellType.FORMULA) {
+                    String formula = formulaCell.getCellFormula();
+                    if (formula != null && formula.startsWith("SUM(")) {
+                        formulaTotalGeneralCol = formulaCell.getColumnIndex();
+                        break;
+                    }
+                }
+            }
+
+            assertTrue(formulaTotalGeneralCol >= 0, "Debe existir la fórmula del Total General alineada con la etiqueta del header");
+            assertEquals(formulaTotalGeneralCol, totalGeneralCol,
+                    "La etiqueta Total General y la fórmula de suma deben estar alineadas en la misma columna");
+
+            boolean specialtyMergePresent = false;
+            boolean courseMergePresent = false;
+            for (CellRangeAddress merge : ((org.apache.poi.xssf.usermodel.XSSFSheet) sheet).getMergedRegions()) {
+                if (merge.getFirstRow() == 3 && merge.getFirstColumn() == 2) {
+                    specialtyMergePresent = true;
+                    assertTrue(merge.getLastColumn() >= 3, "La fusión de Especialidad debe preservarse en el escenario angosto");
+                }
+                if (merge.getFirstRow() == 4 && merge.getFirstColumn() == 2) {
+                    courseMergePresent = true;
+                    assertTrue(merge.getLastColumn() >= 3, "La fusión de Curso/Año debe preservarse en el escenario angosto");
+                }
+            }
+
+            assertTrue(specialtyMergePresent, "Debe mantenerse la fusión de Especialidad tras limpiar columnas sobrantes");
+            assertTrue(courseMergePresent, "Debe mantenerse la fusión de Curso/Año tras limpiar columnas sobrantes");
+        }
+    }
+
+    @Test
     void headerBannerUsesMinimumSpanForLongSpecialtyTextInNarrowPlanilla() throws IOException {
         Planilla planilla = new Planilla(201, 1, 1, "comun", "NarrowLong", 2026, "primera", 7);
         Tarea t1 = new Tarea(); t1.setId(9002); t1.setFecha(LocalDate.of(2026, 2, 5)); t1.setTitulo("S1"); t1.setTotal(5);
@@ -561,7 +636,7 @@ class PlanillaProcesoWorkbookBuilderTest {
         String professorText = "Profesor/a: Ana María de la Cruz Pérez del Valle";
         PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
                 planilla,
-                new ctn.informatica.sca.model.Curso(201, "NarrowLong", 2026, "A"),
+                new ctn.informatica.sca.model.Curso(201, specialtyText, 2026, "A"),
                 "NarrowLong",
                 professorText,
                 "Mañana",
