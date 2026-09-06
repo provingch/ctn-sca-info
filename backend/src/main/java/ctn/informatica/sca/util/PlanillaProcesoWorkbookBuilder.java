@@ -560,16 +560,36 @@ public class PlanillaProcesoWorkbookBuilder {
             }
         }
 
-        ComputedLayout computed = new ComputedLayout(
-            layout.firstMonthColumn(),
-            nextAvailable,           // totalGeneralColumn
-            nextAvailable + 1,       // currentStageGradeColumn
-            layout.leadingFixedColumn() >= 0 ? layout.leadingFixedColumn() : -1, // firstStageGradeColumn (use leading fixed column if present)
-            nextAvailable + 3,       // stageSumColumn
-            nextAvailable + 4,       // finalAverageColumn
-            nextAvailable + 5,       // complementaryColumn
-            nextAvailable + 6        // regularizationColumn
-        );
+        // When the template exposes a leading fixed column for first-stage
+        // grades (e.g. etapa 2 where that grade sits at col C), that column
+        // is not part of the computed trailing block. Therefore the computed
+        // trailing offsets must be one column left compared to the case where
+        // the first-stage grade is appended after the months.
+        ComputedLayout computed;
+        if (layout.leadingFixedColumn() >= 0) {
+            ComputedLayout tmp = new ComputedLayout(
+                    layout.firstMonthColumn(),
+                    nextAvailable,           // totalGeneralColumn
+                    nextAvailable + 1,       // currentStageGradeColumn
+                    layout.leadingFixedColumn(), // firstStageGradeColumn (explicit from template)
+                    nextAvailable + 2,       // stageSumColumn (shifted left by 1)
+                    nextAvailable + 3,       // finalAverageColumn
+                    nextAvailable + 4,       // complementaryColumn
+                    nextAvailable + 5        // regularizationColumn
+            );
+            computed = tmp;
+        } else {
+            computed = new ComputedLayout(
+                    layout.firstMonthColumn(),
+                    nextAvailable,           // totalGeneralColumn
+                    nextAvailable + 1,       // currentStageGradeColumn
+                    layout.firstStageGradeColumn() >= 0 ? nextAvailable + 2 : -1, // firstStageGradeColumn
+                    nextAvailable + 3,       // stageSumColumn
+                    nextAvailable + 4,       // finalAverageColumn
+                    nextAvailable + 5,       // complementaryColumn
+                    nextAvailable + 6        // regularizationColumn
+            );
+        }
 
         // Ensure TP row contains numeric literal values for each instrument
         // (overwrite any leftover template formulas) and place Subtotal/Total
@@ -1721,13 +1741,34 @@ public class PlanillaProcesoWorkbookBuilder {
             anchor.setAnchorType(ClientAnchor.AnchorType.MOVE_AND_RESIZE);
             org.apache.poi.ss.usermodel.Picture pict = drawing.createPicture(anchor, pictureIdx);
             try {
+                double scale = 1.0;
                 if (img != null) {
-                    // Let POI compute a good scale preserving aspect ratio
-                    pict.resize();
+                    // compute available area in pixels between anchor cols/rows
+                    int availW = 0;
+                    for (int c = col1; c < col2; c++) {
+                        try {
+                            int cw = sheet.getColumnWidth(c); // units of 1/256th of char
+                            double chars = cw / 256.0;
+                            availW += Math.round(chars * 7.0); // approx px per char
+                        } catch (Throwable ignore) {}
+                    }
+                    int availH = 0;
+                    for (int r = row1; r < row2; r++) {
+                        Row rr = sheet.getRow(r);
+                        double pts = rr == null ? sheet.getDefaultRowHeightInPoints() : rr.getHeightInPoints();
+                        availH += Math.round(pts * 96.0 / 72.0); // points -> pixels (96dpi)
+                    }
+                    // Safety fallback
+                    if (availW <= 0) availW = Math.max(48, img.getWidth() / 2);
+                    if (availH <= 0) availH = Math.max(24, img.getHeight() / 2);
+                    double sx = availW / (double) img.getWidth();
+                    double sy = availH / (double) img.getHeight();
+                    scale = Math.min(Math.min(sx, sy), 1.0) * 0.9; // leave 10% margin
                 } else {
-                    // fallback: still attempt resize to fit into anchor
-                    pict.resize();
+                    scale = 0.5; // conservative fallback
                 }
+                if (scale <= 0) scale = 0.5;
+                pict.resize(scale);
             } catch (Throwable ignore) {}
         } catch (IOException e) {
             log.warn("No se pudo insertar logo {}: {}", resourcePath, e.getMessage(), e);
