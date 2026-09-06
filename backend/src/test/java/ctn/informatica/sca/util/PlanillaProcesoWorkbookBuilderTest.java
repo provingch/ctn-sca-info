@@ -301,6 +301,65 @@ class PlanillaProcesoWorkbookBuilderTest {
     }
 
     @Test
+    void temp_compareHeaderBeforeAndAfterApplyNavigation() throws Exception {
+        // Temporary diagnostic test: compare header labels before/after applyNavigationAndVisualDesign
+        Planilla planilla = new Planilla(3, 1, 1, "comun", "Diag", 2026, "primera", 7);
+        Tarea t1 = new Tarea(); t1.setId(9001); t1.setFecha(LocalDate.of(2026, 3, 5)); t1.setTitulo("T1"); t1.setTotal(5);
+        StudentRow s = new StudentRow(); s.setAlumnoId(1); s.setAlumnoNombre("Alumno"); s.setGrades(Map.of(9001,5)); s.setTotal(5);
+
+        PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                planilla,
+                new ctn.informatica.sca.model.Curso(3, "Informatica", 2026, "A"),
+                "Diag",
+                "Profe",
+                "Mañana",
+                List.of(t1),
+                List.of(s),
+                Map.of(),
+                null
+        );
+
+        PlanillaProcesoWorkbookBuilder builder = new PlanillaProcesoWorkbookBuilder();
+
+        // First build: skip applyNavigationAndVisualDesign but also skip resizeBanner
+        System.setProperty("skip.apply.nav", "true");
+        System.setProperty("skip.resize.banner", "true");
+        try (XSSFWorkbook w1 = builder.buildSingleWorkbook(data, "Diag1")) {
+            Sheet sheet1 = w1.getSheetAt(0);
+            java.util.List<Integer> pos1 = new java.util.ArrayList<>();
+                Row hdr1 = sheet1.getRow(5);
+            if (hdr1 != null) {
+                for (int c = 0; c < 60; c++) {
+                    Cell h = hdr1.getCell(c);
+                    if (h != null && h.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING) {
+                        String v = h.getStringCellValue();
+                        if (v != null && v.equalsIgnoreCase("Total General")) pos1.add(c);
+                    }
+                }
+            }
+            // Second build: run full pipeline including resizeHeaderBanner
+            System.clearProperty("skip.apply.nav");
+            System.clearProperty("skip.resize.banner");
+            try (XSSFWorkbook w2 = builder.buildSingleWorkbook(data, "Diag2")) {
+                Sheet sheet2 = w2.getSheetAt(0);
+                java.util.List<Integer> pos2 = new java.util.ArrayList<>();
+                Row hdr2 = sheet2.getRow(5);
+                if (hdr2 != null) {
+                    for (int c = 0; c < 60; c++) {
+                        Cell h = hdr2.getCell(c);
+                        if (h != null && h.getCellType() == org.apache.poi.ss.usermodel.CellType.STRING) {
+                            String v = h.getStringCellValue();
+                            if (v != null && v.equalsIgnoreCase("Total General")) pos2.add(c);
+                        }
+                    }
+                }
+
+                assertEquals(pos1, pos2, "Las posiciones de 'Total General' deben ser iguales antes y después de applyNavigationAndVisualDesign");
+            }
+        }
+    }
+
+    @Test
     void diagnostic_verifyInstrumentColumnPositions_currentBuilder_behavior() throws IOException {
         Planilla planilla = new Planilla(100, 1, 1, "comun", "Verif", 2026, "primera", 1);
         List<Tarea> tareas = new java.util.ArrayList<>();
