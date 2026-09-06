@@ -21,8 +21,8 @@ public class EmbeddedImageDiagnosticTest {
 
         PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
             planilla,
-            new ctn.informatica.sca.model.Curso(900, "Diag", 2026, "A"),
-            "Diag",
+            new ctn.informatica.sca.model.Curso(900, "Informática", 2026, "A"),
+            "Informática",
             "Profesor",
             "Mañana",
             java.util.List.of(t1),
