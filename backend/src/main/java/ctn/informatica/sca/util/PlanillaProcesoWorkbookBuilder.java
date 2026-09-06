@@ -1248,7 +1248,9 @@ public class PlanillaProcesoWorkbookBuilder {
         }
 
         int lastRowNum = sheet.getLastRowNum();
-        sheet.shiftRows(templateLastStudentRow + 1, lastRowNum, additionalRows, true, false);
+        if (lastRowNum > templateLastStudentRow) {
+            sheet.shiftRows(templateLastStudentRow + 1, lastRowNum, additionalRows, true, false);
+        }
 
         CellCopyPolicy copyPolicy = new CellCopyPolicy.Builder()
                 .cellFormula(true)
