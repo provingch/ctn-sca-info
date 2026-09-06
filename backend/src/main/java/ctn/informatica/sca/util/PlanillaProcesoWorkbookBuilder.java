@@ -112,8 +112,12 @@ public class PlanillaProcesoWorkbookBuilder {
         );
 
     public XSSFWorkbook buildSingleWorkbook(PlanillaSheetData data, String sheetName) throws IOException {
-        XSSFWorkbook workbook = loadTemplateWorkbook();
+        // Option B: load template as read-only source, create a fresh workbook
+        XSSFWorkbook template = loadTemplateWorkbook();
+        XSSFWorkbook workbook = new XSSFWorkbook();
         try {
+            // copy canonical template sheets (without drawings/images) into the new workbook
+            copyTemplateSheetsToWorkbook(template, workbook);
             XSSFSheet sheet = cloneTemplateSheet(workbook, layoutFor(data.planilla()), sheetName);
             populateSheet(sheet, data);
             java.util.Set<String> preserves = new java.util.HashSet<>();
@@ -128,12 +132,17 @@ public class PlanillaProcesoWorkbookBuilder {
         } catch (RuntimeException ex) {
             workbook.close();
             throw ex;
+        } finally {
+            try { template.close(); } catch (Throwable ignore) {}
         }
     }
 
     public XSSFWorkbook buildCourseWorkbook(Collection<PlanillaSheetData> sheets) throws IOException {
-        XSSFWorkbook workbook = loadTemplateWorkbook();
+        // Option B: create a fresh workbook and copy template content without images
+        XSSFWorkbook template = loadTemplateWorkbook();
+        XSSFWorkbook workbook = new XSSFWorkbook();
         try {
+            copyTemplateSheetsToWorkbook(template, workbook);
             for (PlanillaSheetData data : sheets) {
                 String desiredName = data.disciplina() == null || data.disciplina().isBlank()
                         ? "Planilla-" + data.planilla().getId()
@@ -155,6 +164,8 @@ public class PlanillaProcesoWorkbookBuilder {
         } catch (RuntimeException ex) {
             workbook.close();
             throw ex;
+        } finally {
+            try { template.close(); } catch (Throwable ignore) {}
         }
     }
 
@@ -169,155 +180,122 @@ public class PlanillaProcesoWorkbookBuilder {
         }
     }
 
-    private void removeTemplateImages(XSSFWorkbook workbook, java.util.Set<String> specialtiesToPreserve) {
-        if (workbook == null) {
-            return;
-        }
-        // Template cleanup must not wipe the workbook picture registry used by the
-        // freshly generated sheet. Only remove drawing relations from template sheets
-        // and leave the generated sheet's images intact.
-        try {
-            org.apache.poi.openxml4j.opc.OPCPackage pkg = workbook.getPackage();
-            java.util.Set<org.apache.poi.openxml4j.opc.PackagePartName> partsToRemove = new java.util.HashSet<>();
-            for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
-                org.apache.poi.ss.usermodel.Sheet s = workbook.getSheetAt(i);
-                String name = s == null ? "" : s.getSheetName();
-                if (!(s instanceof XSSFSheet xs)) {
-                    continue;
-                }
-                boolean isTemplateSheet = LEGEND_SHEET.equals(name)
-                        || STAGE_1.templateSheetName().equals(name)
-                        || STAGE_2.templateSheetName().equals(name)
-                        || "Planilla".equals(name);
-                if (!isTemplateSheet) {
-                    continue;
-                }
+    /**
+     * Copy the canonical template sheets from the source workbook into the
+     * target workbook WITHOUT copying drawings or image parts. This ensures
+     * the resulting workbook never contains the template's embedded images.
+     */
+    private void copyTemplateSheetsToWorkbook(XSSFWorkbook source, XSSFWorkbook target) {
+        if (source == null || target == null) return;
+        java.util.List<String> names = java.util.Arrays.asList(LEGEND_SHEET, STAGE_1.templateSheetName(), STAGE_2.templateSheetName(), "Planilla");
+        for (String name : names) {
+            int idx = source.getSheetIndex(name);
+            if (idx >= 0) {
+                XSSFSheet src = source.getSheetAt(idx);
                 try {
-                    // If there is a drawing, collect the package parts used by its shapes
+                    copySheetNoImages(src, target, name);
+                } catch (Throwable t) {
+                    log.warn("Error copiando hoja template '{}' sin imágenes: {}", name, t.getMessage());
+                }
+            }
+        }
+    }
+
+    private void copySheetNoImages(XSSFSheet src, XSSFWorkbook target, String targetName) {
+        if (src == null || target == null) return;
+        XSSFSheet dest = target.createSheet(targetName);
+        // copy column widths
+        int maxCol = 0;
+        for (Row r : src) {
+            if (r.getLastCellNum() > maxCol) maxCol = r.getLastCellNum();
+        }
+        for (int c = 0; c < maxCol; c++) {
+            try {
+                dest.setColumnWidth(c, src.getColumnWidth(c));
+                if (src.isColumnHidden(c)) dest.setColumnHidden(c, true);
+            } catch (Throwable ignore) {}
+        }
+
+        // copy rows and cells (values and styles), but skip drawings
+        for (Row r : src) {
+            Row nr = dest.createRow(r.getRowNum());
+            try { nr.setHeight(r.getHeight()); } catch (Throwable ignore) {}
+            for (Cell c : r) {
+                try {
+                    Cell nc = nr.createCell(c.getColumnIndex(), c.getCellType());
+                    switch (c.getCellType()) {
+                        case STRING: nc.setCellValue(c.getStringCellValue()); break;
+                        case NUMERIC: nc.setCellValue(c.getNumericCellValue()); break;
+                        case BOOLEAN: nc.setCellValue(c.getBooleanCellValue()); break;
+                        case FORMULA: nc.setCellFormula(c.getCellFormula()); break;
+                        case BLANK: nc.setBlank(); break;
+                        case ERROR: nc.setCellErrorValue(c.getErrorCellValue()); break;
+                        default: nc.setCellValue(c.toString()); break;
+                    }
+                    // clone style into target workbook
+                    try {
+                        org.apache.poi.ss.usermodel.CellStyle sc = c.getCellStyle();
+                        if (sc != null) {
+                            org.apache.poi.ss.usermodel.CellStyle ns = target.createCellStyle();
+                            try { ns.cloneStyleFrom(sc); nc.setCellStyle(ns); } catch (Throwable ignore) {}
+                        }
+                    } catch (Throwable ignore) {}
+                } catch (Throwable ignore) {}
+            }
+        }
+
+        // copy merged regions
+        try {
+            for (CellRangeAddress ca : src.getMergedRegions()) {
+                dest.addMergedRegion(ca);
+            }
+        } catch (Throwable ignore) {}
+
+        // copy sheet-level settings (print setup, orientation etc.) if possible
+        try {
+            dest.setDefaultColumnWidth(src.getDefaultColumnWidth());
+            dest.setDefaultRowHeight(src.getDefaultRowHeight());
+            dest.setRightToLeft(src.isRightToLeft());
+        } catch (Throwable ignore) {}
+    }
+
+    private void removeTemplateImages(XSSFWorkbook workbook, java.util.Set<String> specialtiesToPreserve) {
+        if (workbook == null) return;
+        // Only detach drawing relations from template sheets to avoid
+        // touching the package picture registry. Do not attempt to remove
+        // package parts or scan by hash — this was causing valid images
+        // (e.g. teacher signature) to be deleted.
+        for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
+            org.apache.poi.ss.usermodel.Sheet s = workbook.getSheetAt(i);
+            String name = s == null ? "" : s.getSheetName();
+            if (!(s instanceof XSSFSheet xs)) continue;
+            boolean isTemplateSheet = LEGEND_SHEET.equals(name)
+                    || STAGE_1.templateSheetName().equals(name)
+                    || STAGE_2.templateSheetName().equals(name)
+                    || "Planilla".equals(name);
+            if (!isTemplateSheet) continue;
+            try {
+                // Unset drawing relation from the sheet XML if present
+                try {
+                    java.lang.reflect.Method getCt = xs.getClass().getMethod("getCTWorksheet");
+                    Object ctWorksheet = getCt.invoke(xs);
+                    if (ctWorksheet != null) {
+                        java.lang.reflect.Method unset = ctWorksheet.getClass().getMethod("unsetDrawing");
+                        unset.invoke(ctWorksheet);
+                    }
+                } catch (NoSuchMethodException nsme) {
                     try {
                         org.apache.poi.xssf.usermodel.XSSFDrawing drawing = xs.getDrawingPatriarch();
                         if (drawing != null) {
                             java.util.List<?> shapes = drawing.getShapes();
-                            if (shapes != null) {
-                                for (Object shape : shapes) {
-                                    if (shape instanceof org.apache.poi.xssf.usermodel.XSSFPicture) {
-                                        org.apache.poi.xssf.usermodel.XSSFPicture pic = (org.apache.poi.xssf.usermodel.XSSFPicture) shape;
-                                        try {
-                                            org.apache.poi.openxml4j.opc.PackagePart pp = pic.getPictureData().getPackagePart();
-                                            if (pp != null) partsToRemove.add(pp.getPartName());
-                                        } catch (Throwable ignore) {}
-                                    }
-                                }
-                            }
-                            // also mark the drawing part itself for removal
-                            try {
-                                org.apache.poi.openxml4j.opc.PackagePart drawingPart = drawing.getPackagePart();
-                                if (drawingPart != null) partsToRemove.add(drawingPart.getPartName());
-                            } catch (Throwable ignore) {}
+                            if (shapes != null) shapes.clear();
                         }
                     } catch (Throwable ignore) {}
-
-                    // finally unset the drawing relation from the sheet XML
-                    try {
-                        java.lang.reflect.Method getCt = xs.getClass().getMethod("getCTWorksheet");
-                        Object ctWorksheet = getCt.invoke(xs);
-                        if (ctWorksheet != null) {
-                            java.lang.reflect.Method unset = ctWorksheet.getClass().getMethod("unsetDrawing");
-                            unset.invoke(ctWorksheet);
-                        }
-                    } catch (NoSuchMethodException nsme) {
-                        try {
-                            org.apache.poi.xssf.usermodel.XSSFDrawing drawing = xs.getDrawingPatriarch();
-                            if (drawing != null) {
-                                java.util.List<?> shapes = drawing.getShapes();
-                                if (shapes != null) shapes.clear();
-                            }
-                        } catch (Throwable ignore) {}
-                    }
-                } catch (Throwable sheetEx) {
-                    log.debug("No se pudo limpiar dibujos de la hoja template {}: {}", name, sheetEx.getMessage());
                 }
+            } catch (Throwable sheetEx) {
+                log.debug("No se pudo limpiar dibujos de la hoja template {}: {}", name, sheetEx.getMessage());
             }
-
-            // Remove the collected parts from the package (drawing parts and referenced images)
-            for (org.apache.poi.openxml4j.opc.PackagePartName ppn : partsToRemove) {
-                try {
-                    pkg.removePart(ppn);
-                } catch (Throwable ignore) {
-                    // ignore failures to remove individual parts
-                }
-            }
-            // Additionally perform a best-effort sweep: find any /xl/media/ parts
-            // that are not referenced by any package relationship and remove them.
-            try {
-                java.util.Set<org.apache.poi.openxml4j.opc.PackagePartName> referenced = new java.util.HashSet<>();
-                for (org.apache.poi.openxml4j.opc.PackagePart part : pkg.getParts()) {
-                    try {
-                        for (org.apache.poi.openxml4j.opc.PackageRelationship rel : part.getRelationships()) {
-                            try {
-                                String base = part.getPartName().getName();
-                                java.net.URI target = rel.getTargetURI();
-                                try {
-                                    java.net.URI baseUri = new java.net.URI(base);
-                                    java.net.URI resolvedUri = baseUri.resolve(target);
-                                    String resolvedName = resolvedUri.getPath();
-                                    org.apache.poi.openxml4j.opc.PackagePartName resolved = org.apache.poi.openxml4j.opc.PackagingURIHelper.createPartName(resolvedName);
-                                    referenced.add(resolved);
-                                } catch (Throwable ignore) {}
-                            } catch (Throwable ignore) {}
-                        }
-                    } catch (Throwable ignore) {}
-                }
-                for (org.apache.poi.openxml4j.opc.PackagePart part : pkg.getParts()) {
-                    try {
-                        String name = part.getPartName().getName();
-                        if (name != null && name.startsWith("/xl/media/") && !referenced.contains(part.getPartName())) {
-                            try {
-                                pkg.removePart(part.getPartName());
-                            } catch (Throwable ignore) {}
-                        }
-                    } catch (Throwable ignore) {}
-                }
-            } catch (Throwable ignore) {}
-        } catch (Throwable ex) {
-            log.warn("No se pudo limpiar por completo las imágenes de la plantilla: {}", ex.getMessage());
         }
-        // Finally, remove any /xl/media parts that don't match known logos
-        try {
-            org.apache.poi.openxml4j.opc.OPCPackage pkg = workbook.getPackage();
-            java.util.Set<String> keepDigests = new java.util.HashSet<>();
-            // institutional logo
-            try (java.io.InputStream is = getClass().getResourceAsStream(INSTITUTION_LOGO_PATH)) {
-                if (is != null) keepDigests.add(sha256Hex(is));
-            } catch (Throwable ignore) {}
-            // specialty logos
-            if (specialtiesToPreserve != null) {
-                for (String esp : specialtiesToPreserve) {
-                    try {
-                        String p = resolveSpecialtyLogoResourcePath(esp);
-                        if (p == null) continue;
-                        try (java.io.InputStream is = getClass().getResourceAsStream(p)) {
-                            if (is != null) keepDigests.add(sha256Hex(is));
-                        }
-                    } catch (Throwable ignore) {}
-                }
-            }
-            for (org.apache.poi.openxml4j.opc.PackagePart part : pkg.getParts()) {
-                try {
-                    String name = part.getPartName().getName();
-                    if (name != null && name.startsWith("/xl/media/")) {
-                        try (java.io.InputStream pis = part.getInputStream()) {
-                            String d = sha256Hex(pis);
-                            if (!keepDigests.contains(d)) {
-                                try {
-                                    pkg.removePart(part.getPartName());
-                                } catch (Throwable ignore) {}
-                            }
-                        }
-                    }
-                } catch (Throwable ignore) {}
-            }
-        } catch (Throwable ignore) {}
     }
 
     private static String sha256Hex(java.io.InputStream is) {
