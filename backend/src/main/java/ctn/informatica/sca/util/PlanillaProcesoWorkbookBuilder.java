@@ -94,7 +94,8 @@ public class PlanillaProcesoWorkbookBuilder {
             -1,
             -1,
             2, // trailingFixedColumns (Total General + Calificación Final 1ª Etapa)
-            2  // frozenColumns (A:B fixed)
+            2, // frozenColumns (A:B fixed)
+            -1 // leadingFixedColumn (no leading fixed column in stage 1)
         );
 
         private static final StageLayout STAGE_2 = new StageLayout(
@@ -108,7 +109,8 @@ public class PlanillaProcesoWorkbookBuilder {
             -1,
             -1,
             6, // trailingFixedColumns (Total General + Calificación Final 2ª Etapa + cola propia)
-            3  // frozenColumns (A:C fixed to include Calificación Final 1ª Etapa)
+            3, // frozenColumns (A:C fixed to include Calificación Final 1ª Etapa)
+            2  // leadingFixedColumn (col C contains first-stage grades in etapa 2)
         );
 
     public XSSFWorkbook buildSingleWorkbook(PlanillaSheetData data, String sheetName) throws IOException {
@@ -193,7 +195,13 @@ public class PlanillaProcesoWorkbookBuilder {
             if (idx >= 0) {
                 XSSFSheet src = source.getSheetAt(idx);
                 try {
-                    copySheetNoImages(src, target, name);
+                    if (STAGE_1.templateSheetName().equals(name)) {
+                        copySheetNoImages(src, target, name, STAGE_1);
+                    } else if (STAGE_2.templateSheetName().equals(name)) {
+                        copySheetNoImages(src, target, name, STAGE_2);
+                    } else {
+                        copySheetNoImages(src, target, name, null);
+                    }
                 } catch (Throwable t) {
                     log.warn("Error copiando hoja template '{}' sin imágenes: {}", name, t.getMessage());
                 }
@@ -201,7 +209,7 @@ public class PlanillaProcesoWorkbookBuilder {
         }
     }
 
-    private void copySheetNoImages(XSSFSheet src, XSSFWorkbook target, String targetName) {
+    private void copySheetNoImages(XSSFSheet src, XSSFWorkbook target, String targetName, StageLayout layout) {
         if (src == null || target == null) return;
         XSSFSheet dest = target.createSheet(targetName);
         // copy column widths
@@ -226,8 +234,25 @@ public class PlanillaProcesoWorkbookBuilder {
                     // their placeholder formulas/values — copy only styles.
                     boolean isTemplateStudentRow = r.getRowNum() >= FIRST_STUDENT_ROW && r.getRowNum() < (FIRST_STUDENT_ROW + TEMPLATE_STUDENT_COUNT);
                     Cell nc = nr.createCell(c.getColumnIndex(), c.getCellType());
-                    if (isTemplateStudentRow) {
-                        // leave blank content for template sample student rows
+                    if (isTemplateStudentRow && layout != null) {
+                        // Only blank month/instrument columns for template student rows; preserve leading fixed columns
+                        int colIdx = c.getColumnIndex();
+                        if (colIdx >= layout.firstMonthColumn()) {
+                            nc.setBlank();
+                        } else {
+                            // preserve original content for leading fixed columns
+                            switch (c.getCellType()) {
+                                case STRING: nc.setCellValue(c.getStringCellValue()); break;
+                                case NUMERIC: nc.setCellValue(c.getNumericCellValue()); break;
+                                case BOOLEAN: nc.setCellValue(c.getBooleanCellValue()); break;
+                                case FORMULA: nc.setCellFormula(c.getCellFormula()); break;
+                                case BLANK: nc.setBlank(); break;
+                                case ERROR: nc.setCellErrorValue(c.getErrorCellValue()); break;
+                                default: nc.setCellValue(c.toString()); break;
+                            }
+                        }
+                    } else if (isTemplateStudentRow) {
+                        // layout unknown: leave entire row blank (old behavior)
                         nc.setBlank();
                     } else {
                         switch (c.getCellType()) {
@@ -539,7 +564,7 @@ public class PlanillaProcesoWorkbookBuilder {
             layout.firstMonthColumn(),
             nextAvailable,           // totalGeneralColumn
             nextAvailable + 1,       // currentStageGradeColumn
-            layout.firstStageGradeColumn() >= 0 ? nextAvailable + 2 : -1, // firstStageGradeColumn
+            layout.leadingFixedColumn() >= 0 ? layout.leadingFixedColumn() : -1, // firstStageGradeColumn (use leading fixed column if present)
             nextAvailable + 3,       // stageSumColumn
             nextAvailable + 4,       // finalAverageColumn
             nextAvailable + 5,       // complementaryColumn
@@ -655,8 +680,8 @@ public class PlanillaProcesoWorkbookBuilder {
             setStringCell(getOrCreateCell(headerRow, computed.currentStageGradeColumn()), currentStageLabel);
             sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, computed.currentStageGradeColumn(), computed.currentStageGradeColumn()));
 
-            if (layout.firstStageGradeColumn() >= 0) {
-                String firstStageLabel = readTemplateLabel.apply(layout.firstStageGradeColumn());
+            if (layout.leadingFixedColumn() >= 0) {
+                String firstStageLabel = readTemplateLabel.apply(layout.leadingFixedColumn());
                 if (firstStageLabel == null || firstStageLabel.isBlank()) {
                     firstStageLabel = "Calificación Final 1º Etapa";
                 }
@@ -731,7 +756,7 @@ public class PlanillaProcesoWorkbookBuilder {
             if (lastRealColumn < 0) {
                 lastRealColumn = computed.totalGeneralColumn() + finalColumnLabels.size() - 1;
             }
-        } else if (layout.firstStageGradeColumn() >= 0) {
+            } else if (layout.leadingFixedColumn() >= 0) {
             lastRealColumn = scanLastUsedColumn(sheet, new int[]{MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, TP_ROW, FIRST_STUDENT_ROW});
             if (lastRealColumn < 0) {
                 lastRealColumn = computed.regularizationColumn();
@@ -1677,13 +1702,33 @@ public class PlanillaProcesoWorkbookBuilder {
             // still contain unused picture parts which we clean elsewhere.
             int pictureIdx = workbook.addPicture(bytes, Workbook.PICTURE_TYPE_PNG);
             Drawing<?> drawing = sheet.createDrawingPatriarch();
+            // Try to preserve aspect ratio: read image dimensions and
+            // ask POI to resize the picture with MOVE_AND_RESIZE anchor.
+            java.awt.image.BufferedImage img = null;
+            try (InputStream is2 = getClass().getResourceAsStream(resourcePath)) {
+                img = javax.imageio.ImageIO.read(is2);
+            } catch (Throwable ignore) {
+                // fall back to default insertion if ImageIO fails
+            }
             ClientAnchor anchor = workbook.getCreationHelper().createClientAnchor();
             anchor.setCol1(col1);
             anchor.setRow1(row1);
+            // Provide a sensible default span if caller passed a degenerate box
+            if (col2 <= col1) col2 = col1 + Math.max(1, (img == null ? 2 : Math.max(1, img.getWidth() / 100)));
+            if (row2 <= row1) row2 = row1 + Math.max(1, (img == null ? 3 : Math.max(1, img.getHeight() / 40)));
             anchor.setCol2(col2);
             anchor.setRow2(row2);
-            anchor.setAnchorType(ClientAnchor.AnchorType.MOVE_DONT_RESIZE);
-            drawing.createPicture(anchor, pictureIdx);
+            anchor.setAnchorType(ClientAnchor.AnchorType.MOVE_AND_RESIZE);
+            org.apache.poi.ss.usermodel.Picture pict = drawing.createPicture(anchor, pictureIdx);
+            try {
+                if (img != null) {
+                    // Let POI compute a good scale preserving aspect ratio
+                    pict.resize();
+                } else {
+                    // fallback: still attempt resize to fit into anchor
+                    pict.resize();
+                }
+            } catch (Throwable ignore) {}
         } catch (IOException e) {
             log.warn("No se pudo insertar logo {}: {}", resourcePath, e.getMessage(), e);
         }
@@ -2115,7 +2160,8 @@ public class PlanillaProcesoWorkbookBuilder {
             int complementaryColumn,
             int regularizationColumn,
             int trailingFixedColumns,
-            int frozenColumns) {
+            int frozenColumns,
+            int leadingFixedColumn) {
         }
 
     public record PlanillaSheetData(
