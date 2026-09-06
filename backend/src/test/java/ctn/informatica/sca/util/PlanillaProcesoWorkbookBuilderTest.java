@@ -86,7 +86,7 @@ class PlanillaProcesoWorkbookBuilderTest {
             Sheet sheet = workbook.getSheetAt(0);
             assertNotNull(sheet.getPaneInformation());
             assertEquals(2, sheet.getPaneInformation().getVerticalSplitLeftColumn());
-            assertEquals(7, sheet.getPaneInformation().getHorizontalSplitTopRow());
+            assertEquals(8, sheet.getPaneInformation().getHorizontalSplitTopRow());
 
             Cell subtotal = null;
             for (int r = 0; r <= sheet.getLastRowNum(); r++) {
