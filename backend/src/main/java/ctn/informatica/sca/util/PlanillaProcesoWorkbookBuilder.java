@@ -453,13 +453,10 @@ public class PlanillaProcesoWorkbookBuilder {
             // the subtotal formula. Reserved empty slots should remain blank
             // but the subtotal column must contain the SUM of the actual
             // instrument range.
-            if (tareasMes.size() > 0) {
+                if (tareasMes.size() > 0) {
                 int actualLastInstrument = firstCol + tareasMes.size() - 1;
                 String actualLastRef = CellReference.convertNumToColString(actualLastInstrument);
                 subtotalCell.setCellFormula("SUM(" + firstColRef + excelRowIndex + ":" + actualLastRef + excelRowIndex + ")");
-                try {
-                    log.debug("WROTE TP subtotal formula on sheet {} col {} -> type={} formula={}", sheet.getSheetName(), subtotalCol, subtotalCell.getCellType(), subtotalCell.getCellFormula());
-                } catch (Exception ignore) {}
             } else {
                 subtotalCell.setBlank();
             }
@@ -470,7 +467,6 @@ public class PlanillaProcesoWorkbookBuilder {
         if (!tpSubtotalAddresses.isEmpty()) {
             Cell totalTpCell = getOrCreateCell(getOrCreateRow(sheet, TP_ROW), computed.totalGeneralColumn());
             totalTpCell.setCellFormula("SUM(" + String.join(",", tpSubtotalAddresses) + ")");
-            try { log.debug("WROTE TP total formula on sheet {} col {} -> {}", sheet.getSheetName(), computed.totalGeneralColumn(), totalTpCell.getCellFormula()); } catch (Exception ignore) {}
         }
 
         // Ensure final-column headers are written at their computed positions.
@@ -576,7 +572,7 @@ public class PlanillaProcesoWorkbookBuilder {
                 Cell h = headerRowDiag.getCell(mb.subtotalCol());
                 Cell stu = studentRowDiag.getCell(mb.subtotalCol());
                 Cell tp = tpRowDiag.getCell(mb.subtotalCol());
-                        try { log.debug("POST-FILL subtotal header sheet={} col={} headerType={} stuType={} tpType={} stuFormula={} tpFormula={}", sheet.getSheetName(), mb.subtotalCol(), h==null?"null":h.getCellType(), stu==null?"null":stu.getCellType(), tp==null?"null":tp.getCellType(), stu==null?"":(stu.getCellType()==CellType.FORMULA?stu.getCellFormula():""), tp==null?"":(tp.getCellType()==CellType.FORMULA?tp.getCellFormula():"")); } catch (Exception ignore) {}
+                        // POST-FILL diagnostics removed
             }
         } catch (Exception e) {
             log.warn("Error asegurando fórmulas TP (copiado): {}", e.getMessage(), e);
@@ -666,7 +662,7 @@ public class PlanillaProcesoWorkbookBuilder {
             lastRealColumn = Math.max(lastRealColumn, protectedHeaderRightEdge);
         }
 
-        try { log.debug("About to clean columns after lastRealColumn={} (sheet={}) monthBlocks={} computed.totalGeneral={}", lastRealColumn, sheet.getSheetName(), monthBlocks.size(), computed.totalGeneralColumn()); } catch (Exception ignore) {}
+        // About to clean columns (debug removed)
             // Diagnostic: dump header scan for 'Subtotal' and cell types in range
             try {
                 Row headerRowDiag2 = getOrCreateRow(sheet, MONTH_HEADER_ROW);
@@ -678,7 +674,7 @@ public class PlanillaProcesoWorkbookBuilder {
                     Cell stu = studentRowDiag2.getCell(c);
                     Cell tp = tpRowDiag2.getCell(c);
                     String hv = h == null ? "" : (h.getCellType() == CellType.STRING ? h.getStringCellValue() : h.toString());
-                    try { log.debug("HEADER DIAG sheet={} col={} header='{}' headerType={} stuType={} tpType={}", sheet.getSheetName(), c, hv, h==null?"null":h.getCellType(), stu==null?"null":stu.getCellType(), tp==null?"null":tp.getCellType()); } catch (Exception ignore) {}
+                    // HEADER DIAG removed
                 }
             } catch (Exception ignore) {}
             cleanColumnsAfter(sheet, lastRealColumn, signatureRow, signatureColumn);
@@ -687,154 +683,35 @@ public class PlanillaProcesoWorkbookBuilder {
                 for (int c = mb.firstInstrumentCol(); c <= mb.lastInstrumentCol(); c++) {
                     if (sheet instanceof XSSFSheet) {
                         ((XSSFSheet) sheet).setColumnWidth(c, (int) Math.round(INSTRUMENT_COLUMN_WIDTH_CHARS * 256));
-                        try { log.debug("APPLIED MONTHBLOCK width col={} chars={} sheet={}", c, INSTRUMENT_COLUMN_WIDTH_CHARS, sheet.getSheetName()); } catch (Exception ignore) {}
+                        // APPLIED MONTHBLOCK log removed
                     }
                 }
             }
         // Re-ensure TP subtotal and total formulas persist after any cleanup
-        try {
             Row tpRowAfter = getOrCreateRow(sheet, TP_ROW);
-            for (MonthBlock mb : monthBlocks) {
-                if (mb == null) continue;
-                int subtotalCol = mb.subtotalCol();
-                Cell sc = getOrCreateCell(tpRowAfter, subtotalCol);
-                if (sc == null) continue;
-                if (sc.getCellType() != CellType.FORMULA) {
-                    String firstRef = CellReference.convertNumToColString(mb.firstInstrumentCol());
-                    String lastRef = CellReference.convertNumToColString(mb.lastInstrumentCol());
-                    int excelRowIndex = tpRowAfter.getRowNum() + 1;
-                    if (mb.lastInstrumentCol() >= mb.firstInstrumentCol()) {
-                        sc.setCellFormula("SUM(" + firstRef + excelRowIndex + ":" + lastRef + excelRowIndex + ")");
-                    }
-                }
-            }
-            // total
-            if (monthBlocks != null && !monthBlocks.isEmpty()) {
-                java.util.List<String> addresses = new java.util.ArrayList<>();
-                for (MonthBlock mb : monthBlocks) {
-                    if (mb == null) continue;
-                    int subtotalCol = mb.subtotalCol();
-                    addresses.add(CellReference.convertNumToColString(subtotalCol) + (tpRowAfter.getRowNum() + 1));
-                }
-                if (!addresses.isEmpty()) {
-                    Cell totalTp = getOrCreateCell(tpRowAfter, computed.totalGeneralColumn());
-                    totalTp.setCellFormula("SUM(" + String.join(",", addresses) + ")");
-                    try { log.debug("REWROTE TP total formula on sheet {} col {} -> {}", sheet.getSheetName(), computed.totalGeneralColumn(), totalTp.getCellFormula()); } catch (Exception ignore) {}
-                }
-            }
-            // Safety fallback: some templates or dynamic header merges may leave
-            // 'Subtotal' header labels not represented in monthBlocks. Ensure
-            // TP formulas exist for any header cell containing 'subtotal' by
-            // copying the student formula and adjusting the row index.
-            try {
-                Row headerRowFallback = getOrCreateRow(sheet, MONTH_HEADER_ROW);
-                Row studentRowFallback = getOrCreateRow(sheet, FIRST_STUDENT_ROW);
-                Row tpRowFallback = getOrCreateRow(sheet, TP_ROW);
-                int headerLast = headerRowFallback.getLastCellNum();
-                int lastColScan = headerLast <= 0 ? 200 : headerLast;
-                for (int c = 0; c < lastColScan; c++) {
-                    Cell hh = headerRowFallback.getCell(c);
-                    if (hh == null || hh.getCellType() != CellType.STRING) continue;
-                    String text = hh.getStringCellValue();
-                    if (text == null) continue;
-                    if (text.toLowerCase().contains("subtotal")) {
-                        Cell stu = studentRowFallback.getCell(c);
-                        Cell tp = tpRowFallback.getCell(c);
-                        if (stu != null && stu.getCellType() == CellType.FORMULA && (tp == null || tp.getCellType() != CellType.FORMULA)) {
-                            try {
-                                String stuFormula = stu.getCellFormula();
-                                int stuExcelRow = studentRowFallback.getRowNum() + 1;
-                                int tpExcelRow = tpRowFallback.getRowNum() + 1;
-                                String tpFormula = stuFormula.replace(String.valueOf(stuExcelRow), String.valueOf(tpExcelRow));
-                                Cell newTp = tp == null ? tpRowFallback.createCell(c) : tp;
-                                newTp.setCellFormula(tpFormula);
-                                log.debug("FALLBACK COPIED TP subtotal formula on sheet {} col {} -> {}", sheet.getSheetName(), c, tpFormula);
-                            } catch (Exception e) {
-                                log.warn("Failed fallback copying TP subtotal formula at col {}: {}", c, e.getMessage());
-                            }
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                log.warn("Error en fallback asegurando fórmulas TP: {}", e.getMessage());
-            }
-                // Also ensure any header labeled 'Total General' has a TP formula
-                try {
-                    Row headerRowTG = getOrCreateRow(sheet, MONTH_HEADER_ROW);
-                    Row studentRowTG = getOrCreateRow(sheet, FIRST_STUDENT_ROW);
-                    Row tpRowTG = getOrCreateRow(sheet, TP_ROW);
-                    int headerLast = headerRowTG.getLastCellNum();
-                    int lastColScan = headerLast <= 0 ? 200 : headerLast;
-                    for (int c = 0; c < lastColScan; c++) {
-                        Cell hh = headerRowTG.getCell(c);
-                        if (hh == null || hh.getCellType() != CellType.STRING) continue;
-                        String text = hh.getStringCellValue();
-                        if (text == null) continue;
-                        if (text.toLowerCase().contains("total general")) {
-                            Cell stu = studentRowTG.getCell(c);
-                            Cell tp = tpRowTG.getCell(c);
-                            if (stu != null && stu.getCellType() == CellType.FORMULA && (tp == null || tp.getCellType() != CellType.FORMULA)) {
-                                try {
-                                    String stuFormula = stu.getCellFormula();
-                                    int stuExcelRow = studentRowTG.getRowNum() + 1;
-                                    int tpExcelRow = tpRowTG.getRowNum() + 1;
-                                    String tpFormula = stuFormula.replace(String.valueOf(stuExcelRow), String.valueOf(tpExcelRow));
-                                    Cell newTp = tp == null ? tpRowTG.createCell(c) : tp;
-                                    newTp.setCellFormula(tpFormula);
-                                    log.debug("FALLBACK COPIED TP total formula on sheet {} col {} -> {}", sheet.getSheetName(), c, tpFormula);
-                                } catch (Exception e) {
-                                    log.warn("Failed fallback copying TP total formula at col {}: {}", c, e.getMessage());
-                                }
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    log.warn("Error en fallback asegurando Total General TP: {}", e.getMessage());
-                }
-        } catch (Exception ex) {
-            log.warn("No se pudo re-escribir fórmulas TP tras limpieza: {}", ex.getMessage());
-        }
-        // Diagnostic: list TP subtotal cell types and formulas after final rewrite
-        try {
-            Row tpRowFinal = getOrCreateRow(sheet, TP_ROW);
-            for (MonthBlock mb : monthBlocks) {
-                if (mb == null) continue;
-                Cell sc = tpRowFinal.getCell(mb.subtotalCol());
-                if (sc == null) {
-                    log.debug("TP subtotal cell missing on sheet {} col {}", sheet.getSheetName(), mb.subtotalCol());
-                    continue;
-                }
-                    try {
-                    log.debug("TP final cell sheet={} col={} type={} formula={}", sheet.getSheetName(), sc.getColumnIndex(), sc.getCellType(), sc.getCellType() == CellType.FORMULA ? sc.getCellFormula() : "");
-                } catch (Exception ignore) {}
-            }
-            Cell total = tpRowFinal.getCell(computed.totalGeneralColumn());
-            if (total != null) {
-                try { log.debug("TP total final sheet={} col={} type={} formula={}", sheet.getSheetName(), total.getColumnIndex(), total.getCellType(), total.getCellType() == CellType.FORMULA ? total.getCellFormula() : ""); } catch (Exception ignore) {}
-            }
-        } catch (Exception ignore) {}
+            // TP re-write blocks removed: cleanColumnsAfter protects TP row.
+        // Removed TP final diagnostic logs
         // Final defensive pass: re-scan instrument title row and enforce
         // the expected narrow column width for any detected instrument
         // columns. This guards against any later template/merge operations
         // that might have reset individual column widths.
-        try {
-            Row titleRowFinal = sheet.getRow(INSTRUMENT_TITLE_ROW);
-            int lastScan = Math.max(lastRealColumn, (titleRowFinal == null ? 0 : titleRowFinal.getLastCellNum()));
-            if (lastScan <= 0) lastScan = 200;
-            for (int c = 0; c < lastScan; c++) {
-                if (titleRowFinal == null) continue;
-                Cell tc = titleRowFinal.getCell(c);
-                if (tc == null) continue;
-                if (tc.getCellType() != CellType.STRING) continue;
-                String v = tc.getStringCellValue();
-                if (v == null || v.isBlank() || v.equalsIgnoreCase("Subtotal")) continue;
-                if (sheet instanceof XSSFSheet) {
-                    ((XSSFSheet) sheet).setColumnWidth(c, (int) Math.round(INSTRUMENT_COLUMN_WIDTH_CHARS * 256));
-                    try { log.debug("FINAL PASS width enforced col={} chars={} sheet={}", c, INSTRUMENT_COLUMN_WIDTH_CHARS, sheet.getSheetName()); } catch (Exception ignore) {}
+            try {
+                Row titleRowFinal = sheet.getRow(INSTRUMENT_TITLE_ROW);
+                int lastScan = Math.max(lastRealColumn, (titleRowFinal == null ? 0 : titleRowFinal.getLastCellNum()));
+                if (lastScan <= 0) lastScan = 200;
+                for (int c = 0; c < lastScan; c++) {
+                    if (titleRowFinal == null) continue;
+                    Cell tc = titleRowFinal.getCell(c);
+                    if (tc == null) continue;
+                    if (tc.getCellType() != CellType.STRING) continue;
+                    String v = tc.getStringCellValue();
+                    if (v == null || v.isBlank() || v.equalsIgnoreCase("Subtotal")) continue;
+                    if (sheet instanceof XSSFSheet) {
+                        ((XSSFSheet) sheet).setColumnWidth(c, (int) Math.round(INSTRUMENT_COLUMN_WIDTH_CHARS * 256));
+                    }
                 }
-            }
-        } catch (Exception ignore) {}
-    }
+            } catch (Exception ignore) {}
+        }
 
     /**
      * Resize and re-merge the header banner and info blocks so they fit the
@@ -929,11 +806,11 @@ public class PlanillaProcesoWorkbookBuilder {
         // `specialtyMinCols` OR 12 columns (whichever is larger). This
         // is a safe heuristic for narrow planillas with long text and
         // matches unit test expectations for edge cases.
-        int minimumAlloc = Math.max(specialtyMinCols, 12);
+        int minimumAlloc = Math.max(specialtyMinCols, requiredByTests);
         newSpecEnd = Math.max(newSpecEnd, specStart + minimumAlloc - 1);
         // Reserve yearWidth columns for the year INSIDE the targetLastCol area
         int yearWidth = Math.max(2, yearMinCols);
-        int minimumCourseEnd = Math.max(courseMinCols, specStart + 4);
+        int minimumCourseEnd = Math.max(courseMinCols, specStart + computeMinimumColumnsForText(courseText, 2));
         int newCourseEnd = Math.max(minimumCourseEnd, Math.min(targetLastCol - yearWidth, targetLastCol - 1));
 
         // Place the year block immediately after the course block but never
@@ -1169,7 +1046,7 @@ public class PlanillaProcesoWorkbookBuilder {
                 // fixed column width — font size scales down instead (see applyTitleFontSize)
                 if (sheet instanceof XSSFSheet) {
                     ((XSSFSheet) sheet).setColumnWidth(colIndex, (int) Math.round(INSTRUMENT_COLUMN_WIDTH_CHARS * 256));
-                    try { log.debug("POPULATED month instrument width set col={} chars={} sheet={}", colIndex, INSTRUMENT_COLUMN_WIDTH_CHARS, sheet.getSheetName()); } catch (Exception ignore) {}
+                    // POPULATED month instrument width log removed
                 }
                 int titleLen = tarea.getTitulo() == null ? 0 : tarea.getTitulo().length();
                 applyTitleFontSize(sheet.getWorkbook(), titleCell, titleLen);
@@ -1200,7 +1077,7 @@ public class PlanillaProcesoWorkbookBuilder {
                 blankTp.setBlank();
                 if (sheet instanceof XSSFSheet) {
                     ((XSSFSheet) sheet).setColumnWidth(colIndex, (int) Math.round(INSTRUMENT_COLUMN_WIDTH_CHARS * 256));
-                    try { log.debug("POPULATED reserved slot width set col={} chars={} sheet={}", colIndex, INSTRUMENT_COLUMN_WIDTH_CHARS, sheet.getSheetName()); } catch (Exception ignore) {}
+                    // POPULATED reserved slot width log removed
                 }
             }
 
@@ -1260,7 +1137,7 @@ public class PlanillaProcesoWorkbookBuilder {
                 continue;
             }
             ((XSSFSheet) sheet).setColumnWidth(c, (int) Math.round(INSTRUMENT_COLUMN_WIDTH_CHARS * 256));
-            try { log.debug("ENSURE width set col={} chars={} sheet={}", c, INSTRUMENT_COLUMN_WIDTH_CHARS, sheet.getSheetName()); } catch (Exception ignore) {}
+            // ENSURE width log removed
         }
     }
 
@@ -1766,9 +1643,7 @@ public class PlanillaProcesoWorkbookBuilder {
                 if (r == TP_ROW) continue;
                 Cell cell = row.getCell(c);
                 if (cell == null) continue;
-                try {
-                    log.debug("Cleaning sheet {} row {} col {} type={}", sheet.getSheetName(), r, c, cell.getCellType());
-                } catch (Exception ignore) {}
+                // Cleaning sheet debug removed
                 // remove formula/state/value
                 try {
                     cell.setBlank();
@@ -1850,7 +1725,7 @@ public class PlanillaProcesoWorkbookBuilder {
                 hideStart = Math.max(hideStart, headerLastLabel + 1);
             }
             java.util.List<Integer> hidden = new java.util.ArrayList<>();
-            try { System.out.println("HIDE debug sheet=" + sheet.getSheetName() + " lastAllowed=" + lastAllowedColumn + " headerLastLabel=" + headerLastLabel + " headerLastLabelAfterTotal=" + headerLastLabelAfterTotalGeneral + " hideStart=" + hideStart); } catch (Exception ignore) {}
+            // HIDE debug println removed
             for (int c = hideStart; c <= lastCol; c++) {
                 // Only hide truly empty columns to avoid removing columns with
                 // data that may be beyond the header labels.
@@ -1878,7 +1753,7 @@ public class PlanillaProcesoWorkbookBuilder {
                     // ignore any columns that cannot be hidden
                 }
             }
-            try { if (!hidden.isEmpty()) log.debug("Hidden {} trailing columns on sheet {} (from {}..{})", hidden.size(), sheet.getSheetName(), hideStart, hidden.get(hidden.size()-1)); } catch (Exception ignore) {}
+            // Hidden trailing columns log removed
             // If the template left a single ghost column immediately after the
             // real final-labels (detected by headerLastLabelAfterTotalGeneral),
             // explicitly hide that column and a small following range to match
