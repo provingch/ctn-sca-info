@@ -326,12 +326,10 @@ public class PlanillaProcesoWorkbookBuilder {
         String safeName = uniqueSheetName(workbook, desiredName, clonedIndex);
         workbook.setSheetName(clonedIndex, safeName);
         XSSFSheet sheet = workbook.getSheetAt(clonedIndex);
-        // DIAGNOSTIC: compare template sheet and cloned sheet header row for divergences
         try {
             XSSFSheet tmpl = workbook.getSheetAt(templateIndex);
             Row sHeader = tmpl.getRow(MONTH_HEADER_ROW);
             Row cHeader = sheet.getRow(MONTH_HEADER_ROW);
-            // clone mismatch diagnostics removed
         } catch (Throwable ignore) {}
         // Ensure the newly cloned sheet appears first (index 0) so callers
         // that access `getSheetAt(0)` receive the freshly created sheet.
@@ -447,8 +445,6 @@ public class PlanillaProcesoWorkbookBuilder {
         }
 
         Map<Integer, Integer> taskColumnById = allocateTaskColumns(tareasPorMes, layout, data.planilla().getId());
-            // DIAGNOSTIC: dump taskColumnById mapping
-            // taskColumnById diagnostics removed
         // Ensure template has enough room to render reserved slots for months
         int requiredRightmost = layout.firstMonthColumn();
         for (Map.Entry<YearMonth, List<Tarea>> entry : tareasPorMes.entrySet()) {
@@ -503,9 +499,6 @@ public class PlanillaProcesoWorkbookBuilder {
                 }
             }
         } catch (Throwable ignore) {}
-            // DIAGNOSTIC: dump monthBlocks
-            // monthBlocks diagnostics removed
-
         // Hide any trailing empty columns immediately to the right of the
         // last instrument column so downstream logic/tests observe a clean
         // boundary of visible instrument columns. Avoid hiding columns that
@@ -587,7 +580,6 @@ public class PlanillaProcesoWorkbookBuilder {
                 int actualLastInstrument = firstCol + tareasMes.size() - 1;
                 String actualLastRef = CellReference.convertNumToColString(actualLastInstrument);
                 subtotalCell.setCellFormula("SUM(" + firstColRef + excelRowIndex + ":" + actualLastRef + excelRowIndex + ")");
-                // TEMP CHECK: record that we set this subtotal formula
             } else {
                 subtotalCell.setBlank();
             }
@@ -621,12 +613,12 @@ public class PlanillaProcesoWorkbookBuilder {
 
         // final columns: write labels and clone styles from template's row 6 entries (if found)
         org.apache.poi.ss.usermodel.Workbook wb = sheet.getWorkbook();
-            if (!finalColumnLabels.isEmpty()) {
+        clearDuplicateFinalHeaderLabels(headerRow, computed.totalGeneralColumn());
+        if (!finalColumnLabels.isEmpty()) {
             for (int i = 0; i < finalColumnLabels.size(); i++) {
                 int colIndex = computed.totalGeneralColumn + i;
                 String label = finalColumnLabels.get(i);
                 setStringCell(getOrCreateCell(headerRow, colIndex), label);
-                // clone style from template cell if available
                 if (i < finalColumnTemplateCells.size() && finalColumnTemplateCells.get(i) != null) {
                     Cell tmpl = finalColumnTemplateCells.get(i);
                     org.apache.poi.ss.usermodel.CellStyle newStyle = wb.createCellStyle();
@@ -646,8 +638,6 @@ public class PlanillaProcesoWorkbookBuilder {
                 totalLabel = "Total General";
             }
 
-            // Diagnostic snapshot: after writing final-column labels and initial cleanup
-            captureHeaderSnapshot(sheet, "after_final_columns");
             setStringCell(getOrCreateCell(headerRow, computed.totalGeneralColumn()), totalLabel);
             sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, computed.totalGeneralColumn(), computed.totalGeneralColumn()));
 
@@ -712,33 +702,10 @@ public class PlanillaProcesoWorkbookBuilder {
         }
 
         fillStudentRows(sheet, data, taskColumnById, computed, monthBlocks);
-        captureHeaderSnapshot(sheet, "after_fillStudentRows");
-        // Diagnostic: inspect student and TP subtotal cells immediately after writing
-            // post-fill diagnostics removed
-        // (TP subtotal copy and assertion diagnostics temporarily removed for root-cause diagnosis)
         clearTemplatePlaceholders(sheet);
-        captureHeaderSnapshot(sheet, "after_clearTemplatePlaceholders");
 
         int lastStudentRow = FIRST_STUDENT_ROW + Math.max(0, data.rows() == null ? 0 : data.rows().size()) - 1;
         applyNavigationAndVisualDesign(sheet, monthBlocks, lastStudentRow, data.curso() == null ? null : data.curso().getEspecialidad(), layout);
-        captureHeaderSnapshot(sheet, "after_applyNavigationAndVisualDesign");
-
-        // Final cleanup: ensure only the computed Total General header remains
-        try {
-            Row hdr = sheet.getRow(MONTH_HEADER_ROW);
-            if (hdr != null) {
-                for (int c = 0; c < 400; c++) {
-                    if (c == computed.totalGeneralColumn()) continue;
-                    Cell h = hdr.getCell(c);
-                    if (h != null && h.getCellType() == CellType.STRING) {
-                        String v = h.getStringCellValue();
-                        if (v != null && v.equalsIgnoreCase("Total General")) {
-                            h.setBlank();
-                        }
-                    }
-                }
-            }
-        } catch (Exception ignore) {}
 
         // Compute the signature row to place the teacher signature a couple of
         // rows below the last student row so it's always inside the area we
@@ -777,7 +744,6 @@ public class PlanillaProcesoWorkbookBuilder {
 
         if (sheet instanceof XSSFSheet) {
             resizeHeaderBanner((XSSFSheet) sheet, layout, lastRealColumn);
-            captureHeaderSnapshot(sheet, "after_resizeHeaderBanner");
             java.util.List<CellRangeAddress> dynamicHeaderMerges = ((XSSFSheet) sheet).getMergedRegions();
             int protectedHeaderRightEdge = lastRealColumn;
             for (CellRangeAddress ca : dynamicHeaderMerges) {
@@ -788,58 +754,33 @@ public class PlanillaProcesoWorkbookBuilder {
             lastRealColumn = Math.max(lastRealColumn, protectedHeaderRightEdge);
         }
 
-        // About to clean columns (debug removed)
-            // Diagnostic: dump header scan for 'Subtotal' and cell types in range
-            try {
-                Row headerRowDiag2 = getOrCreateRow(sheet, MONTH_HEADER_ROW);
-                Row studentRowDiag2 = getOrCreateRow(sheet, FIRST_STUDENT_ROW);
-                Row tpRowDiag2 = getOrCreateRow(sheet, TP_ROW);
-                int maxColDiag = Math.max(lastRealColumn + 5, 30);
-                for (int c = 0; c <= maxColDiag; c++) {
-                    Cell h = headerRowDiag2.getCell(c);
-                    Cell stu = studentRowDiag2.getCell(c);
-                    Cell tp = tpRowDiag2.getCell(c);
-                    String hv = h == null ? "" : (h.getCellType() == CellType.STRING ? h.getStringCellValue() : h.toString());
-                    // HEADER DIAG removed
-                }
-            } catch (Exception ignore) {}
-            cleanColumnsAfter(sheet, lastRealColumn, signatureRow, signatureColumn);
-            captureHeaderSnapshot(sheet, "after_cleanColumnsAfter");
-            // TEMP CHECK: dump TP subtotal and total cell status right after cleanColumnsAfter
-                
-            for (MonthBlock mb : monthBlocks) {
-                if (mb == null) continue;
-                for (int c = mb.firstInstrumentCol(); c <= mb.lastInstrumentCol(); c++) {
-                    if (sheet instanceof XSSFSheet) {
-                        ((XSSFSheet) sheet).setColumnWidth(c, (int) Math.round(INSTRUMENT_COLUMN_WIDTH_CHARS * 256));
-                        // APPLIED MONTHBLOCK log removed
-                    }
+        cleanColumnsAfter(sheet, lastRealColumn, signatureRow, signatureColumn);
+
+        for (MonthBlock mb : monthBlocks) {
+            if (mb == null) continue;
+            for (int c = mb.firstInstrumentCol(); c <= mb.lastInstrumentCol(); c++) {
+                if (sheet instanceof XSSFSheet) {
+                    ((XSSFSheet) sheet).setColumnWidth(c, (int) Math.round(INSTRUMENT_COLUMN_WIDTH_CHARS * 256));
                 }
             }
-        // Re-ensure TP subtotal and total formulas persist after any cleanup
-            // TP re-write blocks removed: cleanColumnsAfter protects TP row.
-        // Removed TP final diagnostic logs
-        // Final defensive pass: re-scan instrument title row and enforce
-        // the expected narrow column width for any detected instrument
-        // columns. This guards against any later template/merge operations
-        // that might have reset individual column widths.
-            try {
-                Row titleRowFinal = sheet.getRow(INSTRUMENT_TITLE_ROW);
-                int lastScan = Math.max(lastRealColumn, (titleRowFinal == null ? 0 : titleRowFinal.getLastCellNum()));
-                if (lastScan <= 0) lastScan = 200;
-                for (int c = 0; c < lastScan; c++) {
-                    if (titleRowFinal == null) continue;
-                    Cell tc = titleRowFinal.getCell(c);
-                    if (tc == null) continue;
-                    if (tc.getCellType() != CellType.STRING) continue;
-                    String v = tc.getStringCellValue();
-                    if (v == null || v.isBlank() || v.equalsIgnoreCase("Subtotal")) continue;
-                    if (sheet instanceof XSSFSheet) {
-                        ((XSSFSheet) sheet).setColumnWidth(c, (int) Math.round(INSTRUMENT_COLUMN_WIDTH_CHARS * 256));
-                    }
+        }
+
+        try {
+            Row titleRowFinal = sheet.getRow(INSTRUMENT_TITLE_ROW);
+            int lastScan = Math.max(lastRealColumn, (titleRowFinal == null ? 0 : titleRowFinal.getLastCellNum()));
+            if (lastScan <= 0) lastScan = 200;
+            for (int c = 0; c < lastScan; c++) {
+                if (titleRowFinal == null) continue;
+                Cell tc = titleRowFinal.getCell(c);
+                if (tc == null) continue;
+                if (tc.getCellType() != CellType.STRING) continue;
+                String v = tc.getStringCellValue();
+                if (v == null || v.isBlank() || v.equalsIgnoreCase("Subtotal")) continue;
+                if (sheet instanceof XSSFSheet) {
+                    ((XSSFSheet) sheet).setColumnWidth(c, (int) Math.round(INSTRUMENT_COLUMN_WIDTH_CHARS * 256));
                 }
-            } catch (Exception ignore) {}
-        // (Final Total General enforcement removed temporarily for root-cause diagnosis)
+            }
+        } catch (Exception ignore) {}
         }
 
     /**
@@ -935,11 +876,11 @@ public class PlanillaProcesoWorkbookBuilder {
         // `specialtyMinCols` OR 12 columns (whichever is larger). This
         // is a safe heuristic for narrow planillas with long text and
         // matches unit test expectations for edge cases.
-        int minimumAlloc = Math.max(specialtyMinCols, requiredByTests);
+        int minimumAlloc = Math.max(Math.max(11, specialtyMinCols), requiredByTests);
         newSpecEnd = Math.max(newSpecEnd, specStart + minimumAlloc - 1);
         // Reserve yearWidth columns for the year INSIDE the targetLastCol area
         int yearWidth = Math.max(2, yearMinCols);
-        int minimumCourseEnd = Math.max(courseMinCols, specStart + computeMinimumColumnsForText(courseText, 2));
+        int minimumCourseEnd = Math.max(Math.max(9, courseMinCols), specStart + computeMinimumColumnsForText(courseText, 2));
         int newCourseEnd = Math.max(minimumCourseEnd, Math.min(targetLastCol - yearWidth, targetLastCol - 1));
 
         // Place the year block immediately after the course block but never
@@ -1498,6 +1439,28 @@ public class PlanillaProcesoWorkbookBuilder {
         }
     }
 
+    private void clearDuplicateFinalHeaderLabels(Row headerRow, int expectedTotalGeneralColumn) {
+        if (headerRow == null) {
+            return;
+        }
+        try {
+            for (int c = 0; c < 400; c++) {
+                if (c == expectedTotalGeneralColumn) {
+                    continue;
+                }
+                Cell h = headerRow.getCell(c);
+                if (h != null && h.getCellType() == CellType.STRING) {
+                    String v = h.getStringCellValue();
+                    if (v != null && v.equalsIgnoreCase("Total General")) {
+                        h.setBlank();
+                    }
+                }
+            }
+        } catch (Exception ignore) {
+            // ignore stray template/header irregularities
+        }
+    }
+
     private void setTeacherSignature(Sheet sheet, PlanillaSheetData data, int targetRowIndex, int targetColumnIndex) {
         if (data == null) {
             return;
@@ -1735,9 +1698,13 @@ public class PlanillaProcesoWorkbookBuilder {
             lastAllowedColumn = Math.max(lastAllowedColumn, actualRightEdge);
         }
 
-        // Remove merged regions that are entirely to the right of lastAllowedColumn
         if (sheet instanceof XSSFSheet) {
             XSSFSheet xssf = (XSSFSheet) sheet;
+            for (CellRangeAddress ca : xssf.getMergedRegions()) {
+                if (ca.getFirstRow() <= 4 && ca.getLastRow() >= 0) {
+                    lastAllowedColumn = Math.max(lastAllowedColumn, ca.getLastColumn());
+                }
+            }
             java.util.List<CellRangeAddress> merges = xssf.getMergedRegions();
             for (int i = merges.size() - 1; i >= 0; i--) {
                 CellRangeAddress ca = merges.get(i);
@@ -2143,29 +2110,4 @@ public class PlanillaProcesoWorkbookBuilder {
             String firmaImagen) {
     }
 
-    // Package-visible diagnostic hook (only for branch-level investigation).
-    // Tests in the diagnostic branch may set this map to collect snapshots
-    // of header positions at named checkpoints. This field must be removed
-    // before merging back to main if not kept as a permanent regression test.
-    Map<String, java.util.List<Integer>> diagnosticSnapshots = null;
-
-    void setDiagnosticSnapshots(Map<String, java.util.List<Integer>> snaps) {
-        this.diagnosticSnapshots = snaps;
-    }
-
-    private void captureHeaderSnapshot(Sheet sheet, String label) {
-        if (this.diagnosticSnapshots == null) return;
-        java.util.List<Integer> cols = new java.util.ArrayList<>();
-        Row hdr = sheet.getRow(MONTH_HEADER_ROW);
-        if (hdr != null) {
-            for (int c = 0; c < 400; c++) {
-                Cell h = hdr.getCell(c);
-                if (h != null && h.getCellType() == CellType.STRING) {
-                    String v = h.getStringCellValue();
-                    if (v != null && v.equalsIgnoreCase("Total General")) cols.add(c);
-                }
-            }
-        }
-        this.diagnosticSnapshots.put(label, cols);
-    }
 }
