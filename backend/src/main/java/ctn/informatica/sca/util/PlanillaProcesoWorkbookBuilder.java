@@ -621,7 +621,7 @@ public class PlanillaProcesoWorkbookBuilder {
 
         // final columns: write labels and clone styles from template's row 6 entries (if found)
         org.apache.poi.ss.usermodel.Workbook wb = sheet.getWorkbook();
-        if (!finalColumnLabels.isEmpty()) {
+            if (!finalColumnLabels.isEmpty()) {
             for (int i = 0; i < finalColumnLabels.size(); i++) {
                 int colIndex = computed.totalGeneralColumn + i;
                 String label = finalColumnLabels.get(i);
@@ -645,6 +645,9 @@ public class PlanillaProcesoWorkbookBuilder {
             if (totalLabel == null || totalLabel.isBlank()) {
                 totalLabel = "Total General";
             }
+
+            // Diagnostic snapshot: after writing final-column labels and initial cleanup
+            captureHeaderSnapshot(sheet, "after_final_columns");
             setStringCell(getOrCreateCell(headerRow, computed.totalGeneralColumn()), totalLabel);
             sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, computed.totalGeneralColumn(), computed.totalGeneralColumn()));
 
@@ -709,13 +712,16 @@ public class PlanillaProcesoWorkbookBuilder {
         }
 
         fillStudentRows(sheet, data, taskColumnById, computed, monthBlocks);
+        captureHeaderSnapshot(sheet, "after_fillStudentRows");
         // Diagnostic: inspect student and TP subtotal cells immediately after writing
             // post-fill diagnostics removed
         // (TP subtotal copy and assertion diagnostics temporarily removed for root-cause diagnosis)
         clearTemplatePlaceholders(sheet);
+        captureHeaderSnapshot(sheet, "after_clearTemplatePlaceholders");
 
         int lastStudentRow = FIRST_STUDENT_ROW + Math.max(0, data.rows() == null ? 0 : data.rows().size()) - 1;
         applyNavigationAndVisualDesign(sheet, monthBlocks, lastStudentRow, data.curso() == null ? null : data.curso().getEspecialidad(), layout);
+        captureHeaderSnapshot(sheet, "after_applyNavigationAndVisualDesign");
 
         // Final cleanup: ensure only the computed Total General header remains
         try {
@@ -771,6 +777,7 @@ public class PlanillaProcesoWorkbookBuilder {
 
         if (sheet instanceof XSSFSheet) {
             resizeHeaderBanner((XSSFSheet) sheet, layout, lastRealColumn);
+            captureHeaderSnapshot(sheet, "after_resizeHeaderBanner");
             java.util.List<CellRangeAddress> dynamicHeaderMerges = ((XSSFSheet) sheet).getMergedRegions();
             int protectedHeaderRightEdge = lastRealColumn;
             for (CellRangeAddress ca : dynamicHeaderMerges) {
@@ -797,6 +804,7 @@ public class PlanillaProcesoWorkbookBuilder {
                 }
             } catch (Exception ignore) {}
             cleanColumnsAfter(sheet, lastRealColumn, signatureRow, signatureColumn);
+            captureHeaderSnapshot(sheet, "after_cleanColumnsAfter");
             // TEMP CHECK: dump TP subtotal and total cell status right after cleanColumnsAfter
                 
             for (MonthBlock mb : monthBlocks) {
@@ -2133,5 +2141,31 @@ public class PlanillaProcesoWorkbookBuilder {
             List<StudentRow> rows,
             Map<Integer, Integer> firstStageGrades,
             String firmaImagen) {
+    }
+
+    // Package-visible diagnostic hook (only for branch-level investigation).
+    // Tests in the diagnostic branch may set this map to collect snapshots
+    // of header positions at named checkpoints. This field must be removed
+    // before merging back to main if not kept as a permanent regression test.
+    Map<String, java.util.List<Integer>> diagnosticSnapshots = null;
+
+    void setDiagnosticSnapshots(Map<String, java.util.List<Integer>> snaps) {
+        this.diagnosticSnapshots = snaps;
+    }
+
+    private void captureHeaderSnapshot(Sheet sheet, String label) {
+        if (this.diagnosticSnapshots == null) return;
+        java.util.List<Integer> cols = new java.util.ArrayList<>();
+        Row hdr = sheet.getRow(MONTH_HEADER_ROW);
+        if (hdr != null) {
+            for (int c = 0; c < 400; c++) {
+                Cell h = hdr.getCell(c);
+                if (h != null && h.getCellType() == CellType.STRING) {
+                    String v = h.getStringCellValue();
+                    if (v != null && v.equalsIgnoreCase("Total General")) cols.add(c);
+                }
+            }
+        }
+        this.diagnosticSnapshots.put(label, cols);
     }
 }
