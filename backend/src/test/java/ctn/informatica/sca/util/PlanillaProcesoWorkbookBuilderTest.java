@@ -333,6 +333,83 @@ class PlanillaProcesoWorkbookBuilderTest {
         }
     }
 
+    @Test
+    void generateEtapa2Workbook_and_verifyLeadingFixedColumn_and_logos() throws IOException {
+        // Build planilla for etapa 2 with a real specialty so logo exists
+        Planilla planilla = new Planilla(600, 1, 1, "comun", "Etapa2", 2026, "segunda", 7);
+        // Two tasks across two months
+        Tarea t1 = new Tarea(); t1.setId(7001); t1.setFecha(LocalDate.of(2026, 2, 5)); t1.setTitulo("T1"); t1.setTotal(5);
+        Tarea t2 = new Tarea(); t2.setId(7002); t2.setFecha(LocalDate.of(2026, 3, 10)); t2.setTitulo("T2"); t2.setTotal(8);
+
+        StudentRow s1 = new StudentRow(); s1.setAlumnoId(1); s1.setAlumnoNombre("Alumno A"); s1.setGrades(Map.of(7001,5)); s1.setTotal(5);
+        StudentRow s2 = new StudentRow(); s2.setAlumnoId(2); s2.setAlumnoNombre("Alumno B"); s2.setGrades(Map.of(7002,8)); s2.setTotal(8);
+
+        Map<Integer,Integer> firstStage = new HashMap<>();
+        firstStage.put(1, 75); // represent 7.5 as 75.0
+        firstStage.put(2, 80);
+
+        PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                planilla,
+                new ctn.informatica.sca.model.Curso(600, "Informática", 2026, "A"),
+                "Etapa2",
+                "Profe",
+                "Mañana",
+                List.of(t1, t2),
+                List.of(s1, s2),
+                firstStage,
+                null
+        );
+
+        String out = "target/test_planilla_etapa2.xlsx";
+        try (XSSFWorkbook wb = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(data, "Etapa2-Test")) {
+            try (FileOutputStream fos = new FileOutputStream(out)) { wb.write(fos); }
+
+            Sheet sheet = wb.getSheetAt(0);
+            // FIRST_STUDENT_ROW is 8 (builder), check rows 8 and 9 for column C (index 2)
+            Row r1 = sheet.getRow(8);
+            Row r2 = sheet.getRow(9);
+            assertNotNull(r1);
+            assertNotNull(r2);
+            Cell c1 = r1.getCell(2);
+            Cell c2 = r2.getCell(2);
+            assertNotNull(c1, "Cell C for student 1 must exist");
+            assertNotNull(c2, "Cell C for student 2 must exist");
+            assertEquals(org.apache.poi.ss.usermodel.CellType.NUMERIC, c1.getCellType(), "Leading fixed col must be NUMERIC");
+            assertEquals(org.apache.poi.ss.usermodel.CellType.NUMERIC, c2.getCellType(), "Leading fixed col must be NUMERIC");
+            assertEquals(75.0, c1.getNumericCellValue(), 0.0001);
+            assertEquals(80.0, c2.getNumericCellValue(), 0.0001);
+
+            // Verify drawings: expect at least 2 pictures (institutional + specialty)
+            if (sheet instanceof org.apache.poi.xssf.usermodel.XSSFSheet xs) {
+                org.apache.poi.xssf.usermodel.XSSFDrawing drawing = xs.getDrawingPatriarch();
+                assertNotNull(drawing, "Drawing should be present");
+                java.util.List<org.apache.poi.xssf.usermodel.XSSFShape> shapes = drawing.getShapes();
+                int pics = 0;
+                for (org.apache.poi.xssf.usermodel.XSSFShape sh : shapes) {
+                    if (sh instanceof org.apache.poi.xssf.usermodel.XSSFPicture pic) {
+                        pics++;
+                        org.apache.poi.xssf.usermodel.XSSFClientAnchor a = pic.getClientAnchor();
+                        int dx2 = a.getDx2();
+                        int dy2 = a.getDy2();
+                        // convert EMU->px (approx 9525 EMU per pixel)
+                        double pxW = dx2 / 9525.0;
+                        double pxH = dy2 / 9525.0;
+                        java.awt.image.BufferedImage img = javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(pic.getPictureData().getData()));
+                        assertNotNull(img);
+                        double imgW = img.getWidth();
+                        double imgH = img.getHeight();
+                        double ratioImg = imgW / imgH;
+                        double ratioAnchor = pxW / Math.max(1.0, pxH);
+                        // ratios should be close (within 25%)
+                        double rel = Math.abs(ratioImg - ratioAnchor) / ratioImg;
+                        assertTrue(rel < 0.25, "Anchor aspect ratio must be similar to image; rel=" + rel);
+                    }
+                }
+                assertTrue(pics >= 2, "Expected at least 2 pictures in sheet, found " + pics);
+            }
+        }
+    }
+
     
 
     @Test
