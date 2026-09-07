@@ -1825,7 +1825,17 @@ public class PlanillaProcesoWorkbookBuilder {
             // Compute available pixel area inside the provided cell-box
             int availW = 0;
             for (int c = col1; c < Math.max(col2, col1 + 1); c++) {
-                try { int cw = sheet.getColumnWidth(c); double chars = cw / 256.0; availW += Math.round(chars * 7.0); } catch (Throwable ignore) {}
+                try {
+                    // Prefer POI's utility conversion to pixels when available (use reflection
+                    // so code compiles on multiple POI versions).
+                    Class<?> su = Class.forName("org.apache.poi.ss.util.SheetUtil");
+                    java.lang.reflect.Method m = su.getMethod("getColumnWidthInPixels", org.apache.poi.ss.usermodel.Sheet.class, int.class);
+                    Object pxObj = m.invoke(null, (org.apache.poi.ss.usermodel.Sheet) sheet, c);
+                    int px = pxObj == null ? 0 : ((Number) pxObj).intValue();
+                    availW += px;
+                } catch (Throwable t) {
+                    try { int cw = sheet.getColumnWidth(c); double chars = cw / 256.0; availW += Math.round(chars * 7.5); } catch (Throwable ignore) { availW += 70; }
+                }
             }
             int availH = 0;
             for (int r = row1; r < Math.max(row2, row1 + 1); r++) {
@@ -1840,14 +1850,18 @@ public class PlanillaProcesoWorkbookBuilder {
             double finalPixelW;
             double finalPixelH;
             if (img == null) {
-                finalPixelW = availW * 0.8;
-                finalPixelH = availH * 0.8;
+                finalPixelW = Math.max(100, (int) Math.round(availW * 0.8));
+                finalPixelH = Math.max(40, (int) Math.round(availH * 0.8));
             } else {
                 double sx = availW / (double) img.getWidth();
                 double sy = availH / (double) img.getHeight();
                 double scale = Math.min(Math.min(sx, sy), 1.0) * 0.95;
-                finalPixelW = Math.round(img.getWidth() * scale);
-                finalPixelH = Math.round(img.getHeight() * scale);
+                double computedW = Math.round(img.getWidth() * scale);
+                // Enforce a reasonable minimum visual width (but never exceed native width)
+                int minVisualWidth = Math.min(img.getWidth(), 180);
+                finalPixelW = (int) Math.max(computedW, minVisualWidth);
+                // Compute height preserving aspect ratio
+                finalPixelH = (int) Math.round(finalPixelW * ((double) img.getHeight() / img.getWidth()));
             }
 
             // Expand columns until we have enough room; compute remainder in last column
