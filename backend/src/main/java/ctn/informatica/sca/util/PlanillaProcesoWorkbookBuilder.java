@@ -45,6 +45,7 @@ import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
 
 public class PlanillaProcesoWorkbookBuilder {
 
@@ -1834,59 +1835,100 @@ public class PlanillaProcesoWorkbookBuilder {
             if (is == null) return;
             byte[] bytes = is.readAllBytes();
             Workbook workbook = sheet.getWorkbook();
-            // Always add the picture to the workbook; do not attempt
-            // binary deduplication by comparing bytes (this caused bugs
-            // and left noisy catch-suppress blocks). The workbook may
-            // still contain unused picture parts which we clean elsewhere.
             int pictureIdx = workbook.addPicture(bytes, Workbook.PICTURE_TYPE_PNG);
             Drawing<?> drawing = sheet.createDrawingPatriarch();
-            // Try to preserve aspect ratio: read image dimensions and
-            // ask POI to resize the picture with MOVE_AND_RESIZE anchor.
+
+            // Read the real image dimensions up-front (may fail silently)
             java.awt.image.BufferedImage img = null;
             try (InputStream is2 = getClass().getResourceAsStream(resourcePath)) {
                 img = javax.imageio.ImageIO.read(is2);
             } catch (Throwable ignore) {
-                // fall back to default insertion if ImageIO fails
+                // fall back to defaults if ImageIO fails
             }
-            ClientAnchor anchor = workbook.getCreationHelper().createClientAnchor();
+
+            // Compute available pixel area inside the provided cell-box
+            int availW = 0;
+            for (int c = col1; c < Math.max(col2, col1 + 1); c++) {
+                try {
+                    int cw = sheet.getColumnWidth(c); // 1/256th of character
+                    double chars = cw / 256.0;
+                    availW += Math.round(chars * 7.0);
+                } catch (Throwable ignore) {}
+            }
+            int availH = 0;
+            for (int r = row1; r < Math.max(row2, row1 + 1); r++) {
+                Row rr = sheet.getRow(r);
+                double pts = rr == null ? sheet.getDefaultRowHeightInPoints() : rr.getHeightInPoints();
+                availH += Math.round(pts * 96.0 / 72.0);
+            }
+
+            // Default sensible fallbacks
+            if (availW <= 0) availW = 160;
+            if (availH <= 0) availH = 64;
+
+            double targetPixelW = img == null ? availW * 0.8 : Math.min(availW, img.getWidth());
+            double targetPixelH = img == null ? availH * 0.8 : Math.min(availH, img.getHeight());
+            if (img != null) {
+                double sx = targetPixelW / (double) img.getWidth();
+                double sy = targetPixelH / (double) img.getHeight();
+                double s = Math.min(Math.min(sx, sy), 1.0) * 0.95; // small margin
+                targetPixelW = Math.round(img.getWidth() * s);
+                targetPixelH = Math.round(img.getHeight() * s);
+            }
+
+            // Expand col2/row2 if needed to fit the desired pixel width/height
+            int accumW = 0;
+            int endCol = col1;
+            while (accumW < targetPixelW) {
+                try {
+                    int cw = sheet.getColumnWidth(endCol); double chars = cw / 256.0; accumW += Math.round(chars * 7.0);
+                } catch (Throwable ignore) { accumW += 70; }
+                endCol++;
+                if (endCol > col1 + 50) break; // safety
+            }
+
+            int accumH = 0;
+            int endRow = row1;
+            while (accumH < targetPixelH) {
+                Row rr = sheet.getRow(endRow);
+                double pts = rr == null ? sheet.getDefaultRowHeightInPoints() : rr.getHeightInPoints();
+                accumH += Math.round(pts * 96.0 / 72.0);
+                endRow++;
+                if (endRow > row1 + 50) break;
+            }
+
+            // Create anchor and use pixel offsets (EMUs) for precise sizing
+            XSSFClientAnchor anchor = (XSSFClientAnchor) workbook.getCreationHelper().createClientAnchor();
             anchor.setCol1(col1);
             anchor.setRow1(row1);
-            // Provide a sensible default span if caller passed a degenerate box
-            if (col2 <= col1) col2 = col1 + Math.max(1, (img == null ? 2 : Math.max(1, img.getWidth() / 100)));
-            if (row2 <= row1) row2 = row1 + Math.max(1, (img == null ? 3 : Math.max(1, img.getHeight() / 40)));
-            anchor.setCol2(col2);
-            anchor.setRow2(row2);
+            anchor.setCol2(Math.max(col2, endCol));
+            anchor.setRow2(Math.max(row2, endRow));
             anchor.setAnchorType(ClientAnchor.AnchorType.MOVE_AND_RESIZE);
+
+            // dx/dy: compute remainder pixels that don't fill whole columns/rows
+            int filledWidth = 0;
+            for (int c = col1; c < anchor.getCol2(); c++) {
+                try { int cw = sheet.getColumnWidth(c); double chars = cw / 256.0; filledWidth += Math.round(chars * 7.0); } catch (Throwable ignore) { filledWidth += 70; }
+            }
+            int dx2px = Math.max(0, (int) Math.min(targetPixelW, filledWidth));
+            int filledHeight = 0;
+            for (int r = row1; r < anchor.getRow2(); r++) {
+                Row rr = sheet.getRow(r);
+                double pts = rr == null ? sheet.getDefaultRowHeightInPoints() : rr.getHeightInPoints();
+                filledHeight += Math.round(pts * 96.0 / 72.0);
+            }
+            int dy2px = Math.max(0, (int) Math.min(targetPixelH, filledHeight));
+
+            anchor.setDx1(0);
+            anchor.setDy1(0);
+            anchor.setDx2(org.apache.poi.util.Units.pixelToEMU(dx2px));
+            anchor.setDy2(org.apache.poi.util.Units.pixelToEMU(dy2px));
+
             org.apache.poi.ss.usermodel.Picture pict = drawing.createPicture(anchor, pictureIdx);
+
             try {
-                double scale = 1.0;
-                if (img != null) {
-                    // compute available area in pixels between anchor cols/rows
-                    int availW = 0;
-                    for (int c = col1; c < col2; c++) {
-                        try {
-                            int cw = sheet.getColumnWidth(c); // units of 1/256th of char
-                            double chars = cw / 256.0;
-                            availW += Math.round(chars * 7.0); // approx px per char
-                        } catch (Throwable ignore) {}
-                    }
-                    int availH = 0;
-                    for (int r = row1; r < row2; r++) {
-                        Row rr = sheet.getRow(r);
-                        double pts = rr == null ? sheet.getDefaultRowHeightInPoints() : rr.getHeightInPoints();
-                        availH += Math.round(pts * 96.0 / 72.0); // points -> pixels (96dpi)
-                    }
-                    // Safety fallback
-                    if (availW <= 0) availW = Math.max(48, img.getWidth() / 2);
-                    if (availH <= 0) availH = Math.max(24, img.getHeight() / 2);
-                    double sx = availW / (double) img.getWidth();
-                    double sy = availH / (double) img.getHeight();
-                    scale = Math.min(Math.min(sx, sy), 1.0) * 0.9; // leave 10% margin
-                } else {
-                    scale = 0.5; // conservative fallback
-                }
-                if (scale <= 0) scale = 0.5;
-                pict.resize(scale);
+                // final safety resize to adjust internal painting
+                pict.resize(1.0);
             } catch (Throwable ignore) {}
         } catch (IOException e) {
             log.warn("No se pudo insertar logo {}: {}", resourcePath, e.getMessage(), e);
