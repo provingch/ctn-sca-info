@@ -561,11 +561,18 @@ public class PlanillaProcesoWorkbookBuilder {
             }
         }
 
+        // Debug: log month/task counts before computing final layout
+        int tareasPorMesSize = tareasPorMes == null ? 0 : tareasPorMes.size();
+        int taskColumnByIdSize = taskColumnById == null ? 0 : taskColumnById.size();
+        log.info("-- pre-compute: tareasPorMesSize={} taskColumnByIdSize={} monthBlocksSize={}", tareasPorMesSize, taskColumnByIdSize, monthBlocks.size());
+
         // Compute computed layout in a single deterministic pass. Leading
         // fixed column (if present) is the single source of truth for the
         // first-stage grade column. After initial placement, shift once if
         // the block would overlap instrument columns.
         ComputedLayout computed = computeComputedLayout(layout, nextAvailable, monthBlocks);
+        log.info("-- ComputedLayout: totalGeneral={} currentStage={} firstStage={} stageSum={} finalAvg={} comp={} reg={}",
+            computed.totalGeneralColumn(), computed.currentStageGradeColumn(), computed.firstStageGradeColumn(), computed.stageSumColumn(), computed.finalAverageColumn(), computed.complementaryColumn(), computed.regularizationColumn());
 
         // Ensure TP row contains numeric literal values for each instrument
         // (overwrite any leftover template formulas) and place Subtotal/Total
@@ -643,6 +650,30 @@ public class PlanillaProcesoWorkbookBuilder {
         // to avoid accidental overlap with instrument columns. If needed,
         // shift the computed layout to the right and then write labels.
         int lastInstrumentForFinals = monthBlocks.stream().mapToInt(mb -> mb == null ? layout.firstMonthColumn()-1 : mb.lastInstrumentCol()).max().orElse(layout.firstMonthColumn()-1);
+        // If no monthBlocks were discovered (e.g. template placeholders exist
+        // but no real tareas were mapped), fall back to scanning the title
+        // and TP rows for the rightmost non-empty instrument column so the
+        // final-columns block is always placed to the right of any visible
+        // instrument content the tests may detect.
+        if (lastInstrumentForFinals < layout.firstMonthColumn()) {
+            int scanRight = Math.max(nextAvailable, layout.firstMonthColumn() + 30);
+            int detected = lastInstrumentForFinals;
+            for (int c = layout.firstMonthColumn(); c < scanRight; c++) {
+                boolean has = false;
+                Row tr = sheet.getRow(INSTRUMENT_TITLE_ROW);
+                if (tr != null) {
+                    Cell cc = tr.getCell(c);
+                    if (cc != null && cc.getCellType() == CellType.STRING && !cc.getStringCellValue().isBlank()) has = true;
+                }
+                Row tpr = sheet.getRow(TP_ROW);
+                if (!has && tpr != null) {
+                    Cell cc = tpr.getCell(c);
+                    if (cc != null && (cc.getCellType() == CellType.STRING && !cc.getStringCellValue().isBlank() || cc.getCellType() == CellType.NUMERIC)) has = true;
+                }
+                if (has) detected = Math.max(detected, c);
+            }
+            lastInstrumentForFinals = Math.max(lastInstrumentForFinals, detected);
+        }
         int targetTotalStart = Math.max(computed.totalGeneralColumn(), lastInstrumentForFinals + 1);
         if (targetTotalStart != computed.totalGeneralColumn()) {
             int delta = targetTotalStart - computed.totalGeneralColumn();
@@ -690,6 +721,18 @@ public class PlanillaProcesoWorkbookBuilder {
                     }
                 }
                 sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, colIndex, colIndex));
+            }
+            // Ensure leading fixed first-stage column label is present for Stage 2
+            if (layout.leadingFixedColumn() >= 0) {
+                int fsCol = computed.firstStageGradeColumn();
+                String firstStageLabel = readTemplateLabel.apply(layout.leadingFixedColumn());
+                if (firstStageLabel == null || firstStageLabel.isBlank()) {
+                    firstStageLabel = "Calificación Final 1º Etapa";
+                }
+                setStringCell(getOrCreateCell(headerRow, fsCol), firstStageLabel);
+                try {
+                    sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, fsCol, fsCol));
+                } catch (Exception ignore) {}
             }
         } else {
             // fallback to previous behavior using template positions
@@ -1013,13 +1056,23 @@ public class PlanillaProcesoWorkbookBuilder {
         // previously introduced conditional paths created duplicate
         // header writes.
         int firstMonth = layout.firstMonthColumn();
-        int totalGeneral = nextAvailable;
-        int currentStageGrade = nextAvailable + 1;
+        // Ensure the computed final-column block starts to the right of the
+        // rightmost instrument column produced in monthBlocks. This avoids
+        // accidental overlap when month widths are larger than the template
+        // placeholders. Use nextAvailable as a lower bound.
+        int lastInstrument = monthBlocks == null || monthBlocks.isEmpty()
+            ? layout.firstMonthColumn() - 1
+            : monthBlocks.stream().mapToInt(mb -> mb == null ? layout.firstMonthColumn() - 1 : mb.lastInstrumentCol()).max().orElse(layout.firstMonthColumn() - 1);
+        log.info("-- computeComputedLayout: nextAvailable={} monthBlocks={} lastInstrument={}", nextAvailable, monthBlocks == null ? 0 : monthBlocks.size(), lastInstrument);
+        int baseStart = Math.max(nextAvailable, lastInstrument + 1);
+
+        int totalGeneral = baseStart;
+        int currentStageGrade = baseStart + 1;
         int firstStageGrade = layout.leadingFixedColumn() >= 0 ? layout.leadingFixedColumn() : -1;
-        int stageSum = nextAvailable + 2;
-        int finalAverage = nextAvailable + 3;
-        int complementary = nextAvailable + 4;
-        int regularization = nextAvailable + 5;
+        int stageSum = baseStart + 2;
+        int finalAverage = baseStart + 3;
+        int complementary = baseStart + 4;
+        int regularization = baseStart + 5;
 
         return new ComputedLayout(
                 firstMonth,
