@@ -389,6 +389,12 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
     ? HORARIOS_CATEDRA[indiceInicio + horasCatedra] ?? ''
     : '';
 
+  const totalAlumnos = data.rasgoAlumnosValidos.length;
+  const totalAusentes = data.rasgoAlumnosValidos.filter((alumno) => ausentes.includes(alumno.id)).length;
+  const totalPresentes = totalAlumnos - totalAusentes;
+  const porcentajeAsistencia = totalAlumnos > 0 ? Math.round((totalPresentes * 100) / totalAlumnos) : 0;
+  const porcentajeAusencia = totalAlumnos > 0 ? 100 - porcentajeAsistencia : 0;
+
   async function create(e: FormEvent) {
     e.preventDefault();
     if (!data.selCurso || !puedeIniciarClase) {
@@ -455,6 +461,10 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
             <button type="button" className="button secondary" id="clearButton" onClick={clearForm}>Limpiar formulario</button>
           </div>
           <div className="class-grid">
+            {asignacionesDisponibles.length > 1 && <div className="class-field class-field--full">
+              <label>Asignación</label>
+              <AnimatedSelect ariaLabel="Asignación de la clase" value={selectedAsignacionId ?? ''} placeholder="Seleccione asignación…" onChange={(value) => setSelectedAsignacionId(value ? Number(value) : null)} options={asignacionesDisponibles.map((a) => ({ value: a.id, label: a.materiaNombre ?? ('Asignación ' + a.id) }))} />
+            </div>}
             <div className="class-field">
               <label>Horario</label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
@@ -493,26 +503,6 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
               <textarea id="observacionesGenerales" rows={3} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Cualquier eventualidad general de la clase..." style={{ resize: 'none' }} />
             </div>
           </div>
-        </div>
-
-        <div className="class-card">
-          <h3>Plantilla de plan curricular</h3>
-          <p>Descargá la plantilla ya completada con los datos de tu asignación para completar los temas por mes.</p>
-          {asignacionesDisponibles.length === 0 ? <p>No hay asignaciones disponibles para este curso.</p> : (
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              {asignacionesDisponibles.length > 1 && (
-                <AnimatedSelect className="plan-template-assignment-select" ariaLabel="Asignación para la plantilla" value={selectedAsignacionId ?? ''} placeholder="Seleccione asignación…" onChange={(value) => setSelectedAsignacionId(value ? Number(value) : null)} options={asignacionesDisponibles.map((a) => ({ value: a.id, label: a.materiaNombre ?? `Asignación ${a.id}` }))} />
-              )}
-              <button type="button" className="button" disabled={!selectedAsignacionId} onClick={async () => {
-                if (!selectedAsignacionId) return;
-                try {
-                  await import('../../api/planCurricular').then((m) => m.downloadPlantilla(selectedAsignacionId));
-                } catch (err) {
-                  setStatus(err instanceof ApiError ? err.message : 'No se pudo descargar la plantilla.');
-                }
-              }}>Descargar plantilla de mi plan curricular</button>
-            </div>
-          )}
         </div>
 
         <div className="class-card">
@@ -573,6 +563,13 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
             </table>
           </div>
           <button type="button" className="button secondary" onClick={() => setShowCodeHelp(true)}>¿Qué significa cada código?</button>
+          <div className="attendance-summary" role="status" aria-live="polite" aria-atomic="true">
+            <strong>Resumen de asistencia</strong>
+            {totalAlumnos > 0 ? <>
+              <p>Presentes: <strong>{totalPresentes} de {totalAlumnos} ({porcentajeAsistencia}%)</strong> · Ausentes: <strong>{totalAusentes} ({porcentajeAusencia}%)</strong></p>
+              <small>Se actualiza al marcar ausentes. Incluye solo alumnos habilitados.</small>
+            </> : <p>No hay alumnos habilitados para calcular la asistencia.</p>}
+          </div>
         </div>
 
         {showCodeHelp && <div ref={codeHelpDialogRef} role="dialog" aria-modal="true" aria-labelledby="code-help-title" tabIndex={-1} style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'grid', placeItems: 'center', padding: 20, background: 'rgba(0, 0, 0, .55)' }} onClick={() => setShowCodeHelp(false)}>
@@ -582,19 +579,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
   |          </section>
         </div>}
 
-        <div className="class-card">
-          <h3>Reportes de asistencia</h3>
-          <div className="class-grid" style={{ gridTemplateColumns: '220px minmax(0,1fr)' }}>
-            <button type="button" className="button secondary" onClick={() => {
-              const aus = ausentes.length;
-              const total = data.rasgoAlumnosValidos.length;
-              const presentes = Math.max(total - aus, 0);
-              const porcentaje = total > 0 ? Math.round((presentes * 100) / total) : 0;
-              setStatus(`Total alumnos: ${total} | Presentes: ${presentes} | Ausentes: ${aus} | Asistencia: ${porcentaje}%`);
-            }}>Generar reporte de asistencia</button>
-            <div id="reportBox" className="empty-state empty-state-card" style={{ textAlign: 'left' }}>{status || 'Aún no hay resumen de asistencia.'}</div>
-          </div>
-        </div>
+        {status && <p className="notice" role="status">{status}</p>}
 
         <div className="class-card" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <button type="submit" className="button" disabled={!puedeIniciarClase}>Guardar inicio de clase</button>

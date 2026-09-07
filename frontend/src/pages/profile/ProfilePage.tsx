@@ -487,7 +487,7 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
       </section>
     )}
     {data.showSignaturePanel && (
-      <section className="panel form-grid">
+      <section className="panel form-grid signature-panel">
         <SectionHeading number={data.isProfessorProfile ? '05' : '04'} title="Firma del docente" detail="Se usa en la exportación y se limpia automáticamente si no hay dato." />
         {!isSignatureMobile && <div className="signature-box">
           <canvas ref={canvasRef} onPointerDown={drawStart} onPointerMove={drawMove} onPointerUp={finishDrawing} onPointerCancel={finishDrawing} />
