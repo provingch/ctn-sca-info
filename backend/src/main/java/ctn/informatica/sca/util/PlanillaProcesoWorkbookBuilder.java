@@ -704,7 +704,10 @@ public class PlanillaProcesoWorkbookBuilder {
 
         // final columns: write labels and clone styles from template's row 6 entries (if found)
         org.apache.poi.ss.usermodel.Workbook wb = sheet.getWorkbook();
-        clearDuplicateFinalHeaderLabels(headerRow, computed.totalGeneralColumn());
+        int trailingFinalColumnCount = finalColumnLabels.isEmpty()
+                ? Math.max(1, layout.trailingFixedColumns())
+                : finalColumnLabels.size();
+        clearDuplicateFinalHeaderLabels(headerRow, computed.totalGeneralColumn(), trailingFinalColumnCount);
         if (!finalColumnLabels.isEmpty()) {
             for (int i = 0; i < finalColumnLabels.size(); i++) {
                 int colIndex = computed.totalGeneralColumn + i;
@@ -1640,12 +1643,15 @@ public class PlanillaProcesoWorkbookBuilder {
         }
     }
 
-    private void clearDuplicateFinalHeaderLabels(Row headerRow, int expectedTotalGeneralColumn) {
-        if (headerRow == null) return;
+    private void clearDuplicateFinalHeaderLabels(Row headerRow, int expectedTotalGeneralColumn, int trailingFinalColumnCount) {
+        if (headerRow == null || trailingFinalColumnCount <= 0) return;
         try {
-            // Clear any legacy/duplicated labels that match known keywords
-            // except leave the cell at `expectedTotalGeneralColumn` untouched.
-            for (int c = 0; c < 400; c++) {
+            // Clear only the trailing final-columns block that is supposed to
+            // contain the stage summary labels (Total General + final-stage
+            // labels). Do not touch month subtotal labels that sit to the left.
+            int finalBlockStart = expectedTotalGeneralColumn;
+            int finalBlockEnd = expectedTotalGeneralColumn + trailingFinalColumnCount - 1;
+            for (int c = finalBlockStart; c <= finalBlockEnd; c++) {
                 if (c == expectedTotalGeneralColumn) continue;
                 Cell h = headerRow.getCell(c);
                 if (h == null || h.getCellType() != CellType.STRING) continue;

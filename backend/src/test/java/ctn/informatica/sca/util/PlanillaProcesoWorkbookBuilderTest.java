@@ -880,6 +880,60 @@ class PlanillaProcesoWorkbookBuilderTest {
     }
 
     @Test
+    void monthSubtotalHeadersRemainInHeaderRow_whenMultipleMonthsExist() throws IOException {
+        Planilla planilla = new Planilla(701, 1, 1, "comun", "Meses", 2026, "segunda", 7);
+        Tarea feb = new Tarea(); feb.setId(9001); feb.setFecha(LocalDate.of(2026, 2, 5)); feb.setTitulo("Feb"); feb.setTotal(10);
+        Tarea mar = new Tarea(); mar.setId(9002); mar.setFecha(LocalDate.of(2026, 3, 5)); mar.setTitulo("Mar"); mar.setTotal(12);
+        StudentRow s1 = new StudentRow(); s1.setAlumnoId(1); s1.setAlumnoNombre("A"); s1.setGrades(Map.of(9001,8,9002,9)); s1.setTotal(17);
+
+        PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                planilla,
+                new ctn.informatica.sca.model.Curso(701, "Informática", 2026, "A"),
+                "Meses",
+                "Profe",
+                "Mañana",
+                List.of(feb, mar),
+                List.of(s1),
+                Map.of(),
+                null
+        );
+
+        try (XSSFWorkbook workbook = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(data, "MultiMonthSubtotal")) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Row headerRow = sheet.getRow(5);
+            assertNotNull(headerRow, "Debe existir la fila de headers");
+
+            int subtotalCount = 0;
+            int totalGeneralCol = -1;
+            for (int c = 0; c <= headerRow.getLastCellNum(); c++) {
+                Cell cell = headerRow.getCell(c);
+                if (cell == null || cell.getCellType() != CellType.STRING) continue;
+                String value = cell.getStringCellValue();
+                if (value == null) continue;
+                String normalized = value.trim();
+                if (normalized.equalsIgnoreCase("Subtotal")) {
+                    subtotalCount++;
+                }
+                if (normalized.equalsIgnoreCase("Total General")) {
+                    totalGeneralCol = c;
+                }
+            }
+
+            assertTrue(subtotalCount >= 2, "Deben mantenerse los subtotales de cada mes en la fila de headers, encontrado=" + subtotalCount);
+            assertTrue(totalGeneralCol >= 0, "Debe existir la columna Total General en la fila de headers");
+
+            int subtotalBeforeTotalGeneral = 0;
+            for (int c = 0; c < totalGeneralCol; c++) {
+                Cell cell = headerRow.getCell(c);
+                if (cell != null && cell.getCellType() == CellType.STRING && "Subtotal".equalsIgnoreCase(cell.getStringCellValue().trim())) {
+                    subtotalBeforeTotalGeneral++;
+                }
+            }
+            assertTrue(subtotalBeforeTotalGeneral >= 2, "Los subtotales mensuales deben quedar antes de la cola final");
+        }
+    }
+
+    @Test
     void monthHeaderCellKeepsHorizontalRotationZero() throws IOException {
         Planilla planilla = new Planilla(202, 1, 1, "comun", "MesRotation", 2026, "primera", 7);
         Tarea may = new Tarea(); may.setId(9501); may.setFecha(LocalDate.of(2026, 5, 12)); may.setTitulo("Repaso"); may.setTotal(10);
