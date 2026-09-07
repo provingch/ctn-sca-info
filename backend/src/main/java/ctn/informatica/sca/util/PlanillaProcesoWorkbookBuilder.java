@@ -430,13 +430,22 @@ public class PlanillaProcesoWorkbookBuilder {
                     continue;
                 }
                 String normalized = v.trim().toLowerCase(Locale.ROOT);
-                if (normalized.contains("subtotal")) {
+                // Only skip the plain "Subtotal" label used by month blocks
+                // (fillMonthBlocks). A trailing final-block label like
+                // "Subtotal Etapa" IS part of this block and must be kept —
+                // a previous `.contains("subtotal")` check dropped it
+                // entirely, shifting every label written after it one
+                // column to the left of the data column it actually
+                // belongs to (computed.stageSumColumn() etc.).
+                if (normalized.equals("subtotal")) {
                     continue;
                 }
                 if (!normalized.equals("total general")
                         && !normalized.contains("calificación final")
                         && !normalized.contains("calificacion final")
                         && !normalized.contains("sumatoria")
+                        && !normalized.contains("subtotal")
+                        && !normalized.contains("promedio")
                         && !normalized.contains("complementar")
                         && !normalized.contains("regulariz")) {
                     continue;
@@ -583,17 +592,53 @@ public class PlanillaProcesoWorkbookBuilder {
         int taskColumnByIdSize = taskColumnById == null ? 0 : taskColumnById.size();
         log.info("-- pre-compute: tareasPorMesSize={} taskColumnByIdSize={} monthBlocksSize={}", tareasPorMesSize, taskColumnByIdSize, monthBlocks.size());
 
-        // Compute computed layout in a single deterministic pass. Leading
-        // fixed column (if present) is the single source of truth for the
-        // first-stage grade column. After initial placement, shift once if
-        // the block would overlap instrument columns.
-        ComputedLayout computed = computeComputedLayout(layout, nextAvailable, monthBlocks);
+        // Resolve the rightmost instrument column ONCE, merging the
+        // monthBlocks-derived value with the scanning fallback (for cases
+        // where template placeholders exist but no real tareas were mapped
+        // into monthBlocks). This single value is the only input used to
+        // place the trailing final-columns block; nothing below is allowed
+        // to shift it again after this point. A prior "compute, then shift
+        // later if it overlaps" design caused the TP-row Total General
+        // formula (written against the pre-shift position) and the header
+        // labels (written against the post-shift position) to disagree,
+        // producing "expected FORMULA but was BLANK" failures, and also
+        // made it possible for final labels to be written twice at two
+        // different positions across build attempts.
+        int lastInstrumentForFinals = monthBlocks.stream()
+                .mapToInt(mb -> mb == null ? layout.firstMonthColumn() - 1 : mb.lastInstrumentCol())
+                .max().orElse(layout.firstMonthColumn() - 1);
+        if (lastInstrumentForFinals < layout.firstMonthColumn()) {
+            int scanRight = Math.max(nextAvailable, layout.firstMonthColumn() + 30);
+            int detected = lastInstrumentForFinals;
+            for (int c = layout.firstMonthColumn(); c < scanRight; c++) {
+                boolean has = false;
+                Row tr = sheet.getRow(INSTRUMENT_TITLE_ROW);
+                if (tr != null) {
+                    Cell cc = tr.getCell(c);
+                    if (cc != null && cc.getCellType() == CellType.STRING && !cc.getStringCellValue().isBlank()) has = true;
+                }
+                Row tpr = sheet.getRow(TP_ROW);
+                if (!has && tpr != null) {
+                    Cell cc = tpr.getCell(c);
+                    if (cc != null && (cc.getCellType() == CellType.STRING && !cc.getStringCellValue().isBlank() || cc.getCellType() == CellType.NUMERIC)) has = true;
+                }
+                if (has) detected = Math.max(detected, c);
+            }
+            lastInstrumentForFinals = Math.max(lastInstrumentForFinals, detected);
+        }
+
+        // Compute the final layout EXACTLY ONCE, using the fully-resolved
+        // lastInstrumentForFinals. This value is never mutated again below.
+        final ComputedLayout computed = computeComputedLayout(layout, nextAvailable, lastInstrumentForFinals);
         log.info("-- ComputedLayout: totalGeneral={} currentStage={} firstStage={} stageSum={} finalAvg={} comp={} reg={}",
             computed.totalGeneralColumn(), computed.currentStageGradeColumn(), computed.firstStageGradeColumn(), computed.stageSumColumn(), computed.finalAverageColumn(), computed.complementaryColumn(), computed.regularizationColumn());
 
         // Ensure TP row contains numeric literal values for each instrument
         // (overwrite any leftover template formulas) and place Subtotal/Total
         // formulas on the TP row mirroring the pattern used for student rows.
+        // This now always runs AFTER `computed` is final, so the Total
+        // General TP formula lands in the same column as the header label
+        // written further below.
         Row tpRowRuntime = getOrCreateRow(sheet, TP_ROW);
         java.util.List<String> tpSubtotalAddresses = new java.util.ArrayList<>();
         for (Map.Entry<YearMonth, List<Tarea>> entry : tareasPorMes.entrySet()) {
@@ -638,12 +683,13 @@ public class PlanillaProcesoWorkbookBuilder {
             tpSubtotalAddresses.add(CellReference.convertNumToColString(subtotalCol) + excelRowIndex);
         }
 
-        // Total General on TP row: SUM of monthly subtotal TP cells
-            if (!tpSubtotalAddresses.isEmpty()) {
-                Cell totalTpCell = getOrCreateCell(getOrCreateRow(sheet, TP_ROW), computed.totalGeneralColumn());
-                totalTpCell.setCellFormula("SUM(" + String.join(",", tpSubtotalAddresses) + ")");
-                
-            }
+        // Total General on TP row: SUM of monthly subtotal TP cells.
+        // Uses the final `computed.totalGeneralColumn()` — same column the
+        // header label below will be written into.
+        if (!tpSubtotalAddresses.isEmpty()) {
+            Cell totalTpCell = getOrCreateCell(getOrCreateRow(sheet, TP_ROW), computed.totalGeneralColumn());
+            totalTpCell.setCellFormula("SUM(" + String.join(",", tpSubtotalAddresses) + ")");
+        }
 
         // Ensure final-column headers are written at their computed positions.
         // Read original header texts from template positions (if present) and
@@ -662,62 +708,6 @@ public class PlanillaProcesoWorkbookBuilder {
             }
             return null;
         };
-
-        // final columns: ensure they start to the right of the last instrument
-        // to avoid accidental overlap with instrument columns. If needed,
-        // shift the computed layout to the right and then write labels.
-        int lastInstrumentForFinals = monthBlocks.stream().mapToInt(mb -> mb == null ? layout.firstMonthColumn()-1 : mb.lastInstrumentCol()).max().orElse(layout.firstMonthColumn()-1);
-        // If no monthBlocks were discovered (e.g. template placeholders exist
-        // but no real tareas were mapped), fall back to scanning the title
-        // and TP rows for the rightmost non-empty instrument column so the
-        // final-columns block is always placed to the right of any visible
-        // instrument content the tests may detect.
-        if (lastInstrumentForFinals < layout.firstMonthColumn()) {
-            int scanRight = Math.max(nextAvailable, layout.firstMonthColumn() + 30);
-            int detected = lastInstrumentForFinals;
-            for (int c = layout.firstMonthColumn(); c < scanRight; c++) {
-                boolean has = false;
-                Row tr = sheet.getRow(INSTRUMENT_TITLE_ROW);
-                if (tr != null) {
-                    Cell cc = tr.getCell(c);
-                    if (cc != null && cc.getCellType() == CellType.STRING && !cc.getStringCellValue().isBlank()) has = true;
-                }
-                Row tpr = sheet.getRow(TP_ROW);
-                if (!has && tpr != null) {
-                    Cell cc = tpr.getCell(c);
-                    if (cc != null && (cc.getCellType() == CellType.STRING && !cc.getStringCellValue().isBlank() || cc.getCellType() == CellType.NUMERIC)) has = true;
-                }
-                if (has) detected = Math.max(detected, c);
-            }
-            lastInstrumentForFinals = Math.max(lastInstrumentForFinals, detected);
-        }
-        int targetTotalStart = Math.max(computed.totalGeneralColumn(), lastInstrumentForFinals + 1);
-        if (targetTotalStart != computed.totalGeneralColumn()) {
-            int delta = targetTotalStart - computed.totalGeneralColumn();
-            if (layout.leadingFixedColumn() >= 0) {
-                computed = new ComputedLayout(
-                        computed.firstMonthColumn(),
-                        computed.totalGeneralColumn() + delta,
-                        computed.currentStageGradeColumn() + delta,
-                        computed.firstStageGradeColumn(),
-                        computed.stageSumColumn() + delta,
-                        computed.finalAverageColumn() + delta,
-                        computed.complementaryColumn() + delta,
-                        computed.regularizationColumn() + delta
-                );
-            } else {
-                computed = new ComputedLayout(
-                        computed.firstMonthColumn(),
-                        computed.totalGeneralColumn() + delta,
-                        computed.currentStageGradeColumn() + delta,
-                        computed.firstStageGradeColumn() >= 0 ? computed.firstStageGradeColumn() + delta : -1,
-                        computed.stageSumColumn() + delta,
-                        computed.finalAverageColumn() + delta,
-                        computed.complementaryColumn() + delta,
-                        computed.regularizationColumn() + delta
-                );
-            }
-        }
 
         // final columns: write labels and clone styles from template's row 6 entries (if found)
         org.apache.poi.ss.usermodel.Workbook wb = sheet.getWorkbook();
@@ -1079,23 +1069,20 @@ public class PlanillaProcesoWorkbookBuilder {
         return Math.max(2, actualTasks + 2);
     }
 
-    private ComputedLayout computeComputedLayout(StageLayout layout, int nextAvailable, java.util.List<MonthBlock> monthBlocks) {
+    private ComputedLayout computeComputedLayout(StageLayout layout, int nextAvailable, int lastInstrumentForFinals) {
         // Deterministic single-pass computation of trailing columns.
         // Only `leadingFixedColumn` is treated as the authoritative
-        // location for the first-stage grade column. Do NOT perform any
-        // further "shift to avoid overlap" adjustments here — those
-        // previously introduced conditional paths created duplicate
-        // header writes.
+        // location for the first-stage grade column. This method is now
+        // called EXACTLY ONCE per sheet, after `lastInstrumentForFinals`
+        // has already been fully resolved (monthBlocks + any scanning
+        // fallback merged by the caller). Nothing downstream may shift
+        // the resulting ComputedLayout again — a later "shift to avoid
+        // overlap" pass previously caused header labels and TP-row
+        // formulas to be written against two different column positions,
+        // producing duplicate header labels and blank formula cells.
         int firstMonth = layout.firstMonthColumn();
-        // Ensure the computed final-column block starts to the right of the
-        // rightmost instrument column produced in monthBlocks. This avoids
-        // accidental overlap when month widths are larger than the template
-        // placeholders. Use nextAvailable as a lower bound.
-        int lastInstrument = monthBlocks == null || monthBlocks.isEmpty()
-            ? layout.firstMonthColumn() - 1
-            : monthBlocks.stream().mapToInt(mb -> mb == null ? layout.firstMonthColumn() - 1 : mb.lastInstrumentCol()).max().orElse(layout.firstMonthColumn() - 1);
-        log.info("-- computeComputedLayout: nextAvailable={} monthBlocks={} lastInstrument={}", nextAvailable, monthBlocks == null ? 0 : monthBlocks.size(), lastInstrument);
-        int baseStart = Math.max(nextAvailable, lastInstrument + 1);
+        int baseStart = Math.max(nextAvailable, lastInstrumentForFinals + 1);
+        log.info("-- computeComputedLayout: nextAvailable={} lastInstrumentForFinals={} baseStart={}", nextAvailable, lastInstrumentForFinals, baseStart);
 
         int totalGeneral = baseStart;
         int currentStageGrade = baseStart + 1;
@@ -1672,26 +1659,41 @@ public class PlanillaProcesoWorkbookBuilder {
     }
 
     private void clearDuplicateFinalHeaderLabels(Row headerRow, int expectedTotalGeneralColumn, int finalHeaderBlockEndColumn) {
-        if (headerRow == null || expectedTotalGeneralColumn < 0) return;
+        // Historical note: this used to only scan [expectedTotalGeneralColumn+1,
+        // finalHeaderBlockEndColumn]. That bounded scan repeatedly missed
+        // duplicate labels that ended up OUTSIDE that window whenever the
+        // computed block position differed between build attempts (template
+        // leftovers, a prior shift, etc.), which is exactly what produced the
+        // "Total General"/"Período Regularización" appearing twice failures.
+        //
+        // These keyword phrases ("total general", "calificación final",
+        // "sumatoria", "complementar", "regulariz") never legitimately appear
+        // in any other header cell (student number/name columns, instrument
+        // titles, or month labels), so it is always safe to scan the WHOLE
+        // header row and blank every occurrence before the canonical set is
+        // rewritten at its correct computed position immediately afterward.
+        // The literal "Subtotal" cell (month subtotal) is explicitly excluded
+        // and never touched here — but "Subtotal Etapa" (the trailing final
+        // label) IS one of the labels we must clear, since it belongs to the
+        // final block just like "Total General" or "Complementaria" and can
+        // otherwise be left duplicated at its old template position.
+        if (headerRow == null) return;
         try {
-            // Only clean the trailing final-columns block keyed by Total General.
-            // Month subtotal headers and the instrument region must remain before
-            // this anchor; if a template still carries duplicate summary labels to the
-            // right of the block, clear only those duplicates and leave the real
-            // month subtotal cells untouched.
-            int blockStart = expectedTotalGeneralColumn;
-            int blockEnd = Math.max(blockStart, finalHeaderBlockEndColumn);
-            for (int c = blockStart + 1; c <= blockEnd; c++) {
+            short last = headerRow.getLastCellNum();
+            int upperBound = (short) Math.max(last, Math.max(expectedTotalGeneralColumn, finalHeaderBlockEndColumn) + 1);
+            for (int c = 0; c < upperBound; c++) {
                 Cell h = headerRow.getCell(c);
                 if (h == null || h.getCellType() != CellType.STRING) continue;
                 String v = h.getStringCellValue();
                 if (v == null) continue;
                 String vl = v.trim().toLowerCase(Locale.ROOT);
-                if (vl.isEmpty() || vl.contains("subtotal")) continue;
+                if (vl.isEmpty() || vl.equals("subtotal")) continue;
                 if (vl.equals("total general")
                         || vl.contains("calificación final")
                         || vl.contains("calificacion final")
                         || vl.contains("sumatoria")
+                        || vl.contains("subtotal")
+                        || vl.contains("promedio")
                         || vl.contains("complementar")
                         || vl.contains("regulariz")) {
                     h.setBlank();
