@@ -835,6 +835,51 @@ class PlanillaProcesoWorkbookBuilderTest {
     }
 
     @Test
+    void etapa2_trailingHeaderLabels_areUnique_inHeaderRow() throws IOException {
+        Planilla planilla = new Planilla(700, 1, 1, "comun", "Etapa2", 2026, "segunda", 7);
+        Tarea t1 = new Tarea(); t1.setId(8001); t1.setFecha(LocalDate.of(2026, 2, 5)); t1.setTitulo("T1"); t1.setTotal(5);
+        StudentRow s1 = new StudentRow(); s1.setAlumnoId(1); s1.setAlumnoNombre("A"); s1.setGrades(Map.of(8001,5)); s1.setTotal(5);
+
+        PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                planilla,
+                new ctn.informatica.sca.model.Curso(700, "Informática", 2026, "A"),
+                "Etapa2",
+                "Profe",
+                "Mañana",
+                List.of(t1),
+                List.of(s1),
+                Map.of(),
+                null
+        );
+
+        try (XSSFWorkbook wb = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(data, "Etapa2-UniqueHeaders")) {
+            Sheet sheet = wb.getSheetAt(0);
+            Row headerRow = sheet.getRow(5); // MONTH_HEADER_ROW in builder
+            assertNotNull(headerRow, "Header row must exist");
+
+            String[] labels = new String[] {
+                    "Calificación Final 2º Etapa",
+                    "Sumatoria 1° y 2° Etapa",
+                    "Calificación Final",
+                    "Período Complementario",
+                    "Período Regularización"
+            };
+
+            for (String label : labels) {
+                int count = 0;
+                for (int c = 0; c <= headerRow.getLastCellNum(); c++) {
+                    Cell cell = headerRow.getCell(c);
+                    if (cell == null || cell.getCellType() != org.apache.poi.ss.usermodel.CellType.STRING) continue;
+                    String v = cell.getStringCellValue();
+                    if (v == null) continue;
+                    if (v.trim().equalsIgnoreCase(label.trim())) count++;
+                }
+                assertEquals(1, count, "Header label '" + label + "' must appear exactly once in header row, found=" + count);
+            }
+        }
+    }
+
+    @Test
     void monthHeaderCellKeepsHorizontalRotationZero() throws IOException {
         Planilla planilla = new Planilla(202, 1, 1, "comun", "MesRotation", 2026, "primera", 7);
         Tarea may = new Tarea(); may.setId(9501); may.setFecha(LocalDate.of(2026, 5, 12)); may.setTitulo("Repaso"); may.setTotal(10);
