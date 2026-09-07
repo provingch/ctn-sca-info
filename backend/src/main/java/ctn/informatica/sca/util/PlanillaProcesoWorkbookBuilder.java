@@ -79,6 +79,11 @@ public class PlanillaProcesoWorkbookBuilder {
     private static final float SIGNATURE_LABEL_ROW_HEIGHT = 15f;
     private static final Locale SPANISH = Locale.forLanguageTag("es-PY");
 
+    // Cache cloned styles per target workbook to avoid re-creating identical
+    // style objects repeatedly. Uses a WeakHashMap so entries for workbooks
+    // can be GC'd when the workbook is closed and no longer referenced.
+    private final java.util.Map<Workbook, java.util.Map<String, CellStyle>> perWorkbookTemplateStyleCache = new java.util.WeakHashMap<>();
+
         // Note: in v4 templates the authoritative final-column positions are
         // discovered at runtime by scanning the header for literal labels
         // (see finalColumnLabels). The numeric fields below are kept only as
@@ -1243,6 +1248,9 @@ public class PlanillaProcesoWorkbookBuilder {
 
             int firstCol = currentColumn;
 
+            // Keep track of the last title style applied so we can avoid
+            // producing identical styles for adjacent instrument columns.
+            CellStyle lastAppliedTitleStyle = null;
             for (int instrumentIndex = 0; instrumentIndex < tareasMes.size(); instrumentIndex++) {
                 int colIndex = firstCol + instrumentIndex;
                 Cell titleCell = getOrCreateCell(titleRow, colIndex);
@@ -1253,9 +1261,30 @@ public class PlanillaProcesoWorkbookBuilder {
                 // The previous implementation reused only the first column's style,
                 // which flattened all task cells to a single appearance.
                 org.apache.poi.ss.usermodel.Workbook wb = sheet.getWorkbook();
-                CellStyle titleTemplateStyle = cloneTemplateCellStyle(wb, templateSheet, INSTRUMENT_TITLE_ROW, layout.firstMonthColumn() + Math.max(0, colIndex - layout.firstMonthColumn()));
+                CellStyle titleTemplateStyle = cloneTemplateCellStyle(wb, layout.templateSheetName(), INSTRUMENT_TITLE_ROW, layout.firstMonthColumn() + Math.max(0, colIndex - layout.firstMonthColumn()));
                 if (titleTemplateStyle != null) {
+                    // Apply the template-derived style for this exact column.
+                    // The previous workaround that applied a visual "tweak"
+                    // when two styles compared equal has been removed; instead
+                    // we ensure per-column styles are cloned correctly from
+                    // the original template (see cloneTemplateCellStyle).
                     titleCell.setCellStyle(titleTemplateStyle);
+                    lastAppliedTitleStyle = titleTemplateStyle;
+                    // Diagnostic logging for early instrument columns to debug style equality
+                    try {
+                        if (colIndex >= layout.firstMonthColumn() && colIndex < layout.firstMonthColumn() + 6) {
+                            org.slf4j.LoggerFactory.getLogger(getClass()).info("titleStyle col={} fill={} pattern={} align={} vAlign={} borders LRTB={},{},{},{}",
+                                    colIndex,
+                                    titleTemplateStyle.getFillForegroundColor(),
+                                    titleTemplateStyle.getFillPattern(),
+                                    titleTemplateStyle.getAlignment(),
+                                    titleTemplateStyle.getVerticalAlignment(),
+                                    titleTemplateStyle.getBorderLeft(),
+                                    titleTemplateStyle.getBorderRight(),
+                                    titleTemplateStyle.getBorderTop(),
+                                    titleTemplateStyle.getBorderBottom());
+                        }
+                    } catch (Throwable ignore) {}
                 } else if (instrumentRefStyle != null) {
                     org.apache.poi.ss.usermodel.CellStyle cloned = wb.createCellStyle();
                     try { cloned.cloneStyleFrom(instrumentRefStyle); } catch (Exception ignore) {}
@@ -1264,7 +1293,7 @@ public class PlanillaProcesoWorkbookBuilder {
                     titleCell.setCellStyle(wb.createCellStyle());
                 }
 
-                CellStyle tpTemplateStyle = cloneTemplateCellStyle(wb, templateSheet, TP_ROW, layout.firstMonthColumn() + Math.max(0, colIndex - layout.firstMonthColumn()));
+                CellStyle tpTemplateStyle = cloneTemplateCellStyle(wb, layout.templateSheetName(), TP_ROW, layout.firstMonthColumn() + Math.max(0, colIndex - layout.firstMonthColumn()));
                 if (tpTemplateStyle != null) {
                     tpCell.setCellStyle(tpTemplateStyle);
                 } else if (tpRefStyle != null) {
@@ -1297,7 +1326,7 @@ public class PlanillaProcesoWorkbookBuilder {
                 Cell blankTitle = getOrCreateCell(titleRow, colIndex);
                 Cell blankTp = getOrCreateCell(tpRow, colIndex);
                 org.apache.poi.ss.usermodel.Workbook wb = sheet.getWorkbook();
-                CellStyle blankTitleTemplateStyle = cloneTemplateCellStyle(wb, templateSheet, INSTRUMENT_TITLE_ROW, layout.firstMonthColumn() + Math.max(0, colIndex - layout.firstMonthColumn()));
+                CellStyle blankTitleTemplateStyle = cloneTemplateCellStyle(wb, layout.templateSheetName(), INSTRUMENT_TITLE_ROW, layout.firstMonthColumn() + Math.max(0, colIndex - layout.firstMonthColumn()));
                 if (blankTitleTemplateStyle != null) {
                     blankTitle.setCellStyle(blankTitleTemplateStyle);
                 } else if (instrumentRefStyle != null) {
@@ -1308,7 +1337,7 @@ public class PlanillaProcesoWorkbookBuilder {
                     blankTitle.setCellStyle(wb.createCellStyle());
                 }
 
-                CellStyle blankTpTemplateStyle = cloneTemplateCellStyle(wb, templateSheet, TP_ROW, layout.firstMonthColumn() + Math.max(0, colIndex - layout.firstMonthColumn()));
+                CellStyle blankTpTemplateStyle = cloneTemplateCellStyle(wb, layout.templateSheetName(), TP_ROW, layout.firstMonthColumn() + Math.max(0, colIndex - layout.firstMonthColumn()));
                 if (blankTpTemplateStyle != null) {
                     blankTp.setCellStyle(blankTpTemplateStyle);
                 } else if (tpRefStyle != null) {
@@ -1878,33 +1907,123 @@ public class PlanillaProcesoWorkbookBuilder {
         }
     }
 
-    private CellStyle cloneTemplateCellStyle(Workbook workbook, XSSFSheet templateSheet, int rowIndex, int templateColumnIndex) {
-        if (workbook == null || templateSheet == null) {
+    private CellStyle cloneTemplateCellStyle(Workbook workbook, String templateSheetName, int rowIndex, int templateColumnIndex) {
+        if (workbook == null || templateSheetName == null) {
             return null;
         }
-        Row templateRow = templateSheet.getRow(rowIndex);
-        if (templateRow == null) {
-            return null;
+
+        String key = templateSheetName + "|" + rowIndex + "|" + templateColumnIndex;
+        // Check per-workbook cache first
+        synchronized (perWorkbookTemplateStyleCache) {
+            java.util.Map<String, CellStyle> map = perWorkbookTemplateStyleCache.get(workbook);
+            if (map != null && map.containsKey(key)) {
+                return map.get(key);
+            }
         }
-        Cell templateCell = templateRow.getCell(templateColumnIndex);
-        if (templateCell == null || templateCell.getCellStyle() == null) {
-            return null;
-        }
-        CellStyle cloned = workbook.createCellStyle();
+
+        // Prefer to read the template sheet that was already copied into the
+        // target `workbook`. This preserves the `cellXfs` entries the copy
+        // step created and avoids cross-workbook normalization.
         try {
-            cloned.cloneStyleFrom(templateCell.getCellStyle());
-            return cloned;
-        } catch (Exception ignore) {
+            org.apache.poi.ss.usermodel.Sheet localTemplate = workbook.getSheet(templateSheetName);
+            if (localTemplate != null) {
+                Row templateRowLocal = localTemplate.getRow(rowIndex);
+                if (templateRowLocal != null) {
+                    Cell templateCellLocal = templateRowLocal.getCell(templateColumnIndex);
+                    // Try to find a nearby styled cell when exact slot missing
+                    if (templateCellLocal == null || templateCellLocal.getCellStyle() == null) {
+                        short last = templateRowLocal.getLastCellNum();
+                        int found = -1;
+                        for (int d = 1; d <= 8; d++) {
+                            int left = templateColumnIndex - d;
+                            if (left >= 0) {
+                                Cell c = templateRowLocal.getCell(left);
+                                if (c != null && c.getCellStyle() != null) { found = left; break; }
+                            }
+                            int right = templateColumnIndex + d;
+                            if (right >= 0 && right < last) {
+                                Cell c = templateRowLocal.getCell(right);
+                                if (c != null && c.getCellStyle() != null) { found = right; break; }
+                            }
+                        }
+                        if (found >= 0) templateCellLocal = templateRowLocal.getCell(found);
+                    }
+                    if (templateCellLocal != null && templateCellLocal.getCellStyle() != null) {
+                        CellStyle newStyle = workbook.createCellStyle();
+                        try { newStyle.cloneStyleFrom(templateCellLocal.getCellStyle()); } catch (Throwable ignore) {}
+                        synchronized (perWorkbookTemplateStyleCache) {
+                            java.util.Map<String, CellStyle> map = perWorkbookTemplateStyleCache.get(workbook);
+                            if (map == null) { map = new java.util.HashMap<>(); perWorkbookTemplateStyleCache.put(workbook, map); }
+                            map.put(key, newStyle);
+                        }
+                        return newStyle;
+                    }
+                }
+            }
+        } catch (Throwable ignore) {}
+
+        // Fallback: open the original template workbook and clone the style
+        XSSFWorkbook original = null;
+        try {
+            original = loadTemplateWorkbook();
+            XSSFSheet origSheet = original.getSheet(templateSheetName);
+            if (origSheet == null) return null;
+            Row templateRow = origSheet.getRow(rowIndex);
+            if (templateRow == null) return null;
+            Cell templateCell = templateRow.getCell(templateColumnIndex);
+
+            // If exact cell not present, try to locate a nearby styled cell
+            if (templateCell == null || templateCell.getCellStyle() == null) {
+                short last = templateRow.getLastCellNum();
+                int found = -1;
+                for (int d = 1; d <= 8; d++) {
+                    int left = templateColumnIndex - d;
+                    if (left >= 0) {
+                        Cell c = templateRow.getCell(left);
+                        if (c != null && c.getCellStyle() != null) { found = left; break; }
+                    }
+                    int right = templateColumnIndex + d;
+                    if (right < last) {
+                        Cell c = templateRow.getCell(right);
+                        if (c != null && c.getCellStyle() != null) { found = right; break; }
+                    }
+                }
+                if (found >= 0) templateCell = templateRow.getCell(found);
+            }
+
+            if (templateCell == null || templateCell.getCellStyle() == null) return null;
+
+            CellStyle newStyle = workbook.createCellStyle();
+            try { newStyle.cloneStyleFrom(templateCell.getCellStyle()); } catch (Throwable ignore) {}
+
+            synchronized (perWorkbookTemplateStyleCache) {
+                java.util.Map<String, CellStyle> map = perWorkbookTemplateStyleCache.get(workbook);
+                if (map == null) { map = new java.util.HashMap<>(); perWorkbookTemplateStyleCache.put(workbook, map); }
+                map.put(key, newStyle);
+            }
+            return newStyle;
+        } catch (IOException ioe) {
             return null;
+        } finally {
+            try { if (original != null) original.close(); } catch (Throwable ignore) {}
         }
     }
 
     private CellStyle mergeStyle(Workbook workbook, CellStyle baseStyle, CellStyle overlayStyle) {
         CellStyle merged = cloneStyle(workbook, baseStyle);
         if (overlayStyle == null) return merged;
+
+        // Preserve the template's own alignment/border metadata and only apply the
+        // visual overlay for the background fill so we don't flatten the task/month
+        // cell definitions from the template. This keeps month/task/subtotal cells
+        // visually distinct instead of letting a generic block style overwrite them.
         merged.setFillForegroundColor(overlayStyle.getFillForegroundColor());
-        merged.setFillBackgroundColor(overlayStyle.getFillForegroundColor());
+        merged.setFillBackgroundColor(overlayStyle.getFillBackgroundColor());
         merged.setFillPattern(overlayStyle.getFillPattern());
+        if (baseStyle != null) {
+            merged.setAlignment(baseStyle.getAlignment());
+            merged.setVerticalAlignment(baseStyle.getVerticalAlignment());
+        }
         return merged;
     }
 
@@ -1913,6 +2032,21 @@ public class PlanillaProcesoWorkbookBuilder {
         CellStyle cloned = workbook.createCellStyle();
         cloned.cloneStyleFrom(style);
         return cloned;
+    }
+
+    // Compare a subset of style attributes used by the unit test for equality.
+    private boolean sameCellStyleForTest(CellStyle a, CellStyle b) {
+        if (a == b) return true;
+        if (a == null || b == null) return false;
+        return a.getFillPattern() == b.getFillPattern()
+                && a.getFillForegroundColor() == b.getFillForegroundColor()
+                && a.getFillBackgroundColor() == b.getFillBackgroundColor()
+                && a.getAlignment() == b.getAlignment()
+                && a.getVerticalAlignment() == b.getVerticalAlignment()
+                && a.getBorderLeft() == b.getBorderLeft()
+                && a.getBorderRight() == b.getBorderRight()
+                && a.getBorderTop() == b.getBorderTop()
+                && a.getBorderBottom() == b.getBorderBottom();
     }
 
     private void setCenterAlignment(Workbook workbook, Cell cell) {
@@ -1953,125 +2087,34 @@ public class PlanillaProcesoWorkbookBuilder {
             int pictureIdx = workbook.addPicture(bytes, Workbook.PICTURE_TYPE_PNG);
             Drawing<?> drawing = sheet.createDrawingPatriarch();
 
-            java.awt.image.BufferedImage img = null;
+            BufferedImage img = null;
             try (InputStream is2 = getClass().getResourceAsStream(resourcePath)) {
-                img = javax.imageio.ImageIO.read(is2);
+                img = ImageIO.read(is2);
             } catch (Throwable ignore) {
             }
 
-            // Compute available pixel area inside the provided cell-box
-            int availW = 0;
-            for (int c = col1; c < Math.max(col2, col1 + 1); c++) {
-                try {
-                    // Prefer POI's utility conversion to pixels when available (use reflection
-                    // so code compiles on multiple POI versions).
-                    Class<?> su = Class.forName("org.apache.poi.ss.util.SheetUtil");
-                    java.lang.reflect.Method m = su.getMethod("getColumnWidthInPixels", org.apache.poi.ss.usermodel.Sheet.class, int.class);
-                    Object pxObj = m.invoke(null, (org.apache.poi.ss.usermodel.Sheet) sheet, c);
-                    int px = pxObj == null ? 0 : ((Number) pxObj).intValue();
-                    availW += px;
-                } catch (Throwable t) {
-                    try { int cw = sheet.getColumnWidth(c); double chars = cw / 256.0; availW += Math.round(chars * 7.5); } catch (Throwable ignore) { availW += 70; }
-                }
-            }
-            int availH = 0;
-            for (int r = row1; r < Math.max(row2, row1 + 1); r++) {
-                Row rr = sheet.getRow(r);
-                double pts = rr == null ? sheet.getDefaultRowHeightInPoints() : rr.getHeightInPoints();
-                availH += Math.round(pts * 96.0 / 72.0);
-            }
-            if (availW <= 0) availW = 160;
-            if (availH <= 0) availH = 64;
-
-            // If we have image native pixels, compute a scale that fits both dimensions
-            double finalPixelW;
-            double finalPixelH;
-            if (img == null) {
-                finalPixelW = Math.max(100, (int) Math.round(availW * 0.8));
-                finalPixelH = Math.max(40, (int) Math.round(availH * 0.8));
-            } else {
-                double sx = availW / (double) img.getWidth();
-                double sy = availH / (double) img.getHeight();
-                double scale = Math.min(Math.min(sx, sy), 1.0) * 0.95;
-                double computedW = Math.round(img.getWidth() * scale);
-                // Enforce a reasonable minimum visual width (but never exceed native width)
-                int minVisualWidth = Math.min(img.getWidth(), 180);
-                finalPixelW = (int) Math.max(computedW, minVisualWidth);
-                // Compute height preserving aspect ratio
-                finalPixelH = (int) Math.round(finalPixelW * ((double) img.getHeight() / img.getWidth()));
-            }
-
-            // Expand columns until we have enough room; compute remainder in last column
-            int accum = 0; int endCol = col1; int lastColWidth = 0; int sumBeforeLast = 0;
-            while (accum < finalPixelW) {
-                try { int cw = sheet.getColumnWidth(endCol); double chars = cw / 256.0; int px = (int) Math.round(chars * 7.0); lastColWidth = px; sumBeforeLast = accum; accum += px; } catch (Throwable ignore) { lastColWidth = 70; sumBeforeLast = accum; accum += 70; }
-                endCol++;
-                if (endCol > col1 + 50) break;
-            }
-            int dx2px = (int) Math.max(0, Math.min(lastColWidth, Math.round(finalPixelW - sumBeforeLast)));
-            if (dx2px == 0 && accum > 0) {
-                dx2px = Math.min((int) Math.round(finalPixelW), accum);
-            }
-
-            // Expand rows until we have enough room; compute remainder in last row
-            int accumR = 0; int endRow = row1; int lastRowPx = 0; int sumBeforeLastR = 0;
-            while (accumR < finalPixelH) {
-                Row rr = sheet.getRow(endRow);
-                double pts = rr == null ? sheet.getDefaultRowHeightInPoints() : rr.getHeightInPoints();
-                int px = (int) Math.round(pts * 96.0 / 72.0);
-                lastRowPx = px; sumBeforeLastR = accumR; accumR += px;
-                endRow++;
-                if (endRow > row1 + 50) break;
-            }
-            int dy2px = (int) Math.max(0, Math.min(lastRowPx, Math.round(finalPixelH - sumBeforeLastR)));
-            if (dy2px == 0 && accumR > 0) {
-                dy2px = Math.min((int) Math.round(finalPixelH), accumR);
-            }
-
-            // Use total anchor pixel span (sum before last + remainder)
-            long emuX = org.apache.poi.util.Units.pixelToEMU(sumBeforeLast + dx2px);
-            long emuY = org.apache.poi.util.Units.pixelToEMU(sumBeforeLastR + dy2px);
-
-            // Logging: native image size, target (final) pixels and anchor EMU
-            try {
-                log.info("insertLogo: resource={} nativePx={}x{} availPx={}x{} finalPx={}x{} anchorEnd={}x{} dx2px={} dy2px={} emuX={} emuY={}",
-                        resourcePath,
-                        img == null ? -1 : img.getWidth(), img == null ? -1 : img.getHeight(),
-                        availW, availH,
-                        (int) finalPixelW, (int) finalPixelH,
-                        endCol, endRow,
-                        dx2px, dy2px,
-                        emuX, emuY);
-            } catch (Throwable ignore) {
+            // Keep the logo bounded to a single target cell; do not let the block
+            // width expand dynamically and distort the logo or make it appear clipped.
+            int targetWidthPx = img == null ? 120 : Math.min(img.getWidth(), 130);
+            int targetHeightPx = img == null ? 48 : Math.min(img.getHeight(), 52);
+            if (img != null) {
+                double scale = Math.min(1.0, Math.min(((double) targetWidthPx / img.getWidth()), ((double) targetHeightPx / img.getHeight())));
+                targetWidthPx = (int) Math.round(img.getWidth() * scale);
+                targetHeightPx = (int) Math.round(img.getHeight() * scale);
             }
 
             XSSFClientAnchor anchor = (XSSFClientAnchor) workbook.getCreationHelper().createClientAnchor();
             anchor.setCol1(col1);
             anchor.setRow1(row1);
-            anchor.setCol2(Math.max(col2, endCol));
-            anchor.setRow2(Math.max(row2, endRow));
+            anchor.setCol2(Math.max(col1 + 1, Math.min(col2, col1 + 1)));
+            anchor.setRow2(Math.max(row1 + 1, Math.min(row2, row1 + 1)));
             anchor.setAnchorType(ClientAnchor.AnchorType.MOVE_AND_RESIZE);
             anchor.setDx1(0);
             anchor.setDy1(0);
-            // Use the final pixel remainder converted to EMU for Dx2/Dy2 so the
-            // anchor's in-cell extents reflect the intended final image size.
-            anchor.setDx2((int) Math.min(Integer.MAX_VALUE, emuX));
-            anchor.setDy2((int) Math.min(Integer.MAX_VALUE, emuY));
+            anchor.setDx2(org.apache.poi.util.Units.pixelToEMU(targetWidthPx));
+            anchor.setDy2(org.apache.poi.util.Units.pixelToEMU(targetHeightPx));
 
-            // Create picture and DO NOT call resize() — we control final extents
-            // through the anchor to avoid POI's internal adjustments that were
-            // causing mismatched aspect ratios in previous runs.
-            org.apache.poi.ss.usermodel.Picture pict = drawing.createPicture(anchor, pictureIdx);
-
-            // Log computed final EMU extents based on image native pixels
-            if (img != null) {
-                double scaleW = finalPixelW / (double) img.getWidth();
-                double scaleH = finalPixelH / (double) img.getHeight();
-                double usedScale = Math.min(Math.min(scaleW, scaleH), 1.0);
-                long finalCx = org.apache.poi.util.Units.pixelToEMU((int) Math.round(img.getWidth() * usedScale));
-                long finalCy = org.apache.poi.util.Units.pixelToEMU((int) Math.round(img.getHeight() * usedScale));
-                try { log.info("insertLogo: final ext (EMU) cx={} cy={} -> px {}x{} scale={}", finalCx, finalCy, finalCx / 9525.0, finalCy / 9525.0, usedScale); } catch (Throwable ignore) {}
-            }
+            drawing.createPicture(anchor, pictureIdx);
         } catch (IOException e) {
             log.warn("No se pudo insertar logo {}: {}", resourcePath, e.getMessage(), e);
         }
