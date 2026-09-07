@@ -412,20 +412,37 @@ public class PlanillaProcesoWorkbookBuilder {
             }
         }
 
-        // Build ordered list of final-column definitions (text + template cell) starting at templateTotalGeneralCol
+        // Build ordered list of final-column definitions (text + template cell)
+        // starting at the official Total General anchor, but only keep labels that
+        // belong to the trailing summary block. Month subtotal cells are never part
+        // of this block and must not be treated as final summary labels.
         java.util.List<String> finalColumnLabels = new java.util.ArrayList<>();
         java.util.List<Cell> finalColumnTemplateCells = new java.util.ArrayList<>();
         if (templateHeaderRow != null && templateTotalGeneralCol != null) {
             int last = templateHeaderRow.getLastCellNum();
             for (int c = templateTotalGeneralCol; c < last; c++) {
                 Cell tc = templateHeaderRow.getCell(c);
-                if (tc != null && tc.getCellType() == CellType.STRING) {
-                    String v = tc.getStringCellValue();
-                    if (v != null && !v.trim().isBlank()) {
-                        finalColumnLabels.add(v.trim());
-                        finalColumnTemplateCells.add(tc);
-                    }
+                if (tc == null || tc.getCellType() != CellType.STRING) {
+                    continue;
                 }
+                String v = tc.getStringCellValue();
+                if (v == null || v.trim().isBlank()) {
+                    continue;
+                }
+                String normalized = v.trim().toLowerCase(Locale.ROOT);
+                if (normalized.contains("subtotal")) {
+                    continue;
+                }
+                if (!normalized.equals("total general")
+                        && !normalized.contains("calificación final")
+                        && !normalized.contains("calificacion final")
+                        && !normalized.contains("sumatoria")
+                        && !normalized.contains("complementar")
+                        && !normalized.contains("regulariz")) {
+                    continue;
+                }
+                finalColumnLabels.add(v.trim());
+                finalColumnTemplateCells.add(tc);
             }
         }
 
@@ -704,10 +721,17 @@ public class PlanillaProcesoWorkbookBuilder {
 
         // final columns: write labels and clone styles from template's row 6 entries (if found)
         org.apache.poi.ss.usermodel.Workbook wb = sheet.getWorkbook();
-        int trailingFinalColumnCount = finalColumnLabels.isEmpty()
-                ? Math.max(1, layout.trailingFixedColumns())
-                : finalColumnLabels.size();
-        clearDuplicateFinalHeaderLabels(headerRow, computed.totalGeneralColumn(), trailingFinalColumnCount);
+        int headerRightEdge = scanLastUsedColumn(sheet, new int[]{MONTH_HEADER_ROW});
+        int finalHeaderBlockEnd = Math.max(
+                computed.totalGeneralColumn(),
+                Math.max(
+                        layout.leadingFixedColumn() >= 0
+                                ? computed.regularizationColumn()
+                                : computed.currentStageGradeColumn(),
+                        headerRightEdge >= 0 ? headerRightEdge : -1
+                )
+        );
+        clearDuplicateFinalHeaderLabels(headerRow, computed.totalGeneralColumn(), finalHeaderBlockEnd);
         if (!finalColumnLabels.isEmpty()) {
             for (int i = 0; i < finalColumnLabels.size(); i++) {
                 int colIndex = computed.totalGeneralColumn + i;
@@ -826,11 +850,15 @@ public class PlanillaProcesoWorkbookBuilder {
         // templates that do not include these labels.
         int lastRealColumn;
         if (!finalColumnLabels.isEmpty()) {
-            lastRealColumn = scanLastUsedColumn(sheet, new int[]{MONTH_HEADER_ROW});
+            // Prefer a conservative right-edge detection: header row is preferred
+            // when templates provide finalColumnLabels, but fall back to scanning
+            // instrument/TP/student rows as well so we don't accidentally treat
+            // a missing header label as the true right edge and remove formulas.
+            lastRealColumn = scanLastUsedColumn(sheet, new int[]{MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, TP_ROW, FIRST_STUDENT_ROW});
             if (lastRealColumn < 0) {
                 lastRealColumn = computed.totalGeneralColumn() + finalColumnLabels.size() - 1;
             }
-            } else if (layout.leadingFixedColumn() >= 0) {
+        } else if (layout.leadingFixedColumn() >= 0) {
             lastRealColumn = scanLastUsedColumn(sheet, new int[]{MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, TP_ROW, FIRST_STUDENT_ROW});
             if (lastRealColumn < 0) {
                 lastRealColumn = computed.regularizationColumn();
@@ -1643,28 +1671,29 @@ public class PlanillaProcesoWorkbookBuilder {
         }
     }
 
-    private void clearDuplicateFinalHeaderLabels(Row headerRow, int expectedTotalGeneralColumn, int trailingFinalColumnCount) {
-        if (headerRow == null || trailingFinalColumnCount <= 0) return;
+    private void clearDuplicateFinalHeaderLabels(Row headerRow, int expectedTotalGeneralColumn, int finalHeaderBlockEndColumn) {
+        if (headerRow == null || expectedTotalGeneralColumn < 0) return;
         try {
-            // Clear only the trailing final-columns block that is supposed to
-            // contain the stage summary labels (Total General + final-stage
-            // labels). Do not touch month subtotal labels that sit to the left.
-            int finalBlockStart = expectedTotalGeneralColumn;
-            int finalBlockEnd = expectedTotalGeneralColumn + trailingFinalColumnCount - 1;
-            for (int c = finalBlockStart; c <= finalBlockEnd; c++) {
-                if (c == expectedTotalGeneralColumn) continue;
+            // Only clean the trailing final-columns block keyed by Total General.
+            // Month subtotal headers and the instrument region must remain before
+            // this anchor; if a template still carries duplicate summary labels to the
+            // right of the block, clear only those duplicates and leave the real
+            // month subtotal cells untouched.
+            int blockStart = expectedTotalGeneralColumn;
+            int blockEnd = Math.max(blockStart, finalHeaderBlockEndColumn);
+            for (int c = blockStart + 1; c <= blockEnd; c++) {
                 Cell h = headerRow.getCell(c);
                 if (h == null || h.getCellType() != CellType.STRING) continue;
                 String v = h.getStringCellValue();
                 if (v == null) continue;
-                String vl = v.trim().toLowerCase();
-                if (vl.isEmpty()) continue;
+                String vl = v.trim().toLowerCase(Locale.ROOT);
+                if (vl.isEmpty() || vl.contains("subtotal")) continue;
                 if (vl.equals("total general")
-                        || vl.contains("calific") // covers 'calificación' and 'calificacion' and 'calificacion final'
+                        || vl.contains("calificación final")
+                        || vl.contains("calificacion final")
                         || vl.contains("sumatoria")
                         || vl.contains("complementar")
-                        || vl.contains("regulariz")
-                        || vl.contains("subtotal")) {
+                        || vl.contains("regulariz")) {
                     h.setBlank();
                 }
             }
