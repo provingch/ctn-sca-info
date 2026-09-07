@@ -114,7 +114,7 @@ export default function PlanillaPage() {
                 console.warn('etapaSugerida mismatch between initial and resolved planilla', { initialId: id, resolvedId: resolved.planillaId, initialSuggested: suggestedEtapa, resolvedSuggested: suggestedFromResolved });
                 setStatus('Advertencia: la etapa sugerida difiere entre respuestas (ver consola).');
               }
-            } catch (e) {
+            } catch {
               // no bloqueante: si falla el fetch comparativo seguimos y navegamos
               // para mostrar la planilla resuelta.
             }
