@@ -561,66 +561,11 @@ public class PlanillaProcesoWorkbookBuilder {
             }
         }
 
-        // When the template exposes a leading fixed column for first-stage
-        // grades (e.g. etapa 2 where that grade sits at col C), that column
-        // is not part of the computed trailing block. Therefore the computed
-        // trailing offsets must be one column left compared to the case where
-        // the first-stage grade is appended after the months.
-        ComputedLayout computed;
-        if (layout.leadingFixedColumn() >= 0) {
-            ComputedLayout tmp = new ComputedLayout(
-                    layout.firstMonthColumn(),
-                    nextAvailable,           // totalGeneralColumn
-                    nextAvailable + 1,       // currentStageGradeColumn
-                    layout.leadingFixedColumn(), // firstStageGradeColumn (explicit from template)
-                    nextAvailable + 2,       // stageSumColumn (shifted left by 1)
-                    nextAvailable + 3,       // finalAverageColumn
-                    nextAvailable + 4,       // complementaryColumn
-                    nextAvailable + 5        // regularizationColumn
-            );
-            computed = tmp;
-        } else {
-            computed = new ComputedLayout(
-                    layout.firstMonthColumn(),
-                    nextAvailable,           // totalGeneralColumn
-                    nextAvailable + 1,       // currentStageGradeColumn
-                    layout.firstStageGradeColumn() >= 0 ? nextAvailable + 2 : -1, // firstStageGradeColumn
-                    nextAvailable + 3,       // stageSumColumn
-                    nextAvailable + 4,       // finalAverageColumn
-                    nextAvailable + 5,       // complementaryColumn
-                    nextAvailable + 6        // regularizationColumn
-            );
-        }
-
-        // Adjust computed layout if it would overlap instruments: ensure final
-        // columns are placed to the right of the last instrument column.
-        int lastInstrumentGlobal = monthBlocks.stream().mapToInt(mb -> mb == null ? layout.firstMonthColumn()-1 : mb.lastInstrumentCol()).max().orElse(layout.firstMonthColumn()-1);
-        if (computed.totalGeneralColumn() <= lastInstrumentGlobal) {
-            int shift = lastInstrumentGlobal - computed.totalGeneralColumn() + 1;
-            if (layout.leadingFixedColumn() >= 0) {
-                computed = new ComputedLayout(
-                        computed.firstMonthColumn(),
-                        computed.totalGeneralColumn() + shift,
-                        computed.currentStageGradeColumn() + shift,
-                        computed.firstStageGradeColumn(),
-                        computed.stageSumColumn() + shift,
-                        computed.finalAverageColumn() + shift,
-                        computed.complementaryColumn() + shift,
-                        computed.regularizationColumn() + shift
-                );
-            } else {
-                computed = new ComputedLayout(
-                        computed.firstMonthColumn(),
-                        computed.totalGeneralColumn() + shift,
-                        computed.currentStageGradeColumn() + shift,
-                        computed.firstStageGradeColumn() >= 0 ? computed.firstStageGradeColumn() + shift : -1,
-                        computed.stageSumColumn() + shift,
-                        computed.finalAverageColumn() + shift,
-                        computed.complementaryColumn() + shift,
-                        computed.regularizationColumn() + shift
-                );
-            }
-        }
+        // Compute computed layout in a single deterministic pass. Leading
+        // fixed column (if present) is the single source of truth for the
+        // first-stage grade column. After initial placement, shift once if
+        // the block would overlap instrument columns.
+        ComputedLayout computed = computeComputedLayout(layout, nextAvailable, monthBlocks);
 
         // Ensure TP row contains numeric literal values for each instrument
         // (overwrite any leftover template formulas) and place Subtotal/Total
@@ -1058,6 +1003,34 @@ public class PlanillaProcesoWorkbookBuilder {
     private int monthBlockWidth(List<Tarea> tareasMes) {
         int actualTasks = tareasMes == null ? 0 : tareasMes.size();
         return Math.max(2, actualTasks + 2);
+    }
+
+    private ComputedLayout computeComputedLayout(StageLayout layout, int nextAvailable, java.util.List<MonthBlock> monthBlocks) {
+        // Deterministic single-pass computation of trailing columns.
+        // Only `leadingFixedColumn` is treated as the authoritative
+        // location for the first-stage grade column. Do NOT perform any
+        // further "shift to avoid overlap" adjustments here — those
+        // previously introduced conditional paths created duplicate
+        // header writes.
+        int firstMonth = layout.firstMonthColumn();
+        int totalGeneral = nextAvailable;
+        int currentStageGrade = nextAvailable + 1;
+        int firstStageGrade = layout.leadingFixedColumn() >= 0 ? layout.leadingFixedColumn() : -1;
+        int stageSum = nextAvailable + 2;
+        int finalAverage = nextAvailable + 3;
+        int complementary = nextAvailable + 4;
+        int regularization = nextAvailable + 5;
+
+        return new ComputedLayout(
+                firstMonth,
+                totalGeneral,
+                currentStageGrade,
+                firstStageGrade,
+                stageSum,
+                finalAverage,
+                complementary,
+                regularization
+        );
     }
 
     private int reservedSlotsForMonth(List<Tarea> tareasMes) {
@@ -1615,24 +1588,29 @@ public class PlanillaProcesoWorkbookBuilder {
     }
 
     private void clearDuplicateFinalHeaderLabels(Row headerRow, int expectedTotalGeneralColumn) {
-        if (headerRow == null) {
-            return;
-        }
+        if (headerRow == null) return;
         try {
+            // Clear any legacy/duplicated labels that match known keywords
+            // except leave the cell at `expectedTotalGeneralColumn` untouched.
             for (int c = 0; c < 400; c++) {
-                if (c == expectedTotalGeneralColumn) {
-                    continue;
-                }
+                if (c == expectedTotalGeneralColumn) continue;
                 Cell h = headerRow.getCell(c);
-                if (h != null && h.getCellType() == CellType.STRING) {
-                    String v = h.getStringCellValue();
-                    if (v != null && v.equalsIgnoreCase("Total General")) {
-                        h.setBlank();
-                    }
+                if (h == null || h.getCellType() != CellType.STRING) continue;
+                String v = h.getStringCellValue();
+                if (v == null) continue;
+                String vl = v.trim().toLowerCase();
+                if (vl.isEmpty()) continue;
+                if (vl.equals("total general")
+                        || vl.contains("calific") // covers 'calificación' and 'calificacion' and 'calificacion final'
+                        || vl.contains("sumatoria")
+                        || vl.contains("complementar")
+                        || vl.contains("regulariz")
+                        || vl.contains("subtotal")) {
+                    h.setBlank();
                 }
             }
         } catch (Exception ignore) {
-            // ignore stray template/header irregularities
+            // swallow; best-effort cleanup only
         }
     }
 
@@ -1838,22 +1816,16 @@ public class PlanillaProcesoWorkbookBuilder {
             int pictureIdx = workbook.addPicture(bytes, Workbook.PICTURE_TYPE_PNG);
             Drawing<?> drawing = sheet.createDrawingPatriarch();
 
-            // Read the real image dimensions up-front (may fail silently)
             java.awt.image.BufferedImage img = null;
             try (InputStream is2 = getClass().getResourceAsStream(resourcePath)) {
                 img = javax.imageio.ImageIO.read(is2);
             } catch (Throwable ignore) {
-                // fall back to defaults if ImageIO fails
             }
 
             // Compute available pixel area inside the provided cell-box
             int availW = 0;
             for (int c = col1; c < Math.max(col2, col1 + 1); c++) {
-                try {
-                    int cw = sheet.getColumnWidth(c); // 1/256th of character
-                    double chars = cw / 256.0;
-                    availW += Math.round(chars * 7.0);
-                } catch (Throwable ignore) {}
+                try { int cw = sheet.getColumnWidth(c); double chars = cw / 256.0; availW += Math.round(chars * 7.0); } catch (Throwable ignore) {}
             }
             int availH = 0;
             for (int r = row1; r < Math.max(row2, row1 + 1); r++) {
@@ -1861,86 +1833,94 @@ public class PlanillaProcesoWorkbookBuilder {
                 double pts = rr == null ? sheet.getDefaultRowHeightInPoints() : rr.getHeightInPoints();
                 availH += Math.round(pts * 96.0 / 72.0);
             }
-
-            // Default sensible fallbacks
             if (availW <= 0) availW = 160;
             if (availH <= 0) availH = 64;
 
-            double targetPixelW = img == null ? availW * 0.8 : Math.min(availW, img.getWidth());
-            double targetPixelH = img == null ? availH * 0.8 : Math.min(availH, img.getHeight());
-            if (img != null) {
-                double sx = targetPixelW / (double) img.getWidth();
-                double sy = targetPixelH / (double) img.getHeight();
-                double s = Math.min(Math.min(sx, sy), 1.0) * 0.95; // small margin
-                targetPixelW = Math.round(img.getWidth() * s);
-                targetPixelH = Math.round(img.getHeight() * s);
+            // If we have image native pixels, compute a scale that fits both dimensions
+            double finalPixelW;
+            double finalPixelH;
+            if (img == null) {
+                finalPixelW = availW * 0.8;
+                finalPixelH = availH * 0.8;
+            } else {
+                double sx = availW / (double) img.getWidth();
+                double sy = availH / (double) img.getHeight();
+                double scale = Math.min(Math.min(sx, sy), 1.0) * 0.95;
+                finalPixelW = Math.round(img.getWidth() * scale);
+                finalPixelH = Math.round(img.getHeight() * scale);
             }
 
-            // Log diagnostic info for debugging anchor sizing issues
-            try {
-                int imgW = img == null ? -1 : img.getWidth();
-                int imgH = img == null ? -1 : img.getHeight();
-                log.info("insertLogo: resource={} img={}x{} avail={}x{} target={}x{}", resourcePath, imgW, imgH, availW, availH, (int) targetPixelW, (int) targetPixelH);
-            } catch (Throwable ignore) {}
-
-            // Expand col2/row2 if needed to fit the desired pixel width/height
-            int accumW = 0;
-            int endCol = col1;
-            while (accumW < targetPixelW) {
-                try {
-                    int cw = sheet.getColumnWidth(endCol); double chars = cw / 256.0; accumW += Math.round(chars * 7.0);
-                } catch (Throwable ignore) { accumW += 70; }
+            // Expand columns until we have enough room; compute remainder in last column
+            int accum = 0; int endCol = col1; int lastColWidth = 0; int sumBeforeLast = 0;
+            while (accum < finalPixelW) {
+                try { int cw = sheet.getColumnWidth(endCol); double chars = cw / 256.0; int px = (int) Math.round(chars * 7.0); lastColWidth = px; sumBeforeLast = accum; accum += px; } catch (Throwable ignore) { lastColWidth = 70; sumBeforeLast = accum; accum += 70; }
                 endCol++;
-                if (endCol > col1 + 50) break; // safety
+                if (endCol > col1 + 50) break;
+            }
+            int dx2px = (int) Math.max(0, Math.min(lastColWidth, Math.round(finalPixelW - sumBeforeLast)));
+            if (dx2px == 0 && accum > 0) {
+                dx2px = Math.min((int) Math.round(finalPixelW), accum);
             }
 
-            int accumH = 0;
-            int endRow = row1;
-            while (accumH < targetPixelH) {
+            // Expand rows until we have enough room; compute remainder in last row
+            int accumR = 0; int endRow = row1; int lastRowPx = 0; int sumBeforeLastR = 0;
+            while (accumR < finalPixelH) {
                 Row rr = sheet.getRow(endRow);
                 double pts = rr == null ? sheet.getDefaultRowHeightInPoints() : rr.getHeightInPoints();
-                accumH += Math.round(pts * 96.0 / 72.0);
+                int px = (int) Math.round(pts * 96.0 / 72.0);
+                lastRowPx = px; sumBeforeLastR = accumR; accumR += px;
                 endRow++;
                 if (endRow > row1 + 50) break;
             }
+            int dy2px = (int) Math.max(0, Math.min(lastRowPx, Math.round(finalPixelH - sumBeforeLastR)));
+            if (dy2px == 0 && accumR > 0) {
+                dy2px = Math.min((int) Math.round(finalPixelH), accumR);
+            }
 
-            // Create anchor and use pixel offsets (EMUs) for precise sizing
+            // Use total anchor pixel span (sum before last + remainder)
+            long emuX = org.apache.poi.util.Units.pixelToEMU(sumBeforeLast + dx2px);
+            long emuY = org.apache.poi.util.Units.pixelToEMU(sumBeforeLastR + dy2px);
+
+            // Logging: native image size, target (final) pixels and anchor EMU
+            try {
+                log.info("insertLogo: resource={} nativePx={}x{} availPx={}x{} finalPx={}x{} anchorEnd={}x{} dx2px={} dy2px={} emuX={} emuY={}",
+                        resourcePath,
+                        img == null ? -1 : img.getWidth(), img == null ? -1 : img.getHeight(),
+                        availW, availH,
+                        (int) finalPixelW, (int) finalPixelH,
+                        endCol, endRow,
+                        dx2px, dy2px,
+                        emuX, emuY);
+            } catch (Throwable ignore) {
+            }
+
             XSSFClientAnchor anchor = (XSSFClientAnchor) workbook.getCreationHelper().createClientAnchor();
             anchor.setCol1(col1);
             anchor.setRow1(row1);
             anchor.setCol2(Math.max(col2, endCol));
             anchor.setRow2(Math.max(row2, endRow));
             anchor.setAnchorType(ClientAnchor.AnchorType.MOVE_AND_RESIZE);
-
-            // dx/dy: compute remainder pixels that don't fill whole columns/rows
-            int filledWidth = 0;
-            for (int c = col1; c < anchor.getCol2(); c++) {
-                try { int cw = sheet.getColumnWidth(c); double chars = cw / 256.0; filledWidth += Math.round(chars * 7.0); } catch (Throwable ignore) { filledWidth += 70; }
-            }
-            int dx2px = Math.max(0, (int) Math.min(targetPixelW, filledWidth));
-            int filledHeight = 0;
-            for (int r = row1; r < anchor.getRow2(); r++) {
-                Row rr = sheet.getRow(r);
-                double pts = rr == null ? sheet.getDefaultRowHeightInPoints() : rr.getHeightInPoints();
-                filledHeight += Math.round(pts * 96.0 / 72.0);
-            }
-            int dy2px = Math.max(0, (int) Math.min(targetPixelH, filledHeight));
-
-            long emuX = org.apache.poi.util.Units.pixelToEMU(dx2px);
-            long emuY = org.apache.poi.util.Units.pixelToEMU(dy2px);
-            try { log.info("insertLogo: cols {}-{} rows {}-{} filledPx {}x{} dx/dy px {}/{} emu {}/{}", col1, anchor.getCol2(), row1, anchor.getRow2(), filledWidth, filledHeight, dx2px, dy2px, emuX, emuY); } catch (Throwable ignore) {}
-
             anchor.setDx1(0);
             anchor.setDy1(0);
-            anchor.setDx2(emuX);
-            anchor.setDy2(emuY);
+            // Use the final pixel remainder converted to EMU for Dx2/Dy2 so the
+            // anchor's in-cell extents reflect the intended final image size.
+            anchor.setDx2((int) Math.min(Integer.MAX_VALUE, emuX));
+            anchor.setDy2((int) Math.min(Integer.MAX_VALUE, emuY));
 
+            // Create picture and DO NOT call resize() — we control final extents
+            // through the anchor to avoid POI's internal adjustments that were
+            // causing mismatched aspect ratios in previous runs.
             org.apache.poi.ss.usermodel.Picture pict = drawing.createPicture(anchor, pictureIdx);
 
-            try {
-                // final safety resize to adjust internal painting
-                pict.resize(1.0);
-            } catch (Throwable ignore) {}
+            // Log computed final EMU extents based on image native pixels
+            if (img != null) {
+                double scaleW = finalPixelW / (double) img.getWidth();
+                double scaleH = finalPixelH / (double) img.getHeight();
+                double usedScale = Math.min(Math.min(scaleW, scaleH), 1.0);
+                long finalCx = org.apache.poi.util.Units.pixelToEMU((int) Math.round(img.getWidth() * usedScale));
+                long finalCy = org.apache.poi.util.Units.pixelToEMU((int) Math.round(img.getHeight() * usedScale));
+                try { log.info("insertLogo: final ext (EMU) cx={} cy={} -> px {}x{} scale={}", finalCx, finalCy, finalCx / 9525.0, finalCy / 9525.0, usedScale); } catch (Throwable ignore) {}
+            }
         } catch (IOException e) {
             log.warn("No se pudo insertar logo {}: {}", resourcePath, e.getMessage(), e);
         }
