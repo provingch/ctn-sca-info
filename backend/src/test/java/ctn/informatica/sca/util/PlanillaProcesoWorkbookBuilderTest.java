@@ -882,8 +882,8 @@ class PlanillaProcesoWorkbookBuilderTest {
     @Test
     void monthSubtotalHeadersRemainInHeaderRow_whenMultipleMonthsExist() throws IOException {
         Planilla planilla = new Planilla(701, 1, 1, "comun", "Meses", 2026, "segunda", 7);
-        Tarea feb = new Tarea(); feb.setId(9001); feb.setFecha(LocalDate.of(2026, 2, 5)); feb.setTitulo("Feb"); feb.setTotal(10);
-        Tarea mar = new Tarea(); mar.setId(9002); mar.setFecha(LocalDate.of(2026, 3, 5)); mar.setTitulo("Mar"); mar.setTotal(12);
+        Tarea jul = new Tarea(); jul.setId(9001); jul.setFecha(LocalDate.of(2026, 7, 5)); jul.setTitulo("Jul"); jul.setTotal(10);
+        Tarea ago = new Tarea(); ago.setId(9002); ago.setFecha(LocalDate.of(2026, 8, 5)); ago.setTitulo("Ago"); ago.setTotal(12);
         StudentRow s1 = new StudentRow(); s1.setAlumnoId(1); s1.setAlumnoNombre("A"); s1.setGrades(Map.of(9001,8,9002,9)); s1.setTotal(17);
 
         PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
@@ -892,7 +892,7 @@ class PlanillaProcesoWorkbookBuilderTest {
                 "Meses",
                 "Profe",
                 "Mañana",
-                List.of(feb, mar),
+                List.of(jul, ago),
                 List.of(s1),
                 Map.of(),
                 null
