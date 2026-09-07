@@ -1876,6 +1876,13 @@ public class PlanillaProcesoWorkbookBuilder {
                 targetPixelH = Math.round(img.getHeight() * s);
             }
 
+            // Log diagnostic info for debugging anchor sizing issues
+            try {
+                int imgW = img == null ? -1 : img.getWidth();
+                int imgH = img == null ? -1 : img.getHeight();
+                log.info("insertLogo: resource={} img={}x{} avail={}x{} target={}x{}", resourcePath, imgW, imgH, availW, availH, (int) targetPixelW, (int) targetPixelH);
+            } catch (Throwable ignore) {}
+
             // Expand col2/row2 if needed to fit the desired pixel width/height
             int accumW = 0;
             int endCol = col1;
@@ -1919,10 +1926,14 @@ public class PlanillaProcesoWorkbookBuilder {
             }
             int dy2px = Math.max(0, (int) Math.min(targetPixelH, filledHeight));
 
+            long emuX = org.apache.poi.util.Units.pixelToEMU(dx2px);
+            long emuY = org.apache.poi.util.Units.pixelToEMU(dy2px);
+            try { log.info("insertLogo: cols {}-{} rows {}-{} filledPx {}x{} dx/dy px {}/{} emu {}/{}", col1, anchor.getCol2(), row1, anchor.getRow2(), filledWidth, filledHeight, dx2px, dy2px, emuX, emuY); } catch (Throwable ignore) {}
+
             anchor.setDx1(0);
             anchor.setDy1(0);
-            anchor.setDx2(org.apache.poi.util.Units.pixelToEMU(dx2px));
-            anchor.setDy2(org.apache.poi.util.Units.pixelToEMU(dy2px));
+            anchor.setDx2(emuX);
+            anchor.setDy2(emuY);
 
             org.apache.poi.ss.usermodel.Picture pict = drawing.createPicture(anchor, pictureIdx);
 
