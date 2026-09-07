@@ -507,7 +507,7 @@ public class PlanillaProcesoWorkbookBuilder {
         requiredRightmost = requiredRightmost - 1;
         resizeStudentArea(sheet, data.rows().size());
         replaceCommonMarkers(sheet, data);
-        fillMonthBlocks(sheet, tareasPorMes, taskColumnById, layout);
+        fillMonthBlocks(sheet, tareasPorMes, taskColumnById, layout, subtotalTemplateCell);
 
         // Compute runtime positions for fixed-final columns (to the right of month blocks)
         int nextAvailable = layout.firstMonthColumn();
@@ -1196,7 +1196,7 @@ public class PlanillaProcesoWorkbookBuilder {
         }
     }
 
-    private void fillMonthBlocks(Sheet sheet, Map<YearMonth, List<Tarea>> tareasPorMes, Map<Integer, Integer> taskColumnById, StageLayout layout) {
+    private void fillMonthBlocks(Sheet sheet, Map<YearMonth, List<Tarea>> tareasPorMes, Map<Integer, Integer> taskColumnById, StageLayout layout, Cell subtotalTemplateCell) {
         List<Map.Entry<YearMonth, List<Tarea>>> months = new ArrayList<>(tareasPorMes.entrySet());
         // Track longest instrument title so we can set an appropriate row height
         int maxTitleLen = 0;
@@ -1205,7 +1205,8 @@ public class PlanillaProcesoWorkbookBuilder {
         // Remove merged regions inherited from template that overlap header rows
         removeHeaderMerges(sheet, layout);
 
-        // Reference styles from the template to normalize cell styles before writing
+        // Preserve the per-column template styling instead of flattening every
+        // instrument cell to a single reference style from the first column.
         XSSFSheet templateSheet = (XSSFSheet) sheet.getWorkbook().getSheet(layout.templateSheetName());
         org.apache.poi.ss.usermodel.CellStyle instrumentRefStyle = null;
         org.apache.poi.ss.usermodel.CellStyle tpRefStyle = null;
@@ -1248,17 +1249,25 @@ public class PlanillaProcesoWorkbookBuilder {
                 Cell tpCell = getOrCreateCell(tpRow, colIndex);
                 Tarea tarea = tareasMes.get(instrumentIndex);
 
-                // Normalize/reset styles from a neutral template cell to avoid
-                // inheriting the 'Subtotal' boxed style from the original template.
+                // Preserve the exact template style for the corresponding slot.
+                // The previous implementation reused only the first column's style,
+                // which flattened all task cells to a single appearance.
                 org.apache.poi.ss.usermodel.Workbook wb = sheet.getWorkbook();
-                if (instrumentRefStyle != null) {
+                CellStyle titleTemplateStyle = cloneTemplateCellStyle(wb, templateSheet, INSTRUMENT_TITLE_ROW, layout.firstMonthColumn() + Math.max(0, colIndex - layout.firstMonthColumn()));
+                if (titleTemplateStyle != null) {
+                    titleCell.setCellStyle(titleTemplateStyle);
+                } else if (instrumentRefStyle != null) {
                     org.apache.poi.ss.usermodel.CellStyle cloned = wb.createCellStyle();
                     try { cloned.cloneStyleFrom(instrumentRefStyle); } catch (Exception ignore) {}
                     titleCell.setCellStyle(cloned);
                 } else {
                     titleCell.setCellStyle(wb.createCellStyle());
                 }
-                if (tpRefStyle != null) {
+
+                CellStyle tpTemplateStyle = cloneTemplateCellStyle(wb, templateSheet, TP_ROW, layout.firstMonthColumn() + Math.max(0, colIndex - layout.firstMonthColumn()));
+                if (tpTemplateStyle != null) {
+                    tpCell.setCellStyle(tpTemplateStyle);
+                } else if (tpRefStyle != null) {
                     org.apache.poi.ss.usermodel.CellStyle cloned = wb.createCellStyle();
                     try { cloned.cloneStyleFrom(tpRefStyle); } catch (Exception ignore) {}
                     tpCell.setCellStyle(cloned);
@@ -1288,14 +1297,21 @@ public class PlanillaProcesoWorkbookBuilder {
                 Cell blankTitle = getOrCreateCell(titleRow, colIndex);
                 Cell blankTp = getOrCreateCell(tpRow, colIndex);
                 org.apache.poi.ss.usermodel.Workbook wb = sheet.getWorkbook();
-                if (instrumentRefStyle != null) {
+                CellStyle blankTitleTemplateStyle = cloneTemplateCellStyle(wb, templateSheet, INSTRUMENT_TITLE_ROW, layout.firstMonthColumn() + Math.max(0, colIndex - layout.firstMonthColumn()));
+                if (blankTitleTemplateStyle != null) {
+                    blankTitle.setCellStyle(blankTitleTemplateStyle);
+                } else if (instrumentRefStyle != null) {
                     org.apache.poi.ss.usermodel.CellStyle cloned = wb.createCellStyle();
                     try { cloned.cloneStyleFrom(instrumentRefStyle); } catch (Exception ignore) {}
                     blankTitle.setCellStyle(cloned);
                 } else {
                     blankTitle.setCellStyle(wb.createCellStyle());
                 }
-                if (tpRefStyle != null) {
+
+                CellStyle blankTpTemplateStyle = cloneTemplateCellStyle(wb, templateSheet, TP_ROW, layout.firstMonthColumn() + Math.max(0, colIndex - layout.firstMonthColumn()));
+                if (blankTpTemplateStyle != null) {
+                    blankTp.setCellStyle(blankTpTemplateStyle);
+                } else if (tpRefStyle != null) {
                     org.apache.poi.ss.usermodel.CellStyle cloned = wb.createCellStyle();
                     try { cloned.cloneStyleFrom(tpRefStyle); } catch (Exception ignore) {}
                     blankTp.setCellStyle(cloned);
@@ -1324,7 +1340,17 @@ public class PlanillaProcesoWorkbookBuilder {
             applyAdaptiveFontSizeToFitWidth(sheet.getWorkbook(), monthCell, monthLabel, monthBlockWidthChars);
             monthCell.getCellStyle().setRotation((short) 0);
             // set and merge subtotal header vertically (header -> title row)
-            setStringCell(getOrCreateCell(monthHeaderRow, subtotalCol), "Subtotal");
+            Cell subtotalCell = getOrCreateCell(monthHeaderRow, subtotalCol);
+            setStringCell(subtotalCell, "Subtotal");
+            if (subtotalTemplateCell != null) {
+                try {
+                    org.apache.poi.ss.usermodel.CellStyle subtotalStyle = sheet.getWorkbook().createCellStyle();
+                    subtotalStyle.cloneStyleFrom(subtotalTemplateCell.getCellStyle());
+                    subtotalCell.setCellStyle(subtotalStyle);
+                } catch (Exception ignore) {
+                    // fallback to default style when the template subtotal cell is not styleable
+                }
+            }
             sheet.addMergedRegion(new CellRangeAddress(MONTH_HEADER_ROW, INSTRUMENT_TITLE_ROW, subtotalCol, subtotalCol));
 
             // advance to next available column (after subtotal)
@@ -1849,6 +1875,27 @@ public class PlanillaProcesoWorkbookBuilder {
                 style.setRightBorderColor(BLOCK_BORDER_COLOR);
                 cell.setCellStyle(style);
             }
+        }
+    }
+
+    private CellStyle cloneTemplateCellStyle(Workbook workbook, XSSFSheet templateSheet, int rowIndex, int templateColumnIndex) {
+        if (workbook == null || templateSheet == null) {
+            return null;
+        }
+        Row templateRow = templateSheet.getRow(rowIndex);
+        if (templateRow == null) {
+            return null;
+        }
+        Cell templateCell = templateRow.getCell(templateColumnIndex);
+        if (templateCell == null || templateCell.getCellStyle() == null) {
+            return null;
+        }
+        CellStyle cloned = workbook.createCellStyle();
+        try {
+            cloned.cloneStyleFrom(templateCell.getCellStyle());
+            return cloned;
+        } catch (Exception ignore) {
+            return null;
         }
     }
 
