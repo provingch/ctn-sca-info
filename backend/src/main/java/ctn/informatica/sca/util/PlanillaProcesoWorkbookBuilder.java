@@ -826,7 +826,7 @@ public class PlanillaProcesoWorkbookBuilder {
             } catch (Exception ignore) {}
         }
 
-        fillStudentRows(sheet, data, taskColumnById, computed, monthBlocks);
+        fillStudentRows(sheet, data, taskColumnById, computed, monthBlocks, layout.templateSheetName());
         clearTemplatePlaceholders(sheet);
 
         int lastStudentRow = FIRST_STUDENT_ROW + Math.max(0, data.rows() == null ? 0 : data.rows().size()) - 1;
@@ -962,9 +962,15 @@ public class PlanillaProcesoWorkbookBuilder {
         int yearOrigStart = 19;
         int yearOrigEnd = 21;
 
-        // Discover template merges for rows 3 and 4 to get original extents if present
-        java.util.List<CellRangeAddress> currentMerges = sheet.getMergedRegions();
-        for (CellRangeAddress ca : currentMerges) {
+        // Discover template merges for rows 3 and 4 to get original extents if present.
+        // BUGFIX: this used to call sheet.getMergedRegions() again here, AFTER the
+        // deletion loop above had already removed every header merge (rows 0-4).
+        // That meant this discovery always found nothing and silently fell back to
+        // the hardcoded columns 19-21 for "Año", which don't match the real template
+        // (the real "Año" block lives at columns I:J). We reuse the `merges` list
+        // captured BEFORE the deletion loop ran (it's a detached snapshot, so it's
+        // unaffected by the removals) so the original extents are actually found.
+        for (CellRangeAddress ca : merges) {
             if (ca.getFirstRow() == 3) {
                 if (ca.getFirstColumn() >= 2) specOrigEnd = Math.max(specOrigEnd, ca.getLastColumn());
             }
@@ -1207,6 +1213,28 @@ public class PlanillaProcesoWorkbookBuilder {
         int maxTitleLen = 0;
         int currentColumn = layout.firstMonthColumn();
 
+        // BUGFIX: the per-column template style lookup below must wrap the real
+        // sheet column back into the template's own (narrow) instrument-column
+        // pattern. The template only has ONE example month block, so its style
+        // exists for `templateBlockWidth` columns starting at firstMonthColumn();
+        // any real column beyond that (2nd month onward, or the 9th+ task of the
+        // 1st month) has to cycle back into that same pattern. The previous
+        // formula `firstMonthColumn() + Math.max(0, colIndex - firstMonthColumn())`
+        // always simplifies to `colIndex` (colIndex is never less than
+        // firstMonthColumn() here), so it never wrapped anything: once colIndex
+        // walked past the template's real instrument columns it started reading
+        // whatever the template happens to have at that literal position (e.g. the
+        // "Subtotal"/"Total General" header), producing the wrong border/style.
+        // We derive the template's real block width from where its own "Subtotal"
+        // label sits, since that's the boundary of the example block.
+        int templateBlockWidth = FIXED_TASK_COLUMNS_PER_MONTH;
+        if (subtotalTemplateCell != null) {
+            int discovered = subtotalTemplateCell.getColumnIndex() - layout.firstMonthColumn();
+            if (discovered > 0) {
+                templateBlockWidth = discovered;
+            }
+        }
+
         // Remove merged regions inherited from template that overlap header rows
         removeHeaderMerges(sheet, layout);
 
@@ -1261,7 +1289,7 @@ public class PlanillaProcesoWorkbookBuilder {
                 // The previous implementation reused only the first column's style,
                 // which flattened all task cells to a single appearance.
                 org.apache.poi.ss.usermodel.Workbook wb = sheet.getWorkbook();
-                CellStyle titleTemplateStyle = cloneTemplateCellStyle(wb, layout.templateSheetName(), INSTRUMENT_TITLE_ROW, layout.firstMonthColumn() + Math.max(0, colIndex - layout.firstMonthColumn()));
+                CellStyle titleTemplateStyle = cloneTemplateCellStyle(wb, layout.templateSheetName(), INSTRUMENT_TITLE_ROW, layout.firstMonthColumn() + ((colIndex - layout.firstMonthColumn()) % templateBlockWidth));
                 if (titleTemplateStyle != null) {
                     // Apply the template-derived style for this exact column.
                     // The previous workaround that applied a visual "tweak"
@@ -1293,7 +1321,7 @@ public class PlanillaProcesoWorkbookBuilder {
                     titleCell.setCellStyle(wb.createCellStyle());
                 }
 
-                CellStyle tpTemplateStyle = cloneTemplateCellStyle(wb, layout.templateSheetName(), TP_ROW, layout.firstMonthColumn() + Math.max(0, colIndex - layout.firstMonthColumn()));
+                CellStyle tpTemplateStyle = cloneTemplateCellStyle(wb, layout.templateSheetName(), TP_ROW, layout.firstMonthColumn() + ((colIndex - layout.firstMonthColumn()) % templateBlockWidth));
                 if (tpTemplateStyle != null) {
                     tpCell.setCellStyle(tpTemplateStyle);
                 } else if (tpRefStyle != null) {
@@ -1326,7 +1354,7 @@ public class PlanillaProcesoWorkbookBuilder {
                 Cell blankTitle = getOrCreateCell(titleRow, colIndex);
                 Cell blankTp = getOrCreateCell(tpRow, colIndex);
                 org.apache.poi.ss.usermodel.Workbook wb = sheet.getWorkbook();
-                CellStyle blankTitleTemplateStyle = cloneTemplateCellStyle(wb, layout.templateSheetName(), INSTRUMENT_TITLE_ROW, layout.firstMonthColumn() + Math.max(0, colIndex - layout.firstMonthColumn()));
+                CellStyle blankTitleTemplateStyle = cloneTemplateCellStyle(wb, layout.templateSheetName(), INSTRUMENT_TITLE_ROW, layout.firstMonthColumn() + ((colIndex - layout.firstMonthColumn()) % templateBlockWidth));
                 if (blankTitleTemplateStyle != null) {
                     blankTitle.setCellStyle(blankTitleTemplateStyle);
                 } else if (instrumentRefStyle != null) {
@@ -1337,7 +1365,7 @@ public class PlanillaProcesoWorkbookBuilder {
                     blankTitle.setCellStyle(wb.createCellStyle());
                 }
 
-                CellStyle blankTpTemplateStyle = cloneTemplateCellStyle(wb, layout.templateSheetName(), TP_ROW, layout.firstMonthColumn() + Math.max(0, colIndex - layout.firstMonthColumn()));
+                CellStyle blankTpTemplateStyle = cloneTemplateCellStyle(wb, layout.templateSheetName(), TP_ROW, layout.firstMonthColumn() + ((colIndex - layout.firstMonthColumn()) % templateBlockWidth));
                 if (blankTpTemplateStyle != null) {
                     blankTp.setCellStyle(blankTpTemplateStyle);
                 } else if (tpRefStyle != null) {
@@ -1484,16 +1512,28 @@ public class PlanillaProcesoWorkbookBuilder {
         }
     }
 
-    private void fillStudentRows(Sheet sheet, PlanillaSheetData data, Map<Integer, Integer> taskColumnById, ComputedLayout layout, java.util.List<MonthBlock> monthBlocks) {
+    private void fillStudentRows(Sheet sheet, PlanillaSheetData data, Map<Integer, Integer> taskColumnById, ComputedLayout layout, java.util.List<MonthBlock> monthBlocks, String templateSheetName) {
         int maxColumn = layout.firstMonthColumn();
         for (Integer col : taskColumnById.values()) {
             maxColumn = Math.max(maxColumn, col);
         }
 
-        // Pre-fetch template sample rows to clone styles from
+        // BUGFIX: these used to be read from `sheet` — the very sheet this method is
+        // about to write into — via plain getRow() references. For boletas with
+        // TEMPLATE_STUDENT_COUNT (5) students or fewer, templateIndex == rowOffset,
+        // so templateSampleRows[i] ended up being the EXACT SAME Row object as the
+        // row currently being populated: "cloning the template style" actually
+        // cloned whatever default (non-centered) style that cell had just received
+        // moments earlier in the same iteration, not a real reference style. That's
+        // what produced the alternating centered/not-centered pattern once
+        // zebra-striping ran afterwards. Reading these rows from the untouched
+        // template sheet (a separate, never-written-to sheet in the workbook)
+        // guarantees a real, stable reference style regardless of student count.
         Row[] templateSampleRows = new Row[TEMPLATE_STUDENT_COUNT];
+        Sheet templateSheetForStyles = templateSheetName == null ? null : sheet.getWorkbook().getSheet(templateSheetName);
+        Sheet styleSource = templateSheetForStyles != null ? templateSheetForStyles : sheet;
         for (int i = 0; i < TEMPLATE_STUDENT_COUNT; i++) {
-            templateSampleRows[i] = sheet.getRow(FIRST_STUDENT_ROW + i);
+            templateSampleRows[i] = styleSource.getRow(FIRST_STUDENT_ROW + i);
         }
 
         for (int rowOffset = 0; rowOffset < data.rows().size(); rowOffset++) {
@@ -2093,21 +2133,51 @@ public class PlanillaProcesoWorkbookBuilder {
             } catch (Throwable ignore) {
             }
 
-            // Keep the logo bounded to a single target cell; do not let the block
-            // width expand dynamically and distort the logo or make it appear clipped.
-            int targetWidthPx = img == null ? 120 : Math.min(img.getWidth(), 130);
-            int targetHeightPx = img == null ? 48 : Math.min(img.getHeight(), 52);
-            if (img != null) {
-                double scale = Math.min(1.0, Math.min(((double) targetWidthPx / img.getWidth()), ((double) targetHeightPx / img.getHeight())));
+            int anchorCol2 = Math.max(col1 + 1, Math.min(col2, col1 + 1));
+            int anchorRow2 = Math.max(row1 + 1, Math.min(row2, row1 + 1));
+
+            // BUGFIX: this used to hard-cap the logo at ~130x52px regardless of the
+            // real asset size or the actual target cell area. The real institutional
+            // logo is 600x200px; scaling it down to fit inside that fixed 130x52 box
+            // shrank it so much the "CTN"/"ASUNCIÓN" text became an unreadable blur.
+            // Instead of a fixed pixel ceiling, size the logo to actually fill the
+            // real available pixel area of the anchor's target cell range (derived
+            // from the sheet's own column widths / row heights), preserving aspect
+            // ratio. This lets the logo render as large as the cell it's anchored to
+            // actually allows, instead of an arbitrary small constant.
+            double availWidthPx = 0;
+            for (int c = col1; c < anchorCol2; c++) {
+                try {
+                    availWidthPx += org.apache.poi.ss.util.SheetUtil.getColumnWidthInPixels(sheet, c);
+                } catch (Throwable ignore) {
+                    availWidthPx += 64; // reasonable fallback per column if the sheet can't report it
+                }
+            }
+            double availHeightPx = 0;
+            for (int r = row1; r < anchorRow2; r++) {
+                Row row = sheet.getRow(r);
+                float heightPoints = row != null ? row.getHeightInPoints() : sheet.getDefaultRowHeightInPoints();
+                availHeightPx += heightPoints * (96f / 72f);
+            }
+            if (availWidthPx <= 0) availWidthPx = 130;
+            if (availHeightPx <= 0) availHeightPx = 52;
+
+            int targetWidthPx;
+            int targetHeightPx;
+            if (img != null && img.getWidth() > 0 && img.getHeight() > 0) {
+                double scale = Math.min(availWidthPx / img.getWidth(), availHeightPx / img.getHeight());
                 targetWidthPx = (int) Math.round(img.getWidth() * scale);
                 targetHeightPx = (int) Math.round(img.getHeight() * scale);
+            } else {
+                targetWidthPx = (int) Math.round(availWidthPx);
+                targetHeightPx = (int) Math.round(availHeightPx);
             }
 
             XSSFClientAnchor anchor = (XSSFClientAnchor) workbook.getCreationHelper().createClientAnchor();
             anchor.setCol1(col1);
             anchor.setRow1(row1);
-            anchor.setCol2(Math.max(col1 + 1, Math.min(col2, col1 + 1)));
-            anchor.setRow2(Math.max(row1 + 1, Math.min(row2, row1 + 1)));
+            anchor.setCol2(anchorCol2);
+            anchor.setRow2(anchorRow2);
             anchor.setAnchorType(ClientAnchor.AnchorType.MOVE_AND_RESIZE);
             anchor.setDx1(0);
             anchor.setDy1(0);
