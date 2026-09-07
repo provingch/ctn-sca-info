@@ -75,6 +75,38 @@ class PlanillaProcesoWorkbookBuilderTest {
     }
 
     @Test
+    void buildSingleWorkbook_doesNotOverrideHeaderAndTaskStylesWithZebraStriping() throws IOException {
+        Planilla planilla = new Planilla(260, 1, 1, "comun", "Headers", 2026, "primera", 7);
+        Tarea task = new Tarea(); task.setId(261); task.setFecha(LocalDate.of(2026, 2, 5)); task.setTitulo("Tarea 1"); task.setTotal(5);
+        StudentRow student = new StudentRow(); student.setAlumnoId(1); student.setAlumnoNombre("Ana"); student.setGrades(Map.of(261, 5)); student.setTotal(5);
+
+        PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                planilla,
+                new ctn.informatica.sca.model.Curso(260, "Informática", 2026, "A"),
+                "Headers",
+                "Profe",
+                "Mañana",
+                List.of(task),
+                List.of(student),
+                Map.of(),
+                null
+        );
+
+        try (XSSFWorkbook workbook = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(data, "HeaderStyleCheck")) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Cell monthHeader = sheet.getRow(5).getCell(2);
+            Cell taskTitle = sheet.getRow(6).getCell(2);
+
+            assertNotNull(monthHeader);
+            assertNotNull(taskTitle);
+            assertFalse(monthHeader.getCellStyle().getFillForegroundColor() == org.apache.poi.ss.usermodel.IndexedColors.GREY_25_PERCENT.getIndex(),
+                    "El encabezado de mes no debe quedar pintado con zebra");
+            assertFalse(taskTitle.getCellStyle().getFillForegroundColor() == org.apache.poi.ss.usermodel.IndexedColors.GREY_25_PERCENT.getIndex(),
+                    "La celda de tarea no debe quedar pintada con zebra");
+        }
+    }
+
+    @Test
     void buildSingleWorkbook_whenCursoIsNull_doesNotThrow() throws IOException {
         Planilla planilla = new Planilla(1, 0, 0, "comun", "Materia", 2026, "primera", 1);
         PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
