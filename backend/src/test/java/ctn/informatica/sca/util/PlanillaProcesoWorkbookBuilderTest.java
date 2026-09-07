@@ -160,15 +160,11 @@ class PlanillaProcesoWorkbookBuilderTest {
                 Row studentRow = sh2.getRow(8); // FIRST_STUDENT_ROW
                 Cell fixedCell = studentRow.getCell(2); // column C
                 assertNotNull(fixedCell, "La celda fija (col C) debe existir");
-                if (fixedCell.getCellType() == org.apache.poi.ss.usermodel.CellType.NUMERIC) {
-                    assertEquals(7, (int) fixedCell.getNumericCellValue(), "La celda fija debe contener el valor de firstStageGrades");
-                } else if (fixedCell.getCellType() == org.apache.poi.ss.usermodel.CellType.FORMULA) {
-                    org.apache.poi.ss.usermodel.CellType cached = fixedCell.getCachedFormulaResultType();
-                    assertEquals(org.apache.poi.ss.usermodel.CellType.NUMERIC, cached, "El resultado en caché de la fórmula debe ser numérico");
-                    assertEquals(7, (int) fixedCell.getNumericCellValue(), "La celda fija (fórmula) debe haber almacenado en caché el valor esperado");
-                } else {
-                    fail("La celda fija debe ser numérica o fórmula que evalúe a numérico");
-                }
+                // Regression strictness: the fixed leading column must contain
+                // a numeric literal (not a formula). This verifies the
+                // structural fix that preserves the template-fixed column.
+                assertEquals(org.apache.poi.ss.usermodel.CellType.NUMERIC, fixedCell.getCellType(), "La celda fija debe ser un literal numérico");
+                assertEquals(7, (int) fixedCell.getNumericCellValue(), "La celda fija debe contener el valor de firstStageGrades");
             }
         }
     }

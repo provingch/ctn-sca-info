@@ -2178,11 +2178,23 @@ public class PlanillaProcesoWorkbookBuilder {
     }
 
     private void setNumericCell(Cell cell, Number value) {
+        if (cell == null) return;
         if (value == null) {
             cell.setBlank();
-        } else {
-            cell.setCellValue(value.doubleValue());
+            return;
         }
+        try {
+            // Ensure the cell is a numeric literal (remove any existing formula)
+            if (cell.getCellType() == CellType.FORMULA) {
+                // converting the cell type to NUMERIC clears the formula
+                cell.setCellType(CellType.NUMERIC);
+            } else if (cell.getCellType() != CellType.NUMERIC) {
+                cell.setCellType(CellType.NUMERIC);
+            }
+        } catch (Throwable ignore) {
+            // best-effort: proceed to set the value regardless
+        }
+        cell.setCellValue(value.doubleValue());
     }
 
     private String safeString(String value) {
