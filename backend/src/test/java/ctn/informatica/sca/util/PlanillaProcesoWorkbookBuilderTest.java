@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -26,6 +27,52 @@ import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.FillPatternType;
 
 class PlanillaProcesoWorkbookBuilderTest {
+
+    private static boolean sameCellStyle(CellStyle a, CellStyle b) {
+        if (a == b) return true;
+        if (a == null || b == null) return false;
+        return a.getFillPattern() == b.getFillPattern()
+                && a.getFillForegroundColor() == b.getFillForegroundColor()
+                && a.getFillBackgroundColor() == b.getFillBackgroundColor()
+                && a.getAlignment() == b.getAlignment()
+                && a.getVerticalAlignment() == b.getVerticalAlignment()
+                && a.getBorderLeft() == b.getBorderLeft()
+                && a.getBorderRight() == b.getBorderRight()
+                && a.getBorderTop() == b.getBorderTop()
+                && a.getBorderBottom() == b.getBorderBottom();
+    }
+
+    @Test
+    void buildSingleWorkbook_preservesDistinctTemplateStylesForInstrumentColumns() throws IOException {
+        Planilla planilla = new Planilla(650, 1, 1, "comun", "Estilos", 2026, "primera", 7);
+        Tarea t1 = new Tarea(); t1.setId(651); t1.setFecha(LocalDate.of(2026, 2, 5)); t1.setTitulo("Tarea 1"); t1.setTotal(5);
+        Tarea t2 = new Tarea(); t2.setId(652); t2.setFecha(LocalDate.of(2026, 2, 15)); t2.setTitulo("Tarea 2"); t2.setTotal(8);
+        StudentRow s = new StudentRow(); s.setAlumnoId(1); s.setAlumnoNombre("Ana"); s.setGrades(Map.of(651, 5, 652, 8)); s.setTotal(13);
+
+        PlanillaProcesoWorkbookBuilder.PlanillaSheetData data = new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
+                planilla,
+                new ctn.informatica.sca.model.Curso(650, "Informática", 2026, "A"),
+                "Estilos",
+                "Profe",
+                "Mañana",
+                List.of(t1, t2),
+                List.of(s),
+                Map.of(),
+                null
+        );
+
+        try (XSSFWorkbook workbook = new PlanillaProcesoWorkbookBuilder().buildSingleWorkbook(data, "StyleCheck")) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Row titleRow = sheet.getRow(6);
+            Cell left = titleRow.getCell(2);
+            Cell right = titleRow.getCell(3);
+
+            assertNotNull(left, "Debe existir la primera columna de instrumento");
+            assertNotNull(right, "Debe existir la segunda columna de instrumento");
+            assertFalse(sameCellStyle(left.getCellStyle(), right.getCellStyle()),
+                    "Las columnas de instrumento deben conservar estilos distintos del template");
+        }
+    }
 
     @Test
     void buildSingleWorkbook_whenCursoIsNull_doesNotThrow() throws IOException {
