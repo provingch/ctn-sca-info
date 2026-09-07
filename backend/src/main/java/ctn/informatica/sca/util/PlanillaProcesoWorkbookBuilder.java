@@ -2119,6 +2119,22 @@ public class PlanillaProcesoWorkbookBuilder {
         return path;
     }
 
+    /**
+     * Convierte el ancho de una columna (unidades internas de POI: 1/256 del ancho
+     * de un carácter '0' con la fuente por defecto) a píxeles aproximados.
+     *
+     * Reemplaza a org.apache.poi.ss.util.SheetUtil.getColumnWidthInPixels(Sheet, int),
+     * que no está disponible en la versión de Apache POI usada por este proyecto
+     * (no es parte de la API pública estable de SheetUtil en todas las versiones).
+     * El cálculo usa la fórmula estándar de Excel/POI para fuente Calibri 11
+     * (ancho de carácter por defecto ~7px).
+     */
+    private static double columnWidthToPixels(Sheet sheet, int columnIndex) {
+        int widthUnits = sheet.getColumnWidth(columnIndex); // 1/256 de un carácter
+        final double defaultCharWidthPx = 7.0; // Calibri 11, valor por defecto de Excel
+        return Math.round((widthUnits / 256.0) * defaultCharWidthPx);
+    }
+
     private void insertLogo(Sheet sheet, String resourcePath, int col1, int row1, int col2, int row2) {
         try (InputStream is = getClass().getResourceAsStream(resourcePath)) {
             if (is == null) return;
@@ -2148,7 +2164,7 @@ public class PlanillaProcesoWorkbookBuilder {
             double availWidthPx = 0;
             for (int c = col1; c < anchorCol2; c++) {
                 try {
-                    availWidthPx += org.apache.poi.ss.util.SheetUtil.getColumnWidthInPixels(sheet, c);
+                    availWidthPx += columnWidthToPixels(sheet, c);
                 } catch (Throwable ignore) {
                     availWidthPx += 64; // reasonable fallback per column if the sheet can't report it
                 }
