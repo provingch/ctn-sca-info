@@ -551,42 +551,61 @@ public class HomeController {
         }
         Integer profesorId = payload.get("profesorId") instanceof Number n ? n.intValue() : null;
         Integer cursoId = payload.get("cursoId") instanceof Number n ? n.intValue() : null;
-        Integer especialidadId = payload.get("especialidadId") instanceof Number n ? n.intValue() : null;
         String motivo = payload.get("motivo") instanceof String s ? s : null;
-        if (profesorId == null || cursoId == null || especialidadId == null || motivo == null || motivo.isBlank()) {
+        if (profesorId == null || profesorId <= 0 || cursoId == null || cursoId <= 0 || motivo == null || motivo.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Faltan datos para registrar la queja");
         }
         try {
-            int id = quejaDao.crear(profesorId, cursoId, especialidadId, motivo, current.getId());
+            Integer especialidadId = cursoBaseDao.findEspecialidadId(cursoId);
+            if (especialidadId == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El curso no existe");
+            }
+            if (current.getLevel() == 3) {
+                Profesor admin = profesorDao.findById(current.getId());
+                if (admin == null || (admin.getEspecialidadId() != null && !admin.getEspecialidadId().equals(especialidadId))) {
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes registrar quejas fuera de tu especialidad");
+                }
+            }
+            if (asignacionDao.findByProfesorAndCurso(profesorId, cursoId).isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El profesor no está asignado al curso seleccionado");
+            }
+            int id = quejaDao.crear(profesorId, cursoId, especialidadId, motivo.trim(), current.getId());
             if (id <= 0) {
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo registrar la queja");
             }
-            long total = quejaDao.contarPorProfesor(profesorId);
-            int umbral = configuracionSistemaDao.getInt("umbral_quejas_coordinacion", 5);
-            if (total >= umbral && !notificacionDao.existePendientePorTipoEntidad(profesorId, "QUEJA", "COORDINACION")) {
-                List<User> coordinadores = userDao.findAllByLevel(5);
-                for (User coordinador : coordinadores) {
-                    if (coordinador == null) continue;
-                    String userType = NotificacionDao.resolveUserType(userDao, coordinador.getId());
-                    String titulo = "Profesor con quejas acumuladas";
-                    String cuerpo = "El profesor " + profesorId + " alcanzó " + total + " quejas. Requiere revisión de coordinación pedagógica.";
-                    boolean created = notificacionDao.crear(
-                            coordinador.getId(),
-                            userType,
-                            "COORDINACION",
-                            titulo,
-                            cuerpo,
-                            "QUEJA",
-                            (long) profesorId);
-                    if (created) {
-                        try {
-                            PushNotificationService.sendToUser(coordinador.getId(), userType, titulo, cuerpo, "/coordinacion");
-                        } catch (Exception ex) {
-                            log.warn("No se pudo enviar push a coordinador {} por queja del profesor {}: {}", coordinador.getId(), profesorId, ex.getMessage());
+            try {
+                long total = quejaDao.contarPorProfesor(profesorId);
+                int umbral = configuracionSistemaDao.getInt("umbral_quejas_coordinacion", 5);
+                if (total >= umbral && !notificacionDao.existePendientePorTipoEntidad(profesorId, "QUEJA", "COORDINACION")) {
+                    List<User> coordinadores = userDao.findAllByLevel(5);
+                    for (User coordinador : coordinadores) {
+                        if (coordinador == null) continue;
+                        String userType = NotificacionDao.resolveUserType(userDao, coordinador.getId());
+                        String titulo = "Profesor con quejas acumuladas";
+                        String cuerpo = "El profesor " + profesorId + " alcanzó " + total + " quejas. Requiere revisión de coordinación pedagógica.";
+                        boolean created = notificacionDao.crear(
+                                coordinador.getId(),
+                                userType,
+                                "COORDINACION",
+                                titulo,
+                                cuerpo,
+                                "QUEJA",
+                                (long) profesorId);
+                        if (created) {
+                            try {
+                                PushNotificationService.sendToUser(coordinador.getId(), userType, titulo, cuerpo, "/coordinacion");
+                            } catch (Exception ex) {
+                                log.warn("No se pudo enviar push a coordinador {} por queja del profesor {}: {}", coordinador.getId(), profesorId, ex.getMessage());
+                            }
                         }
                     }
                 }
+            } catch (Exception ex) {
+                // La queja ya está guardada: no provocar un reenvío por un fallo de notificación.
+                log.error("Queja {} registrada, pero no se pudo notificar a coordinación", id, ex);
             }
+        } catch (ResponseStatusException ex) {
+            throw ex;
         } catch (SQLException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo registrar la queja", ex);
         } catch (Exception ex) {
