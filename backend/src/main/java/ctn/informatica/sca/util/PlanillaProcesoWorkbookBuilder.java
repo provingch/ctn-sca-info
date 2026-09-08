@@ -61,6 +61,7 @@ public class PlanillaProcesoWorkbookBuilder {
     private static final int MONTH_BLOCK_WIDTH = 13;
     // Reduced instrument column width to 4.5 characters (was 8)
     private static final double INSTRUMENT_COLUMN_WIDTH_CHARS = 4.5;
+    private static final double DEFAULT_COLUMN_WIDTH_CHARS = 8.0;
     private static final int MIN_HEADER_COLUMNS = 15;
     private static final int MONTH_HEADER_ROW = 5;
     private static final int INSTRUMENT_TITLE_ROW = 6;
@@ -896,31 +897,35 @@ public class PlanillaProcesoWorkbookBuilder {
 
         cleanColumnsAfter(sheet, lastRealColumn, signatureRow, signatureColumn);
 
-        for (MonthBlock mb : monthBlocks) {
-            if (mb == null) continue;
-            for (int c = mb.firstInstrumentCol(); c <= mb.lastInstrumentCol(); c++) {
-                if (sheet instanceof XSSFSheet) {
-                    ((XSSFSheet) sheet).setColumnWidth(c, (int) Math.round(INSTRUMENT_COLUMN_WIDTH_CHARS * 256));
+        if (sheet instanceof XSSFSheet) {
+            XSSFSheet xssf = (XSSFSheet) sheet;
+
+            // Limpiar cualquier definición de ancho previa y contradictoria en todo
+            // el rango de meses + columnas finales ANTES de reescribir los anchos
+            // definitivos. Sin este paso, las pasadas anteriores dejan rangos <col>
+            // viejos que compiten con el valor correcto y Excel puede terminar
+            // mostrando cualquiera de los dos.
+            resetColumnWidthsInRange(xssf, layout.firstMonthColumn(), lastRealColumn);
+
+            for (MonthBlock mb : monthBlocks) {
+                if (mb == null) continue;
+                for (int c = mb.firstInstrumentCol(); c <= mb.lastInstrumentCol(); c++) {
+                    xssf.setColumnWidth(c, (int) Math.round(INSTRUMENT_COLUMN_WIDTH_CHARS * 256));
                 }
+                // La columna de subtotal de cada bloque NO es una columna de tarea:
+                // debe quedar con el ancho normal, no el angosto.
+                xssf.setColumnWidth(mb.subtotalCol(), (int) Math.round(DEFAULT_COLUMN_WIDTH_CHARS * 256));
+            }
+
+            // Columnas finales fijas (Total General, Calificación Final, etc.) entre
+            // el último subtotal y lastRealColumn: ancho normal también.
+            int afterLastSubtotal = monthBlocks.stream()
+                .mapToInt(mb -> mb == null ? layout.firstMonthColumn() - 1 : mb.subtotalCol())
+                .max().orElse(layout.firstMonthColumn() - 1) + 1;
+            for (int c = afterLastSubtotal; c <= lastRealColumn; c++) {
+                xssf.setColumnWidth(c, (int) Math.round(DEFAULT_COLUMN_WIDTH_CHARS * 256));
             }
         }
-
-        try {
-            Row titleRowFinal = sheet.getRow(INSTRUMENT_TITLE_ROW);
-            int lastScan = Math.max(lastRealColumn, (titleRowFinal == null ? 0 : titleRowFinal.getLastCellNum()));
-            if (lastScan <= 0) lastScan = 200;
-            for (int c = 0; c < lastScan; c++) {
-                if (titleRowFinal == null) continue;
-                Cell tc = titleRowFinal.getCell(c);
-                if (tc == null) continue;
-                if (tc.getCellType() != CellType.STRING) continue;
-                String v = tc.getStringCellValue();
-                if (v == null || v.isBlank() || v.equalsIgnoreCase("Subtotal")) continue;
-                if (sheet instanceof XSSFSheet) {
-                    ((XSSFSheet) sheet).setColumnWidth(c, (int) Math.round(INSTRUMENT_COLUMN_WIDTH_CHARS * 256));
-                }
-            }
-        } catch (Exception ignore) {}
         }
 
     /**
@@ -1089,6 +1094,56 @@ public class PlanillaProcesoWorkbookBuilder {
     private int monthBlockWidth(List<Tarea> tareasMes) {
         int actualTasks = tareasMes == null ? 0 : tareasMes.size();
         return Math.max(2, actualTasks + 2);
+    }
+
+    /**
+     * Elimina cualquier definición <col> existente que se superponga con
+     * [fromCol, toCol] (0-based, inclusive), partiendo las que se extienden
+     * fuera del rango para no perder anchos de columnas vecinas. Esto es
+     * necesario porque setColumnWidth() llamado repetidas veces sobre una
+     * columna que ya pertenece a un rango <col> más ancho no siempre lo
+     * reemplaza limpiamente: puede dejar la definición vieja y la nueva
+     * conviviendo, y Excel resuelve el conflicto quedándose con la que
+     * aparece última en el XML — que no necesariamente es la correcta.
+     * Llamar esto SIEMPRE antes de la pasada final y definitiva de anchos,
+     * nunca antes de pasadas intermedias.
+     */
+    private void resetColumnWidthsInRange(XSSFSheet sheet, int fromCol, int toCol) {
+        if (sheet == null || fromCol > toCol) return;
+        org.openxmlformats.schemas.spreadsheetml.x2006.main.CTCols ctCols;
+        try {
+            ctCols = sheet.getCTWorksheet().getColsArray(0);
+        } catch (Exception e) {
+            return; // sin <cols>, nada que limpiar
+        }
+        int loBound = fromCol + 1; // CTCol usa min/max 1-based
+        int hiBound = toCol + 1;
+        java.util.List<org.openxmlformats.schemas.spreadsheetml.x2006.main.CTCol> kept = new java.util.ArrayList<>();
+        for (org.openxmlformats.schemas.spreadsheetml.x2006.main.CTCol col : ctCols.getColList()) {
+            long min = col.getMin();
+            long max = col.getMax();
+            if (max < loBound || min > hiBound) {
+                kept.add(col); // no se superpone, se conserva tal cual
+                continue;
+            }
+            if (min < loBound) {
+                org.openxmlformats.schemas.spreadsheetml.x2006.main.CTCol left =
+                    (org.openxmlformats.schemas.spreadsheetml.x2006.main.CTCol) col.copy();
+                left.setMin(min);
+                left.setMax(loBound - 1);
+                kept.add(left);
+            }
+            if (max > hiBound) {
+                org.openxmlformats.schemas.spreadsheetml.x2006.main.CTCol right =
+                    (org.openxmlformats.schemas.spreadsheetml.x2006.main.CTCol) col.copy();
+                right.setMin(hiBound + 1);
+                right.setMax(max);
+                kept.add(right);
+            }
+            // el tramo [loBound..hiBound] se descarta a propósito: se va a
+            // reescribir con una única definición definitiva por columna.
+        }
+        ctCols.setColArray(kept.toArray(new org.openxmlformats.schemas.spreadsheetml.x2006.main.CTCol[0]));
     }
 
     private ComputedLayout computeComputedLayout(StageLayout layout, int nextAvailable, int lastInstrumentForFinals) {
@@ -2806,5 +2861,4 @@ public class PlanillaProcesoWorkbookBuilder {
             Map<Integer, Integer> firstStageGrades,
             String firmaImagen) {
     }
-
 }
