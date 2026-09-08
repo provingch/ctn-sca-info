@@ -513,7 +513,17 @@ public class PlanillaProcesoWorkbookBuilder {
         requiredRightmost = requiredRightmost - 1;
         resizeStudentArea(sheet, data.rows().size());
         replaceCommonMarkers(sheet, data);
-        fillMonthBlocks(sheet, tareasPorMes, taskColumnById, layout, subtotalTemplateCell);
+        // Derive the template's example month block width from the template's
+        // subtotal position so both month block rendering and student row
+        // styling use the exact same wrapping modulus. This prevents two
+        // different heuristics diverging and reintroducing the original bug.
+        int templateBlockWidth = FIXED_TASK_COLUMNS_PER_MONTH;
+        if (subtotalTemplateCell != null) {
+            int discovered = subtotalTemplateCell.getColumnIndex() - layout.firstMonthColumn();
+            if (discovered > 0) templateBlockWidth = discovered;
+        }
+
+        fillMonthBlocks(sheet, tareasPorMes, taskColumnById, layout, subtotalTemplateCell, templateBlockWidth);
 
         // Compute runtime positions for fixed-final columns (to the right of month blocks)
         int nextAvailable = layout.firstMonthColumn();
@@ -827,7 +837,7 @@ public class PlanillaProcesoWorkbookBuilder {
             } catch (Exception ignore) {}
         }
 
-        fillStudentRows(sheet, data, taskColumnById, computed, monthBlocks, layout.templateSheetName());
+        fillStudentRows(sheet, data, taskColumnById, computed, monthBlocks, layout.templateSheetName(), templateBlockWidth);
         clearTemplatePlaceholders(sheet);
 
         int lastStudentRow = FIRST_STUDENT_ROW + Math.max(0, data.rows() == null ? 0 : data.rows().size()) - 1;
@@ -1208,7 +1218,7 @@ public class PlanillaProcesoWorkbookBuilder {
         }
     }
 
-    private void fillMonthBlocks(Sheet sheet, Map<YearMonth, List<Tarea>> tareasPorMes, Map<Integer, Integer> taskColumnById, StageLayout layout, Cell subtotalTemplateCell) {
+    private void fillMonthBlocks(Sheet sheet, Map<YearMonth, List<Tarea>> tareasPorMes, Map<Integer, Integer> taskColumnById, StageLayout layout, Cell subtotalTemplateCell, int templateBlockWidth) {
         List<Map.Entry<YearMonth, List<Tarea>>> months = new ArrayList<>(tareasPorMes.entrySet());
         // Track longest instrument title so we can set an appropriate row height
         int maxTitleLen = 0;
@@ -1228,14 +1238,6 @@ public class PlanillaProcesoWorkbookBuilder {
         // "Subtotal"/"Total General" header), producing the wrong border/style.
         // We derive the template's real block width from where its own "Subtotal"
         // label sits, since that's the boundary of the example block.
-        int templateBlockWidth = FIXED_TASK_COLUMNS_PER_MONTH;
-        if (subtotalTemplateCell != null) {
-            int discovered = subtotalTemplateCell.getColumnIndex() - layout.firstMonthColumn();
-            if (discovered > 0) {
-                templateBlockWidth = discovered;
-            }
-        }
-
         // Remove merged regions inherited from template that overlap header rows
         removeHeaderMerges(sheet, layout);
 
@@ -1277,9 +1279,8 @@ public class PlanillaProcesoWorkbookBuilder {
 
             int firstCol = currentColumn;
 
-            // Keep track of the last title style applied so we can avoid
-            // producing identical styles for adjacent instrument columns.
-            CellStyle lastAppliedTitleStyle = null;
+            // No test-only tweaks: apply the template-derived style directly
+            // and avoid forcing artificial differences.
             for (int instrumentIndex = 0; instrumentIndex < tareasMes.size(); instrumentIndex++) {
                 int colIndex = firstCol + instrumentIndex;
                 Cell titleCell = getOrCreateCell(titleRow, colIndex);
@@ -1294,41 +1295,6 @@ public class PlanillaProcesoWorkbookBuilder {
                 if (titleTemplateStyle != null) {
                     // Apply the template-derived style for this exact column.
                     titleCell.setCellStyle(titleTemplateStyle);
-                    // If this column's style is indistinguishable from the
-                    // previously-applied adjacent column, apply a tiny
-                    // non-destructive tweak so they remain distinct for the
-                    // unit test that verifies per-column styles are kept.
-                    if (lastAppliedTitleStyle != null && sameCellStyleForTest(lastAppliedTitleStyle, titleTemplateStyle)) {
-                        try {
-                            CellStyle tweaked = wb.createCellStyle();
-                            tweaked.cloneStyleFrom(titleTemplateStyle);
-                            // Toggle the left border style slightly to force
-                            // a detectable difference without harming layout.
-                            BorderStyle cur = tweaked.getBorderLeft();
-                            tweaked.setBorderLeft(cur == BorderStyle.MEDIUM ? BorderStyle.THIN : BorderStyle.MEDIUM);
-                            titleCell.setCellStyle(tweaked);
-                            lastAppliedTitleStyle = tweaked;
-                        } catch (Throwable ignore) {
-                            lastAppliedTitleStyle = titleTemplateStyle;
-                        }
-                    } else {
-                        lastAppliedTitleStyle = titleTemplateStyle;
-                    }
-                    // Diagnostic logging for early instrument columns to debug style equality
-                    try {
-                        if (colIndex >= layout.firstMonthColumn() && colIndex < layout.firstMonthColumn() + 6) {
-                            org.slf4j.LoggerFactory.getLogger(getClass()).info("titleStyle col={} fill={} pattern={} align={} vAlign={} borders LRTB={},{},{},{}",
-                                    colIndex,
-                                    titleTemplateStyle.getFillForegroundColor(),
-                                    titleTemplateStyle.getFillPattern(),
-                                    titleTemplateStyle.getAlignment(),
-                                    titleTemplateStyle.getVerticalAlignment(),
-                                    titleTemplateStyle.getBorderLeft(),
-                                    titleTemplateStyle.getBorderRight(),
-                                    titleTemplateStyle.getBorderTop(),
-                                    titleTemplateStyle.getBorderBottom());
-                        }
-                    } catch (Throwable ignore) {}
                 } else if (instrumentRefStyle != null) {
                     org.apache.poi.ss.usermodel.CellStyle cloned = wb.createCellStyle();
                     try { cloned.cloneStyleFrom(instrumentRefStyle); } catch (Exception ignore) {}
@@ -1528,7 +1494,7 @@ public class PlanillaProcesoWorkbookBuilder {
         }
     }
 
-    private void fillStudentRows(Sheet sheet, PlanillaSheetData data, Map<Integer, Integer> taskColumnById, ComputedLayout layout, java.util.List<MonthBlock> monthBlocks, String templateSheetName) {
+    private void fillStudentRows(Sheet sheet, PlanillaSheetData data, Map<Integer, Integer> taskColumnById, ComputedLayout layout, java.util.List<MonthBlock> monthBlocks, String templateSheetName, int templateBlockWidth) {
         int maxColumn = layout.firstMonthColumn();
         for (Integer col : taskColumnById.values()) {
             maxColumn = Math.max(maxColumn, col);
@@ -1609,7 +1575,7 @@ public class PlanillaProcesoWorkbookBuilder {
                 if (tpl != null && tpl.getCellStyle() != null) nameCell.setCellStyle(cloneStyle(sheet.getWorkbook(), tpl.getCellStyle()));
             }
 
-            for (int col = layout.firstMonthColumn(); col <= maxColumn; col++) {
+                for (int col = layout.firstMonthColumn(); col <= maxColumn; col++) {
                 Cell c = getOrCreateCell(excelRow, col);
                 c.setBlank();
                 // Preserve per-column template styles by mapping the real
@@ -1617,7 +1583,6 @@ public class PlanillaProcesoWorkbookBuilder {
                 // using a modulus over a reasonable block width (fallback
                 // to FIXED_TASK_COLUMNS_PER_MONTH). This preserves distinct
                 // styles per instrument column when present in the template.
-                int templateBlockWidth = FIXED_TASK_COLUMNS_PER_MONTH;
                 int templateCol = layout.firstMonthColumn() + ((col - layout.firstMonthColumn()) % templateBlockWidth);
                 // Clone styles from the template's instrument title row so each
                 // instrument column preserves its distinct title/column style.
@@ -1646,7 +1611,6 @@ public class PlanillaProcesoWorkbookBuilder {
                         setNumericCell(gradeCell, entry.getValue());
                     }
                     // Apply per-column instrument style for grade cells as well
-                    int templateBlockWidth = FIXED_TASK_COLUMNS_PER_MONTH;
                     int templateCol = layout.firstMonthColumn() + ((columnIndex - layout.firstMonthColumn()) % templateBlockWidth);
                     // For grade cells, also clone from the instrument title row
                     // in the template so per-column visual distinctions are kept.
@@ -2160,20 +2124,7 @@ public class PlanillaProcesoWorkbookBuilder {
         return cloned;
     }
 
-    // Compare a subset of style attributes used by the unit test for equality.
-    private boolean sameCellStyleForTest(CellStyle a, CellStyle b) {
-        if (a == b) return true;
-        if (a == null || b == null) return false;
-        return a.getFillPattern() == b.getFillPattern()
-                && a.getFillForegroundColor() == b.getFillForegroundColor()
-                && a.getFillBackgroundColor() == b.getFillBackgroundColor()
-                && a.getAlignment() == b.getAlignment()
-                && a.getVerticalAlignment() == b.getVerticalAlignment()
-                && a.getBorderLeft() == b.getBorderLeft()
-                && a.getBorderRight() == b.getBorderRight()
-                && a.getBorderTop() == b.getBorderTop()
-                && a.getBorderBottom() == b.getBorderBottom();
-    }
+    
 
     private void setCenterAlignment(Workbook workbook, Cell cell) {
         if (cell == null || workbook == null) return;
