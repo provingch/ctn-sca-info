@@ -1,126 +1,135 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import AnimatedSelect from '../../components/AnimatedSelect';
+import ContentState from '../../components/ui/ContentState';
 import { ApiError } from '../../api/client';
-import { useAuth } from '../../context/AuthContext';
 import type { AdminCatalog } from '../../api/admin';
 import { createQueja, getAdminQuejas, type QuejaItem } from '../../api/quejas';
 import { formatSqlDateTime } from '../../utils/date';
 
-export default function AdminQuejasPanel({ data, reload, status }: { data: AdminCatalog; reload: () => Promise<void>; status: (s: string) => void }) {
+const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+export default function AdminQuejasPanel({ data, status, isGlobalAdmin }: { data: AdminCatalog; status: (s: string) => void; isGlobalAdmin: boolean }) {
   const [cursoId, setCursoId] = useState<number | ''>('');
   const [profesorId, setProfesorId] = useState<number | ''>('');
   const [motivo, setMotivo] = useState('');
-  const [lista, setLista] = useState<QuejaItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [lista, setLista] = useState<QuejaItem[] | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [listLoading, setListLoading] = useState(true);
+  const [listError, setListError] = useState('');
+  const [formError, setFormError] = useState('');
+  const [query, setQuery] = useState('');
+  const requestId = useRef(0);
+  const submitting = useRef(false);
 
-  const cursos = data.cursos;
-  const asignaciones = data.asignaciones;
+  const usuariosPorId = useMemo(() => new Map(data.usuarios.map((u) => [u.id, (u.nombre + ' ' + u.apellido).trim()])), [data.usuarios]);
+  const profesoresForCurso = useMemo(() => Array.from(new Map(data.asignaciones
+    .filter((a) => a.cursoId === cursoId)
+    .map((a) => [a.profesorId, a.profesor])).entries())
+    .map(([id, nombre]) => ({ id, nombre }))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')), [cursoId, data.asignaciones]);
+  const validSelection = data.cursos.some((c) => c.id === cursoId) && profesoresForCurso.some((p) => p.id === profesorId);
 
-  const usuariosPorId = useMemo(() => {
-    const map = new Map<number, string>();
-    data.usuarios.forEach((u) => map.set(u.id, `${u.nombre} ${u.apellido}`.trim()));
-    return map;
-  }, [data.usuarios]);
-
-  function nombreCreador(creadaPor: number): string {
-    return usuariosPorId.get(creadaPor) ?? `Usuario #${creadaPor}`;
-  }
-
-  const profesoresForCurso = useMemo(() => {
-    if (!cursoId) return [] as { id: number; nombre: string }[];
-    const items = asignaciones.filter((a) => a.cursoId === Number(cursoId)).map((a) => ({ id: a.profesorId, nombre: a.profesor }));
-    // unique
-    const map = new Map<number, string>();
-    items.forEach((i) => map.set(i.id, i.nombre));
-    return Array.from(map.entries()).map(([id, nombre]) => ({ id, nombre }));
-  }, [cursoId, asignaciones]);
-
-  const { user } = useAuth();
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!cursoId || !profesorId || !motivo) return status('Completá todos los campos.');
-    setLoading(true);
+  const loadList = useCallback(async () => {
+    const request = ++requestId.current;
+    setListLoading(true);
+    setListError('');
     try {
-      const especialidadId = user?.especialidadId ?? (data.especialidades[0]?.id ?? 0);
-      await createQueja({ cursoId: Number(cursoId), profesorId: Number(profesorId), especialidadId: Number(especialidadId), motivo });
-      setMotivo('');
-      setProfesorId('');
-      setCursoId('');
-      await reload();
-      const all = await getAdminQuejas();
-      setLista(all);
-      status('Queja registrada.');
+      const items = await getAdminQuejas();
+      if (request === requestId.current) setLista(items);
     } catch (err) {
-      status(err instanceof ApiError ? err.message : 'No se pudo registrar la queja.');
+      if (request === requestId.current) setListError(err instanceof ApiError ? err.message : 'No se pudo cargar la lista de quejas.');
     } finally {
-      setLoading(false);
+      if (request === requestId.current) setListLoading(false);
     }
-  }
+  }, []);
 
-  async function loadList() {
+  useEffect(() => {
+    void loadList();
+    return () => { requestId.current += 1; };
+  }, [loadList]);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    if (submitting.current) return;
+    setFormError('');
+    if (!validSelection || !motivo.trim()) {
+      setFormError('Elegí un curso, un profesor asignado y describí el motivo.');
+      return;
+    }
+    submitting.current = true;
+    setSaving(true);
     try {
-      const all = await getAdminQuejas();
-      setLista(all);
+      await createQueja({ cursoId: Number(cursoId), profesorId: Number(profesorId), motivo: motivo.trim() });
     } catch (err) {
-      status(err instanceof ApiError ? err.message : 'No se pudo cargar la lista de quejas.');
+      setFormError(err instanceof ApiError ? err.message : 'No se pudo registrar la queja. Los datos se conservaron para reintentar.');
+      submitting.current = false;
+      setSaving(false);
+      return;
     }
+    setMotivo('');
+    setProfesorId('');
+    setCursoId('');
+    setQuery('');
+    status('Queja registrada.');
+    await loadList();
+    submitting.current = false;
+    setSaving(false);
   }
 
-  return <div>
-    <section className="panel">
-      <header className="planilla-table-heading" style={{ borderLeftColor: 'var(--accent)' }}>
-        <div><span>Registrar</span><h2>Registrar queja</h2></div>
-        <small>Registrar una queja por un profesor en tu especialidad.</small>
-      </header>
-      <div className="panel form-grid" style={{ paddingTop: 18 }}>
-        <form onSubmit={submit}>
-          <label>
-            <div className="form-label">Curso</div>
-            <AnimatedSelect ariaLabel="Curso" value={cursoId || ''} onChange={(v) => { setCursoId(Number(v)); setProfesorId(''); }} options={cursos.map((c) => ({ value: c.id, label: `${c.especialidad} ${c.nivel}° Sección ${c.seccion}` }))} />
-          </label>
-          <label>
-            <div className="form-label">Profesor</div>
-            <AnimatedSelect ariaLabel="Profesor" value={profesorId || ''} onChange={(v) => setProfesorId(Number(v))} disabled={!cursoId || profesoresForCurso.length === 0} options={profesoresForCurso.map((p) => ({ value: p.id, label: p.nombre }))} />
-          </label>
-          <label>
-            <div className="form-label">Motivo</div>
-            <textarea placeholder="Describa brevemente el motivo de la queja" value={motivo} onChange={(e) => setMotivo(e.target.value)} required />
-          </label>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <button className="button" type="submit" disabled={loading}><svg viewBox="0 0 20 20" aria-hidden="true" style={{ width: 16, height: 16, marginRight: 8 }}><path d="M2 11v5h5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>Registrar queja</button>
-            <button type="button" className="button secondary" onClick={() => void loadList()} style={{ marginLeft: 'auto' }}><svg viewBox="0 0 20 20" aria-hidden="true" style={{ width: 14, height: 14, marginRight: 6 }}><path d="M3 10a7 7 0 0112.12-4.95L17 5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>Refrescar lista</button>
-          </div>
-        </form>
-      </div>
+  const filtered = (lista ?? []).filter((q) => normalize([
+    q.profesorNombre, q.profesorApellido, q.cursoEspecialidad, q.cursoNivel, q.cursoSeccion, q.motivo,
+  ].join(' ')).includes(normalize(query.trim())));
 
-      <header className="planilla-table-heading" style={{ borderLeftColor: 'var(--muted)', marginTop: 16 }}>
-        <div><span>Listado</span><h2>Quejas en este alcance</h2></div>
-        <small className="muted-copy">Registros cargados para la especialidad actual.</small>
+  return <div className="complaints-workspace">
+    <section className="panel complaints-register" aria-labelledby="complaints-register-title">
+      <header className="complaints-heading">
+        <div><span className="eyebrow">Nuevo registro</span><h2 id="complaints-register-title">Registrar queja</h2>
+          <p>Seleccioná el curso y el profesor involucrado. La especialidad se determina por el curso.</p></div>
       </header>
-      <div className="panel" style={{ marginTop: 0, paddingTop: 12 }}>
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <button className="button secondary" type="button" onClick={() => void loadList()} style={{ marginBottom: 8 }}><svg viewBox="0 0 20 20" aria-hidden="true" style={{ width: 14, height: 14, marginRight: 6 }}><path d="M3 10a7 7 0 0112.12-4.95L17 5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>Refrescar</button>
+      <form className="form-grid complaints-form" onSubmit={submit} aria-busy={saving}>
+        <div className="complaints-field">
+          <span className="form-label">Curso</span>
+          <AnimatedSelect ariaLabel="Curso" value={cursoId} disabled={saving || data.cursos.length === 0} placeholder="Seleccioná un curso" onChange={(v) => { setCursoId(Number(v) || ''); setProfesorId(''); setFormError(''); }} options={data.cursos.map((c) => ({ value: c.id, label: c.especialidad + ' · ' + c.nivel + '° ' + c.seccion }))} />
+          {data.cursos.length === 0 && <small>No hay cursos disponibles en tu alcance.</small>}
         </div>
-        {lista.length === 0 ? <p>No hay quejas registradas.</p> : (
-          <ul className="list" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-            {lista.map((q) => (
-              <li key={q.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: 12, borderBottom: '1px solid var(--line)' }}>
-                <div className="avatar" style={{ width: 44, height: 44, borderRadius: 999, fontSize: '0.95rem', fontWeight: 900, display: 'grid', placeItems: 'center', background: 'var(--bg-soft)', color: 'var(--muted)' }}>{(q.profesorNombre ?? 'P').slice(0,1)}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <strong style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{`${q.profesorNombre ?? ''} ${q.profesorApellido ?? ''}`.trim()}</strong>
-                    <small style={{ color: 'var(--muted)', marginLeft: 6 }}>{`${q.cursoEspecialidad ?? ''} ${q.cursoNivel ?? ''}° ${q.cursoSeccion ?? ''}`.trim()}</small>
-                    <div style={{ marginLeft: 'auto' }}><span className={`badge`} style={{ borderColor: 'color-mix(in srgb, var(--accent) 32%, var(--line))' }}>{'Pendiente'}</span></div>
-                  </div>
-                  <div style={{ color: 'var(--muted)', marginTop: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.motivo}</div>
-                  <div style={{ marginTop: 8 }}><small style={{ color: 'var(--muted)' }}>{formatSqlDateTime(q.creadaEn)} — cargada por {nombreCreador(q.creadaPor)}</small></div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+        <div className="complaints-field">
+          <span className="form-label">Profesor</span>
+          <AnimatedSelect ariaLabel="Profesor" value={profesorId} onChange={(v) => setProfesorId(Number(v) || '')} disabled={saving || !cursoId || profesoresForCurso.length === 0} placeholder={cursoId ? 'Seleccioná un profesor' : 'Primero elegí un curso'} options={profesoresForCurso.map((p) => ({ value: p.id, label: p.nombre }))} />
+          {!!cursoId && profesoresForCurso.length === 0 && <small>No hay profesores asignados a este curso.</small>}
+        </div>
+        <label className="complaints-full">Motivo
+          <textarea placeholder="Describí qué ocurrió y agregá los detalles necesarios para su revisión." value={motivo} onChange={(e) => setMotivo(e.target.value)} disabled={saving} rows={4} required />
+        </label>
+        {formError && <p className="notice error complaints-full" role="alert">{formError}</p>}
+        <div className="complaints-form-footer complaints-full">
+          <small>Completá los tres campos para registrar la queja.</small>
+          <button className="button" type="submit" disabled={saving || !validSelection || !motivo.trim()}>{saving ? 'Registrando…' : 'Registrar queja'}</button>
+        </div>
+      </form>
+    </section>
+
+    <section className="panel complaints-history" aria-labelledby="complaints-history-title" aria-busy={listLoading}>
+      <header className="complaints-heading">
+        <div><span className="eyebrow">Historial</span><h2 id="complaints-history-title">Quejas registradas{lista !== null && <span className="complaints-count">{lista.length}</span>}</h2>
+          <p>{isGlobalAdmin ? 'Registros de todas las especialidades, del más reciente al más antiguo.' : 'Registros de tu especialidad, del más reciente al más antiguo.'}</p></div>
+        <button className="button secondary" type="button" disabled={listLoading || saving} onClick={() => void loadList()}>{listLoading ? 'Actualizando…' : 'Actualizar lista'}</button>
+      </header>
+      {lista !== null && lista.length > 0 && <div className="complaints-search form-grid">
+        <label>Buscar en las quejas<input type="search" placeholder="Profesor, curso, especialidad o motivo" value={query} onChange={(e) => setQuery(e.target.value)} /></label>
+        <small>{filtered.length} de {lista.length} registros</small>
+      </div>}
+      {listError && <ContentState compact tone="error" title="No se pudo actualizar el historial" detail={listError + (lista !== null ? ' Se conserva la última lista cargada.' : '')} />}
+      {lista === null && listLoading && <ContentState compact tone="loading" title="Cargando quejas…" />}
+      {lista !== null && lista.length === 0 && <ContentState compact title="Todavía no hay quejas registradas" detail="Los nuevos registros aparecerán aquí automáticamente." />}
+      {lista !== null && lista.length > 0 && filtered.length === 0 && <ContentState compact title="Sin coincidencias" detail="Probá con otro nombre, curso o motivo." actions={<button className="button secondary" type="button" onClick={() => setQuery('')}>Limpiar búsqueda</button>} />}
+      {filtered.length > 0 && <ul className="complaints-list">{filtered.map((q) => <li key={q.id}>
+        <article className="complaint-record">
+          <div className="complaint-record-heading"><h3>{[q.profesorNombre, q.profesorApellido].filter(Boolean).join(' ') || ('Profesor #' + q.profesorId)}</h3><span className="complaint-reference">Registro #{q.id}</span></div>
+          <p className="complaint-course">{[q.cursoEspecialidad, q.cursoNivel ? q.cursoNivel + '°' : null, q.cursoSeccion ? 'Sección ' + q.cursoSeccion : null].filter(Boolean).join(' · ') || ('Curso #' + q.cursoId)}</p>
+          <p className="complaint-reason">{q.motivo}</p>
+          <footer>{formatSqlDateTime(q.creadaEn)} · Registrada por {usuariosPorId.get(q.creadaPor) ?? ('Usuario #' + q.creadaPor)}</footer>
+        </article>
+      </li>)}</ul>}
     </section>
   </div>;
 }

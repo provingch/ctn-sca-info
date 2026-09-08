@@ -120,6 +120,6 @@ function AdminModule({ module, data, reload, status, isGlobalAdmin }: {
   if (module.key === 'alumnos') return <AlumnosPanel data={data} reload={reload} status={status} />;
   if (module.key === 'horarios') return <HorariosPanel status={status} />;
   if (module.key === 'salas') return <SalasPanel data={data} status={status} />;
-  if (module.key === 'quejas') return <AdminQuejasPanel data={data} reload={reload} status={status} />;
+  if (module.key === 'quejas') return <AdminQuejasPanel data={data} status={status} isGlobalAdmin={isGlobalAdmin} />;
   return <SistemaEstadoPanel />;
 }

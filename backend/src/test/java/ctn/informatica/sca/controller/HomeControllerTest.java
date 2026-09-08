@@ -129,8 +129,12 @@ class HomeControllerTest {
         UserDao userDao = mock(UserDao.class);
         NotificacionDao notificacionDao = mock(NotificacionDao.class);
         QuejaDao quejaDao = mock(QuejaDao.class);
+        CursoBaseDao cursoBaseDao = mock(CursoBaseDao.class);
+        AsignacionDao asignacionDao = mock(AsignacionDao.class);
+        when(cursoBaseDao.findEspecialidadId(13)).thenReturn(21);
+        when(asignacionDao.findByProfesorAndCurso(7, 13)).thenReturn(List.of(new Asignacion(1, 7, 2, 13)));
         HomeController controller = new HomeController(
-                mock(CursoDao.class), mock(CursoBaseDao.class), mock(AsignacionDao.class), mock(ProfesorDao.class),
+                mock(CursoDao.class), cursoBaseDao, asignacionDao, mock(ProfesorDao.class),
                 mock(PlanillaDao.class), mock(MateriaDao.class), mock(AlumnoDao.class), mock(RasgoPlanillaDao.class),
                 mock(InstrumentoDao.class), userDao, mock(PlanCurricularDao.class), mock(TemaVerificacionService.class),
                 mock(ActivityLogService.class), configuracionSistemaDao, mock(IncumplimientoRevisionDao.class), notificacionDao, quejaDao);
@@ -164,8 +168,12 @@ class HomeControllerTest {
         UserDao userDao = mock(UserDao.class);
         NotificacionDao notificacionDao = mock(NotificacionDao.class);
         QuejaDao quejaDao = mock(QuejaDao.class);
+        CursoBaseDao cursoBaseDao = mock(CursoBaseDao.class);
+        AsignacionDao asignacionDao = mock(AsignacionDao.class);
+        when(cursoBaseDao.findEspecialidadId(13)).thenReturn(21);
+        when(asignacionDao.findByProfesorAndCurso(7, 13)).thenReturn(List.of(new Asignacion(1, 7, 2, 13)));
         HomeController controller = new HomeController(
-                mock(CursoDao.class), mock(CursoBaseDao.class), mock(AsignacionDao.class), mock(ProfesorDao.class),
+                mock(CursoDao.class), cursoBaseDao, asignacionDao, mock(ProfesorDao.class),
                 mock(PlanillaDao.class), mock(MateriaDao.class), mock(AlumnoDao.class), mock(RasgoPlanillaDao.class),
                 mock(InstrumentoDao.class), userDao, mock(PlanCurricularDao.class), mock(TemaVerificacionService.class),
                 mock(ActivityLogService.class), configuracionSistemaDao, mock(IncumplimientoRevisionDao.class), notificacionDao, quejaDao);
