@@ -55,7 +55,7 @@ public class PlanillaProcesoWorkbookBuilder {
     private static final String LEGEND_SHEET = "LEYENDA_PARA_DESARROLLO";
     private static final String INSTITUTION_LOGO_PATH = "/static/logo-institucional.png";
     private static final short BLOCK_BORDER_COLOR = IndexedColors.GREY_50_PERCENT.getIndex();
-    private static final int MONTH_BLOCK_COUNT = 5;
+    private static final int MONTH_BLOCK_COUNT = 6;
     private static final int FIXED_TASK_COLUMNS_PER_MONTH = 5;
     private static final int INSTRUMENTS_PER_MONTH = 12;
     private static final int MONTH_BLOCK_WIDTH = 13;
@@ -1246,9 +1246,24 @@ public class PlanillaProcesoWorkbookBuilder {
         XSSFSheet templateSheet = (XSSFSheet) sheet.getWorkbook().getSheet(layout.templateSheetName());
         org.apache.poi.ss.usermodel.CellStyle instrumentRefStyle = null;
         org.apache.poi.ss.usermodel.CellStyle tpRefStyle = null;
+        // BUGFIX (formato de mes se pierde despues del 3er bloque): the month
+        // name header cell (e.g. "Febrero") never had its fill/border style
+        // explicitly cloned anywhere — it only kept whatever style happened to
+        // already sit at that column from the raw workbook.cloneSheet() copy
+        // of the template. Columns that fall within the template's original
+        // physical width (its last used column, ~20) accidentally inherited
+        // *some* leftover style from that copy; any column created fresh via
+        // getOrCreateCell() beyond that width (4th/5th/6th month block) got a
+        // brand-new cell with no style at all. Reading the real reference
+        // style here — the same way instrumentRefStyle/tpRefStyle already do —
+        // and cloning it onto every month header cell below fixes this for
+        // any number of month blocks, not just however many columns the
+        // template happens to physically span.
+        org.apache.poi.ss.usermodel.CellStyle monthHeaderRefStyle = null;
         if (templateSheet != null) {
             Row refTitleRow = templateSheet.getRow(INSTRUMENT_TITLE_ROW);
             Row refTpRow = templateSheet.getRow(TP_ROW);
+            Row refMonthHeaderRow = templateSheet.getRow(MONTH_HEADER_ROW);
             if (refTitleRow != null) {
                 Cell ref = refTitleRow.getCell(layout.firstMonthColumn());
                 if (ref != null) instrumentRefStyle = ref.getCellStyle();
@@ -1256,6 +1271,10 @@ public class PlanillaProcesoWorkbookBuilder {
             if (refTpRow != null) {
                 Cell ref = refTpRow.getCell(layout.firstMonthColumn());
                 if (ref != null) tpRefStyle = ref.getCellStyle();
+            }
+            if (refMonthHeaderRow != null) {
+                Cell ref = refMonthHeaderRow.getCell(layout.firstMonthColumn());
+                if (ref != null) monthHeaderRefStyle = ref.getCellStyle();
             }
         }
 
@@ -1369,6 +1388,15 @@ public class PlanillaProcesoWorkbookBuilder {
             int subtotalCol = firstCol + reservedSlotsForMonth(tareasMes);
             Cell monthCell = getOrCreateCell(monthHeaderRow, firstCol);
             setStringCell(monthCell, monthLabel);
+            if (monthHeaderRefStyle != null) {
+                org.apache.poi.ss.usermodel.CellStyle clonedMonthStyle = sheet.getWorkbook().createCellStyle();
+                try {
+                    clonedMonthStyle.cloneStyleFrom(monthHeaderRefStyle);
+                    monthCell.setCellStyle(clonedMonthStyle);
+                } catch (Exception ignore) {
+                    // keep whatever style the cell already had
+                }
+            }
             monthCell.getCellStyle().setRotation((short) 0);
             int lastInstrumentCol = firstCol + reservedSlotsForMonth(tareasMes) - 1;
             // merge month header across instrument columns if it spans 2+ cols
@@ -1535,7 +1563,14 @@ public class PlanillaProcesoWorkbookBuilder {
         CellStyle calificacionRefStyle = null;
         try {
             if (templateSheetForStyles != null) {
-                Row refTitleRow = templateSheetForStyles.getRow(INSTRUMENT_TITLE_ROW);
+                // BUGFIX (puntajes en vertical): this used to read from
+                // INSTRUMENT_TITLE_ROW (row 6, the task-name header, which is
+                // deliberately rotated 90° so long titles fit narrow columns).
+                // That rotation is only correct for header text — cloning it
+                // into the actual grade/instrument VALUE cells below made every
+                // student score render sideways. Grade cells must clone from a
+                // data row (TP_ROW), which the template keeps unrotated.
+                Row refTitleRow = templateSheetForStyles.getRow(TP_ROW);
                 Row refHeaderRow = templateSheetForStyles.getRow(MONTH_HEADER_ROW);
                 Row refTpRow = templateSheetForStyles.getRow(TP_ROW);
                 if (refTitleRow != null) {
@@ -1584,9 +1619,10 @@ public class PlanillaProcesoWorkbookBuilder {
                 // to FIXED_TASK_COLUMNS_PER_MONTH). This preserves distinct
                 // styles per instrument column when present in the template.
                 int templateCol = layout.firstMonthColumn() + ((col - layout.firstMonthColumn()) % templateBlockWidth);
-                // Clone styles from the template's instrument title row so each
-                // instrument column preserves its distinct title/column style.
-                CellStyle perCol = cloneTemplateCellStyle(sheet.getWorkbook(), templateSheetName, INSTRUMENT_TITLE_ROW, templateCol);
+                // Clone styles from the template's TP row (data row), not the
+                // instrument title row — the title row is rotated 90° for long
+                // task names, and cloning it here rotated every score value too.
+                CellStyle perCol = cloneTemplateCellStyle(sheet.getWorkbook(), templateSheetName, TP_ROW, templateCol);
                 if (perCol != null) {
                     c.setCellStyle(perCol);
                 } else if (instrumentRefStyle != null) {
@@ -1612,9 +1648,10 @@ public class PlanillaProcesoWorkbookBuilder {
                     }
                     // Apply per-column instrument style for grade cells as well
                     int templateCol = layout.firstMonthColumn() + ((columnIndex - layout.firstMonthColumn()) % templateBlockWidth);
-                    // For grade cells, also clone from the instrument title row
-                    // in the template so per-column visual distinctions are kept.
-                    CellStyle perColGrade = cloneTemplateCellStyle(sheet.getWorkbook(), templateSheetName, INSTRUMENT_TITLE_ROW, templateCol);
+                    // For grade cells, clone from the TP (data) row so the value
+                    // keeps the per-column border/width but stays unrotated —
+                    // see the BUGFIX note above (puntajes en vertical).
+                    CellStyle perColGrade = cloneTemplateCellStyle(sheet.getWorkbook(), templateSheetName, TP_ROW, templateCol);
                     if (perColGrade != null) {
                         gradeCell.setCellStyle(perColGrade);
                     } else if (instrumentRefStyle != null) {
@@ -1628,10 +1665,10 @@ public class PlanillaProcesoWorkbookBuilder {
 
             // Write subtotal formulas per month (SUM of instruments for that month)
             java.util.List<String> subtotalAddresses = new java.util.ArrayList<>();
+            int excelRowIndex = excelRow.getRowNum() + 1; // formulas use 1-based row numbers; also used below for stageSum/finalAverage
             for (MonthBlock mb : monthBlocks) {
                 String firstColRef = CellReference.convertNumToColString(mb.firstInstrumentCol());
                 String lastColRef = CellReference.convertNumToColString(mb.lastInstrumentCol());
-                int excelRowIndex = excelRow.getRowNum() + 1; // formulas use 1-based row numbers
                 String range = firstColRef + excelRowIndex + ":" + lastColRef + excelRowIndex;
                 Cell subtotalCell = getOrCreateCell(excelRow, mb.subtotalCol());
                 subtotalCell.setCellFormula("SUM(" + range + ")");
@@ -1683,6 +1720,48 @@ public class PlanillaProcesoWorkbookBuilder {
                     Cell tpl = templateRow.getCell(layout.firstStageGradeColumn());
                     if (tpl != null && tpl.getCellStyle() != null) firstStageCell.setCellStyle(cloneStyle(sheet.getWorkbook(), tpl.getCellStyle()));
                 }
+
+                // BUGFIX (Sumatoria 1ra+2da etapa nunca se calculaba): headers for
+                // "Sumatoria 1° y 2° Etapa" (stageSumColumn) and "Calificación
+                // Final" (finalAverageColumn) were already written further above
+                // by the finalColumnLabels loop, but no value/formula was ever
+                // written into those columns for any student row — they stayed
+                // permanently empty. The original 2-hoja template (row 9 of
+                // PLANTILLA_ETAPA_2) already carried these exact formulas
+                // (=SUM(firstStage+currentStage) and the rounding IF), just
+                // hardcoded to columns C/N; we reproduce them here against the
+                // real, dynamically-computed columns so they work regardless of
+                // how many months/instrument columns come before them.
+                if (layout.stageSumColumn() >= 0 || layout.finalAverageColumn() >= 0) {
+                    String firstStageRef = CellReference.convertNumToColString(layout.firstStageGradeColumn()) + excelRowIndex;
+                    String currentStageRef = CellReference.convertNumToColString(layout.currentStageGradeColumn()) + excelRowIndex;
+
+                    if (layout.stageSumColumn() >= 0) {
+                        Cell stageSumCell = getOrCreateCell(excelRow, layout.stageSumColumn());
+                        stageSumCell.setCellFormula("SUM(" + firstStageRef + "," + currentStageRef + ")");
+                        setCenterAlignment(sheet.getWorkbook(), stageSumCell);
+                        if (calificacionRefStyle != null) {
+                            stageSumCell.setCellStyle(cloneStyle(sheet.getWorkbook(), calificacionRefStyle));
+                        } else if (templateRow != null) {
+                            Cell tpl = templateRow.getCell(layout.stageSumColumn());
+                            if (tpl != null && tpl.getCellStyle() != null) stageSumCell.setCellStyle(cloneStyle(sheet.getWorkbook(), tpl.getCellStyle()));
+                        }
+                    }
+
+                    if (layout.finalAverageColumn() >= 0) {
+                        Cell finalAvgCell = getOrCreateCell(excelRow, layout.finalAverageColumn());
+                        String avgExpr = "(" + firstStageRef + "+" + currentStageRef + ")/2";
+                        finalAvgCell.setCellFormula("IF(" + avgExpr + "<=1.5,1,IF(" + currentStageRef + "=1,1,ROUND(" + avgExpr + ",0)))");
+                        setCenterAlignment(sheet.getWorkbook(), finalAvgCell);
+                        if (calificacionRefStyle != null) {
+                            finalAvgCell.setCellStyle(cloneStyle(sheet.getWorkbook(), calificacionRefStyle));
+                        } else if (templateRow != null) {
+                            Cell tpl = templateRow.getCell(layout.finalAverageColumn());
+                            if (tpl != null && tpl.getCellStyle() != null) finalAvgCell.setCellStyle(cloneStyle(sheet.getWorkbook(), tpl.getCellStyle()));
+                        }
+                    }
+                }
+
                 Cell comp = getOrCreateCell(excelRow, layout.complementaryColumn());
                 comp.setBlank();
                 if (templateRow != null) {
@@ -1954,6 +2033,15 @@ public class PlanillaProcesoWorkbookBuilder {
         // compute right edge as last subtotal + trailing fixed columns for the stage
         int trailing = layout == null ? 2 : Math.max(0, layout.trailingFixedColumns());
         lastCol = lastCol + trailing;
+
+        // Full-grid thin borders across the whole table (header rows through the
+        // last student row, column 0 through lastCol). Runs after the medium
+        // block borders were applied above (per month block, in the loop just
+        // above) and before zebra — applyFullGridBorders only fills in sides
+        // that don't already have a border, so the medium month-block outline
+        // set above is preserved, not overwritten with thin.
+        applyFullGridBorders(sheet, MONTH_HEADER_ROW, lastStudentRow, 0, lastCol);
+
         for (int r = FIRST_STUDENT_ROW, i = 0; r <= lastStudentRow; r++, i++) {
             if (i % 2 == 0) continue;
             Row row = sheet.getRow(r);
@@ -1973,6 +2061,28 @@ public class PlanillaProcesoWorkbookBuilder {
             insertLogo(sheet, specialtyLogoPath, Math.max(0, lastCol - 1), 0, Math.max(1, lastCol), 3);
         }
         insertLogo(sheet, INSTITUTION_LOGO_PATH, 0, 0, 1, 3);
+    }
+
+    /**
+     * Adds a thin border on every side of every cell in the given range that
+     * doesn't already have a border on that side. Used to satisfy "toda la
+     * planilla tenga bordes" without stomping on the thicker block-outline
+     * borders applyBlockBorder() already drew around each month block.
+     */
+    private void applyFullGridBorders(Sheet sheet, int firstRow, int lastRow, int firstCol, int lastCol) {
+        Workbook workbook = sheet.getWorkbook();
+        for (int r = firstRow; r <= lastRow; r++) {
+            Row row = getOrCreateRow(sheet, r);
+            for (int c = firstCol; c <= lastCol; c++) {
+                Cell cell = getOrCreateCell(row, c);
+                CellStyle style = cloneStyle(workbook, cell.getCellStyle());
+                if (style.getBorderTop() == BorderStyle.NONE) style.setBorderTop(BorderStyle.THIN);
+                if (style.getBorderBottom() == BorderStyle.NONE) style.setBorderBottom(BorderStyle.THIN);
+                if (style.getBorderLeft() == BorderStyle.NONE) style.setBorderLeft(BorderStyle.THIN);
+                if (style.getBorderRight() == BorderStyle.NONE) style.setBorderRight(BorderStyle.THIN);
+                cell.setCellStyle(style);
+            }
+        }
     }
 
     private void applyBlockBorder(Sheet sheet, int firstRow, int lastRow, int firstCol, int lastCol) {
