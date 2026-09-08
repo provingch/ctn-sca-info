@@ -25,6 +25,9 @@ import java.io.FileOutputStream;
 import java.util.ArrayList;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.BorderStyle;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
 
 class PlanillaProcesoWorkbookBuilderTest {
 
