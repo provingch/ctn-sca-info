@@ -189,48 +189,145 @@ INSERT INTO usuario (
     null, 3, NULL, 8),
     
     -- Profesores
-    -- Hasta ahora solo disponemos los profes que van en informatica, pero se pueden agregar los de las otras especialidades si se desea.
-    (10, 'Abner', 'Alcaraz', 'abner.alcaraz', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
-    (11, 'Alcira', 'Cáceres', 'alcira.caceres', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
-    (12, 'Andres', 'Rojas', 'andres.rojas', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
-    (13, 'Claudia', 'Burgos', 'claudia.burgos', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
-    (14, 'Cristian', 'Delgado', 'cristian.delgado', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
-    (15, 'Daniel', 'Lenguaza', 'daniel.lenguaza', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
-    (16, 'Emilce', 'Jara', 'emilce.jara', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
-    (17, 'Federico', 'González', 'federico.gonzalez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
-    (18, 'Gerardo', 'Ovelar', 'gerardo.ovelar', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
-    (19, 'Graciela', 'López', 'graciela.lopez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
-    (20, 'Graciela', 'Maidana', 'graciela.maidana', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
-    (21, 'Gustavo', 'Ramirez', 'gustavo.ramirez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
-    (22, 'Irma', 'Cardozo', 'irma.cardozo', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
-    (23, 'Juan', 'Acosta', 'juan.acosta', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
-    (24, 'Laura', 'Rivas', 'laura.rivas', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
-    (25, 'Lourdes', 'Galeano', 'lourdes.galeano', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
-    (26, 'Luz', 'Angulo', 'luz.angulo', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
-    (27, 'Mirian', 'Montania', 'mirian.montania', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
-    (28, 'Oscar', 'Ibarrola', 'oscar.ibarrola', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
-    (29, 'Oscar', 'Villasanti', 'oscar.villasanti', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
-    (30, 'Romy', 'Aguilera', 'romy.aguilera', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
-    (31, 'Ruth', 'Estigarribia', 'ruth.estigarribia', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
-    (32, 'Ruth', 'Román', 'ruth.roman', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
-    (33, 'Susana', 'Alvarenga', 'susana.alvarenga', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
-    (34, 'Zully', 'Nuñez', 'zully.nunez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
-    (35, null, 'Chavez', 'null.chavez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
-    (36, null, 'Mequer', 'null.mequer', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 10, null, null, null, null, 1, NULL, null),
-    -- Reservado hasta 90...
+    (10, 'Juan Nicolas', 'Acosta', 'juan.acosta', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 4959582, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (11, 'Abel', 'Admen Oliveira', 'abel.admen', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 2307477, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (12, 'Romy Luz', 'Aguilera de Mongelos', 'romy.aguilera', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 748826, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (13, 'Abner Constantino', 'Alcaraz Rojas', 'abner.alcaraz', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 801245, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (14, 'Jorge Anibal', 'Alfonzo Vera', 'jorge.alfonzo', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 3538324, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (15, 'Liz Maria Gloria', 'Alfonzo Vera', 'liz.alfonzo', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 3538327, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (16, 'Blanca Rosa', 'Almirón de Notario', 'blanca.almiron', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 2870819, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (17, 'Susana Raquel', 'Alvarenga Cañete', 'susana.alvarenga', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 2846055, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (18, 'Ana Maria', 'Andino Ramos', 'ana.andino', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 814644, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (19, 'Edgar Sebastian', 'Aquino Ledezma', 'edgar.aquino', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 4739025, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (20, 'Jorge Alberto', 'Aquino Peralta', 'jorge.aquino', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 2928412, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (21, 'Alba Concepción', 'Arrúa Sosa', 'alba.arrua', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 3721761, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (22, 'Nathalia Soledad', 'Báez Pereira', 'nathalia.baez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 3518186, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (23, 'Alicia Celeste', 'Barrios de Báez', 'alicia.barrios', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 2332755, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (24, 'Irma', 'Benítez Fernández', 'irma.benitez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 503029, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (25, 'Victor Sebastián', 'Benítez Irala', 'victor.benitez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1348684, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (26, 'Norberto Alejandro', 'Benítez López', 'norberto.benitez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 2152502, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (27, 'Leticia Ester', 'Bogado Fariña', 'leticia.bogado', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 6570457, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (28, 'Víctor Hugo', 'Bogarin Martinez', 'victor.bogarin', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1241578, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (29, 'Claudia Marina', 'Burgos de Velázquez', 'claudia.burgos', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 2069958, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (30, 'Robert Brigido', 'Caballero Vera', 'robert.caballero', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1044470, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (31, 'Arnaldo José', 'Cabrera Díaz', 'arnaldo.cabrera', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1291777, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (32, 'Lourdes Natalia', 'Caceres Alfonzo', 'lourdes.caceres', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 3654427, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (33, 'Alcira Carolina', 'Cáceres de Ortellado', 'alcira.caceres', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 2291288, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (34, 'Máximo Tito Simón', 'Cáceres Gini', 'maximo.caceres', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 4325994, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (35, 'Irma Graciela', 'Cardozo', 'irma.cardozo', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1295107, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (36, 'Tango Ottmar', 'Carrero Romero', 'tango.carrero', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1825471, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (37, 'Gerardo Omar', 'Centurión Gómez', 'gerardo.centurion', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 4337053, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (38, 'Victor Amadeo', 'Cerquetti Cristaldo', 'victor.cerquetti', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 451439, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (39, 'Luis Carlos', 'Chávez Zalazar', 'luis.chavez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1798067, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (40, 'Luis Fernando', 'Codas Baade', 'luis.codas', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1138010, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (41, 'Crispin', 'Coeffier Villalba', 'crispin.coeffier', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 694719, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (42, 'Osvaldo Ramón', 'Cruz', 'osvaldo.cruz', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1955257, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (43, 'Cristian Humberto', 'Delgado Pereira', 'cristian.delgado', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1877110, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (44, 'Cynthia Noelia', 'Díaz López', 'cynthia.diaz', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 4295031, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (45, 'Liz Mariza', 'Duarte de Delgado', 'liz.duarte', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1325786, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (46, 'Helen Lilian', 'Duarte Ortiz', 'helen.duarte', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 2868076, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (47, 'Jorge Guillermo', 'Echague Ramirez', 'jorge.echague', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 4318501, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (48, 'Maria del Rocio', 'Egusquiza de Schwarz', 'maria.egusquiza', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1349146, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (49, 'Lidubina', 'Escobar Garcete', 'lidubina.escobar', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 2888556, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (50, 'Fernando Javier', 'Espinoza Correa', 'fernando.espinoza', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 4912277, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (51, 'Ruth Ninfa', 'Estigarribia González', 'ruth.estigarribia', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1297160, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (52, 'Nemesio', 'Fernandez Ferreira', 'nemesio.fernandez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 4193955, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (53, 'Ana Luciana', 'Fernández de Gómez', 'ana.fernandez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1711121, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (54, 'Igor Alejandro', 'Fernández Ozuna', 'igor.fernandez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 6719007, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (55, 'Ruth Johana', 'Ferrarino Chaparro', 'ruth.ferrarino', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 4994558, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (56, 'Richar', 'Ferreira Valenzuela', 'richar.ferreira', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1319513, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (57, 'Carmen Lilian', 'Franco', 'carmen.franco', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 758565, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (58, 'Lourdes', 'Galeano de Viera', 'lourdes.galeano', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1788967, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (59, 'Mirian Raquel', 'Galeano Zavala', 'mirian.galeano', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 4089145, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (60, 'Ana Gabriela', 'Gallardo Alderete', 'ana.gallardo', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 3994217, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (61, 'Ismael Inocente', 'Garay Gonzalez', 'ismael.garay', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 3455447, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (62, 'Pedro David', 'Garcete Gauto', 'pedro.garcete', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 2110348, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (63, 'Anibal', 'Genes Boy', 'anibal.genes', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 3471698, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (64, 'Juan Angel', 'González Aguilera', 'juan.gonzalez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 805420, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (65, 'Bernarda Maria', 'González de Fleitas', 'bernarda.gonzalez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1415391, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (66, 'Federico', 'Gónzalez Esteche', 'federico.gonzalez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 3176523, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (67, 'Graciela Elizabeth', 'González Gimenez', 'graciela.gonzalez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 3480729, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (68, 'Raquel', 'González Quintana', 'raquel.gonzalez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1217787, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (69, 'Francisco Andres', 'Gónzalez Zaracho', 'francisco.gonzalez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 4793465, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (70, 'Fátima Rocío', 'Grillón de Medina', 'fatima.grillon', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 2281694, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (71, 'Felix Fernando', 'Huerta Etcheverry', 'felix.huerta', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 939001, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (72, 'Zulma Asunción', 'Ibarra Rodríguez', 'zulma.ibarra', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 757978, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (73, 'Oscar', 'Ibarrola Diaz', 'oscar.ibarrola', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 621312, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (74, 'Emilce Beatriz', 'Jara Bogado', 'emilce.jara', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 2045853, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (75, 'Hernán', 'Jara Olmedo', 'hernan.jara', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1059166, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (76, 'Rolando Daniel', 'Lenguaza Sosa', 'rolando.lenguaza', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1200350, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (77, 'Javier Adolfo', 'López Benítez', 'javier.lopez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1638538, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (78, 'Alice Amelia', 'López de Fretes', 'alice.lopez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1418878, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (79, 'Humberto Manuel', 'López González', 'humberto.lopez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 4203308, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (80, 'Maria Mercedes', 'López Lezcano', 'maria.lopez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 4165186, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (81, 'Graciela Noemí', 'López Molinas', 'graciela.lopez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1722056, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (82, 'Graciela', 'Maidana Pinto', 'graciela.maidana', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1077876, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (83, 'Alicia', 'Martinez López', 'alicia.martinez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 2970412, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (84, 'Cristhian Agustin', 'Martinez Paredes', 'cristhian.martinez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 5928736, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (85, 'Cirilo David', 'Medina Cáceres', 'cirilo.medina', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 2188244, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (86, 'Juan Antonio', 'Medina Chávez', 'juan.medina', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1988072, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (87, 'Maria Adriana', 'Mequer Pfefferkorn', 'maria.mequer', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 4261227, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (88, 'Milner Gabriel', 'Mercado Vera', 'milner.mercado', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 979744, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (89, 'Maria Soledad', 'Mereles Barrios', 'maria.mereles', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1711193, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (90, 'Marta Guadalupe', 'Mojoli Apthorpe', 'marta.mojoli', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1434365, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (91, 'Francisco Javier', 'Molinas Ferreira', 'francisco.molinas', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 4329959, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (92, 'Mirian Airini', 'Montanía Gónzalez', 'mirian.montania', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 4311520, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (93, 'Liz Marina', 'Montiel de Bogarin', 'liz.montiel', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 2196944, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (94, 'Justo Enrique', 'Mora Caballero', 'justo.mora', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 3189593, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (95, 'Iván Gerardo', 'Núñez Genes', 'ivan.nunez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 3578998, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (96, 'Zully Antonia', 'Núñez Ramírez', 'zully.nunez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1794168, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (97, 'Genicio', 'Núñez Romero', 'genicio.nunez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 3176523, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (98, 'Hugo de Jesús', 'Olmedo Chávez', 'hugo.olmedo', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 2817429, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (99, 'Leticia Soledad', 'Olmedo Melgarejo', 'leticia.olmedo', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 3446998, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (100, 'Aracely Macarena', 'Ortiz Ramirez', 'aracely.ortiz', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 5132182, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (101, 'José Edgar', 'Orué Alonso', 'jose.orue', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 901079, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (102, 'Gerardo Raúl', 'Ovelar Fernández', 'gerardo.ovelar', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 4614218, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (103, 'Andrea Romina', 'Perez Benitez', 'andrea.perez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 3420813, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (104, 'José Luis', 'Pino Meza', 'jose.pino', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 3385220, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (105, 'Zonia Inocencia', 'Ramirez de Torres', 'zonia.ramirez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1427160, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (106, 'Gustavo Adolfo', 'Ramírez Fernández', 'gustavo.ramirez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1393836, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (107, 'Christian Javier', 'Ramos Santacruz', 'christian.ramos', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 5132801, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (108, 'Daniela Consuelo', 'Ratzlaff Galeano', 'daniela.ratzlaff', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1858451, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (109, 'Jorge Alberto', 'Recalde Espinoza', 'jorge.recalde', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1203846, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (110, 'Daniel', 'Rios Morales', 'daniel.rios', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1083166, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (111, 'Laura Raquel', 'Rivas de López', 'laura.rivas', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1587228, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (112, 'Claudia Irene', 'Riveros Weiler', 'claudia.riveros', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 3528678, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (113, 'Karill Aracelli', 'Rojas Díaz', 'karill.rojas', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 4562211, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (114, 'Celso Ramón', 'Rojas Jara', 'celso.rojas', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 3669793, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (115, 'Cesar Andres', 'Rojas Morel', 'cesar.rojas', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 4635720, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (116, 'María de Lurdes', 'Román de Rivaldi', 'maria.roman', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1225464, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (117, 'Ruth Marlene', 'Román Gómez', 'ruth.roman', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 2375989, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (118, 'Angel José', 'Ruíz Diaz Antunez', 'angel.ruiz', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 3610653, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (119, 'Guillermo', 'Salcedo', 'guillermo.salcedo', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 4797255, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (120, 'Nidia Beatriz', 'Samudio de Torres', 'nidia.samudio', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 3439931, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (121, 'Silvio Gustavo', 'Sanchéz Montiel', 'silvio.sanchez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 3685769, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (122, 'Hilda Ramona', 'Sánchez', 'hilda.sanchez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 3701199, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (123, 'Jean Michel', 'Sekatcheff Snead', 'jean.sekatcheff', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 577903, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (124, 'Nancy Catalina', 'Sosa de Franco', 'nancy.sosa', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 3201310, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (125, 'Jorge Hilario', 'Szwako Montero', 'jorge.szwako', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 715659, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (126, 'Esperanza Lucia', 'Torales de Aquino', 'esperanza.torales', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 2375521, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (127, 'Genoveva De Jesús', 'Valdéz González', 'genoveva.valdez', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 558994, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (128, 'Maria Luz', 'Valiente de Angulo', 'maria.valiente', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1275005, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (129, 'Gladys Carmen', 'Vallejos Ortiz', 'gladys.vallejos', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 758565, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (130, 'Mónica Elizabeth', 'Vera Vega', 'monica.vera', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1407630, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (131, 'Oscar Adolfo', 'Villalba Ortiz', 'oscar.villalba', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 1722056, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (132, 'Oscar Daniel', 'Villalba Riveros', 'oscar.villalba', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 4912277, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (133, 'Oscar Ramón', 'Villasanti Cañete', 'oscar.villasanti', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 2293109, null, null, null, null, 1, NULL, null), --[cite: 1]
+    (134, 'Paolo Giovanni', 'Zucchini Cuevas', 'paolo.zucchini', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 4337468, null, null, null, null, 1, NULL, null); --[cite: 1]
 
     -- Evaluadores
-    (91, 'Evaluador', '1', 'evaluador1', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 11, null, null, null, null, 2, NULL, null),
-    (92, 'Evaluador', '2', 'evaluador2', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 12, null, null, null, null, 2, NULL, null),
-    (93, 'Evaluador', '3', 'evaluador3', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 13, null, null, null, null, 2, NULL, null),
-    (94, 'Evaluador', '4', 'evaluador4', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 14, null, null, null, null, 2, NULL, null),
-    (95, 'Evaluador', '5', 'evaluador5', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 15, null, null, null, null, 2, NULL, null),
+    (135, 'Evaluador', '1', 'evaluador1', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 11, null, null, null, null, 2, NULL, null),
+    (136, 'Evaluador', '2', 'evaluador2', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 12, null, null, null, null, 2, NULL, null),
+    (137, 'Evaluador', '3', 'evaluador3', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 13, null, null, null, null, 2, NULL, null),
+    (138, 'Evaluador', '4', 'evaluador4', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 14, null, null, null, null, 2, NULL, null),
+    (139, 'Evaluador', '5', 'evaluador5', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 15, null, null, null, null, 2, NULL, null),
 
-    (96, 'CoordinadorPedagogico', '1', 'cpdg1', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 16, null, null, null, null, 5, NULL, null),
-    (97, 'CoordinadorPedagogico', '2', 'cpdg2', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 17, null, null, null, null, 5, NULL, null),
-    (98, 'CoordinadorPedagogico', '3', 'cpdg3', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 18, null, null, null, null, 5, NULL, null),
-    (99, 'CoordinadorPedagogico', '4', 'cpdg4', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 19, null, null, null, null, 5, NULL, null),
-    (100,'CoordinadorPedagogico', '5', 'cpdg5', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 20, null, null, null, null, 5, NULL, null)
+    -- Coordinadores Pedagógicos
+    (140, 'CoordinadorPedagogico', '1', 'cpdg1', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 16, null, null, null, null, 5, NULL, null),
+    (141, 'CoordinadorPedagogico', '2', 'cpdg2', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 17, null, null, null, null, 5, NULL, null),
+    (142, 'CoordinadorPedagogico', '3', 'cpdg3', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 18, null, null, null, null, 5, NULL, null),
+    (143, 'CoordinadorPedagogico', '4', 'cpdg4', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 19, null, null, null, null, 5, NULL, null),
+    (144,'CoordinadorPedagogico', '5', 'cpdg5', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 20, null, null, null, null, 5, NULL, null)
 
     -- Padres (deben ser creados a traves del flujo de autenticacion de Google, por lo que no se insertan aca)    
 ON DUPLICATE KEY UPDATE
@@ -254,11 +351,11 @@ WHERE activity_log_path IS NOT NULL
 
 -- Todas las contraseñas de los usuarios son "password" y estan encriptadas con BCrypt.
 
--- ========================================
--- MATERIAS
--- ========================================
+-- =====================================================================
+-- MATERIAS COMUNES
+-- =====================================================================
+
 INSERT INTO materia (id, nombre, categoria) VALUES
--- Comunes (reservado hasta ID 40)
 (1, 'Antropología', 'comun'),
 (2, 'Ciencias', 'comun'),
 (3, 'Economía y Gestión', 'comun'),
@@ -275,51 +372,184 @@ INSERT INTO materia (id, nombre, categoria) VALUES
 (14, 'Química', 'comun'),
 (15, 'Administración Financiera', 'comun'),
 (16, 'Literatura', 'comun'),
+(17, 'Informática', 'comun'),
+(18, 'Instalaciones Industriales', 'comun'),
+(19, 'Taller de Mecánica', 'comun');
 
+INSERT INTO materia_especialidad (materia_id, especialidad_id)
+SELECT m.id, e.id
+FROM materia m
+CROSS JOIN especialidad e
+WHERE m.id IN (1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 16, 3)
+  AND e.nombre IN (
+    'Construcciones Civiles',
+    'Mecánica General',
+    'Electricidad',
+    'Química Industrial',
+    'Electromecánica',
+    'Informática',
+    'Electrónica'
+  );
 
--- Especificas
-    -- Informática (ID 41-55)
-    (41, 'Algorítmica', 'especifico'),
-    (42, 'Laboratorio Android', 'especifico'),
-    (43, 'Laboratorio Java', 'especifico'),
-    (44, 'Laboratorio Linux', 'especifico'),
-    (45, 'Laboratorio Python', 'especifico'),
-    (46, 'Laboratorio SQL', 'especifico'),
-    (47, 'Laboratorio Web', 'especifico'),
-    (48, 'Matemática Aplicada', 'especifico'),
-    (49, 'Plan de Lectura', 'especifico'),
-    (50, 'Laboratorio Redes', 'especifico'),
-    (51, 'Seguridad en Riesgos Eléctricos', 'especifico'),
-    (52, 'Dibujo Técnico', 'especifico'),
-    (53, 'Info General', 'especifico'),
-    (54, 'Laboratorio Hardware', 'especifico');
+-- Química (comun, id 14) no se dicta como tal dentro de la especialidad
+-- Química Industrial (ahí las materias son específicas: Química General,
+-- Química Analítica, etc.) -> se linkea a las otras 6
+INSERT INTO materia_especialidad (materia_id, especialidad_id)
+SELECT 14, e.id
+FROM especialidad e
+WHERE e.nombre IN (
+  'Construcciones Civiles',
+  'Mecánica General',
+  'Electricidad',
+  'Electromecánica',
+  'Informática',
+  'Electrónica'
+);
 
-    -- Las demas quedan pendientes a cargar...
+-- Administración Financiera (comun, id 15) solo aparece en Informática
+INSERT INTO materia_especialidad (materia_id, especialidad_id)
+VALUES (15, (SELECT id FROM especialidad WHERE nombre = 'Informática'));
 
 INSERT INTO materia_especialidad (materia_id, especialidad_id) VALUES
-    -- Comunes (ID 1-16)
-    (1, 1),  (1, 2),  (1, 3),  (1, 4),  (1, 5),  (1, 6),  (1, 7),  (1, 8),
-    (2, 1),  (2, 2),  (2, 3),  (2, 4),  (2, 5),  (2, 6),  (2, 7),  (2, 8),
-    (3, 1),  (3, 2),  (3, 3),  (3, 4),  (3, 5),  (3, 6),  (3, 7),  (3, 8),
-    (4, 1),  (4, 2),  (4, 3),  (4, 4),  (4, 5),  (4, 6),  (4, 7),  (4, 8),
-    (5, 1),  (5, 2),  (5, 3),  (5, 4),  (5, 5),  (5, 6),  (5, 7),  (5, 8),
-    (6, 1),  (6, 2),  (6, 3),  (6, 4),  (6, 5),  (6, 6),  (6, 7),  (6, 8),
-    (7, 1),  (7, 2),  (7, 3),  (7, 4),  (7, 5),  (7, 6),  (7, 7),  (7, 8),
-    (8, 1),  (8, 2),  (8, 3),  (8, 4),  (8, 5),  (8, 6),  (8, 7),  (8, 8),
-    (9, 1),  (9, 2),  (9, 3),  (9, 4),  (9, 5),  (9, 6),  (9, 7),  (9, 8),
-    (10, 1), (10, 2), (10, 3), (10, 4), (10, 5), (10, 6), (10, 7), (10, 8),
-    (11, 1), (11, 2), (11, 3), (11, 4), (11, 5), (11, 6), (11, 7), (11, 8),
-    (12, 1), (12, 2), (12, 3), (12, 4), (12, 5), (12, 6), (12, 7), (12, 8),
-    (13, 1), (13, 2), (13, 3), (13, 4), (13, 5), (13, 6), (13, 7), (13, 8),
-    (14, 1), (14, 2), (14, 3), (14, 4), (14, 5), (14, 6), (14, 7), (14, 8),
-    (15, 1), (15, 2), (15, 3), (15, 4), (15, 5), (15, 6), (15, 7), (15, 8),
-    (16, 1), (16, 2), (16, 3), (16, 4), (16, 5), (16, 6), (16, 7), (16, 8),
-    
-    -- Especificas Informatica (ID 41-54)
-    (41, 5), (42, 5), (43, 5), (44, 5), (45, 5), (46, 5), (47, 5), (48, 5),
-    (49, 5), (50, 5), (51, 5), (52, 5), (53, 5), (54, 5);
+(17, (SELECT id FROM especialidad WHERE nombre = 'Electricidad')),
+(17, (SELECT id FROM especialidad WHERE nombre = 'Electromecánica')),
+(17, (SELECT id FROM especialidad WHERE nombre = 'Electrónica')),
+(18, (SELECT id FROM especialidad WHERE nombre = 'Construcciones Civiles')),
+(18, (SELECT id FROM especialidad WHERE nombre = 'Electromecánica')),
+(18, (SELECT id FROM especialidad WHERE nombre = 'Electricidad')),
+(19, (SELECT id FROM especialidad WHERE nombre = 'Electricidad')),
+(19, (SELECT id FROM especialidad WHERE nombre = 'Electromecánica')),
+(19, (SELECT id FROM especialidad WHERE nombre = 'Mecánica General'));
 
-    
+
+-- =====================================================================
+-- MATERIAS ESPECÍFICAS
+-- =====================================================================
+
+-- Informática (41-55)
+INSERT INTO materia (id, nombre, categoria) VALUES
+(41, 'Algorítmica', 'especifico'),
+(42, 'Laboratorio Android', 'especifico'),
+(43, 'Laboratorio Java', 'especifico'),
+(44, 'Laboratorio Linux', 'especifico'),
+(45, 'Laboratorio Python', 'especifico'),
+(46, 'Laboratorio SQL', 'especifico'),
+(47, 'Laboratorio Web', 'especifico'),
+(48, 'Matemática Aplicada', 'especifico'),
+(49, 'Plan de Lectura', 'especifico'),
+(50, 'Laboratorio Redes', 'especifico'),
+(51, 'Seguridad en Riesgos Eléctricos', 'especifico'),
+(52, 'Dibujo Técnico', 'especifico'),
+(53, 'Info General', 'especifico'),
+(54, 'Laboratorio Hardware', 'especifico');
+
+-- Construcciones Civiles (61-80)
+INSERT INTO materia (id, nombre, categoria) VALUES
+(61, 'Proyecto y Dibujo', 'especifico'),
+(62, 'Laboratorio (Construcciones)', 'especifico'),
+(63, 'Tecnología (Construcciones)', 'especifico'),
+(64, 'Técnicas Instrumentales', 'especifico'),
+(65, 'Taller (Construcciones)', 'especifico'),
+(66, 'Resistencia de Materiales', 'especifico'),
+(67, 'Topografía', 'especifico'),
+(68, 'AutoCAD', 'especifico'),
+(69, 'Proyecto Educativo (Construcciones)', 'especifico');
+
+-- Mecánica General (81-100)
+INSERT INTO materia (id, nombre, categoria) VALUES
+(81, 'Laboratorio de Mecánica', 'especifico'),
+(82, 'Mecánica Aplicada', 'especifico'),
+(83, 'Electrotecnia (Mecánica General)', 'especifico'),
+(84, 'Tecnología Mecánica', 'especifico'),
+(85, 'Dibujo Técnico (Mecánica General)', 'especifico'),
+(86, 'Diseño y Proyecto', 'especifico'),
+(87, 'Máquinas CNC', 'especifico');
+
+-- Electricidad (101-120)
+INSERT INTO materia (id, nombre, categoria) VALUES
+(101, 'Taller (Electricidad)', 'especifico'),
+(102, 'Diseño (Electricidad)', 'especifico'),
+(103, 'Dibujo Técnico (Electricidad)', 'especifico'),
+(104, 'Laboratorio de Electrotecnia', 'especifico'),
+(105, 'Electrónica (Electricidad)', 'especifico'),
+(106, 'Proyecto (Electricidad)', 'especifico'),
+(107, 'Optativa (Electricidad)', 'especifico'),
+(108, 'Laboratorio (Electricidad)', 'especifico');
+
+-- Química Industrial (121-140)
+INSERT INTO materia (id, nombre, categoria) VALUES
+(121, 'Química General', 'especifico'),
+(122, 'Química Práctica', 'especifico'),
+(123, 'Química Analítica', 'especifico'),
+(124, 'Fisicoquímica', 'especifico'),
+(125, 'Operaciones Unitarias', 'especifico'),
+(126, 'Análisis Instrumental', 'especifico'),
+(127, 'Recursos Naturales', 'especifico'),
+(128, 'Seguridad e Higiene (Química)', 'especifico'),
+(129, 'Taller (Química)', 'especifico'),
+(130, 'Análisis Industrial', 'especifico'),
+(131, 'Microbiología', 'especifico'),
+(132, 'Tecnología y Análisis de Alimentos', 'especifico'),
+(133, 'Energía', 'especifico'),
+(134, 'Proyecto Industrial', 'especifico'),
+(135, 'Plan Optativo', 'especifico'),
+(136, 'Proyecto Educativo (Química)', 'especifico'),
+(137, 'Tecnología (Química)', 'especifico');
+
+-- Electromecánica (141-160)
+INSERT INTO materia (id, nombre, categoria) VALUES
+(141, 'Refrigeración', 'especifico'),
+(142, 'Neumática e Hidráulica', 'especifico'),
+(143, 'PLC', 'especifico'),
+(144, 'Diseño y Mantenimiento Industrial', 'especifico'),
+(145, 'Electrotecnia (Electromecánica)', 'especifico'),
+(146, 'Electrónica (Electromecánica)', 'especifico');
+
+-- Electrónica (161-180)
+INSERT INTO materia (id, nombre, categoria) VALUES
+(161, 'Electrónica Analógica', 'especifico'),
+(162, 'Electrónica Digital', 'especifico'),
+(163, 'Laboratorio de Electrónica', 'especifico'),
+(164, 'Electrotecnia (Electrónica)', 'especifico'),
+(165, 'Elementos', 'especifico'),
+(166, 'Electrónica Industrial', 'especifico'),
+(167, 'Dibujo Técnico (Electrónica)', 'especifico'),
+(168, 'Seguridad e Higiene (Electrónica)', 'especifico'),
+(169, 'Optativa (Electrónica)', 'especifico'),
+(170, 'Proyecto (Electrónica)', 'especifico');
+
+
+-- =====================================================================
+-- VÍNCULOS ESPECÍFICA -> ESPECIALIDAD
+-- =====================================================================
+
+INSERT INTO materia_especialidad (materia_id, especialidad_id)
+SELECT m.id, (SELECT id FROM especialidad WHERE nombre = 'Informática')
+FROM materia m WHERE m.id BETWEEN 41 AND 54;
+
+INSERT INTO materia_especialidad (materia_id, especialidad_id)
+SELECT m.id, (SELECT id FROM especialidad WHERE nombre = 'Construcciones Civiles')
+FROM materia m WHERE m.id BETWEEN 61 AND 69;
+
+INSERT INTO materia_especialidad (materia_id, especialidad_id)
+SELECT m.id, (SELECT id FROM especialidad WHERE nombre = 'Mecánica General')
+FROM materia m WHERE m.id BETWEEN 81 AND 87;
+
+INSERT INTO materia_especialidad (materia_id, especialidad_id)
+SELECT m.id, (SELECT id FROM especialidad WHERE nombre = 'Electricidad')
+FROM materia m WHERE m.id BETWEEN 101 AND 108;
+
+INSERT INTO materia_especialidad (materia_id, especialidad_id)
+SELECT m.id, (SELECT id FROM especialidad WHERE nombre = 'Química Industrial')
+FROM materia m WHERE m.id BETWEEN 121 AND 137;
+
+INSERT INTO materia_especialidad (materia_id, especialidad_id)
+SELECT m.id, (SELECT id FROM especialidad WHERE nombre = 'Electromecánica')
+FROM materia m WHERE m.id BETWEEN 141 AND 146;
+
+INSERT INTO materia_especialidad (materia_id, especialidad_id)
+SELECT m.id, (SELECT id FROM especialidad WHERE nombre = 'Electrónica')
+FROM materia m WHERE m.id BETWEEN 161 AND 170;
 
 -- ========================================
 -- INSTRUMENTOS
