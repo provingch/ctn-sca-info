@@ -1,8 +1,8 @@
 import type { HoraCatedraItem } from '../../api/admin';
-import { SCHEDULE_DAYS, type HorarioGridColumnState, type HorarioTablaGridProps } from './horarioSchedule';
+import { WEEKLY_SCHEDULE_DAYS, type HorarioGridColumnState, type HorarioTablaGridProps } from './horarioSchedule';
 
 function buildColumnStates(hours: HoraCatedraItem[], groupKey?: HorarioTablaGridProps['groupKey']) {
-  return SCHEDULE_DAYS.slice(1).map((_, dayIndex) => {
+  return WEEKLY_SCHEDULE_DAYS.map((_, dayIndex) => {
     const states: HorarioGridColumnState[] = [];
     for (let index = 0; index < hours.length; ) {
       const hour = hours[index];
@@ -36,7 +36,7 @@ export default function HorarioTablaGrid({ hours, renderCell, groupKey, classNam
         <thead>
           <tr>
             <th>Hora</th>
-            {SCHEDULE_DAYS.slice(1).map((day) => <th key={day}>{day}</th>)}
+            {WEEKLY_SCHEDULE_DAYS.map((day) => <th key={day}>{day}</th>)}
           </tr>
         </thead>
         <tbody>
@@ -46,7 +46,7 @@ export default function HorarioTablaGrid({ hours, renderCell, groupKey, classNam
                 <span>{hour.numero}°</span>
                 <small>{hour.horaInicio} - {hour.horaFin}</small>
               </th>
-              {SCHEDULE_DAYS.slice(1).map((day, index) => {
+              {WEEKLY_SCHEDULE_DAYS.map((day, index) => {
                 const columnState = columnStates[index][rowIndex];
                 if (columnState.kind === 'skip') {
                   return null;
