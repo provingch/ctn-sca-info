@@ -1,0 +1,29 @@
+.date-picker { min-width: 0; width: 100%; }
+.date-picker-trigger { width: 100%; min-height: 46px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--paper-raised); color: var(--ink); text-align: left; font-weight: 600; transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease; }
+.date-picker-trigger .placeholder { color: var(--muted); font-weight: 500; }
+.date-picker-trigger svg { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: var(--accent-deep); stroke-width: 1.7; stroke-linecap: round; }
+.date-picker-trigger:hover:not(:disabled) { border-color: var(--accent); background: color-mix(in srgb, var(--accent-soft) 32%, var(--paper-raised)); }
+.date-picker-trigger:focus-visible, .date-picker-trigger[aria-expanded="true"] { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent); }
+.date-picker-trigger:disabled { background: var(--bg-soft); color: var(--muted); cursor: not-allowed; }
+.date-picker-dialog { position: fixed; box-sizing: border-box; width: min(336px, calc(100vw - 24px)); max-width: none; max-height: calc(100dvh - 24px); overflow: auto; margin: 0; padding: 12px; border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line)); border-radius: 13px; background: var(--paper-raised); color: var(--ink); box-shadow: var(--shadow-md); }
+.date-picker-dialog[open] { animation: date-picker-in .18s ease both; }
+.date-picker-dialog::backdrop { background: rgb(0 0 0 / .12); }
+.date-picker-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.date-picker-header h2 { margin: 0; font-size: .95rem; font-weight: 750; text-align: center; text-transform: capitalize; }
+.date-picker-dialog button { display: inline-flex; align-items: center; justify-content: center; min-width: 0; border: 1px solid transparent; border-radius: 9px; background: transparent; color: var(--ink); box-shadow: none; cursor: pointer; }
+.date-picker-header button { width: 40px; height: 40px; flex-shrink: 0; padding: 0; font-size: 1.6rem; background: var(--bg-soft); }
+.date-picker-dialog button:hover:not(:disabled) { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 32%, var(--line)); color: var(--accent-deep); }
+.date-picker-dialog button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.date-picker-grid { width: 100%; border-collapse: separate; border-spacing: 2px; table-layout: fixed; }
+.date-picker-grid th, .date-picker-grid td { padding: 0; border: 0; text-align: center; background: transparent; }
+.date-picker-grid th { height: 30px; color: var(--muted); font-size: .72rem; font-weight: 650; }
+.date-picker-grid td button { width: 100%; min-height: 38px; padding: 4px 0; font-size: .85rem; font-variant-numeric: tabular-nums; }
+.date-picker-grid button.outside-month { color: var(--muted); opacity: .65; }
+.date-picker-grid button[aria-current="date"] { border-color: var(--accent); }
+.date-picker-grid button[aria-pressed="true"], .date-picker-grid button[aria-pressed="true"]:hover { background: var(--accent); color: var(--accent-contrast); opacity: 1; font-weight: 800; }
+.date-picker-footer { display: flex; justify-content: space-between; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.date-picker-footer button { min-height: 40px; padding: 8px 12px; color: var(--accent-deep); font-weight: 650; font-size: .8rem; }
+.date-picker-footer button:disabled { color: var(--muted); opacity: .5; cursor: not-allowed; }
+@keyframes date-picker-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 480px) { .date-picker-dialog { left: 50% !important; top: 50% !important; transform: translate(-50%, -50%); } .date-picker-dialog[open] { animation: none; } .date-picker-grid td button { min-height: 42px; } .date-picker-dialog::backdrop { background: rgb(0 0 0 / .38); } }
+@media (prefers-reduced-motion: reduce) { .date-picker-dialog[open] { animation: none; } .date-picker-trigger { transition: none; } }

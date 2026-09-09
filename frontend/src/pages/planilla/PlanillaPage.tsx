@@ -5,6 +5,7 @@ import ClassroomBadge from '../../components/ClassroomBadge';
 import GradeChip from '../../components/ui/GradeChip';
 import ContentState from '../../components/ui/ContentState';
 import AnimatedSelect from '../../components/AnimatedSelect';
+import DatePicker from '../../components/DatePicker';
 import { getPlanilla, resolvePlanilla, syncClassroom, confirmClassroomMapping, saveGrades, saveEtapa1FechaCierre, confirmEtapa1, type PlanillaDetail } from '../../api/academics';
 import { reformatearEtapa1 } from '../../api/admin';
 import { ApiError, apiDownload } from '../../api/client';
@@ -370,10 +371,10 @@ export default function PlanillaPage() {
           </div>
           {data.planilla.etapaIndex === 1 && (
             <>
-              <label className="inline-filter">
+              <div className="inline-filter planilla-date-filter">
                 <span>Cierre Etapa 1</span>
-                <input type="date" value={etapa1Date} disabled={isEtapa1Locked || confirmingEtapa1} onChange={(event) => setEtapa1Date(event.target.value)} />
-              </label>
+                <DatePicker ariaLabel="Cierre Etapa 1" value={etapa1Date} disabled={isEtapa1Locked || confirmingEtapa1} onChange={setEtapa1Date} />
+              </div>
               <div className="planilla-toolbar-actions">
                 <button className="button secondary" type="button" disabled={!etapa1Date || isEtapa1Locked || confirmingEtapa1} onClick={() => void confirmarEtapa1Accion()}>{confirmingEtapa1 ? 'Confirmando…' : 'Confirmar Etapa 1'}</button>
                 {isGlobalAdmin && <button className="button secondary" type="button" disabled={reformattingEtapa1 || !data.planilla.fechaCierreEtapa1} onClick={() => void reformatearEtapa1Accion()}>{reformattingEtapa1 ? 'Reformateando…' : 'Reformatear etapa'}</button>}
@@ -482,8 +483,10 @@ export default function PlanillaPage() {
                     )}
                     <small className="planilla-task-tp">
                       TP: {task.total}{task.fechaInicio ? ` · ${formatShortDate(task.fechaInicio)}` : ''}
-                      {isClassroomTask && <ClassroomBadge className="planilla-task-classroom-icon" label="Importada de Google Classroom" iconOnly />}
                     </small>
+                    <div className="planilla-task-origin" title={isClassroomTask ? 'Importada de Google Classroom' : 'Tarea local'}>
+                      {isClassroomTask ? <ClassroomBadge className="planilla-task-origin-icon" label="Importada de Google Classroom" iconOnly /> : <span className="origin-badge planilla-task-origin-icon" role="img" aria-label="Tarea local"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h5" /></svg></span>}
+                    </div>
                     {!isClassroomTask && !isEtapa1Locked && <Link className="planilla-task-edit" to={`/planilla/${id}/tarea/${task.id}`}>Editar</Link>}
                   </th>
                 );
