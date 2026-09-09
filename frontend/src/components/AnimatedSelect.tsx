@@ -13,6 +13,7 @@ interface AnimatedSelectProps {
   onChange: (value: string) => void;
   placeholder?: string;
   ariaLabel: string;
+  describedBy?: string;
   name?: string;
   required?: boolean;
   disabled?: boolean;
@@ -25,6 +26,7 @@ export default function AnimatedSelect({
   onChange,
   placeholder = 'Seleccione…',
   ariaLabel,
+  describedBy,
   name,
   required = false,
   disabled = false,
@@ -156,6 +158,7 @@ export default function AnimatedSelect({
       type="button"
       className="animated-select-trigger"
       aria-label={ariaLabel}
+      aria-describedby={describedBy}
       aria-haspopup="listbox"
       aria-expanded={open}
       aria-controls={listboxId}

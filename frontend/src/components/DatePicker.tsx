@@ -1,18 +1,22 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import './DatePicker.css';
+import { isValidDateValue, localDateValue as isoDate } from '../utils/dateInput';
 
-const isoDate = (date: Date) => [String(date.getFullYear()).padStart(4, '0'), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
 const parseDate = (value: string) => {
+  if (!isValidDateValue(value)) return new Date();
   const [year, month, day] = value.split('-').map(Number);
-  return year && month && day ? new Date(year, month - 1, day, 12) : new Date();
+  const date = new Date();
+  date.setFullYear(year, month - 1, day);
+  date.setHours(12, 0, 0, 0);
+  return date;
 };
 const monthLabel = new Intl.DateTimeFormat('es', { month: 'long', year: 'numeric' });
 const dayLabel = new Intl.DateTimeFormat('es', { dateStyle: 'full' });
 const displayDate = new Intl.DateTimeFormat('es', { day: '2-digit', month: '2-digit', year: 'numeric' });
 const weekdays = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
 
-export default function DatePicker({ value, onChange, ariaLabel, disabled = false }: {
-  value: string; onChange: (value: string) => void; ariaLabel: string; disabled?: boolean;
+export default function DatePicker({ value, onChange, ariaLabel, disabled = false, describedBy, invalid = false }: {
+  value: string; onChange: (value: string) => void; ariaLabel: string; disabled?: boolean; describedBy?: string; invalid?: boolean;
 }) {
   const id = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -85,7 +89,7 @@ export default function DatePicker({ value, onChange, ariaLabel, disabled = fals
   }
 
   return <div className="date-picker">
-    <button ref={triggerRef} type="button" className="date-picker-trigger" aria-label={ariaLabel} aria-haspopup="dialog" aria-expanded={open && !disabled} aria-controls={id} disabled={disabled} onClick={show}>
+    <button ref={triggerRef} type="button" className="date-picker-trigger" aria-label={ariaLabel} aria-describedby={describedBy} aria-invalid={invalid || undefined} aria-haspopup="dialog" aria-expanded={open && !disabled} aria-controls={id} disabled={disabled} onClick={show}>
       <span className={value ? '' : 'placeholder'}>{value ? displayDate.format(parseDate(value)) : 'Seleccioná una fecha'}</span>
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3" /><path d="M7 3v4m10-4v4M3 11h18m-14 4h3m4 0h3" /></svg>
     </button>

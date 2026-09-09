@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { ApiError } from '../../api/client';
 import { useToast } from '../../context/toast';
 import AnimatedSelect from '../../components/AnimatedSelect';
+import DateTimePicker from '../../components/DateTimePicker';
+import { isValidDateTimeValue } from '../../utils/dateInput';
 import * as evaluacionApi from '../../api/evaluacion';
 import * as planCurricularApi from '../../api/planCurricular';
 import { formatSqlDateTime } from '../../utils/date';
@@ -95,7 +97,7 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
   async function handleResolver() {
     if (selectedIncumplimientoId == null) return;
     if (estadoResolucion === 'RECHAZADO') {
-      if (!suspensionDesde || !suspensionHasta) {
+      if (!isValidDateTimeValue(suspensionDesde) || !isValidDateTimeValue(suspensionHasta)) {
         showToast('Indicá el inicio y el fin de la suspensión.', { tone: 'error' });
         return;
       }
@@ -181,10 +183,10 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
               />
             </label>
             {estadoResolucion === 'RECHAZADO' && <>
-              <label>Suspensión desde<input type="datetime-local" value={suspensionDesde} onChange={(event) => setSuspensionDesde(event.target.value)} /></label>
-              <label>Suspensión hasta<input type="datetime-local" value={suspensionHasta} onChange={(event) => setSuspensionHasta(event.target.value)} /></label>
+              <div className="form-field"><span className="field-label">Suspensión desde</span><DateTimePicker ariaLabel="Suspensión desde" value={suspensionDesde} disabled={resolving} onChange={setSuspensionDesde} /></div>
+              <div className="form-field"><span className="field-label">Suspensión hasta</span><DateTimePicker ariaLabel="Suspensión hasta" value={suspensionHasta} disabled={resolving} onChange={setSuspensionHasta} /></div>
             </>}
-            <button type="button" className="button" disabled={resolving || (estadoResolucion === 'RECHAZADO' && (!suspensionDesde || !suspensionHasta))} onClick={() => void handleResolver()}>{resolving ? 'Resolviendo...' : 'Resolver incumplimiento'}</button>
+            <button type="button" className="button" disabled={resolving || (estadoResolucion === 'RECHAZADO' && (!isValidDateTimeValue(suspensionDesde) || !isValidDateTimeValue(suspensionHasta)))} onClick={() => void handleResolver()}>{resolving ? 'Resolviendo...' : 'Resolver incumplimiento'}</button>
           </div>
         </>}
       </div>
