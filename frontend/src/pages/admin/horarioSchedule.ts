@@ -1,4 +1,5 @@
 export const SCHEDULE_DAYS = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'] as const;
+export const WEEKLY_SCHEDULE_DAYS = SCHEDULE_DAYS.slice(1, 6);
 
 export interface HorarioGridCell {
   content: import('react').ReactNode;
