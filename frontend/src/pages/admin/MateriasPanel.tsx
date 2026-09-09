@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { createAdminRecord, deleteAdminRecord, getMateriaEspecialidades, updateAdminRecord, type AdminCatalog } from '../../api/admin';
+import MateriasCatalog from './MateriasCatalog';
+import { createAdminRecord, getMateriaEspecialidades, updateAdminRecord, type AdminCatalog } from '../../api/admin';
 import { ApiError } from '../../api/client';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import useAccessibleDialog from '../../hooks/useAccessibleDialog';
@@ -29,7 +30,8 @@ export default function MateriasPanel({ data, reload, status }: MateriasPanelPro
       try {
         especialidadIds = await getMateriaEspecialidades(item.id);
       } catch {
-        especialidadIds = [];
+        status('No se pudieron cargar las especialidades de la materia. Reintentá antes de editar.');
+        return;
       }
     }
     setEditingId(item.id);
@@ -68,51 +70,7 @@ export default function MateriasPanel({ data, reload, status }: MateriasPanelPro
 
   return (
     <>
-      <div className="toolbar">
-        <button type="button" className="button" onClick={openCreate}>Crear registro</button>
-      </div>
-
-      <div className="table-wrap">
-        <table className="grade-table" style={{ minWidth: 720 }}>
-          <caption className="visually-hidden">Materias registradas</caption>
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Tipo</th>
-              <th>Especialidad(es)</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.materias.map((subject) => (
-              <tr key={subject.id}>
-                <td>{subject.nombre}</td>
-                <td>{subject.categoria === 'especifico' ? 'Específica' : 'Común'}</td>
-                <td>
-                  {subject.especialidadIds && subject.especialidadIds.length > 0
-                    ? subject.especialidadIds.map((specialtyId) => data.especialidades.find((specialty) => specialty.id === specialtyId)?.nombre).filter(Boolean).join(', ')
-                    : '—'}
-                </td>
-                <td>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    <button type="button" className="button secondary" onClick={() => void openEdit(subject)}>Editar</button>
-                    <button type="button" className="button danger" onClick={async () => {
-                      if (!window.confirm('¿Eliminar esta materia? Esta acción fallará si existen planillas que la referencian.')) return;
-                      try {
-                        await deleteAdminRecord('materias', subject.id);
-                        status('Materia eliminada.');
-                        await reload();
-                      } catch (error) {
-                        status(error instanceof ApiError ? error.message : 'No se pudo eliminar la materia.');
-                      }
-                    }}>Eliminar</button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <MateriasCatalog data={data} reload={reload} status={status} onCreate={openCreate} onEdit={(item) => void openEdit(item)} />
 
       {isOpen && (
         <div ref={formDialogRef} className="data-modal" role="dialog" aria-modal="true" aria-labelledby="materia-form-title" tabIndex={-1}>

@@ -438,7 +438,7 @@ public class AdminController {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes eliminar materias fuera de tu especialidad");
             }
             boolean deleted = new MateriaDao().delete(id);
-            if (!deleted) throw new ResponseStatusException(HttpStatus.CONFLICT, "No se pudo eliminar: la materia está referenciada por planillas o no existe");
+            if (!deleted) throw new ResponseStatusException(HttpStatus.CONFLICT, "No se pudo eliminar: la materia tiene planillas o asignaciones vinculadas, o ya no existe");
             try {
                 activityLogService.registrar(ApiAuth.requireUserId(auth), "Eliminó materia #" + id);
             } catch (Exception ex) {
