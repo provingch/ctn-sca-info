@@ -1032,3 +1032,10 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .complaint-course { margin: 6px 0 14px; color: var(--muted); font-size: .82rem; }
 .complaint-reason { margin: 0 0 16px; white-space: pre-wrap; line-height: 1.65; font-size: .9rem; }
 @media (max-width: 640px) { .complaints-form, .complaints-search { grid-template-columns: 1fr; } .complaints-heading { align-items: flex-start; flex-direction: column; } .complaints-form-footer { align-items: stretch; flex-direction: column; } .complaints-search > small { padding-bottom: 0; } }
+.planilla-task-heading .planilla-task-tp { justify-content: center; text-align: center; }
+.planilla-task-origin { display: flex; align-items: center; justify-content: center; margin-top: 8px; }
+.planilla-task-origin .planilla-task-origin-icon { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 32px; width: 32px; height: 32px; padding: 5px; box-sizing: border-box; border-radius: 9px; }
+.planilla-task-origin .planilla-task-origin-icon svg { display: block; width: 20px; height: 20px; flex-shrink: 0; }
+.planilla-task-origin .origin-badge svg { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.planilla-legacy-toolbar .planilla-date-filter { display: grid; }
+@media (max-width: 680px) { .planilla-legacy-toolbar .planilla-date-filter { grid-template-columns: 1fr; } }
