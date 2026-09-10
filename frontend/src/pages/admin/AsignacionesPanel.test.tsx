@@ -15,6 +15,15 @@ function choose(label: string, option: string) {
 }
 
 describe('Directorio de profesores', () => {
+  it('distingue las especialidades de un profesor con sus colores y cantidades', () => {
+    const catalog = { ...data, cursos: [{ id: 1, especialidad: 'Informática', nivel: 1, seccion: 'A' }, { id: 2, especialidad: 'Electrónica', nivel: 2, seccion: 'B' }], asignaciones: [data.asignaciones[3], { ...data.asignaciones[3], id: 10, cursoId: 2 }] };
+    render(panel(catalog));
+    const row = screen.getAllByRole('rowheader')[0];
+    expect(within(row).getByText('Informática')).toHaveAttribute('data-specialty', 'informatica');
+    expect(within(row).getByText('Electrónica')).toHaveAttribute('data-specialty', 'electronica');
+    fireEvent.click(screen.getByRole('button', { name: 'Ver detalle de Ácosta, Ana' }));
+    expect(screen.getByText('Electrónica')).toHaveAttribute('data-specialty', 'electronica');
+  });
   it('pagina, busca sin tildes y combina filtros', () => {
     render(panel());
     expect(screen.getAllByRole('rowheader')).toHaveLength(10);

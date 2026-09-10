@@ -14,9 +14,11 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class SalaDao extends conexion {
     private Sala from(ResultSet rs) throws SQLException {
-        return new Sala(rs.getInt("id"), rs.getString("nombre"),
+        Sala sala = new Sala(rs.getInt("id"), rs.getString("nombre"),
                 rs.getObject("especialidad_id") == null ? null : rs.getInt("especialidad_id"),
                 rs.getString("especialidad_nombre"));
+        sala.setBloquesAsignados(rs.getInt("bloques_asignados"));
+        return sala;
     }
 
     public List<Sala> findAll() throws SQLException { return query(null, false); }
@@ -24,7 +26,8 @@ public class SalaDao extends conexion {
     public List<Sala> findByEspecialidad(Integer especialidadId) throws SQLException { return query(especialidadId, true); }
 
     private List<Sala> query(Integer especialidadId, boolean visible) throws SQLException {
-        String sql = "SELECT s.id, s.nombre, s.especialidad_id, e.nombre AS especialidad_nombre FROM sala s "
+        String sql = "SELECT s.id, s.nombre, s.especialidad_id, e.nombre AS especialidad_nombre, "
+                + "(SELECT COUNT(*) FROM horario_slot hs WHERE hs.sala_id = s.id) AS bloques_asignados FROM sala s "
                 + "LEFT JOIN especialidad e ON e.id = s.especialidad_id "
                 + (visible ? "WHERE s.especialidad_id IS NULL OR s.especialidad_id = ? " : "")
                 + "ORDER BY s.especialidad_id IS NOT NULL, e.nombre, s.nombre";
@@ -54,6 +57,37 @@ public class SalaDao extends conexion {
     }
 
     public boolean eliminar(int id) throws SQLException {
-        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("DELETE FROM sala WHERE id = ?")) { ps.setInt(1, id); return ps.executeUpdate() == 1; }
+        try (Connection c = getCon()) {
+            c.setAutoCommit(false);
+            try {
+                // Lock the parent row: concurrent horario inserts require a FK lock
+                // on this same room, so usage cannot change between check and delete.
+                try (PreparedStatement lock = c.prepareStatement("SELECT id FROM sala WHERE id = ? FOR UPDATE")) {
+                    lock.setInt(1, id);
+                    try (ResultSet row = lock.executeQuery()) {
+                        if (!row.next()) { c.rollback(); return false; }
+                    }
+                }
+                try (PreparedStatement usage = c.prepareStatement("SELECT id FROM horario_slot WHERE sala_id = ? LIMIT 1 FOR UPDATE")) {
+                    usage.setInt(1, id);
+                    try (ResultSet row = usage.executeQuery()) {
+                        if (row.next()) throw new SalaEnUsoException();
+                    }
+                }
+                try (PreparedStatement delete = c.prepareStatement("DELETE FROM sala WHERE id = ?")) {
+                    delete.setInt(1, id);
+                    boolean deleted = delete.executeUpdate() == 1;
+                    c.commit();
+                    return deleted;
+                }
+            } catch (SQLException error) {
+                c.rollback();
+                throw error;
+            }
+        }
+    }
+
+    public static class SalaEnUsoException extends SQLException {
+        public SalaEnUsoException() { super("La sala tiene bloques de horario asignados. Reasigná o quitá esos bloques antes de eliminarla."); }
     }
 }

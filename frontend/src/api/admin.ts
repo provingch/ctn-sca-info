@@ -106,7 +106,7 @@ export interface HorarioImportRowItem {
 }
 export interface HorarioImportResponse { creados: number; omitidos: number; filas: HorarioImportRowItem[]; }
 export interface AsignacionResumenItem { asignacionId: number; materiaNombre: string; profesorNombre: string; }
-export interface SalaItem { id: number; nombre: string; especialidadId: number | null; especialidadNombre: string | null; }
+export interface SalaItem { id: number; nombre: string; especialidadId: number | null; especialidadNombre: string | null; bloquesAsignados?: number | null; }
 
 export interface MigracionEstadoItem {
   version: string;
