@@ -310,7 +310,6 @@ public class AdminController {
         try {
             String defaultPassword = input.contrasenia() == null || input.contrasenia().isBlank() ? "password" : input.contrasenia();
             if (input.nivel() == 4) {
-                PadreDao padreDao = new PadreDao();
                 Padre padre = new Padre();
                 padre.setNombre(input.nombre().trim());
                 padre.setApellido(input.apellido().trim());
@@ -320,11 +319,9 @@ public class AdminController {
                 padre.setTelefono(input.telefono());
                 padre.setCi(input.ci());
                 padre.setTotpSecret(null);
+                // toProfesor(...) ya deja nivel = 4, así que create(...) inserta al padre con su nivel definitivo.
                 int id = new ProfesorDao().create(toProfesor(padre));
-                if (id <= 0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo crear el usuario");
-                if (!new ProfesorDao().updateNivel(id, 4)) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo asignar el nivel del padre");
-                }
+                if (id <= 0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se pudo crear el usuario. Verificá que el nombre de usuario y la cédula no estén en uso.");
                 return;
             }
             validateAdminRoleAssignment(getSpecialtyAdminIdForUser(actingUserId), input.nivel(), input.especialidadId());
