@@ -17,9 +17,14 @@ INSERT IGNORE INTO codigo_conducta (codigo, descripcion, activo) VALUES
     ('N7', 'No utiliza el uniforme establecido', TRUE),
     ('N8', 'Ausente en clase, presente en la Institución', TRUE);
 
+-- MariaDB no soporta `DROP CHECK`; usa `DROP CONSTRAINT`. Se separan los
+-- ALTER y se hace drop-then-add del FK para que la migración sea reintentable.
+ALTER TABLE rasgo_asistencia_codigo MODIFY codigo VARCHAR(10) NOT NULL;
+
+ALTER TABLE rasgo_asistencia_codigo DROP CONSTRAINT IF EXISTS chk_rasgo_asistencia_codigo;
+
+ALTER TABLE rasgo_asistencia_codigo DROP FOREIGN KEY IF EXISTS fk_rasgo_asistencia_codigo_conducta;
 ALTER TABLE rasgo_asistencia_codigo
-    MODIFY codigo VARCHAR(10) NOT NULL,
-    DROP CHECK chk_rasgo_asistencia_codigo,
     ADD CONSTRAINT fk_rasgo_asistencia_codigo_conducta
         FOREIGN KEY (codigo) REFERENCES codigo_conducta (codigo)
         ON UPDATE CASCADE ON DELETE RESTRICT;
