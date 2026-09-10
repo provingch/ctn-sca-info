@@ -11,6 +11,7 @@ import ctn.informatica.sca.dao.TareaDao;
 import ctn.informatica.sca.google.ClassroomSyncOrchestrator;
 import ctn.informatica.sca.dao.ClassroomSyncLogDao;
 import ctn.informatica.sca.service.ActivityLogService;
+import ctn.informatica.sca.service.ParentPushService;
 import ctn.informatica.sca.service.PlanillaService;
 import ctn.informatica.sca.google.GoogleClassroomService;
 import ctn.informatica.sca.model.Curso;
@@ -60,16 +61,17 @@ public class PlanillaController {
     private final ClassroomSyncOrchestrator classroomSyncOrchestrator;
     private final ClassroomSyncLogDao classroomSyncLogDao;
     private final ActivityLogService activityLogService;
+    private final ParentPushService parentPushService;
 
     public PlanillaController() {
-        this(new PlanillaDao(), new ProfesorDao(), new ClassroomSyncOrchestrator(), new ClassroomSyncLogDao(), null);
+        this(new PlanillaDao(), new ProfesorDao(), new ClassroomSyncOrchestrator(), new ClassroomSyncLogDao(), null, null);
     }
 
     public PlanillaController(
             PlanillaDao planillaDao,
             ProfesorDao profesorDao,
             ClassroomSyncOrchestrator classroomSyncOrchestrator) {
-        this(planillaDao, profesorDao, classroomSyncOrchestrator, new ClassroomSyncLogDao(), null);
+        this(planillaDao, profesorDao, classroomSyncOrchestrator, new ClassroomSyncLogDao(), null, null);
     }
 
     @Autowired
@@ -78,12 +80,14 @@ public class PlanillaController {
             ProfesorDao profesorDao,
             ClassroomSyncOrchestrator classroomSyncOrchestrator,
             ClassroomSyncLogDao classroomSyncLogDao,
-            ActivityLogService activityLogService) {
+            ActivityLogService activityLogService,
+            ParentPushService parentPushService) {
         this.planillaDao = planillaDao;
         this.profesorDao = profesorDao;
         this.classroomSyncOrchestrator = classroomSyncOrchestrator;
         this.classroomSyncLogDao = classroomSyncLogDao;
         this.activityLogService = activityLogService;
+        this.parentPushService = parentPushService;
     }
 
     @GetMapping("/{planillaId}")
@@ -256,6 +260,9 @@ public class PlanillaController {
 
             if (savedCount > 0) {
                 new GradeDao().saveGradesBatch(planilla.getId(), gradesByRegistro);
+                if (parentPushService != null) {
+                    parentPushService.notifyGradesSaved(planilla.getId(), gradesByAlumno.keySet());
+                }
             }
 
             String message = savedCount > 0

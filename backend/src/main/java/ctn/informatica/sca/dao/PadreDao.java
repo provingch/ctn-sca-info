@@ -221,6 +221,49 @@ public class PadreDao extends conexion {
         }
     }
 
+    /** Distinct parent (nivel 4) user ids linked to any of the given students. */
+    public List<Integer> findPadreUserIdsByAlumnoIds(java.util.Collection<Integer> alumnoIds) throws SQLException {
+        if (alumnoIds == null || alumnoIds.isEmpty()) {
+            return List.of();
+        }
+        String placeholders = alumnoIds.stream().map(id -> "?").collect(java.util.stream.Collectors.joining(","));
+        String sql = "SELECT DISTINCT ap.usuario_id "
+                + "FROM alumno_usuario ap JOIN usuario u ON u.id = ap.usuario_id "
+                + "WHERE u.nivel = 4 AND ap.alumno_id IN (" + placeholders + ")";
+        List<Integer> ids = new ArrayList<>();
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            int i = 1;
+            for (Integer alumnoId : alumnoIds) {
+                ps.setInt(i++, alumnoId);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    ids.add(rs.getInt(1));
+                }
+            }
+        }
+        return ids;
+    }
+
+    /** Distinct parent user ids of every student registered in the given planilla. */
+    public List<Integer> findPadreUserIdsByPlanillaId(int planillaId) throws SQLException {
+        String sql = "SELECT DISTINCT ap.usuario_id "
+                + "FROM registro r "
+                + "JOIN alumno_usuario ap ON ap.alumno_id = r.alumno_id "
+                + "JOIN usuario u ON u.id = ap.usuario_id "
+                + "WHERE u.nivel = 4 AND r.planilla_id = ?";
+        List<Integer> ids = new ArrayList<>();
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, planillaId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    ids.add(rs.getInt(1));
+                }
+            }
+        }
+        return ids;
+    }
+
     public List<ParentSummaryItem> findParentSummary(int padreId) throws SQLException {
         String sql = "SELECT a.id AS alumno_id, a.nombre AS alumno_nombre, a.apellido AS alumno_apellido, "
                 + "c.id AS curso_id, e.nombre AS especialidad_nombre, m.id AS materia_id, m.nombre AS materia_nombre, p.id AS planilla_id, p.etapa, p.categoria, "
