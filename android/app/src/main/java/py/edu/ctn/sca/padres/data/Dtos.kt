@@ -87,3 +87,35 @@ data class FcmTokenRequest(
     val token: String,
     val platform: String = "android",
 )
+
+// ---- Profile (subset of ctn.informatica.sca.dto.ProfileResponse / SaveProfileRequest) ----
+
+@Serializable
+data class ProfileResponseDto(
+    val profileOwner: ProfileOwnerDto = ProfileOwnerDto(),
+    val canEditAdminOnlyProfileFields: Boolean = false,
+)
+
+@Serializable
+data class ProfileOwnerDto(
+    val nombre: String? = null,
+    val apellido: String? = null,
+    val ci: Int? = null,
+    val correo: String? = null,
+    val telefono: String? = null,
+    val usuario: String? = null,
+)
+
+@Serializable
+data class SaveProfileRequest(
+    val usuario: String,
+    val nombre: String? = null,
+    val apellido: String? = null,
+    val correo: String? = null,
+    val telefono: String? = null,
+    val ci: Int? = null,
+)
+
+/** Cuerpo de error que devuelve `ApiExceptionHandler` (status, error, message). */
+@Serializable
+data class ApiErrorDto(val message: String? = null)
