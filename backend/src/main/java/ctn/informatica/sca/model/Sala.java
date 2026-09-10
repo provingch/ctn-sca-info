@@ -5,6 +5,7 @@ public class Sala {
     private String nombre;
     private Integer especialidadId;
     private String especialidadNombre;
+    private int bloquesAsignados;
 
     public Sala() {}
     public Sala(int id, String nombre, Integer especialidadId, String especialidadNombre) {
@@ -21,4 +22,6 @@ public class Sala {
     public void setEspecialidadId(Integer especialidadId) { this.especialidadId = especialidadId; }
     public String getEspecialidadNombre() { return especialidadNombre; }
     public void setEspecialidadNombre(String especialidadNombre) { this.especialidadNombre = especialidadNombre; }
+    public int getBloquesAsignados() { return bloquesAsignados; }
+    public void setBloquesAsignados(int bloquesAsignados) { this.bloquesAsignados = bloquesAsignados; }
 }

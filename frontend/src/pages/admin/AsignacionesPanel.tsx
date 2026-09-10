@@ -4,6 +4,8 @@ import { ApiError } from '../../api/client';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import useAccessibleDialog from '../../hooks/useAccessibleDialog';
 import './AsignacionesPanel.css';
+import SpecialtyBadge from '../../components/SpecialtyBadge';
+import { normalizeSpecialty } from '../../theme/theme';
 
 interface AsignacionesPanelProps {
   data: AdminCatalog;
@@ -63,6 +65,17 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
     return result;
   }, [data.asignaciones]);
   const totalAssignments = profesores.reduce((total, profesor) => total + (counts.get(profesor.id) ?? 0), 0);
+  const specialtiesByProfessor = useMemo(() => {
+    const courses = new Map(data.cursos.map((course) => [course.id, course.especialidad]));
+    const result = new Map<number, Map<string, number>>();
+    for (const assignment of data.asignaciones) {
+      const name = courses.get(assignment.cursoId) || 'Sin especialidad';
+      const groups = result.get(assignment.profesorId) ?? new Map<string, number>();
+      groups.set(name, (groups.get(name) ?? 0) + 1);
+      result.set(assignment.profesorId, groups);
+    }
+    return result;
+  }, [data.asignaciones, data.cursos]);
   const average = profesores.length ? totalAssignments / profesores.length : 0;
   const maxAssignments = profesores.reduce((max, profesor) => Math.max(max, counts.get(profesor.id) ?? 0), 1);
   const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
@@ -287,8 +300,8 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
                 const description = count === 0 ? 'Sin asignaciones' : count > average ? 'Sobre el promedio' : count < average ? 'Bajo el promedio' : 'En el promedio';
                 return (
                 <tr key={profesor.id}>
-                  <th scope="row">{profesor.apellido}, {profesor.nombre}<small>@{profesor.usuario}</small></th>
-                  <td><div className="assignment-load" data-above={count > average}><div><strong>{count}</strong><span>{description}</span></div><div className="assignment-load-track" aria-hidden="true"><i style={{ width: `${count / maxAssignments * 100}%` }} /></div></div></td>
+                  <th scope="row">{profesor.apellido}, {profesor.nombre}<small>@{profesor.usuario}</small><div className="assignment-specialties">{[...(specialtiesByProfessor.get(profesor.id) ?? [])].sort(([a], [b]) => a.localeCompare(b, 'es')).map(([name, total]) => <SpecialtyBadge key={name} name={name} count={total} />)}</div></th>
+                  <td><div className="assignment-load"><div><strong>{count}</strong><span>{description}</span></div><div className="assignment-load-track" aria-hidden="true">{[...(specialtiesByProfessor.get(profesor.id) ?? [])].sort(([a], [b]) => a.localeCompare(b, 'es')).map(([name, total]) => <i key={name} data-specialty={normalizeSpecialty(name)} style={{ width: `${total / maxAssignments * 100}%` }} />)}</div></div></td>
                   <td><button type="button" className="assignment-detail" aria-label={`Ver detalle de ${profesor.apellido}, ${profesor.nombre}`} onClick={() => setSelectedProfesorId(profesor.id)}>Ver detalle <span aria-hidden="true">→</span></button></td>
                 </tr>
               ); })}
@@ -336,7 +349,7 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
                 return (
                   <tr key={assignment.id}>
                     <td>{assignment.materia}</td>
-                    <td>{course?.especialidad ?? '—'}</td>
+                    <td>{course?.especialidad ? <SpecialtyBadge name={course.especialidad} /> : '—'}</td>
                     <td>{course?.nivel ?? '—'}°</td>
                     <td>{course?.seccion ?? '—'}</td>
                     <td>

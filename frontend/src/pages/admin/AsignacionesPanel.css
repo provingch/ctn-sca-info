@@ -27,9 +27,10 @@
 .assignment-load > div:first-child { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
 .assignment-load strong { font-variant-numeric: tabular-nums; }
 .assignment-load span { font-size: .75rem; }
-.assignment-load-track { height: 5px; overflow: hidden; border-radius: 3px; background: var(--line); }
+.assignment-load-track { display: flex; height: 5px; overflow: hidden; border-radius: 3px; background: var(--line); }
 .assignment-load-track i { display: block; height: 100%; border-radius: inherit; background: var(--accent); }
-.assignment-load[data-above="true"] .assignment-load-track i { background: var(--warning); }
+.assignment-specialties { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.assignment-specialties:empty { display: none; }
 .assignment-pagination, .assignment-pagination nav { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; font-size: .82rem; }
 .assignment-pagination p { margin: 0; }
 .assignment-pagination .button:disabled { opacity: .5; cursor: not-allowed; }

@@ -172,7 +172,7 @@ public class AdminController {
             Integer scopedId = getSpecialtyAdminIdForUser(ApiAuth.requireUserId(auth));
             if (scopedId != null) especialidadId = scopedId;
             List<Sala> salas = especialidadId == null ? new SalaDao().findAll() : new SalaDao().findByEspecialidad(especialidadId);
-            return salas.stream().map(s -> new SalaItem(s.getId(), s.getNombre(), s.getEspecialidadId(), s.getEspecialidadNombre())).toList();
+            return salas.stream().map(s -> new SalaItem(s.getId(), s.getNombre(), s.getEspecialidadId(), s.getEspecialidadNombre(), s.getBloquesAsignados())).toList();
         } catch (Exception ex) { throw failure("No se pudo cargar el catálogo de salas", ex); }
     }
 
@@ -204,6 +204,7 @@ public class AdminController {
     public void deleteSala(@PathVariable int id, Authentication auth) {
         ApiAuth.requireUserId(auth); requireGlobalAdmin(auth);
         try { if (!new SalaDao().eliminar(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Sala no encontrada"); }
+        catch (SalaDao.SalaEnUsoException ex) { throw new ResponseStatusException(HttpStatus.CONFLICT, ex.getMessage()); }
         catch (ResponseStatusException ex) { throw ex; }
         catch (Exception ex) { throw failure("No se pudo eliminar la sala", ex); }
     }
@@ -915,7 +916,11 @@ public class AdminController {
     public record WipeResponse(String message, int deletedGrades, int deletedTasks, int planillaId, int clearedGoogleCourseIds) {}
     public record GlobalWipeResponse(String message, int deletedGrades, int deletedTasks, int clearedGoogleCourseIds) {}
     public record GoogleClearResponse(String message) {}
-    public record SalaItem(int id, String nombre, Integer especialidadId, String especialidadNombre) {}
+    public record SalaItem(int id, String nombre, Integer especialidadId, String especialidadNombre, Integer bloquesAsignados) {
+        public SalaItem(int id, String nombre, Integer especialidadId, String especialidadNombre) {
+            this(id, nombre, especialidadId, especialidadNombre, null);
+        }
+    }
     public record SalaInput(String nombre, Integer especialidadId) {}
 
     public record GoogleTokenInfo(String googleEmail, boolean hasAccessToken, boolean hasRefreshToken, long tokenExpiry) {}
