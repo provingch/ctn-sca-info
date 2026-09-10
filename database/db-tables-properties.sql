@@ -37,7 +37,7 @@ CREATE TABLE curso (
 
 CREATE TABLE alumno (
     id INT AUTO_INCREMENT,
-    ci INT UNIQUE,
+    ci VARCHAR(20) UNIQUE,
     nombre VARCHAR(45) NOT NULL,
     apellido VARCHAR(45) NOT NULL,
     curso_id INT NOT NULL,

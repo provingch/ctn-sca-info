@@ -5,7 +5,7 @@ import { createSala, deleteSala, getSalas, updateSala, type AdminCatalog, type S
 import { ApiError } from '../../api/client';
 
 vi.mock('../../api/admin', () => ({ createSala: vi.fn(), deleteSala: vi.fn(), getSalas: vi.fn(), updateSala: vi.fn() }));
-const data: AdminCatalog = { especialidades: [{ id: 1, nombre: 'Electrónica' }, { id: 2, nombre: 'Informática' }], usuarios: [], materias: [], asignaciones: [], alumnos: [], cursos: [], cursosAlumnos: [] };
+const data: AdminCatalog = { especialidades: [{ id: 1, nombre: 'Electrónica' }, { id: 2, nombre: 'Informática' }], usuarios: [], materias: [], asignaciones: [], alumnos: [], cursos: [], cursosAlumnos: [], egresados: [] };
 const rooms: SalaItem[] = [{ id: 1, nombre: 'PC 01', especialidadId: null, especialidadNombre: null, bloquesAsignados: 0 }, ...Array.from({ length: 11 }, (_, index) => ({ id: index + 2, nombre: `S${index + 1}`, especialidadId: 1, especialidadNombre: 'Electrónica', bloquesAsignados: index === 3 ? 8 : 0 }))];
 beforeEach(() => { vi.resetAllMocks(); vi.mocked(getSalas).mockResolvedValue(rooms); });
 function show() { return render(<SalasPanel data={data} status={vi.fn()} />); }
