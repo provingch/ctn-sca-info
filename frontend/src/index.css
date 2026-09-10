@@ -446,6 +446,9 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .parent-overview-header h2, .parent-section-heading h2, .parent-subject-detail-header h2 { margin: 4px 0 0; }
 .parent-overview-header p, .parent-section-heading p, .parent-subject-detail-header p { margin: 5px 0 0; color: var(--muted); }
 .parent-print-button { flex: 0 0 auto; }
+.parent-report-actions { flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+.parent-report-month select { min-height: 38px; padding: 0 10px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--paper-raised); color: var(--ink); }
+.parent-report-actions .button:disabled { opacity: .55; cursor: not-allowed; }
 .parent-overview-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .parent-overview-metrics article { min-width: 0; padding: 17px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-soft); }
 .parent-overview-metrics span, .parent-overview-metrics small { display: block; color: var(--muted); }
@@ -756,6 +759,8 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
   .parent-section-heading,
   .parent-subject-toolbar { align-items: stretch; flex-direction: column; }
   .parent-print-button { width: 100%; }
+  .parent-report-actions { justify-content: stretch; }
+  .parent-report-actions .button, .parent-report-month, .parent-report-month select { width: 100%; }
   .parent-overview-metrics { grid-template-columns: 1fr 1fr; }
   .parent-overview-metrics article:last-child { grid-column: 1 / -1; }
   .parent-stage-comparison { display: grid; grid-template-columns: 1fr 1fr; }

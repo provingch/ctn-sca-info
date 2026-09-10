@@ -221,6 +221,41 @@ public class PadreDao extends conexion {
         }
     }
 
+    /** true si el alumno está vinculado a ese usuario padre (nivel 4) vía alumno_usuario. */
+    public boolean isAlumnoLinkedToPadre(int alumnoId, int padreId) throws SQLException {
+        String sql = "SELECT 1 FROM alumno_usuario ap JOIN usuario u ON u.id = ap.usuario_id "
+                + "WHERE ap.alumno_id = ? AND ap.usuario_id = ? AND u.nivel = 4 LIMIT 1";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, alumnoId);
+            ps.setInt(2, padreId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    /**
+     * La libreta está disponible cuando existen planillas de Segunda Etapa para el
+     * curso del alumno en el período actual y todas tienen {@code etapa2_confirmada = 1}.
+     */
+    public boolean isLibretaDisponibleParaAlumno(int alumnoId) throws SQLException {
+        String sql = "SELECT COUNT(*) AS total, COALESCE(SUM(p.etapa2_confirmada), 0) AS confirmadas "
+                + "FROM planilla p JOIN alumno a ON a.curso_id = p.curso_id "
+                + "WHERE a.id = ? AND p.etapa = 'segunda' AND p.periodo = ?";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, alumnoId);
+            ps.setInt(2, ctn.informatica.sca.util.AcademicPeriod.current());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    int total = rs.getInt("total");
+                    int confirmadas = rs.getInt("confirmadas");
+                    return total > 0 && confirmadas == total;
+                }
+            }
+        }
+        return false;
+    }
+
     /** Distinct parent (nivel 4) user ids linked to any of the given students. */
     public List<Integer> findPadreUserIdsByAlumnoIds(java.util.Collection<Integer> alumnoIds) throws SQLException {
         if (alumnoIds == null || alumnoIds.isEmpty()) {

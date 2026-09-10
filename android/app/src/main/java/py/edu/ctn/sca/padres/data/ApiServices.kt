@@ -1,10 +1,13 @@
 package py.edu.ctn.sca.padres.data
 
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Path
 import retrofit2.http.Query
+import retrofit2.http.Streaming
 
 interface AuthApi {
     @POST("api/auth/login")
@@ -23,6 +26,18 @@ interface AuthApi {
 interface ParentApi {
     @GET("api/padre")
     suspend fun summary(@Query("alumnoId") alumnoId: Int? = null): ParentResponse
+
+    @Streaming
+    @GET("api/padre/alumnos/{alumnoId}/reporte-mensual")
+    suspend fun reporteMensual(
+        @Path("alumnoId") alumnoId: Int,
+        @Query("mes") mes: Int,
+        @Query("anio") anio: Int,
+    ): Response<ResponseBody>
+
+    @Streaming
+    @GET("api/padre/alumnos/{alumnoId}/libreta")
+    suspend fun libreta(@Path("alumnoId") alumnoId: Int): Response<ResponseBody>
 }
 
 interface ProfileApi {

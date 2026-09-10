@@ -1,5 +1,8 @@
 package py.edu.ctn.sca.padres.ui.parent
 
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -28,12 +31,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -42,22 +49,29 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import py.edu.ctn.sca.padres.Graph
 import py.edu.ctn.sca.padres.R
 import py.edu.ctn.sca.padres.data.ChildDto
+import py.edu.ctn.sca.padres.data.ReportRepository
+import py.edu.ctn.sca.padres.data.ReportResult
 import py.edu.ctn.sca.padres.data.SubjectDto
 import py.edu.ctn.sca.padres.data.TaskDto
 import py.edu.ctn.sca.padres.ui.components.ContentMaxWidth
@@ -69,7 +83,13 @@ import py.edu.ctn.sca.padres.ui.components.ProgressTrack
 import py.edu.ctn.sca.padres.ui.components.StatusPill
 import py.edu.ctn.sca.padres.ui.graphViewModel
 import py.edu.ctn.sca.padres.ui.theme.scaColors
+import java.io.File
 import java.time.LocalDate
+
+private val MESES = arrayOf(
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+)
 
 /**
  * Parent dashboard, mirroring the web `frontend/src/pages/parent/ParentPage.tsx`:
@@ -133,14 +153,14 @@ fun ParentDashboardScreen(graph: Graph, onOpenProfile: () -> Unit = {}) {
                         )
                     }
                 }
-                else -> DashboardContent(ui, vm)
+                else -> DashboardContent(ui, vm, graph.reportRepository)
             }
         }
     }
 }
 
 @Composable
-private fun DashboardContent(ui: ParentUiState, vm: ParentViewModel) {
+private fun DashboardContent(ui: ParentUiState, vm: ParentViewModel, reports: ReportRepository) {
     val data = ui.data ?: return
     val selectedChild = data.hijos.firstOrNull { it.id == data.selectedAlumnoId }
     val subjects = ui.subjectsForStage
@@ -169,6 +189,13 @@ private fun DashboardContent(ui: ParentUiState, vm: ParentViewModel) {
 
             if (selectedChild != null) {
                 item { OverviewPanel(child = selectedChild, ui = ui, latestActivity = latestActivity) }
+                item {
+                    ReportsPanel(
+                        alumnoId = selectedChild.id,
+                        libretaDisponible = data.libretaDisponible,
+                        reports = reports,
+                    )
+                }
             }
 
             item { StageSwitcher(ui = ui, onSelect = vm::selectStage, count = subjects.size) }
@@ -624,6 +651,93 @@ private fun CalculationNote() {
 @Composable
 private fun CenteredMessage(content: @Composable () -> Unit) {
     Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) { content() }
+}
+
+/**
+ * Descarga el reporte mensual / la libreta del alumno seleccionado y los abre con
+ * un visor de PDF externo. Espeja los botones de la web `ParentPage.tsx`.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ReportsPanel(alumnoId: Int, libretaDisponible: Boolean, reports: ReportRepository) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var mes by remember { mutableIntStateOf(LocalDate.now().monthValue) }
+    var menuOpen by remember { mutableStateOf(false) }
+    var busy by remember { mutableStateOf<String?>(null) }
+    var message by remember { mutableStateOf<String?>(null) }
+
+    fun run(kind: String, block: suspend () -> ReportResult) {
+        if (busy != null) return
+        busy = kind
+        message = null
+        scope.launch {
+            message = when (val result = block()) {
+                is ReportResult.Ok -> openReportPdf(context, result.file)
+                is ReportResult.Error -> result.message
+            }
+            busy = null
+        }
+    }
+
+    Panel {
+        Eyebrow("Reportes")
+        Spacer(Modifier.height(10.dp))
+        Box {
+            OutlinedButton(onClick = { menuOpen = true }, enabled = busy == null) {
+                Text("Mes: ${MESES[mes - 1]}")
+            }
+            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                MESES.forEachIndexed { index, label ->
+                    DropdownMenuItem(text = { Text(label) }, onClick = { mes = index + 1; menuOpen = false })
+                }
+            }
+        }
+        Spacer(Modifier.height(10.dp))
+        Button(
+            onClick = { run("mensual") { reports.reporteMensual(alumnoId, mes, LocalDate.now().year) } },
+            enabled = busy == null,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(if (busy == "mensual") "Generando…" else "Descargar reporte mensual", fontWeight = FontWeight.Bold)
+        }
+        Spacer(Modifier.height(8.dp))
+        Button(
+            onClick = { run("libreta") { reports.libreta(alumnoId) } },
+            enabled = busy == null && libretaDisponible,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(if (busy == "libreta") "Generando…" else "Descargar libreta", fontWeight = FontWeight.Bold)
+        }
+        if (!libretaDisponible) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "La libreta estará disponible cuando el colegio cierre la Segunda Etapa.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        message?.let {
+            Spacer(Modifier.height(8.dp))
+            Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+        }
+    }
+}
+
+/** Abre el PDF con un visor externo vía FileProvider. Devuelve un mensaje si falla, o null. */
+private fun openReportPdf(context: Context, file: File): String? = try {
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+    context.startActivity(
+        Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, "application/pdf")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        },
+    )
+    null
+} catch (e: ActivityNotFoundException) {
+    "No hay una app instalada para abrir PDF. El archivo quedó guardado en la app."
+} catch (e: Exception) {
+    "No se pudo abrir el PDF."
 }
 
 private val MONTHS_ES = arrayOf(

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import AppShell from '../../components/AppShell';
 import GradeChip from '../../components/ui/GradeChip';
 import ContentState from '../../components/ui/ContentState';
-import { getParentSummary, type ParentResponse, type ParentStage, type ParentSubject, type ParentTaskStatus } from '../../api/parent';
+import { getParentSummary, downloadReporteMensual, downloadLibreta, type ParentResponse, type ParentStage, type ParentSubject, type ParentTaskStatus } from '../../api/parent';
 import { ApiError } from '../../api/client';
 import { normalizeSpecialty } from '../../theme/theme';
 
@@ -10,6 +10,8 @@ const STAGES: Array<{ value: ParentStage; label: string }> = [
   { value: 'primera', label: 'Primera etapa' },
   { value: 'segunda', label: 'Segunda etapa' },
 ];
+
+const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 function currentStage(): ParentStage {
   const today = new Date();
@@ -30,6 +32,25 @@ export default function ParentPage() {
   const [error, setError] = useState('');
   const [stage, setStage] = useState<ParentStage>(currentStage);
   const [selectedPlanillaId, setSelectedPlanillaId] = useState<number | null>(null);
+  const [reportMes, setReportMes] = useState(() => new Date().getMonth() + 1);
+  const [downloading, setDownloading] = useState<'mensual' | 'libreta' | null>(null);
+  const [downloadMsg, setDownloadMsg] = useState('');
+
+  async function handleDownload(kind: 'mensual' | 'libreta', alumnoId: number) {
+    setDownloading(kind);
+    setDownloadMsg('');
+    try {
+      if (kind === 'mensual') {
+        await downloadReporteMensual(alumnoId, reportMes, new Date().getFullYear());
+      } else {
+        await downloadLibreta(alumnoId);
+      }
+    } catch (e) {
+      setDownloadMsg(e instanceof ApiError ? e.message : 'No se pudo generar el PDF.');
+    } finally {
+      setDownloading(null);
+    }
+  }
 
   function load(alumnoId?: number) {
     setError('');
@@ -90,8 +111,23 @@ export default function ParentPage() {
         {selectedChild && <section className="panel parent-overview" aria-labelledby="parent-overview-title">
           <header className="parent-overview-header">
             <div><span>Resumen académico</span><h2 id="parent-overview-title">{selectedChild.nombre} {selectedChild.apellido}</h2><p>{selectedChild.especialidad} · Actividad hasta {formatDate(latestTaskDate)}</p></div>
-            <button className="button secondary parent-print-button" type="button" onClick={() => window.print()}>Imprimir resumen</button>
+            <div className="parent-report-actions">
+              <label className="parent-report-month">
+                <span className="visually-hidden">Mes del reporte</span>
+                <select value={reportMes} onChange={(event) => setReportMes(Number(event.target.value))} aria-label="Mes del reporte">
+                  {MESES.map((label, index) => <option key={label} value={index + 1}>{label}</option>)}
+                </select>
+              </label>
+              <button className="button secondary" type="button" disabled={downloading !== null} onClick={() => void handleDownload('mensual', selectedChild.id)}>
+                {downloading === 'mensual' ? 'Generando…' : 'Descargar reporte mensual'}
+              </button>
+              <button className="button secondary" type="button" disabled={downloading !== null || !data.libretaDisponible} title={data.libretaDisponible ? undefined : 'Disponible cuando el colegio cierre la Segunda Etapa'} onClick={() => void handleDownload('libreta', selectedChild.id)}>
+                {downloading === 'libreta' ? 'Generando…' : 'Descargar libreta'}
+              </button>
+              <button className="button secondary parent-print-button" type="button" onClick={() => window.print()}>Imprimir resumen</button>
+            </div>
           </header>
+          {downloadMsg && <p className="notice error" role="alert">{downloadMsg}</p>}
           <div className="parent-overview-metrics">
             <article><span>Promedio general</span><strong>{selectedChild.promedio}%</strong><small>Todas las etapas publicadas</small></article>
             <article><span>{stageLabel(stage)}</span><strong>{stageAverage}%</strong><small>{subjects.length} {subjects.length === 1 ? 'materia' : 'materias'}</small></article>
