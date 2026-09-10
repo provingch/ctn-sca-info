@@ -61,7 +61,7 @@ public class PlanillaDao extends conexion {
             placeholders.add("?");
         }
 
-        String sql = "SELECT p.id, m.nombre AS nombre, curso_id, materia_id, periodo, etapa, p.usuario_id AS profesor_id, p.google_course_id, p.fecha_cierre_etapa1, p.etapa1_confirmada, COUNT(DISTINCT t.id) AS tareas_count "
+        String sql = "SELECT p.id, m.nombre AS nombre, curso_id, materia_id, periodo, etapa, p.usuario_id AS profesor_id, p.google_course_id, p.fecha_cierre_etapa1, p.etapa1_confirmada, p.fecha_cierre_etapa2, p.etapa2_confirmada, COUNT(DISTINCT t.id) AS tareas_count "
                 + "FROM planilla p "
                 + "JOIN materia m ON p.materia_id = m.id "
                 + "LEFT JOIN tarea t ON t.planilla_id = p.id "
@@ -109,7 +109,7 @@ public class PlanillaDao extends conexion {
             placeholders.add("?");
         }
 
-        String sql = "SELECT p.id, m.nombre AS nombre, curso_id, materia_id, categoria, periodo, etapa, p.usuario_id AS profesor_id, p.fecha_cierre_etapa1, p.etapa1_confirmada "
+        String sql = "SELECT p.id, m.nombre AS nombre, curso_id, materia_id, categoria, periodo, etapa, p.usuario_id AS profesor_id, p.fecha_cierre_etapa1, p.etapa1_confirmada, p.fecha_cierre_etapa2, p.etapa2_confirmada "
                 + "FROM planilla p "
                 + "JOIN materia m ON p.materia_id = m.id "
                 + "WHERE p.usuario_id = ? AND etapa = ? AND periodo = ? AND p.materia_id IN (" + String.join(", ", placeholders) + ") "
@@ -170,7 +170,7 @@ public class PlanillaDao extends conexion {
     }
 
     public Planilla findById(int id) throws SQLException {// could create an interface
-        String sql = "SELECT p.id, m.nombre AS nombre, curso_id, materia_id, categoria, periodo, etapa, p.usuario_id AS profesor_id, p.google_course_id, p.fecha_cierre_etapa1, p.etapa1_confirmada "
+        String sql = "SELECT p.id, m.nombre AS nombre, curso_id, materia_id, categoria, periodo, etapa, p.usuario_id AS profesor_id, p.google_course_id, p.fecha_cierre_etapa1, p.etapa1_confirmada, p.fecha_cierre_etapa2, p.etapa2_confirmada "
                 + "FROM planilla p JOIN materia m ON p.materia_id = m.id "
                 + "WHERE p.id = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -183,7 +183,7 @@ public class PlanillaDao extends conexion {
     }
 
     public Planilla findByCompositeKey(int cursoId, int materiaId, int etapa) throws SQLException {
-        String sql = "SELECT p.id, m.nombre AS nombre, curso_id, materia_id, categoria, periodo, etapa, p.usuario_id AS profesor_id, p.google_course_id, p.fecha_cierre_etapa1, p.etapa1_confirmada "
+        String sql = "SELECT p.id, m.nombre AS nombre, curso_id, materia_id, categoria, periodo, etapa, p.usuario_id AS profesor_id, p.google_course_id, p.fecha_cierre_etapa1, p.etapa1_confirmada, p.fecha_cierre_etapa2, p.etapa2_confirmada "
                 + "FROM planilla p JOIN materia m ON p.materia_id = m.id "
                 + "WHERE curso_id = ? AND materia_id = ? AND periodo = ? AND etapa = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -313,6 +313,28 @@ public class PlanillaDao extends conexion {
         }
     }
 
+    public boolean updateFechaCierreEtapa2(int planillaId, java.time.LocalDate fecha) throws SQLException {
+        String sql = "UPDATE planilla SET fecha_cierre_etapa2 = ? WHERE id = ?";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            if (fecha == null) {
+                ps.setNull(1, java.sql.Types.DATE);
+            } else {
+                ps.setDate(1, java.sql.Date.valueOf(fecha));
+            }
+            ps.setInt(2, planillaId);
+            return ps.executeUpdate() == 1;
+        }
+    }
+
+    public boolean updateEtapa2Confirmada(int planillaId, boolean confirmed) throws SQLException {
+        String sql = "UPDATE planilla SET etapa2_confirmada = ? WHERE id = ?";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setBoolean(1, confirmed);
+            ps.setInt(2, planillaId);
+            return ps.executeUpdate() == 1;
+        }
+    }
+
     public boolean updateClassroomCourseId(int planillaId, String classroomCourseId) throws SQLException {
         try (Connection con = getCon()) {
             DatabaseMetaData metaData = con.getMetaData();
@@ -360,6 +382,8 @@ public class PlanillaDao extends conexion {
             String googleCourseId = null;
             java.time.LocalDate fechaCierreEtapa1 = null;
             boolean etapa1Confirmada = false;
+            java.time.LocalDate fechaCierreEtapa2 = null;
+            boolean etapa2Confirmada = false;
             try {
                 googleCourseId = rs.getString("google_course_id");
             } catch (SQLException ex) {
@@ -375,6 +399,19 @@ public class PlanillaDao extends conexion {
             }
             try {
                 etapa1Confirmada = rs.getBoolean("etapa1_confirmada");
+            } catch (SQLException ex) {
+                // older schema may not include this column
+            }
+            try {
+                java.sql.Date cierre2 = rs.getDate("fecha_cierre_etapa2");
+                if (cierre2 != null) {
+                    fechaCierreEtapa2 = cierre2.toLocalDate();
+                }
+            } catch (SQLException ex) {
+                // older schema may not include this column
+            }
+            try {
+                etapa2Confirmada = rs.getBoolean("etapa2_confirmada");
             } catch (SQLException ex) {
                 // older schema may not include this column
             }
@@ -409,6 +446,10 @@ public class PlanillaDao extends conexion {
 
             p.setFechaCierreEtapa1(fechaCierreEtapa1);
             p.setEtapa1Confirmada(etapa1Confirmada);
+            // Etapa 2 lee y escribe únicamente su propia columna: sin el fallback
+            // "heredar de primera" que sí aplica a fecha_cierre_etapa1 más arriba.
+            p.setFechaCierreEtapa2(fechaCierreEtapa2);
+            p.setEtapa2Confirmada(etapa2Confirmada);
             return p;
         } else {
             return null;

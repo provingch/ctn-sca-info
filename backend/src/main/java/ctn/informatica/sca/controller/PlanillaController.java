@@ -460,6 +460,54 @@ public class PlanillaController {
         }
     }
 
+    @PutMapping("/{planillaId}/etapa2/fecha-cierre")
+    public void guardarFechaCierreEtapa2(@PathVariable int planillaId, @RequestBody(required = false) LocalDate fecha, Authentication authentication) {
+        int userId = ApiAuth.requireUserId(authentication);
+        try {
+            Planilla planilla = requireOwnedPlanillaById(planillaId, userId);
+            if (planilla.getEtapa2Confirmada()) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Etapa 2 cerrada, no se pueden modificar sus datos");
+            }
+            if (fecha == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La fecha de cierre de Etapa 2 es requerida");
+            }
+            boolean updated = planillaDao.updateFechaCierreEtapa2(planillaId, fecha);
+            if (!updated) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Planilla no encontrada");
+            }
+            planilla.setFechaCierreEtapa2(fecha);
+            // Nota: a diferencia de Etapa 1, la fecha de cierre de Etapa 2 no
+            // reclasifica tareas — el límite entre etapas lo marca solo Etapa 1.
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (SQLException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al guardar la fecha de cierre de Etapa 2", ex);
+        }
+    }
+
+    @PostMapping("/{planillaId}/etapa2/confirmar")
+    public void confirmarEtapa2(@PathVariable int planillaId, Authentication authentication) {
+        int userId = ApiAuth.requireUserId(authentication);
+        try {
+            Planilla planilla = requireOwnedPlanillaById(planillaId, userId);
+            if (planilla.getEtapa2Confirmada()) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Etapa 2 cerrada, no se pueden modificar sus datos");
+            }
+            if (planilla.getFechaCierreEtapa2() == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe indicar la fecha de cierre de Etapa 2 antes de confirmar");
+            }
+            boolean updated = planillaDao.updateEtapa2Confirmada(planillaId, true);
+            if (!updated) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Planilla no encontrada");
+            }
+            planilla.setEtapa2Confirmada(true);
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (SQLException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al confirmar Etapa 2", ex);
+        }
+    }
+
     private Planilla requireOwnedPlanillaById(int planillaId, int userId) throws SQLException {
         Planilla planilla = planillaDao.findById(planillaId);
         if (planilla == null) {
@@ -595,6 +643,8 @@ public class PlanillaController {
                 maxEnd,
                 planilla.getFechaCierreEtapa1(),
                 planilla.getEtapa1Confirmada(),
+                planilla.getFechaCierreEtapa2(),
+                planilla.getEtapa2Confirmada(),
                 planilla.getGoogleCourseId());
 
         CursoDto cursoDto = curso == null
@@ -690,6 +740,8 @@ public class PlanillaController {
             LocalDate planillaHasta,
             LocalDate fechaCierreEtapa1,
             boolean etapa1Confirmada,
+            LocalDate fechaCierreEtapa2,
+            boolean etapa2Confirmada,
             String googleCourseId) {
     }
 

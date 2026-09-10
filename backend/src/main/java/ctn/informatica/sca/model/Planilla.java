@@ -32,6 +32,8 @@ public class Planilla{
     private String googleCourseId;
     private LocalDate fechaCierreEtapa1;
     private boolean etapa1Confirmada;
+    private LocalDate fechaCierreEtapa2;
+    private boolean etapa2Confirmada;
 
     private Map<Integer, int[]> gradeRanges;
     private int limiteInferior;   // li
@@ -365,6 +367,26 @@ public class Planilla{
 
     public void setEtapa1Confirmada(boolean etapa1Confirmada) {
         this.etapa1Confirmada = etapa1Confirmada;
+    }
+
+    public LocalDate getFechaCierreEtapa2() {
+        return fechaCierreEtapa2;
+    }
+
+    public boolean isEtapa2Confirmada() {
+        return etapa2Confirmada;
+    }
+
+    public boolean getEtapa2Confirmada() {
+        return etapa2Confirmada;
+    }
+
+    public void setFechaCierreEtapa2(LocalDate fechaCierreEtapa2) {
+        this.fechaCierreEtapa2 = fechaCierreEtapa2;
+    }
+
+    public void setEtapa2Confirmada(boolean etapa2Confirmada) {
+        this.etapa2Confirmada = etapa2Confirmada;
     }
 
     public void setGradeRanges(Map<Integer, int[]> gradeRanges) {

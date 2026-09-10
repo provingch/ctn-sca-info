@@ -166,6 +166,8 @@ CREATE TABLE planilla (
     google_course_id VARCHAR(255) NULL,
     fecha_cierre_etapa1 DATE NULL,
     etapa1_confirmada BOOLEAN NOT NULL DEFAULT FALSE,
+    fecha_cierre_etapa2 DATE NULL,
+    etapa2_confirmada BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY (id),
     UNIQUE (curso_id, materia_id, periodo, etapa),
     FOREIGN KEY (curso_id)
