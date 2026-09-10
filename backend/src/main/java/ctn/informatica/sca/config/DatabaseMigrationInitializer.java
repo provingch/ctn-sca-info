@@ -1,6 +1,7 @@
 package ctn.informatica.sca.config;
 
 import ctn.informatica.sca.dao.SchemaMigrationDao;
+import ctn.informatica.sca.dao.TextEncodingMigrationDao;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -25,9 +26,11 @@ public class DatabaseMigrationInitializer implements ApplicationRunner {
             "00AA_complete_especialidades_cursos.sql", "004_complete_especialidades_cursos.sql",
             "00AB_rasgo_asistencia_codigos.sql", "005_rasgo_asistencia_codigos.sql");
     private final SchemaMigrationDao migrationDao;
+    private final TextEncodingMigrationDao textEncodingMigrationDao;
 
-    public DatabaseMigrationInitializer(SchemaMigrationDao migrationDao) {
+    public DatabaseMigrationInitializer(SchemaMigrationDao migrationDao, TextEncodingMigrationDao textEncodingMigrationDao) {
         this.migrationDao = migrationDao;
+        this.textEncodingMigrationDao = textEncodingMigrationDao;
     }
 
     @Override
@@ -52,5 +55,8 @@ public class DatabaseMigrationInitializer implements ApplicationRunner {
                 throw ex;
             }
         }
+        // Run after SQL schema migrations; repairs once and retains original bytes.
+        int repaired = textEncodingMigrationDao.repairOnce();
+        if (repaired > 0) log.info("Codificación UTF-8 reparada en {} campos de texto", repaired);
     }
 }

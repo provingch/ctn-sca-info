@@ -21,6 +21,9 @@ function readSelection(): SpecialtySelection {
     const stored = sessionStorage.getItem(STORAGE_KEY);
     if (!stored) return DEFAULT_SELECTION;
     const parsed = JSON.parse(stored) as Partial<SpecialtySelection>;
+    // Discard legacy palette labels imported with broken encoding. The next
+    // selection uses the repaired catalog; this cache never defines account scope.
+    if (typeof parsed.name === 'string' && /[\u00c2\u00c3][\u0080-\u00bf\u0192]/.test(parsed.name)) return DEFAULT_SELECTION;
     return typeof parsed.name === 'string'
       ? { id: typeof parsed.id === 'number' ? parsed.id : null, name: parsed.name }
       : DEFAULT_SELECTION;
