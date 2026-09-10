@@ -12,9 +12,10 @@ describe('SpecialtyIcon', () => {
     expect(mask?.style.maskImage || mask?.style.webkitMaskImage).toContain('mecanica-industrial');
   });
 
-  it('uses an initial fallback for an unknown specialty', () => {
+  it('uses the institutional SVG for an unknown specialty instead of a letter', () => {
     render(<SpecialtyIcon name="Especialidad nueva" />);
 
-    expect(screen.getByLabelText('Especialidad Especialidad nueva')).toHaveTextContent('E');
+    expect(screen.getByLabelText('Especialidad Especialidad nueva').querySelector('svg')).not.toBeNull();
+    expect(screen.getByLabelText('Especialidad Especialidad nueva')).not.toHaveTextContent('E');
   });
 });

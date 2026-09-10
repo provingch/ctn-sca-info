@@ -7,6 +7,7 @@ import mecanicaIndustrial from '../assets/logos-especialidad/mecanica-industrial
 import mecanicaAutomotriz from '../assets/logos-especialidad/mecanica-automotriz.svg';
 import quimicaIndustrial from '../assets/logos-especialidad/quimica-industrial.svg';
 import { normalizeSpecialty } from '../theme/theme';
+import ScaLogo from './ScaLogo';
 
 const icons: Array<[string, string]> = [['construcciones civiles', construcciones], ['electricidad', electricidad], ['electronica', electronica], ['electromecanica', electromecanica], ['informatica', informatica], ['mecanica industrial', mecanicaIndustrial], ['mecanica general', mecanicaIndustrial], ['mecanica automotriz', mecanicaAutomotriz], ['quimica industrial', quimicaIndustrial], ['quimica', quimicaIndustrial]];
 
@@ -17,7 +18,7 @@ function iconFor(name: string) {
 
 export default function SpecialtyIcon({ name, className = '' }: { name: string; className?: string }) {
   const iconUrl = iconFor(name);
-  if (!iconUrl) return <span className={`specialty-icon specialty-icon-fallback ${className}`.trim()} role="img" aria-label={`Especialidad ${name}`}>{name.trim().charAt(0).toUpperCase() || '?'}</span>;
+  if (!iconUrl) return <span className={`specialty-icon ${className}`.trim()} role="img" aria-label={`Especialidad ${name}`}><ScaLogo /></span>;
   return (
     <span className={`specialty-icon ${className}`.trim()} role="img" aria-label={`Especialidad ${name}`}>
       <span
