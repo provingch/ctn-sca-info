@@ -478,7 +478,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
                 </div>
               </div>
             </div>
-            <div className="class-field">
+            <div className="class-field class-field--hours">
               <label htmlFor="cantidadHoras">Cant. horas cátedra</label>
               <input id="cantidadHoras" type="text" inputMode="numeric" maxLength={2} value={cantidadHoras} onChange={(e) => handleCantidadHorasInput(e.target.value)} placeholder="Ej: 18" />
             </div>
@@ -583,26 +583,8 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
 
         <div className="class-card" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <button type="submit" className="button" disabled={!puedeIniciarClase}>Guardar inicio de clase</button>
-          <button type="button" className="button secondary" onClick={() => {
-            const payload = {
-              cursoId: data.selCurso ? Number(data.selCurso.id) : 0,
-              instrumentoId: instrumentoId,
-              tema,
-              horarioClase: horario,
-              horarioFinalClase: horarioFinal,
-              cantidadHoras,
-              modalidad,
-              observaciones,
-              alumnosAusentes: ausentes
-            };
-            // mostrar JSON temporal en consola (equivalente al botón export de JSP)
-            // el backend actual solo usa la estructura mínima enviada por createClass
-            console.log('Payload Clase:', payload);
-            alert(JSON.stringify(payload, null, 2));
-          }}>Ver datos JSON generados</button>
         </div>
 
-        <pre id="resultOutput" className="result-output" style={{ display: 'none' }} />
       </form>
 
       {/* Right-side attendance & history panel removed as requested */}
