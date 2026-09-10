@@ -3,6 +3,7 @@ import { createAdminRecord, createHorarioSlot, deleteAssignment, deleteHorarioSl
 import { ApiError } from '../../api/client';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import useAccessibleDialog from '../../hooks/useAccessibleDialog';
+import './AsignacionesPanel.css';
 
 interface AsignacionesPanelProps {
   data: AdminCatalog;
@@ -43,6 +44,11 @@ function HorarioStepper({ label, item, canDecrease, canIncrease, onDecrease, onI
 
 export default function AsignacionesPanel({ data, reload, status }: AsignacionesPanelProps) {
   const [selectedProfesorId, setSelectedProfesorId] = useState<number | null>(null);
+  const [query, setQuery] = useState('');
+  const [loadFilter, setLoadFilter] = useState('all');
+  const [sort, setSort] = useState<{ key: 'name' | 'count'; descending: boolean }>({ key: 'name', descending: false });
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState({ materiaId: '', cursoIds: [] as number[] });
@@ -51,6 +57,33 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
   const scheduleDialogRef = useAccessibleDialog(Boolean(horarioPopup), () => setHorarioPopup(null));
 
   const profesores = useMemo(() => data.usuarios.filter((user) => user.nivel === 1), [data.usuarios]);
+  const counts = useMemo(() => {
+    const result = new Map<number, number>();
+    data.asignaciones.forEach((item) => result.set(item.profesorId, (result.get(item.profesorId) ?? 0) + 1));
+    return result;
+  }, [data.asignaciones]);
+  const totalAssignments = profesores.reduce((total, profesor) => total + (counts.get(profesor.id) ?? 0), 0);
+  const average = profesores.length ? totalAssignments / profesores.length : 0;
+  const maxAssignments = profesores.reduce((max, profesor) => Math.max(max, counts.get(profesor.id) ?? 0), 1);
+  const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  const filtered = profesores.filter((profesor) => {
+    const count = counts.get(profesor.id) ?? 0;
+    return normalize(`${profesor.apellido} ${profesor.nombre} ${profesor.usuario}`).includes(normalize(query))
+      && (loadFilter === 'all' || (loadFilter === 'none' && count === 0) || (loadFilter === 'assigned' && count > 0) || (loadFilter === 'above' && count > average));
+  }).sort((a, b) => {
+    const byName = `${a.apellido} ${a.nombre}`.localeCompare(`${b.apellido} ${b.nombre}`, 'es', { sensitivity: 'base' }) || a.id - b.id;
+    if (sort.key === 'name') return sort.descending ? -byName : byName;
+    const byCount = (counts.get(a.id) ?? 0) - (counts.get(b.id) ?? 0);
+    return (sort.descending ? -byCount : byCount) || byName;
+  });
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, pageCount);
+  const offset = (currentPage - 1) * pageSize;
+  const visibleProfesores = filtered.slice(offset, offset + pageSize);
+  const changeSort = (key: 'name' | 'count') => {
+    setSort((current) => ({ key, descending: current.key === key ? !current.descending : key === 'count' }));
+    setPage(1);
+  };
   const profesorAsignaciones = useMemo(
     () => data.asignaciones.filter((assignment) => assignment.profesorId === selectedProfesorId),
     [data.asignaciones, selectedProfesorId],
@@ -225,31 +258,49 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
 
   if (!selectedProfesorId) {
     return (
-      <>
+      <section className="assignment-directory" aria-label="Profesores y asignaciones">
+        <div className="assignment-overview">
+          <div><span>Profesores</span><strong>{profesores.length}</strong></div>
+          <div><span>Sin asignaciones</span><strong>{profesores.filter((profesor) => !counts.get(profesor.id)).length}</strong></div>
+          <div><span>Promedio por profesor</span><strong>{average.toLocaleString('es-PY', { maximumFractionDigits: 1 })}</strong></div>
+        </div>
+        <div className="assignment-filters">
+          <label>Buscar profesor<input type="search" placeholder="Apellido, nombre o usuario" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} /></label>
+          <label>Asignaciones<AnimatedSelect ariaLabel="Filtrar por asignaciones" value={loadFilter} onChange={(value) => { setLoadFilter(value); setPage(1); }} options={[{ value: 'all', label: 'Todos' }, { value: 'none', label: 'Sin asignaciones' }, { value: 'assigned', label: 'Con asignaciones' }, { value: 'above', label: 'Sobre el promedio' }]} /></label>
+          <label>Por página<AnimatedSelect ariaLabel="Profesores por página" value={pageSize} onChange={(value) => { setPageSize(Number(value)); setPage(1); }} options={[10, 25, 50].map((value) => ({ value, label: String(value) }))} /></label>
+          {(query || loadFilter !== 'all') && <button type="button" className="button secondary" onClick={() => { setQuery(''); setLoadFilter('all'); setPage(1); }}>Limpiar filtros</button>}
+        </div>
+        <p className="assignment-help" id="assignment-load-help">La barra compara la cantidad con el máximo de la lista. El promedio incluye a todos los profesores; no representa horas ni un límite de carga.</p>
         <div className="table-wrap">
-          <table className="grade-table" style={{ minWidth: 680 }}>
+          <table className="assignment-table" aria-describedby="assignment-load-help">
             <caption className="visually-hidden">Profesores y cantidad de asignaciones</caption>
             <thead>
               <tr>
-                <th>Profesor</th>
-                <th>Asignaciones</th>
+                <th scope="col" aria-sort={sort.key === 'name' ? sort.descending ? 'descending' : 'ascending' : 'none'}><button type="button" className="assignment-sort" onClick={() => changeSort('name')} aria-label="Ordenar por profesor">Profesor <span aria-hidden="true">{sort.key === 'name' ? sort.descending ? '↓' : '↑' : '↕'}</span></button></th>
+                <th scope="col" aria-sort={sort.key === 'count' ? sort.descending ? 'descending' : 'ascending' : 'none'}><button type="button" className="assignment-sort" onClick={() => changeSort('count')} aria-label="Ordenar por asignaciones">Asignaciones <span aria-hidden="true">{sort.key === 'count' ? sort.descending ? '↓' : '↑' : '↕'}</span></button></th>
+                <th scope="col">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {profesores.map((profesor) => (
+              {visibleProfesores.map((profesor) => {
+                const count = counts.get(profesor.id) ?? 0;
+                const description = count === 0 ? 'Sin asignaciones' : count > average ? 'Sobre el promedio' : count < average ? 'Bajo el promedio' : 'En el promedio';
+                return (
                 <tr key={profesor.id}>
-                  <td>
-                    <button type="button" className="button secondary" style={{ width: '100%', justifyContent: 'flex-start' }} onClick={() => setSelectedProfesorId(profesor.id)}>
-                      {profesor.apellido}, {profesor.nombre}
-                    </button>
-                  </td>
-                  <td>{data.asignaciones.filter((assignment) => assignment.profesorId === profesor.id).length}</td>
+                  <th scope="row">{profesor.apellido}, {profesor.nombre}<small>@{profesor.usuario}</small></th>
+                  <td><div className="assignment-load" data-above={count > average}><div><strong>{count}</strong><span>{description}</span></div><div className="assignment-load-track" aria-hidden="true"><i style={{ width: `${count / maxAssignments * 100}%` }} /></div></div></td>
+                  <td><button type="button" className="assignment-detail" aria-label={`Ver detalle de ${profesor.apellido}, ${profesor.nombre}`} onClick={() => setSelectedProfesorId(profesor.id)}>Ver detalle <span aria-hidden="true">→</span></button></td>
                 </tr>
-              ))}
+              ); })}
+              {visibleProfesores.length === 0 && <tr><td colSpan={3} className="assignment-empty"><strong>{profesores.length ? 'No hay coincidencias' : 'No hay profesores registrados'}</strong><p>{profesores.length ? 'Probá otro nombre o cambiá el filtro de asignaciones.' : 'Los profesores aparecerán aquí cuando se registren en Usuarios.'}</p></td></tr>}
             </tbody>
           </table>
         </div>
-      </>
+        <div className="assignment-pagination">
+          <p role="status">Mostrando {visibleProfesores.length ? offset + 1 : 0}–{offset + visibleProfesores.length} de {filtered.length} profesores{filtered.length !== profesores.length ? ` (${profesores.length} en total)` : ''}</p>
+          <nav aria-label="Paginación de profesores"><button type="button" className="button secondary" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}>Anterior</button><span>Página {currentPage} de {pageCount}</span><button type="button" className="button secondary" disabled={currentPage === pageCount} onClick={() => setPage(currentPage + 1)}>Siguiente</button></nav>
+        </div>
+      </section>
     );
   }
 
