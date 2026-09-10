@@ -1,8 +1,9 @@
 ##information_schema|mysql|performance_schema|phpmyadmin
 
 drop database if exists ctndb;
-create database ctndb;
+create database ctndb CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 use ctndb;
+SET NAMES utf8mb4;
 
 CREATE TABLE especialidad (
     id INT,

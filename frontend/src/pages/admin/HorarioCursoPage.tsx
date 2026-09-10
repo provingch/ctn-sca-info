@@ -24,6 +24,7 @@ import { SCHEDULE_DAYS, type HorarioGridCell } from './horarioSchedule';
 import SpecialtyIcon from '../../components/SpecialtyIcon';
 
 interface HorarioCursoPageProps {
+  backTo?: string;
   cursoId: string | undefined;
   summary: HorarioResumenCursoItem[];
   hours: HoraCatedraItem[];
@@ -75,7 +76,7 @@ function groupHorarioSlots(slots: HorarioSlotItem[], hours: HoraCatedraItem[]) {
   return blocks.map(({ lastHourIndex: _lastHourIndex, ...block }) => block);
 }
 
-export default function HorarioCursoPage({ cursoId, summary, hours, status, refreshSummary }: HorarioCursoPageProps) {
+export default function HorarioCursoPage({ cursoId, summary, hours, status, refreshSummary, backTo = '/admin/horarios' }: HorarioCursoPageProps) {
   const courseId = Number(cursoId);
   const courseItem = useMemo(() => summary.find((item) => item.cursoId === courseId) ?? null, [courseId, summary]);
   const [slots, setSlots] = useState<HorarioSlotItem[]>([]);
@@ -273,7 +274,7 @@ export default function HorarioCursoPage({ cursoId, summary, hours, status, refr
   return (
     <div className="schedule-course-page">
       <div className="toolbar schedule-course-toolbar">
-        <Link className="button secondary" to="/admin/horarios">← Volver al listado</Link>
+        <Link className="button secondary" to={backTo}>← Volver a secciones</Link>
         <div className="schedule-course-actions">
           <label className="button secondary">
             Cargar

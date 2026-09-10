@@ -1,3 +1,5 @@
+SET NAMES utf8mb4;
+
 -- Vaciado de datos de todas las tablas
 DELETE FROM puntaje;
 DELETE FROM registro;
