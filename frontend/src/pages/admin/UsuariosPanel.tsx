@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { clearUserGoogleTokens, createAdminRecord, deleteAdminRecord, updateAdminRecord, type AdminCatalog } from '../../api/admin';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { clearUserGoogleTokens, createAdminRecord, deleteAdminRecord, getAlumnosDePadre, linkPadreAlumno, unlinkPadreAlumno, updateAdminRecord, type AdminCatalog, type PadreChildItem } from '../../api/admin';
 import { ApiError } from '../../api/client';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import useAccessibleDialog from '../../hooks/useAccessibleDialog';
@@ -97,6 +97,41 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [sort, setSort] = useState<{ key: 'apellido' | 'nombre'; descending: boolean }>({ key: 'apellido', descending: false });
+
+  const [hijos, setHijos] = useState<PadreChildItem[]>([]);
+  const [alumnoQuery, setAlumnoQuery] = useState('');
+
+  const loadHijos = useCallback(async (padreId: number) => {
+    try {
+      setHijos(await getAlumnosDePadre(padreId));
+    } catch (error) {
+      setHijos([]);
+      status(error instanceof ApiError ? error.message : 'No se pudo cargar los alumnos del padre.');
+    }
+  }, [status]);
+
+  useEffect(() => {
+    if (!isOpen || !editingId || form.nivel !== '4') {
+      setHijos([]);
+      setAlumnoQuery('');
+      return;
+    }
+    void loadHijos(editingId);
+  }, [isOpen, editingId, form.nivel, loadHijos]);
+
+  const cursoAlumnoLabel = (cursoId: number) => {
+    const curso = data.cursosAlumnos.find((item) => item.id === cursoId);
+    return curso ? `${curso.nivel}° ${curso.seccion} · ${curso.especialidad}` : '—';
+  };
+
+  const alumnoResults = (() => {
+    const term = normalize(alumnoQuery);
+    if (!term) return [];
+    return data.alumnos
+      .filter((alumno) => !hijos.some((hijo) => hijo.id === alumno.id))
+      .filter((alumno) => normalize(`${alumno.nombre} ${alumno.apellido} ${alumno.ci ?? ''}`).includes(term))
+      .slice(0, 20);
+  })();
 
   const specialtyLabel = (user: UserRecord) => {
     if (!Object.hasOwn(user, 'especialidadId')) return 'No informado por el backend';
@@ -368,6 +403,74 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
               Correo
               <input type="email" value={form.correo} onChange={(event) => setForm({ ...form, correo: event.target.value })} />
             </label>
+
+            {form.nivel === '4' && (
+              <div style={{ gridColumn: '1 / -1' }}>
+                {!editingId ? (
+                  <p className="muted-copy" style={{ margin: '8px 0 0' }}>Guardá el usuario primero para poder vincular alumnos.</p>
+                ) : (
+                  <>
+                    <h3 style={{ marginBottom: 8 }}>Alumno/s vinculados</h3>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                      <input
+                        value={alumnoQuery}
+                        onChange={(event) => setAlumnoQuery(event.target.value)}
+                        placeholder="Buscar alumno por nombre, apellido o cédula"
+                        style={{ flex: 1, minWidth: 220 }}
+                      />
+                    </div>
+                    {alumnoResults.length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+                        {alumnoResults.map((alumno) => (
+                          <div key={alumno.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, border: '1px solid var(--line)', borderRadius: 8, padding: '6px 8px' }}>
+                            <span>{alumno.nombre} {alumno.apellido} · {cursoAlumnoLabel(alumno.cursoId)} {alumno.ci ? `· CI ${alumno.ci}` : ''}</span>
+                            <button
+                              type="button"
+                              className="button secondary"
+                              onClick={async () => {
+                                try {
+                                  await linkPadreAlumno(alumno.id, editingId);
+                                  status('Alumno vinculado.');
+                                  await loadHijos(editingId);
+                                  setAlumnoQuery('');
+                                } catch (error) {
+                                  status(error instanceof ApiError ? error.message : 'No se pudo vincular el alumno.');
+                                }
+                              }}
+                            >Agregar</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {hijos.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {hijos.map((hijo) => (
+                          <div key={hijo.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, border: '1px solid var(--line)', borderRadius: 8, padding: '6px 8px' }}>
+                            <span>{hijo.nombre} {hijo.apellido} · {cursoAlumnoLabel(hijo.cursoId)}</span>
+                            <button
+                              type="button"
+                              className="button danger"
+                              onClick={async () => {
+                                try {
+                                  await unlinkPadreAlumno(hijo.id, editingId);
+                                  status('Alumno desvinculado.');
+                                  await loadHijos(editingId);
+                                } catch (error) {
+                                  status(error instanceof ApiError ? error.message : 'No se pudo desvincular el alumno.');
+                                }
+                              }}
+                            >Quitar</button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="muted-copy">No hay alumnos vinculados.</p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
             <div className="signature-modal-actions">
               <button type="button" className="button secondary" onClick={() => setIsOpen(false)}>Cancelar</button>
               <button type="submit" className="button" style={{ gridColumn: 'span 2' }}>{editingId ? 'Guardar cambios' : 'Crear usuario'}</button>

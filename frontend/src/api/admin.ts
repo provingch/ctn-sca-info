@@ -15,6 +15,14 @@ export interface PadreSummary {
   usuario: string;
 }
 
+export interface PadreChildItem {
+  id: number;
+  nombre: string;
+  apellido: string;
+  cursoId: number;
+  especialidadNombre: string | null;
+}
+
 export interface UserItem {
   id: number;
   nombre: string;
@@ -180,6 +188,7 @@ export const deleteSala = (id: number) => adminRequest(() => api.delete<void>(`/
 export const getSistemaEstado = () => adminRequest(() => api.get<SistemaEstadoResponse>('/api/admin/sistema-estado'));
 export const buscarPadres = (q: string) => adminRequest(() => api.get<PadreSummary[]>(`/api/admin/padres/buscar?q=${encodeURIComponent(q)}`));
 export const getPadresDeAlumno = (alumnoId: number) => adminRequest(() => api.get<PadreSummary[]>(`/api/admin/alumnos/${alumnoId}/padres`));
+export const getAlumnosDePadre = (padreId: number) => adminRequest(() => api.get<PadreChildItem[]>(`/api/admin/padres/${padreId}/alumnos`));
 export const linkPadreAlumno = (alumnoId: number, padreId: number) => adminRequest(() => api.post<void>(`/api/admin/alumnos/${alumnoId}/padres/${padreId}`, {}));
 export const unlinkPadreAlumno = (alumnoId: number, padreId: number) => adminRequest(() => api.delete<void>(`/api/admin/alumnos/${alumnoId}/padres/${padreId}`));
 export const wipePlanillaSyncImports = (planillaId: number) => adminRequest(() => api.post<{ message: string; deletedGrades: number; deletedTasks: number; clearedGoogleCourseIds: number }>(`/api/admin/planillas/${planillaId}/sync/wipe`));
