@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { createClass, getHome, updateRasgoCodigos, type HomeResponse } from '../../api/home';
+import { createClass, crearCodigoConducta, desactivarCodigoConducta, getHome, listarCodigosConducta, updateRasgoCodigos, type CodigoConducta, type HomeResponse } from '../../api/home';
 import { ApiError } from '../../api/client';
 import AppShell from '../../components/AppShell';
 import ContentState from '../../components/ui/ContentState';
@@ -10,6 +10,7 @@ import AnimatedSelect from '../../components/AnimatedSelect';
 import { useSpecialty } from '../../context/SpecialtyContext';
 import PlanCurricularView from './PlanCurricularView';
 import useAccessibleDialog from '../../hooks/useAccessibleDialog';
+import { useAuth } from '../../context/AuthContext';
 
 const normalizeSpecialtyName = (value: string) => value
   .trim()
@@ -21,18 +22,6 @@ const normalizeSpecialtyName = (value: string) => value
   .trim();
 
 const HORARIOS_CATEDRA = ['7:00', '7:35', '8:10', '8:45', '9:40', '10:15', '10:50', '11:25', '13:00', '13:35', '14:10', '14:45', '15:40', '16:15', '16:50', '17:25'];
-const RASGO_CODIGOS = [
-  ['N1', 'Llegada tardia a clase'],
-  ['N2', 'Sale de clase sin autorización'],
-  ['N3', 'No realiza la tarea asignada en clase'],
-  ['N4', 'No dispone de los materiales necesarios'],
-  ['N5', 'No presenta la tarea las tareas asignadas para la casa'],
-  ['N6', 'Utiliza vocabulario indebido en clase'],
-  ['N7', 'Charla mucho en clase'],
-  ['N8', 'No utiliza el uniforme establecido'],
-  ['N9', 'Ausente en clase, presente en la institución'],
-] as const;
-
 export default function HomePage() {
   const [search, setSearch] = useSearchParams();
   const [data, setData] = useState<HomeResponse | null>(null);
@@ -305,6 +294,7 @@ function PlanillasView({ data, syncingProp, setSyncingProp }: { data: HomeRespon
 
 function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise<void> }) {
   const [, setSearch] = useSearchParams();
+  const { user } = useAuth();
   const [tema, setTema] = useState('');
   const [asignacionesDisponibles, setAsignacionesDisponibles] = useState<Array<{ id: number; materiaId: number; materiaNombre?: string; estadoPlan?: string }>>([]);
   const [selectedAsignacionId, setSelectedAsignacionId] = useState<number | null>(null);
@@ -319,7 +309,46 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
   const [codigosPorAlumno, setCodigosPorAlumno] = useState<Record<number, string[]>>({});
   const [selectorRasgosAbierto, setSelectorRasgosAbierto] = useState<number | null>(null);
   const [showCodeHelp, setShowCodeHelp] = useState(false);
+  const [codigosConducta, setCodigosConducta] = useState<CodigoConducta[]>([]);
+  const [nuevoCodigo, setNuevoCodigo] = useState('');
+  const [nuevaDescripcion, setNuevaDescripcion] = useState('');
+  const [catalogStatus, setCatalogStatus] = useState('');
   const codeHelpDialogRef = useAccessibleDialog(showCodeHelp, () => setShowCodeHelp(false));
+  const canManageCodes = user?.level === 2 || user?.level === 3;
+
+  const loadCodigosConducta = useCallback(async () => {
+    try {
+      setCodigosConducta(await listarCodigosConducta());
+    } catch (err) {
+      setCatalogStatus(err instanceof ApiError ? err.message : 'No se pudo cargar el catálogo de conducta.');
+    }
+  }, []);
+
+  useEffect(() => { void loadCodigosConducta(); }, [loadCodigosConducta]);
+
+  async function saveCodigoConducta(event: FormEvent) {
+    event.preventDefault();
+    try {
+      await crearCodigoConducta(nuevoCodigo, nuevaDescripcion);
+      setNuevoCodigo('');
+      setNuevaDescripcion('');
+      setCatalogStatus('Código de conducta guardado.');
+      await loadCodigosConducta();
+    } catch (err) {
+      setCatalogStatus(err instanceof ApiError ? err.message : 'No se pudo guardar el código de conducta.');
+    }
+  }
+
+  async function disableCodigoConducta(item: CodigoConducta) {
+    if (!window.confirm(`¿Desactivar ${item.codigo}?`)) return;
+    try {
+      await desactivarCodigoConducta(item.id);
+      setCatalogStatus('Código de conducta desactivado.');
+      await loadCodigosConducta();
+    } catch (err) {
+      setCatalogStatus(err instanceof ApiError ? err.message : 'No se pudo desactivar el código de conducta.');
+    }
+  }
 
   useEffect(() => {
     const initial: Record<number, string[]> = {};
@@ -433,6 +462,16 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
 
   return (
     <div className="two-column">
+      {canManageCodes && <section className="panel" style={{ gridColumn: '1 / -1' }}>
+        <div className="class-card-head"><div><span>Administración</span><h3>Catálogo de conducta</h3></div></div>
+        <form className="form-grid" onSubmit={saveCodigoConducta}>
+          <label>Código<input value={nuevoCodigo} maxLength={10} placeholder="Ej.: N9" onChange={(event) => setNuevoCodigo(event.target.value.toUpperCase())} required /></label>
+          <label>Descripción<input value={nuevaDescripcion} maxLength={255} placeholder="Descripción del rasgo" onChange={(event) => setNuevaDescripcion(event.target.value)} required /></label>
+          <span className="admin-actions"><button className="button" type="submit">Agregar código</button></span>
+        </form>
+        <div className="admin-list">{codigosConducta.map((item) => <div key={item.id}><span><strong>{item.codigo}</strong> {item.descripcion}</span><button className="button danger" type="button" onClick={() => void disableCodigoConducta(item)}>Desactivar</button></div>)}</div>
+        {catalogStatus && <p className="notice" role="status">{catalogStatus}</p>}
+      </section>}
       {!puedeIniciarClase && mensajeBloqueo && (
         <div className="panel" style={{ gridColumn: '1 / -1', marginBottom: 0 }}>
           <div className="notice error" style={{ marginBottom: 12 }}>
@@ -548,10 +587,10 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
                       </button>
                       {selectorRasgosAbierto === alumno.id && (
                         <div className="rasgos-conductuales-menu" role="group" aria-label={`Rasgos conductuales de ${alumno.nombre} ${alumno.apellido}`}>
-                          {RASGO_CODIGOS.map(([codigo]) => (
-                            <label key={codigo} className="rasgos-conductuales-option">
-                              <input type="checkbox" checked={(codigosPorAlumno[alumno.id] ?? []).includes(codigo)} onChange={() => toggleCodigo(alumno.id, codigo)} />
-                              {codigo}
+                          {codigosConducta.map((item) => (
+                            <label key={item.codigo} className="rasgos-conductuales-option">
+                              <input type="checkbox" checked={(codigosPorAlumno[alumno.id] ?? []).includes(item.codigo)} onChange={() => toggleCodigo(alumno.id, item.codigo)} />
+                              {item.codigo}
                             </label>
                           ))}
                         </div>
@@ -575,7 +614,7 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
         {showCodeHelp && <div ref={codeHelpDialogRef} role="dialog" aria-modal="true" aria-labelledby="code-help-title" tabIndex={-1} style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'grid', placeItems: 'center', padding: 20, background: 'rgba(0, 0, 0, .55)' }} onClick={() => setShowCodeHelp(false)}>
           <section className="panel" style={{ width: 'min(620px, 100%)', maxHeight: '80vh', overflow: 'auto' }} onClick={(e) => e.stopPropagation()}>
             <div className="class-card-head"><h3 id="code-help-title">Significado de códigos</h3><button type="button" className="button secondary" data-dialog-initial-focus onClick={() => setShowCodeHelp(false)}>Cerrar</button></div>
-            <table className="table table-striped"><caption className="visually-hidden">Códigos de rasgos conductuales</caption><thead><tr><th>Código</th><th>Significado</th></tr></thead><tbody>{RASGO_CODIGOS.map(([codigo, significado]) => <tr key={codigo}><td><strong>{codigo}</strong></td><td>{significado}</td></tr>)}</tbody></table>
+            <table className="table table-striped"><caption className="visually-hidden">Códigos de rasgos conductuales</caption><thead><tr><th>Código</th><th>Significado</th></tr></thead><tbody>{codigosConducta.map((item) => <tr key={item.codigo}><td><strong>{item.codigo}</strong></td><td>{item.descripcion}</td></tr>)}</tbody></table>
   |          </section>
         </div>}
 

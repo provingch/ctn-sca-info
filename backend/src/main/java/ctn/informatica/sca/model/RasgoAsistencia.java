@@ -16,6 +16,7 @@ public class RasgoAsistencia {
     private String faltaObservacion;
     private Timestamp respondedAt;
     private String tema;
+    private String codigoDescripcion;
     private List<String> codigos = List.of();
 
     public int getId() {
@@ -106,6 +107,10 @@ public class RasgoAsistencia {
         this.tema = tema;
     }
 
+    public void setCodigoDescripcion(String codigoDescripcion) {
+        this.codigoDescripcion = codigoDescripcion;
+    }
+
     public List<String> getCodigos() {
         return codigos;
     }
@@ -127,19 +132,7 @@ public class RasgoAsistencia {
     }
 
     public String getCodigoDescripcion() {
-        if (faltaCodigo == null) {
-            return "Sin código asignado";
-        }
-        return switch (faltaCodigo) {
-            case "N1" -> "Sale del aula sin autorización";
-            case "N2" -> "No realiza la tarea asignada en clase";
-            case "N3" -> "No dispone de los materiales necesarios";
-            case "N4" -> "No presenta las tareas asignadas para la casa";
-            case "N5" -> "Utiliza vocabulario indebido en clase";
-            case "N6" -> "Charla mucho en clase";
-            case "N7" -> "No utiliza el uniforme establecido";
-            case "N8" -> "Ausente en clase, presente en la Institución";
-            default -> "Sin código asignado";
-        };
+        return codigoDescripcion == null || codigoDescripcion.isBlank()
+                ? "Sin código asignado" : codigoDescripcion;
     }
 }

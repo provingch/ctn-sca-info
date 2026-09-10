@@ -9,6 +9,13 @@
  */
 import { apiRequest } from './client';
 
+export interface CodigoConducta {
+  id: number;
+  codigo: string;
+  descripcion: string;
+  activo: boolean;
+}
+
 export interface CursoDto {
   id: number;
   especialidad: string;
@@ -59,6 +66,18 @@ export function updateAttendance(asistenciaId: number, estado: string) {
 
 export function updateRasgoCodigos(asistenciaId: number, codigos: string[]) {
   return apiRequest<void>('/api/home/update-rasgo-codigos', { method: 'POST', body: { asistenciaId, codigos } });
+}
+
+export function listarCodigosConducta() {
+  return apiRequest<CodigoConducta[]>('/api/codigos-conducta', { method: 'GET' });
+}
+
+export function crearCodigoConducta(codigo: string, descripcion: string) {
+  return apiRequest<CodigoConducta>('/api/codigos-conducta', { method: 'POST', body: { codigo, descripcion } });
+}
+
+export function desactivarCodigoConducta(id: number) {
+  return apiRequest<void>(`/api/codigos-conducta/${id}/desactivar`, { method: 'POST' });
 }
 
 export interface GetHomeParams {
