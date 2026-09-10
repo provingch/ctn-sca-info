@@ -10,6 +10,7 @@ import py.edu.ctn.sca.padres.core.Session
 import py.edu.ctn.sca.padres.core.TokenStore
 import py.edu.ctn.sca.padres.data.AuthRepository
 import py.edu.ctn.sca.padres.data.ParentRepository
+import py.edu.ctn.sca.padres.data.ProfileRepository
 import py.edu.ctn.sca.padres.data.PushRepository
 
 class ScaApp : Application() {
@@ -48,6 +49,7 @@ class Graph(context: Context) {
 
     val authRepository = AuthRepository(network.authApi, session, cookieJar, network.json)
     val parentRepository = ParentRepository(network.parentApi)
+    val profileRepository = ProfileRepository(network.profileApi, network.json)
     val pushRepository = PushRepository(network.pushApi, tokenStore)
 }
 

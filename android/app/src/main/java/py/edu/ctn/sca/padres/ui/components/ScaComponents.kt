@@ -24,6 +24,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import py.edu.ctn.sca.padres.ui.theme.scaColors
 
+/**
+ * Ancho máximo del contenido principal. En teléfonos no tiene efecto (siempre son
+ * más angostos); en tablets y foldables desplegados evita tarjetas y líneas de
+ * texto de borde a borde — el contenido queda centrado y legible.
+ */
+val ContentMaxWidth = 640.dp
+
 /** Web `.parent-*-heading > div > span`: an all-caps accent eyebrow above a title. */
 @Composable
 fun Eyebrow(text: String, modifier: Modifier = Modifier) {

@@ -25,6 +25,14 @@ interface ParentApi {
     suspend fun summary(@Query("alumnoId") alumnoId: Int? = null): ParentResponse
 }
 
+interface ProfileApi {
+    @GET("api/profile")
+    suspend fun get(): ProfileResponseDto
+
+    @POST("api/profile/save-profile")
+    suspend fun save(@Body body: SaveProfileRequest): Response<Unit>
+}
+
 interface PushApi {
     @POST("api/push/fcm")
     suspend fun register(@Body body: FcmTokenRequest): Response<Unit>

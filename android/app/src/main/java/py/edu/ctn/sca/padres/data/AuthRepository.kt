@@ -11,6 +11,11 @@ sealed interface LoginStep {
     data class Failed(val message: String, val locked: Boolean = false, val retryAfterSeconds: Long? = null) : LoginStep
 }
 
+/** Solo las cuentas Padre (nivel 4) pueden usar esta app. */
+private const val PARENT_LEVEL = 4
+private const val NOT_PARENT_MESSAGE =
+    "Esta app es solo para cuentas de padres. Iniciá sesión desde la web con tu usuario."
+
 class AuthRepository(
     private val authApi: AuthApi,
     private val session: Session,
@@ -33,7 +38,7 @@ class AuthRepository(
     suspend fun restore(): Boolean {
         val resp = runCatching { authApi.refresh() }.getOrNull()
         val body = resp?.body()
-        return if (resp != null && resp.isSuccessful && body != null) {
+        return if (resp != null && resp.isSuccessful && body != null && body.level == PARENT_LEVEL) {
             session.onAuthenticated(body.accessToken, body.level)
             true
         } else {
@@ -48,7 +53,7 @@ class AuthRepository(
         session.onLoggedOut()
     }
 
-    private fun handle(resp: Response<LoginResponse>): LoginStep {
+    private suspend fun handle(resp: Response<LoginResponse>): LoginStep {
         if (!resp.isSuccessful) {
             val err = resp.errorBody()?.string()?.let {
                 runCatching { json.decodeFromString<AuthErrorResponse>(it) }.getOrNull()
@@ -66,8 +71,16 @@ class AuthRepository(
             body.requiere2fa && !body.tempToken.isNullOrBlank() ->
                 LoginStep.NeedsTwoFactor(body.tempToken)
             !body.accessToken.isNullOrBlank() -> {
-                session.onAuthenticated(body.accessToken, body.level)
-                LoginStep.Authenticated
+                // La app es solo para padres: si el login server-side es de otro rol,
+                // se cierra la sesión recién creada (cookie + refresh token) sin llegar
+                // a marcar la sesión como autenticada, así la UI nunca muestra el dashboard.
+                if (body.level != PARENT_LEVEL) {
+                    logout()
+                    LoginStep.Failed(NOT_PARENT_MESSAGE)
+                } else {
+                    session.onAuthenticated(body.accessToken, body.level)
+                    LoginStep.Authenticated
+                }
             }
             else -> LoginStep.Failed("No se pudo iniciar sesión.")
         }

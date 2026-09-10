@@ -20,12 +20,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -58,6 +60,7 @@ import py.edu.ctn.sca.padres.R
 import py.edu.ctn.sca.padres.data.ChildDto
 import py.edu.ctn.sca.padres.data.SubjectDto
 import py.edu.ctn.sca.padres.data.TaskDto
+import py.edu.ctn.sca.padres.ui.components.ContentMaxWidth
 import py.edu.ctn.sca.padres.ui.components.Eyebrow
 import py.edu.ctn.sca.padres.ui.components.GradeChip
 import py.edu.ctn.sca.padres.ui.components.MetricBox
@@ -76,7 +79,7 @@ import java.time.LocalDate
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ParentDashboardScreen(graph: Graph) {
+fun ParentDashboardScreen(graph: Graph, onOpenProfile: () -> Unit = {}) {
     val vm: ParentViewModel = graphViewModel { ParentViewModel(it.parentRepository, it.authRepository) }
     val ui by vm.ui.collectAsStateWithLifecycle()
 
@@ -97,6 +100,9 @@ fun ParentDashboardScreen(graph: Graph) {
                     )
                 },
                 actions = {
+                    IconButton(onClick = onOpenProfile) {
+                        Icon(Icons.Outlined.AccountCircle, contentDescription = "Mi perfil")
+                    }
                     IconButton(onClick = vm::logout) {
                         Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Cerrar sesión")
                     }
@@ -141,71 +147,76 @@ private fun DashboardContent(ui: ParentUiState, vm: ParentViewModel) {
     val selectedSubject = ui.selectedSubject
     val latestActivity = data.materias.flatMap { it.tareas }.mapNotNull { it.fecha }.maxOrNull()
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        if (data.hijos.isNotEmpty()) {
-            item { Eyebrow("Hijos vinculados") }
-            items(data.hijos, key = { it.id }) { child ->
-                ChildCard(
-                    child = child,
-                    selected = child.id == data.selectedAlumnoId,
-                    onClick = { vm.selectChild(child.id) },
-                )
-            }
-        }
-
-        if (selectedChild != null) {
-            item { OverviewPanel(child = selectedChild, ui = ui, latestActivity = latestActivity) }
-        }
-
-        item { StageSwitcher(ui = ui, onSelect = vm::selectStage, count = subjects.size) }
-
-        if (subjects.isEmpty()) {
-            item {
-                Panel {
-                    Text(
-                        "Sin calificaciones en ${ui.stage.label.lowercase()}",
-                        style = MaterialTheme.typography.titleSmall,
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "Todavía no hay materias ni tareas publicadas para este alumno en la etapa seleccionada.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+        LazyColumn(
+            modifier = Modifier
+                .widthIn(max = ContentMaxWidth)
+                .fillMaxWidth()
+                .fillMaxHeight(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            if (data.hijos.isNotEmpty()) {
+                item { Eyebrow("Hijos vinculados") }
+                items(data.hijos, key = { it.id }) { child ->
+                    ChildCard(
+                        child = child,
+                        selected = child.id == data.selectedAlumnoId,
+                        onClick = { vm.selectChild(child.id) },
                     )
                 }
             }
-        } else {
-            item {
-                Column {
-                    Eyebrow("Materias")
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "Promedios de ${ui.stage.label.lowercase()}",
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "Seleccioná una materia para ver sus tareas y calificaciones.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+
+            if (selectedChild != null) {
+                item { OverviewPanel(child = selectedChild, ui = ui, latestActivity = latestActivity) }
+            }
+
+            item { StageSwitcher(ui = ui, onSelect = vm::selectStage, count = subjects.size) }
+
+            if (subjects.isEmpty()) {
+                item {
+                    Panel {
+                        Text(
+                            "Sin calificaciones en ${ui.stage.label.lowercase()}",
+                            style = MaterialTheme.typography.titleSmall,
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "Todavía no hay materias ni tareas publicadas para este alumno en la etapa seleccionada.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            } else {
+                item {
+                    Column {
+                        Eyebrow("Materias")
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "Promedios de ${ui.stage.label.lowercase()}",
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "Seleccioná una materia para ver sus tareas y calificaciones.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                items(subjects, key = { it.planillaId }) { subject ->
+                    SubjectCard(
+                        subject = subject,
+                        selected = subject.planillaId == selectedSubject?.planillaId,
+                        onClick = { vm.selectSubject(subject.planillaId) },
                     )
                 }
+                selectedSubject?.let { subject ->
+                    item { SubjectDetailPanel(subject) }
+                }
+                item { CalculationNote() }
             }
-            items(subjects, key = { it.planillaId }) { subject ->
-                SubjectCard(
-                    subject = subject,
-                    selected = subject.planillaId == selectedSubject?.planillaId,
-                    onClick = { vm.selectSubject(subject.planillaId) },
-                )
-            }
-            selectedSubject?.let { subject ->
-                item { SubjectDetailPanel(subject) }
-            }
-            item { CalculationNote() }
         }
     }
 }

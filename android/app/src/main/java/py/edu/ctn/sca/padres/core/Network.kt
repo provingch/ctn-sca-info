@@ -10,6 +10,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import py.edu.ctn.sca.padres.BuildConfig
 import py.edu.ctn.sca.padres.data.AuthApi
 import py.edu.ctn.sca.padres.data.ParentApi
+import py.edu.ctn.sca.padres.data.ProfileApi
 import py.edu.ctn.sca.padres.data.PushApi
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -84,6 +85,7 @@ class Network(
         .build()
 
     val parentApi: ParentApi = authedRetrofit.create(ParentApi::class.java)
+    val profileApi: ProfileApi = authedRetrofit.create(ProfileApi::class.java)
     val pushApi: PushApi = authedRetrofit.create(PushApi::class.java)
 }
 

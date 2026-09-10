@@ -9,12 +9,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import py.edu.ctn.sca.padres.Graph
 import py.edu.ctn.sca.padres.core.Session
 import py.edu.ctn.sca.padres.ui.auth.LoginFlow
 import py.edu.ctn.sca.padres.ui.parent.ParentDashboardScreen
+import py.edu.ctn.sca.padres.ui.profile.ProfileScreen
 
 @Composable
 fun AppRoot(
@@ -38,7 +43,14 @@ fun AppRoot(
                 CircularProgressIndicator()
             }
             Session.AuthState.LOGGED_OUT -> LoginFlow(graph = graph)
-            Session.AuthState.AUTHENTICATED -> ParentDashboardScreen(graph = graph)
+            Session.AuthState.AUTHENTICATED -> {
+                var showProfile by rememberSaveable { mutableStateOf(false) }
+                if (showProfile) {
+                    ProfileScreen(graph = graph, onBack = { showProfile = false })
+                } else {
+                    ParentDashboardScreen(graph = graph, onOpenProfile = { showProfile = true })
+                }
+            }
         }
     }
 }

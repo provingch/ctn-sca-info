@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -82,12 +83,20 @@ fun LoginFlow(graph: Graph) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            BrandHeader()
-            Spacer(Modifier.height(24.dp))
-            AccentTopCard {
-                when (ui.stage) {
-                    AuthUiState.Stage.CREDENTIALS -> CredentialsForm(ui, vm)
-                    AuthUiState.Stage.TWO_FACTOR -> TwoFactorForm(ui, vm)
+            // Ancho acotado para que en tablets/foldables la tarjeta no se estire a lo ancho.
+            Column(
+                modifier = Modifier
+                    .widthIn(max = 460.dp)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                BrandHeader()
+                Spacer(Modifier.height(24.dp))
+                AccentTopCard {
+                    when (ui.stage) {
+                        AuthUiState.Stage.CREDENTIALS -> CredentialsForm(ui, vm)
+                        AuthUiState.Stage.TWO_FACTOR -> TwoFactorForm(ui, vm)
+                    }
                 }
             }
         }
