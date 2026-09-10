@@ -7,7 +7,23 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SOURCE="$ROOT/backend/src/main/resources/logos-source"
 OUT_SPECIALTY="$ROOT/backend/src/main/resources/static/assets/png"
 OUT_INSTITUTIONAL="$ROOT/backend/src/main/resources/static/logo-institucional.png"
+OUT_SCA_COLOR="$ROOT/backend/src/main/resources/static/logo-sca-color.png"
 mkdir -p "$OUT_SPECIALTY"
+
+# Convierte manteniendo el aspecto original (solo se fija el ancho).
+convert_svg_keep_aspect() {
+  local svg="$1"
+  local out="$2"
+  local width="${3:-480}"
+  if command -v rsvg-convert >/dev/null 2>&1; then
+    rsvg-convert -w "$width" "$svg" -o "$out"
+  elif command -v inkscape >/dev/null 2>&1; then
+    inkscape "$svg" --export-type=png --export-filename="$out" --export-width="$width"
+  else
+    echo "No se encontró rsvg-convert ni inkscape. Instala librsvg2-bin o inkscape." >&2
+    exit 2
+  fi
+}
 
 convert_svg() {
   local svg="$1"
@@ -34,6 +50,15 @@ if [ ! -f "$institutional_svg" ]; then
 fi
 convert_svg "$institutional_svg" "$OUT_INSTITUTIONAL"
 echo "Converted $institutional_svg -> $OUT_INSTITUTIONAL"
+
+# Logo SCA a color para el header de los reportes PDF de padres.
+sca_color_svg="$SOURCE/logos-sca/logo_SCA_color.svg"
+if [ ! -f "$sca_color_svg" ]; then
+  echo "Falta el SVG a color esperado: $sca_color_svg" >&2
+  exit 2
+fi
+convert_svg_keep_aspect "$sca_color_svg" "$OUT_SCA_COLOR" 480
+echo "Converted $sca_color_svg -> $OUT_SCA_COLOR"
 
 for svg in "$SOURCE"/logos-especialidad/*.svg; do
   [ -e "$svg" ] || continue

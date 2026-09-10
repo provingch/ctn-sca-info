@@ -12,6 +12,7 @@ import py.edu.ctn.sca.padres.data.AuthRepository
 import py.edu.ctn.sca.padres.data.ParentRepository
 import py.edu.ctn.sca.padres.data.ProfileRepository
 import py.edu.ctn.sca.padres.data.PushRepository
+import py.edu.ctn.sca.padres.data.ReportRepository
 
 class ScaApp : Application() {
 
@@ -37,6 +38,7 @@ class ScaApp : Application() {
 
 /** Hand-rolled service locator. The app is tiny; a DI framework would be overkill. */
 class Graph(context: Context) {
+    private val appContext = context.applicationContext
     val session = Session()
     private val tokenStore = TokenStore(context)
     private val cookieJar = PersistentCookieJar(tokenStore)
@@ -50,6 +52,7 @@ class Graph(context: Context) {
     val authRepository = AuthRepository(network.authApi, session, cookieJar, network.json)
     val parentRepository = ParentRepository(network.parentApi)
     val profileRepository = ProfileRepository(network.profileApi, network.json)
+    val reportRepository = ReportRepository(appContext, network.parentApi, network.json)
     val pushRepository = PushRepository(network.pushApi, tokenStore)
 }
 

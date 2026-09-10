@@ -46,6 +46,7 @@ data class ParentResponse(
     val hijos: List<ChildDto> = emptyList(),
     val selectedAlumnoId: Int? = null,
     val materias: List<SubjectDto> = emptyList(),
+    val libretaDisponible: Boolean = false,
 )
 
 @Serializable
