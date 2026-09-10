@@ -3,5 +3,5 @@
 sdk.dir=/home/USER/Android/Sdk
 
 # Base URL of the SCA backend the APK should talk to (needs a trailing slash).
-# Must be HTTPS with a valid certificate for a release build.
-sca.baseUrl=https://sca.tu-dominio.edu.py/
+# Defaults to the production host if unset. Must be HTTPS for a release build.
+sca.baseUrl=https://ctn-sca.ddns.net/
