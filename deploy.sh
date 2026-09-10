@@ -1031,7 +1031,7 @@ load_default_database() {
   awk -v db="$DB_NAME" '
     NR == 1 && /^##/ { next }
     tolower($0) == "drop database if exists ctndb;" { print "DROP DATABASE IF EXISTS `" db "`;"; next }
-    tolower($0) == "create database ctndb;" { print "CREATE DATABASE `" db "` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"; next }
+    tolower($0) ~ /^create database ctndb([ ;])/ { print "CREATE DATABASE `" db "` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"; next }
     tolower($0) == "use ctndb;" { print "USE `" db "`;"; next }
     { print }
   ' "$schema_file" > "$transformed_schema"
@@ -1045,13 +1045,13 @@ load_default_database() {
   fi
 
   echo "==> Loading database structure"
-  if ! "$client" --defaults-extra-file="$client_config" < "$transformed_schema"; then
+  if ! "$client" --defaults-extra-file="$client_config" --default-character-set=utf8mb4 < "$transformed_schema"; then
     rm -f "$client_config" "$transformed_schema"
     if [[ "$restart_service" == true ]]; then sudo systemctl start "$SERVICE_NAME"; fi
     return 1
   fi
   echo "==> Loading official CTN seed"
-  if ! "$client" --defaults-extra-file="$client_config" "$DB_NAME" < "$seed_file"; then
+  if ! "$client" --defaults-extra-file="$client_config" --default-character-set=utf8mb4 "$DB_NAME" < "$seed_file"; then
     rm -f "$client_config" "$transformed_schema"
     if [[ "$restart_service" == true ]]; then sudo systemctl start "$SERVICE_NAME"; fi
     return 1
