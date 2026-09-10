@@ -6,7 +6,7 @@ import AdminQuejasPanel from './AdminQuejasPanel';
 
 vi.mock('../../api/quejas', () => ({ createQueja: vi.fn(), getAdminQuejas: vi.fn() }));
 const data: AdminCatalog = {
-  materias: [], alumnos: [], cursosAlumnos: [],
+  materias: [], alumnos: [], cursosAlumnos: [], egresados: [],
   usuarios: [{ id: 9, nombre: 'Admin', apellido: 'Global', usuario: 'admin', nivel: 3, correo: null }],
   especialidades: [{ id: 99, nombre: 'Electricidad' }, { id: 21, nombre: 'Informática' }],
   cursos: [{ id: 13, especialidad: 'Informática', nivel: 2, seccion: 'A' }, { id: 14, especialidad: 'Electricidad', nivel: 1, seccion: 'B' }],

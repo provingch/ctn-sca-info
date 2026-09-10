@@ -45,6 +45,16 @@ public class Curso {
     public int getNivel() {
         return getCurso();
     }
+
+    /**
+     * true cuando la promoción del curso ya pasó (año de egreso anterior al
+     * período actual). Puro, sin efectos secundarios — mismo estilo que
+     * {@link #getCurso()}. Espeja el filtro {@code c.promocion >= ?} que usa
+     * CursoDao: activo == promocion >= period, egresado == promocion < period.
+     */
+    public boolean isEgresado() {
+        return getPeriod() > getPromocion();
+    }
     
     public String getCursoOrdinal() {
         int cursoInt = getCurso();

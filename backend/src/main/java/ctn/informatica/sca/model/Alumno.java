@@ -11,6 +11,7 @@ public class Alumno {
     private String googleUserId;
     private String googleEmail;
     private String especialidadNombre;
+    private Integer promocion;
 
     public int getId() {
         return id;
@@ -86,4 +87,8 @@ public class Alumno {
 
     public String getEspecialidadNombre() { return especialidadNombre; }
     public void setEspecialidadNombre(String especialidadNombre) { this.especialidadNombre = especialidadNombre; }
+
+    /** Año de egreso del curso al que pertenece (solo lo pobla findAllEgresados). */
+    public Integer getPromocion() { return promocion; }
+    public void setPromocion(Integer promocion) { this.promocion = promocion; }
 }

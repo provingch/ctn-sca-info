@@ -7,7 +7,7 @@ vi.mock('../../api/admin', () => ({ deleteAdminRecord: vi.fn() }));
 const data: AdminCatalog = {
   materias: Array.from({ length: 23 }, (_, i) => ({ id: i + 1, nombre: 'Materia ' + String(i + 1).padStart(2, '0'), categoria: i % 2 ? 'especifico' : 'comun', especialidadIds: i % 2 ? [1] : [1, 2] })),
   especialidades: [{ id: 1, nombre: 'Informática' }, { id: 2, nombre: 'Electricidad' }],
-  asignaciones: [], usuarios: [], alumnos: [], cursos: [], cursosAlumnos: [],
+  asignaciones: [], usuarios: [], alumnos: [], cursos: [], cursosAlumnos: [], egresados: [],
 };
 const reload = vi.fn();
 const status = vi.fn();

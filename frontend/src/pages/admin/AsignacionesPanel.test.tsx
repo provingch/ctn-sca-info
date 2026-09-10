@@ -6,7 +6,7 @@ import type { AdminCatalog } from '../../api/admin';
 const data: AdminCatalog = {
   usuarios: Array.from({ length: 23 }, (_, index) => ({ id: index + 1, nombre: 'Ana', apellido: index === 0 ? 'Ácosta' : `Profesor ${String(index + 1).padStart(2, '0')}`, usuario: `docente${index + 1}`, nivel: 1, correo: null })),
   asignaciones: [1, 2, 3, 4].map((id) => ({ id, profesorId: id < 4 ? 23 : 1, materiaId: 1, cursoId: 1, profesor: 'Ana', materia: 'Matemática', curso: '1 A' })),
-  especialidades: [], materias: [], alumnos: [], cursos: [], cursosAlumnos: [],
+  especialidades: [], materias: [], alumnos: [], cursos: [], cursosAlumnos: [], egresados: [],
 };
 function panel(catalog = data) { return <AsignacionesPanel data={catalog} reload={vi.fn()} status={vi.fn()} />; }
 function choose(label: string, option: string) {
