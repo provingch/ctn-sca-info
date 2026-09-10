@@ -6,7 +6,7 @@ import GradeChip from '../../components/ui/GradeChip';
 import ContentState from '../../components/ui/ContentState';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import DatePicker from '../../components/DatePicker';
-import { getPlanilla, resolvePlanilla, syncClassroom, confirmClassroomMapping, saveGrades, saveEtapa1FechaCierre, confirmEtapa1, type PlanillaDetail } from '../../api/academics';
+import { getPlanilla, resolvePlanilla, syncClassroom, confirmClassroomMapping, saveGrades, saveEtapa1FechaCierre, confirmEtapa1, saveEtapa2FechaCierre, confirmEtapa2, type PlanillaDetail } from '../../api/academics';
 import { reformatearEtapa1 } from '../../api/admin';
 import { ApiError, apiDownload } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
@@ -57,6 +57,8 @@ export default function PlanillaPage() {
   const [etapa1Date, setEtapa1Date] = useState('');
   const [confirmingEtapa1, setConfirmingEtapa1] = useState(false);
   const [reformattingEtapa1, setReformattingEtapa1] = useState(false);
+  const [etapa2Date, setEtapa2Date] = useState('');
+  const [confirmingEtapa2, setConfirmingEtapa2] = useState(false);
   const [selectedEtapa, setSelectedEtapa] = useState<number>(1);
   const { user } = useAuth();
   const { showToast } = useToast();
@@ -77,8 +79,11 @@ export default function PlanillaPage() {
     setData(result);
     setValues(createGradeValues(result));
     setEtapa1Date(result.planilla.fechaCierreEtapa1 ?? '');
-    // Inicializar el selector de etapa con la "etapa sugerida" al cargar
-    setSelectedEtapa(result.planilla.etapaSugerida ?? result.planilla.etapaIndex ?? 1);
+    setEtapa2Date(result.planilla.fechaCierreEtapa2 ?? '');
+    // El selector refleja la etapa que efectivamente se está mostrando, no la
+    // sugerida: `etapaSugerida` maneja el auto-redirect inicial y el badge, pero
+    // parado en la fila de "primera" el combo debe decir "primera".
+    setSelectedEtapa(result.planilla.etapaIndex ?? 1);
   }, []);
 
   useEffect(() => {
@@ -299,6 +304,35 @@ export default function PlanillaPage() {
     }
   }
 
+  // Espejo de confirmarEtapa1Accion para la Segunda Etapa (columna propia, sin
+  // relación con el cierre de Etapa 1).
+  async function confirmarEtapa2Accion() {
+    if (!data) return;
+    if (data.planilla.etapa2Confirmada) {
+      setStatus('Etapa 2 cerrada, no se pueden modificar sus datos');
+      return;
+    }
+    if (!etapa2Date) {
+      setStatus('Debe indicar la fecha de cierre de Etapa 2 antes de confirmar');
+      return;
+    }
+
+    const ok = window.confirm(`¿Confirmar el cierre de la Etapa 2 con fecha ${etapa2Date}? No se podrá editar después.`);
+    if (!ok) return;
+
+    setConfirmingEtapa2(true);
+    try {
+      await saveEtapa2FechaCierre(id, etapa2Date);
+      await confirmEtapa2(id);
+      setStatus('Etapa 2 confirmada.');
+      applyPlanillaData(await getPlanilla(id));
+    } catch (e) {
+      setStatus(e instanceof ApiError ? e.message : 'No se pudo confirmar Etapa 2.');
+    } finally {
+      setConfirmingEtapa2(false);
+    }
+  }
+
 
 
   async function reformatearEtapa1Accion() {
@@ -334,6 +368,9 @@ export default function PlanillaPage() {
   const classroomTaskCount = data.tareas.filter((task) => Boolean(task.googleCourseworkId?.trim())).length;
   const localTaskCount = data.tareas.length - classroomTaskCount;
   const isEtapa1Locked = data.planilla.etapaIndex === 1 && Boolean(data.planilla.etapa1Confirmada);
+  const isEtapa2Locked = data.planilla.etapaIndex === 2 && Boolean(data.planilla.etapa2Confirmada);
+  // La etapa que se está mostrando está cerrada (bloquea edición de notas/tareas).
+  const isStageLocked = isEtapa1Locked || isEtapa2Locked;
   const isGlobalAdmin = user?.level === 3 && user.especialidadId === null;
   // Piso de "1": todo lo que caiga por debajo del mínimo de "2" (igual que
   // en Planilla.jsp: "${gradeRanges['2'][0] - 1} o menos").
@@ -350,7 +387,7 @@ export default function PlanillaPage() {
             <p>{data.curso ? `${data.curso.nivel}° ${data.curso.seccion}` : 'Curso'} · {data.planilla.etapa}</p>
             <div className="planilla-stage-closure-summary" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
               <span className="badge">Etapa sugerida: {data.planilla.etapaSugerida}</span>
-              {isEtapa1Locked ? <span className="badge" style={{ background: '#e8f5e9', color: '#1b5e20' }}>Etapa 1 cerrada</span> : <span className="badge" style={{ background: '#fff3e0', color: '#e65100' }}>Abierta para edición</span>}
+              {isStageLocked ? <span className="badge" style={{ background: '#e8f5e9', color: '#1b5e20' }}>Etapa {data.planilla.etapaIndex} cerrada</span> : <span className="badge" style={{ background: '#fff3e0', color: '#e65100' }}>Abierta para edición</span>}
             </div>
           </div>
           <div className="planilla-hero-actions">
@@ -370,18 +407,33 @@ export default function PlanillaPage() {
             <StageCombobox value={selectedEtapa} disabled={switchingEtapa} onChange={changeEtapa} />
           </div>
           {data.planilla.etapaIndex === 1 && (
-            <>
-              <div className="inline-filter planilla-date-filter">
-                <span>Cierre Etapa 1</span>
-                <DatePicker ariaLabel="Cierre Etapa 1" value={etapa1Date} disabled={isEtapa1Locked || confirmingEtapa1} onChange={setEtapa1Date} />
-              </div>
-              <div className="planilla-toolbar-actions">
-                <button className="button secondary" type="button" disabled={!etapa1Date || isEtapa1Locked || confirmingEtapa1} onClick={() => void confirmarEtapa1Accion()}>{confirmingEtapa1 ? 'Confirmando…' : 'Confirmar Etapa 1'}</button>
-                {isGlobalAdmin && <button className="button secondary" type="button" disabled={reformattingEtapa1 || !data.planilla.fechaCierreEtapa1} onClick={() => void reformatearEtapa1Accion()}>{reformattingEtapa1 ? 'Reformateando…' : 'Reformatear etapa'}</button>}
-                <button className="button secondary" type="button" disabled={syncingClassroom} onClick={() => void performClassroomSync(id)}>{syncingClassroom ? 'Sincronizando…' : 'Sincronizar Classroom'}</button>
-                {!isEtapa1Locked && <Link className="button" to={`/planilla/${id}/tarea`}>Agregar tarea</Link>}
-              </div>
-            </>
+            <div className="inline-filter planilla-date-filter">
+              <span>Cierre Etapa 1</span>
+              {isEtapa1Locked
+                ? <span className="planilla-stage-closed-date">Cerrada el {formatShortDate(etapa1Date)}</span>
+                : <DatePicker ariaLabel="Cierre Etapa 1" value={etapa1Date} disabled={confirmingEtapa1} onChange={setEtapa1Date} />}
+            </div>
+          )}
+          {data.planilla.etapaIndex === 2 && (
+            <div className="inline-filter planilla-date-filter">
+              <span>Cierre Etapa 2</span>
+              {isEtapa2Locked
+                ? <span className="planilla-stage-closed-date">Cerrada el {formatShortDate(etapa2Date)}</span>
+                : <DatePicker ariaLabel="Cierre Etapa 2" value={etapa2Date} disabled={confirmingEtapa2} onChange={setEtapa2Date} />}
+            </div>
+          )}
+          {(data.planilla.etapaIndex === 1 || data.planilla.etapaIndex === 2) && (
+            <div className="planilla-toolbar-actions">
+              {data.planilla.etapaIndex === 1 && !isEtapa1Locked && (
+                <button className="button secondary" type="button" disabled={!etapa1Date || confirmingEtapa1} onClick={() => void confirmarEtapa1Accion()}>{confirmingEtapa1 ? 'Confirmando…' : 'Confirmar Etapa 1'}</button>
+              )}
+              {data.planilla.etapaIndex === 2 && !isEtapa2Locked && (
+                <button className="button secondary" type="button" disabled={!etapa2Date || confirmingEtapa2} onClick={() => void confirmarEtapa2Accion()}>{confirmingEtapa2 ? 'Confirmando…' : 'Confirmar Etapa 2'}</button>
+              )}
+              {isGlobalAdmin && data.planilla.etapaIndex === 1 && <button className="button secondary" type="button" disabled={reformattingEtapa1 || !data.planilla.fechaCierreEtapa1} onClick={() => void reformatearEtapa1Accion()}>{reformattingEtapa1 ? 'Reformateando…' : 'Reformatear etapa'}</button>}
+              <button className="button secondary" type="button" disabled={syncingClassroom} onClick={() => void performClassroomSync(id)}>{syncingClassroom ? 'Sincronizando…' : 'Sincronizar Classroom'}</button>
+              {!isStageLocked && <Link className="button" to={`/planilla/${id}/tarea`}>Agregar tarea</Link>}
+            </div>
           )}
           </div>
       </section>
@@ -390,9 +442,9 @@ export default function PlanillaPage() {
         <span><strong>{syncSummary.created}</strong> tareas creadas</span>
         <span><strong>{syncSummary.updated}</strong> calificaciones actualizadas</span>
       </div>}
-      {isEtapa1Locked && (
+      {isStageLocked && (
         <div className="notice" role="status">
-          <strong>Etapa 1 cerrada, no se pueden modificar sus datos.</strong>
+          <strong>Etapa {data.planilla.etapaIndex} cerrada, no se pueden modificar sus datos.</strong>
         </div>
       )}
       {resolvedCourse && resolvedCourse.classroomCourseMapped && resolvedCourse.googleCourseId && data.planilla.googleCourseId !== resolvedCourse.googleCourseId && (
@@ -487,7 +539,7 @@ export default function PlanillaPage() {
                     <div className="planilla-task-origin" title={isClassroomTask ? 'Importada de Google Classroom' : 'Tarea local'}>
                       {isClassroomTask ? <ClassroomBadge className="planilla-task-origin-icon" label="Importada de Google Classroom" iconOnly /> : <span className="origin-badge planilla-task-origin-icon" role="img" aria-label="Tarea local"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h5" /></svg></span>}
                     </div>
-                    {!isClassroomTask && !isEtapa1Locked && <Link className="planilla-task-edit" to={`/planilla/${id}/tarea/${task.id}`}>Editar</Link>}
+                    {!isClassroomTask && !isStageLocked && <Link className="planilla-task-edit" to={`/planilla/${id}/tarea/${task.id}`}>Editar</Link>}
                   </th>
                 );
               })}
@@ -518,7 +570,7 @@ export default function PlanillaPage() {
                       min={0}
                       max={task.total}
                       value={grade ?? ''}
-                      disabled={isEtapa1Locked}
+                      disabled={isStageLocked}
                       onChange={(e) => handleGradeChange(`${row.alumnoId}:${task.id}`, e.target.value, task.total)}
                       onBlur={() => void handleGradeBlur(row.alumnoId, task.id, task.total)}
                       aria-label={`Nota para ${row.alumnoNombre} en ${task.titulo}`}

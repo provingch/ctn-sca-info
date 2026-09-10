@@ -852,6 +852,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .planilla-legacy-toolbar .inline-filter { min-width: 0; margin-left: 0; grid-template-columns: auto minmax(0, 1fr); }
 .planilla-date-range { margin: 0; color: var(--muted); font-size: .82rem; }
 .planilla-date-range strong { color: var(--ink); }
+.planilla-stage-closed-date { align-self: center; color: var(--ink); font-size: .88rem; font-weight: 700; white-space: nowrap; }
 .planilla-toolbar-actions { margin-left: auto; }
 .planilla-page .inline-filter { position: relative; }
 .planilla-page .inline-filter > span { color: var(--ink); font-size: .88rem; font-weight: 700; }
