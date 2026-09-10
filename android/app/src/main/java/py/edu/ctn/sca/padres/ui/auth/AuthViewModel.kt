@@ -22,6 +22,8 @@ data class AuthUiState(
     val lockedSeconds: Long? = null,
 ) {
     enum class Stage { CREDENTIALS, TWO_FACTOR }
+
+    val isLocked: Boolean get() = (lockedSeconds ?: 0L) > 0L
 }
 
 class AuthViewModel(
@@ -34,9 +36,9 @@ class AuthViewModel(
 
     private var tempToken: String? = null
 
-    fun onUsername(v: String) = _ui.update { it.copy(username = v, error = null) }
-    fun onPassword(v: String) = _ui.update { it.copy(password = v, error = null) }
-    fun onCode(v: String) = _ui.update { it.copy(code = v.filter(Char::isDigit).take(6), error = null) }
+    fun onUsername(v: String) = _ui.update { it.copy(username = v, error = null, lockedSeconds = null) }
+    fun onPassword(v: String) = _ui.update { it.copy(password = v, error = null, lockedSeconds = null) }
+    fun onCode(v: String) = _ui.update { it.copy(code = v.filter(Char::isDigit).take(6), error = null, lockedSeconds = null) }
     fun onRememberMe(v: Boolean) = _ui.update { it.copy(rememberMe = v) }
 
     fun backToCredentials() {
@@ -78,7 +80,11 @@ class AuthViewModel(
                 }
             }
             is LoginStep.Failed -> _ui.update {
-                it.copy(loading = false, error = step.message, lockedSeconds = step.retryAfterSeconds)
+                it.copy(
+                    loading = false,
+                    error = step.message,
+                    lockedSeconds = if (step.locked) (step.retryAfterSeconds ?: 1L) else null,
+                )
             }
         }
     }
