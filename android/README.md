@@ -59,8 +59,25 @@ ese host — no lo dejes en release.
    `py.edu.ctn.sca.padres.debug` si querés push en debug).
 3. Descargá `google-services.json` y ponelo en `android/app/`.
    Sin ese archivo la app compila igual, sólo que sin push.
-4. En el backend, cargá las credenciales del **service account** de Firebase
-   (`FIREBASE_CREDENTIALS` / archivo JSON) — ver `backend` en esta rama.
+4. En el backend, exponé las credenciales del **service account** de Firebase
+   por env (cualquiera de las tres, en este orden de prioridad):
+   - `FIREBASE_CREDENTIALS_JSON` — el JSON del service account, inline
+   - `FIREBASE_CREDENTIALS` — ruta al archivo JSON
+   - `GOOGLE_APPLICATION_CREDENTIALS` — el default del SDK
+   Sin credenciales el backend arranca igual; el push queda deshabilitado y
+   `/api/push/fcm` sólo guarda tokens.
+
+### Endpoints de push (backend, en esta rama)
+
+| | |
+|---|---|
+| `POST /api/push/fcm` `{token, platform}` | registra/renueva el token del dispositivo |
+| `POST /api/push/fcm/unregister` `{token}` | baja el token (logout) |
+| `POST /api/push/fcm/test` | envía un push de prueba a los dispositivos del usuario |
+
+Disparadores automáticos: alta de tarea (`POST /api/planillas/{id}/tareas`) y
+carga de notas (`POST /api/planillas/{id}/notas`) notifican a los padres de los
+alumnos afectados. **Requiere vínculos en `alumno_usuario`** (hoy vacía en prod).
 
 ## Compilar el APK
 
