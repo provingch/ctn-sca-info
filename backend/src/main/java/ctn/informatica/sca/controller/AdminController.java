@@ -54,6 +54,7 @@ public class AdminController {
     private final PlanillaDao planillaDao;
     private final QuejaDao quejaDao;
     private final ActivityLogService activityLogService;
+    private final AlumnoDao alumnoDao;
 
     public AdminController() {
         this(new TareaDao(), new GradeDao(), new PlanillaDao(), new QuejaDao(), new ActivityLogService());
@@ -69,11 +70,16 @@ public class AdminController {
 
     @Autowired
     public AdminController(TareaDao tareaDao, GradeDao gradeDao, PlanillaDao planillaDao, QuejaDao quejaDao, ActivityLogService activityLogService) {
+        this(tareaDao, gradeDao, planillaDao, quejaDao, activityLogService, new AlumnoDao());
+    }
+
+    AdminController(TareaDao tareaDao, GradeDao gradeDao, PlanillaDao planillaDao, QuejaDao quejaDao, ActivityLogService activityLogService, AlumnoDao alumnoDao) {
         this.tareaDao = tareaDao;
         this.gradeDao = gradeDao;
         this.planillaDao = planillaDao;
         this.quejaDao = quejaDao == null ? new QuejaDao() : quejaDao;
         this.activityLogService = activityLogService == null ? new ActivityLogService() : activityLogService;
+        this.alumnoDao = alumnoDao == null ? new AlumnoDao() : alumnoDao;
     }
     @GetMapping
     public CatalogResponse catalog(Authentication authentication) {
@@ -115,11 +121,8 @@ public class AdminController {
             });
             List<Asignacion> asignacionesDb = actingSpecialtyId == null ? new AsignacionDao().findAll() : new AsignacionDao().findByEspecialidad(actingSpecialtyId);
             List<AssignmentItem> asignaciones = asignacionesDb.stream().map(a -> new AssignmentItem(a.getId(), a.getProfesorId(), a.getMateriaId(), a.getCursoId(), a.getProfesorNombre(), a.getMateriaNombre(), a.getCursoDescripcion())).toList();
-            List<Alumno> alumnosDb = new AlumnoDao().findAll();
-            if (actingSpecialtyId != null) {
-                alumnosDb = alumnosDb.stream().filter(a -> canAccessAlumno(actingSpecialtyId, a.getCursoId())).toList();
-            }
-            List<StudentItem> alumnos = alumnosDb.stream().map(a -> new StudentItem(a.getId(), a.getNombre(), a.getApellido(), a.getCursoId(), a.getCi(), a.getCorreoEncargado(), a.getCorreoEncargado2())).toList();
+            CatalogAlumnos catalogAlumnos = loadCatalogAlumnos(actingSpecialtyId);
+            List<StudentItem> alumnos = catalogAlumnos.alumnos();
             List<CursoBase> cursosDb = actingSpecialtyId == null ? new CursoBaseDao().findAll() : new CursoBaseDao().findAllByEspecialidadId(actingSpecialtyId);
             List<CourseItem> cursos = cursosDb.stream()
                     .map(c -> new CourseItem(c.getId(), c.getEspecialidad(), c.getNivel(), c.getSeccion())).toList();
@@ -136,11 +139,35 @@ public class AdminController {
             List<SpecialtyItem> especialidades = especialidadesDb.stream()
                     .map(e -> new SpecialtyItem(e.getId(), e.getNombre()))
                     .toList();
-            return new CatalogResponse(materias, usuarios, asignaciones, alumnos, cursos, cursosAlumnos, especialidades);
+            return new CatalogResponse(materias, usuarios, asignaciones, alumnos, cursos, cursosAlumnos, especialidades, catalogAlumnos.egresados());
         } catch (Exception ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo cargar el panel administrativo", ex);
         }
     }
+
+    /**
+     * Parte el padrón de alumnos en activos (curso vigente) y egresados (curso
+     * cuya promoción ya pasó), aplicando el mismo recorte por especialidad que
+     * el resto del catálogo. Los egresados van a una vista de solo lectura; no
+     * se los expone en el árbol de gestión porque su curso tampoco lo es.
+     */
+    CatalogAlumnos loadCatalogAlumnos(Integer actingSpecialtyId) throws SQLException {
+        List<Alumno> activosDb = alumnoDao.findAllActivos();
+        List<Alumno> egresadosDb = alumnoDao.findAllEgresados();
+        if (actingSpecialtyId != null) {
+            activosDb = activosDb.stream().filter(a -> canAccessAlumno(actingSpecialtyId, a.getCursoId())).toList();
+            egresadosDb = egresadosDb.stream().filter(a -> canAccessAlumno(actingSpecialtyId, a.getCursoId())).toList();
+        }
+        List<StudentItem> alumnos = activosDb.stream()
+                .map(a -> new StudentItem(a.getId(), a.getNombre(), a.getApellido(), a.getCursoId(), a.getCi(), a.getCorreoEncargado(), a.getCorreoEncargado2()))
+                .toList();
+        List<EgresadoItem> egresados = egresadosDb.stream()
+                .map(a -> new EgresadoItem(a.getId(), a.getNombre(), a.getApellido(), a.getCi(), a.getEspecialidadNombre(), a.getPromocion()))
+                .toList();
+        return new CatalogAlumnos(alumnos, egresados);
+    }
+
+    record CatalogAlumnos(List<StudentItem> alumnos, List<EgresadoItem> egresados) {}
 
     @GetMapping("/quejas")
     public List<Map<String, Object>> listarQuejas(Authentication auth) {
@@ -895,7 +922,7 @@ public class AdminController {
     }
     private ResponseStatusException failure(String message, Exception ex) { return new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, ex); }
 
-    public record CatalogResponse(List<MateriaItem> materias, List<UserItem> usuarios, List<AssignmentItem> asignaciones, List<StudentItem> alumnos, List<CourseItem> cursos, List<CourseItem> cursosAlumnos, List<SpecialtyItem> especialidades) {}
+    public record CatalogResponse(List<MateriaItem> materias, List<UserItem> usuarios, List<AssignmentItem> asignaciones, List<StudentItem> alumnos, List<CourseItem> cursos, List<CourseItem> cursosAlumnos, List<SpecialtyItem> especialidades, List<EgresadoItem> egresados) {}
     public record MateriaItem(int id, String nombre, String categoria, List<Integer> especialidadIds) {}
     public record PadreSummary(int id, String nombre, String apellido, Integer ci, String usuario) {}
     public record UserItem(int id, String nombre, String apellido, String usuario, int nivel, String correo, Integer ci, Integer especialidadId, String especialidadNombre) {
@@ -905,6 +932,7 @@ public class AdminController {
     }
     public record AssignmentItem(int id, int profesorId, int materiaId, int cursoId, String profesor, String materia, String curso) {}
     public record StudentItem(int id, String nombre, String apellido, int cursoId, Integer ci, String correoEncargado, String correoEncargado2) {}
+    public record EgresadoItem(int id, String nombre, String apellido, Integer ci, String especialidad, Integer promocion) {}
     public record CourseItem(int id, String especialidad, int nivel, String seccion) {}
     public record SpecialtyItem(int id, String nombre) {}
     public record MateriaInput(String nombre, String categoria, List<Integer> especialidadIds) {}
