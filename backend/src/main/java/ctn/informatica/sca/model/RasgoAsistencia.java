@@ -131,8 +131,4 @@ public class RasgoAsistencia {
         return nombre + " " + apellido;
     }
 
-    public String getCodigoDescripcion() {
-        return codigoDescripcion == null || codigoDescripcion.isBlank()
-                ? "Sin código asignado" : codigoDescripcion;
-    }
 }
