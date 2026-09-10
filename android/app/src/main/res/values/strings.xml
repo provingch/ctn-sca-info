@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SCA Padres</string>
+    <string name="fcm_channel_id">sca_calificaciones</string>
+    <string name="fcm_channel_name">Calificaciones</string>
+    <string name="fcm_channel_desc">Avisos cuando se publican o califican tareas de tus hijos.</string>
+</resources>
