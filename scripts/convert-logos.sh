@@ -27,7 +27,7 @@ if [ ! -d "$SOURCE" ]; then
   exit 2
 fi
 
-institutional_svg="$SOURCE/institucional.svg"
+institutional_svg="$SOURCE/logos-colegio/institucional.svg"
 if [ ! -f "$institutional_svg" ]; then
   echo "Falta el SVG institucional esperado: $institutional_svg" >&2
   exit 2
@@ -35,7 +35,7 @@ fi
 convert_svg "$institutional_svg" "$OUT_INSTITUTIONAL"
 echo "Converted $institutional_svg -> $OUT_INSTITUTIONAL"
 
-for svg in "$SOURCE"/*.svg; do
+for svg in "$SOURCE"/logos-especialidad/*.svg; do
   [ -e "$svg" ] || continue
   name=$(basename "$svg" .svg)
   case "$name" in
