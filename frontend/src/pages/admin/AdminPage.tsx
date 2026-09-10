@@ -1,12 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import AppShell from '../../components/AppShell';
-import AnimatedSelect from '../../components/AnimatedSelect';
 import ContentState from '../../components/ui/ContentState';
 import { getAdminCatalog, type AdminCatalog } from '../../api/admin';
 import { ApiError } from '../../api/client';
-import { useSpecialty } from '../../context/SpecialtyContext';
-import { normalizeSpecialty } from '../../theme/theme';
 import { useAuth } from '../../context/AuthContext';
 import MateriasPanel from './MateriasPanel';
 import UsuariosPanel from './UsuariosPanel';
@@ -67,7 +64,7 @@ export default function AdminPage() {
   const scopeName = user.especialidadNombre ?? data.especialidades.find((item) => item.id === user.especialidadId)?.nombre ?? (user.especialidadId === null ? null : `Especialidad #${user.especialidadId}`);
 
   return <AppShell title={selected?.title || 'Panel general'} subtitle={scopeName ? `Administración de ${scopeName}` : 'Administración global del sistema'} specialty={scopeName}>
-    <AdminToolbar data={data} showBack={Boolean(selected)} scopeName={scopeName} />
+    <AdminToolbar showBack={Boolean(selected)} scopeName={scopeName} />
     {/* toasts shown globally via ToastProvider */}
     {selectedIsRestricted ? (
       <ContentState tone="error" title="Módulo reservado al administrador global" detail="Tu cuenta administra una especialidad y no tiene acceso a esta herramienta del sistema." actions={<Link className="button" to="/admin">Volver al panel</Link>} />
@@ -92,22 +89,11 @@ export default function AdminPage() {
   </AppShell>;
 }
 
-function AdminToolbar({ data, showBack, scopeName }: { data: AdminCatalog; showBack: boolean; scopeName: string | null }) {
-  const { id, name, selectSpecialty, resetSpecialty } = useSpecialty();
-  const selectedId = id ?? data.especialidades.find((item) => normalizeSpecialty(item.nombre) === normalizeSpecialty(name))?.id ?? 0;
-
-  function changePalette(value: number) {
-    const specialty = data.especialidades.find((item) => item.id === value);
-    if (specialty) selectSpecialty(specialty.nombre, specialty.id);
-    else resetSpecialty();
-  }
-
+function AdminToolbar({ showBack, scopeName }: { showBack: boolean; scopeName: string | null }) {
+  if (!showBack && !scopeName) return null;
   return <div className="toolbar filters admin-toolbar">
     {showBack && <Link className="button secondary" to="/admin">← Panel general</Link>}
     {scopeName && <span className="admin-scope-badge"><small>Especialidad gestionada</small><strong className="specialty-card-title"><SpecialtyIcon name={scopeName} />{scopeName}</strong></span>}
-    {!scopeName && data.especialidades.length > 1 && <label className="inline-filter">Paleta del sistema
-      <AnimatedSelect ariaLabel="Paleta del sistema" value={selectedId} onChange={(value) => changePalette(Number(value))} options={[{ value: 0, label: 'Institucional (predeterminada)' }, ...data.especialidades.map((specialty) => ({ value: specialty.id, label: specialty.nombre }))]} />
-    </label>}
   </div>;
 }
 

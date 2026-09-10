@@ -20,12 +20,13 @@ import useAccessibleDialog from '../../hooks/useAccessibleDialog';
 import { useToast } from '../../context/toast';
 import { normalizeSpecialty } from '../../theme/theme';
 import { useNavigate } from 'react-router-dom';
+import SystemPalette from './SystemPalette';
 
 type ProfileTab = 'profile' | 'security' | 'subjects' | 'app' | 'activity';
 const message = (error: unknown, fallback: string) => error instanceof ApiError ? error.message : fallback;
 
 export default function ProfilePage() {
-  const { refreshUserIdentity, logout } = useAuth();
+  const { user, refreshUserIdentity, logout } = useAuth();
   const navigate = useNavigate();
   const [data, setData] = useState<ProfileResponse | null>(null);
   const { showToast } = useToast();
@@ -61,6 +62,7 @@ export default function ProfilePage() {
   if (!data) return <AppShell><ContentState tone={'loading'} title={'Cargando perfil…'} detail={'Estamos preparando los datos de tu cuenta.'} /></AppShell>;
 
   const owner = data.profileOwner;
+  const isGlobalAdmin = user?.level === 3 && user.especialidadId === null;
   // `completion` removed — progress UI was eliminated from the profile header
   const finish = async (text: string) => { if (text) showToast(text, { tone: 'success' }); await Promise.all([load(), refreshUserIdentity()]); };
 
@@ -72,7 +74,7 @@ export default function ProfilePage() {
           {data.showSecurityPanel && <Tab active={tab === 'security'} onClick={() => setTab('security')} title="Seguridad" detail="Contraseña y 2FA" />}
           {data.showMateriasPanel && <Tab active={tab === 'subjects'} onClick={() => setTab('subjects')} title="Materias" detail="Asignaciones" />}
           <Tab active={tab === 'app'} onClick={() => setTab('app')} title="Aplicación" detail="Estado y avisos" />
-          {data.showActivityPanel && <Tab active={tab === 'activity'} onClick={() => setTab('activity')} title="Registros" detail="Actividad" />}
+          {(data.showActivityPanel || isGlobalAdmin) && <Tab active={tab === 'activity'} onClick={() => setTab('activity')} title="Registros" detail={isGlobalAdmin ? 'Actividad y apariencia' : 'Actividad'} />}
         </aside>
         <div className="profile-content" ref={profileContentRef}>
           {/* toasts shown globally via ToastProvider */}
@@ -80,7 +82,7 @@ export default function ProfilePage() {
           {tab === 'security' && <Security data={data} done={finish} onPasswordChanged={finishPasswordChange} />}
           {tab === 'subjects' && <Subjects data={data} />}
           {tab === 'app' && <AppStatus data={data} />}
-          {tab === 'activity' && <Activity entries={data.activityLog} />}
+          {tab === 'activity' && <div className="profile-section-stack">{isGlobalAdmin && <SystemPalette especialidades={data.especialidades} />}{data.showActivityPanel && <Activity entries={data.activityLog} />}</div>}
         </div>
         <aside className="profile-preview" aria-label="Vista previa del perfil">
           <span className="profile-preview-kicker">Vista previa</span>
