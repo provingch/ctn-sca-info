@@ -1,9 +1,12 @@
 package ctn.informatica.sca.controller;
 
+import ctn.informatica.sca.dao.AlumnoDao;
 import ctn.informatica.sca.dao.GradeDao;
 import ctn.informatica.sca.dao.QuejaDao;
 import ctn.informatica.sca.dao.PlanillaDao;
 import ctn.informatica.sca.dao.TareaDao;
+import ctn.informatica.sca.model.Alumno;
+import ctn.informatica.sca.service.ActivityLogService;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.server.ResponseStatusException;
@@ -123,6 +126,44 @@ public class AdminControllerTest {
         ResponseStatusException selfEditEx = assertThrows(ResponseStatusException.class,
                 () -> AdminController.validateAdminMutationAccess(7, 7, 3));
         assertEquals(403, selfEditEx.getStatusCode().value());
+    }
+
+    @Test
+    public void loadCatalogAlumnos_separaAlumnosActivosDeEgresados() throws Exception {
+        Alumno activo = new Alumno();
+        activo.setId(1);
+        activo.setNombre("Ana");
+        activo.setApellido("Activa");
+        activo.setCursoId(10);
+
+        Alumno egresado = new Alumno();
+        egresado.setId(2);
+        egresado.setNombre("Beto");
+        egresado.setApellido("Egresado");
+        egresado.setCursoId(99);
+        egresado.setEspecialidadNombre("Informática");
+        egresado.setPromocion(2024);
+
+        AlumnoDao alumnoDao = mock(AlumnoDao.class);
+        when(alumnoDao.findAllActivos()).thenReturn(List.of(activo));
+        when(alumnoDao.findAllEgresados()).thenReturn(List.of(egresado));
+
+        AdminController controller = new AdminController(
+                mock(TareaDao.class), mock(GradeDao.class), mock(PlanillaDao.class),
+                mock(QuejaDao.class), new ActivityLogService(), alumnoDao);
+
+        AdminController.CatalogAlumnos result = controller.loadCatalogAlumnos(null);
+
+        assertEquals(1, result.alumnos().size());
+        assertEquals(1, result.alumnos().get(0).id());
+        assertEquals(1, result.egresados().size());
+        assertEquals(2, result.egresados().get(0).id());
+        assertEquals("Informática", result.egresados().get(0).especialidad());
+        assertEquals(2024, result.egresados().get(0).promocion());
+        assertTrue(result.alumnos().stream().noneMatch(a -> a.id() == 2));
+
+        verify(alumnoDao).findAllActivos();
+        verify(alumnoDao).findAllEgresados();
     }
 
     @Test

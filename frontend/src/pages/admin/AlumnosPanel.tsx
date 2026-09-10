@@ -12,7 +12,7 @@ interface AlumnosPanelProps {
   status: (message: string) => void;
 }
 
-type ViewStep = 'especialidades' | 'cursos' | 'secciones' | 'tabla';
+type ViewStep = 'especialidades' | 'cursos' | 'secciones' | 'tabla' | 'egresados';
 
 export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps) {
   const [step, setStep] = useState<ViewStep>('especialidades');
@@ -45,6 +45,11 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
       return course && course.especialidad === especialidades.find((e) => e.id === selectedEspecialidadId)?.nombre && course.nivel === selectedNivel && course.seccion === selectedSeccion;
     });
   }, [data.alumnos, data.cursosAlumnos, especialidades, selectedNivel, selectedEspecialidadId, selectedSeccion]);
+
+  const egresados = useMemo(
+    () => [...data.egresados].sort((a, b) => (b.promocion ?? 0) - (a.promocion ?? 0) || a.apellido.localeCompare(b.apellido) || a.nombre.localeCompare(b.nombre)),
+    [data.egresados],
+  );
 
   const openCreate = () => {
     setEditingId(null);
@@ -178,19 +183,67 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
   return (
     <>
       {step === 'especialidades' && (
-        <div className="card-grid">
-          {especialidades.map((specialty) => {
-            const totals = data.alumnos.filter((student) => data.cursosAlumnos.find((course) => course.id === student.cursoId)?.especialidad === specialty.nombre).length;
-            return (
-              <button type="button" key={specialty.id} className="nav-card" data-specialty={normalizeSpecialty(specialty.nombre)} onClick={() => goToCursos(specialty.id)}>
-                <span>Especialidad</span>
-                <h2 className="specialty-card-title"><SpecialtyIcon name={specialty.nombre} />{specialty.nombre}</h2>
-                <p>{totals} alumnos</p>
-                <strong>Ver cursos →</strong>
-              </button>
-            );
-          })}
-        </div>
+        <>
+          {egresados.length > 0 && (
+            <div className="toolbar">
+              <button type="button" className="button secondary" onClick={() => setStep('egresados')}>Ver egresados ({egresados.length})</button>
+            </div>
+          )}
+          <div className="card-grid">
+            {especialidades.map((specialty) => {
+              const totals = data.alumnos.filter((student) => data.cursosAlumnos.find((course) => course.id === student.cursoId)?.especialidad === specialty.nombre).length;
+              return (
+                <button type="button" key={specialty.id} className="nav-card" data-specialty={normalizeSpecialty(specialty.nombre)} onClick={() => goToCursos(specialty.id)}>
+                  <span>Especialidad</span>
+                  <h2 className="specialty-card-title"><SpecialtyIcon name={specialty.nombre} />{specialty.nombre}</h2>
+                  <p>{totals} alumnos</p>
+                  <strong>Ver cursos →</strong>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {step === 'egresados' && (
+        <>
+          <div className="toolbar">
+            <button type="button" className="button secondary" onClick={goToEspecialidades}>← Volver</button>
+          </div>
+          <div className="panel">
+            <h2>Egresados</h2>
+            <p className="muted-copy">Registro histórico de solo lectura: alumnos cuyo curso ya egresó. No se editan ni se eliminan desde acá.</p>
+            <div className="table-wrap">
+              <table className="grade-table" style={{ minWidth: 720 }}>
+                <caption className="visually-hidden">Alumnos egresados</caption>
+                <thead>
+                  <tr>
+                    <th>Apellido</th>
+                    <th>Nombre</th>
+                    <th>Cédula</th>
+                    <th>Especialidad</th>
+                    <th>Año de egreso</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {egresados.length === 0 ? (
+                    <tr><td colSpan={5}>No hay alumnos egresados.</td></tr>
+                  ) : (
+                    egresados.map((student) => (
+                      <tr key={student.id}>
+                        <td>{student.apellido}</td>
+                        <td>{student.nombre}</td>
+                        <td>{student.ci ?? '—'}</td>
+                        <td>{student.especialidad ?? '—'}</td>
+                        <td>{student.promocion ?? '—'}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       )}
 
       {step === 'cursos' && (

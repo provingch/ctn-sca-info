@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Verifica el cálculo de año (1º/2º/3º) a partir de la promoción (año de egreso)
@@ -60,5 +62,18 @@ class CursoTest {
         // con c.promocion >= period), pero si llegara, el clamp defensivo lo
         // absorbe en 3° en vez de romper con un valor fuera de rango.
         assertEquals(3, cursoConPromocion(CURRENT_YEAR - 5).getCurso());
+    }
+
+    @Test
+    void isEgresado_falseMientrasLaPromocionNoHayaPasado() {
+        assertFalse(cursoConPromocion(CURRENT_YEAR).isEgresado());     // egresa este año, sigue activo
+        assertFalse(cursoConPromocion(CURRENT_YEAR + 1).isEgresado()); // 2°
+        assertFalse(cursoConPromocion(CURRENT_YEAR + 2).isEgresado()); // 1°
+    }
+
+    @Test
+    void isEgresado_trueUnaVezQueLaPromocionQuedoAtras() {
+        assertTrue(cursoConPromocion(CURRENT_YEAR - 1).isEgresado());
+        assertTrue(cursoConPromocion(CURRENT_YEAR - 20).isEgresado());
     }
 }

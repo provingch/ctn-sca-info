@@ -3,6 +3,7 @@ package ctn.informatica.sca.dao;
 import org.springframework.stereotype.Repository;
 import ctn.informatica.sca.clases.conexion;
 import ctn.informatica.sca.model.Alumno;
+import ctn.informatica.sca.util.AcademicPeriod;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -16,10 +17,19 @@ import java.util.List;
 @Repository
 public class AlumnoDao extends conexion {
 
-    public List<Alumno> findAll() throws SQLException {
-        String sql = "SELECT id, ci, nombre, apellido, curso_id, correo_encargado, correo_encargado2 FROM alumno ORDER BY apellido, nombre";
+    /**
+     * Alumnos cuyo curso todavía no egresó (promoción &gt;= período actual),
+     * mismo criterio que {@link CursoDao#findAll()}. Un alumno de un curso ya
+     * egresado no aparece acá — se lo consulta con {@link #findAllEgresados()}.
+     */
+    public List<Alumno> findAllActivos() throws SQLException {
+        String sql = "SELECT a.id, a.ci, a.nombre, a.apellido, a.curso_id, a.correo_encargado, a.correo_encargado2 "
+                + "FROM alumno a JOIN curso c ON c.id = a.curso_id "
+                + "WHERE c.promocion >= ? "
+                + "ORDER BY a.apellido, a.nombre";
         List<Alumno> alumnos = new ArrayList<>();
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, AcademicPeriod.current());
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Alumno alumno = new Alumno();
@@ -30,6 +40,41 @@ public class AlumnoDao extends conexion {
                     alumno.setCursoId(rs.getInt("curso_id"));
                     alumno.setCorreoEncargado(rs.getString("correo_encargado"));
                     alumno.setCorreoEncargado2(rs.getString("correo_encargado2"));
+                    alumnos.add(alumno);
+                }
+            }
+        }
+        return alumnos;
+    }
+
+    /**
+     * Alumnos cuyo curso ya egresó (promoción &lt; período actual). Trae también
+     * el nombre de especialidad y el año de egreso porque esas filas de
+     * {@code curso} quedan fuera de {@link CursoDao#findAll()} y el frontend no
+     * podría resolverlas. Solo lectura: registro histórico.
+     */
+    public List<Alumno> findAllEgresados() throws SQLException {
+        String sql = "SELECT a.id, a.ci, a.nombre, a.apellido, a.curso_id, a.correo_encargado, a.correo_encargado2, "
+                + "e.nombre AS especialidad_nombre, c.promocion "
+                + "FROM alumno a JOIN curso c ON c.id = a.curso_id "
+                + "JOIN especialidad e ON e.id = c.especialidad_id "
+                + "WHERE c.promocion < ? "
+                + "ORDER BY c.promocion DESC, a.apellido, a.nombre";
+        List<Alumno> alumnos = new ArrayList<>();
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, AcademicPeriod.current());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Alumno alumno = new Alumno();
+                    alumno.setId(rs.getInt("id"));
+                    alumno.setCi(rs.getObject("ci") == null ? null : rs.getInt("ci"));
+                    alumno.setNombre(rs.getString("nombre"));
+                    alumno.setApellido(rs.getString("apellido"));
+                    alumno.setCursoId(rs.getInt("curso_id"));
+                    alumno.setCorreoEncargado(rs.getString("correo_encargado"));
+                    alumno.setCorreoEncargado2(rs.getString("correo_encargado2"));
+                    alumno.setEspecialidadNombre(rs.getString("especialidad_nombre"));
+                    alumno.setPromocion(rs.getObject("promocion") == null ? null : rs.getInt("promocion"));
                     alumnos.add(alumno);
                 }
             }
