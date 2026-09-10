@@ -1,0 +1,7 @@
+# Copy to android/local.properties (gitignored).
+# Path to your Android SDK:
+sdk.dir=/home/USER/Android/Sdk
+
+# Base URL of the SCA backend the APK should talk to (needs a trailing slash).
+# Must be HTTPS with a valid certificate for a release build.
+sca.baseUrl=https://sca.tu-dominio.edu.py/
