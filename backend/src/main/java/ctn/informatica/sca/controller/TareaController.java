@@ -4,10 +4,12 @@ import ctn.informatica.sca.dao.PlanillaDao;
 import ctn.informatica.sca.dao.TareaDao;
 import ctn.informatica.sca.model.Planilla;
 import ctn.informatica.sca.model.Tarea;
+import ctn.informatica.sca.service.ParentPushService;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -24,6 +26,17 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 @RequestMapping("/api")
 public class TareaController {
+
+    private final ParentPushService parentPushService;
+
+    public TareaController() {
+        this(null);
+    }
+
+    @Autowired
+    public TareaController(ParentPushService parentPushService) {
+        this.parentPushService = parentPushService;
+    }
 
     @GetMapping("/planillas/{planillaId}/tareas")
     public List<TareaResponse> listByPlanilla(@PathVariable int planillaId, Authentication authentication) {
@@ -70,6 +83,9 @@ public class TareaController {
             tarea.setTitulo(request.titulo().trim());
 
             new TareaDao().insertarTarea(tarea);
+            if (parentPushService != null) {
+                parentPushService.notifyNewTask(planillaId, tarea.getTitulo());
+            }
             return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(tarea, false, null));
         } catch (SQLException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al crear tarea", ex);

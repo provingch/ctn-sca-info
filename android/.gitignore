@@ -1,0 +1,18 @@
+# Android / Gradle
+.gradle/
+build/
+/local.properties
+/keystore.properties
+*.jks
+*.keystore
+/app/google-services.json
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# OS
+.DS_Store
