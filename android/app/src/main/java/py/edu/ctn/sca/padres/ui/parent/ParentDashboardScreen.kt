@@ -1,52 +1,79 @@
 package py.edu.ctn.sca.padres.ui.parent
 
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import py.edu.ctn.sca.padres.Graph
+import py.edu.ctn.sca.padres.R
 import py.edu.ctn.sca.padres.data.ChildDto
 import py.edu.ctn.sca.padres.data.SubjectDto
 import py.edu.ctn.sca.padres.data.TaskDto
+import py.edu.ctn.sca.padres.ui.components.Eyebrow
+import py.edu.ctn.sca.padres.ui.components.GradeChip
+import py.edu.ctn.sca.padres.ui.components.MetricBox
+import py.edu.ctn.sca.padres.ui.components.Panel
+import py.edu.ctn.sca.padres.ui.components.ProgressTrack
+import py.edu.ctn.sca.padres.ui.components.StatusPill
 import py.edu.ctn.sca.padres.ui.graphViewModel
+import py.edu.ctn.sca.padres.ui.theme.scaColors
 import java.time.LocalDate
 
+/**
+ * Parent dashboard, mirroring the web `frontend/src/pages/parent/ParentPage.tsx`:
+ * child selector cards, an academic-summary panel with stat boxes and per-stage
+ * averages, a pill stage switcher, subject cards with a progress bar and grade
+ * chip, and a per-subject task breakdown.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ParentDashboardScreen(graph: Graph) {
@@ -54,14 +81,29 @@ fun ParentDashboardScreen(graph: Graph) {
     val ui by vm.ui.collectAsStateWithLifecycle()
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Notas de mis hijos") },
+                title = {
+                    Text("Notas de mis hijos", fontWeight = FontWeight.Bold)
+                },
+                navigationIcon = {
+                    Image(
+                        painter = painterResource(R.drawable.sca_logo),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .padding(start = 12.dp)
+                            .height(28.dp),
+                    )
+                },
                 actions = {
                     IconButton(onClick = vm::logout) {
                         Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Cerrar sesión")
                     }
                 },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
             )
         },
     ) { padding ->
@@ -97,57 +139,61 @@ private fun DashboardContent(ui: ParentUiState, vm: ParentViewModel) {
     val selectedChild = data.hijos.firstOrNull { it.id == data.selectedAlumnoId }
     val subjects = ui.subjectsForStage
     val selectedSubject = ui.selectedSubject
+    val latestActivity = data.materias.flatMap { it.tareas }.mapNotNull { it.fecha }.maxOrNull()
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        if (data.hijos.size > 1) {
-            item {
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    data.hijos.forEach { child ->
-                        ChildCard(
-                            child = child,
-                            selected = child.id == data.selectedAlumnoId,
-                            onClick = { vm.selectChild(child.id) },
-                        )
-                    }
-                }
+        if (data.hijos.isNotEmpty()) {
+            item { Eyebrow("Hijos vinculados") }
+            items(data.hijos, key = { it.id }) { child ->
+                ChildCard(
+                    child = child,
+                    selected = child.id == data.selectedAlumnoId,
+                    onClick = { vm.selectChild(child.id) },
+                )
             }
         }
 
         if (selectedChild != null) {
-            item { OverviewCard(child = selectedChild, ui = ui) }
+            item { OverviewPanel(child = selectedChild, ui = ui, latestActivity = latestActivity) }
         }
 
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Stage.entries.forEach { stage ->
-                    FilterChip(
-                        selected = ui.stage == stage,
-                        onClick = { vm.selectStage(stage) },
-                        label = { Text(stage.label) },
-                    )
-                }
-            }
-        }
+        item { StageSwitcher(ui = ui, onSelect = vm::selectStage, count = subjects.size) }
 
         if (subjects.isEmpty()) {
             item {
-                EmptyCard("Sin calificaciones en ${ui.stage.label.lowercase()}. Todavía no hay materias ni tareas publicadas para este alumno.")
+                Panel {
+                    Text(
+                        "Sin calificaciones en ${ui.stage.label.lowercase()}",
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Todavía no hay materias ni tareas publicadas para este alumno en la etapa seleccionada.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         } else {
             item {
-                Text(
-                    "Materias · ${ui.stage.label.lowercase()}",
-                    style = MaterialTheme.typography.titleMedium,
-                )
+                Column {
+                    Eyebrow("Materias")
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Promedios de ${ui.stage.label.lowercase()}",
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Seleccioná una materia para ver sus tareas y calificaciones.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
             items(subjects, key = { it.planillaId }) { subject ->
                 SubjectCard(
@@ -157,166 +203,337 @@ private fun DashboardContent(ui: ParentUiState, vm: ParentViewModel) {
                 )
             }
             selectedSubject?.let { subject ->
-                item { SubjectDetailCard(subject) }
+                item { SubjectDetailPanel(subject) }
             }
+            item { CalculationNote() }
         }
     }
 }
 
+/** Web `.child-card` / `.nav-card`: accent rule, especialidad eyebrow, average in accent. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ChildCard(child: ChildDto, selected: Boolean, onClick: () -> Unit) {
-    Card(
+    Surface(
         onClick = onClick,
-        colors = CardDefaults.cardColors(
-            containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer
-            else MaterialTheme.colorScheme.surfaceVariant,
+        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+        shape = RoundedCornerShape(14.dp),
+        color = if (selected) scaColors.accentSoft else MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        border = BorderStroke(
+            if (selected) 2.dp else 1.dp,
+            if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
         ),
-        modifier = Modifier.width(220.dp),
+        shadowElevation = 2.dp,
     ) {
-        Column(Modifier.padding(16.dp)) {
-            Text(
-                child.especialidad ?: "—",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+        Row(Modifier.height(IntrinsicSize.Min)) {
+            Box(
+                Modifier
+                    .width(4.dp)
+                    .fillMaxHeight()
+                    .background(MaterialTheme.colorScheme.primary),
             )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                "${child.apellido}, ${child.nombre}",
-                style = MaterialTheme.typography.titleSmall,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                "Promedio general: ${child.promedio}%",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold,
-            )
-        }
-    }
-}
-
-@Composable
-private fun OverviewCard(child: ChildDto, ui: ParentUiState) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp)) {
-            Text("Resumen académico", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("${child.nombre} ${child.apellido}", style = MaterialTheme.typography.titleMedium)
-            child.especialidad?.let {
-                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Spacer(Modifier.height(16.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Metric("Promedio general", "${child.promedio}%", Modifier.weight(1f))
-                Metric(ui.stage.label, "${ui.stagePercent}%", Modifier.weight(1f))
-                Metric(
-                    "Por revisar",
-                    ui.pendingTasks.toString(),
-                    Modifier.weight(1f),
-                    hint = if (ui.missingTasks > 0) "${ui.missingTasks} sin entregar" else null,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun Metric(label: String, value: String, modifier: Modifier = Modifier, hint: String? = null) {
-    Column(modifier) {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        if (hint != null) {
-            Text(hint, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
-        }
-    }
-}
-
-@Composable
-private fun SubjectCard(subject: SubjectDto, selected: Boolean, onClick: () -> Unit) {
-    val pending = subject.tareas.count { it.estado != "CALIFICADA" }
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = if (selected) MaterialTheme.colorScheme.primaryContainer
-            else MaterialTheme.colorScheme.surface,
-        ),
-        border = if (selected) null else CardDefaults.outlinedCardBorder(),
-    ) {
-        Column(Modifier.padding(16.dp)) {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            Column(Modifier.padding(18.dp)) {
+                Eyebrow(child.especialidad ?: "—")
+                Spacer(Modifier.height(8.dp))
                 Text(
-                    subject.materia,
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.weight(1f),
+                    "${child.apellido}, ${child.nombre}",
+                    style = MaterialTheme.typography.titleMedium,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
-                GradePill(subject.nota)
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "Promedio general: ${child.promedio}%",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = scaColors.accentDeep,
+                    fontWeight = FontWeight.Bold,
+                )
             }
-            Spacer(Modifier.height(8.dp))
-            Text(
-                "${subject.porcentaje}%  ·  ${subject.puntos} de ${subject.total} pts",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Spacer(Modifier.height(6.dp))
-            LinearProgressIndicator(
-                progress = { (subject.porcentaje.coerceIn(0, 100)) / 100f },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(6.dp),
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                "${subject.tareas.size} tareas" + if (pending > 0) " · $pending por revisar" else "",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
     }
 }
 
+/** Web `.parent-overview` panel. */
 @Composable
-private fun SubjectDetailCard(subject: SubjectDto) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp)) {
-            Text("Detalle de tareas", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(subject.materia, style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(12.dp))
-            if (subject.tareas.isEmpty()) {
+private fun OverviewPanel(child: ChildDto, ui: ParentUiState, latestActivity: String?) {
+    Panel {
+        Eyebrow("Resumen académico")
+        Spacer(Modifier.height(4.dp))
+        Text("${child.nombre} ${child.apellido}", style = MaterialTheme.typography.titleMedium)
+        Text(
+            "${child.especialidad ?: "—"} · Actividad hasta ${formatDate(latestActivity)}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(16.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            MetricBox(
+                "Promedio general",
+                "${child.promedio}%",
+                Modifier.weight(1f),
+                hint = "Todas las etapas",
+            )
+            MetricBox(
+                ui.stage.label,
+                "${ui.stagePercent}%",
+                Modifier.weight(1f),
+                hint = "${ui.subjectsForStage.size} " + if (ui.subjectsForStage.size == 1) "materia" else "materias",
+            )
+            MetricBox(
+                "Por revisar",
+                ui.pendingTasks.toString(),
+                Modifier.weight(1f),
+                hint = if (ui.missingTasks > 0) "${ui.missingTasks} sin entregar" else "Al día",
+                hintTone = if (ui.missingTasks > 0) MaterialTheme.colorScheme.error else null,
+            )
+        }
+        Spacer(Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(9.dp), modifier = Modifier.fillMaxWidth()) {
+            Stage.entries.forEach { stage ->
+                StageAveragePill(stage = stage, ui = ui, modifier = Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+/** Web `.parent-stage-comparison > div`: a bordered pill, "Etapa · NN%". */
+@Composable
+private fun StageAveragePill(stage: Stage, ui: ParentUiState, modifier: Modifier = Modifier) {
+    val items = ui.data?.materias?.filter { Stage.from(it.etapa) == stage } ?: emptyList()
+    val points = items.sumOf { it.puntos }
+    val total = items.sumOf { it.total }
+    val avg = if (total > 0) Math.round(points * 100.0 / total).toInt() else null
+    Row(
+        modifier
+            .clip(RoundedCornerShape(999.dp))
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(999.dp))
+            .padding(horizontal = 11.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(
+            stage.label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f, fill = false),
+        )
+        Text(
+            if (avg == null) "Sin datos" else "$avg%",
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
+/** Web `.parent-stage-tabs`: a rounded pill container with a filled active segment. */
+@Composable
+private fun StageSwitcher(ui: ParentUiState, onSelect: (Stage) -> Unit, count: Int) {
+    Column {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(999.dp))
+                .background(scaColors.bgSoft)
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(999.dp))
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Stage.entries.forEach { stage ->
+                val active = ui.stage == stage
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(if (active) MaterialTheme.colorScheme.primary else Color.Transparent)
+                        .clickable { onSelect(stage) }
+                        .padding(vertical = 9.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        stage.label,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = if (active) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "$count " + if (count == 1) "materia publicada" else "materias publicadas",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/** Web `.parent-subject-card`. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SubjectCard(subject: SubjectDto, selected: Boolean, onClick: () -> Unit) {
+    val pending = subject.tareas.count { it.estado != "CALIFICADA" }
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        border = BorderStroke(
+            if (selected) 2.dp else 1.dp,
+            if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+        ),
+        shadowElevation = 2.dp,
+    ) {
+        Row(Modifier.height(IntrinsicSize.Min)) {
+            if (selected) {
+                Box(
+                    Modifier
+                        .width(4.dp)
+                        .fillMaxHeight()
+                        .background(MaterialTheme.colorScheme.primary),
+                )
+            }
+            Column(Modifier.padding(18.dp)) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Eyebrow("Materia")
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            subject.materia,
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    Spacer(Modifier.width(10.dp))
+                    GradeChip(subject.nota)
+                }
+                Spacer(Modifier.height(14.dp))
                 Text(
-                    "Esta materia todavía no tiene actividades publicadas.",
-                    style = MaterialTheme.typography.bodyMedium,
+                    "${subject.porcentaje}%",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    "Promedio de la materia",
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-            } else {
-                subject.tareas.forEachIndexed { index, task ->
-                    if (index > 0) Spacer(Modifier.height(10.dp))
-                    TaskRow(index + 1, task)
+                Spacer(Modifier.height(12.dp))
+                ProgressTrack(subject.porcentaje / 100f, Modifier.fillMaxWidth())
+                Spacer(Modifier.height(12.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        "${subject.puntos} de ${subject.total} puntos",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        "${subject.tareas.size} tareas" + if (pending > 0) " · $pending por revisar" else "",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }
     }
 }
 
+/** Web `.parent-subject-detail` panel. */
+@Composable
+private fun SubjectDetailPanel(subject: SubjectDto) {
+    Panel {
+        Row(verticalAlignment = Alignment.Top) {
+            Column(Modifier.weight(1f)) {
+                Eyebrow("Detalle de tareas")
+                Spacer(Modifier.height(4.dp))
+                Text(subject.materia, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "${Stage.from(subject.etapa).label} · ${subject.porcentaje}% de promedio",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Spacer(Modifier.width(10.dp))
+            GradeChip(subject.nota)
+        }
+        Spacer(Modifier.height(12.dp))
+        if (subject.tareas.isEmpty()) {
+            Text(
+                "Esta materia todavía no tiene actividades publicadas.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            subject.tareas.forEachIndexed { index, task ->
+                if (index > 0) {
+                    Spacer(Modifier.height(8.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    Spacer(Modifier.height(8.dp))
+                }
+                TaskRow(index + 1, task)
+            }
+        }
+    }
+}
+
+/** Web `.parent-task-row`. */
 @Composable
 private fun TaskRow(number: Int, task: TaskDto) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            number.toString().padStart(2, '0'),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.width(28.dp),
-        )
+    val inset = when (task.estado) {
+        "NO_ENTREGADA" -> MaterialTheme.colorScheme.error
+        "ENTREGADA_PENDIENTE" -> scaColors.warning
+        else -> null
+    }
+    Row(
+        modifier = Modifier.height(IntrinsicSize.Min),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (inset != null) {
+            Box(
+                Modifier
+                    .width(3.dp)
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(inset),
+            )
+            Spacer(Modifier.width(10.dp))
+        }
+        Box(
+            Modifier
+                .size(32.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(scaColors.bgSoft),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                number.toString().padStart(2, '0'),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Black,
+            )
+        }
+        Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(task.titulo, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Text(formatDate(task.fecha), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                formatDate(task.fecha),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(10.dp))
         TaskResult(task)
     }
 }
@@ -326,49 +543,70 @@ private fun TaskResult(task: TaskDto) {
     if (task.estado == "CALIFICADA") {
         val pct = if (task.total > 0) Math.round((task.puntos ?: 0) * 100.0 / task.total).toInt() else 0
         Column(horizontalAlignment = Alignment.End) {
-            Text("${task.puntos ?: 0} / ${task.total}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-            Text("$pct% · Calificada", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                "${task.puntos ?: 0} / ${task.total}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = scaColors.success,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                "$pct% · Calificada",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
         return
     }
-    val label = when (task.estado) {
-        "ENTREGADA_PENDIENTE" -> "Entregada · sin calificar"
-        "NO_ENTREGADA" -> "No entregada"
-        else -> "Pendiente"
+    val (label, tone) = when (task.estado) {
+        "ENTREGADA_PENDIENTE" -> "Entregada · sin calificar" to scaColors.warning
+        "NO_ENTREGADA" -> "No entregada" to MaterialTheme.colorScheme.error
+        else -> "Pendiente" to MaterialTheme.colorScheme.onSurfaceVariant
     }
-    val tone = if (task.estado == "NO_ENTREGADA") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
     Column(horizontalAlignment = Alignment.End) {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = tone)
-        Text("de ${task.total} pts", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-@Composable
-private fun GradePill(nota: Int) {
-    val bg = when {
-        nota >= 4 -> MaterialTheme.colorScheme.secondary
-        nota == 3 -> MaterialTheme.colorScheme.primary
-        else -> MaterialTheme.colorScheme.error
-    }
-    Surface(color = bg, shape = CircleShape) {
+        StatusPill(label, tone)
+        Spacer(Modifier.height(3.dp))
         Text(
-            nota.toString(),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.surface,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-        )
-    }
-}
-
-@Composable
-private fun EmptyCard(text: String) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text,
-            modifier = Modifier.padding(20.dp),
-            style = MaterialTheme.typography.bodyMedium,
+            "de ${task.total} puntos",
+            style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+/** Web `.parent-calculation-note` <details>. */
+@Composable
+private fun CalculationNote() {
+    var open by remember { mutableStateOf(false) }
+    Panel {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clickable { open = !open },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "¿Cómo se calcula el promedio?",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(
+                Icons.Filled.ExpandMore,
+                contentDescription = null,
+                modifier = Modifier.rotate(if (open) 180f else 0f),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        AnimatedVisibility(visible = open) {
+            Text(
+                "El porcentaje de cada materia se obtiene dividiendo los puntos logrados entre los puntos " +
+                    "posibles de las tareas publicadas. El promedio general combina los puntos de todas las " +
+                    "materias disponibles.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
     }
 }
 
