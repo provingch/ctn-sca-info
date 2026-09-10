@@ -2,7 +2,7 @@ package ctn.informatica.sca.model;
 
 public class Alumno {
     private int id;
-    private Integer ci;
+    private String ci;
     private String nombre;
     private String apellido;
     private int cursoId;
@@ -21,11 +21,12 @@ public class Alumno {
         this.id = id;
     }
 
-    public Integer getCi() {
+    // La cédula puede traer una letra (p. ej. DNI español/argentino), por eso es texto y no INT.
+    public String getCi() {
         return ci;
     }
 
-    public void setCi(Integer ci) {
+    public void setCi(String ci) {
         this.ci = ci;
     }
 

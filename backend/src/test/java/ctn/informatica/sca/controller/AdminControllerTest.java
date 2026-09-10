@@ -141,6 +141,7 @@ public class AdminControllerTest {
         egresado.setNombre("Beto");
         egresado.setApellido("Egresado");
         egresado.setCursoId(99);
+        egresado.setCi("51540489L");
         egresado.setEspecialidadNombre("Informática");
         egresado.setPromocion(2024);
 
@@ -158,6 +159,7 @@ public class AdminControllerTest {
         assertEquals(1, result.alumnos().get(0).id());
         assertEquals(1, result.egresados().size());
         assertEquals(2, result.egresados().get(0).id());
+        assertEquals("51540489L", result.egresados().get(0).ci());
         assertEquals("Informática", result.egresados().get(0).especialidad());
         assertEquals(2024, result.egresados().get(0).promocion());
         assertTrue(result.alumnos().stream().noneMatch(a -> a.id() == 2));

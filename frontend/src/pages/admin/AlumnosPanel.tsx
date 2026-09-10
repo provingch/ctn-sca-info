@@ -102,7 +102,7 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
     const payload = {
       nombre: form.nombre.trim(),
       apellido: form.apellido.trim(),
-      ci: form.ci ? Number(form.ci) : null,
+      ci: form.ci.trim() || null,
       cursoId: Number(form.cursoId || currentCurso?.id || 0),
       correoEncargado: form.correoEncargado.trim() || null,
       correoEncargado2: form.correoEncargado2.trim() || null,

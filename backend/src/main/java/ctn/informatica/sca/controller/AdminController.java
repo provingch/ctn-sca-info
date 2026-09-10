@@ -931,8 +931,8 @@ public class AdminController {
         }
     }
     public record AssignmentItem(int id, int profesorId, int materiaId, int cursoId, String profesor, String materia, String curso) {}
-    public record StudentItem(int id, String nombre, String apellido, int cursoId, Integer ci, String correoEncargado, String correoEncargado2) {}
-    public record EgresadoItem(int id, String nombre, String apellido, Integer ci, String especialidad, Integer promocion) {}
+    public record StudentItem(int id, String nombre, String apellido, int cursoId, String ci, String correoEncargado, String correoEncargado2) {}
+    public record EgresadoItem(int id, String nombre, String apellido, String ci, String especialidad, Integer promocion) {}
     public record CourseItem(int id, String especialidad, int nivel, String seccion) {}
     public record SpecialtyItem(int id, String nombre) {}
     public record MateriaInput(String nombre, String categoria, List<Integer> especialidadIds) {}
@@ -940,7 +940,7 @@ public class AdminController {
     public record AssignmentInput(int profesorId, int materiaId, int cursoId) {}
     public record BatchAssignmentInput(int profesorId, int materiaId, List<Integer> cursoIds) {}
     public record BatchAssignmentResponse(int creadas, int yaExistian) {}
-    public record StudentInput(String nombre, String apellido, int cursoId, Integer ci, String correoEncargado, String correoEncargado2) {}
+    public record StudentInput(String nombre, String apellido, int cursoId, String ci, String correoEncargado, String correoEncargado2) {}
     public record WipeResponse(String message, int deletedGrades, int deletedTasks, int planillaId, int clearedGoogleCourseIds) {}
     public record GlobalWipeResponse(String message, int deletedGrades, int deletedTasks, int clearedGoogleCourseIds) {}
     public record GoogleClearResponse(String message) {}

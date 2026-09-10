@@ -42,7 +42,7 @@ export interface StudentItem {
   nombre: string;
   apellido: string;
   cursoId: number;
-  ci: number | null;
+  ci: string | null;
   correoEncargado: string | null;
   correoEncargado2: string | null;
 }
@@ -58,7 +58,7 @@ export interface EgresadoItem {
   id: number;
   nombre: string;
   apellido: string;
-  ci: number | null;
+  ci: string | null;
   especialidad: string | null;
   promocion: number | null;
 }

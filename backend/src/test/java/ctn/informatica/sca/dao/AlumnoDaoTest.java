@@ -62,6 +62,7 @@ class AlumnoDaoTest {
         when(rs.getString("nombre")).thenReturn("Beto");
         when(rs.getString("apellido")).thenReturn("Egresado");
         when(rs.getInt("curso_id")).thenReturn(99);
+        when(rs.getString("ci")).thenReturn("51540489L");
         when(rs.getString("especialidad_nombre")).thenReturn("Informática");
         when(rs.getObject("promocion")).thenReturn(2024);
         when(rs.getInt("promocion")).thenReturn(2024);
@@ -69,6 +70,7 @@ class AlumnoDaoTest {
         List<Alumno> alumnos = daoOver(con).findAllEgresados();
 
         assertEquals(1, alumnos.size());
+        assertEquals("51540489L", alumnos.get(0).getCi());
         assertEquals("Informática", alumnos.get(0).getEspecialidadNombre());
         assertEquals(2024, alumnos.get(0).getPromocion());
         verify(con).prepareStatement(argThat(sql ->
