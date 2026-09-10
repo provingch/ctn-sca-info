@@ -264,7 +264,7 @@ public class RasgoPlanillaDao extends conexion {
             for (Alumno alumno : alumnos) {
                 List<String> codigos = codigosPorAlumno.get(alumno.getId());
                 if (codigos == null) continue;
-                for (String codigo : validarCodigos(codigos)) {
+                for (String codigo : validarCodigos(con, codigos)) {
                     ps.setString(1, codigo);
                     ps.setInt(2, planillaId);
                     ps.setInt(3, alumno.getId());
@@ -379,9 +379,10 @@ public class RasgoPlanillaDao extends conexion {
 
     public List<RasgoAsistencia> listarAsistencias(int planillaRasgoId) throws SQLException {
         String sql = "SELECT ra.id, ra.planilla_rasgo_id, ra.alumno_id, ra.alumno_nombre, ra.alumno_apellido, ra.alumno_email, "
-                + "ra.estado, ra.falta_codigo, ra.falta_observacion, ra.responded_at, pr.tema "
+                + "ra.estado, ra.falta_codigo, ra.falta_observacion, ra.responded_at, pr.tema, cc.descripcion AS falta_codigo_descripcion "
                 + "FROM rasgo_asistencia ra "
                 + "INNER JOIN planilla_rasgo pr ON pr.id = ra.planilla_rasgo_id "
+                + "LEFT JOIN codigo_conducta cc ON cc.codigo = ra.falta_codigo "
                 + "WHERE ra.planilla_rasgo_id = ? ORDER BY ra.alumno_apellido, ra.alumno_nombre";
         List<RasgoAsistencia> asistencias = new ArrayList<>();
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -399,9 +400,10 @@ public class RasgoPlanillaDao extends conexion {
 
     public RasgoAsistencia findAsistenciaById(int asistenciaId) throws SQLException {
         String sql = "SELECT ra.id, ra.planilla_rasgo_id, ra.alumno_id, ra.alumno_nombre, ra.alumno_apellido, ra.alumno_email, "
-                + "ra.estado, ra.falta_codigo, ra.falta_observacion, ra.responded_at, pr.tema "
+                + "ra.estado, ra.falta_codigo, ra.falta_observacion, ra.responded_at, pr.tema, cc.descripcion AS falta_codigo_descripcion "
                 + "FROM rasgo_asistencia ra "
                 + "INNER JOIN planilla_rasgo pr ON pr.id = ra.planilla_rasgo_id "
+                + "LEFT JOIN codigo_conducta cc ON cc.codigo = ra.falta_codigo "
                 + "WHERE ra.id = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, asistenciaId);
@@ -416,9 +418,10 @@ public class RasgoPlanillaDao extends conexion {
 
     public RasgoAsistencia findAsistenciaByPlanillaAndAlumno(int planillaRasgoId, int alumnoId) throws SQLException {
         String sql = "SELECT ra.id, ra.planilla_rasgo_id, ra.alumno_id, ra.alumno_nombre, ra.alumno_apellido, ra.alumno_email, "
-                + "ra.estado, ra.falta_codigo, ra.falta_observacion, ra.responded_at, pr.tema "
+                + "ra.estado, ra.falta_codigo, ra.falta_observacion, ra.responded_at, pr.tema, cc.descripcion AS falta_codigo_descripcion "
                 + "FROM rasgo_asistencia ra "
                 + "INNER JOIN planilla_rasgo pr ON pr.id = ra.planilla_rasgo_id "
+                + "LEFT JOIN codigo_conducta cc ON cc.codigo = ra.falta_codigo "
                 + "WHERE ra.planilla_rasgo_id = ? AND ra.alumno_id = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, planillaRasgoId);
@@ -456,8 +459,8 @@ public class RasgoPlanillaDao extends conexion {
     }
 
     public void reemplazarCodigos(int asistenciaId, List<String> codigos) throws SQLException {
-        Set<String> validos = validarCodigos(codigos);
         try (Connection con = getCon()) {
+            Set<String> validos = validarCodigos(con, codigos);
             con.setAutoCommit(false);
             try (PreparedStatement delete = con.prepareStatement("DELETE FROM rasgo_asistencia_codigo WHERE rasgo_asistencia_id = ?")) {
                 delete.setInt(1, asistenciaId);
@@ -484,10 +487,30 @@ public class RasgoPlanillaDao extends conexion {
         Set<String> validos = new HashSet<>();
         if (codigos == null) return validos;
         for (String codigo : codigos) {
-            if (codigo == null || !codigo.trim().toUpperCase().matches("N[1-8]")) {
+            if (codigo == null || !codigo.trim().toUpperCase().matches("N[A-Z0-9]{0,9}")) {
                 throw new IllegalArgumentException("Código de rasgo inválido: " + codigo);
             }
             validos.add(codigo.trim().toUpperCase());
+        }
+        return validos;
+    }
+
+    private Set<String> validarCodigos(Connection con, List<String> codigos) throws SQLException {
+        Set<String> requested = validarCodigos(codigos);
+        if (requested.isEmpty()) return requested;
+        String placeholders = String.join(",", java.util.Collections.nCopies(requested.size(), "?"));
+        Set<String> validos = new HashSet<>();
+        String sql = "SELECT codigo FROM codigo_conducta WHERE activo = TRUE AND codigo IN (" + placeholders + ")";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            int index = 1;
+            for (String codigo : requested) ps.setString(index++, codigo);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) validos.add(rs.getString("codigo"));
+            }
+        }
+        if (validos.size() != requested.size()) {
+            requested.removeAll(validos);
+            throw new IllegalArgumentException("Código(s) de rasgo no disponible(s): " + requested);
         }
         return validos;
     }
@@ -535,6 +558,7 @@ public class RasgoPlanillaDao extends conexion {
         asistencia.setFaltaObservacion(rs.getString("falta_observacion"));
         asistencia.setRespondedAt(rs.getTimestamp("responded_at"));
         asistencia.setTema(rs.getString("tema"));
+        asistencia.setCodigoDescripcion(rs.getString("falta_codigo_descripcion"));
         return asistencia;
     }
 }

@@ -296,7 +296,7 @@ CREATE TABLE rasgo_asistencia (
     alumno_apellido VARCHAR(80) NOT NULL,
     alumno_email VARCHAR(255) NOT NULL,
     estado ENUM('pendiente', 'presente', 'ausente') NOT NULL DEFAULT 'pendiente',
-    falta_codigo VARCHAR(4) NULL,
+    falta_codigo VARCHAR(10) NULL,
     falta_observacion VARCHAR(500) NULL,
     responded_at TIMESTAMP NULL,
     UNIQUE KEY uq_rasgo_asistencia_alumno (planilla_rasgo_id, alumno_id),
@@ -309,18 +309,27 @@ CREATE TABLE rasgo_asistencia (
         ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+CREATE TABLE codigo_conducta (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    codigo VARCHAR(10) NOT NULL UNIQUE,
+    descripcion VARCHAR(255) NOT NULL,
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 CREATE TABLE rasgo_asistencia_codigo (
     id INT AUTO_INCREMENT PRIMARY KEY,
     rasgo_asistencia_id INT NOT NULL,
-    codigo VARCHAR(2) NOT NULL,
+    codigo VARCHAR(10) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uq_rasgo_asistencia_codigo (rasgo_asistencia_id, codigo),
     KEY idx_rasgo_asistencia_codigo (rasgo_asistencia_id),
     CONSTRAINT fk_rasgo_asistencia_codigo_asistencia
         FOREIGN KEY (rasgo_asistencia_id) REFERENCES rasgo_asistencia (id)
         ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT chk_rasgo_asistencia_codigo
-        CHECK (codigo IN ('N1', 'N2', 'N3', 'N4', 'N5', 'N6', 'N7', 'N8'))
+    CONSTRAINT fk_rasgo_asistencia_codigo_conducta
+        FOREIGN KEY (codigo) REFERENCES codigo_conducta (codigo)
+        ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- Tabla de relación entre alumno y usuario (antes: alumno_padre)

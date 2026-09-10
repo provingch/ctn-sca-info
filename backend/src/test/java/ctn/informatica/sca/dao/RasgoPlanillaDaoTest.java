@@ -20,7 +20,7 @@ class RasgoPlanillaDaoTest {
         assertThrows(IllegalArgumentException.class,
                 () -> RasgoPlanillaDao.validarCodigos(List.of("V")));
         assertThrows(IllegalArgumentException.class,
-                () -> RasgoPlanillaDao.validarCodigos(List.of("N9")));
+            () -> RasgoPlanillaDao.validarCodigos(List.of("N1234567890")));
     }
 
     @Test

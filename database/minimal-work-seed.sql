@@ -30,6 +30,17 @@ ALTER TABLE planilla_rasgo AUTO_INCREMENT = 1;
 ALTER TABLE rasgo_asistencia AUTO_INCREMENT = 1;
 ALTER TABLE rasgo_asistencia_codigo AUTO_INCREMENT = 1;
 
+INSERT INTO codigo_conducta (codigo, descripcion, activo) VALUES
+('N1', 'Sale del aula sin autorización', TRUE),
+('N2', 'No realiza la tarea asignada en clase', TRUE),
+('N3', 'No dispone de los materiales necesarios', TRUE),
+('N4', 'No presenta las tareas asignadas para la casa', TRUE),
+('N5', 'Utiliza vocabulario indebido en clase', TRUE),
+('N6', 'Charla mucho en clase', TRUE),
+('N7', 'No utiliza el uniforme establecido', TRUE),
+('N8', 'Ausente en clase, presente en la Institución', TRUE)
+ON DUPLICATE KEY UPDATE descripcion = VALUES(descripcion), activo = TRUE;
+
 -- ========================================
 -- HORAS CÁTEDRA
 -- ========================================
