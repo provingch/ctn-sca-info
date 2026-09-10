@@ -41,8 +41,6 @@ CREATE TABLE alumno (
     nombre VARCHAR(45) NOT NULL,
     apellido VARCHAR(45) NOT NULL,
     curso_id INT NOT NULL,
-    correo_encargado VARCHAR(45),
-    correo_encargado2 VARCHAR(45),
     google_user_id VARCHAR(255) NULL,
     google_email VARCHAR(255) NULL,
     PRIMARY KEY (id),

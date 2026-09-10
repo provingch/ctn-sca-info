@@ -159,7 +159,7 @@ public class AdminController {
             egresadosDb = egresadosDb.stream().filter(a -> canAccessAlumno(actingSpecialtyId, a.getCursoId())).toList();
         }
         List<StudentItem> alumnos = activosDb.stream()
-                .map(a -> new StudentItem(a.getId(), a.getNombre(), a.getApellido(), a.getCursoId(), a.getCi(), a.getCorreoEncargado(), a.getCorreoEncargado2()))
+                .map(a -> new StudentItem(a.getId(), a.getNombre(), a.getApellido(), a.getCursoId(), a.getCi()))
                 .toList();
         List<EgresadoItem> egresados = egresadosDb.stream()
                 .map(a -> new EgresadoItem(a.getId(), a.getNombre(), a.getApellido(), a.getCi(), a.getEspecialidadNombre(), a.getPromocion()))
@@ -634,7 +634,7 @@ public class AdminController {
             if (actingSpecialtyId != null && !canAccessAlumno(actingSpecialtyId, input.cursoId())) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes mover alumnos a cursos fuera de tu especialidad");
             }
-            if (!alumnoDao.update(id, input.nombre().trim(), input.apellido().trim(), input.cursoId(), input.ci(), input.correoEncargado(), input.correoEncargado2())) {
+            if (!alumnoDao.update(id, input.nombre().trim(), input.apellido().trim(), input.cursoId(), input.ci())) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Alumno no encontrado");
             }
             try {
@@ -662,7 +662,7 @@ public class AdminController {
             if (actingSpecialtyId != null && !canAccessAlumno(actingSpecialtyId, input.cursoId())) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes crear alumnos fuera de tu especialidad");
             }
-            new AlumnoDao().create(input.nombre().trim(), input.apellido().trim(), input.cursoId(), input.ci(), input.correoEncargado(), input.correoEncargado2());
+            new AlumnoDao().create(input.nombre().trim(), input.apellido().trim(), input.cursoId(), input.ci());
         } catch (ResponseStatusException ex) { throw ex; } catch (Exception ex) { throw failure("No se pudo crear el alumno", ex); }
     }
 
@@ -947,7 +947,7 @@ public class AdminController {
         }
     }
     public record AssignmentItem(int id, int profesorId, int materiaId, int cursoId, String profesor, String materia, String curso) {}
-    public record StudentItem(int id, String nombre, String apellido, int cursoId, String ci, String correoEncargado, String correoEncargado2) {}
+    public record StudentItem(int id, String nombre, String apellido, int cursoId, String ci) {}
     public record EgresadoItem(int id, String nombre, String apellido, String ci, String especialidad, Integer promocion) {}
     public record CourseItem(int id, String especialidad, int nivel, String seccion) {}
     public record SpecialtyItem(int id, String nombre) {}
@@ -956,7 +956,7 @@ public class AdminController {
     public record AssignmentInput(int profesorId, int materiaId, int cursoId) {}
     public record BatchAssignmentInput(int profesorId, int materiaId, List<Integer> cursoIds) {}
     public record BatchAssignmentResponse(int creadas, int yaExistian) {}
-    public record StudentInput(String nombre, String apellido, int cursoId, String ci, String correoEncargado, String correoEncargado2) {}
+    public record StudentInput(String nombre, String apellido, int cursoId, String ci) {}
     public record WipeResponse(String message, int deletedGrades, int deletedTasks, int planillaId, int clearedGoogleCourseIds) {}
     public record GlobalWipeResponse(String message, int deletedGrades, int deletedTasks, int clearedGoogleCourseIds) {}
     public record GoogleClearResponse(String message) {}

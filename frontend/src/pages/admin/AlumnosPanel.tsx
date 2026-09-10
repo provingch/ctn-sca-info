@@ -25,7 +25,7 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
   const [padres, setPadres] = useState<PadreSummary[]>([]);
   const [padresSearch, setPadresSearch] = useState('');
   const [padresResults, setPadresResults] = useState<PadreSummary[]>([]);
-  const [form, setForm] = useState({ nombre: '', apellido: '', ci: '', cursoId: '', correoEncargado: '', correoEncargado2: '' });
+  const [form, setForm] = useState({ nombre: '', apellido: '', ci: '', cursoId: '' });
 
   const especialidades = data.especialidades;
 
@@ -54,7 +54,7 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
   const openCreate = () => {
     setEditingId(null);
     const preselectedCourse = currentCurso ? String(currentCurso.id) : '';
-    setForm({ nombre: '', apellido: '', ci: '', cursoId: preselectedCourse, correoEncargado: '', correoEncargado2: '' });
+    setForm({ nombre: '', apellido: '', ci: '', cursoId: preselectedCourse });
     setPadres([]);
     setPadresSearch('');
     setPadresResults([]);
@@ -83,8 +83,6 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
       apellido: student.apellido,
       ci: String(student.ci ?? ''),
       cursoId: String(student.cursoId),
-      correoEncargado: student.correoEncargado ?? '',
-      correoEncargado2: student.correoEncargado2 ?? '',
     });
     setSelectedEspecialidadId(especialidades.find((specialty) => specialty.nombre === course?.especialidad)?.id ?? null);
     setSelectedNivel(course?.nivel ?? null);
@@ -104,8 +102,6 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
       apellido: form.apellido.trim(),
       ci: form.ci.trim() || null,
       cursoId: Number(form.cursoId || currentCurso?.id || 0),
-      correoEncargado: form.correoEncargado.trim() || null,
-      correoEncargado2: form.correoEncargado2.trim() || null,
     };
 
     if (!payload.nombre || !payload.apellido || !payload.cursoId) {
@@ -389,14 +385,6 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
                 />
               </label>
             )}
-            <label>
-              Correo del encargado
-              <input type="email" value={form.correoEncargado} onChange={(event) => setForm({ ...form, correoEncargado: event.target.value })} />
-            </label>
-            <label>
-              Segundo correo
-              <input type="email" value={form.correoEncargado2} onChange={(event) => setForm({ ...form, correoEncargado2: event.target.value })} />
-            </label>
 
             {!editingId ? (
               <div style={{ gridColumn: '1 / -1', padding: '8px 0 0' }} className="muted-copy">Guardá el alumno primero para poder vincular padres.</div>

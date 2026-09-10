@@ -23,7 +23,7 @@ public class AlumnoDao extends conexion {
      * egresado no aparece acá — se lo consulta con {@link #findAllEgresados()}.
      */
     public List<Alumno> findAllActivos() throws SQLException {
-        String sql = "SELECT a.id, a.ci, a.nombre, a.apellido, a.curso_id, a.correo_encargado, a.correo_encargado2 "
+        String sql = "SELECT a.id, a.ci, a.nombre, a.apellido, a.curso_id "
                 + "FROM alumno a JOIN curso c ON c.id = a.curso_id "
                 + "WHERE c.promocion >= ? "
                 + "ORDER BY a.apellido, a.nombre";
@@ -38,8 +38,6 @@ public class AlumnoDao extends conexion {
                     alumno.setNombre(rs.getString("nombre"));
                     alumno.setApellido(rs.getString("apellido"));
                     alumno.setCursoId(rs.getInt("curso_id"));
-                    alumno.setCorreoEncargado(rs.getString("correo_encargado"));
-                    alumno.setCorreoEncargado2(rs.getString("correo_encargado2"));
                     alumnos.add(alumno);
                 }
             }
@@ -54,7 +52,7 @@ public class AlumnoDao extends conexion {
      * podría resolverlas. Solo lectura: registro histórico.
      */
     public List<Alumno> findAllEgresados() throws SQLException {
-        String sql = "SELECT a.id, a.ci, a.nombre, a.apellido, a.curso_id, a.correo_encargado, a.correo_encargado2, "
+        String sql = "SELECT a.id, a.ci, a.nombre, a.apellido, a.curso_id, "
                 + "e.nombre AS especialidad_nombre, c.promocion "
                 + "FROM alumno a JOIN curso c ON c.id = a.curso_id "
                 + "JOIN especialidad e ON e.id = c.especialidad_id "
@@ -71,8 +69,6 @@ public class AlumnoDao extends conexion {
                     alumno.setNombre(rs.getString("nombre"));
                     alumno.setApellido(rs.getString("apellido"));
                     alumno.setCursoId(rs.getInt("curso_id"));
-                    alumno.setCorreoEncargado(rs.getString("correo_encargado"));
-                    alumno.setCorreoEncargado2(rs.getString("correo_encargado2"));
                     alumno.setEspecialidadNombre(rs.getString("especialidad_nombre"));
                     alumno.setPromocion(rs.getObject("promocion") == null ? null : rs.getInt("promocion"));
                     alumnos.add(alumno);
@@ -83,7 +79,7 @@ public class AlumnoDao extends conexion {
     }
 
     public Alumno findById(int id) throws SQLException {
-        String sql = "SELECT id, ci, nombre, apellido, curso_id, correo_encargado, correo_encargado2 FROM alumno WHERE id = ?";
+        String sql = "SELECT id, ci, nombre, apellido, curso_id FROM alumno WHERE id = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
@@ -94,8 +90,6 @@ public class AlumnoDao extends conexion {
                     alumno.setNombre(rs.getString("nombre"));
                     alumno.setApellido(rs.getString("apellido"));
                     alumno.setCursoId(rs.getInt("curso_id"));
-                    alumno.setCorreoEncargado(rs.getString("correo_encargado"));
-                    alumno.setCorreoEncargado2(rs.getString("correo_encargado2"));
                     return alumno;
                 }
             }
@@ -159,8 +153,8 @@ public class AlumnoDao extends conexion {
         return 0;
     }
 
-    public int create(String nombre, String apellido, int cursoId, String ci, String correoEncargado, String correoEncargado2) throws SQLException {
-        String sql = "INSERT INTO alumno (ci, nombre, apellido, curso_id, correo_encargado, correo_encargado2) VALUES (?, ?, ?, ?, ?, ?)";
+    public int create(String nombre, String apellido, int cursoId, String ci) throws SQLException {
+        String sql = "INSERT INTO alumno (ci, nombre, apellido, curso_id) VALUES (?, ?, ?, ?)";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             if (ci == null || ci.isBlank()) {
                 ps.setNull(1, java.sql.Types.VARCHAR);
@@ -170,8 +164,6 @@ public class AlumnoDao extends conexion {
             ps.setString(2, nombre);
             ps.setString(3, apellido);
             ps.setInt(4, cursoId);
-            ps.setString(5, correoEncargado);
-            ps.setString(6, correoEncargado2);
             int affected = ps.executeUpdate();
             if (affected == 0) {
                 return 0;
@@ -185,8 +177,8 @@ public class AlumnoDao extends conexion {
         }
     }
 
-    public boolean update(int alumnoId, String nombre, String apellido, int cursoId, String ci, String correoEncargado, String correoEncargado2) throws SQLException {
-        String sql = "UPDATE alumno SET ci = ?, nombre = ?, apellido = ?, curso_id = ?, correo_encargado = ?, correo_encargado2 = ? WHERE id = ?";
+    public boolean update(int alumnoId, String nombre, String apellido, int cursoId, String ci) throws SQLException {
+        String sql = "UPDATE alumno SET ci = ?, nombre = ?, apellido = ?, curso_id = ? WHERE id = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
             if (ci == null || ci.isBlank()) {
                 ps.setNull(1, java.sql.Types.VARCHAR);
@@ -196,9 +188,7 @@ public class AlumnoDao extends conexion {
             ps.setString(2, nombre);
             ps.setString(3, apellido);
             ps.setInt(4, cursoId);
-            ps.setString(5, correoEncargado);
-            ps.setString(6, correoEncargado2);
-            ps.setInt(7, alumnoId);
+            ps.setInt(5, alumnoId);
             return ps.executeUpdate() > 0;
         }
     }

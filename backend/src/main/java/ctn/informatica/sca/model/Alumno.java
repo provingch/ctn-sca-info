@@ -6,8 +6,6 @@ public class Alumno {
     private String nombre;
     private String apellido;
     private int cursoId;
-    private String correoEncargado;
-    private String correoEncargado2;
     private String googleUserId;
     private String googleEmail;
     private String especialidadNombre;
@@ -52,22 +50,6 @@ public class Alumno {
 
     public void setCursoId(int cursoId) {
         this.cursoId = cursoId;
-    }
-
-    public String getCorreoEncargado() {
-        return correoEncargado;
-    }
-
-    public void setCorreoEncargado(String correoEncargado) {
-        this.correoEncargado = correoEncargado;
-    }
-
-    public String getCorreoEncargado2() {
-        return correoEncargado2;
-    }
-
-    public void setCorreoEncargado2(String correoEncargado2) {
-        this.correoEncargado2 = correoEncargado2;
     }
 
     public String getGoogleUserId() {
