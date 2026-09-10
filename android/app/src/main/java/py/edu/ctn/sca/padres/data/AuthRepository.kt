@@ -24,11 +24,16 @@ class AuthRepository(
     suspend fun verifyTwoFactor(tempToken: String, code: String, rememberMe: Boolean): LoginStep =
         handle(authApi.verify2fa(Verify2faRequest(tempToken, code.trim(), rememberMe)))
 
-    /** Cold-start: try to turn a stored cookie into a live session. */
+    /**
+     * Cold-start: try to turn a stored cookie into a live session. Any outcome
+     * other than "authenticated" ends in [Session.onLoggedOut] so the UI leaves
+     * the splash and shows the login screen — a network error must not strand
+     * the app on the spinner.
+     */
     suspend fun restore(): Boolean {
-        val resp = runCatching { authApi.refresh() }.getOrNull() ?: return false
-        val body = resp.body()
-        return if (resp.isSuccessful && body != null) {
+        val resp = runCatching { authApi.refresh() }.getOrNull()
+        val body = resp?.body()
+        return if (resp != null && resp.isSuccessful && body != null) {
             session.onAuthenticated(body.accessToken, body.level)
             true
         } else {

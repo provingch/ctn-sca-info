@@ -38,19 +38,15 @@ keytool -genkeypair -v -keystore sca-padres.jks -alias sca \
   -keyalg RSA -keysize 2048 -validity 10000       # y completá keystore.properties
 ```
 
-### 1. Backend por HTTPS (obligatorio para release)
+### 1. Backend por HTTPS
 
-Android bloquea tráfico en claro. El backend tiene que estar detrás de un dominio
-con TLS. El `deploy.sh` del repo ya instala nginx + certbot:
+Ya está: producción vive en `https://ctn-sca.ddns.net/` (nginx + Let's Encrypt).
+Es el valor por defecto de `sca.baseUrl`, así que no hace falta configurar nada
+para apuntar ahí.
 
-```sh
-DOMAIN_NAME=sca.tu-dominio.edu.py CERTBOT_EMAIL=admin@tu-dominio.edu.py ./deploy.sh --update
-```
-
-Luego poné ese dominio en `sca.baseUrl` (con `/` final).
-Para pruebas locales contra `http://10.0.2.2:8080/` (emulador) usá un build
-*debug* y agregá un `network_security_config.xml` que permita cleartext sólo a
-ese host — no lo dejes en release.
+Android bloquea tráfico en claro; los builds **debug** lo permiten
+(`app/src/debug/AndroidManifest.xml`) sólo para poder probar contra un backend
+sin TLS (p. ej. `http://10.0.2.2:8080/` desde el emulador). Release siempre HTTPS.
 
 ### 2. Firebase Cloud Messaging
 

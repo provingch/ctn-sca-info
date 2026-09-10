@@ -16,7 +16,7 @@ if (googleServicesFile.exists()) {
 }
 
 // Base URL of the SCA backend. Override per build with:
-//   ./gradlew assembleRelease -PscaBaseUrl=https://sca.tu-dominio.edu.py/
+//   ./gradlew assembleRelease -PscaBaseUrl=https://otro-host/
 // or by setting sca.baseUrl in android/local.properties (gitignored).
 val scaBaseUrl: String = (project.findProperty("scaBaseUrl") as String?)
     ?: runCatching {
@@ -24,7 +24,7 @@ val scaBaseUrl: String = (project.findProperty("scaBaseUrl") as String?)
             rootProject.file("local.properties").inputStream().use { load(it) }
         }.getProperty("sca.baseUrl")
     }.getOrNull()
-    ?: "https://sca.example.edu.py/"
+    ?: "https://ctn-sca.ddns.net/"
 
 android {
     namespace = "py.edu.ctn.sca.padres"
