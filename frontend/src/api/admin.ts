@@ -51,8 +51,6 @@ export interface StudentItem {
   apellido: string;
   cursoId: number;
   ci: string | null;
-  correoEncargado: string | null;
-  correoEncargado2: string | null;
 }
 
 export interface CourseItem {
