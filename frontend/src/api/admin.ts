@@ -54,6 +54,15 @@ export interface CourseItem {
   seccion: string;
 }
 
+export interface EgresadoItem {
+  id: number;
+  nombre: string;
+  apellido: string;
+  ci: number | null;
+  especialidad: string | null;
+  promocion: number | null;
+}
+
 export interface SpecialtyItem {
   id: number;
   nombre: string;
@@ -128,6 +137,7 @@ export interface AdminCatalog {
   cursos: CourseItem[];
   cursosAlumnos: CourseItem[];
   especialidades: SpecialtyItem[];
+  egresados: EgresadoItem[];
 }
 
 export const ADMIN_FORBIDDEN_MESSAGE = 'No tenés permiso para gestionar este recurso.';
