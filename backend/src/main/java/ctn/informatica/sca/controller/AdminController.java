@@ -735,6 +735,21 @@ public class AdminController {
         }
     }
 
+    @GetMapping("/padres/{id}/alumnos")
+    public java.util.List<PadreChildItem> alumnosDelPadre(@PathVariable int id, Authentication auth) {
+        ApiAuth.requireUserId(auth);
+        try {
+            if (new PadreDao().findById(id) == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Padre no encontrado");
+            return new PadreDao().findChildrenByPadreId(id).stream()
+                .map(a -> new PadreChildItem(a.getId(), a.getNombre(), a.getApellido(), a.getCursoId(), a.getEspecialidadNombre()))
+                .toList();
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw failure("No se pudo cargar los alumnos del padre", ex);
+        }
+    }
+
     @PostMapping("/planillas/{id}/sync/wipe")
     public WipeResponse wipePlanillaSync(@PathVariable int id, Authentication auth) {
         ApiAuth.requireUserId(auth);
@@ -925,6 +940,7 @@ public class AdminController {
     public record CatalogResponse(List<MateriaItem> materias, List<UserItem> usuarios, List<AssignmentItem> asignaciones, List<StudentItem> alumnos, List<CourseItem> cursos, List<CourseItem> cursosAlumnos, List<SpecialtyItem> especialidades, List<EgresadoItem> egresados) {}
     public record MateriaItem(int id, String nombre, String categoria, List<Integer> especialidadIds) {}
     public record PadreSummary(int id, String nombre, String apellido, Integer ci, String usuario) {}
+    public record PadreChildItem(int id, String nombre, String apellido, int cursoId, String especialidadNombre) {}
     public record UserItem(int id, String nombre, String apellido, String usuario, int nivel, String correo, Integer ci, Integer especialidadId, String especialidadNombre) {
         public UserItem(int id, String nombre, String apellido, String usuario, int nivel, String correo, Integer ci) {
             this(id, nombre, apellido, usuario, nivel, correo, ci, null, null);
