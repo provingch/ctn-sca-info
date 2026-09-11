@@ -24,10 +24,12 @@ class AuthRepository(
 ) {
 
     suspend fun login(username: String, password: String, rememberMe: Boolean): LoginStep =
-        handle(authApi.login(LoginRequest(username.trim(), password, rememberMe)))
+        runCatching { authApi.login(LoginRequest(username.trim(), password, rememberMe)) }
+            .fold(onSuccess = { handle(it) }, onFailure = { networkError(it) })
 
     suspend fun verifyTwoFactor(tempToken: String, code: String, rememberMe: Boolean): LoginStep =
-        handle(authApi.verify2fa(Verify2faRequest(tempToken, code.trim(), rememberMe)))
+        runCatching { authApi.verify2fa(Verify2faRequest(tempToken, code.trim(), rememberMe)) }
+            .fold(onSuccess = { handle(it) }, onFailure = { networkError(it) })
 
     /**
      * Cold-start: try to turn a stored cookie into a live session. Any outcome
@@ -84,6 +86,14 @@ class AuthRepository(
             }
             else -> LoginStep.Failed("No se pudo iniciar sesión.")
         }
+    }
+
+    private fun networkError(t: Throwable): LoginStep.Failed {
+        val msg = if (t is java.io.IOException)
+            "Sin conexión. Verificá tu internet e intentá de nuevo."
+        else
+            "No se pudo iniciar sesión. Intentá de nuevo."
+        return LoginStep.Failed(msg)
     }
 
     private fun defaultError(code: Int) = when (code) {
