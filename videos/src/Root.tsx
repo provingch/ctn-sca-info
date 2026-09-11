@@ -34,7 +34,7 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="Scene3Features"
           component={Scene3Features}
-          durationInFrames={220}
+          durationInFrames={325}
           fps={FPS}
           width={WIDTH}
           height={HEIGHT}

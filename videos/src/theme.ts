@@ -11,3 +11,11 @@ export const theme = {
   textMuted: "#9aa3c9",
   border: "rgba(145, 160, 255, 0.22)",
 };
+
+export const specialtyColors = {
+  informatica: "#d1717f",
+  electromecanica: "#6f80ff",
+  electricidad: "#4db6dd",
+  construcciones: "#dcb15c",
+  mecanica: "#4fae82",
+};
