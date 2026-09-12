@@ -13,11 +13,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import ctn.informatica.sca.dto.PlanTemplateConfigDto;
 import org.springframework.security.core.context.SecurityContextHolder;
 import ctn.informatica.sca.model.User;
 import ctn.informatica.sca.service.ActivityLogService;
@@ -169,6 +171,32 @@ public class PlanCurricularController {
         headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
         headers.setContentDispositionFormData("attachment", "plan-curricular-plantilla.xlsx");
         return ResponseEntity.ok().headers(headers).body(data);
+    }
+
+    @PostMapping("/plantilla")
+    public ResponseEntity<byte[]> plantillaConfigurada(@RequestParam("asignacionId") int asignacionId,
+            @RequestBody PlanTemplateConfigDto config) throws Exception {
+        if (!isProfessor(getCurrentUser())) return ResponseEntity.status(403).build();
+        long userId = getCurrentUserId();
+        var asignacion = asignacionDao.findById(asignacionId);
+        if (asignacion == null) return ResponseEntity.notFound().build();
+        if (asignacion.getProfesorId() != (int) userId) return ResponseEntity.status(403).build();
+        byte[] data;
+        try {
+            data = templateBuilder.buildForAsignacion(asignacionId, config);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(ex.getMessage().getBytes());
+        }
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        headers.setContentDispositionFormData("attachment", "plan-curricular-plantilla.xlsx");
+        return ResponseEntity.ok().headers(headers).body(data);
+    }
+
+    @GetMapping("/meses-disponibles")
+    public ResponseEntity<?> mesesDisponibles(@RequestParam("etapa") String etapa) throws Exception {
+        if (!isProfessor(getCurrentUser())) return ResponseEntity.status(403).build();
+        return ResponseEntity.ok(templateBuilder.mesesPosibles(etapa));
     }
 
     @GetMapping("/mi-plan")
