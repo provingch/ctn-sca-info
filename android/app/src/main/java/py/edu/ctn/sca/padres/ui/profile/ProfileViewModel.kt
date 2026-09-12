@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import py.edu.ctn.sca.padres.data.ChangePasswordRequest
+import py.edu.ctn.sca.padres.data.PasswordChange
 import py.edu.ctn.sca.padres.data.ProfileLoad
 import py.edu.ctn.sca.padres.data.ProfileRepository
 import py.edu.ctn.sca.padres.data.ProfileSave
@@ -27,6 +29,13 @@ data class ProfileUiState(
     val saving: Boolean = false,
     val saveError: String? = null,
     val saved: Boolean = false,
+    val activityLog: List<String> = emptyList(),
+    val currentPassword: String = "",
+    val newPassword: String = "",
+    val confirmPassword: String = "",
+    val changingPassword: Boolean = false,
+    val passwordError: String? = null,
+    val passwordChanged: Boolean = false,
 )
 
 class ProfileViewModel(
@@ -60,6 +69,7 @@ class ProfileViewModel(
                             canEditIdentity = result.data.canEditAdminOnlyProfileFields,
                             saved = false,
                             saveError = null,
+                            activityLog = result.data.activityLog,
                         )
                     }
                 }
@@ -108,6 +118,56 @@ class ProfileViewModel(
                 }
                 is ProfileSave.Error -> _ui.update {
                     it.copy(saving = false, saveError = result.message)
+                }
+            }
+        }
+    }
+
+    fun onCurrentPassword(v: String) = _ui.update {
+        it.copy(currentPassword = v, passwordChanged = false, passwordError = null)
+    }
+    fun onNewPassword(v: String) = _ui.update {
+        it.copy(newPassword = v, passwordChanged = false, passwordError = null)
+    }
+    fun onConfirmPassword(v: String) = _ui.update {
+        it.copy(confirmPassword = v, passwordChanged = false, passwordError = null)
+    }
+
+    fun changePassword() {
+        val s = _ui.value
+        if (s.changingPassword) return
+        if (s.currentPassword.isBlank() || s.newPassword.isBlank() || s.confirmPassword.isBlank()) {
+            _ui.update { it.copy(passwordError = "Completá los tres campos de contraseña.") }
+            return
+        }
+        if (s.newPassword.length < 6) {
+            _ui.update { it.copy(passwordError = "La nueva contraseña debe tener al menos 6 caracteres.") }
+            return
+        }
+        if (s.newPassword != s.confirmPassword) {
+            _ui.update { it.copy(passwordError = "Las contraseñas no coinciden.") }
+            return
+        }
+        _ui.update { it.copy(changingPassword = true, passwordError = null, passwordChanged = false) }
+        viewModelScope.launch {
+            val req = ChangePasswordRequest(
+                currentPassword = s.currentPassword,
+                newPassword = s.newPassword,
+                confirmPassword = s.confirmPassword,
+            )
+            when (val result = profileRepository.changePassword(req)) {
+                is PasswordChange.Ok -> _ui.update {
+                    it.copy(
+                        changingPassword = false,
+                        passwordChanged = true,
+                        passwordError = null,
+                        currentPassword = "",
+                        newPassword = "",
+                        confirmPassword = "",
+                    )
+                }
+                is PasswordChange.Error -> _ui.update {
+                    it.copy(changingPassword = false, passwordError = result.message)
                 }
             }
         }

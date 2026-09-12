@@ -13,6 +13,11 @@ sealed interface ProfileSave {
     data class Error(val message: String) : ProfileSave
 }
 
+sealed interface PasswordChange {
+    data object Ok : PasswordChange
+    data class Error(val message: String) : PasswordChange
+}
+
 class ProfileRepository(
     private val profileApi: ProfileApi,
     private val json: Json,
@@ -40,5 +45,21 @@ class ProfileRepository(
         ProfileSave.Error("Sin conexión. Verificá tu internet e intentá de nuevo.")
     } catch (e: Exception) {
         ProfileSave.Error("No se pudieron guardar los cambios.")
+    }
+
+    suspend fun changePassword(request: ChangePasswordRequest): PasswordChange = try {
+        val resp = profileApi.changePassword(request)
+        if (resp.isSuccessful) {
+            PasswordChange.Ok
+        } else {
+            val serverMessage = resp.errorBody()?.string()?.let {
+                runCatching { json.decodeFromString<ApiErrorDto>(it) }.getOrNull()?.message
+            }
+            PasswordChange.Error(serverMessage ?: "No se pudo cambiar la contraseña (error ${resp.code()}).")
+        }
+    } catch (e: IOException) {
+        PasswordChange.Error("Sin conexión. Verificá tu internet e intentá de nuevo.")
+    } catch (e: Exception) {
+        PasswordChange.Error("No se pudo cambiar la contraseña.")
     }
 }
