@@ -28,8 +28,6 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import ctn.informatica.sca.dao.AsignacionDao;
 import ctn.informatica.sca.dao.HorarioSlotDao;
 import ctn.informatica.sca.dao.UserDao;
@@ -79,8 +77,6 @@ public class PlanCurricularTemplateBuilder {
 
     @Autowired
     private UserDao userDao;
-
-    private final ObjectMapper mapper = new ObjectMapper();
 
     /** Meses habilitados para la etapa; sirve al frontend para armar el selector. */
     public List<String> mesesPosibles(String etapa) {
@@ -313,33 +309,36 @@ public class PlanCurricularTemplateBuilder {
     }
 
     private void writeMetaSheet(Workbook wb, String etapa, int anio, int asignacionId,
-                                List<PlanTemplateConfigDto.MesConfig> mesesConfig) throws Exception {
+                                List<PlanTemplateConfigDto.MesConfig> mesesConfig) {
         Sheet meta = wb.createSheet(META_SHEET);
-        Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("etapa", etapa);
-        payload.put("anio", anio);
-        payload.put("asignacionId", asignacionId);
-        payload.put("blockStartRow", BLOCK_START_ROW);
-        payload.put("blockStride", BLOCK_STRIDE);
-        payload.put("colCapacidades", COL_CAPACIDADES);
-        payload.put("colTemas", COL_TEMAS);
-        payload.put("colActividades", COL_ACTIVIDADES);
-        payload.put("colInstrumentos", COL_INSTRUMENTOS);
-        payload.put("colIndicadores", COL_INDICADORES);
-        List<Map<String, Object>> meses = new ArrayList<>();
+        // Formato simple: cada fila es "clave" | "valor". Para la lista de meses,
+        // se marcan filas contiguas con clave "mes" y columnas mes/bloques/ordenMes.
+        int r = 0;
+        putKV(meta, r++, "etapa", etapa);
+        putKV(meta, r++, "anio", String.valueOf(anio));
+        putKV(meta, r++, "asignacionId", String.valueOf(asignacionId));
+        putKV(meta, r++, "blockStartRow", String.valueOf(BLOCK_START_ROW));
+        putKV(meta, r++, "blockStride", String.valueOf(BLOCK_STRIDE));
+        putKV(meta, r++, "colCapacidades", String.valueOf(COL_CAPACIDADES));
+        putKV(meta, r++, "colTemas", String.valueOf(COL_TEMAS));
+        putKV(meta, r++, "colActividades", String.valueOf(COL_ACTIVIDADES));
+        putKV(meta, r++, "colInstrumentos", String.valueOf(COL_INSTRUMENTOS));
+        putKV(meta, r++, "colIndicadores", String.valueOf(COL_INDICADORES));
         for (PlanTemplateConfigDto.MesConfig mc : mesesConfig) {
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("mes", mc.mes);
-            m.put("bloques", mc.bloques);
-            m.put("ordenMes", ordenMesEnEtapa(mc.mes, etapa));
-            meses.add(m);
+            Row row = meta.createRow(r++);
+            row.createCell(0).setCellValue("mes");
+            row.createCell(1).setCellValue(mc.mes);
+            row.createCell(2).setCellValue(String.valueOf(mc.bloques));
+            row.createCell(3).setCellValue(String.valueOf(ordenMesEnEtapa(mc.mes, etapa)));
         }
-        payload.put("meses", meses);
-        String json = mapper.writeValueAsString(payload);
-        Row r = meta.createRow(0);
-        r.createCell(0).setCellValue(json);
         int idx = wb.getSheetIndex(META_SHEET);
         wb.setSheetHidden(idx, true);
+    }
+
+    private void putKV(Sheet sh, int row, String k, String v) {
+        Row r = sh.createRow(row);
+        r.createCell(0).setCellValue(k);
+        r.createCell(1).setCellValue(v == null ? "" : v);
     }
 
     // ---- Utilidades expuestas para el parser y aprobación ----
@@ -362,44 +361,58 @@ public class PlanCurricularTemplateBuilder {
     public MetaInfo readMeta(Workbook wb) {
         Sheet meta = wb.getSheet(META_SHEET);
         if (meta == null) return null;
-        Row r = meta.getRow(0);
-        if (r == null) return null;
-        Cell c = r.getCell(0);
-        if (c == null) return null;
-        String json = c.getStringCellValue();
-        if (json == null || json.isBlank()) return null;
-        try {
-            Map<?, ?> m = mapper.readValue(json, Map.class);
-            MetaInfo info = new MetaInfo();
-            Object etapaObj = m.get("etapa");
-            if (etapaObj != null) info.etapa = etapaObj.toString();
-            Object anioObj = m.get("anio");
-            if (anioObj instanceof Number n) info.anio = n.intValue();
-            info.blockStartRow = intOrDefault(m.get("blockStartRow"), BLOCK_START_ROW);
-            info.blockStride = intOrDefault(m.get("blockStride"), BLOCK_STRIDE);
-            info.colCapacidades = intOrDefault(m.get("colCapacidades"), COL_CAPACIDADES);
-            info.colTemas = intOrDefault(m.get("colTemas"), COL_TEMAS);
-            info.colActividades = intOrDefault(m.get("colActividades"), COL_ACTIVIDADES);
-            info.colInstrumentos = intOrDefault(m.get("colInstrumentos"), COL_INSTRUMENTOS);
-            info.colIndicadores = intOrDefault(m.get("colIndicadores"), COL_INDICADORES);
-            Object mesesObj = m.get("meses");
-            if (mesesObj instanceof List<?> lst) {
-                for (Object o : lst) {
-                    if (o instanceof Map<?, ?> item) {
-                        String mes = item.get("mes") == null ? null : item.get("mes").toString();
-                        if (mes == null) continue;
-                        int b = intOrDefault(item.get("bloques"), 4);
-                        int ord = intOrDefault(item.get("ordenMes"), ordenMesEnEtapa(mes, info.etapa));
-                        info.meses.add(mes);
-                        info.bloquesPorMes.put(mes, b);
-                        info.ordenPorMes.put(mes, ord);
-                    }
-                }
+        MetaInfo info = new MetaInfo();
+        boolean hadAnything = false;
+        for (int i = 0; i <= meta.getLastRowNum(); i++) {
+            Row r = meta.getRow(i);
+            if (r == null) continue;
+            String key = cellString(r, 0);
+            if (key == null) continue;
+            String v1 = cellString(r, 1);
+            if ("mes".equalsIgnoreCase(key)) {
+                if (v1 == null || v1.isBlank()) continue;
+                int b = parseIntOr(cellString(r, 2), 4);
+                int ord = parseIntOr(cellString(r, 3), ordenMesEnEtapa(v1, info.etapa));
+                info.meses.add(v1);
+                info.bloquesPorMes.put(v1, b);
+                info.ordenPorMes.put(v1, ord);
+                hadAnything = true;
+                continue;
             }
-            return info;
-        } catch (Exception e) {
-            return null;
+            switch (key) {
+                case "etapa": info.etapa = v1; hadAnything = true; break;
+                case "anio": info.anio = parseIntOr(v1, 0); hadAnything = true; break;
+                case "blockStartRow": info.blockStartRow = parseIntOr(v1, BLOCK_START_ROW); break;
+                case "blockStride": info.blockStride = parseIntOr(v1, BLOCK_STRIDE); break;
+                case "colCapacidades": info.colCapacidades = parseIntOr(v1, COL_CAPACIDADES); break;
+                case "colTemas": info.colTemas = parseIntOr(v1, COL_TEMAS); break;
+                case "colActividades": info.colActividades = parseIntOr(v1, COL_ACTIVIDADES); break;
+                case "colInstrumentos": info.colInstrumentos = parseIntOr(v1, COL_INSTRUMENTOS); break;
+                case "colIndicadores": info.colIndicadores = parseIntOr(v1, COL_INDICADORES); break;
+                default: break;
+            }
         }
+        return hadAnything ? info : null;
+    }
+
+    private static String cellString(Row r, int col) {
+        Cell c = r.getCell(col);
+        if (c == null) return null;
+        switch (c.getCellType()) {
+            case STRING: return c.getStringCellValue();
+            case NUMERIC: {
+                double d = c.getNumericCellValue();
+                if (d == Math.floor(d) && !Double.isInfinite(d)) return String.valueOf((long) d);
+                return String.valueOf(d);
+            }
+            case BOOLEAN: return String.valueOf(c.getBooleanCellValue());
+            default: return c.toString();
+        }
+    }
+
+    private static int parseIntOr(String s, int def) {
+        if (s == null) return def;
+        try { return Integer.parseInt(s.trim()); } catch (Exception e) { return def; }
     }
 
     /** Estampa la firma del evaluador en un xlsx ya generado. No-op si el usuario no tiene firma. */
@@ -437,14 +450,6 @@ public class PlanCurricularTemplateBuilder {
             wb.write(out);
             return out.toByteArray();
         }
-    }
-
-    private static int intOrDefault(Object v, int def) {
-        if (v instanceof Number n) return n.intValue();
-        if (v instanceof String s) {
-            try { return Integer.parseInt(s.trim()); } catch (Exception ignored) { }
-        }
-        return def;
     }
 
     private static String nullToEmpty(String v) { return v == null ? "" : v; }
