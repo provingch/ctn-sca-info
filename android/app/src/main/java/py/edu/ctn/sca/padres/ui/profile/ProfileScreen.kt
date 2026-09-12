@@ -1,6 +1,14 @@
 package py.edu.ctn.sca.padres.ui.profile
 
+import android.content.Context
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.util.Base64
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,16 +19,26 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -42,7 +60,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import android.graphics.Bitmap
+import android.graphics.Matrix
 import py.edu.ctn.sca.padres.Graph
 import py.edu.ctn.sca.padres.ui.components.ContentMaxWidth
 import py.edu.ctn.sca.padres.ui.components.Eyebrow
@@ -101,6 +122,24 @@ fun ProfileScreen(graph: Graph, onBack: () -> Unit) {
 
 @Composable
 private fun ProfileForm(ui: ProfileUiState, vm: ProfileViewModel) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var photoError by remember { mutableStateOf<String?>(null) }
+    val photoPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+    ) { uri: Uri? ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            photoError = null
+            val encoded = withContext(Dispatchers.IO) { encodeImageToBase64(context, uri) }
+            if (encoded == null) {
+                photoError = "No se pudo procesar la imagen."
+            } else {
+                vm.onFotoPerfil(encoded)
+            }
+        }
+    }
+
     Column(
         Modifier
             .widthIn(max = ContentMaxWidth)
@@ -110,6 +149,52 @@ private fun ProfileForm(ui: ProfileUiState, vm: ProfileViewModel) {
             .padding(horizontal = 16.dp, vertical = 20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
+        if (ui.showFotoPanel) {
+            Panel {
+                Eyebrow("00 · Foto de perfil")
+                Text(
+                    "Se mostrará en la barra de navegación.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
+                )
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    ProfilePhotoPreview(
+                        base64OrDataUrl = ui.fotoPerfil,
+                        fallbackInitials = buildInitials(ui.nombre, ui.apellido, ui.usuario),
+                    )
+                    Column(
+                        Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Button(
+                            onClick = { photoPicker.launch("image/*") },
+                            shape = RoundedCornerShape(9.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { Text("Subir foto", fontWeight = FontWeight.Bold) }
+                        androidx.compose.material3.OutlinedButton(
+                            onClick = { vm.onFotoPerfil("") },
+                            shape = RoundedCornerShape(9.dp),
+                            enabled = !ui.fotoPerfil.isNullOrBlank(),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { Text("Quitar foto") }
+                    }
+                }
+                photoError?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+            }
+        }
+
         Panel {
             Eyebrow("01 · Información personal")
             Text(
@@ -348,6 +433,91 @@ private fun PasswordField(
             },
             modifier = Modifier.fillMaxWidth(),
         )
+    }
+}
+
+@Composable
+private fun ProfilePhotoPreview(base64OrDataUrl: String?, fallbackInitials: String) {
+    val bitmap = remember(base64OrDataUrl) { decodeDataUrlToBitmap(base64OrDataUrl) }
+    Box(
+        modifier = Modifier
+            .size(84.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap.asImageBitmap(),
+                contentDescription = "Foto de perfil",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        } else {
+            Text(
+                fallbackInitials,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+private fun buildInitials(nombre: String, apellido: String, usuario: String): String {
+    val a = nombre.firstOrNull()?.takeIf { it.isLetter() }
+        ?: usuario.firstOrNull()?.takeIf { it.isLetter() }
+        ?: 'S'
+    val b = apellido.firstOrNull()?.takeIf { it.isLetter() } ?: ' '
+    return "$a$b".trim().uppercase()
+}
+
+private fun decodeDataUrlToBitmap(value: String?): Bitmap? {
+    if (value.isNullOrBlank()) return null
+    val commaIdx = value.indexOf(',')
+    val payload = if (commaIdx >= 0) value.substring(commaIdx + 1) else value
+    return try {
+        val bytes = Base64.decode(payload, Base64.DEFAULT)
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+    } catch (_: Throwable) {
+        null
+    }
+}
+
+/**
+ * Lee la imagen elegida, la reescala a 512 px (lado mayor) y la comprime a JPEG
+ * al 82 % para mantener el payload bien por debajo del límite del backend (1.5 MB).
+ */
+private fun encodeImageToBase64(context: Context, uri: Uri): String? {
+    return try {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        context.contentResolver.openInputStream(uri)?.use {
+            BitmapFactory.decodeStream(it, null, bounds)
+        }
+        val srcW = bounds.outWidth
+        val srcH = bounds.outHeight
+        if (srcW <= 0 || srcH <= 0) return null
+
+        val maxSide = 512
+        val sample = generateSequence(1) { it * 2 }
+            .first { it * maxSide >= maxOf(srcW, srcH) / 2 }
+        val decodeOpts = BitmapFactory.Options().apply { inSampleSize = sample }
+        val decoded = context.contentResolver.openInputStream(uri)?.use {
+            BitmapFactory.decodeStream(it, null, decodeOpts)
+        } ?: return null
+
+        val scale = maxSide.toFloat() / maxOf(decoded.width, decoded.height).toFloat()
+        val scaled = if (scale < 1f) {
+            val m = Matrix().apply { postScale(scale, scale) }
+            Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, m, true)
+        } else decoded
+
+        val baos = ByteArrayOutputStream()
+        scaled.compress(Bitmap.CompressFormat.JPEG, 82, baos)
+        val base64 = Base64.encodeToString(baos.toByteArray(), Base64.NO_WRAP)
+        "data:image/jpeg;base64,$base64"
+    } catch (_: Throwable) {
+        null
     }
 }
 

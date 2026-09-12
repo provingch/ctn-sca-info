@@ -12,6 +12,7 @@ public record ProfileResponse(
         boolean showMateriasPanel,
         boolean showGoogleClassroomPanel,
         boolean showSignaturePanel,
+        boolean showFotoPanel,
         boolean showSecurityPanel,
         boolean showActivityPanel,
         boolean canEditAdminOnlyProfileFields,

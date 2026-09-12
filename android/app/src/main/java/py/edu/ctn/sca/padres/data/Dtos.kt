@@ -97,6 +97,7 @@ data class ProfileResponseDto(
     val canEditAdminOnlyProfileFields: Boolean = false,
     val profileRoleLabel: String? = null,
     val activityLog: List<String> = emptyList(),
+    val showFotoPanel: Boolean = false,
 )
 
 @Serializable
@@ -107,6 +108,7 @@ data class ProfileOwnerDto(
     val correo: String? = null,
     val telefono: String? = null,
     val usuario: String? = null,
+    val fotoPerfil: String? = null,
 )
 
 @Serializable
@@ -117,6 +119,7 @@ data class SaveProfileRequest(
     val correo: String? = null,
     val telefono: String? = null,
     val ci: Int? = null,
+    val fotoPerfil: String? = null,
 )
 
 @Serializable

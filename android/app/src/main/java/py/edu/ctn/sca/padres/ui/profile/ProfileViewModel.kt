@@ -30,6 +30,8 @@ data class ProfileUiState(
     val saveError: String? = null,
     val saved: Boolean = false,
     val activityLog: List<String> = emptyList(),
+    val showFotoPanel: Boolean = false,
+    val fotoPerfil: String? = null,
     val currentPassword: String = "",
     val newPassword: String = "",
     val confirmPassword: String = "",
@@ -70,6 +72,8 @@ class ProfileViewModel(
                             saved = false,
                             saveError = null,
                             activityLog = result.data.activityLog,
+                            showFotoPanel = result.data.showFotoPanel,
+                            fotoPerfil = owner.fotoPerfil,
                         )
                     }
                 }
@@ -85,6 +89,10 @@ class ProfileViewModel(
     fun onCi(v: String) = _ui.update { it.copy(ci = v.filter { c -> c.isDigit() }, saved = false, saveError = null) }
     fun onCorreo(v: String) = _ui.update { it.copy(correo = v, saved = false, saveError = null) }
     fun onTelefono(v: String) = _ui.update { it.copy(telefono = v, saved = false, saveError = null) }
+
+    fun onFotoPerfil(base64WithPrefix: String?) = _ui.update {
+        it.copy(fotoPerfil = base64WithPrefix, saved = false, saveError = null)
+    }
 
     fun save() {
         val s = _ui.value
@@ -102,6 +110,7 @@ class ProfileViewModel(
                 ci = s.ci.trim().toLongOrNull()?.let { if (it in 1..99_999_999) it.toInt() else null },
                 correo = s.correo.trim().ifBlank { null },
                 telefono = s.telefono.trim().ifBlank { null },
+                fotoPerfil = if (s.showFotoPanel) s.fotoPerfil.orEmpty() else null,
             )
             when (val result = profileRepository.save(request)) {
                 is ProfileSave.Ok -> _ui.update {
