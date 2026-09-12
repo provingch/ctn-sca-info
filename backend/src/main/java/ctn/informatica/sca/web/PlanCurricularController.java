@@ -328,8 +328,22 @@ public class PlanCurricularController {
         User user = getCurrentUser();
         if (user == null) return ResponseEntity.status(401).build();
         if (!canReviewPlans(user)) return ResponseEntity.status(403).build();
-        
-        dao.aprobar(id, (int) getCurrentUserId());
+
+        int evaluadorId = (int) getCurrentUserId();
+        // Estampar firma del evaluador en el xlsx guardado antes de marcar aprobado.
+        try {
+            byte[] original = dao.getArchivoOriginal(id);
+            if (original != null && original.length > 0) {
+                byte[] firmado = templateBuilder.injectEvaluadorSignature(original, evaluadorId);
+                if (firmado != null && firmado != original) {
+                    dao.updateArchivoContenido(id, firmado);
+                }
+            }
+        } catch (Exception ex) {
+            log.warn("No se pudo inyectar la firma del evaluador en el plan {}: {}", id, ex.getMessage());
+        }
+
+        dao.aprobar(id, evaluadorId);
         try {
             if (activityLogService != null) {
                 var plan = dao.findById(id);

@@ -93,6 +93,15 @@ public class PlanCurricularDao extends conexion {
         }
     }
 
+    /** Reemplaza el binario del archivo aprobado (usado para inyectar la firma del evaluador). */
+    public boolean updateArchivoContenido(int id, byte[] contenido) throws SQLException {
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("UPDATE plan_curricular SET archivo_contenido = ? WHERE id = ?")) {
+            ps.setBytes(1, contenido);
+            ps.setInt(2, id);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
     public Integer findProfesorIdByPlanId(int planId) throws SQLException {
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("SELECT a.usuario_id AS profesor_id FROM plan_curricular p JOIN asignacion a ON a.id = p.asignacion_id WHERE p.id = ?")) {
             ps.setInt(1, planId);
