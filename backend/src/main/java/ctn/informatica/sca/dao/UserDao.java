@@ -93,6 +93,20 @@ public class UserDao {
         }
     }
 
+    /** Devuelve el data URL de la firma (o null si no hay). Usado por el generador de plantillas. */
+    public String findFirmaImagenById(int userId) throws SQLException {
+        String sql = "SELECT firma_imagen FROM usuario WHERE id = ?";
+        try (Connection con = new conexion().getCon(); PreparedStatement stm = con.prepareStatement(sql)) {
+            stm.setInt(1, userId);
+            try (ResultSet rs = stm.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("firma_imagen");
+                }
+            }
+        }
+        return null;
+    }
+
     private User findProfessorUser(String username, String password) throws Exception {
         String sql = "select * from usuario where nivel <> 4 and (usuario = ? OR ci = ?)";
         try (Connection con = new conexion().getCon();
