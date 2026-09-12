@@ -16,6 +16,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -222,6 +227,127 @@ private fun ProfileForm(ui: ProfileUiState, vm: ProfileViewModel) {
         ) {
             Text(if (ui.saving) "Guardando…" else "Guardar cambios", fontWeight = FontWeight.Bold)
         }
+
+        Panel {
+            Eyebrow("04 · Seguridad")
+            Text(
+                "Cambiá la contraseña de tu cuenta. Se cerrarán tus otras sesiones.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
+            )
+            PasswordField(
+                label = "Contraseña actual",
+                value = ui.currentPassword,
+                onValueChange = vm::onCurrentPassword,
+            )
+            Spacer(Modifier.height(10.dp))
+            PasswordField(
+                label = "Nueva contraseña",
+                value = ui.newPassword,
+                onValueChange = vm::onNewPassword,
+            )
+            Spacer(Modifier.height(10.dp))
+            PasswordField(
+                label = "Confirmar nueva contraseña",
+                value = ui.confirmPassword,
+                onValueChange = vm::onConfirmPassword,
+                imeAction = ImeAction.Done,
+            )
+            ui.passwordError?.let { msg ->
+                Text(
+                    msg,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+            if (ui.passwordChanged && ui.passwordError == null) {
+                Text(
+                    "Contraseña actualizada.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = scaColors.success,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+            Button(
+                onClick = vm::changePassword,
+                enabled = !ui.changingPassword,
+                shape = RoundedCornerShape(9.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+            ) {
+                Text(
+                    if (ui.changingPassword) "Actualizando…" else "Cambiar contraseña",
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
+
+        Panel {
+            Eyebrow("05 · Registros")
+            Text(
+                "Actividad reciente de tu cuenta.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
+            )
+            if (ui.activityLog.isEmpty()) {
+                Text(
+                    "Todavía no hay actividad registrada.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ui.activityLog.forEach { entry ->
+                        Text(
+                            entry,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PasswordField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    imeAction: ImeAction = ImeAction.Next,
+) {
+    var visible by remember { mutableStateOf(false) }
+    Column {
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(bottom = 6.dp),
+        )
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = true,
+            shape = RoundedCornerShape(9.dp),
+            visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                imeAction = imeAction,
+            ),
+            trailingIcon = {
+                androidx.compose.material3.TextButton(onClick = { visible = !visible }) {
+                    Text(if (visible) "Ocultar" else "Ver")
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 

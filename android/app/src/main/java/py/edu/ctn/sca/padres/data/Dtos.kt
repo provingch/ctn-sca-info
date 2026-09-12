@@ -96,6 +96,7 @@ data class ProfileResponseDto(
     val profileOwner: ProfileOwnerDto = ProfileOwnerDto(),
     val canEditAdminOnlyProfileFields: Boolean = false,
     val profileRoleLabel: String? = null,
+    val activityLog: List<String> = emptyList(),
 )
 
 @Serializable
@@ -116,6 +117,13 @@ data class SaveProfileRequest(
     val correo: String? = null,
     val telefono: String? = null,
     val ci: Int? = null,
+)
+
+@Serializable
+data class ChangePasswordRequest(
+    val currentPassword: String,
+    val newPassword: String,
+    val confirmPassword: String,
 )
 
 /** Cuerpo de error que devuelve `ApiExceptionHandler` (status, error, message). */

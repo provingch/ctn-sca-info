@@ -46,6 +46,9 @@ interface ProfileApi {
 
     @POST("api/profile/save-profile")
     suspend fun save(@Body body: SaveProfileRequest): Response<Unit>
+
+    @POST("api/profile/change-password")
+    suspend fun changePassword(@Body body: ChangePasswordRequest): Response<Unit>
 }
 
 interface PushApi {
