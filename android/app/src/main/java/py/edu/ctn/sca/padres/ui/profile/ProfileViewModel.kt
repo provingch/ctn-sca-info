@@ -17,10 +17,12 @@ data class ProfileUiState(
     val loadError: String? = null,
     val nombre: String = "",
     val apellido: String = "",
+    val ci: String = "",
     val correo: String = "",
     val telefono: String = "",
     val usuario: String = "",
-    /** Nombre/apellido solo los edita un admin; para el padre suele venir en false. */
+    val roleLabel: String = "",
+    /** Nombre/apellido/CI solo los edita un admin; para el padre suele venir en false. */
     val canEditIdentity: Boolean = false,
     val saving: Boolean = false,
     val saveError: String? = null,
@@ -50,9 +52,11 @@ class ProfileViewModel(
                             loadError = null,
                             nombre = owner.nombre.orEmpty(),
                             apellido = owner.apellido.orEmpty(),
+                            ci = owner.ci?.toString().orEmpty(),
                             correo = owner.correo.orEmpty(),
                             telefono = owner.telefono.orEmpty(),
                             usuario = owner.usuario.orEmpty(),
+                            roleLabel = result.data.profileRoleLabel.orEmpty(),
                             canEditIdentity = result.data.canEditAdminOnlyProfileFields,
                             saved = false,
                             saveError = null,
@@ -68,6 +72,7 @@ class ProfileViewModel(
 
     fun onNombre(v: String) = _ui.update { it.copy(nombre = v, saved = false, saveError = null) }
     fun onApellido(v: String) = _ui.update { it.copy(apellido = v, saved = false, saveError = null) }
+    fun onCi(v: String) = _ui.update { it.copy(ci = v.filter { c -> c.isDigit() }, saved = false, saveError = null) }
     fun onCorreo(v: String) = _ui.update { it.copy(correo = v, saved = false, saveError = null) }
     fun onTelefono(v: String) = _ui.update { it.copy(telefono = v, saved = false, saveError = null) }
 
@@ -84,6 +89,7 @@ class ProfileViewModel(
                 usuario = s.usuario.trim(),
                 nombre = s.nombre.trim().ifBlank { null },
                 apellido = s.apellido.trim().ifBlank { null },
+                ci = s.ci.trim().toLongOrNull()?.let { if (it in 1..99_999_999) it.toInt() else null },
                 correo = s.correo.trim().ifBlank { null },
                 telefono = s.telefono.trim().ifBlank { null },
             )
@@ -93,9 +99,9 @@ class ProfileViewModel(
                         saving = false,
                         saved = true,
                         saveError = null,
-                        // Reflejar lo que efectivamente se envió (ya recortado).
                         nombre = request.nombre.orEmpty(),
                         apellido = request.apellido.orEmpty(),
+                        ci = request.ci?.toString().orEmpty(),
                         correo = request.correo.orEmpty(),
                         telefono = request.telefono.orEmpty(),
                     )
