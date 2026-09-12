@@ -105,6 +105,28 @@ public class HomeController {
         this(new CursoDao(), new CursoBaseDao(), new AsignacionDao(), new ProfesorDao(), new PlanillaDao(), new MateriaDao(), new AlumnoDao(), new RasgoPlanillaDao(), new InstrumentoDao(), new UserDao(), new PlanCurricularDao(), new TemaVerificacionService(), new ActivityLogService(), new ConfiguracionSistemaDao(), new IncumplimientoRevisionDao(), new NotificacionDao(), new QuejaDao(), new HorarioSlotDao());
     }
 
+    /** Compat constructor for tests written before HorarioSlotDao was injected. */
+    public HomeController(
+            CursoDao cursoDao,
+            CursoBaseDao cursoBaseDao,
+            AsignacionDao asignacionDao,
+            ProfesorDao profesorDao,
+            PlanillaDao planillaDao,
+            MateriaDao materiaDao,
+            AlumnoDao alumnoDao,
+            RasgoPlanillaDao rasgoPlanillaDao,
+            InstrumentoDao instrumentoDao,
+            UserDao userDao,
+            PlanCurricularDao planCurricularDao,
+            TemaVerificacionService temaVerificacionService,
+            ActivityLogService activityLogService,
+            ConfiguracionSistemaDao configuracionSistemaDao,
+            IncumplimientoRevisionDao incumplimientoRevisionDao,
+            NotificacionDao notificacionDao,
+            QuejaDao quejaDao) {
+        this(cursoDao, cursoBaseDao, asignacionDao, profesorDao, planillaDao, materiaDao, alumnoDao, rasgoPlanillaDao, instrumentoDao, userDao, planCurricularDao, temaVerificacionService, activityLogService, configuracionSistemaDao, incumplimientoRevisionDao, notificacionDao, quejaDao, null);
+    }
+
     @Autowired
     public HomeController(
             CursoDao cursoDao,
