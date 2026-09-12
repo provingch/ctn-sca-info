@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { createClass, crearCodigoConducta, desactivarCodigoConducta, getHome, listarCodigosConducta, updateRasgoCodigos, type CodigoConducta, type HomeResponse } from '../../api/home';
+import { createClass, crearCodigoConducta, desactivarCodigoConducta, getClaseActual, getHome, listarCodigosConducta, updateRasgoCodigos, type ClaseActualDto, type CodigoConducta, type HomeResponse } from '../../api/home';
 import { ApiError } from '../../api/client';
 import AppShell from '../../components/AppShell';
 import ContentState from '../../components/ui/ContentState';
@@ -366,6 +366,9 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
     setCodigosPorAlumno(initial);
   }, [data.rasgoAsistencias]);
 
+  const [claseActual, setClaseActual] = useState<ClaseActualDto | null>(null);
+  const [autoTemaAplicado, setAutoTemaAplicado] = useState(false);
+
   useEffect(() => {
     // when course selection changes, fetch available assignments for this professor
     if (!data.selCurso) { setAsignacionesDisponibles([]); setSelectedAsignacionId(null); return; }
@@ -382,6 +385,31 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
       }
     })();
   }, [data.selCurso]);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const info = await getClaseActual();
+        if (active) setClaseActual(info);
+      } catch {
+        if (active) setClaseActual(null);
+      }
+    })();
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!claseActual?.hasClaseAhora || !data.selCurso) return;
+    if (claseActual.cursoId !== data.selCurso.id) return;
+    if (claseActual.asignacionId && asignacionesDisponibles.some((a) => a.id === claseActual.asignacionId)) {
+      setSelectedAsignacionId((prev) => prev ?? claseActual.asignacionId!);
+    }
+    if (!autoTemaAplicado && claseActual.temaSugerido && !tema) {
+      setTema(claseActual.temaSugerido);
+      setAutoTemaAplicado(true);
+    }
+  }, [claseActual, data.selCurso, asignacionesDisponibles, tema, autoTemaAplicado]);
 
   async function changeCodigos(alumnoId: number, codigos: string[]) {
     setCodigosPorAlumno((current) => ({ ...current, [alumnoId]: codigos }));
@@ -496,6 +524,17 @@ function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise
               Ir a cargar/revisar Plan curricular
             </button>
           )}
+        </div>
+      )}
+      {claseActual?.hasClaseAhora && (
+        <div className="panel" style={{ gridColumn: '1 / -1', marginBottom: 0 }}>
+          <div className="notice" role="status" style={{ margin: 0 }}>
+            <p style={{ margin: 0 }}>
+              <strong>Clase en curso según tu horario:</strong> {claseActual.materia} — {claseActual.cursoDescripcion}
+              {claseActual.horaInicio ? ` (${claseActual.horaInicio}${claseActual.horaFin ? '–' + claseActual.horaFin : ''})` : ''}
+              {claseActual.temaSugerido ? '. Se autocompletó el tema según tu plan curricular aprobado.' : '.'}
+            </p>
+          </div>
         </div>
       )}
       <form className="panel" onSubmit={create} style={{ display: 'grid', gap: 12, gridColumn: '1 / -1' }}>

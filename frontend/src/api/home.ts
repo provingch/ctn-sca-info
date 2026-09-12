@@ -86,6 +86,22 @@ export interface GetHomeParams {
   view?: 'clase' | 'planillas';
 }
 
+export interface ClaseActualDto {
+  hasClaseAhora: boolean;
+  asignacionId?: number;
+  cursoId?: number;
+  materia?: string;
+  cursoDescripcion?: string;
+  etapa?: number;
+  horaInicio?: string;
+  horaFin?: string;
+  temaSugerido?: string;
+}
+
+export function getClaseActual(): Promise<ClaseActualDto> {
+  return apiRequest<ClaseActualDto>('/api/home/clase-actual', { method: 'GET' });
+}
+
 export function getHome(params: GetHomeParams = {}): Promise<HomeResponse> {
   const query = new URLSearchParams();
   if (params.cursoId !== undefined) query.set('cursoId', String(params.cursoId));

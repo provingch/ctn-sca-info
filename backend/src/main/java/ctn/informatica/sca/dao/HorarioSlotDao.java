@@ -7,6 +7,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Time;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Repository;
@@ -355,6 +357,58 @@ public class HorarioSlotDao extends conexion {
                 slot.setProfesorNombre(buildFullName(rs.getString("profesor_apellido"), rs.getString("profesor_nombre")));
                 slot.setHoraCatedraNumero(rs.getInt("hora_catedra_numero")); slot.setHoraCatedraEtiqueta(rs.getString("hora_catedra_etiqueta"));
                 slot.setHoraInicio(rs.getString("hora_inicio")); slot.setHoraFin(rs.getString("hora_fin"));
+                return slot;
+            }
+        }
+    }
+
+    /**
+     * Devuelve el slot del profesor cuya hora catedra abarca la hora dada, para el dia_semana indicado.
+     * Retorna null si el profesor no tiene clase asignada en ese momento.
+     */
+    public HorarioSlot findCurrentSlot(int usuarioId, int diaSemana, LocalTime hora) throws SQLException {
+        String sql = "SELECT hs.id, hs.asignacion_id, hs.usuario_id, hs.curso_base_id AS curso_id, hs.dia_semana, hs.hora_catedra_id, hs.sala_id, s.nombre AS sala_nombre, "
+                + "m.nombre AS materia_nombre, e.nombre AS especialidad, cb.nivel, cb.seccion, "
+                + "u.nombre AS profesor_nombre, u.apellido AS profesor_apellido, "
+                + "hc.numero AS hora_catedra_numero, hc.etiqueta AS hora_catedra_etiqueta, "
+                + "TIME_FORMAT(hc.hora_inicio, '%H:%i') AS hora_inicio, TIME_FORMAT(hc.hora_fin, '%H:%i') AS hora_fin "
+                + "FROM horario_slot hs "
+                + "LEFT JOIN sala s ON s.id = hs.sala_id "
+                + "JOIN asignacion a ON a.id = hs.asignacion_id "
+                + "JOIN usuario u ON u.id = hs.usuario_id "
+                + "JOIN materia m ON m.id = a.materia_id "
+                + "JOIN curso_base cb ON cb.id = hs.curso_base_id "
+                + "JOIN especialidad e ON e.id = cb.especialidad_id "
+                + "JOIN hora_catedra hc ON hc.id = hs.hora_catedra_id "
+                + "WHERE hs.usuario_id = ? AND hs.dia_semana = ? "
+                + "AND hc.hora_inicio <= ? AND hc.hora_fin > ? "
+                + "ORDER BY hc.hora_inicio DESC LIMIT 1";
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, usuarioId);
+            ps.setInt(2, diaSemana);
+            Time t = Time.valueOf(hora);
+            ps.setTime(3, t);
+            ps.setTime(4, t);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                HorarioSlot slot = new HorarioSlot();
+                slot.setId(rs.getInt("id"));
+                slot.setAsignacionId(rs.getInt("asignacion_id"));
+                slot.setUsuarioId(rs.getInt("usuario_id"));
+                slot.setCursoId(rs.getInt("curso_id"));
+                slot.setDiaSemana(rs.getInt("dia_semana"));
+                slot.setHoraCatedraId(rs.getInt("hora_catedra_id"));
+                slot.setSalaId(rs.getObject("sala_id") == null ? null : rs.getInt("sala_id"));
+                slot.setSalaNombre(rs.getString("sala_nombre"));
+                slot.setMateriaNombre(rs.getString("materia_nombre"));
+                String especialidad = rs.getString("especialidad");
+                String seccion = rs.getString("seccion");
+                slot.setCursoDescripcion((especialidad == null ? "" : especialidad) + (seccion == null || seccion.isBlank() ? "" : (" " + seccion)));
+                slot.setProfesorNombre(buildFullName(rs.getString("profesor_apellido"), rs.getString("profesor_nombre")));
+                slot.setHoraCatedraNumero(rs.getInt("hora_catedra_numero"));
+                slot.setHoraCatedraEtiqueta(rs.getString("hora_catedra_etiqueta"));
+                slot.setHoraInicio(rs.getString("hora_inicio"));
+                slot.setHoraFin(rs.getString("hora_fin"));
                 return slot;
             }
         }
