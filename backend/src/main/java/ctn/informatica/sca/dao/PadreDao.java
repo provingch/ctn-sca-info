@@ -20,7 +20,7 @@ import org.springframework.stereotype.Repository;
 public class PadreDao extends conexion {
 
     public List<Padre> findAll() throws SQLException {
-        String sql = "SELECT id, ci, nombre, apellido, usuario, contrasenia, correo, telefono, totp_secret "
+        String sql = "SELECT id, ci, nombre, apellido, usuario, contrasenia, correo, telefono, totp_secret, foto_perfil "
                 + "FROM usuario WHERE nivel = 4 ORDER BY apellido, nombre";
         List<Padre> padres = new ArrayList<>();
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
@@ -47,7 +47,7 @@ public class PadreDao extends conexion {
         }
         String term = query.trim();
         String likeTerm = "%" + term.toLowerCase() + "%";
-        String sql = "SELECT id, ci, nombre, apellido, usuario, contrasenia, correo, telefono, totp_secret "
+        String sql = "SELECT id, ci, nombre, apellido, usuario, contrasenia, correo, telefono, totp_secret, foto_perfil "
                 + "FROM usuario WHERE nivel = 4 AND "
                 + "(CAST(ci AS CHAR) = ? OR LOWER(nombre) LIKE ? OR LOWER(apellido) LIKE ? OR LOWER(usuario) LIKE ?) "
                 + "ORDER BY apellido, nombre LIMIT 20";
@@ -69,6 +69,7 @@ public class PadreDao extends conexion {
                     padre.setCorreo(rs.getString("correo"));
                     padre.setTelefono(rs.getString("telefono"));
                     padre.setTotpSecret(rs.getString("totp_secret"));
+                    padre.setFotoPerfil(rs.getString("foto_perfil"));
                     padres.add(padre);
                 }
             }
@@ -77,7 +78,7 @@ public class PadreDao extends conexion {
     }
 
     public Padre findById(int id) throws SQLException {
-        String sql = "SELECT id, ci, nombre, apellido, usuario, contrasenia, correo, telefono, totp_secret FROM usuario WHERE nivel = 4 AND id = ?";
+        String sql = "SELECT id, ci, nombre, apellido, usuario, contrasenia, correo, telefono, totp_secret, foto_perfil FROM usuario WHERE nivel = 4 AND id = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
@@ -92,6 +93,7 @@ public class PadreDao extends conexion {
                     padre.setCorreo(rs.getString("correo"));
                     padre.setTelefono(rs.getString("telefono"));
                     padre.setTotpSecret(rs.getString("totp_secret"));
+                    padre.setFotoPerfil(rs.getString("foto_perfil"));
                     return padre;
                 }
             }
@@ -100,7 +102,7 @@ public class PadreDao extends conexion {
     }
 
     public boolean update(Padre padre) throws SQLException {
-        String sql = "UPDATE usuario SET ci = ?, nombre = ?, apellido = ?, usuario = ?, contrasenia = ?, telefono = ?, correo = ?, totp_secret = ? WHERE nivel = 4 AND id = ?";
+        String sql = "UPDATE usuario SET ci = ?, nombre = ?, apellido = ?, usuario = ?, contrasenia = ?, telefono = ?, correo = ?, totp_secret = ?, foto_perfil = ? WHERE nivel = 4 AND id = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
             if (padre.getCi() != null) {
                 ps.setInt(1, padre.getCi());
@@ -125,7 +127,12 @@ public class PadreDao extends conexion {
             } else {
                 ps.setNull(8, java.sql.Types.VARCHAR);
             }
-            ps.setInt(9, padre.getId());
+            if (padre.getFotoPerfil() != null && !padre.getFotoPerfil().isBlank()) {
+                ps.setString(9, padre.getFotoPerfil());
+            } else {
+                ps.setNull(9, java.sql.Types.LONGVARCHAR);
+            }
+            ps.setInt(10, padre.getId());
             return ps.executeUpdate() == 1;
         }
     }
@@ -176,7 +183,7 @@ public class PadreDao extends conexion {
     }
 
     public List<Padre> findPadresByAlumnoId(int alumnoId) throws SQLException {
-        String sql = "SELECT u.id, u.ci, u.nombre, u.apellido, u.usuario, u.contrasenia, u.correo, u.telefono, u.totp_secret "
+        String sql = "SELECT u.id, u.ci, u.nombre, u.apellido, u.usuario, u.contrasenia, u.correo, u.telefono, u.totp_secret, u.foto_perfil "
                 + "FROM alumno_usuario ap "
                 + "JOIN usuario u ON u.id = ap.usuario_id "
                 + "WHERE ap.alumno_id = ? AND u.nivel = 4 "
@@ -196,6 +203,7 @@ public class PadreDao extends conexion {
                     padre.setCorreo(rs.getString("correo"));
                     padre.setTelefono(rs.getString("telefono"));
                     padre.setTotpSecret(rs.getString("totp_secret"));
+                    padre.setFotoPerfil(rs.getString("foto_perfil"));
                     padres.add(padre);
                 }
             }

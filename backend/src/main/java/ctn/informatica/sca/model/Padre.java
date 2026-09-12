@@ -10,6 +10,7 @@ public class Padre {
     private String correo;
     private String telefono;
     private String totpSecret;
+    private String fotoPerfil;
 
     public String getFullName() {
         return ((nombre == null ? "" : nombre) + " " + (apellido == null ? "" : apellido)).trim();
@@ -85,5 +86,13 @@ public class Padre {
 
     public void setTotpSecret(String totpSecret) {
         this.totpSecret = totpSecret;
+    }
+
+    public String getFotoPerfil() {
+        return fotoPerfil;
+    }
+
+    public void setFotoPerfil(String fotoPerfil) {
+        this.fotoPerfil = fotoPerfil;
     }
 }

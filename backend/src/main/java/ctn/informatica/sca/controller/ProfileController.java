@@ -123,7 +123,8 @@ public class ProfileController {
         Profesor profesor = null;
         Padre padre = null;
         boolean isProfessorProfile = user.getLevel() == 1;
-        boolean showSignaturePanel = user.getLevel() == 1 || user.getLevel() == 2;
+        boolean showSignaturePanel = user.getLevel() == 1 || user.getLevel() == 2 || user.getLevel() == 5;
+        boolean showFotoPanel = user.getLevel() != 3;
         boolean isStaffProfile = user.getLevel() >= 1 && user.getLevel() <= 3 || user.getLevel() == 5;
         boolean isParentProfile = user.getLevel() == 4;
 
@@ -192,6 +193,7 @@ public class ProfileController {
                 isProfessorProfile,
                 isProfessorProfile,
                 showSignaturePanel,
+                showFotoPanel,
                 true,
                 true,
                 canModifyField("nombre", user),
@@ -436,20 +438,45 @@ public class ProfileController {
                         errors.add("Solo el administrador puede modificar la cédula.");
                     }
                 }
+                boolean fotoCambiadaPadre = false;
+                if (request.fotoPerfil() != null) {
+                    String raw = request.fotoPerfil().trim();
+                    if (raw.isEmpty()) {
+                        if (padre.getFotoPerfil() != null) {
+                            fotoCambiadaPadre = true;
+                        }
+                        padre.setFotoPerfil(null);
+                    } else {
+                        int idx = raw.indexOf(',');
+                        String payload = idx >= 0 ? raw.substring(idx + 1) : raw;
+                        int approxBytes = Math.round((float) payload.length() * 3f / 4f);
+                        int maxBytes = 1_500_000;
+                        if (approxBytes > maxBytes) {
+                            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La foto de perfil es demasiado grande. Reduce el tamaño antes de guardar.");
+                        }
+                        if (!Objects.equals(padre.getFotoPerfil(), raw)) {
+                            fotoCambiadaPadre = true;
+                        }
+                        padre.setFotoPerfil(raw);
+                    }
+                }
                 if (!errors.isEmpty()) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, String.join(" ", errors));
                 }
                 if (!padreDao.update(padre)) {
                     throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudieron guardar los datos. Intente de nuevo más tarde.");
                 }
-                registrarCambiosPerfil(user.getId(), List.of(
-                        detalleCambio("correo", previousCorreo, padre.getCorreo()),
-                        detalleCambio("telefono", previousTelefono, padre.getTelefono()),
-                        detalleCambio("usuario", previousUsuario, padre.getUsuario()),
-                        detalleCambio("nombre", previousNombre, padre.getNombre()),
-                        detalleCambio("apellido", previousApellido, padre.getApellido()),
-                        detalleCambio("ci", previousCi, padre.getCi())
-                ));
+                List<String> cambiosPadre = new ArrayList<>();
+                addCambio(cambiosPadre, "correo", previousCorreo, padre.getCorreo());
+                addCambio(cambiosPadre, "telefono", previousTelefono, padre.getTelefono());
+                addCambio(cambiosPadre, "usuario", previousUsuario, padre.getUsuario());
+                addCambio(cambiosPadre, "nombre", previousNombre, padre.getNombre());
+                addCambio(cambiosPadre, "apellido", previousApellido, padre.getApellido());
+                addCambio(cambiosPadre, "ci", previousCi, padre.getCi());
+                if (fotoCambiadaPadre) {
+                    cambiosPadre.add("foto de perfil actualizada");
+                }
+                registrarCambiosPerfil(user.getId(), cambiosPadre);
                 return;
             }
 
@@ -663,7 +690,7 @@ public class ProfileController {
                     null,
                     null,
                     null,
-                    null
+                    padre.getFotoPerfil()
             );
         }
         return new ProfileOwnerDto(null, null, null, null, null, null, null, null, null, null, null, null, null, null);
