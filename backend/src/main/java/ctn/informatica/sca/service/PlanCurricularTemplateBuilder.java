@@ -56,10 +56,15 @@ public class PlanCurricularTemplateBuilder {
     public static final int MAX_BLOCKS_PER_MONTH = 20;
 
     private static final Map<String, List<String>> MESES_POR_ETAPA;
+    /** Pool viejo (sin Julio en etapa 1) usado por el endpoint GET legacy. */
+    private static final Map<String, List<String>> MESES_LEGACY;
     static {
         MESES_POR_ETAPA = new LinkedHashMap<>();
         MESES_POR_ETAPA.put("1", List.of("Marzo", "Abril", "Mayo", "Junio", "Julio"));
         MESES_POR_ETAPA.put("2", List.of("Julio", "Agosto", "Septiembre", "Octubre", "Noviembre"));
+        MESES_LEGACY = new LinkedHashMap<>();
+        MESES_LEGACY.put("1", List.of("Marzo", "Abril", "Mayo", "Junio"));
+        MESES_LEGACY.put("2", List.of("Julio", "Agosto", "Septiembre", "Octubre", "Noviembre"));
     }
 
     static int ordenMesEnEtapa(String mes, String etapa) {
@@ -84,10 +89,22 @@ public class PlanCurricularTemplateBuilder {
         return l == null ? MESES_POR_ETAPA.get("1") : l;
     }
 
-    /** Compat: se conserva la firma antigua para no romper llamadores existentes. */
+    /**
+     * Compat: se conserva la firma antigua para no romper llamadores existentes. Usa el
+     * pool "legacy" (etapa 1 sin Julio) para no cambiar la salida del endpoint GET viejo.
+     */
     public byte[] buildForAsignacion(int asignacionId, String etapaOverride) throws Exception {
+        String etapa = (etapaOverride != null && ("1".equals(etapaOverride.trim()) || "2".equals(etapaOverride.trim())))
+                ? etapaOverride.trim()
+                : String.valueOf(AcademicPeriod.currentEtapa());
         PlanTemplateConfigDto def = new PlanTemplateConfigDto();
-        def.etapa = etapaOverride;
+        def.etapa = etapa;
+        for (String m : MESES_LEGACY.get(etapa)) {
+            PlanTemplateConfigDto.MesConfig mc = new PlanTemplateConfigDto.MesConfig();
+            mc.mes = m;
+            mc.bloques = 4;
+            def.meses.add(mc);
+        }
         return buildForAsignacion(asignacionId, def);
     }
 

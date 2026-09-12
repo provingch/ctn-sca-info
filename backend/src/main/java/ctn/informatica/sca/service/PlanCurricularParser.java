@@ -24,9 +24,16 @@ public class PlanCurricularParser {
     private static final String ETAPA_PARSE_ERROR =
             "No se pudo interpretar la etapa/año del plan. Descargá la plantilla actual y volvé a completarla.";
     private static final Map<String, List<String>> MESES_POR_ETAPA = new LinkedHashMap<>();
+    /**
+     * Meses obligatorios para archivos entregados con el layout viejo (sin hoja _META).
+     * Etapa 1 no incluye Julio porque los planes pre-existentes tienen sólo hasta Junio.
+     */
+    private static final Map<String, List<String>> MESES_LEGACY = new LinkedHashMap<>();
     static {
         MESES_POR_ETAPA.put("1", List.of("Marzo", "Abril", "Mayo", "Junio", "Julio"));
         MESES_POR_ETAPA.put("2", List.of("Julio", "Agosto", "Septiembre", "Octubre", "Noviembre"));
+        MESES_LEGACY.put("1", List.of("Marzo", "Abril", "Mayo", "Junio"));
+        MESES_LEGACY.put("2", List.of("Julio", "Agosto", "Septiembre", "Octubre", "Noviembre"));
     }
 
     private static int ordenMesEnEtapa(String mes, String etapa) {
@@ -148,7 +155,8 @@ public class PlanCurricularParser {
 
     private List<String> mesesEsperadosParaEtapa(String etapa) {
         if (etapa == null) throw new IllegalArgumentException(ETAPA_PARSE_ERROR);
-        List<String> meses = MESES_POR_ETAPA.get(etapa.trim());
+        // Sin META asumimos el layout viejo (etapa 1 sin Julio).
+        List<String> meses = MESES_LEGACY.get(etapa.trim());
         if (meses == null) throw new IllegalArgumentException(ETAPA_PARSE_ERROR);
         return meses;
     }
