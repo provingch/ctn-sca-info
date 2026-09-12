@@ -366,6 +366,32 @@ public class PlanCurricularDao extends conexion {
         }
     }
 
+    /**
+     * Devuelve el próximo tema PENDIENTE del plan aprobado para la asignación/etapa/año.
+     * Ordena por mes cronológico (año lectivo Marzo→Febrero) y por orden_mes.
+     * Retorna null si no hay plan aprobado o si todos los temas ya fueron cubiertos.
+     */
+    public String findProximoTemaPendiente(int asignacionId, String etapa, int anio) throws SQLException {
+        String sql = "SELECT t.temas_contenidos FROM tema_plan_curricular t "
+                + "JOIN plan_curricular p ON p.id = t.plan_curricular_id "
+                + "WHERE p.asignacion_id = ? AND p.etapa = ? AND p.anio_lectivo = ? "
+                + "AND p.estado = 'APROBADO' AND (t.estado_cobertura IS NULL OR t.estado_cobertura = 'PENDIENTE') "
+                + "ORDER BY FIELD(LOWER(t.mes), 'marzo','abril','mayo','junio','julio','agosto','septiembre','setiembre','octubre','noviembre','diciembre','enero','febrero') ASC, "
+                + "t.orden_mes ASC, t.bloque ASC LIMIT 1";
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, asignacionId);
+            ps.setString(2, etapa);
+            ps.setInt(3, anio);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String tema = rs.getString(1);
+                    return tema == null || tema.isBlank() ? null : tema.trim();
+                }
+                return null;
+            }
+        }
+    }
+
     public void marcarCubierto(int temaId, int planillaRasgoId) throws SQLException {
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("UPDATE tema_plan_curricular SET estado_cobertura = 'CUBIERTO', fecha_cobertura = CURRENT_TIMESTAMP, planilla_rasgo_id = ? WHERE id = ?")) {
             ps.setInt(1, planillaRasgoId);

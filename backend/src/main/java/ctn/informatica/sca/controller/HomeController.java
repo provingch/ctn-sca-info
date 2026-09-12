@@ -5,6 +5,7 @@ import ctn.informatica.sca.dao.AsignacionDao;
 import ctn.informatica.sca.dao.ConfiguracionSistemaDao;
 import ctn.informatica.sca.dao.CursoBaseDao;
 import ctn.informatica.sca.dao.CursoDao;
+import ctn.informatica.sca.dao.HorarioSlotDao;
 import ctn.informatica.sca.dao.IncumplimientoRevisionDao;
 import ctn.informatica.sca.dao.InstrumentoDao;
 import ctn.informatica.sca.dao.MateriaDao;
@@ -32,6 +33,7 @@ import ctn.informatica.sca.google.GoogleClassroomService;
 import ctn.informatica.sca.model.Alumno;
 import ctn.informatica.sca.model.Asignacion;
 import ctn.informatica.sca.model.Curso;
+import ctn.informatica.sca.model.HorarioSlot;
 import ctn.informatica.sca.model.Instrumento;
 import ctn.informatica.sca.model.Planilla;
 import ctn.informatica.sca.model.Profesor;
@@ -46,6 +48,9 @@ import ctn.informatica.sca.service.VerificacionResultado;
 import com.google.api.services.classroom.model.Course;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -94,9 +99,10 @@ public class HomeController {
     private final IncumplimientoRevisionDao incumplimientoRevisionDao;
     private final NotificacionDao notificacionDao;
     private final QuejaDao quejaDao;
+    private final HorarioSlotDao horarioSlotDao;
 
     public HomeController() {
-        this(new CursoDao(), new CursoBaseDao(), new AsignacionDao(), new ProfesorDao(), new PlanillaDao(), new MateriaDao(), new AlumnoDao(), new RasgoPlanillaDao(), new InstrumentoDao(), new UserDao(), new PlanCurricularDao(), new TemaVerificacionService(), new ActivityLogService(), new ConfiguracionSistemaDao(), new IncumplimientoRevisionDao(), new NotificacionDao(), new QuejaDao());
+        this(new CursoDao(), new CursoBaseDao(), new AsignacionDao(), new ProfesorDao(), new PlanillaDao(), new MateriaDao(), new AlumnoDao(), new RasgoPlanillaDao(), new InstrumentoDao(), new UserDao(), new PlanCurricularDao(), new TemaVerificacionService(), new ActivityLogService(), new ConfiguracionSistemaDao(), new IncumplimientoRevisionDao(), new NotificacionDao(), new QuejaDao(), new HorarioSlotDao());
     }
 
     @Autowired
@@ -117,7 +123,8 @@ public class HomeController {
             ConfiguracionSistemaDao configuracionSistemaDao,
             IncumplimientoRevisionDao incumplimientoRevisionDao,
             NotificacionDao notificacionDao,
-            QuejaDao quejaDao) {
+            QuejaDao quejaDao,
+            HorarioSlotDao horarioSlotDao) {
         this.cursoDao = cursoDao;
         this.cursoBaseDao = cursoBaseDao;
         this.asignacionDao = asignacionDao;
@@ -135,6 +142,7 @@ public class HomeController {
         this.incumplimientoRevisionDao = incumplimientoRevisionDao;
         this.notificacionDao = notificacionDao;
         this.quejaDao = quejaDao;
+        this.horarioSlotDao = horarioSlotDao;
     }
 
     @GetMapping
@@ -345,6 +353,56 @@ public class HomeController {
                 alumnosInvalidos.stream().map(this::toAlumnoDto).collect(Collectors.toList()),
                 instrumentos.stream().map(this::toInstrumentoDto).collect(Collectors.toList())
         );
+    }
+
+    /**
+     * Devuelve la clase en curso del profesor según su horario ahora mismo.
+     * Si tiene plan curricular APROBADO para la etapa actual, incluye temaSugerido (próximo bloque PENDIENTE).
+     */
+    @GetMapping("/clase-actual")
+    @PreAuthorize("hasRole('LEVEL_1')")
+    public java.util.Map<String, Object> claseActual(Authentication authentication) {
+        int usuarioId = ApiAuth.requireUserId(authentication);
+        LocalDate hoy = LocalDate.now();
+        LocalTime ahora = LocalTime.now();
+        int diaSemana = hoy.getDayOfWeek().getValue(); // Lunes=1 … Domingo=7
+        if (diaSemana == 7) {
+            return java.util.Map.of("hasClaseAhora", false);
+        }
+        HorarioSlot slot;
+        try {
+            slot = horarioSlotDao.findCurrentSlot(usuarioId, diaSemana, ahora);
+        } catch (SQLException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo consultar el horario", ex);
+        }
+        if (slot == null) {
+            return java.util.Map.of("hasClaseAhora", false);
+        }
+
+        int mes = hoy.getMonthValue();
+        int etapa = mes >= 3 && mes <= 7 ? 1 : 2;
+        int anio = hoy.getYear();
+
+        String temaSugerido = null;
+        try {
+            temaSugerido = planCurricularDao.findProximoTemaPendiente(slot.getAsignacionId(), String.valueOf(etapa), anio);
+        } catch (SQLException ex) {
+            log.warn("No se pudo consultar próximo tema pendiente para asignacion {}: {}", slot.getAsignacionId(), ex.getMessage());
+        }
+
+        Map<String, Object> out = new HashMap<>();
+        out.put("hasClaseAhora", true);
+        out.put("asignacionId", slot.getAsignacionId());
+        out.put("cursoId", slot.getCursoId());
+        out.put("materia", slot.getMateriaNombre());
+        out.put("cursoDescripcion", slot.getCursoDescripcion());
+        out.put("etapa", etapa);
+        out.put("horaInicio", slot.getHoraInicio());
+        out.put("horaFin", slot.getHoraFin());
+        if (temaSugerido != null) {
+            out.put("temaSugerido", temaSugerido);
+        }
+        return out;
     }
 
     @PostMapping("/create-rasgo-planilla")
