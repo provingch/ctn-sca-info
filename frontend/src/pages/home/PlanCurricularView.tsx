@@ -5,6 +5,7 @@ import * as planCurricularApi from '../../api/planCurricular';
 import useAccessibleDialog from '../../hooks/useAccessibleDialog';
 import { useToast } from '../../context/toast';
 import { formatSqlDateTime } from '../../utils/date';
+import TemasPorMesAccordion from '../../components/TemasPorMesAccordion';
 
 type AssignmentGroup = { id: number; nombre: string; asignaciones: planCurricularApi.AsignacionCompleta[] };
 
@@ -40,7 +41,7 @@ function PlanDetalleModal({ id, onClose }: { id: number; onClose: () => void }) 
       {error ? <div className="notice error">{error}</div> : !plan ? <p>Cargando detalle…</p> : <>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', margin: '16px 0' }}><EstadoBadge estado={plan.estado} /><span>{plan.archivoNombre}</span><button type="button" className="button secondary" onClick={() => void planCurricularApi.descargarDocumentoOriginal(id)}>Descargar archivo original</button></div>
         {plan.observacionesEvaluador && <div style={{ marginBottom: 16, padding: 14, borderLeft: '4px solid var(--danger)', background: 'color-mix(in srgb, var(--danger) 8%, var(--paper-raised))' }}><strong>Observaciones del evaluador</strong><p style={{ margin: '6px 0 0' }}>{plan.observacionesEvaluador}</p></div>}
-        {plan.temas?.length ? <div className="table-responsive"><table className="table table-striped"><caption className="visually-hidden">Contenido del plan curricular</caption><thead><tr><th>Mes</th><th>Tema / Contenido</th><th>Capacidades</th><th>Actividades</th></tr></thead><tbody>{plan.temas.map((tema, index) => <tr key={`${tema.ordenMes}-${index}`}><td>{tema.mes}</td><td>{tema.temasContenidos}</td><td>{tema.capacidades || '—'}</td><td>{tema.actividades || '—'}</td></tr>)}</tbody></table></div> : <p>No hay temas parseados para este plan.</p>}
+        {plan.temas?.length ? <TemasPorMesAccordion temas={plan.temas} /> : <p>No hay temas parseados para este plan.</p>}
       </>}
     </section>
   </div>;

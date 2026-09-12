@@ -3,6 +3,7 @@ import { ApiError } from '../../api/client';
 import { useToast } from '../../context/toast';
 import * as planCurricularApi from '../../api/planCurricular';
 import { formatSqlDateTime } from '../../utils/date';
+import TemasPorMesAccordion from '../../components/TemasPorMesAccordion';
 
 // StatusTone removed; toasts replace local status state
 
@@ -160,15 +161,9 @@ export default function ReviewPlanesView() {
             <h3>Detalle del plan curricular</h3>
             <button type="button" className="button secondary" onClick={handleDescargarDocumento} style={{ marginBottom: 12 }}>Descargar documento original</button>
             {selectedPlan.temas && selectedPlan.temas.length > 0 && (
-              <div style={{ marginBottom: 16, maxHeight: 300, overflow: 'auto' }}>
+              <div style={{ marginBottom: 16, maxHeight: 360, overflow: 'auto' }}>
                 <h4 style={{ marginTop: 0 }}>Temas por mes</h4>
-                <div className="table-responsive">
-                  <table className="table table-striped" style={{ fontSize: '0.85rem' }}>
-                    <caption className="visually-hidden">Temas del plan curricular por mes</caption>
-                    <thead><tr><th>Mes</th><th>Tema/Contenido</th><th>Capacidades</th><th>Actividades</th></tr></thead>
-                    <tbody>{selectedPlan.temas.map((tema, index) => <tr key={`${tema.ordenMes}-${index}`}><td>{tema.mes}</td><td>{tema.temasContenidos}</td><td>{tema.capacidades || '—'}</td><td>{tema.actividades || '—'}</td></tr>)}</tbody>
-                  </table>
-                </div>
+                <TemasPorMesAccordion temas={selectedPlan.temas} compact />
               </div>
             )}
 
