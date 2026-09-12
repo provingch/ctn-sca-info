@@ -46,6 +46,104 @@ function PlanDetalleModal({ id, onClose }: { id: number; onClose: () => void }) 
   </div>;
 }
 
+const MAX_BLOQUES_POR_MES = 20;
+const DEFAULT_BLOQUES = 4;
+
+function ConfigPlantillaModal({ asignacionId, etapa, onClose }: { asignacionId: number; etapa: string; onClose: () => void }) {
+  const [meses, setMeses] = useState<string[] | null>(null);
+  const [seleccion, setSeleccion] = useState<Record<string, { activo: boolean; bloques: number }>>({});
+  const [errorMeses, setErrorMeses] = useState('');
+  const [descargando, setDescargando] = useState(false);
+  const { showToast } = useToast();
+  const dialogRef = useAccessibleDialog(true, onClose);
+
+  useEffect(() => {
+    let active = true;
+    planCurricularApi.getMesesDisponibles(etapa)
+      .then((result) => {
+        if (!active) return;
+        setMeses(result);
+        const initial: Record<string, { activo: boolean; bloques: number }> = {};
+        result.forEach((m) => { initial[m] = { activo: true, bloques: DEFAULT_BLOQUES }; });
+        setSeleccion(initial);
+      })
+      .catch((reason) => { if (active) setErrorMeses(errorMessage(reason, 'No se pudieron cargar los meses disponibles.')); });
+    return () => { active = false; };
+  }, [etapa]);
+
+  const seleccionados = Object.entries(seleccion).filter(([, cfg]) => cfg.activo);
+  const puedeDescargar = seleccionados.length > 0 && seleccionados.every(([, cfg]) => cfg.bloques >= 1 && cfg.bloques <= MAX_BLOQUES_POR_MES);
+
+  async function descargar() {
+    if (!puedeDescargar || !meses) return;
+    const config: planCurricularApi.PlanTemplateConfigDto = {
+      etapa,
+      meses: meses
+        .filter((m) => seleccion[m]?.activo)
+        .map((m) => ({ mes: m, bloques: seleccion[m].bloques })),
+    };
+    setDescargando(true);
+    try {
+      await planCurricularApi.downloadPlantillaConfigurada(asignacionId, config);
+      onClose();
+    } catch (err) {
+      showToast(errorMessage(err, 'No se pudo descargar la plantilla.'), { tone: 'error' });
+    } finally {
+      setDescargando(false);
+    }
+  }
+
+  return <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="plantilla-config-title" tabIndex={-1} style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'grid', placeItems: 'center', padding: 20, background: 'rgba(0, 0, 0, .55)' }} onClick={onClose}>
+    <section className="panel" style={{ width: 'min(640px, 100%)', maxHeight: '85vh', overflow: 'auto', margin: 0 }} onClick={(event) => event.stopPropagation()}>
+      <div className="class-card-head">
+        <h3 id="plantilla-config-title">Configurar plantilla — Etapa {etapa}</h3>
+        <button type="button" className="button secondary" onClick={onClose}>Cerrar</button>
+      </div>
+      <p style={{ margin: '8px 0 16px', color: 'var(--muted)' }}>Elegí los meses que vas a cargar y cuántos bloques (celdas) necesitás para cada uno (1 a {MAX_BLOQUES_POR_MES}).</p>
+      {errorMeses ? <div className="notice error">{errorMeses}</div>
+        : !meses ? <p>Cargando meses…</p>
+        : <div style={{ display: 'grid', gap: 10 }}>
+          {meses.map((m) => {
+            const cfg = seleccion[m] ?? { activo: false, bloques: DEFAULT_BLOQUES };
+            return <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', border: '1px solid var(--line)', borderRadius: 8, background: 'var(--paper)' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={cfg.activo}
+                  onChange={(event) => setSeleccion((prev) => ({ ...prev, [m]: { ...cfg, activo: event.target.checked } }))}
+                />
+                <strong>{m}</strong>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>Bloques</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={MAX_BLOQUES_POR_MES}
+                  value={cfg.bloques}
+                  disabled={!cfg.activo}
+                  onChange={(event) => {
+                    const raw = Number(event.target.value);
+                    const clamped = Number.isFinite(raw) ? Math.max(1, Math.min(MAX_BLOQUES_POR_MES, Math.floor(raw))) : DEFAULT_BLOQUES;
+                    setSeleccion((prev) => ({ ...prev, [m]: { ...cfg, bloques: clamped } }));
+                  }}
+                  style={{ width: 72, padding: '4px 8px' }}
+                  aria-label={`Cantidad de bloques para ${m}`}
+                />
+              </label>
+            </div>;
+          })}
+        </div>}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
+        <button type="button" className="button secondary" onClick={onClose} disabled={descargando}>Cancelar</button>
+        <button type="button" className="button" data-dialog-initial-focus disabled={!puedeDescargar || descargando} onClick={() => void descargar()}>
+          {descargando ? 'Descargando…' : 'Descargar plantilla'}
+        </button>
+      </div>
+    </section>
+  </div>;
+}
+
 function DescargarPlantillaSection({ group }: { group: AssignmentGroup }) {
   const [curso, setCurso] = useState('');
   const [seccion, setSeccion] = useState('');
@@ -54,13 +152,8 @@ function DescargarPlantillaSection({ group }: { group: AssignmentGroup }) {
   const secciones = curso ? unique(group.asignaciones.filter((item) => item.cursoOrdinal === curso), (item) => item.seccion) : [];
   const materias = curso && seccion ? group.asignaciones.filter((item) => item.cursoOrdinal === curso && item.seccion === seccion) : [];
   const asignacion = materias.find((item) => item.materiaId === Number(materiaId));
-  const [etapa, setEtapa] = useState<string | undefined>(undefined);
-  const { showToast } = useToast();
-
-  async function download() {
-    if (!asignacion) return;
-    try { await planCurricularApi.downloadPlantilla(asignacion.id, etapa); } catch (err) { showToast(errorMessage(err, 'No se pudo descargar la plantilla.'), { tone: 'error' }); }
-  }
+  const [etapa, setEtapa] = useState<string>('1');
+  const [configOpen, setConfigOpen] = useState(false);
 
   return <section className="class-card" style={{ marginTop: 12 }}>
     <h3 style={{ margin: 0, fontSize: '1.15rem' }}>Descargar plantilla</h3>
@@ -68,10 +161,11 @@ function DescargarPlantillaSection({ group }: { group: AssignmentGroup }) {
       <div className="class-field"><label>Curso</label><AnimatedSelect ariaLabel={`Curso de ${group.nombre}`} value={curso} onChange={(value) => { setCurso(value); setSeccion(''); setMateriaId(''); }} options={[{ value: '', label: 'Seleccione curso' }, ...cursos.map((item) => ({ value: item.cursoOrdinal, label: item.cursoOrdinal }))]} /></div>
       <div className="class-field"><label>Sección</label><AnimatedSelect ariaLabel={`Sección de ${group.nombre}`} value={seccion} disabled={!curso} onChange={(value) => { setSeccion(value); setMateriaId(''); }} options={[{ value: '', label: 'Seleccione sección' }, ...secciones.map((item) => ({ value: item.seccion, label: item.seccion }))]} /></div>
       <div className="class-field"><label>Materia</label><AnimatedSelect ariaLabel={`Materia de ${group.nombre}`} value={materiaId} disabled={!seccion} onChange={setMateriaId} options={[{ value: '', label: 'Seleccione materia' }, ...materias.map((item) => ({ value: item.materiaId, label: item.materiaNombre }))]} /></div>
-      <div className="class-field"><label>Etapa</label><AnimatedSelect ariaLabel={`Etapa de ${group.nombre}`} value={etapa ?? ''} onChange={(v) => setEtapa(v || undefined)} options={[{ value: '', label: 'Etapa (opcional)' }, { value: '1', label: 'Etapa 1' }, { value: '2', label: 'Etapa 2' }]} /></div>
-      <div className="class-field" style={{ justifyContent: 'end' }}><button type="button" className="button" disabled={!asignacion} onClick={() => void download()}>Descargar plantilla</button></div>
+      <div className="class-field"><label>Etapa</label><AnimatedSelect ariaLabel={`Etapa de ${group.nombre}`} value={etapa} onChange={setEtapa} options={[{ value: '1', label: 'Etapa 1' }, { value: '2', label: 'Etapa 2' }]} /></div>
+      <div className="class-field" style={{ justifyContent: 'end' }}><button type="button" className="button" disabled={!asignacion} onClick={() => setConfigOpen(true)}>Configurar y descargar</button></div>
     </div>
     {asignacion?.estadoPlan === 'APROBADO' && <div className="notice" style={{ margin: 0, background: 'color-mix(in srgb, var(--success) 10%, var(--paper))', borderColor: 'color-mix(in srgb, var(--success) 45%, var(--line))' }}>Esta asignación ya cuenta con un plan aprobado. Podés descargar nuevamente su plantilla si lo necesitás.</div>}
+    {configOpen && asignacion && <ConfigPlantillaModal asignacionId={asignacion.id} etapa={etapa} onClose={() => setConfigOpen(false)} />}
   </section>;
 }
 

@@ -219,6 +219,45 @@ export async function apiDownload(path: string, fallbackFilename = 'download.bin
   return filename;
 }
 
+/**
+ * Variante POST de {@link apiDownload}: envía un JSON body y descarga el blob resultante.
+ * Necesaria cuando la config no cabe cómodamente en la query string.
+ */
+export async function apiDownloadPost(path: string, body: unknown, fallbackFilename = 'download.bin'): Promise<string> {
+  const options: RequestOptions = { method: 'POST', body };
+  let response = await rawRequest(path, options);
+
+  if (response.status === 401) {
+    const refreshed = await tryRefresh();
+    if (refreshed) {
+      response = await rawRequest(path, options);
+    } else {
+      setAccessToken(null);
+      onAuthExpired?.();
+    }
+  }
+
+  if (!response.ok) {
+    const errBody = await parseBody(response);
+    const message = extractErrorMessage(errBody, `${response.status}`, path);
+    throw new ApiError(response.status, message, errBody);
+  }
+
+  const blob = await response.blob();
+  const contentDisposition = response.headers.get('content-disposition') || '';
+  const filename = extractFilename(contentDisposition) || fallbackFilename;
+
+  const blobUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = blobUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+  return filename;
+}
+
 function extractFilename(contentDisposition: string): string | null {
   if (!contentDisposition) return null;
   // ejemplo: attachment; filename="planilla-5.xlsx"

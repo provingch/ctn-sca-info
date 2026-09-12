@@ -1,4 +1,14 @@
-import { apiRequest, apiDownload } from './client';
+import { apiRequest, apiDownload, apiDownloadPost } from './client';
+
+export interface PlanTemplateMesConfig {
+  mes: string;
+  bloques: number;
+}
+
+export interface PlanTemplateConfigDto {
+  etapa: string;
+  meses: PlanTemplateMesConfig[];
+}
 
 export interface AsignacionOption {
   id: number;
@@ -123,6 +133,14 @@ export function subirPlanAutoDetectado(file: File, asignacionId?: number): Promi
 export function downloadPlantilla(asignacionId: number, etapa?: string) {
   const etapaQuery = etapa ? `&etapa=${encodeURIComponent(etapa)}` : '';
   return apiDownload(`/api/plan-curricular/plantilla?asignacionId=${asignacionId}${etapaQuery}`, 'plan-curricular-plantilla.xlsx');
+}
+
+export function getMesesDisponibles(etapa: string): Promise<string[]> {
+  return apiRequest<string[]>(`/api/plan-curricular/meses-disponibles?etapa=${encodeURIComponent(etapa)}`);
+}
+
+export function downloadPlantillaConfigurada(asignacionId: number, config: PlanTemplateConfigDto) {
+  return apiDownloadPost(`/api/plan-curricular/plantilla?asignacionId=${asignacionId}`, config, 'plan-curricular-plantilla.xlsx');
 }
 
 export function getMiPlan(asignacionId: number, etapa: string, anio: number): Promise<PlanCurricularEstado | undefined> {
