@@ -8,8 +8,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -37,14 +35,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             ScaPadresTheme {
                 val authState by appGraph.session.state.collectAsStateWithLifecycle()
-                Scaffold(modifier = Modifier.fillMaxSize()) { padding ->
-                    AppRoot(
-                        modifier = Modifier.padding(padding),
-                        authState = authState,
-                        graph = appGraph,
-                        onAuthenticated = { maybeAskNotificationPermission() },
-                    )
-                }
+                AppRoot(
+                    modifier = Modifier.fillMaxSize(),
+                    authState = authState,
+                    graph = appGraph,
+                    onAuthenticated = { maybeAskNotificationPermission() },
+                )
             }
         }
     }

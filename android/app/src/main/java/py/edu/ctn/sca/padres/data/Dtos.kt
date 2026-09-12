@@ -95,6 +95,7 @@ data class FcmTokenRequest(
 data class ProfileResponseDto(
     val profileOwner: ProfileOwnerDto = ProfileOwnerDto(),
     val canEditAdminOnlyProfileFields: Boolean = false,
+    val profileRoleLabel: String? = null,
 )
 
 @Serializable
