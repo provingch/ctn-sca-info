@@ -389,6 +389,57 @@ public class PadreDao extends conexion {
         return out;
     }
 
+    /**
+     * Lista las notas de conducta ("N") asignadas al alumno, tanto la falta principal
+     * de cada rasgo_asistencia (con su observación) como los códigos agregados en
+     * rasgo_asistencia_codigo. Ordenadas por fecha de clase descendente.
+     */
+    public List<ctn.informatica.sca.dto.RasgoConductaDto> findRasgosConductaByAlumno(int alumnoId) throws SQLException {
+        String sql =
+                "SELECT pr.fecha_clase, m.nombre AS materia, u.nombre AS profesor_nombre, u.apellido AS profesor_apellido, "
+                + "ra.falta_codigo AS codigo, cc.descripcion, ra.falta_observacion AS observacion "
+                + "FROM rasgo_asistencia ra "
+                + "JOIN planilla_rasgo pr ON pr.id = ra.planilla_rasgo_id "
+                + "LEFT JOIN asignacion a ON a.id = pr.asignacion_id "
+                + "LEFT JOIN materia m ON m.id = a.materia_id "
+                + "LEFT JOIN usuario u ON u.id = pr.usuario_id "
+                + "LEFT JOIN codigo_conducta cc ON cc.codigo = ra.falta_codigo "
+                + "WHERE ra.alumno_id = ? AND ra.falta_codigo IS NOT NULL "
+                + "UNION ALL "
+                + "SELECT pr.fecha_clase, m.nombre AS materia, u.nombre AS profesor_nombre, u.apellido AS profesor_apellido, "
+                + "rac.codigo, cc.descripcion, NULL AS observacion "
+                + "FROM rasgo_asistencia_codigo rac "
+                + "JOIN rasgo_asistencia ra ON ra.id = rac.rasgo_asistencia_id "
+                + "JOIN planilla_rasgo pr ON pr.id = ra.planilla_rasgo_id "
+                + "LEFT JOIN asignacion a ON a.id = pr.asignacion_id "
+                + "LEFT JOIN materia m ON m.id = a.materia_id "
+                + "LEFT JOIN usuario u ON u.id = pr.usuario_id "
+                + "JOIN codigo_conducta cc ON cc.codigo = rac.codigo "
+                + "WHERE ra.alumno_id = ? "
+                + "ORDER BY fecha_clase DESC, codigo";
+        List<ctn.informatica.sca.dto.RasgoConductaDto> out = new ArrayList<>();
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, alumnoId);
+            ps.setInt(2, alumnoId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    java.sql.Date fecha = rs.getDate("fecha_clase");
+                    String apellido = rs.getString("profesor_apellido");
+                    String nombre = rs.getString("profesor_nombre");
+                    String profesor = ((apellido == null ? "" : apellido) + " " + (nombre == null ? "" : nombre)).trim();
+                    out.add(new ctn.informatica.sca.dto.RasgoConductaDto(
+                            fecha == null ? null : fecha.toString(),
+                            rs.getString("materia"),
+                            profesor.isBlank() ? null : profesor,
+                            rs.getString("codigo"),
+                            rs.getString("descripcion"),
+                            rs.getString("observacion")));
+                }
+            }
+        }
+        return out;
+    }
+
     public List<ParentTaskGrade> findTaskGradesForAlumno(int alumnoId) throws SQLException {
         String sql = "SELECT t.id AS tarea_id, t.titulo, t.fecha, t.fecha_limite, t.total, t.planilla_id, t.google_coursework_id, "
                 + "puntaje.tarea_id AS puntaje_tarea_id, puntaje.puntos "

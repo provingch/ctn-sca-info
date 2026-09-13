@@ -10,6 +10,15 @@ export interface ParentResponse {
   libretaDisponible: boolean;
 }
 export const getParentSummary = (alumnoId?: number) => api.get<ParentResponse>(`/api/padre${alumnoId ? `?alumnoId=${alumnoId}` : ''}`);
+export interface RasgoConducta {
+  fechaClase: string | null;
+  materia: string | null;
+  profesorNombre: string | null;
+  codigo: string;
+  descripcion: string | null;
+  observacion: string | null;
+}
+export const getRasgosConducta = (alumnoId: number) => api.get<RasgoConducta[]>(`/api/padre/alumnos/${alumnoId}/conducta`);
 export const downloadReporteMensual = (alumnoId: number, mes: number, anio: number) =>
   apiDownload(`/api/padre/alumnos/${alumnoId}/reporte-mensual?mes=${mes}&anio=${anio}`, `reporte-mensual-${alumnoId}-${anio}-${String(mes).padStart(2, '0')}.pdf`);
 export const downloadLibreta = (alumnoId: number) =>
