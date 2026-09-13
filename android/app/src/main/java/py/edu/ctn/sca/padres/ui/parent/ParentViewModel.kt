@@ -8,9 +8,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import py.edu.ctn.sca.padres.data.AuthRepository
+import py.edu.ctn.sca.padres.data.ConductaResult
 import py.edu.ctn.sca.padres.data.ParentRepository
 import py.edu.ctn.sca.padres.data.ParentResponse
 import py.edu.ctn.sca.padres.data.ParentResult
+import py.edu.ctn.sca.padres.data.RasgoConductaDto
 import py.edu.ctn.sca.padres.data.SubjectDto
 import java.util.Calendar
 
@@ -37,6 +39,9 @@ data class ParentUiState(
     val data: ParentResponse? = null,
     val stage: Stage = Stage.current(),
     val selectedPlanillaId: Int? = null,
+    val conducta: List<RasgoConductaDto> = emptyList(),
+    val conductaError: String? = null,
+    val conductaLoading: Boolean = false,
 ) {
     val subjectsForStage: List<SubjectDto>
         get() = data?.materias?.filter { Stage.from(it.etapa) == stage } ?: emptyList()
@@ -81,20 +86,25 @@ class ParentViewModel(
         }
         viewModelScope.launch {
             when (val result = parentRepository.summary(alumnoId)) {
-                is ParentResult.Ok -> _ui.update { prev ->
-                    val available = result.data.materias.map { Stage.from(it.etapa) }.toSet()
-                    val preferred = when {
-                        available.contains(Stage.current()) -> Stage.current()
-                        else -> result.data.materias.firstOrNull()?.let { Stage.from(it.etapa) } ?: Stage.current()
+                is ParentResult.Ok -> {
+                    _ui.update { prev ->
+                        val available = result.data.materias.map { Stage.from(it.etapa) }.toSet()
+                        val preferred = when {
+                            available.contains(Stage.current()) -> Stage.current()
+                            else -> result.data.materias.firstOrNull()?.let { Stage.from(it.etapa) } ?: Stage.current()
+                        }
+                        prev.copy(
+                            loading = false,
+                            refreshing = false,
+                            error = null,
+                            data = result.data,
+                            stage = if (alumnoId == null) preferred else prev.stage,
+                            selectedPlanillaId = null,
+                            conducta = emptyList(),
+                            conductaError = null,
+                        )
                     }
-                    prev.copy(
-                        loading = false,
-                        refreshing = false,
-                        error = null,
-                        data = result.data,
-                        stage = if (alumnoId == null) preferred else prev.stage,
-                        selectedPlanillaId = null,
-                    )
+                    result.data.selectedAlumnoId?.let { loadConducta(it) }
                 }
                 is ParentResult.Error -> _ui.update {
                     it.copy(loading = false, refreshing = false, error = result.message)
@@ -116,5 +126,19 @@ class ParentViewModel(
 
     fun logout() {
         viewModelScope.launch { authRepository.logout() }
+    }
+
+    private fun loadConducta(alumnoId: Int) {
+        _ui.update { it.copy(conductaLoading = true, conductaError = null) }
+        viewModelScope.launch {
+            when (val res = parentRepository.conducta(alumnoId)) {
+                is ConductaResult.Ok -> _ui.update {
+                    it.copy(conductaLoading = false, conducta = res.data, conductaError = null)
+                }
+                is ConductaResult.Error -> _ui.update {
+                    it.copy(conductaLoading = false, conducta = emptyList(), conductaError = res.message)
+                }
+            }
+        }
     }
 }

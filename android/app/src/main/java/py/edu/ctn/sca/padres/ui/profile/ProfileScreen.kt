@@ -372,8 +372,111 @@ private fun ProfileForm(ui: ProfileUiState, vm: ProfileViewModel) {
             }
         }
 
+        if (ui.showSecurityPanel) {
+            Panel {
+                Eyebrow("05 · Verificación en dos pasos")
+                Text(
+                    "Protegé tu cuenta con una app autenticadora (Google Authenticator, Authy).",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    val active = ui.totpEnabled
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .clip(CircleShape)
+                            .background(if (active) scaColors.success else MaterialTheme.colorScheme.outline),
+                    )
+                    Spacer(Modifier.size(8.dp))
+                    Text(
+                        if (active) "Activa" else "Inactiva",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+
+                ui.pendingTotpSecret?.takeIf { it.isNotBlank() }?.let { secret ->
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        "Escaneá o pegá esta clave en tu app autenticadora:",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        secret,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(9.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .padding(12.dp),
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    ProfileField(
+                        label = "Código de la app",
+                        value = ui.totpCode,
+                        onValueChange = vm::onTotpCode,
+                        keyboardType = KeyboardType.NumberPassword,
+                        imeAction = ImeAction.Done,
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Button(
+                        onClick = vm::confirmTotp,
+                        enabled = !ui.totpBusy,
+                        shape = RoundedCornerShape(9.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                    ) { Text(if (ui.totpBusy) "Confirmando…" else "Confirmar activación", fontWeight = FontWeight.Bold) }
+                }
+
+                ui.totpError?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+                ui.totpMessage?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = scaColors.success,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+
+                Spacer(Modifier.height(12.dp))
+                if (ui.totpEnabled) {
+                    androidx.compose.material3.OutlinedButton(
+                        onClick = vm::disableTotp,
+                        enabled = !ui.totpBusy,
+                        shape = RoundedCornerShape(9.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                    ) { Text("Desactivar 2FA", fontWeight = FontWeight.Bold) }
+                } else if (ui.pendingTotpSecret.isNullOrBlank()) {
+                    androidx.compose.material3.OutlinedButton(
+                        onClick = vm::prepareTotp,
+                        enabled = !ui.totpBusy,
+                        shape = RoundedCornerShape(9.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                    ) { Text(if (ui.totpBusy) "Generando…" else "Configurar 2FA", fontWeight = FontWeight.Bold) }
+                }
+            }
+        }
+
         Panel {
-            Eyebrow("05 · Registros")
+            Eyebrow("06 · Registros")
             Text(
                 "Actividad reciente de tu cuenta.",
                 style = MaterialTheme.typography.bodySmall,

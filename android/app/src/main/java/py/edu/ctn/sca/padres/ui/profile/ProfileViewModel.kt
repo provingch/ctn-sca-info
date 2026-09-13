@@ -13,6 +13,7 @@ import py.edu.ctn.sca.padres.data.ProfileLoad
 import py.edu.ctn.sca.padres.data.ProfileRepository
 import py.edu.ctn.sca.padres.data.ProfileSave
 import py.edu.ctn.sca.padres.data.SaveProfileRequest
+import py.edu.ctn.sca.padres.data.TotpAction
 
 data class ProfileUiState(
     val loading: Boolean = true,
@@ -38,6 +39,14 @@ data class ProfileUiState(
     val changingPassword: Boolean = false,
     val passwordError: String? = null,
     val passwordChanged: Boolean = false,
+    val showSecurityPanel: Boolean = false,
+    val totpEnabled: Boolean = false,
+    val pendingTotpSecret: String? = null,
+    val totpProvisioningUri: String? = null,
+    val totpCode: String = "",
+    val totpBusy: Boolean = false,
+    val totpError: String? = null,
+    val totpMessage: String? = null,
 )
 
 class ProfileViewModel(
@@ -74,6 +83,11 @@ class ProfileViewModel(
                             activityLog = result.data.activityLog,
                             showFotoPanel = result.data.showFotoPanel,
                             fotoPerfil = owner.fotoPerfil,
+                            showSecurityPanel = result.data.showSecurityPanel,
+                            totpEnabled = result.data.totpEnabled,
+                            pendingTotpSecret = result.data.pendingTotpSecret,
+                            totpProvisioningUri = result.data.totpProvisioningUri,
+                            totpError = null,
                         )
                     }
                 }
@@ -178,6 +192,55 @@ class ProfileViewModel(
                 is PasswordChange.Error -> _ui.update {
                     it.copy(changingPassword = false, passwordError = result.message)
                 }
+            }
+        }
+    }
+
+    fun onTotpCode(v: String) = _ui.update {
+        it.copy(totpCode = v.filter { c -> c.isDigit() }.take(8), totpError = null, totpMessage = null)
+    }
+
+    fun prepareTotp() {
+        if (_ui.value.totpBusy) return
+        _ui.update { it.copy(totpBusy = true, totpError = null, totpMessage = null) }
+        viewModelScope.launch {
+            val res = profileRepository.prepareTotp()
+            _ui.update { it.copy(totpBusy = false, totpError = (res as? TotpAction.Error)?.message) }
+            if (res is TotpAction.Ok) load()
+        }
+    }
+
+    fun confirmTotp() {
+        val s = _ui.value
+        if (s.totpBusy) return
+        if (s.totpCode.isBlank()) {
+            _ui.update { it.copy(totpError = "Ingresá el código de la app.") }
+            return
+        }
+        _ui.update { it.copy(totpBusy = true, totpError = null, totpMessage = null) }
+        viewModelScope.launch {
+            val res = profileRepository.confirmTotp(s.totpCode)
+            when (res) {
+                is TotpAction.Ok -> {
+                    _ui.update { it.copy(totpBusy = false, totpCode = "", totpMessage = "Verificación en dos pasos activada.") }
+                    load()
+                }
+                is TotpAction.Error -> _ui.update { it.copy(totpBusy = false, totpError = res.message) }
+            }
+        }
+    }
+
+    fun disableTotp() {
+        if (_ui.value.totpBusy) return
+        _ui.update { it.copy(totpBusy = true, totpError = null, totpMessage = null) }
+        viewModelScope.launch {
+            val res = profileRepository.disableTotp()
+            when (res) {
+                is TotpAction.Ok -> {
+                    _ui.update { it.copy(totpBusy = false, totpMessage = "Verificación en dos pasos desactivada.") }
+                    load()
+                }
+                is TotpAction.Error -> _ui.update { it.copy(totpBusy = false, totpError = res.message) }
             }
         }
     }

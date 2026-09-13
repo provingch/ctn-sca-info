@@ -59,6 +59,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -114,9 +115,10 @@ fun ParentDashboardScreen(graph: Graph, onOpenProfile: () -> Unit = {}) {
                     Image(
                         painter = painterResource(R.drawable.sca_logo),
                         contentDescription = null,
+                        contentScale = ContentScale.Fit,
                         modifier = Modifier
                             .padding(start = 12.dp)
-                            .height(28.dp),
+                            .size(width = 45.dp, height = 28.dp),
                     )
                 },
                 actions = {
@@ -242,6 +244,7 @@ private fun DashboardContent(ui: ParentUiState, vm: ParentViewModel, reports: Re
                 selectedSubject?.let { subject ->
                     item { SubjectDetailPanel(subject) }
                 }
+                item { ConductaPanel(ui) }
                 item { CalculationNote() }
             }
         }
@@ -612,6 +615,89 @@ private fun TaskResult(task: TaskDto) {
 }
 
 /** Web `.parent-calculation-note` <details>. */
+@Composable
+private fun ConductaPanel(ui: ParentUiState) {
+    Panel {
+        Eyebrow("Notas de conducta")
+        Text(
+            "Códigos \"N\" registrados por los profesores durante las clases.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
+        )
+        when {
+            ui.conductaLoading -> Text(
+                "Cargando notas de conducta…",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            ui.conductaError != null -> Text(
+                ui.conductaError,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+            ui.conducta.isEmpty() -> Text(
+                "Sin notas de conducta registradas todavía.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            else -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                ui.conducta.forEach { row ->
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(9.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
+                            .padding(12.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                row.codigo,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                            Spacer(Modifier.width(10.dp))
+                            Text(
+                                formatDate(row.fechaClase),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        row.descripcion?.takeIf { it.isNotBlank() }?.let {
+                            Text(
+                                it,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(top = 4.dp),
+                            )
+                        }
+                        val meta = listOfNotNull(
+                            row.materia?.takeIf { it.isNotBlank() },
+                            row.profesorNombre?.takeIf { it.isNotBlank() },
+                        ).joinToString(" · ")
+                        if (meta.isNotEmpty()) {
+                            Text(
+                                meta,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
+                        }
+                        row.observacion?.takeIf { it.isNotBlank() }?.let {
+                            Text(
+                                "Obs: $it",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(top = 4.dp),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun CalculationNote() {
     var open by remember { mutableStateOf(false) }
