@@ -74,6 +74,17 @@ public class ParentController {
         return children.get(0).getId();
     }
 
+    @GetMapping("/alumnos/{alumnoId}/conducta")
+    public List<ctn.informatica.sca.dto.RasgoConductaDto> conducta(@PathVariable int alumnoId, Authentication authentication) {
+        int userId = ApiAuth.requireUserId(authentication);
+        try {
+            requireOwnChild(userId, alumnoId);
+            return padreDao.findRasgosConductaByAlumno(alumnoId);
+        } catch (SQLException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudieron cargar las notas de conducta", ex);
+        }
+    }
+
     @GetMapping(value = "/alumnos/{alumnoId}/reporte-mensual", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> reporteMensual(@PathVariable int alumnoId,
             @RequestParam int mes, @RequestParam int anio, Authentication authentication) {

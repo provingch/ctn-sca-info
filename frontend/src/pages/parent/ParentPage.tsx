@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import AppShell from '../../components/AppShell';
 import GradeChip from '../../components/ui/GradeChip';
 import ContentState from '../../components/ui/ContentState';
-import { getParentSummary, downloadReporteMensual, downloadLibreta, type ParentResponse, type ParentStage, type ParentSubject, type ParentTaskStatus } from '../../api/parent';
+import { getParentSummary, downloadReporteMensual, downloadLibreta, getRasgosConducta, type ParentResponse, type ParentStage, type ParentSubject, type ParentTaskStatus, type RasgoConducta } from '../../api/parent';
 import { ApiError } from '../../api/client';
 import { normalizeSpecialty } from '../../theme/theme';
 
@@ -35,6 +35,8 @@ export default function ParentPage() {
   const [reportMes, setReportMes] = useState(() => new Date().getMonth() + 1);
   const [downloading, setDownloading] = useState<'mensual' | 'libreta' | null>(null);
   const [downloadMsg, setDownloadMsg] = useState('');
+  const [conducta, setConducta] = useState<RasgoConducta[] | null>(null);
+  const [conductaError, setConductaError] = useState('');
 
   async function handleDownload(kind: 'mensual' | 'libreta', alumnoId: number) {
     setDownloading(kind);
@@ -66,6 +68,16 @@ export default function ParentPage() {
   }
 
   useEffect(() => load(), []);
+
+  useEffect(() => {
+    if (!data || !data.selectedAlumnoId) { setConducta(null); return; }
+    const alumnoId = data.selectedAlumnoId;
+    setConductaError('');
+    setConducta(null);
+    getRasgosConducta(alumnoId)
+      .then((rows) => setConducta(rows))
+      .catch((e) => setConductaError(e instanceof ApiError ? e.message : 'No se pudieron cargar las notas de conducta.'));
+  }, [data]);
 
   useEffect(() => {
     if (!data) return;
@@ -155,6 +167,52 @@ export default function ParentPage() {
           {selectedSubject && <SubjectDetail subject={selectedSubject} />}
           <details className="panel parent-calculation-note"><summary>¿Cómo se calcula el promedio?</summary><p>El porcentaje de cada materia se obtiene dividiendo los puntos logrados entre los puntos posibles de las tareas publicadas. El promedio general combina los puntos de todas las materias disponibles.</p></details>
         </> : <ContentState title={`Sin calificaciones en ${stageLabel(stage).toLowerCase()}`} detail="Todavía no hay materias ni tareas publicadas para este alumno en la etapa seleccionada." />}
+
+        {selectedChild && (
+          <section className="panel" aria-labelledby="parent-conducta-title" style={{ marginTop: 16 }}>
+            <header className="panel-header">
+              <div>
+                <span>Conducta</span>
+                <h2 id="parent-conducta-title">Notas de conducta</h2>
+                <p>Registros conductuales asignados por profesores durante las clases.</p>
+              </div>
+            </header>
+            {conductaError ? (
+              <ContentState tone="error" title="No se pudieron cargar las notas de conducta" detail={conductaError} />
+            ) : conducta === null ? (
+              <ContentState tone="loading" title="Cargando notas de conducta…" />
+            ) : conducta.length === 0 ? (
+              <ContentState tone="empty" title="Sin notas de conducta" detail={`${selectedChild.nombre} no tiene notas conductuales registradas.`} />
+            ) : (
+              <div className="table-scroll">
+                <table className="grade-table" style={{ minWidth: 720 }}>
+                  <thead>
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Materia</th>
+                      <th>Profesor</th>
+                      <th>Código</th>
+                      <th>Descripción</th>
+                      <th>Observación</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {conducta.map((row, index) => (
+                      <tr key={`${row.fechaClase ?? 'sf'}-${row.codigo}-${index}`}>
+                        <td>{formatDate(row.fechaClase)}</td>
+                        <td>{row.materia ?? '—'}</td>
+                        <td>{row.profesorNombre ?? '—'}</td>
+                        <td><strong>{row.codigo}</strong></td>
+                        <td>{row.descripcion ?? '—'}</td>
+                        <td>{row.observacion ?? '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        )}
       </div>
     </AppShell>
   );
