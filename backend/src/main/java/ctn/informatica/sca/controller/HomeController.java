@@ -19,6 +19,7 @@ import ctn.informatica.sca.dao.UserDao;
 import ctn.informatica.sca.dto.AssignFaltaCodigoRequest;
 import ctn.informatica.sca.dto.AlumnoDto;
 import ctn.informatica.sca.dto.CursoDto;
+import ctn.informatica.sca.dto.ClaseDadaDto;
 import ctn.informatica.sca.dto.CreateRasgoPlanillaRequest;
 import ctn.informatica.sca.dto.HomeGoogleClassroomCourseDto;
 import ctn.informatica.sca.dto.HomeMateriaDto;
@@ -427,6 +428,52 @@ public class HomeController {
         return out;
     }
 
+    /**
+     * Lista las clases dictadas por el profesor autenticado (para vista "Clases dadas").
+     * Incluye contadores de ausentes / justificados por clase.
+     */
+    @GetMapping("/mis-clases")
+    @PreAuthorize("hasRole('LEVEL_1')")
+    public List<ClaseDadaDto> misClases(Authentication authentication) {
+        int usuarioId = ApiAuth.requireUserId(authentication);
+        try {
+            return rasgoPlanillaDao.listarClasesDadasPorProfesor(usuarioId);
+        } catch (SQLException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudieron cargar las clases dictadas", ex);
+        }
+    }
+
+    /**
+     * Detalle de una clase dictada por el profesor: metadata + asistencias.
+     * Requiere que la clase pertenezca al profesor autenticado.
+     */
+    @GetMapping("/mis-clases/{planillaId}")
+    @PreAuthorize("hasRole('LEVEL_1')")
+    public Map<String, Object> detalleClase(@org.springframework.web.bind.annotation.PathVariable("planillaId") int planillaId, Authentication authentication) {
+        User user = requireUser(authentication);
+        try {
+            RasgoPlanilla planilla = rasgoPlanillaDao.findPlanillaById(planillaId);
+            if (planilla == null) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Clase no encontrada");
+            }
+            if (planilla.getProfesorId() != user.getId()) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes acceso a esta clase");
+            }
+            List<RasgoAsistencia> asistencias = rasgoPlanillaDao.listarAsistencias(planillaId);
+            Map<String, Object> out = new HashMap<>();
+            out.put("id", planilla.getId());
+            out.put("tema", planilla.getTema());
+            out.put("fechaClase", planilla.getFechaClase() == null ? null : planilla.getFechaClase().toString());
+            out.put("cursoId", planilla.getCursoId());
+            out.put("asistencias", asistencias.stream().map(this::toRasgoAsistenciaDto).collect(Collectors.toList()));
+            return out;
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (SQLException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo cargar el detalle de la clase", ex);
+        }
+    }
+
     @PostMapping("/create-rasgo-planilla")
     @PreAuthorize("hasRole('LEVEL_1')")
     @ResponseStatus(HttpStatus.CREATED)
@@ -560,7 +607,14 @@ public class HomeController {
         if (request == null || request.asistenciaId() == null || request.asistenciaId() <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El id de asistencia es requerido.");
         }
-        String estado = "presente".equalsIgnoreCase(request.estado()) ? "presente" : "ausente";
+        String estado;
+        if ("presente".equalsIgnoreCase(request.estado())) {
+            estado = "presente";
+        } else if ("ausente_justificado".equalsIgnoreCase(request.estado())) {
+            estado = "ausente_justificado";
+        } else {
+            estado = "ausente";
+        }
         try {
             requireOwnedAttendance(request.asistenciaId(), user);
             rasgoPlanillaDao.registrarRespuesta(request.asistenciaId(), estado);

@@ -308,6 +308,101 @@ public class RasgoPlanillaDao extends conexion {
         return planillas;
     }
 
+    /**
+     * Lista todas las clases dictadas por un profesor (para la vista "Mis clases"),
+     * más la información del curso, materia y contadores de ausencias.
+     */
+    public List<ctn.informatica.sca.dto.ClaseDadaDto> listarClasesDadasPorProfesor(int profesorId) throws SQLException {
+        return listarClasesDadas("pr.usuario_id = ?", ps -> ps.setInt(1, profesorId));
+    }
+
+    /**
+     * Lista todas las clases dictadas dentro de una especialidad (para admin nivel 3).
+     */
+    public List<ctn.informatica.sca.dto.ClaseDadaDto> listarClasesDadasPorEspecialidad(int especialidadId) throws SQLException {
+        return listarClasesDadas("e.id = ?", ps -> ps.setInt(1, especialidadId));
+    }
+
+    /**
+     * Lista todas las clases dictadas sin filtro (para admin global).
+     */
+    public List<ctn.informatica.sca.dto.ClaseDadaDto> listarClasesDadas() throws SQLException {
+        return listarClasesDadas(null, ps -> {});
+    }
+
+    @FunctionalInterface
+    private interface PsBinder { void bind(PreparedStatement ps) throws SQLException; }
+
+    private List<ctn.informatica.sca.dto.ClaseDadaDto> listarClasesDadas(String whereClause, PsBinder binder) throws SQLException {
+        StringBuilder sql = new StringBuilder(
+                "SELECT pr.id, pr.fecha_clase, pr.tema, pr.curso_id, pr.asignacion_id, pr.usuario_id AS profesor_id, "
+                + "c.promocion AS curso_promocion, c.seccion AS curso_seccion, "
+                + "e.id AS especialidad_id, e.nombre AS especialidad_nombre, "
+                + "m.nombre AS materia_nombre, "
+                + "u.nombre AS profesor_nombre, u.apellido AS profesor_apellido, "
+                + "(SELECT COUNT(*) FROM rasgo_asistencia ra WHERE ra.planilla_rasgo_id = pr.id) AS total_alumnos, "
+                + "(SELECT COUNT(*) FROM rasgo_asistencia ra WHERE ra.planilla_rasgo_id = pr.id AND ra.estado = 'ausente') AS total_ausentes, "
+                + "(SELECT COUNT(*) FROM rasgo_asistencia ra WHERE ra.planilla_rasgo_id = pr.id AND ra.estado = 'ausente_justificado') AS total_justificados "
+                + "FROM planilla_rasgo pr "
+                + "JOIN curso c ON c.id = pr.curso_id "
+                + "LEFT JOIN especialidad e ON e.id = c.especialidad_id "
+                + "LEFT JOIN asignacion a ON a.id = pr.asignacion_id "
+                + "LEFT JOIN materia m ON m.id = a.materia_id "
+                + "LEFT JOIN usuario u ON u.id = pr.usuario_id ");
+        if (whereClause != null && !whereClause.isBlank()) {
+            sql.append("WHERE ").append(whereClause).append(' ');
+        }
+        sql.append("ORDER BY pr.fecha_clase DESC, pr.id DESC");
+
+        List<ctn.informatica.sca.dto.ClaseDadaDto> out = new ArrayList<>();
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql.toString())) {
+            binder.bind(ps);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String seccion = rs.getString("curso_seccion");
+                    Integer promocion = rs.getObject("curso_promocion", Integer.class);
+                    String especialidadNombre = rs.getString("especialidad_nombre");
+                    String cursoDesc = (especialidadNombre == null ? "" : especialidadNombre)
+                            + (promocion == null ? "" : (" " + promocion))
+                            + (seccion == null || seccion.isBlank() ? "" : (" " + seccion));
+                    String profesorNombre = ((rs.getString("profesor_apellido") == null ? "" : rs.getString("profesor_apellido")) + " "
+                            + (rs.getString("profesor_nombre") == null ? "" : rs.getString("profesor_nombre"))).trim();
+                    java.sql.Date fecha = rs.getDate("fecha_clase");
+                    out.add(new ctn.informatica.sca.dto.ClaseDadaDto(
+                            rs.getInt("id"),
+                            fecha == null ? null : fecha.toString(),
+                            rs.getString("tema"),
+                            rs.getInt("curso_id"),
+                            cursoDesc.trim(),
+                            rs.getObject("asignacion_id", Integer.class),
+                            rs.getString("materia_nombre"),
+                            rs.getInt("profesor_id"),
+                            profesorNombre.isBlank() ? null : profesorNombre,
+                            rs.getObject("especialidad_id", Integer.class),
+                            especialidadNombre,
+                            rs.getInt("total_alumnos"),
+                            rs.getInt("total_ausentes"),
+                            rs.getInt("total_justificados")));
+                }
+            }
+        }
+        return out;
+    }
+
+    public Integer findEspecialidadIdByPlanilla(int planillaId) throws SQLException {
+        String sql = "SELECT c.especialidad_id FROM planilla_rasgo pr "
+                + "JOIN curso c ON c.id = pr.curso_id WHERE pr.id = ?";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, planillaId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getObject(1, Integer.class);
+                }
+            }
+        }
+        return null;
+    }
+
     public List<RasgoPlanilla> listarPorCurso(int cursoId) throws SQLException {
         List<RasgoPlanilla> planillas = new ArrayList<>();
         try (Connection con = getCon()) {

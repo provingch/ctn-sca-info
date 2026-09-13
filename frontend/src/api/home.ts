@@ -102,6 +102,47 @@ export function getClaseActual(): Promise<ClaseActualDto> {
   return apiRequest<ClaseActualDto>('/api/home/clase-actual', { method: 'GET' });
 }
 
+export interface ClaseDadaDto {
+  id: number;
+  fechaClase: string | null;
+  tema: string;
+  cursoId: number;
+  cursoDescripcion: string;
+  asignacionId: number | null;
+  materiaNombre: string | null;
+  profesorId: number;
+  profesorNombre: string | null;
+  especialidadId: number | null;
+  especialidadNombre: string | null;
+  totalAlumnos: number;
+  totalAusentes: number;
+  totalJustificados: number;
+}
+
+export interface ClaseDetalleDto {
+  id: number;
+  tema: string;
+  fechaClase: string | null;
+  cursoId: number;
+  asistencias: Array<{
+    id: number;
+    alumnoId: number;
+    alumnoNombreCompleto: string;
+    estado: string;
+    faltaCodigo: string | null;
+    faltaObservacion: string | null;
+    codigos: string[];
+  }>;
+}
+
+export function getMisClases(): Promise<ClaseDadaDto[]> {
+  return apiRequest<ClaseDadaDto[]>('/api/home/mis-clases', { method: 'GET' });
+}
+
+export function getMiClase(planillaId: number): Promise<ClaseDetalleDto> {
+  return apiRequest<ClaseDetalleDto>(`/api/home/mis-clases/${planillaId}`, { method: 'GET' });
+}
+
 export function getHome(params: GetHomeParams = {}): Promise<HomeResponse> {
   const query = new URLSearchParams();
   if (params.cursoId !== undefined) query.set('cursoId', String(params.cursoId));

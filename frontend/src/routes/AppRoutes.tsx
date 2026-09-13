@@ -47,6 +47,7 @@ export default function AppRoutes() {
     <Route path="/admin/horarios/:cursoId" element={protect(<AdminPage />, [3])} />
     <Route path="/admin/salas" element={protect(<AdminPage />, [3])} />
     <Route path="/admin/quejas" element={protect(<AdminPage />, [3])} />
+    <Route path="/admin/clases" element={protect(<AdminPage />, [3])} />
     <Route path="/admin/sistema" element={protect(<AdminPage />, [3])} />
     <Route path="/admin/ingresantes" element={protect(<Navigate to="/admin/alumnos" replace />, [3])} />
     <Route path="/padre" element={protect(<ParentPage />, [4])} />

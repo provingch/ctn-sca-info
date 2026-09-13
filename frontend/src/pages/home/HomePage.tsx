@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import { useSpecialty } from '../../context/SpecialtyContext';
 import PlanCurricularView from './PlanCurricularView';
+import MisClasesView from './MisClasesView';
 import useAccessibleDialog from '../../hooks/useAccessibleDialog';
 import { useAuth } from '../../context/AuthContext';
 
@@ -234,9 +235,12 @@ export default function HomePage() {
           <div className="choice-grid">
             <button type="button" onClick={() => params({ subview: 'clase' })}><span>01</span><h2>Iniciar clase</h2><p>Asistencia, rasgos e historial del curso.</p></button>
             <button type="button" onClick={() => params({ subview: 'plan-curricular' })}><span>02</span><h2>Plan curricular</h2><p>Cargá y revisá tu plan curricular anual.</p></button>
+            <button type="button" onClick={() => params({ subview: 'mis-clases' })}><span>03</span><h2>Clases dadas</h2><p>Historial de clases; justificar ausencias.</p></button>
           </div>
         ) : subview === 'plan-curricular' ? (
           <PlanCurricularView />
+        ) : subview === 'mis-clases' ? (
+          <MisClasesView />
         ) : selectionLoading ? (
           <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Cargando…</h2><p>Esperá un momento mientras preparamos la clase.</p></section>
         ) : showSelectionWait ? (

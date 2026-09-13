@@ -15,6 +15,7 @@ import { SpecialtyDecorative } from '../../utils/specialtyIcons';
 import SistemaEstadoPanel from './SistemaEstadoPanel';
 import SalasPanel from './SalasPanel';
 import AdminQuejasPanel from './AdminQuejasPanel';
+import ClasesEspecialidadPanel from './ClasesEspecialidadPanel';
 import { useToast } from '../../context/toast';
 
 const modules = [
@@ -26,6 +27,7 @@ const modules = [
   { path: '/admin/sistema', key: 'sistema', title: 'Estado del sistema', detail: 'Salud de base de datos, migraciones y sincronización', globalOnly: true },
   { path: '/admin/salas', key: 'salas', title: 'Salas', detail: 'Catálogo de salas comunes y de pabellón', globalOnly: true },
   { path: '/admin/quejas', key: 'quejas', title: 'Quejas', detail: 'Registrar y gestionar quejas por especialidad' },
+  { path: '/admin/clases', key: 'clases', title: 'Clases dadas', detail: 'Historial de clases registradas por los profesores' },
 ];
 
 export default function AdminPage() {
@@ -107,5 +109,6 @@ function AdminModule({ module, data, reload, status, isGlobalAdmin }: {
   if (module.key === 'horarios') return <HorariosPanel status={status} />;
   if (module.key === 'salas') return <SalasPanel data={data} status={status} />;
   if (module.key === 'quejas') return <AdminQuejasPanel data={data} status={status} isGlobalAdmin={isGlobalAdmin} />;
+  if (module.key === 'clases') return <ClasesEspecialidadPanel status={status} />;
   return <SistemaEstadoPanel />;
 }
