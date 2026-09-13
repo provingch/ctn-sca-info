@@ -72,6 +72,16 @@ data class SubjectDto(
 )
 
 @Serializable
+data class RasgoConductaDto(
+    val fechaClase: String? = null,
+    val materia: String? = null,
+    val profesorNombre: String? = null,
+    val codigo: String,
+    val descripcion: String? = null,
+    val observacion: String? = null,
+)
+
+@Serializable
 data class TaskDto(
     val id: Int,
     val titulo: String,
@@ -98,7 +108,14 @@ data class ProfileResponseDto(
     val profileRoleLabel: String? = null,
     val activityLog: List<String> = emptyList(),
     val showFotoPanel: Boolean = false,
+    val showSecurityPanel: Boolean = false,
+    val totpEnabled: Boolean = false,
+    val pendingTotpSecret: String? = null,
+    val totpProvisioningUri: String? = null,
 )
+
+@Serializable
+data class ConfirmTotpRequest(val totpSetupCode: String)
 
 @Serializable
 data class ProfileOwnerDto(

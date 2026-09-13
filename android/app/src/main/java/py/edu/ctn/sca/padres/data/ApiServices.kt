@@ -27,6 +27,9 @@ interface ParentApi {
     @GET("api/padre")
     suspend fun summary(@Query("alumnoId") alumnoId: Int? = null): ParentResponse
 
+    @GET("api/padre/alumnos/{alumnoId}/conducta")
+    suspend fun conducta(@Path("alumnoId") alumnoId: Int): List<RasgoConductaDto>
+
     @Streaming
     @GET("api/padre/alumnos/{alumnoId}/reporte-mensual")
     suspend fun reporteMensual(
@@ -49,6 +52,15 @@ interface ProfileApi {
 
     @POST("api/profile/change-password")
     suspend fun changePassword(@Body body: ChangePasswordRequest): Response<Unit>
+
+    @POST("api/profile/prepare-totp")
+    suspend fun prepareTotp(): Response<Unit>
+
+    @POST("api/profile/confirm-totp")
+    suspend fun confirmTotp(@Body body: ConfirmTotpRequest): Response<Unit>
+
+    @POST("api/profile/disable-totp")
+    suspend fun disableTotp(): Response<Unit>
 }
 
 interface PushApi {
