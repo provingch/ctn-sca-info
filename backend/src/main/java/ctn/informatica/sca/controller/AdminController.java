@@ -169,6 +169,26 @@ public class AdminController {
 
     record CatalogAlumnos(List<StudentItem> alumnos, List<EgresadoItem> egresados) {}
 
+    /**
+     * Lista clases dictadas (planilla_rasgo) para el admin.
+     * - Admin global: ve todas las clases.
+     * - Admin nivel 3 (por especialidad): ve solo las clases de su especialidad.
+     * Solo lectura; la edición de asistencias solo la hace el profesor dueño.
+     */
+    @GetMapping("/clases-especialidad")
+    public List<ctn.informatica.sca.dto.ClaseDadaDto> clasesEspecialidad(Authentication auth) {
+        int userId = ApiAuth.requireUserId(auth);
+        try {
+            Integer actingSpecialtyId = getSpecialtyAdminIdForUser(userId);
+            ctn.informatica.sca.dao.RasgoPlanillaDao dao = new ctn.informatica.sca.dao.RasgoPlanillaDao();
+            return actingSpecialtyId == null
+                    ? dao.listarClasesDadas()
+                    : dao.listarClasesDadasPorEspecialidad(actingSpecialtyId);
+        } catch (Exception ex) {
+            throw failure("No se pudieron cargar las clases de la especialidad", ex);
+        }
+    }
+
     @GetMapping("/quejas")
     public List<Map<String, Object>> listarQuejas(Authentication auth) {
         int userId = ApiAuth.requireUserId(auth);

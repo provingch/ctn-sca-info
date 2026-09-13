@@ -311,7 +311,7 @@ CREATE TABLE rasgo_asistencia (
     alumno_nombre VARCHAR(80) NOT NULL,
     alumno_apellido VARCHAR(80) NOT NULL,
     alumno_email VARCHAR(255) NOT NULL,
-    estado ENUM('pendiente', 'presente', 'ausente') NOT NULL DEFAULT 'pendiente',
+    estado ENUM('pendiente', 'presente', 'ausente', 'ausente_justificado') NOT NULL DEFAULT 'pendiente',
     falta_codigo VARCHAR(10) NULL,
     falta_observacion VARCHAR(500) NULL,
     responded_at TIMESTAMP NULL,
