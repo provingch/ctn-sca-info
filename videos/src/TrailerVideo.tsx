@@ -14,7 +14,7 @@ const SCENE_DURATIONS = [90, 100, SCENE3_FEATURES_DURATION, 160, 110];
 export const TrailerVideo: React.FC = () => {
   return (
     <AbsoluteFill>
-      <Audio src={staticFile("audio/trailer-theme.mp3")} volume={0.75} />
+      <Audio src={staticFile("audio/trailer-theme-original.mp3")} volume={0.75} />
       <TransitionSeries>
         <TransitionSeries.Sequence durationInFrames={SCENE_DURATIONS[0]} name="Intro">
           <Scene1Intro />
