@@ -1,8 +1,11 @@
+import { Audio } from "@remotion/media";
 import {
   AbsoluteFill,
   Easing,
   Interactive,
+  Sequence,
   interpolate,
+  staticFile,
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
@@ -12,6 +15,7 @@ import { Logo } from "../components/Logo";
 import { fontFamily, theme } from "../theme";
 
 const tags = ["PWA instalable", "Notificaciones push", "Multiplataforma"];
+const NARRATION_START = 9;
 
 export const Scene5Outro: React.FC = () => {
   const frame = useCurrentFrame();
@@ -23,6 +27,9 @@ export const Scene5Outro: React.FC = () => {
     >
       <Background />
       <BrandCorner />
+      <Sequence from={NARRATION_START} layout="none">
+        <Audio src={staticFile("audio/narration/04-outro.wav")} />
+      </Sequence>
       <AbsoluteFill
         style={{ justifyContent: "center", alignItems: "center", gap: 40 }}
       >

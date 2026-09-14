@@ -1,14 +1,19 @@
+import { Audio } from "@remotion/media";
 import {
   AbsoluteFill,
   Easing,
   Interactive,
+  Sequence,
   interpolate,
+  staticFile,
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
 import { Background } from "../components/Background";
 import { BrandCorner } from "../components/BrandCorner";
 import { fontFamily, theme } from "../theme";
+
+const NARRATION_START = 10;
 
 const pills = ["Horarios", "Planillas", "Plan curricular", "Notas"];
 
@@ -26,6 +31,9 @@ export const Scene2Problem: React.FC = () => {
     >
       <Background />
       <BrandCorner />
+      <Sequence from={NARRATION_START} layout="none">
+        <Audio src={staticFile("audio/narration/03-gestion.wav")} />
+      </Sequence>
       <AbsoluteFill
         style={{
           justifyContent: "center",
