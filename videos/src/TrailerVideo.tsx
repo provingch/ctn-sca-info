@@ -9,7 +9,7 @@ import { Scene4Roles } from "./scenes/Scene4Roles";
 import { Scene5Outro } from "./scenes/Scene5Outro";
 
 const TRANSITION = 15;
-const SCENE_DURATIONS = [90, 100, SCENE3_FEATURES_DURATION, 160, 110];
+const SCENE_DURATIONS = [130, 100, SCENE3_FEATURES_DURATION, 160, 110];
 
 export const TrailerVideo: React.FC = () => {
   return (
