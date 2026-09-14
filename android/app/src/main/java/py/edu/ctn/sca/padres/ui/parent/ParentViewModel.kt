@@ -104,7 +104,7 @@ class ParentViewModel(
                             conductaError = null,
                         )
                     }
-                    result.data.selectedAlumnoId?.let { loadConducta(it) }
+                    result.data.selectedAlumnoId?.takeIf { it > 0 }?.let { loadConducta(it) }
                 }
                 is ParentResult.Error -> _ui.update {
                     it.copy(loading = false, refreshing = false, error = result.message)

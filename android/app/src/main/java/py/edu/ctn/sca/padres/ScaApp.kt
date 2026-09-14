@@ -40,7 +40,7 @@ class ScaApp : Application() {
 class Graph(context: Context) {
     private val appContext = context.applicationContext
     val session = Session()
-    private val tokenStore = TokenStore(context)
+    val tokenStore = TokenStore(context)
     private val cookieJar = PersistentCookieJar(tokenStore)
 
     private val network = Network(

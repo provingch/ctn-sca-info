@@ -1,8 +1,13 @@
 package py.edu.ctn.sca.padres.ui.profile
 
+import android.Manifest
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import android.util.Base64
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -12,6 +17,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,19 +32,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.ByteArrayOutputStream
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -47,34 +40,61 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import android.graphics.Bitmap
 import android.graphics.Matrix
+import java.io.ByteArrayOutputStream
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import py.edu.ctn.sca.padres.Graph
+import py.edu.ctn.sca.padres.ScaApp
 import py.edu.ctn.sca.padres.ui.components.ContentMaxWidth
 import py.edu.ctn.sca.padres.ui.components.Eyebrow
 import py.edu.ctn.sca.padres.ui.components.Panel
 import py.edu.ctn.sca.padres.ui.graphViewModel
 import py.edu.ctn.sca.padres.ui.theme.scaColors
 
+private enum class ProfileTab(val title: String, val detail: String) {
+    PROFILE("Perfil", "Datos personales"),
+    SECURITY("Seguridad", "Contraseña y 2FA"),
+    APP("Aplicación", "Estado y avisos"),
+    ACTIVITY("Registros", "Actividad"),
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(graph: Graph, onBack: () -> Unit) {
-    val vm: ProfileViewModel = graphViewModel { ProfileViewModel(it.profileRepository) }
+    val vm: ProfileViewModel = graphViewModel {
+        ProfileViewModel(it.profileRepository, it.pushRepository)
+    }
     val ui by vm.ui.collectAsStateWithLifecycle()
 
     BackHandler(onBack = onBack)
@@ -114,14 +134,74 @@ fun ProfileScreen(graph: Graph, onBack: () -> Unit) {
                     Spacer(Modifier.height(12.dp))
                     Button(onClick = vm::load) { Text("Reintentar") }
                 }
-                else -> ProfileForm(ui, vm)
+                else -> ProfileTabs(ui, vm)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ProfileTabs(ui: ProfileUiState, vm: ProfileViewModel) {
+    val tabs = buildList {
+        add(ProfileTab.PROFILE)
+        if (ui.showSecurityPanel) add(ProfileTab.SECURITY)
+        add(ProfileTab.APP)
+        if (ui.showActivityPanel) add(ProfileTab.ACTIVITY)
+    }
+    var selected by remember(tabs.size) { mutableStateOf(ProfileTab.PROFILE) }
+    val selectedIndex = tabs.indexOf(selected).coerceAtLeast(0)
+
+    Column(Modifier.fillMaxSize()) {
+        ScrollableTabRow(
+            selectedTabIndex = selectedIndex,
+            edgePadding = 12.dp,
+            containerColor = MaterialTheme.colorScheme.surface,
+        ) {
+            tabs.forEachIndexed { index, tab ->
+                Tab(
+                    selected = index == selectedIndex,
+                    onClick = { selected = tab },
+                    text = {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(tab.title, fontWeight = FontWeight.Bold)
+                            Text(
+                                tab.detail,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    },
+                )
+            }
+        }
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+            when (selected) {
+                ProfileTab.PROFILE -> ProfileTabContent(ui, vm)
+                ProfileTab.SECURITY -> SecurityTabContent(ui, vm)
+                ProfileTab.APP -> AppTabContent(ui, vm)
+                ProfileTab.ACTIVITY -> ActivityTabContent(ui)
             }
         }
     }
 }
 
 @Composable
-private fun ProfileForm(ui: ProfileUiState, vm: ProfileViewModel) {
+private fun TabColumn(content: @Composable ColumnScope.() -> Unit) {
+    Column(
+        Modifier
+            .widthIn(max = ContentMaxWidth)
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .imePadding()
+            .padding(horizontal = 16.dp, vertical = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+        content = content,
+    )
+}
+
+@Composable
+private fun ProfileTabContent(ui: ProfileUiState, vm: ProfileViewModel) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var photoError by remember { mutableStateOf<String?>(null) }
@@ -140,60 +220,8 @@ private fun ProfileForm(ui: ProfileUiState, vm: ProfileViewModel) {
         }
     }
 
-    Column(
-        Modifier
-            .widthIn(max = ContentMaxWidth)
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .imePadding()
-            .padding(horizontal = 16.dp, vertical = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        if (ui.showFotoPanel) {
-            Panel {
-                Eyebrow("00 · Foto de perfil")
-                Text(
-                    "Se mostrará en la barra de navegación.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
-                )
-                Row(
-                    Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    ProfilePhotoPreview(
-                        base64OrDataUrl = ui.fotoPerfil,
-                        fallbackInitials = buildInitials(ui.nombre, ui.apellido, ui.usuario),
-                    )
-                    Column(
-                        Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Button(
-                            onClick = { photoPicker.launch("image/*") },
-                            shape = RoundedCornerShape(9.dp),
-                            modifier = Modifier.fillMaxWidth(),
-                        ) { Text("Subir foto", fontWeight = FontWeight.Bold) }
-                        androidx.compose.material3.OutlinedButton(
-                            onClick = { vm.onFotoPerfil("") },
-                            shape = RoundedCornerShape(9.dp),
-                            enabled = !ui.fotoPerfil.isNullOrBlank(),
-                            modifier = Modifier.fillMaxWidth(),
-                        ) { Text("Quitar foto") }
-                    }
-                }
-                photoError?.let {
-                    Text(
-                        it,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                }
-            }
-        }
+    TabColumn {
+        PreviewPanel(ui)
 
         Panel {
             Eyebrow("01 · Información personal")
@@ -253,7 +281,7 @@ private fun ProfileForm(ui: ProfileUiState, vm: ProfileViewModel) {
         Panel {
             Eyebrow("03 · Cuenta")
             Text(
-                "Nombre de usuario para iniciar sesión.",
+                "Nombre utilizado para iniciar sesión.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
@@ -286,6 +314,52 @@ private fun ProfileForm(ui: ProfileUiState, vm: ProfileViewModel) {
             }
         }
 
+        if (ui.showFotoPanel) {
+            Panel {
+                Eyebrow("04 · Foto de perfil")
+                Text(
+                    "Se mostrará en la barra de navegación.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
+                )
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    ProfilePhotoPreview(
+                        base64OrDataUrl = ui.fotoPerfil,
+                        fallbackInitials = buildInitials(ui.nombre, ui.apellido, ui.usuario),
+                    )
+                    Column(
+                        Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Button(
+                            onClick = { photoPicker.launch("image/*") },
+                            shape = RoundedCornerShape(9.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { Text("Subir foto", fontWeight = FontWeight.Bold) }
+                        OutlinedButton(
+                            onClick = { vm.onFotoPerfil("") },
+                            shape = RoundedCornerShape(9.dp),
+                            enabled = !ui.fotoPerfil.isNullOrBlank(),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { Text("Quitar foto") }
+                    }
+                }
+                photoError?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+            }
+        }
+
         ui.saveError?.let { msg ->
             Text(
                 msg,
@@ -312,11 +386,63 @@ private fun ProfileForm(ui: ProfileUiState, vm: ProfileViewModel) {
         ) {
             Text(if (ui.saving) "Guardando…" else "Guardar cambios", fontWeight = FontWeight.Bold)
         }
+    }
+}
 
+@Composable
+private fun PreviewPanel(ui: ProfileUiState) {
+    Panel {
+        Eyebrow("Vista previa")
+        Spacer(Modifier.height(10.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            ProfilePhotoPreview(
+                base64OrDataUrl = ui.fotoPerfil,
+                fallbackInitials = buildInitials(ui.nombre, ui.apellido, ui.usuario),
+            )
+            Column(Modifier.fillMaxWidth()) {
+                if (ui.roleLabel.isNotBlank()) {
+                    Box(
+                        Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(scaColors.accentSoft)
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                    ) {
+                        Text(
+                            ui.roleLabel,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = scaColors.accentDeep,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                    Spacer(Modifier.height(6.dp))
+                }
+                val displayName = ui.fullName.ifBlank { ui.usuario.ifBlank { "Usuario SCA" } }
+                Text(displayName, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "@${ui.usuario.ifBlank { "sin-usuario" }}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                if (ui.accessDescription.isNotBlank()) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        ui.accessDescription,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SecurityTabContent(ui: ProfileUiState, vm: ProfileViewModel) {
+    TabColumn {
         Panel {
-            Eyebrow("04 · Seguridad")
+            Eyebrow("01 · Cambiar contraseña")
             Text(
-                "Cambiá la contraseña de tu cuenta. Se cerrarán tus otras sesiones.",
+                "Usá al menos seis caracteres. Al actualizarla se cerrarán todas las sesiones.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
@@ -372,121 +498,193 @@ private fun ProfileForm(ui: ProfileUiState, vm: ProfileViewModel) {
             }
         }
 
-        if (ui.showSecurityPanel) {
-            Panel {
-                Eyebrow("05 · Verificación en dos pasos")
+        Panel {
+            Eyebrow("02 · Verificación en dos pasos")
+            Text(
+                "Protegé el acceso con tu app autenticadora.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
+            )
+            StatusRow(active = ui.totpEnabled, activeLabel = "Activa", inactiveLabel = "Inactiva")
+
+            ui.pendingTotpSecret?.takeIf { it.isNotBlank() }?.let { secret ->
+                Spacer(Modifier.height(12.dp))
                 Text(
-                    "Protegé tu cuenta con una app autenticadora (Google Authenticator, Authy).",
+                    "Escaneá o pegá esta clave en tu app autenticadora:",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
                 )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    val active = ui.totpEnabled
-                    Box(
-                        modifier = Modifier
-                            .size(10.dp)
-                            .clip(CircleShape)
-                            .background(if (active) scaColors.success else MaterialTheme.colorScheme.outline),
-                    )
-                    Spacer(Modifier.size(8.dp))
-                    Text(
-                        if (active) "Activa" else "Inactiva",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    secret,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(9.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .padding(12.dp),
+                )
+                Spacer(Modifier.height(10.dp))
+                ProfileField(
+                    label = "Código de la app",
+                    value = ui.totpCode,
+                    onValueChange = vm::onTotpCode,
+                    keyboardType = KeyboardType.NumberPassword,
+                    imeAction = ImeAction.Done,
+                )
+                Spacer(Modifier.height(10.dp))
+                Button(
+                    onClick = vm::confirmTotp,
+                    enabled = !ui.totpBusy,
+                    shape = RoundedCornerShape(9.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                ) { Text(if (ui.totpBusy) "Confirmando…" else "Confirmar activación", fontWeight = FontWeight.Bold) }
+            }
 
-                ui.pendingTotpSecret?.takeIf { it.isNotBlank() }?.let { secret ->
-                    Spacer(Modifier.height(12.dp))
-                    Text(
-                        "Escaneá o pegá esta clave en tu app autenticadora:",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        secret,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(9.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .padding(12.dp),
-                    )
-                    Spacer(Modifier.height(10.dp))
-                    ProfileField(
-                        label = "Código de la app",
-                        value = ui.totpCode,
-                        onValueChange = vm::onTotpCode,
-                        keyboardType = KeyboardType.NumberPassword,
-                        imeAction = ImeAction.Done,
-                    )
-                    Spacer(Modifier.height(10.dp))
-                    Button(
-                        onClick = vm::confirmTotp,
-                        enabled = !ui.totpBusy,
-                        shape = RoundedCornerShape(9.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                    ) { Text(if (ui.totpBusy) "Confirmando…" else "Confirmar activación", fontWeight = FontWeight.Bold) }
-                }
+            ui.totpError?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+            ui.totpMessage?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = scaColors.success,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
 
-                ui.totpError?.let {
-                    Text(
-                        it,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                }
-                ui.totpMessage?.let {
-                    Text(
-                        it,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = scaColors.success,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                }
-
-                Spacer(Modifier.height(12.dp))
-                if (ui.totpEnabled) {
-                    androidx.compose.material3.OutlinedButton(
-                        onClick = vm::disableTotp,
-                        enabled = !ui.totpBusy,
-                        shape = RoundedCornerShape(9.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                    ) { Text("Desactivar 2FA", fontWeight = FontWeight.Bold) }
-                } else if (ui.pendingTotpSecret.isNullOrBlank()) {
-                    androidx.compose.material3.OutlinedButton(
-                        onClick = vm::prepareTotp,
-                        enabled = !ui.totpBusy,
-                        shape = RoundedCornerShape(9.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                    ) { Text(if (ui.totpBusy) "Generando…" else "Configurar 2FA", fontWeight = FontWeight.Bold) }
-                }
+            Spacer(Modifier.height(12.dp))
+            if (ui.totpEnabled) {
+                OutlinedButton(
+                    onClick = vm::disableTotp,
+                    enabled = !ui.totpBusy,
+                    shape = RoundedCornerShape(9.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                ) { Text("Desactivar 2FA", fontWeight = FontWeight.Bold) }
+            } else if (ui.pendingTotpSecret.isNullOrBlank()) {
+                OutlinedButton(
+                    onClick = vm::prepareTotp,
+                    enabled = !ui.totpBusy,
+                    shape = RoundedCornerShape(9.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                ) { Text(if (ui.totpBusy) "Generando…" else "Configurar 2FA", fontWeight = FontWeight.Bold) }
             }
         }
+    }
+}
 
+@Composable
+private fun AppTabContent(ui: ProfileUiState, vm: ProfileViewModel) {
+    val context = LocalContext.current
+    var permGranted by remember {
+        mutableStateOf(hasNotificationPermission(context))
+    }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        permGranted = granted
+        if (granted) vm.retryPushRegistration()
+    }
+    val tokenRegistered = remember(ui.pushBusy, ui.pushEnabledOnServer) {
+        (context.applicationContext as ScaApp).graph.tokenStore.lastFcmTokenSynced != null
+    }
+    val active = permGranted && tokenRegistered
+
+    val (statusTitle, statusDetail) = when {
+        !permGranted -> "Bloqueadas en el sistema" to "Habilitá los avisos desde los ajustes de la aplicación."
+        !tokenRegistered -> "Registro pendiente" to "Todavía no pudimos registrar este dispositivo. Probá de nuevo."
+        else -> "Activadas en este dispositivo" to "Vas a recibir avisos aunque la app esté cerrada."
+    }
+
+    TabColumn {
         Panel {
-            Eyebrow("06 · Registros")
+            Eyebrow("01 · Notificaciones")
             Text(
-                "Actividad reciente de tu cuenta.",
+                "Avisos asociados a tu cuenta y este dispositivo.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
+            )
+            StatusRow(active = active, activeLabel = statusTitle, inactiveLabel = statusTitle)
+            Text(
+                statusDetail,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+            Spacer(Modifier.height(12.dp))
+            when {
+                !permGranted -> Button(
+                    onClick = { requestNotificationPermission(context, permissionLauncher::launch) },
+                    enabled = !ui.pushBusy,
+                    shape = RoundedCornerShape(9.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                ) { Text("Activar notificaciones", fontWeight = FontWeight.Bold) }
+                !tokenRegistered -> Button(
+                    onClick = vm::retryPushRegistration,
+                    enabled = !ui.pushBusy,
+                    shape = RoundedCornerShape(9.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                ) { Text(if (ui.pushBusy) "Registrando…" else "Reintentar registro", fontWeight = FontWeight.Bold) }
+                else -> OutlinedButton(
+                    onClick = vm::disablePush,
+                    enabled = !ui.pushBusy,
+                    shape = RoundedCornerShape(9.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                ) { Text(if (ui.pushBusy) "Desactivando…" else "Desactivar", fontWeight = FontWeight.Bold) }
+            }
+            ui.pushMessage?.let {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActivityTabContent(ui: ProfileUiState) {
+    TabColumn {
+        Panel {
+            Eyebrow("01 · Actividad reciente")
+            Text(
+                "Movimientos registrados para esta cuenta.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
             )
             if (ui.activityLog.isEmpty()) {
                 Text(
-                    "Todavía no hay actividad registrada.",
+                    "Aún no hay movimientos",
                     style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    "La actividad de tu cuenta aparecerá aquí.",
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
@@ -502,6 +700,47 @@ private fun ProfileForm(ui: ProfileUiState, vm: ProfileViewModel) {
             }
         }
     }
+}
+
+@Composable
+private fun StatusRow(active: Boolean, activeLabel: String, inactiveLabel: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .clip(CircleShape)
+                .background(if (active) scaColors.success else MaterialTheme.colorScheme.outline),
+        )
+        Spacer(Modifier.size(8.dp))
+        Text(
+            if (active) activeLabel else inactiveLabel,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+        )
+    }
+}
+
+private fun hasNotificationPermission(context: Context): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
+    return ContextCompat.checkSelfPermission(
+        context,
+        Manifest.permission.POST_NOTIFICATIONS,
+    ) == PackageManager.PERMISSION_GRANTED
+}
+
+private fun requestNotificationPermission(context: Context, launch: (String) -> Unit) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+    runCatching { launch(Manifest.permission.POST_NOTIFICATIONS) }.onFailure {
+        openAppNotificationSettings(context)
+    }
+}
+
+private fun openAppNotificationSettings(context: Context) {
+    val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+        putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    runCatching { context.startActivity(intent) }
 }
 
 @Composable
