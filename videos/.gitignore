@@ -5,3 +5,10 @@ dist
 
 # Ignore the output video from Git but not videos you import into src/.
 out
+
+# Raw screen recordings contain real student/staff names and grades (PII).
+# Only the blurred/trimmed clips in public/videos/safe/ are meant to be versioned.
+public/videos/*.mp4
+
+# Full-length source track for the trailer music, not needed once trimmed.
+public/audio/worry-slowed-source.mp3
