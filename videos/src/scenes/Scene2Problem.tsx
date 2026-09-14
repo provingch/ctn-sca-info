@@ -7,6 +7,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import { Background } from "../components/Background";
+import { BrandCorner } from "../components/BrandCorner";
 import { fontFamily, theme } from "../theme";
 
 const pills = ["Horarios", "Planillas", "Plan curricular", "Notas"];
@@ -24,18 +25,19 @@ export const Scene2Problem: React.FC = () => {
       }}
     >
       <Background />
+      <BrandCorner />
       <AbsoluteFill
         style={{
           justifyContent: "center",
           alignItems: "center",
           padding: "0 160px",
-          gap: 56,
+          gap: 60,
         }}
       >
         <Interactive.Div
           name="Headline"
           style={{
-            fontSize: 92,
+            fontSize: 104,
             fontWeight: 800,
             letterSpacing: "-0.02em",
             color: theme.text,
@@ -99,12 +101,12 @@ export const Scene2Problem: React.FC = () => {
                 style={{
                   opacity,
                   scale,
-                  padding: "18px 34px",
+                  padding: "20px 40px",
                   borderRadius: 999,
                   border: `1px solid ${theme.border}`,
                   background: "rgba(145, 160, 255, 0.08)",
                   color: theme.text,
-                  fontSize: 32,
+                  fontSize: 38,
                   fontWeight: 600,
                 }}
               >

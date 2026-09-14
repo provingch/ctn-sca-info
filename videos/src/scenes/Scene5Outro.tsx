@@ -7,6 +7,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import { Background } from "../components/Background";
+import { BrandCorner } from "../components/BrandCorner";
 import { Logo } from "../components/Logo";
 import { fontFamily, theme } from "../theme";
 
@@ -21,6 +22,7 @@ export const Scene5Outro: React.FC = () => {
       style={{ fontFamily, justifyContent: "center", alignItems: "center" }}
     >
       <Background />
+      <BrandCorner />
       <AbsoluteFill
         style={{ justifyContent: "center", alignItems: "center", gap: 40 }}
       >
@@ -40,12 +42,12 @@ export const Scene5Outro: React.FC = () => {
             filter: `drop-shadow(0 0 34px ${theme.accent}66)`,
           }}
         >
-          <Logo size={92} color={theme.accentLight} />
+          <Logo size={106} color={theme.accentLight} />
         </Interactive.Div>
         <Interactive.Div
           name="Outro headline"
           style={{
-            fontSize: 78,
+            fontSize: 90,
             fontWeight: 800,
             letterSpacing: "-0.02em",
             color: theme.text,
@@ -84,11 +86,11 @@ export const Scene5Outro: React.FC = () => {
                 name={`Tag ${tag}`}
                 style={{
                   opacity,
-                  padding: "14px 26px",
+                  padding: "16px 30px",
                   borderRadius: 999,
                   border: `1px solid ${theme.border}`,
                   color: theme.accentLight,
-                  fontSize: 24,
+                  fontSize: 28,
                   fontWeight: 600,
                 }}
               >
@@ -100,7 +102,7 @@ export const Scene5Outro: React.FC = () => {
         <Interactive.Div
           name="Footer"
           style={{
-            fontSize: 24,
+            fontSize: 27,
             fontWeight: 600,
             letterSpacing: "0.1em",
             textTransform: "uppercase",
