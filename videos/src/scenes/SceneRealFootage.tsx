@@ -17,8 +17,10 @@ const FADE = 10;
 const RealClip: React.FC<{
   src: string;
   title: string;
+  role: string;
+  description: string;
   durationInFrames: number;
-}> = ({ src, title, durationInFrames }) => {
+}> = ({ src, title, role, description, durationInFrames }) => {
   const frame = useCurrentFrame();
   const opacity = interpolate(
     frame,
@@ -37,6 +39,10 @@ const RealClip: React.FC<{
       style={{
         position: "absolute",
         opacity,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 24,
         filter: `drop-shadow(0 30px 60px ${theme.accent}22)`,
       }}
     >
@@ -47,6 +53,20 @@ const RealClip: React.FC<{
           style={{ width: "100%", display: "block" }}
         />
       </ScreenMockup>
+      <div style={{ textAlign: "center", maxWidth: 760 }}>
+        <div style={{ fontSize: 24, fontWeight: 700, color: theme.text }}>
+          {role}
+        </div>
+        <div
+          style={{
+            fontSize: 17,
+            color: theme.textMuted,
+            marginTop: 6,
+          }}
+        >
+          {description}
+        </div>
+      </div>
     </Interactive.Div>
   );
 };
@@ -91,6 +111,8 @@ export const SceneRealFootage: React.FC = () => {
           <RealClip
             src="videos/safe/admin_montage.mp4"
             title="SCA · Panel de Administración"
+            role="Administración"
+            description="Especialidades, usuarios, horarios y salas: toda la gestión del colegio en un solo panel."
             durationInFrames={adminDuration}
           />
         </Sequence>
@@ -98,6 +120,8 @@ export const SceneRealFootage: React.FC = () => {
           <RealClip
             src="videos/safe/eval_montage.mp4"
             title="SCA · Panel de Evaluación"
+            role="Evaluación"
+            description="Aprobación de planillas y seguimiento del cumplimiento docente."
             durationInFrames={evalDuration}
           />
         </Sequence>
@@ -105,6 +129,8 @@ export const SceneRealFootage: React.FC = () => {
           <RealClip
             src="videos/safe/profesor_montage.mp4"
             title="SCA · Panel de Profesor"
+            role="Profesores"
+            description="Carga de tareas, calificaciones y seguimiento del curso, todo sincronizado."
             durationInFrames={profesorDuration}
           />
         </Sequence>
@@ -112,6 +138,8 @@ export const SceneRealFootage: React.FC = () => {
           <RealClip
             src="videos/safe/padres_montage.mp4"
             title="SCA · Panel de Familias"
+            role="Familias"
+            description="Notas, promedios y tareas de tus hijos, al instante."
             durationInFrames={padresDuration}
           />
         </Sequence>
