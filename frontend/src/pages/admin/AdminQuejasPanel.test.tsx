@@ -1,10 +1,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AdminCatalog } from '../../api/admin';
-import { createQueja, getAdminQuejas, reviewQueja } from '../../api/quejas';
+import { createQueja, getAdminQuejas, reviewQueja, resolveQueja, downloadQuejaExcel, downloadQuejaPdf } from '../../api/quejas';
 import AdminQuejasPanel from './AdminQuejasPanel';
 
-vi.mock('../../api/quejas', async (importOriginal) => ({ ...await importOriginal<typeof import('../../api/quejas')>(), createQueja: vi.fn(), getAdminQuejas: vi.fn(), reviewQueja: vi.fn() }));
+vi.mock('../../api/quejas', async (importOriginal) => ({ ...await importOriginal<typeof import('../../api/quejas')>(), createQueja: vi.fn(), getAdminQuejas: vi.fn(), reviewQueja: vi.fn(), resolveQueja: vi.fn(), downloadQuejaExcel: vi.fn(), downloadQuejaPdf: vi.fn() }));
 const data: AdminCatalog = {
   materias: [], alumnos: [], cursosAlumnos: [], egresados: [],
   usuarios: [{ id: 9, nombre: 'Admin', apellido: 'Global', usuario: 'admin', nivel: 3, correo: null }],
@@ -32,6 +32,53 @@ beforeEach(() => {
 });
 
 describe('AdminQuejasPanel', () => {
+  it('ofrece Excel solo en pendientes y usa el identificador de la queja', async () => {
+    vi.mocked(getAdminQuejas).mockResolvedValue([item]);
+    vi.mocked(downloadQuejaExcel).mockResolvedValue('solicitud-revision-42.xlsx');
+    render(<AdminQuejasPanel data={data} status={vi.fn()} isGlobalAdmin />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Descargar solicitud de revisión (Excel)' }));
+    await waitFor(() => expect(downloadQuejaExcel).toHaveBeenCalledWith(42));
+    expect(screen.queryByRole('button', { name: 'Registrar solución' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Descargar reporte de solución/ })).not.toBeInTheDocument();
+  });
+
+  it('separa revisada de resuelta, exige los datos y habilita PDF al resolver', async () => {
+    const resolution = { estado: 'resuelta' as const, procesoRevision: 'Se revisaron los registros.', solucionAplicada: 'Se corrigieron las consignas.', corregidaPorNombre: 'María López', resueltaEn: '2026-09-14T12:30:00' };
+    vi.mocked(getAdminQuejas).mockResolvedValue([{ ...item, estado: 'revisada', revisadaEn: '2026-09-14T10:30:00', conclusion: 'Situación verificada.' }]);
+    vi.mocked(resolveQueja).mockResolvedValue(resolution);
+    vi.mocked(downloadQuejaPdf).mockResolvedValue('reporte-solucion-42.pdf');
+    render(<AdminQuejasPanel data={data} status={vi.fn()} isGlobalAdmin />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Registrar solución' }));
+    expect(screen.queryByRole('button', { name: /Descargar solicitud/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Descargar reporte/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Marcar como resuelta' })).toBeDisabled();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Qué se revisó' }), { target: { value: resolution.procesoRevision } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Solución aplicada' }), { target: { value: resolution.solucionAplicada } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Nombre de quien corrigió' }), { target: { value: resolution.corregidaPorNombre } });
+    fireEvent.click(screen.getByRole('button', { name: 'Marcar como resuelta' }));
+    const download = await screen.findByRole('button', { name: 'Descargar reporte de solución (PDF)' });
+    expect(screen.getByText('Resuelta')).toBeVisible();
+    expect(screen.getByText('Situación verificada.')).toBeVisible();
+    expect(screen.getByText('Quejas resueltas').parentElement).toHaveTextContent('1');
+    expect(screen.getByText('Quejas revisadas').parentElement).toHaveTextContent('0');
+    expect(screen.getByText('Quejas pendientes').parentElement).toHaveTextContent('0');
+    fireEvent.click(download);
+    await waitFor(() => expect(downloadQuejaPdf).toHaveBeenCalledWith(42));
+  });
+
+  it('conserva los campos y el estado si falla la resolución', async () => {
+    vi.mocked(getAdminQuejas).mockResolvedValue([{ ...item, estado: 'revisada', revisadaEn: '2026-09-14T10:30:00' }]);
+    vi.mocked(resolveQueja).mockRejectedValue(new Error('Sin conexión'));
+    render(<AdminQuejasPanel data={data} status={vi.fn()} isGlobalAdmin />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Registrar solución' }));
+    for (const label of ['Qué se revisó', 'Solución aplicada', 'Nombre de quien corrigió']) fireEvent.change(screen.getByRole('textbox', { name: label }), { target: { value: 'Dato a conservar' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Marcar como resuelta' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Los datos se conservaron');
+    expect(screen.getByRole('textbox', { name: 'Solución aplicada' })).toHaveValue('Dato a conservar');
+    expect(screen.getByText('Revisada')).toBeVisible();
+    expect(screen.queryByRole('button', { name: /Descargar reporte/ })).not.toBeInTheDocument();
+  });
+
   it('completa la revisión con conclusión, fecha y responsable y actualiza los totales', async () => {
     vi.mocked(getAdminQuejas).mockResolvedValue([item]);
     const revision = { estado: 'revisada' as const, revisadaEn: '2026-09-14T12:30:00', revisadaPor: 9, conclusion: 'Se acordó un seguimiento con el profesor.' };

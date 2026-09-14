@@ -17,6 +17,47 @@ public class QuejaDao extends conexion {
 
     public record Revision(String estado, java.sql.Timestamp revisadaEn, int revisadaPor, String conclusion) {}
 
+    public record Documento(long id, int especialidadId, String especialidad, String profesor, String curso,
+            String motivo, java.sql.Timestamp creadaEn, java.sql.Timestamp revisadaEn, String conclusion,
+            String procesoRevision, String solucionAplicada, String corregidaPorNombre, java.sql.Timestamp resueltaEn) {}
+    public record Resolucion(String estado, String procesoRevision, String solucionAplicada,
+            String corregidaPorNombre, java.sql.Timestamp resueltaEn) {}
+
+    public Documento documento(long id) throws SQLException {
+        String sql = "SELECT q.*, e.nombre AS especialidad, CONCAT_WS(' ', u.nombre, u.apellido) AS profesor, "
+                + "CONCAT(cb.nivel, '° ', cb.seccion) AS curso FROM queja q "
+                + "LEFT JOIN especialidad e ON e.id = q.especialidad_id "
+                + "LEFT JOIN usuario u ON u.id = q.profesor_id LEFT JOIN curso_base cb ON cb.id = q.curso_id WHERE q.id = ?";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setLong(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return null;
+                return new Documento(id, rs.getInt("especialidad_id"), rs.getString("especialidad"), rs.getString("profesor"),
+                        rs.getString("curso"), rs.getString("motivo"), rs.getTimestamp("creada_en"), rs.getTimestamp("revisada_en"),
+                        rs.getString("conclusion"), rs.getString("proceso_revision"), rs.getString("solucion_aplicada"),
+                        rs.getString("corregida_por_nombre"), rs.getTimestamp("resuelta_en"));
+            }
+        }
+    }
+
+    public Resolucion resolver(long id, int especialidadId, String proceso, String solucion, String nombre, int userId) throws SQLException {
+        String sql = "UPDATE queja SET proceso_revision = ?, solucion_aplicada = ?, corregida_por_nombre = ?, "
+                + "resuelta_en = CURRENT_TIMESTAMP, resolucion_registrada_por = ? "
+                + "WHERE id = ? AND especialidad_id = ? AND revisada_en IS NOT NULL AND resuelta_en IS NULL";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, proceso); ps.setString(2, solucion); ps.setString(3, nombre); ps.setInt(4, userId);
+            ps.setLong(5, id); ps.setInt(6, especialidadId);
+            if (ps.executeUpdate() == 0) return null;
+            try (PreparedStatement read = con.prepareStatement("SELECT resuelta_en FROM queja WHERE id = ?")) {
+                read.setLong(1, id);
+                try (ResultSet rs = read.executeQuery()) {
+                    if (!rs.next()) throw new SQLException("No se encontró la resolución guardada");
+                    return new Resolucion("resuelta", proceso, solucion, nombre, rs.getTimestamp(1));
+                }
+            }
+        }
+    }
+
     public Integer findEspecialidadId(long id) throws SQLException {
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement("SELECT especialidad_id FROM queja WHERE id = ?")) {
             ps.setLong(1, id);
@@ -79,7 +120,7 @@ public class QuejaDao extends conexion {
 
     public List<Map<String, Object>> listar() throws SQLException {
         String sql = "SELECT q.id, q.profesor_id, q.curso_id, q.especialidad_id, q.motivo, q.creada_por, q.creada_en, "
-                + "q.revisada_en, q.revisada_por, q.conclusion, "
+                + "q.revisada_en, q.revisada_por, q.conclusion, q.proceso_revision, q.solucion_aplicada, q.corregida_por_nombre, q.resuelta_en, "
                 + "u.nombre AS profesor_nombre, u.apellido AS profesor_apellido, "
                 + "cb.seccion AS curso_seccion, cb.nivel AS curso_nivel, "
                 + "e.nombre AS curso_especialidad "
@@ -101,7 +142,11 @@ public class QuejaDao extends conexion {
                 row.put("motivo", rs.getString("motivo"));
                 row.put("creadaPor", rs.getLong("creada_por"));
                 row.put("creadaEn", rs.getTimestamp("creada_en"));
-                row.put("estado", rs.getTimestamp("revisada_en") == null ? "pendiente" : "revisada");
+                row.put("estado", rs.getTimestamp("resuelta_en") != null ? "resuelta" : rs.getTimestamp("revisada_en") == null ? "pendiente" : "revisada");
+                row.put("resueltaEn", rs.getTimestamp("resuelta_en"));
+                row.put("procesoRevision", rs.getString("proceso_revision"));
+                row.put("solucionAplicada", rs.getString("solucion_aplicada"));
+                row.put("corregidaPorNombre", rs.getString("corregida_por_nombre"));
                 row.put("revisadaEn", rs.getTimestamp("revisada_en"));
                 row.put("revisadaPor", rs.getObject("revisada_por"));
                 row.put("conclusion", rs.getString("conclusion"));

@@ -214,6 +214,61 @@ public class AdminController {
 
     public record QuejaRevisionInput(String conclusion) {}
 
+    public record QuejaResolucionInput(String procesoRevision, String solucionAplicada, String corregidaPorNombre) {}
+
+    private QuejaDao.Documento quejaAutorizada(long id, Authentication auth) throws SQLException {
+        int userId = ApiAuth.requireUserId(auth);
+        Integer scope = getSpecialtyAdminIdForUser(userId);
+        QuejaDao.Documento q = quejaDao.documento(id);
+        if (q == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Queja no encontrada");
+        if (scope != null && scope != q.especialidadId()) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "La queja pertenece a otra especialidad");
+        return q;
+    }
+
+    @PutMapping("/quejas/{id}/resolucion")
+    public QuejaDao.Resolucion resolverQueja(@PathVariable long id, @RequestBody QuejaResolucionInput input, Authentication auth) {
+        int userId = ApiAuth.requireUserId(auth);
+        if (input == null || !textoValido(input.procesoRevision(), 5000) || !textoValido(input.solucionAplicada(), 5000) || !textoValido(input.corregidaPorNombre(), 200))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Completá proceso y solución (hasta 5000 caracteres) y nombre de quien corrigió (hasta 200)");
+        try {
+            var q = quejaAutorizada(id, auth);
+            var result = quejaDao.resolver(id, q.especialidadId(), input.procesoRevision().trim(), input.solucionAplicada().trim(), input.corregidaPorNombre().trim(), userId);
+            if (result == null) throw new ResponseStatusException(HttpStatus.CONFLICT, "La queja debe estar revisada y todavía sin resolver. Actualizá el historial");
+            return result;
+        } catch (ResponseStatusException ex) { throw ex; }
+        catch (SQLException ex) { throw failure("No se pudo guardar la solución", ex); }
+    }
+
+    private static boolean textoValido(String text, int max) { return text != null && !text.isBlank() && text.trim().length() <= max; }
+
+    @GetMapping("/quejas/{id}/reporte-solucion.pdf")
+    public org.springframework.http.ResponseEntity<byte[]> quejaSolucionPdf(@PathVariable long id, Authentication auth) {
+        try {
+            var q = quejaAutorizada(id, auth);
+            if (q.resueltaEn() == null || q.revisadaEn() == null) throw new ResponseStatusException(HttpStatus.CONFLICT, "El reporte de solución solo está disponible para quejas resueltas");
+            byte[] file = new ctn.informatica.sca.util.QuejaPdfBuilder().build(q, java.time.LocalDateTime.now());
+            return archivoQueja(file, "application/pdf", "reporte-solucion-" + id + ".pdf");
+        } catch (ResponseStatusException ex) { throw ex; }
+        catch (Exception ex) { throw failure("No se pudo generar el reporte de solución", ex); }
+    }
+
+    @GetMapping("/quejas/{id}/solicitud-revision.xlsx")
+    public org.springframework.http.ResponseEntity<byte[]> quejaSolicitudExcel(@PathVariable long id, Authentication auth) {
+        try {
+            var q = quejaAutorizada(id, auth);
+            if (q.revisadaEn() != null || q.resueltaEn() != null) throw new ResponseStatusException(HttpStatus.CONFLICT, "La solicitud solo está disponible para quejas pendientes");
+            byte[] file = new ctn.informatica.sca.util.QuejaWorkbookBuilder().build(q, java.time.LocalDateTime.now());
+            return archivoQueja(file, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "solicitud-revision-" + id + ".xlsx");
+        } catch (ResponseStatusException ex) { throw ex; }
+        catch (Exception ex) { throw failure("No se pudo generar la solicitud de revisión", ex); }
+    }
+
+    private org.springframework.http.ResponseEntity<byte[]> archivoQueja(byte[] bytes, String type, String name) {
+        return org.springframework.http.ResponseEntity.ok().header("Content-Type", type)
+                .header("Content-Disposition", "attachment; filename=\"" + name + "\"")
+                .header("Cache-Control", "no-store").body(bytes);
+    }
+
     @PutMapping("/quejas/{id}/revision")
     public QuejaDao.Revision revisarQueja(@PathVariable long id, @RequestBody QuejaRevisionInput input, Authentication auth) {
         int userId = ApiAuth.requireUserId(auth);
