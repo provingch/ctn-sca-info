@@ -4,13 +4,12 @@ import { TransitionSeries, linearTiming } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
 import { Scene1Intro } from "./scenes/Scene1Intro";
 import { Scene2Problem } from "./scenes/Scene2Problem";
-import { Scene3Features } from "./scenes/Scene3Features";
+import { Scene3Features, SCENE3_FEATURES_DURATION } from "./scenes/Scene3Features";
 import { Scene4Roles } from "./scenes/Scene4Roles";
-import { SceneRealFootage, SCENE_REAL_FOOTAGE_DURATION } from "./scenes/SceneRealFootage";
 import { Scene5Outro } from "./scenes/Scene5Outro";
 
 const TRANSITION = 15;
-const SCENE_DURATIONS = [90, 100, 325, 160, SCENE_REAL_FOOTAGE_DURATION, 110];
+const SCENE_DURATIONS = [90, 100, SCENE3_FEATURES_DURATION, 160, 110];
 
 export const TrailerVideo: React.FC = () => {
   return (
@@ -45,14 +44,7 @@ export const TrailerVideo: React.FC = () => {
           presentation={fade()}
           timing={linearTiming({ durationInFrames: TRANSITION })}
         />
-        <TransitionSeries.Sequence durationInFrames={SCENE_DURATIONS[4]} name="RealFootage">
-          <SceneRealFootage />
-        </TransitionSeries.Sequence>
-        <TransitionSeries.Transition
-          presentation={fade()}
-          timing={linearTiming({ durationInFrames: TRANSITION })}
-        />
-        <TransitionSeries.Sequence durationInFrames={SCENE_DURATIONS[5]} name="Outro">
+        <TransitionSeries.Sequence durationInFrames={SCENE_DURATIONS[4]} name="Outro">
           <Scene5Outro />
         </TransitionSeries.Sequence>
       </TransitionSeries>
