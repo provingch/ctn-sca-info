@@ -3,8 +3,9 @@ import { theme } from "../theme";
 export const ScreenMockup: React.FC<{
   title: string;
   width: number;
+  contentPadding?: number;
   children: React.ReactNode;
-}> = ({ title, width, children }) => {
+}> = ({ title, width, contentPadding = 22, children }) => {
   return (
     <div
       style={{
@@ -41,7 +42,9 @@ export const ScreenMockup: React.FC<{
           {title}
         </div>
       </div>
-      <div style={{ padding: 22, background: theme.bgDeep }}>{children}</div>
+      <div style={{ padding: contentPadding, background: theme.bgDeep }}>
+        {children}
+      </div>
     </div>
   );
 };

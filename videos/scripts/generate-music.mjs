@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 const SAMPLE_RATE = 44100;
-const TOTAL_SECONDS = 24.3;
+const TOTAL_SECONDS = 34.2;
 const TOTAL_SAMPLES = Math.ceil(TOTAL_SECONDS * SAMPLE_RATE);
 
 // I - V - vi - IV in C major, 2 seconds (one bar at 120bpm) per chord.
@@ -76,20 +76,25 @@ const addHat = (buf, startSample, amp) => {
   }
 };
 
+const ENERGETIC_END = TOTAL_SECONDS - 6.3;
+
 const padGainAt = (t) => {
   if (t < 6) return smoothstep(0.5, 6, t) * 0.55;
-  if (t < 18) return 0.55;
-  return 0.55 * (1 - smoothstep(18, 22.5, t)) + 0.22 * (1 - smoothstep(22.5, TOTAL_SECONDS, t));
+  if (t < ENERGETIC_END) return 0.55;
+  return (
+    0.55 * (1 - smoothstep(ENERGETIC_END, ENERGETIC_END + 4.5, t)) +
+    0.22 * (1 - smoothstep(ENERGETIC_END + 4.5, TOTAL_SECONDS, t))
+  );
 };
 
 const arpGainAt = (t) => {
   if (t < 4) return 0;
   if (t < 6) return smoothstep(4, 6, t) * 0.32;
-  if (t < 18) return 0.32;
-  return 0.32 * (1 - smoothstep(18, 20, t));
+  if (t < ENERGETIC_END) return 0.32;
+  return 0.32 * (1 - smoothstep(ENERGETIC_END, ENERGETIC_END + 2, t));
 };
 
-const percActiveAt = (t) => t >= 6 && t < 18.2;
+const percActiveAt = (t) => t >= 6 && t < ENERGETIC_END + 0.2;
 
 // Pad + arpeggio, chord by chord.
 for (let barStart = 0; barStart < TOTAL_SECONDS; barStart += CHORD_DURATION) {
