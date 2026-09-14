@@ -212,6 +212,28 @@ public class AdminController {
         }
     }
 
+    public record QuejaRevisionInput(String conclusion) {}
+
+    @PutMapping("/quejas/{id}/revision")
+    public QuejaDao.Revision revisarQueja(@PathVariable long id, @RequestBody QuejaRevisionInput input, Authentication auth) {
+        int userId = ApiAuth.requireUserId(auth);
+        if (input == null || input.conclusion() == null || input.conclusion().isBlank() || input.conclusion().trim().length() > 5000) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Escribí una conclusión de entre 1 y 5000 caracteres");
+        }
+        try {
+            Integer scope = getSpecialtyAdminIdForUser(userId);
+            Integer specialty = quejaDao.findEspecialidadId(id);
+            if (specialty == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Queja no encontrada");
+            if (scope != null && !scope.equals(specialty)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes revisar quejas fuera de tu especialidad");
+            }
+            QuejaDao.Revision revision = quejaDao.completarRevision(id, specialty, input.conclusion().trim(), userId);
+            if (revision == null) throw new ResponseStatusException(HttpStatus.CONFLICT, "La queja ya fue revisada o cambió. Actualizá el historial");
+            return revision;
+        } catch (ResponseStatusException ex) { throw ex; }
+        catch (SQLException ex) { throw failure("No se pudo guardar la revisión", ex); }
+    }
+
     @GetMapping("/salas")
     public List<SalaItem> salas(@RequestParam(required = false) Integer especialidadId, Authentication auth) {
         ApiAuth.requireUserId(auth);
