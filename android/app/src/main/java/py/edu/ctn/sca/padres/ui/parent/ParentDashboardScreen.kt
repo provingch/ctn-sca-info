@@ -244,8 +244,11 @@ private fun DashboardContent(ui: ParentUiState, vm: ParentViewModel, reports: Re
                 selectedSubject?.let { subject ->
                     item { SubjectDetailPanel(subject) }
                 }
-                item { ConductaPanel(ui) }
                 item { CalculationNote() }
+            }
+
+            if (selectedChild != null) {
+                item { ConductaPanel(ui) }
             }
         }
     }

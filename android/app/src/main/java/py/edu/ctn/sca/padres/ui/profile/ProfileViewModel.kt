@@ -12,6 +12,7 @@ import py.edu.ctn.sca.padres.data.PasswordChange
 import py.edu.ctn.sca.padres.data.ProfileLoad
 import py.edu.ctn.sca.padres.data.ProfileRepository
 import py.edu.ctn.sca.padres.data.ProfileSave
+import py.edu.ctn.sca.padres.data.PushRepository
 import py.edu.ctn.sca.padres.data.SaveProfileRequest
 import py.edu.ctn.sca.padres.data.TotpAction
 
@@ -25,14 +26,20 @@ data class ProfileUiState(
     val telefono: String = "",
     val usuario: String = "",
     val roleLabel: String = "",
+    val fullName: String = "",
+    val accessDescription: String = "",
     /** Nombre/apellido/CI solo los edita un admin; para el padre suele venir en false. */
     val canEditIdentity: Boolean = false,
     val saving: Boolean = false,
     val saveError: String? = null,
     val saved: Boolean = false,
     val activityLog: List<String> = emptyList(),
+    val showActivityPanel: Boolean = false,
     val showFotoPanel: Boolean = false,
     val fotoPerfil: String? = null,
+    val pushEnabledOnServer: Boolean = false,
+    val pushBusy: Boolean = false,
+    val pushMessage: String? = null,
     val currentPassword: String = "",
     val newPassword: String = "",
     val confirmPassword: String = "",
@@ -51,6 +58,7 @@ data class ProfileUiState(
 
 class ProfileViewModel(
     private val profileRepository: ProfileRepository,
+    private val pushRepository: PushRepository,
 ) : ViewModel() {
 
     private val _ui = MutableStateFlow(ProfileUiState())
@@ -77,12 +85,20 @@ class ProfileViewModel(
                             telefono = owner.telefono.orEmpty(),
                             usuario = owner.usuario.orEmpty(),
                             roleLabel = result.data.profileRoleLabel.orEmpty(),
+                            fullName = owner.fullName.orEmpty().ifBlank {
+                                listOfNotNull(owner.nombre, owner.apellido)
+                                    .filter { it.isNotBlank() }
+                                    .joinToString(" ")
+                            },
+                            accessDescription = result.data.profileAccessDescription.orEmpty(),
                             canEditIdentity = result.data.canEditAdminOnlyProfileFields,
                             saved = false,
                             saveError = null,
                             activityLog = result.data.activityLog,
+                            showActivityPanel = result.data.showActivityPanel,
                             showFotoPanel = result.data.showFotoPanel,
                             fotoPerfil = owner.fotoPerfil,
+                            pushEnabledOnServer = result.data.pushEnabled,
                             showSecurityPanel = result.data.showSecurityPanel,
                             totpEnabled = result.data.totpEnabled,
                             pendingTotpSecret = result.data.pendingTotpSecret,
@@ -227,6 +243,25 @@ class ProfileViewModel(
                 }
                 is TotpAction.Error -> _ui.update { it.copy(totpBusy = false, totpError = res.message) }
             }
+        }
+    }
+
+    fun retryPushRegistration() {
+        if (_ui.value.pushBusy) return
+        _ui.update { it.copy(pushBusy = true, pushMessage = null) }
+        viewModelScope.launch {
+            pushRepository.syncToken(force = true)
+            _ui.update { it.copy(pushBusy = false) }
+            load()
+        }
+    }
+
+    fun disablePush() {
+        if (_ui.value.pushBusy) return
+        _ui.update { it.copy(pushBusy = true, pushMessage = null) }
+        viewModelScope.launch {
+            pushRepository.unregister()
+            _ui.update { it.copy(pushBusy = false, pushEnabledOnServer = false) }
         }
     }
 

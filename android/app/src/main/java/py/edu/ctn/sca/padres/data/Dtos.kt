@@ -106,12 +106,15 @@ data class ProfileResponseDto(
     val profileOwner: ProfileOwnerDto = ProfileOwnerDto(),
     val canEditAdminOnlyProfileFields: Boolean = false,
     val profileRoleLabel: String? = null,
+    val profileAccessDescription: String? = null,
     val activityLog: List<String> = emptyList(),
     val showFotoPanel: Boolean = false,
     val showSecurityPanel: Boolean = false,
+    val showActivityPanel: Boolean = false,
     val totpEnabled: Boolean = false,
     val pendingTotpSecret: String? = null,
     val totpProvisioningUri: String? = null,
+    val pushEnabled: Boolean = false,
 )
 
 @Serializable
@@ -121,6 +124,7 @@ data class ConfirmTotpRequest(val totpSetupCode: String)
 data class ProfileOwnerDto(
     val nombre: String? = null,
     val apellido: String? = null,
+    val fullName: String? = null,
     val ci: Int? = null,
     val correo: String? = null,
     val telefono: String? = null,
