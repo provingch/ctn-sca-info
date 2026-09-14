@@ -5,11 +5,10 @@ import { fade } from "@remotion/transitions/fade";
 import { Scene1Intro } from "./scenes/Scene1Intro";
 import { Scene2Problem } from "./scenes/Scene2Problem";
 import { Scene3Features, SCENE3_FEATURES_DURATION } from "./scenes/Scene3Features";
-import { Scene4Roles } from "./scenes/Scene4Roles";
 import { Scene5Outro } from "./scenes/Scene5Outro";
 
 const TRANSITION = 15;
-const SCENE_DURATIONS = [130, 100, SCENE3_FEATURES_DURATION, 160, 110];
+const SCENE_DURATIONS = [130, 100, SCENE3_FEATURES_DURATION, 110];
 
 export const TrailerVideo: React.FC = () => {
   return (
@@ -37,14 +36,7 @@ export const TrailerVideo: React.FC = () => {
           presentation={fade()}
           timing={linearTiming({ durationInFrames: TRANSITION })}
         />
-        <TransitionSeries.Sequence durationInFrames={SCENE_DURATIONS[3]} name="Roles">
-          <Scene4Roles />
-        </TransitionSeries.Sequence>
-        <TransitionSeries.Transition
-          presentation={fade()}
-          timing={linearTiming({ durationInFrames: TRANSITION })}
-        />
-        <TransitionSeries.Sequence durationInFrames={SCENE_DURATIONS[4]} name="Outro">
+        <TransitionSeries.Sequence durationInFrames={SCENE_DURATIONS[3]} name="Outro">
           <Scene5Outro />
         </TransitionSeries.Sequence>
       </TransitionSeries>
