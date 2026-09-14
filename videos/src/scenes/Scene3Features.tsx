@@ -1,41 +1,53 @@
-import { Video } from "@remotion/media";
 import {
   AbsoluteFill,
   Easing,
   Interactive,
   Sequence,
   interpolate,
-  staticFile,
   useCurrentFrame,
 } from "remotion";
 import { Background } from "../components/Background";
 import { BrandCorner } from "../components/BrandCorner";
 import { ScreenMockup } from "../components/ScreenMockup";
+import {
+  AdministracionMock,
+  EvaluacionMock,
+  ExcelMock,
+  FamiliasMock,
+  PlanillaMock,
+} from "../components/mockups";
 import { fontFamily, theme } from "../theme";
 
 const userViews = [
   {
     role: "Profesores",
     body: "Cargan el plan curricular y verifican el tema visto en cada clase desde el Libro de Cátedra, suben tareas y calificaciones por curso y período, y llevan el horario siempre al día — todo sincronizado con Google Classroom.",
-    screen: { title: "SCA · Panel de Profesor", videoSrc: "videos/safe/profesor_montage.mp4" },
+    screenStack: [
+      { title: "planilla-ejemplo.xlsx", content: <ExcelMock /> },
+      { title: "SCA · Planilla", content: <PlanillaMock /> },
+    ],
+    screen: null,
     duration: 210,
   },
   {
     role: "Evaluación y Coordinación",
     body: "Aprueban o rechazan las planillas cargadas por cada docente, hacen seguimiento del cumplimiento y desempeño del profesorado, y detectan atrasos e incumplimientos antes de que se acumulen.",
-    screen: { title: "SCA · Panel de Evaluación", videoSrc: "videos/safe/eval_montage.mp4" },
+    screenStack: null,
+    screen: { title: "SCA · Panel de Evaluación", content: <EvaluacionMock /> },
     duration: 210,
   },
   {
     role: "Administración",
     body: "Gestionan especialidades, usuarios, horarios y salas desde un panel central, dan de alta cursos y secciones, y mantienen el control académico de todo el colegio en un solo lugar.",
-    screen: { title: "SCA · Panel de Administración", videoSrc: "videos/safe/admin_montage.mp4" },
+    screenStack: null,
+    screen: { title: "SCA · Panel de Administración", content: <AdministracionMock /> },
     duration: 210,
   },
   {
     role: "Familias",
     body: "Consultan notas, promedios y tareas de sus hijos en tiempo real, reciben notificaciones ante nuevas calificaciones o incumplimientos, y acceden al resumen académico completo desde el celular.",
-    screen: { title: "SCA · Panel de Familias", videoSrc: "videos/safe/padres_montage.mp4" },
+    screenStack: null,
+    screen: { title: "SCA · Panel de Familias", content: <FamiliasMock /> },
     duration: 210,
   },
 ] as const;
@@ -158,13 +170,21 @@ const UserViewSlide: React.FC<{
           filter: `drop-shadow(0 40px 80px ${theme.accent}28)`,
         }}
       >
-        <ScreenMockup title={view.screen.title} width={820} contentPadding={0}>
-          <Video
-            src={staticFile(view.screen.videoSrc)}
-            muted
-            style={{ width: "100%", display: "block" }}
-          />
-        </ScreenMockup>
+        {view.screenStack ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            {view.screenStack.map((item) => (
+              <ScreenMockup key={item.title} title={item.title} width={580}>
+                {item.content}
+              </ScreenMockup>
+            ))}
+          </div>
+        ) : (
+          view.screen && (
+            <ScreenMockup title={view.screen.title} width={820}>
+              {view.screen.content}
+            </ScreenMockup>
+          )
+        )}
       </div>
     </Interactive.Div>
   );
