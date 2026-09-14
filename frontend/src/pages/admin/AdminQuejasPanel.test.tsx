@@ -32,6 +32,36 @@ beforeEach(() => {
 });
 
 describe('AdminQuejasPanel', () => {
+  it('separa las quejas por especialidad y abre los grupos al buscar', async () => {
+    const electricidad = { ...item, id: 43, especialidadId: 99, cursoId: 14, cursoEspecialidad: 'Electricidad', motivo: 'Faltan materiales de taller.' };
+    vi.mocked(getAdminQuejas).mockResolvedValue([electricidad, item, { ...item, id: 41 }]);
+    render(<AdminQuejasPanel data={data} status={vi.fn()} isGlobalAdmin />);
+    const infoButton = await screen.findByRole('button', { name: /Informática.*2 quejas/ });
+    const electricityButton = screen.getByRole('button', { name: /Electricidad.*1 queja/ });
+    expect(infoButton).toHaveAttribute('aria-expanded', 'false');
+    expect(electricityButton).toHaveAttribute('aria-expanded', 'false');
+    expect(infoButton.closest('section')).toHaveAttribute('data-specialty', 'informatica');
+    expect(electricityButton.closest('section')).toHaveAttribute('data-specialty', 'electricidad');
+    fireEvent.click(infoButton);
+    expect(infoButton).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText('Registro #42').compareDocumentPosition(screen.getByText('Registro #41')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByText(electricidad.motivo)).not.toBeVisible();
+    fireEvent.click(infoButton);
+    expect(infoButton).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'electricidad' } });
+    expect(screen.queryByRole('button', { name: /Informática.*quejas/ })).not.toBeInTheDocument();
+    expect(screen.getByText(electricidad.motivo)).toBeVisible();
+    expect(electricityButton).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('recupera la especialidad desde el catálogo si el registro no trae su nombre', async () => {
+    vi.mocked(getAdminQuejas).mockResolvedValue([{ ...item, cursoEspecialidad: null }]);
+    render(<AdminQuejasPanel data={data} status={vi.fn()} isGlobalAdmin />);
+    expect(await screen.findByRole('button', { name: /Informática.*1 queja/ })).toHaveAttribute('aria-expanded', 'true');
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'informatica' } });
+    expect(screen.getByText(item.motivo)).toBeVisible();
+  });
+
   it('carga automáticamente, muestra el motivo y busca sin depender de tildes', async () => {
     vi.mocked(getAdminQuejas).mockResolvedValue([item]);
     render(<AdminQuejasPanel data={data} status={vi.fn()} isGlobalAdmin />);

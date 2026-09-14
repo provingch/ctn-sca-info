@@ -1035,9 +1035,25 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .complaints-search { grid-template-columns: minmax(0, 520px) auto; align-items: end; gap: 14px; margin-bottom: 20px; }
 .complaints-search > small { padding-bottom: 12px; }
 .complaints-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.complaints-groups { display: grid; gap: 14px; }
+.complaints-specialty { min-width: 0; border: 1px solid var(--accent-strong); border-left: 4px solid var(--accent); border-radius: var(--radius-sm); background: var(--paper); overflow: hidden; }
+.complaints-specialty-heading { margin: 0; }
+.complaints-specialty-heading button { display: flex; align-items: center; gap: 14px; width: 100%; padding: 18px; border: 0; background: var(--accent-soft); color: var(--accent-deep); font: inherit; text-align: left; cursor: pointer; }
+.complaints-specialty-heading button:hover { background: var(--accent-strong); }
+.complaints-specialty-heading button:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
+.complaints-specialty-logo { display: grid; place-items: center; width: 46px; height: 46px; flex: 0 0 46px; border: 1px solid var(--accent-strong); border-radius: 12px; background: var(--paper); color: var(--accent); }
+.complaints-specialty-logo .specialty-icon { width: 30px; height: 30px; }
+.complaints-specialty-copy { display: grid; gap: 5px; min-width: 0; flex: 1; overflow-wrap: anywhere; font-size: 1rem; }
+.complaints-specialty-copy small { font-size: .76rem; font-weight: 400; }
+.complaints-specialty-count { flex-shrink: 0; padding: 5px 9px; border-radius: 20px; background: var(--paper); color: var(--accent-deep); font-size: .76rem; font-weight: 700; }
+.complaints-specialty-chevron { flex-shrink: 0; transition: transform .18s ease; }
+.complaints-specialty-heading button[aria-expanded="true"] .complaints-specialty-chevron { transform: rotate(180deg); }
+.complaints-specialty .complaints-list { padding: 16px; }
+@media (prefers-reduced-motion: reduce) { .complaints-specialty-chevron { transition: none; } }
+@media (max-width: 640px) { .complaints-specialty-heading button { gap: 10px; padding: 14px 10px; flex-wrap: wrap; } .complaints-specialty-copy { flex-basis: calc(100% - 60px); } .complaints-specialty-count { margin-left: 56px; } .complaints-specialty-chevron { margin-left: auto; } .complaints-specialty .complaints-list { padding: 10px; } }
 .complaint-record { padding: 18px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--paper-raised); overflow-wrap: anywhere; }
 .complaint-record-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; }
-.complaint-record-heading h3 { margin: 0; font-size: 1rem; }
+.complaint-record-heading h4 { margin: 0; font-size: 1rem; }
 .complaint-reference, .complaint-record footer { color: var(--muted); font-size: .76rem; }
 .complaint-course { margin: 6px 0 14px; color: var(--muted); font-size: .82rem; }
 .complaint-reason { margin: 0 0 16px; white-space: pre-wrap; line-height: 1.65; font-size: .9rem; }

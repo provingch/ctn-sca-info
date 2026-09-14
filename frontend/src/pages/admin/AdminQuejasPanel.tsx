@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import ContentState from '../../components/ui/ContentState';
+import SpecialtyIcon from '../../components/SpecialtyIcon';
+import { normalizeSpecialty } from '../../theme/theme';
 import { ApiError } from '../../api/client';
 import type { AdminCatalog } from '../../api/admin';
 import { createQueja, getAdminQuejas, type QuejaItem } from '../../api/quejas';
@@ -18,6 +20,7 @@ export default function AdminQuejasPanel({ data, status, isGlobalAdmin }: { data
   const [listError, setListError] = useState('');
   const [formError, setFormError] = useState('');
   const [query, setQuery] = useState('');
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const requestId = useRef(0);
   const submitting = useRef(false);
 
@@ -76,9 +79,20 @@ export default function AdminQuejasPanel({ data, status, isGlobalAdmin }: { data
     setSaving(false);
   }
 
+  const specialtyName = (q: QuejaItem) => data.especialidades.find((s) => s.id === q.especialidadId)?.nombre
+    || q.cursoEspecialidad?.trim() || data.cursos.find((c) => c.id === q.cursoId)?.especialidad || 'Especialidad no disponible';
   const filtered = (lista ?? []).filter((q) => normalize([
-    q.profesorNombre, q.profesorApellido, q.cursoEspecialidad, q.cursoNivel, q.cursoSeccion, q.motivo,
+    q.profesorNombre, q.profesorApellido, specialtyName(q), q.cursoNivel, q.cursoSeccion, q.motivo,
   ].join(' ')).includes(normalize(query.trim())));
+  const groups = Array.from(filtered.reduce((map, q) => {
+    const name = specialtyName(q);
+    const key = q.especialidadId != null ? String(q.especialidadId) : normalize(name);
+    const group = map.get(key) ?? { key, name, items: [] as QuejaItem[] };
+    group.items.push(q);
+    map.set(key, group);
+    return map;
+  }, new Map<string, { key: string; name: string; items: QuejaItem[] }>()).values())
+    .sort((a, b) => a.name.localeCompare(b.name, 'es'));
 
   return <div className="complaints-workspace">
     <section className="panel complaints-register" aria-labelledby="complaints-register-title">
@@ -111,25 +125,39 @@ export default function AdminQuejasPanel({ data, status, isGlobalAdmin }: { data
     <section className="panel complaints-history" aria-labelledby="complaints-history-title" aria-busy={listLoading}>
       <header className="complaints-heading">
         <div><span className="eyebrow">Historial</span><h2 id="complaints-history-title">Quejas registradas{lista !== null && <span className="complaints-count">{lista.length}</span>}</h2>
-          <p>{isGlobalAdmin ? 'Registros de todas las especialidades, del más reciente al más antiguo.' : 'Registros de tu especialidad, del más reciente al más antiguo.'}</p></div>
+          <p>{isGlobalAdmin ? 'Explorá las quejas por especialidad. Dentro de cada grupo, las más recientes aparecen primero.' : 'Registros de tu especialidad, del más reciente al más antiguo.'}</p></div>
         <button className="button secondary" type="button" disabled={listLoading || saving} onClick={() => void loadList()}>{listLoading ? 'Actualizando…' : 'Actualizar lista'}</button>
       </header>
       {lista !== null && lista.length > 0 && <div className="complaints-search form-grid">
-        <label>Buscar en las quejas<input type="search" placeholder="Profesor, curso, especialidad o motivo" value={query} onChange={(e) => setQuery(e.target.value)} /></label>
+        <label>Buscar en las quejas<input type="search" placeholder="Profesor, curso, especialidad o motivo" value={query} onChange={(e) => { setQuery(e.target.value); setExpandedGroups({}); }} /></label>
         <small>{filtered.length} de {lista.length} registros</small>
       </div>}
       {listError && <ContentState compact tone="error" title="No se pudo actualizar el historial" detail={listError + (lista !== null ? ' Se conserva la última lista cargada.' : '')} />}
       {lista === null && listLoading && <ContentState compact tone="loading" title="Cargando quejas…" />}
       {lista !== null && lista.length === 0 && <ContentState compact title="Todavía no hay quejas registradas" detail="Los nuevos registros aparecerán aquí automáticamente." />}
       {lista !== null && lista.length > 0 && filtered.length === 0 && <ContentState compact title="Sin coincidencias" detail="Probá con otro nombre, curso o motivo." actions={<button className="button secondary" type="button" onClick={() => setQuery('')}>Limpiar búsqueda</button>} />}
-      {filtered.length > 0 && <ul className="complaints-list">{filtered.map((q) => <li key={q.id}>
+      {groups.length > 0 && <div className="complaints-groups">{groups.map((group) => {
+        const expanded = expandedGroups[group.key] ?? (!!query.trim() || groups.length === 1);
+        const panelId = `complaints-specialty-${encodeURIComponent(group.key)}`;
+        return <section className="complaints-specialty" data-specialty={normalizeSpecialty(group.name)} key={group.key}>
+          <h3 className="complaints-specialty-heading"><button type="button" id={`${panelId}-heading`} aria-expanded={expanded} aria-controls={panelId}
+            onClick={() => setExpandedGroups((current) => ({ ...current, [group.key]: !expanded }))}>
+            <span className="complaints-specialty-logo" aria-hidden="true"><SpecialtyIcon name={group.name} /></span>
+            <span className="complaints-specialty-copy"><span>{group.name}</span><small>{expanded ? 'Quejas de esta especialidad' : 'Abrir para revisar las quejas'}</small></span>
+            <span className="complaints-specialty-count">{group.items.length} {group.items.length === 1 ? 'queja' : 'quejas'}</span>
+            <svg className="complaints-specialty-chevron" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6" /></svg>
+          </button></h3>
+          <div id={panelId} role="region" aria-labelledby={`${panelId}-heading`} hidden={!expanded}>
+      <ul className="complaints-list">{group.items.map((q) => <li key={q.id}>
         <article className="complaint-record">
-          <div className="complaint-record-heading"><h3>{[q.profesorNombre, q.profesorApellido].filter(Boolean).join(' ') || ('Profesor #' + q.profesorId)}</h3><span className="complaint-reference">Registro #{q.id}</span></div>
+          <div className="complaint-record-heading"><h4>{[q.profesorNombre, q.profesorApellido].filter(Boolean).join(' ') || ('Profesor #' + q.profesorId)}</h4><span className="complaint-reference">Registro #{q.id}</span></div>
           <p className="complaint-course">{[q.cursoEspecialidad, q.cursoNivel ? q.cursoNivel + '°' : null, q.cursoSeccion ? 'Sección ' + q.cursoSeccion : null].filter(Boolean).join(' · ') || ('Curso #' + q.cursoId)}</p>
           <p className="complaint-reason">{q.motivo}</p>
           <footer>{formatSqlDateTime(q.creadaEn)} · Registrada por {usuariosPorId.get(q.creadaPor) ?? ('Usuario #' + q.creadaPor)}</footer>
         </article>
-      </li>)}</ul>}
+      </li>)}</ul></div>
+        </section>;
+      })}</div>}
     </section>
   </div>;
 }
