@@ -5,11 +5,12 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 const SAMPLE_RATE = 44100;
-const TOTAL_SECONDS = 34.2;
+const TOTAL_SECONDS = 51.2;
 const TOTAL_SAMPLES = Math.ceil(TOTAL_SECONDS * SAMPLE_RATE);
 
-// ii9 - V13 - Imaj9 - vi9 in C major, slow lounge/jazz feel at ~84bpm.
-// Bar = 4 beats, beat = 60/84s ≈ 0.714s -> bar ≈ 2.857s.
+// Extended 8-chord lounge/jazz progression in C major at ~84bpm, so a
+// longer track doesn't just loop the same 4 bars over and over. Bar = 4
+// beats, beat = 60/84s ≈ 0.714s -> bar ≈ 2.857s.
 const CHORD_DURATION = 2.857;
 const PROGRESSION = [
   // Dm9 (bass D2)
@@ -31,6 +32,30 @@ const PROGRESSION = [
     arp: [329.63, 392.0, 440.0, 493.88, 587.33],
   },
   // Am9 (bass A1)
+  {
+    bass: 55.0,
+    pad: [110.0, 130.81, 164.81, 246.94, 293.66],
+    arp: [293.66, 329.63, 392.0, 440.0, 493.88],
+  },
+  // Fmaj9 (bass F2) — middle-eight lift.
+  {
+    bass: 87.31,
+    pad: [174.61, 220.0, 261.63, 329.63, 392.0],
+    arp: [349.23, 392.0, 440.0, 523.25, 659.25],
+  },
+  // Bm7b5 (bass B1) — ii of Am, adds tension before the turnaround.
+  {
+    bass: 61.74,
+    pad: [123.47, 146.83, 174.61, 220.0, 293.66],
+    arp: [293.66, 349.23, 415.3, 440.0, 523.25],
+  },
+  // E7 (bass E2) — V of Am, resolves into the recap.
+  {
+    bass: 82.41,
+    pad: [164.81, 207.65, 246.94, 293.66, 329.63],
+    arp: [329.63, 415.3, 493.88, 587.33, 659.25],
+  },
+  // Am9 (bass A1) — recap resolve before the loop returns to Dm9.
   {
     bass: 55.0,
     pad: [110.0, 130.81, 164.81, 246.94, 293.66],
