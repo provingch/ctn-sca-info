@@ -71,22 +71,12 @@ const FeatureSlide: React.FC<{
     },
   );
 
-  const textTranslateX = interpolate(localFrame, [0, FADE], [hasScreen ? -50 : 0, 0], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-    easing: Easing.bezier(0.16, 1, 0.3, 1),
-  });
   const underlineWidth = interpolate(localFrame, [FADE, FADE + 20], [0, 140], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  const screenRotateY = interpolate(localFrame, [0, FADE + 10], [22, -6], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-    easing: Easing.bezier(0.16, 1, 0.3, 1),
-  });
-  const screenScale = interpolate(localFrame, [0, FADE + 10], [0.82, 1], {
+  const screenScale = interpolate(localFrame, [0, FADE + 10], [0.9, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
     easing: Easing.bezier(0.16, 1, 0.3, 1),
@@ -104,29 +94,44 @@ const FeatureSlide: React.FC<{
         position: "absolute",
         opacity,
         display: "flex",
-        flexDirection: hasScreen ? "row" : "column",
+        flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        gap: hasScreen ? 90 : 26,
-        maxWidth: 1700,
-        padding: "0 100px",
+        gap: hasScreen ? 28 : 26,
+        maxWidth: 1780,
+        padding: "0 60px",
       }}
     >
+      {feature.screen && (
+        <div
+          style={{
+            opacity: screenOpacity,
+            scale: screenScale,
+            transform: "perspective(1600px) rotateX(2deg)",
+            filter: `drop-shadow(0 40px 80px ${theme.accent}28)`,
+          }}
+        >
+          <ScreenMockup title={feature.screen.title} width={1180} contentPadding={0}>
+            <Video
+              src={staticFile(feature.screen.videoSrc)}
+              muted
+              style={{ width: "100%", display: "block" }}
+            />
+          </ScreenMockup>
+        </div>
+      )}
       <div
         style={{
           display: "flex",
           flexDirection: "column",
-          alignItems: hasScreen ? "flex-start" : "center",
-          textAlign: hasScreen ? "left" : "center",
-          gap: 22,
-          width: hasScreen ? 560 : "auto",
-          maxWidth: hasScreen ? 560 : 1180,
-          translate: `${textTranslateX}px 0px`,
+          alignItems: "center",
+          textAlign: "center",
+          gap: hasScreen ? 8 : 22,
         }}
       >
         <div
           style={{
-            fontSize: 26,
+            fontSize: hasScreen ? 20 : 26,
             fontWeight: 700,
             color: theme.accentLight,
             letterSpacing: "0.05em",
@@ -136,7 +141,7 @@ const FeatureSlide: React.FC<{
         </div>
         <div
           style={{
-            fontSize: hasScreen ? 60 : 82,
+            fontSize: hasScreen ? 40 : 82,
             fontWeight: 800,
             color: theme.text,
             letterSpacing: "-0.02em",
@@ -155,33 +160,16 @@ const FeatureSlide: React.FC<{
         />
         <div
           style={{
-            fontSize: hasScreen ? 30 : 38,
+            fontSize: hasScreen ? 22 : 38,
             fontWeight: 500,
             color: theme.textMuted,
-            lineHeight: 1.35,
+            lineHeight: 1.3,
+            maxWidth: hasScreen ? 900 : 1180,
           }}
         >
           {feature.body}
         </div>
       </div>
-      {feature.screen && (
-        <div
-          style={{
-            opacity: screenOpacity,
-            scale: screenScale,
-            transform: `perspective(1600px) rotateX(3deg) rotateY(${screenRotateY}deg)`,
-            filter: `drop-shadow(0 30px 60px ${theme.accent}22)`,
-          }}
-        >
-          <ScreenMockup title={feature.screen.title} width={640} contentPadding={0}>
-            <Video
-              src={staticFile(feature.screen.videoSrc)}
-              muted
-              style={{ width: "100%", display: "block" }}
-            />
-          </ScreenMockup>
-        </div>
-      )}
     </Interactive.Div>
   );
 };
