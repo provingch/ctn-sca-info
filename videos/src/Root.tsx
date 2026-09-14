@@ -2,9 +2,8 @@ import "./index.css";
 import { Composition, Folder } from "remotion";
 import { Scene1Intro } from "./scenes/Scene1Intro";
 import { Scene2Problem } from "./scenes/Scene2Problem";
-import { Scene3Features } from "./scenes/Scene3Features";
+import { Scene3Features, SCENE3_FEATURES_DURATION } from "./scenes/Scene3Features";
 import { Scene4Roles } from "./scenes/Scene4Roles";
-import { SceneRealFootage, SCENE_REAL_FOOTAGE_DURATION } from "./scenes/SceneRealFootage";
 import { Scene5Outro } from "./scenes/Scene5Outro";
 import { TrailerVideo, TRAILER_TOTAL_DURATION } from "./TrailerVideo";
 
@@ -35,7 +34,7 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="Scene3Features"
           component={Scene3Features}
-          durationInFrames={325}
+          durationInFrames={SCENE3_FEATURES_DURATION}
           fps={FPS}
           width={WIDTH}
           height={HEIGHT}
@@ -44,14 +43,6 @@ export const RemotionRoot: React.FC = () => {
           id="Scene4Roles"
           component={Scene4Roles}
           durationInFrames={160}
-          fps={FPS}
-          width={WIDTH}
-          height={HEIGHT}
-        />
-        <Composition
-          id="SceneRealFootage"
-          component={SceneRealFootage}
-          durationInFrames={SCENE_REAL_FOOTAGE_DURATION}
           fps={FPS}
           width={WIDTH}
           height={HEIGHT}

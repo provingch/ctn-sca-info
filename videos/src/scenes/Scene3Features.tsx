@@ -1,48 +1,200 @@
+import { Video } from "@remotion/media";
 import {
   AbsoluteFill,
   Easing,
   Interactive,
+  Sequence,
   interpolate,
+  staticFile,
   useCurrentFrame,
 } from "remotion";
 import { Background } from "../components/Background";
 import { ScreenMockup } from "../components/ScreenMockup";
-import { HorarioMock, PlanillaMock, PadresMock } from "../components/mockups";
 import { fontFamily, theme } from "../theme";
 
 const features = [
   {
     title: "Libro de Cátedra",
     body: "Horario, plan curricular y verificación de tema por clase",
-    screen: { title: "SCA · Horario", content: <HorarioMock /> },
+    screen: { title: "SCA · Panel de Profesor", videoSrc: "videos/safe/profesor_montage.mp4" },
+    duration: 130,
   },
   {
     title: "Planillas y notas",
     body: "Carga de tareas y calificaciones por curso, período y sección",
-    screen: { title: "SCA · Planilla", content: <PlanillaMock /> },
+    screen: { title: "SCA · Panel de Evaluación", videoSrc: "videos/safe/eval_montage.mp4" },
+    duration: 130,
   },
   {
     title: "Portal para padres",
     body: "Resumen académico y notas del alumno en tiempo real",
-    screen: { title: "SCA · Portal de padres", content: <PadresMock /> },
+    screen: { title: "SCA · Panel de Familias", videoSrc: "videos/safe/padres_montage.mp4" },
+    duration: 130,
   },
   {
     title: "Control académico",
     body: "Incumplimientos, quejas y seguimiento de Coordinación Pedagógica",
-    screen: null,
+    screen: { title: "SCA · Panel de Administración", videoSrc: "videos/safe/admin_montage.mp4" },
+    duration: 130,
   },
   {
     title: "Google Classroom",
     body: "Sincronización automática de tareas, notas y cursos",
     screen: null,
+    duration: 90,
   },
-];
+] as const;
 
-const SLOT = 65;
+export const SCENE3_FEATURES_DURATION = features.reduce((a, f) => a + f.duration, 0);
+
 const FADE = 16;
+
+const FeatureSlide: React.FC<{
+  feature: (typeof features)[number];
+  index: number;
+  isLast: boolean;
+}> = ({ feature, index, isLast }) => {
+  const localFrame = useCurrentFrame();
+  const slotDuration = feature.duration;
+  const hasScreen = feature.screen !== null;
+
+  const opacity = interpolate(
+    localFrame,
+    isLast
+      ? [0, FADE]
+      : [0, FADE, slotDuration - FADE, slotDuration],
+    isLast ? [0, 1] : [0, 1, 1, 0],
+    {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+      easing: Easing.bezier(0.16, 1, 0.3, 1),
+    },
+  );
+
+  const textTranslateX = interpolate(localFrame, [0, FADE], [hasScreen ? -50 : 0, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.bezier(0.16, 1, 0.3, 1),
+  });
+  const underlineWidth = interpolate(localFrame, [FADE, FADE + 20], [0, 140], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  const screenRotateY = interpolate(localFrame, [0, FADE + 10], [22, -6], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.bezier(0.16, 1, 0.3, 1),
+  });
+  const screenScale = interpolate(localFrame, [0, FADE + 10], [0.82, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.bezier(0.16, 1, 0.3, 1),
+    output: "perceptual-scale",
+  });
+  const screenOpacity = interpolate(localFrame, [4, FADE + 6], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  return (
+    <Interactive.Div
+      name={`Feature card ${index + 1}`}
+      style={{
+        position: "absolute",
+        opacity,
+        display: "flex",
+        flexDirection: hasScreen ? "row" : "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: hasScreen ? 90 : 26,
+        maxWidth: 1700,
+        padding: "0 100px",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: hasScreen ? "flex-start" : "center",
+          textAlign: hasScreen ? "left" : "center",
+          gap: 22,
+          width: hasScreen ? 560 : "auto",
+          maxWidth: hasScreen ? 560 : 1180,
+          translate: `${textTranslateX}px 0px`,
+        }}
+      >
+        <div
+          style={{
+            fontSize: 26,
+            fontWeight: 700,
+            color: theme.accentLight,
+            letterSpacing: "0.05em",
+          }}
+        >
+          {String(index + 1).padStart(2, "0")}
+        </div>
+        <div
+          style={{
+            fontSize: hasScreen ? 60 : 82,
+            fontWeight: 800,
+            color: theme.text,
+            letterSpacing: "-0.02em",
+            lineHeight: 1.1,
+          }}
+        >
+          {feature.title}
+        </div>
+        <div
+          style={{
+            width: underlineWidth,
+            height: 5,
+            borderRadius: 3,
+            background: theme.accent,
+          }}
+        />
+        <div
+          style={{
+            fontSize: hasScreen ? 30 : 38,
+            fontWeight: 500,
+            color: theme.textMuted,
+            lineHeight: 1.35,
+          }}
+        >
+          {feature.body}
+        </div>
+      </div>
+      {feature.screen && (
+        <div
+          style={{
+            opacity: screenOpacity,
+            scale: screenScale,
+            transform: `perspective(1600px) rotateX(3deg) rotateY(${screenRotateY}deg)`,
+            filter: `drop-shadow(0 30px 60px ${theme.accent}22)`,
+          }}
+        >
+          <ScreenMockup title={feature.screen.title} width={640} contentPadding={0}>
+            <Video
+              src={staticFile(feature.screen.videoSrc)}
+              muted
+              style={{ width: "100%", display: "block" }}
+            />
+          </ScreenMockup>
+        </div>
+      )}
+    </Interactive.Div>
+  );
+};
 
 export const Scene3Features: React.FC = () => {
   const frame = useCurrentFrame();
+
+  let cursor = 0;
+  const starts = features.map((f) => {
+    const start = cursor;
+    cursor += f.duration;
+    return start;
+  });
 
   return (
     <AbsoluteFill style={{ fontFamily, justifyContent: "center", alignItems: "center" }}>
@@ -66,141 +218,16 @@ export const Scene3Features: React.FC = () => {
         Funcionalidades clave
       </Interactive.Div>
 
-      {features.map((feature, i) => {
-        const localStart = i * SLOT;
-        const localFrame = frame - localStart;
-        const isLast = i === features.length - 1;
-
-        const opacity = interpolate(
-          localFrame,
-          isLast ? [0, FADE] : [0, FADE, SLOT - FADE, SLOT],
-          isLast ? [0, 1] : [0, 1, 1, 0],
-          {
-            extrapolateLeft: "clamp",
-            extrapolateRight: "clamp",
-            easing: Easing.bezier(0.16, 1, 0.3, 1),
-          },
-        );
-        const hasScreen = feature.screen !== null;
-
-        const textTranslateX = interpolate(
-          localFrame,
-          [0, FADE],
-          [hasScreen ? -50 : 0, 0],
-          {
-            extrapolateLeft: "clamp",
-            extrapolateRight: "clamp",
-            easing: Easing.bezier(0.16, 1, 0.3, 1),
-          },
-        );
-        const underlineWidth = interpolate(
-          localFrame,
-          [FADE, FADE + 20],
-          [0, 140],
-          { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
-        );
-
-        const screenRotateY = interpolate(localFrame, [0, FADE + 10], [22, -6], {
-          extrapolateLeft: "clamp",
-          extrapolateRight: "clamp",
-          easing: Easing.bezier(0.16, 1, 0.3, 1),
-        });
-        const screenScale = interpolate(localFrame, [0, FADE + 10], [0.82, 1], {
-          extrapolateLeft: "clamp",
-          extrapolateRight: "clamp",
-          easing: Easing.bezier(0.16, 1, 0.3, 1),
-          output: "perceptual-scale",
-        });
-        const screenOpacity = interpolate(localFrame, [4, FADE + 6], [0, 1], {
-          extrapolateLeft: "clamp",
-          extrapolateRight: "clamp",
-        });
-
-        return (
-          <Interactive.Div
-            key={feature.title}
-            name={`Feature card ${i + 1}`}
-            style={{
-              position: "absolute",
-              opacity,
-              display: "flex",
-              flexDirection: hasScreen ? "row" : "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: hasScreen ? 90 : 26,
-              maxWidth: 1700,
-              padding: "0 100px",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: hasScreen ? "flex-start" : "center",
-                textAlign: hasScreen ? "left" : "center",
-                gap: 22,
-                width: hasScreen ? 560 : "auto",
-                maxWidth: hasScreen ? 560 : 1180,
-                translate: `${textTranslateX}px 0px`,
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 26,
-                  fontWeight: 700,
-                  color: theme.accentLight,
-                  letterSpacing: "0.05em",
-                }}
-              >
-                {String(i + 1).padStart(2, "0")}
-              </div>
-              <div
-                style={{
-                  fontSize: hasScreen ? 60 : 82,
-                  fontWeight: 800,
-                  color: theme.text,
-                  letterSpacing: "-0.02em",
-                  lineHeight: 1.1,
-                }}
-              >
-                {feature.title}
-              </div>
-              <div
-                style={{
-                  width: underlineWidth,
-                  height: 5,
-                  borderRadius: 3,
-                  background: theme.accent,
-                }}
-              />
-              <div
-                style={{
-                  fontSize: hasScreen ? 30 : 38,
-                  fontWeight: 500,
-                  color: theme.textMuted,
-                  lineHeight: 1.35,
-                }}
-              >
-                {feature.body}
-              </div>
-            </div>
-            {feature.screen && (
-              <div
-                style={{
-                  opacity: screenOpacity,
-                  scale: screenScale,
-                  transform: `perspective(1600px) rotateX(3deg) rotateY(${screenRotateY}deg)`,
-                  filter: `drop-shadow(0 30px 60px ${theme.accent}22)`,
-                }}
-              >
-                <ScreenMockup title={feature.screen.title} width={640}>
-                  {feature.screen.content}
-                </ScreenMockup>
-              </div>
-            )}
-          </Interactive.Div>
-        );
-      })}
+      {features.map((feature, i) => (
+        <Sequence
+          key={feature.title}
+          from={starts[i]}
+          durationInFrames={feature.duration}
+          layout="none"
+        >
+          <FeatureSlide feature={feature} index={i} isLast={i === features.length - 1} />
+        </Sequence>
+      ))}
 
       <div
         style={{
@@ -211,8 +238,7 @@ export const Scene3Features: React.FC = () => {
         }}
       >
         {features.map((feature, i) => {
-          const localStart = i * SLOT;
-          const active = frame >= localStart && frame < localStart + SLOT;
+          const active = frame >= starts[i] && frame < starts[i] + feature.duration;
           return (
             <div
               key={feature.title}
