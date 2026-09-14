@@ -5,8 +5,9 @@ import SpecialtyIcon from '../../components/SpecialtyIcon';
 import { normalizeSpecialty } from '../../theme/theme';
 import { ApiError } from '../../api/client';
 import type { AdminCatalog } from '../../api/admin';
-import { createQueja, getAdminQuejas, type QuejaItem } from '../../api/quejas';
+import { createQueja, getAdminQuejas, isQuejaReviewed, type QuejaItem } from '../../api/quejas';
 import { formatSqlDateTime } from '../../utils/date';
+import ComplaintReview from './ComplaintReview';
 
 const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
@@ -82,7 +83,7 @@ export default function AdminQuejasPanel({ data, status, isGlobalAdmin }: { data
   const specialtyName = (q: QuejaItem) => data.especialidades.find((s) => s.id === q.especialidadId)?.nombre
     || q.cursoEspecialidad?.trim() || data.cursos.find((c) => c.id === q.cursoId)?.especialidad || 'Especialidad no disponible';
   const filtered = (lista ?? []).filter((q) => normalize([
-    q.profesorNombre, q.profesorApellido, specialtyName(q), q.cursoNivel, q.cursoSeccion, q.motivo,
+    q.profesorNombre, q.profesorApellido, specialtyName(q), q.cursoNivel, q.cursoSeccion, q.motivo, q.conclusion,
   ].join(' ')).includes(normalize(query.trim())));
   const groups = Array.from(filtered.reduce((map, q) => {
     const name = specialtyName(q);
@@ -93,6 +94,7 @@ export default function AdminQuejasPanel({ data, status, isGlobalAdmin }: { data
     return map;
   }, new Map<string, { key: string; name: string; items: QuejaItem[] }>()).values())
     .sort((a, b) => a.name.localeCompare(b.name, 'es'));
+  const reviewedCount = (lista ?? []).filter(isQuejaReviewed).length;
 
   return <div className="complaints-workspace">
     <section className="panel complaints-register" aria-labelledby="complaints-register-title">
@@ -128,6 +130,11 @@ export default function AdminQuejasPanel({ data, status, isGlobalAdmin }: { data
           <p>{isGlobalAdmin ? 'Explorá las quejas por especialidad. Dentro de cada grupo, las más recientes aparecen primero.' : 'Registros de tu especialidad, del más reciente al más antiguo.'}</p></div>
         <button className="button secondary" type="button" disabled={listLoading || saving} onClick={() => void loadList()}>{listLoading ? 'Actualizando…' : 'Actualizar lista'}</button>
       </header>
+      {lista !== null && <dl className="complaints-summary" aria-label="Resumen del historial de quejas" aria-live="polite">
+        <div><dt>Total de quejas</dt><dd>{lista.length}</dd></div>
+        <div className="complaints-summary-pending"><dt>Quejas pendientes</dt><dd>{lista.length - reviewedCount}</dd></div>
+        <div className="complaints-summary-reviewed"><dt>Quejas revisadas</dt><dd>{reviewedCount}</dd></div>
+      </dl>}
       {lista !== null && lista.length > 0 && <div className="complaints-search form-grid">
         <label>Buscar en las quejas<input type="search" placeholder="Profesor, curso, especialidad o motivo" value={query} onChange={(e) => { setQuery(e.target.value); setExpandedGroups({}); }} /></label>
         <small>{filtered.length} de {lista.length} registros</small>
@@ -151,9 +158,17 @@ export default function AdminQuejasPanel({ data, status, isGlobalAdmin }: { data
       <ul className="complaints-list">{group.items.map((q) => <li key={q.id}>
         <article className="complaint-record">
           <div className="complaint-record-heading"><h4>{[q.profesorNombre, q.profesorApellido].filter(Boolean).join(' ') || ('Profesor #' + q.profesorId)}</h4><span className="complaint-reference">Registro #{q.id}</span></div>
+          <span className={`complaint-status ${isQuejaReviewed(q) ? 'reviewed' : 'pending'}`}>{isQuejaReviewed(q) ? 'Revisada' : 'Pendiente'}</span>
           <p className="complaint-course">{[q.cursoEspecialidad, q.cursoNivel ? q.cursoNivel + '°' : null, q.cursoSeccion ? 'Sección ' + q.cursoSeccion : null].filter(Boolean).join(' · ') || ('Curso #' + q.cursoId)}</p>
           <p className="complaint-reason">{q.motivo}</p>
           <footer>{formatSqlDateTime(q.creadaEn)} · Registrada por {usuariosPorId.get(q.creadaPor) ?? ('Usuario #' + q.creadaPor)}</footer>
+          <ComplaintReview queja={q} reviewerName={q.revisadaPor != null ? usuariosPorId.get(q.revisadaPor) : undefined} onReviewed={(revision) => {
+            // Una carga anterior no debe restaurar el estado pendiente después de guardar.
+            requestId.current += 1;
+            setListLoading(false);
+            setLista((current) => current?.map((item) => item.id === q.id ? { ...item, ...revision } : item) ?? null);
+            status('Revisión completada.');
+          }} />
         </article>
       </li>)}</ul></div>
         </section>;

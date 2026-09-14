@@ -1,10 +1,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AdminCatalog } from '../../api/admin';
-import { createQueja, getAdminQuejas } from '../../api/quejas';
+import { createQueja, getAdminQuejas, reviewQueja } from '../../api/quejas';
 import AdminQuejasPanel from './AdminQuejasPanel';
 
-vi.mock('../../api/quejas', () => ({ createQueja: vi.fn(), getAdminQuejas: vi.fn() }));
+vi.mock('../../api/quejas', async (importOriginal) => ({ ...await importOriginal<typeof import('../../api/quejas')>(), createQueja: vi.fn(), getAdminQuejas: vi.fn(), reviewQueja: vi.fn() }));
 const data: AdminCatalog = {
   materias: [], alumnos: [], cursosAlumnos: [], egresados: [],
   usuarios: [{ id: 9, nombre: 'Admin', apellido: 'Global', usuario: 'admin', nivel: 3, correo: null }],
@@ -32,6 +32,53 @@ beforeEach(() => {
 });
 
 describe('AdminQuejasPanel', () => {
+  it('completa la revisión con conclusión, fecha y responsable y actualiza los totales', async () => {
+    vi.mocked(getAdminQuejas).mockResolvedValue([item]);
+    const revision = { estado: 'revisada' as const, revisadaEn: '2026-09-14T12:30:00', revisadaPor: 9, conclusion: 'Se acordó un seguimiento con el profesor.' };
+    let resolve!: (value: typeof revision) => void;
+    vi.mocked(reviewQueja).mockReturnValue(new Promise((done) => { resolve = done; }));
+    render(<AdminQuejasPanel data={data} status={vi.fn()} isGlobalAdmin />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Revisar queja #42' }));
+    const complete = screen.getByRole('button', { name: 'Completar revisión' });
+    expect(complete).toBeDisabled();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Conclusión de la revisión' }), { target: { value: `  ${revision.conclusion}  ` } });
+    fireEvent.click(complete);
+    fireEvent.click(complete);
+    expect(reviewQueja).toHaveBeenCalledTimes(1);
+    expect(reviewQueja).toHaveBeenCalledWith(42, revision.conclusion);
+    resolve(revision);
+    expect(await screen.findByText('Revisada')).toBeVisible();
+    expect(screen.getByText(revision.conclusion)).toBeVisible();
+    expect(screen.getByText(/Revisada el/)).toHaveTextContent('Admin Global');
+    expect(screen.queryByRole('button', { name: 'Revisar queja #42' })).not.toBeInTheDocument();
+    expect(screen.getByText('Quejas pendientes').parentElement).toHaveTextContent('0');
+    expect(screen.getByText('Quejas revisadas').parentElement).toHaveTextContent('1');
+  });
+
+  it('conserva la conclusión y el estado pendiente si falla la revisión', async () => {
+    vi.mocked(getAdminQuejas).mockResolvedValue([item]);
+    vi.mocked(reviewQueja).mockRejectedValue(new Error('Sin conexión'));
+    render(<AdminQuejasPanel data={data} status={vi.fn()} isGlobalAdmin />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Revisar queja #42' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Conclusión de la revisión' }), { target: { value: 'Conclusión a conservar' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Completar revisión' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo guardar la revisión');
+    expect(screen.getByRole('textbox', { name: 'Conclusión de la revisión' })).toHaveValue('Conclusión a conservar');
+    expect(screen.getByText('Pendiente')).toBeVisible();
+    expect(screen.getByText('Quejas pendientes').parentElement).toHaveTextContent('1');
+  });
+
+  it('muestra revisiones guardadas y conserva los totales al buscar', async () => {
+    vi.mocked(getAdminQuejas).mockResolvedValue([item, { ...item, id: 43, estado: 'revisada', revisadaEn: '2026-09-14T12:30:00', revisadaPor: 9, conclusion: 'Resuelto mediante reunión.' }]);
+    render(<AdminQuejasPanel data={data} status={vi.fn()} isGlobalAdmin />);
+    await screen.findByText('Revisada');
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'reunion' } });
+    expect(screen.getByText('Resuelto mediante reunión.')).toBeVisible();
+    expect(screen.getByText('Total de quejas').parentElement).toHaveTextContent('2');
+    expect(screen.getByText('Quejas pendientes').parentElement).toHaveTextContent('1');
+    expect(screen.getByText('Quejas revisadas').parentElement).toHaveTextContent('1');
+  });
+
   it('separa las quejas por especialidad y abre los grupos al buscar', async () => {
     const electricidad = { ...item, id: 43, especialidadId: 99, cursoId: 14, cursoEspecialidad: 'Electricidad', motivo: 'Faltan materiales de taller.' };
     vi.mocked(getAdminQuejas).mockResolvedValue([electricidad, item, { ...item, id: 41 }]);
@@ -67,7 +114,7 @@ describe('AdminQuejasPanel', () => {
     render(<AdminQuejasPanel data={data} status={vi.fn()} isGlobalAdmin />);
     expect(await screen.findByText(item.motivo)).toBeInTheDocument();
     expect(getAdminQuejas).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText('Pendiente')).not.toBeInTheDocument();
+    expect(screen.getByText('Pendiente')).toBeInTheDocument();
     fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'informatica' } });
     expect(screen.getByText(item.motivo)).toBeInTheDocument();
     fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'inexistente' } });
