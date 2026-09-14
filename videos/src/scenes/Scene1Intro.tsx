@@ -14,105 +14,98 @@ export const Scene1Intro: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const logoScale = interpolate(frame, [0, 0.7 * fps], [0.6, 1], {
+  const cornerOpacity = interpolate(frame, [0, 0.4 * fps], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const cornerTranslateY = interpolate(frame, [0, 0.4 * fps], [-12, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
     easing: Easing.bezier(0.16, 1, 0.3, 1),
-    output: "perceptual-scale",
-  });
-  const logoOpacity = interpolate(frame, [0, 0.5 * fps], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
   });
 
+  const headlineOpacity = interpolate(frame, [0.5 * fps, 1.1 * fps], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.bezier(0.16, 1, 0.3, 1),
+  });
+  const headlineTranslateY = interpolate(
+    frame,
+    [0.5 * fps, 1.1 * fps],
+    [28, 0],
+    {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+      easing: Easing.bezier(0.16, 1, 0.3, 1),
+    },
+  );
+
   return (
-    <AbsoluteFill
-      style={{
-        fontFamily,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
+    <AbsoluteFill style={{ fontFamily }}>
       <Background />
+
+      <Interactive.Div
+        name="Brand corner"
+        style={{
+          position: "absolute",
+          top: 70,
+          left: 90,
+          display: "flex",
+          flexDirection: "column",
+          gap: 10,
+          opacity: cornerOpacity,
+          translate: `0px ${cornerTranslateY}px`,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <Logo size={46} color={theme.accentLight} />
+          <div
+            style={{
+              fontSize: 40,
+              fontWeight: 800,
+              letterSpacing: "-0.02em",
+              color: theme.text,
+            }}
+          >
+            SCA
+          </div>
+        </div>
+        <div
+          style={{
+            fontSize: 18,
+            fontWeight: 600,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            color: theme.textMuted,
+          }}
+        >
+          Colegio Técnico Nacional
+        </div>
+      </Interactive.Div>
+
       <AbsoluteFill
         style={{
           justifyContent: "center",
           alignItems: "center",
-          gap: 36,
+          padding: "0 180px",
         }}
       >
         <Interactive.Div
-          name="Logo mark"
+          name="Problem headline"
           style={{
-            scale: logoScale,
-            opacity: logoOpacity,
-            filter: `drop-shadow(0 0 46px ${theme.accent}88)`,
-          }}
-        >
-          <Logo size={150} color={theme.accentLight} />
-        </Interactive.Div>
-        <Interactive.Div
-          name="SCA title"
-          style={{
-            fontSize: 132,
+            fontSize: 72,
             fontWeight: 800,
-            letterSpacing: "-0.03em",
+            letterSpacing: "-0.02em",
             color: theme.text,
-            opacity: interpolate(frame, [0.35 * fps, 0.85 * fps], [0, 1], {
-              extrapolateLeft: "clamp",
-              extrapolateRight: "clamp",
-              easing: Easing.bezier(0.16, 1, 0.3, 1),
-            }),
-            translate: interpolate(
-              frame,
-              [0.35 * fps, 0.85 * fps],
-              ["0px 26px", "0px 0px"],
-              {
-                extrapolateLeft: "clamp",
-                extrapolateRight: "clamp",
-                easing: Easing.bezier(0.16, 1, 0.3, 1),
-              },
-            ),
-          }}
-        >
-          SCA
-        </Interactive.Div>
-        <Interactive.Div
-          name="Subtitle"
-          style={{
-            fontSize: 42,
-            fontWeight: 500,
-            color: theme.textMuted,
             textAlign: "center",
-            opacity: interpolate(frame, [0.8 * fps, 1.3 * fps], [0, 1], {
-              extrapolateLeft: "clamp",
-              extrapolateRight: "clamp",
-            }),
-            translate: interpolate(
-              frame,
-              [0.8 * fps, 1.3 * fps],
-              ["0px 16px", "0px 0px"],
-              { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
-            ),
+            lineHeight: 1.2,
+            opacity: headlineOpacity,
+            translate: `0px ${headlineTranslateY}px`,
           }}
         >
-          Sistema de Carpetas Académicas
-        </Interactive.Div>
-        <Interactive.Div
-          name="Institution tag"
-          style={{
-            fontSize: 26,
-            fontWeight: 600,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            color: theme.accentLight,
-            opacity: interpolate(frame, [1.35 * fps, 1.8 * fps], [0, 1], {
-              extrapolateLeft: "clamp",
-              extrapolateRight: "clamp",
-            }),
-          }}
-        >
-          Colegio Técnico Nacional
+          ¿Cansado del{" "}
+          <span style={{ color: theme.accentLight }}>traspapeleo</span> de
+          planillas, notas, exámenes y documentos académicos?
         </Interactive.Div>
       </AbsoluteFill>
     </AbsoluteFill>
