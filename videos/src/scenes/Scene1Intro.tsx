@@ -9,22 +9,12 @@ import {
   useVideoConfig,
 } from "remotion";
 import { Background } from "../components/Background";
-import { Logo } from "../components/Logo";
+import { BrandCorner } from "../components/BrandCorner";
 import { fontFamily, theme } from "../theme";
 
 export const Scene1Intro: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-
-  const cornerOpacity = interpolate(frame, [0, 0.4 * fps], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const cornerTranslateY = interpolate(frame, [0, 0.4 * fps], [-12, 0], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-    easing: Easing.bezier(0.16, 1, 0.3, 1),
-  });
 
   const headlineOpacity = interpolate(frame, [0.5 * fps, 1.1 * fps], [0, 1], {
     extrapolateLeft: "clamp",
@@ -56,51 +46,13 @@ export const Scene1Intro: React.FC = () => {
   return (
     <AbsoluteFill style={{ fontFamily }}>
       <Background />
-
-      <Interactive.Div
-        name="Brand corner"
-        style={{
-          position: "absolute",
-          top: 70,
-          left: 90,
-          display: "flex",
-          flexDirection: "column",
-          gap: 10,
-          opacity: cornerOpacity,
-          translate: `0px ${cornerTranslateY}px`,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <Logo size={46} color={theme.accentLight} />
-          <div
-            style={{
-              fontSize: 40,
-              fontWeight: 800,
-              letterSpacing: "-0.02em",
-              color: theme.text,
-            }}
-          >
-            SCA
-          </div>
-        </div>
-        <div
-          style={{
-            fontSize: 18,
-            fontWeight: 600,
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
-            color: theme.textMuted,
-          }}
-        >
-          Colegio Técnico Nacional
-        </div>
-      </Interactive.Div>
+      <BrandCorner />
 
       <AbsoluteFill
         style={{
           justifyContent: "center",
           alignItems: "center",
-          padding: "0 130px",
+          padding: "0 100px",
         }}
       >
         <div
@@ -109,19 +61,19 @@ export const Scene1Intro: React.FC = () => {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "center",
-            gap: 90,
+            gap: 80,
           }}
         >
           <Interactive.Div
             name="Problem headline"
             style={{
-              fontSize: 58,
+              fontSize: 70,
               fontWeight: 800,
               letterSpacing: "-0.02em",
               color: theme.text,
               textAlign: "left",
               lineHeight: 1.22,
-              width: 620,
+              width: 720,
               opacity: headlineOpacity,
               translate: `0px ${headlineTranslateY}px`,
             }}
@@ -140,7 +92,7 @@ export const Scene1Intro: React.FC = () => {
               overflow: "hidden",
               border: `1px solid ${theme.border}`,
               boxShadow: `0 40px 90px -20px rgba(0,0,0,0.65), 0 0 60px ${theme.accent}18`,
-              width: 620,
+              width: 720,
               lineHeight: 0,
             }}
           >
