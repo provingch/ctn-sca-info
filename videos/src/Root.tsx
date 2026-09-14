@@ -1,6 +1,7 @@
 import "./index.css";
 import { Composition, Folder } from "remotion";
 import { Scene1Intro } from "./scenes/Scene1Intro";
+import { SceneSolutionReveal } from "./scenes/SceneSolutionReveal";
 import { Scene2Problem } from "./scenes/Scene2Problem";
 import { Scene3Features, SCENE3_FEATURES_DURATION } from "./scenes/Scene3Features";
 import { Scene5Outro } from "./scenes/Scene5Outro";
@@ -17,7 +18,15 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="Scene1Intro"
           component={Scene1Intro}
-          durationInFrames={130}
+          durationInFrames={240}
+          fps={FPS}
+          width={WIDTH}
+          height={HEIGHT}
+        />
+        <Composition
+          id="SceneSolutionReveal"
+          component={SceneSolutionReveal}
+          durationInFrames={200}
           fps={FPS}
           width={WIDTH}
           height={HEIGHT}
@@ -25,7 +34,7 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="Scene2Problem"
           component={Scene2Problem}
-          durationInFrames={100}
+          durationInFrames={180}
           fps={FPS}
           width={WIDTH}
           height={HEIGHT}
@@ -41,7 +50,7 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="Scene5Outro"
           component={Scene5Outro}
-          durationInFrames={110}
+          durationInFrames={130}
           fps={FPS}
           width={WIDTH}
           height={HEIGHT}
