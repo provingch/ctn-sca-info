@@ -3,9 +3,10 @@ import { useToast } from '../../context/toast';
 import { getAsignacionesDisponibles, getMisAsignaciones, type AsignacionOption, type AsignacionCompleta } from '../../api/planCurricular';
 import { getProfile } from '../../api/profile';
 import { Link, useSearchParams } from 'react-router-dom';
-import { createClass, getClaseActual, getHome, type ClaseActualDto, type CodigoConducta, type HomeResponse } from '../../api/home';
+import { createClass, getClaseActual, getHome, listarCodigosConducta, type ClaseActualDto, type CodigoConducta, type HomeResponse } from '../../api/home';
 import { ApiError } from '../../api/client';
 import AppShell from '../../components/AppShell';
+import SpecialtyIcon from '../../components/SpecialtyIcon';
 import ContentState from '../../components/ui/ContentState';
 import { getEspecialidades, resolvePlanilla, syncClassroom, type Especialidad } from '../../api/academics';
 import { useNavigate } from 'react-router-dom';
@@ -154,7 +155,11 @@ export default function HomePage() {
         if (value) next.set('especialidadId', value); else next.delete('especialidadId');
         return next;
       })}
-      onSelect={(nextView) => setSearch(especialidadId ? { view: nextView, especialidadId: String(especialidadId) } : { view: nextView })}
+      onSelect={(nextView, extra) => setSearch({
+        view: nextView,
+        ...(especialidadId ? { especialidadId: String(especialidadId) } : {}),
+        ...extra,
+      })}
     />
   </AppShell>;
   if (!data) return <AppShell title="Panel SCA"><ContentState tone={error ? 'error' : 'loading'} title={error || 'Cargando inicio…'} detail={error ? 'Recargá la página para volver a intentarlo.' : 'Estamos preparando tus cursos y planillas.'} /></AppShell>;
@@ -285,12 +290,27 @@ function splitActivityLine(line: string): { date: string; message: string } | nu
   return { date: line.slice(1, closeIdx), message: line.slice(closeIdx + 2) };
 }
 
+// ActivityLogService escribe fechas con LINE_FORMATTER = "yyyy-MM-dd HH:mm:ss".
+function humanizeActivityDate(raw: string): string {
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):\d{2}$/);
+  if (!match) return raw;
+  const [, y, mo, d, h, mi] = match;
+  const date = new Date(Number(y), Number(mo) - 1, Number(d));
+  if (Number.isNaN(date.getTime())) return raw;
+  const startOfDay = (dt: Date) => new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()).getTime();
+  const diffDays = Math.round((startOfDay(new Date()) - startOfDay(date)) / 86400000);
+  const time = `${h}:${mi}`;
+  if (diffDays === 0) return `hoy ${time}`;
+  if (diffDays === 1) return `ayer ${time}`;
+  return `${d}/${mo} ${time}`;
+}
+
 function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChange, onSelect }: {
   data: HomeResponse | null;
   especialidades: Especialidad[];
   especialidadId: number;
   onEspecialidadChange: (value: string) => void;
-  onSelect: (view: string) => void;
+  onSelect: (view: string, extra?: Record<string, string>) => void;
 }) {
   const { user } = useAuth();
   const [asignaciones, setAsignaciones] = useState<AsignacionCompleta[] | null>(null);
@@ -321,27 +341,33 @@ function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChan
   const rechazados = asignaciones?.filter((a) => a.estadoPlan === 'RECHAZADO').length ?? 0;
   const noCargados = asignaciones?.filter((a) => a.estadoPlan === 'NO_CARGADO').length ?? 0;
 
-  const recentActivity = (activity ?? []).slice(-5).reverse();
+  const recentActivity = (activity ?? [])
+    .filter((line) => splitActivityLine(line)?.message !== 'Inició sesión')
+    .slice(-5)
+    .reverse();
+
+  const selectedEspecialidad = especialidades.find((item) => item.id === especialidadId);
 
   return <div className="home-launcher">
     <div className="launcher-context">
       <div className="launcher-greeting">
         <strong>{firstName ? `Hola, ${firstName}` : 'Hola'}</strong>
-        {data && <span>{todayLabel} · {data.cursos.length} curso{data.cursos.length === 1 ? '' : 's'}</span>}
+        {data && <span>{todayLabel} · {data.cursos.length} curso{data.cursos.length === 1 ? '' : 's'}{selectedEspecialidad ? ` · ${selectedEspecialidad.nombre}` : ''}</span>}
       </div>
-      {especialidades.length > 1 ? (
+      {especialidades.length > 1 && (
         <label className="inline-filter">Especialidad
           <AnimatedSelect ariaLabel="Especialidad" value={especialidadId || ''} onChange={onEspecialidadChange} placeholder="Seleccione la especialidad" options={[{ value: '', label: 'Seleccione la especialidad' }, ...especialidades.map((item) => ({ value: item.id, label: item.nombre }))]} />
         </label>
-      ) : especialidades.length === 1 ? (
-        <span className="launcher-specialty-static">{especialidades[0].nombre}</span>
-      ) : null}
+      )}
+      <div className="launcher-emblem">
+        <SpecialtyIcon name={selectedEspecialidad?.nombre ?? (especialidades.length === 1 ? especialidades[0].nombre : '')} />
+      </div>
     </div>
     <div className="launcher-body">
       <div className="launcher-cards">
         <button type="button" className="launcher-card" onClick={() => onSelect('catedra')}>
           <div className="launcher-card-head">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 5.5c2.2-1 5-1 8 .3V19c-3-1.3-5.8-1.3-8-.3V5.5Z" /><path d="M20 5.5c-2.2-1-5-1-8 .3V19c3-1.3 5.8-1.3 8-.3V5.5Z" /></svg>
+            <span className="launcher-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 5.5c2.2-1 5-1 8 .3V19c-3-1.3-5.8-1.3-8-.3V5.5Z" /><path d="M20 5.5c-2.2-1-5-1-8 .3V19c3-1.3 5.8-1.3 8-.3V5.5Z" /></svg></span>
             <h2>Libro de Cátedra</h2>
             <span className="launcher-card-arrow" aria-hidden="true">→</span>
           </div>
@@ -356,7 +382,7 @@ function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChan
         </button>
         <button type="button" className="launcher-card" onClick={() => onSelect('planillas')}>
           <div className="launcher-card-head">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="6" y="4" width="12" height="17" rx="2" /><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" /><path d="M9 11h6M9 15h6" /></svg>
+            <span className="launcher-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="6" y="4" width="12" height="17" rx="2" /><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" /><path d="M9 11h6M9 15h6" /></svg></span>
             <h2>Gestionar planillas</h2>
             <span className="launcher-card-arrow" aria-hidden="true">→</span>
           </div>
@@ -380,7 +406,7 @@ function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChan
               return <div className="launcher-activity-item" key={idx}>
                 {parsed ? <>
                   <span className="launcher-activity-message">{parsed.message}</span>
-                  <span className="launcher-activity-date">{parsed.date}</span>
+                  <span className="launcher-activity-date">{humanizeActivityDate(parsed.date)}</span>
                 </> : <span className="launcher-activity-raw">{line}</span>}
               </div>;
             })}
@@ -388,6 +414,19 @@ function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChan
         )}
       </aside>
     </div>
+    {data && data.cursos.length > 0 && (
+      <div className="launcher-courses">
+        <h3>Tus cursos</h3>
+        <div className="launcher-courses-grid">
+          {data.cursos.map((curso) => (
+            <button type="button" key={curso.id} className="launcher-course-chip" onClick={() => onSelect('planillas', { cursoId: String(curso.id) })}>
+              <strong>{curso.curso}° {curso.seccion}</strong>
+              <span>{curso.especialidad}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    )}
   </div>;
 }
 
@@ -455,10 +494,12 @@ export function ClassView({ data, reload }: { data: HomeResponse; reload: () => 
   const canManageCodes = user?.level === 2 || user?.level === 3;
 
   useEffect(() => {
-    const initial: Record<number, string[]> = {};
-    for (const asistencia of data.rasgoAsistencias) initial[asistencia.alumnoId] = asistencia.codigos ?? [];
-    setCodigosPorAlumno(initial);
-  }, [data.rasgoAsistencias]);
+    let active = true;
+    void listarCodigosConducta()
+      .then((codes) => { if (active) setCodigosConducta(codes); })
+      .catch(() => { /* el formulario sigue usable sin catálogo */ });
+    return () => { active = false; };
+  }, []);
 
   const [claseActual, setClaseActual] = useState<ClaseActualDto | null>(null);
   const [autoTemaAplicado, setAutoTemaAplicado] = useState(false);
@@ -475,7 +516,6 @@ export function ClassView({ data, reload }: { data: HomeResponse; reload: () => 
       if (!active) return;
       setAsignacionesDisponibles(list);
       if (list.length === 1) setSelectedAsignacionId(list[0].id);
-      if (list.length === 0) showToast('No hay asignaciones disponibles para este curso.', { tone: 'warning', autoDismiss: true });
     }).catch((err) => {
       if (!active) return;
       const message = err instanceof ApiError ? err.message : 'No se pudieron consultar las asignaciones. Reintentá la carga.';
