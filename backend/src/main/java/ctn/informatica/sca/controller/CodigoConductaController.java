@@ -33,7 +33,7 @@ public class CodigoConductaController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('LEVEL_2','LEVEL_3')")
+    @PreAuthorize("hasAnyRole('LEVEL_2','LEVEL_3','LEVEL_5')")
     public CodigoConducta crear(@RequestBody CodigoConductaRequest request) {
         if (request == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Se requiere código y descripción.");
@@ -48,7 +48,7 @@ public class CodigoConductaController {
     }
 
     @PostMapping("/{id}/desactivar")
-    @PreAuthorize("hasAnyRole('LEVEL_2','LEVEL_3')")
+    @PreAuthorize("hasAnyRole('LEVEL_2','LEVEL_3','LEVEL_5')")
     public void desactivar(@PathVariable int id) {
         try {
             if (!dao.desactivar(id)) {
