@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { useToast } from '../../context/toast';
-import { getAsignacionesDisponibles, type AsignacionOption } from '../../api/planCurricular';
+import { getAsignacionesDisponibles, getMisAsignaciones, type AsignacionOption, type AsignacionCompleta } from '../../api/planCurricular';
+import { getProfile } from '../../api/profile';
 import { Link, useSearchParams } from 'react-router-dom';
 import { createClass, getClaseActual, getHome, type ClaseActualDto, type CodigoConducta, type HomeResponse } from '../../api/home';
 import { ApiError } from '../../api/client';
@@ -143,7 +144,19 @@ export default function HomePage() {
     }
   }, [especialidadId]);
 
-  if (!view) return <AppShell title="Elegí cómo querés empezar"><div className="choice-grid"><button type="button" onClick={() => setSearch({ view: 'catedra' })}><span>01</span><h2>Libro de Cátedra</h2><p>Plan curricular e inicio de clases.</p></button><button type="button" onClick={() => setSearch({ view: 'planillas' })}><span>02</span><h2>Gestionar planillas</h2><p>Tareas, puntajes y sincronización con Classroom.</p></button></div></AppShell>;
+  if (!view) return <AppShell title="Inicio" hero={false}>
+    <HomeLauncher
+      data={data}
+      especialidades={especialidades}
+      especialidadId={especialidadId}
+      onEspecialidadChange={(value) => setSearch((prev) => {
+        const next = new URLSearchParams(prev);
+        if (value) next.set('especialidadId', value); else next.delete('especialidadId');
+        return next;
+      })}
+      onSelect={(nextView) => setSearch(especialidadId ? { view: nextView, especialidadId: String(especialidadId) } : { view: nextView })}
+    />
+  </AppShell>;
   if (!data) return <AppShell title="Panel SCA"><ContentState tone={error ? 'error' : 'loading'} title={error || 'Cargando inicio…'} detail={error ? 'Recargá la página para volver a intentarlo.' : 'Estamos preparando tus cursos y planillas.'} /></AppShell>;
 
   const visibleCursos = selectedEspecialidad
@@ -263,6 +276,119 @@ export default function HomePage() {
       )}
     </AppShell>
   </>;
+}
+
+function splitActivityLine(line: string): { date: string; message: string } | null {
+  if (!line.startsWith('[')) return null;
+  const closeIdx = line.indexOf('] ');
+  if (closeIdx <= 0) return null;
+  return { date: line.slice(1, closeIdx), message: line.slice(closeIdx + 2) };
+}
+
+function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChange, onSelect }: {
+  data: HomeResponse | null;
+  especialidades: Especialidad[];
+  especialidadId: number;
+  onEspecialidadChange: (value: string) => void;
+  onSelect: (view: string) => void;
+}) {
+  const { user } = useAuth();
+  const [asignaciones, setAsignaciones] = useState<AsignacionCompleta[] | null>(null);
+  const [activity, setActivity] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void getMisAsignaciones()
+      .then((list) => { if (active) setAsignaciones(list); })
+      .catch(() => { /* sin datos: no se muestra badge de plan curricular */ });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    void getProfile()
+      .then((profile) => { if (active) setActivity(profile.activityLog ?? []); })
+      .catch(() => { if (active) setActivity([]); });
+    return () => { active = false; };
+  }, []);
+
+  const firstName = user?.displayName?.trim().split(/\s+/)[0];
+  const todayLabel = (() => {
+    const raw = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+    return raw.charAt(0).toUpperCase() + raw.slice(1);
+  })();
+
+  const rechazados = asignaciones?.filter((a) => a.estadoPlan === 'RECHAZADO').length ?? 0;
+  const noCargados = asignaciones?.filter((a) => a.estadoPlan === 'NO_CARGADO').length ?? 0;
+
+  const recentActivity = (activity ?? []).slice(-5).reverse();
+
+  return <div className="home-launcher">
+    <div className="launcher-context">
+      <div className="launcher-greeting">
+        <strong>{firstName ? `Hola, ${firstName}` : 'Hola'}</strong>
+        {data && <span>{todayLabel} · {data.cursos.length} curso{data.cursos.length === 1 ? '' : 's'}</span>}
+      </div>
+      {especialidades.length > 1 ? (
+        <label className="inline-filter">Especialidad
+          <AnimatedSelect ariaLabel="Especialidad" value={especialidadId || ''} onChange={onEspecialidadChange} placeholder="Seleccione la especialidad" options={[{ value: '', label: 'Seleccione la especialidad' }, ...especialidades.map((item) => ({ value: item.id, label: item.nombre }))]} />
+        </label>
+      ) : especialidades.length === 1 ? (
+        <span className="launcher-specialty-static">{especialidades[0].nombre}</span>
+      ) : null}
+    </div>
+    <div className="launcher-body">
+      <div className="launcher-cards">
+        <button type="button" className="launcher-card" onClick={() => onSelect('catedra')}>
+          <div className="launcher-card-head">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 5.5c2.2-1 5-1 8 .3V19c-3-1.3-5.8-1.3-8-.3V5.5Z" /><path d="M20 5.5c-2.2-1-5-1-8 .3V19c3-1.3 5.8-1.3 8-.3V5.5Z" /></svg>
+            <h2>Libro de Cátedra</h2>
+            <span className="launcher-card-arrow" aria-hidden="true">→</span>
+          </div>
+          <p>Plan curricular e inicio de clases.</p>
+          <div className="launcher-badges">
+            {asignaciones && (rechazados > 0
+              ? <span className="launcher-badge tone-danger">{rechazados} plan{rechazados === 1 ? '' : 'es'} rechazado{rechazados === 1 ? '' : 's'}</span>
+              : noCargados > 0
+                ? <span className="launcher-badge tone-warning">{noCargados} plan{noCargados === 1 ? '' : 'es'} sin cargar</span>
+                : <span className="launcher-badge tone-success">Planes al día</span>)}
+          </div>
+        </button>
+        <button type="button" className="launcher-card" onClick={() => onSelect('planillas')}>
+          <div className="launcher-card-head">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="6" y="4" width="12" height="17" rx="2" /><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" /><path d="M9 11h6M9 15h6" /></svg>
+            <h2>Gestionar planillas</h2>
+            <span className="launcher-card-arrow" aria-hidden="true">→</span>
+          </div>
+          <p>Tareas, puntajes y sincronización con Classroom.</p>
+          <div className="launcher-badges">
+            {data && data.planillas.length > 0 && <span className="launcher-badge tone-accent">{data.planillas.length} planilla{data.planillas.length === 1 ? '' : 's'} activa{data.planillas.length === 1 ? '' : 's'}</span>}
+            {data && data.googleClassroomConnected === false && <span className="launcher-badge tone-warning">Classroom sin conectar</span>}
+          </div>
+        </button>
+      </div>
+      <aside className="launcher-activity">
+        <h3>Actividad reciente</h3>
+        {activity === null ? (
+          <p className="launcher-activity-empty">Cargando actividad…</p>
+        ) : recentActivity.length === 0 ? (
+          <p className="launcher-activity-empty">Todavía no hay actividad registrada.</p>
+        ) : (
+          <div className="launcher-activity-list">
+            {recentActivity.map((line, idx) => {
+              const parsed = splitActivityLine(line);
+              return <div className="launcher-activity-item" key={idx}>
+                {parsed ? <>
+                  <span className="launcher-activity-message">{parsed.message}</span>
+                  <span className="launcher-activity-date">{parsed.date}</span>
+                </> : <span className="launcher-activity-raw">{line}</span>}
+              </div>;
+            })}
+          </div>
+        )}
+      </aside>
+    </div>
+  </div>;
 }
 
 function PlanillasView({ data, syncingProp, setSyncingProp }: { data: HomeResponse; syncingProp?: boolean; setSyncingProp?: (v: boolean) => void }) {
