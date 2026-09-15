@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { useToast } from '../../context/toast';
 import { getAsignacionesDisponibles, type AsignacionOption } from '../../api/planCurricular';
 import { Link, useSearchParams } from 'react-router-dom';
-import { createClass, crearCodigoConducta, desactivarCodigoConducta, getClaseActual, getHome, listarCodigosConducta, type ClaseActualDto, type CodigoConducta, type HomeResponse } from '../../api/home';
+import { createClass, getClaseActual, getHome, type ClaseActualDto, type CodigoConducta, type HomeResponse } from '../../api/home';
 import { ApiError } from '../../api/client';
 import AppShell from '../../components/AppShell';
 import ContentState from '../../components/ui/ContentState';
@@ -12,6 +12,7 @@ import AnimatedSelect from '../../components/AnimatedSelect';
 import { useSpecialty } from '../../context/SpecialtyContext';
 import PlanCurricularView from './PlanCurricularView';
 import MisClasesView from './MisClasesView';
+import CatalogoConductaPanel from '../../components/CatalogoConductaPanel';
 import useAccessibleDialog from '../../hooks/useAccessibleDialog';
 import { useAuth } from '../../context/AuthContext';
 import { classEndTime, HORARIOS_CATEDRA } from './classFormUtils';
@@ -324,55 +325,14 @@ export function ClassView({ data, reload }: { data: HomeResponse; reload: () => 
   const [codigosPorAlumno, setCodigosPorAlumno] = useState<Record<number, string[]>>({});
   const [showCodeHelp, setShowCodeHelp] = useState(false);
   const [codigosConducta, setCodigosConducta] = useState<CodigoConducta[]>([]);
-  const [nuevoCodigo, setNuevoCodigo] = useState('');
-  const [nuevaDescripcion, setNuevaDescripcion] = useState('');
-  const [catalogStatus, setCatalogStatus] = useState('');
   const codeHelpDialogRef = useAccessibleDialog(showCodeHelp, () => setShowCodeHelp(false));
   const canManageCodes = user?.level === 2 || user?.level === 3;
 
-  const loadCodigosConducta = useCallback(async () => {
-    try {
-      setCodigosConducta(await listarCodigosConducta());
-    } catch (err) {
-      setCatalogStatus(err instanceof ApiError ? err.message : 'No se pudo cargar el catálogo de conducta.');
-    }
-  }, []);
-
-  useEffect(() => { void loadCodigosConducta(); }, [loadCodigosConducta]);
-
-  async function saveCodigoConducta(event: FormEvent) {
-    event.preventDefault();
-    const codigo = nuevoCodigo.trim().toUpperCase();
-    const descripcion = nuevaDescripcion.trim();
-    if (!codigo || codigo.length > 10 || !/^N[A-Z0-9]{0,9}$/.test(codigo)) {
-      setCatalogStatus('El código debe comenzar con N, tener entre 2 y 10 caracteres y usar solo letras o números.');
-      return;
-    }
-    if (!descripcion || descripcion.length > 255) {
-      setCatalogStatus('La descripción es obligatoria y no puede superar 255 caracteres.');
-      return;
-    }
-    try {
-      await crearCodigoConducta(codigo, descripcion);
-      setNuevoCodigo('');
-      setNuevaDescripcion('');
-      setCatalogStatus('Código de conducta guardado.');
-      await loadCodigosConducta();
-    } catch (err) {
-      setCatalogStatus(err instanceof ApiError ? err.message : 'No se pudo guardar el código de conducta.');
-    }
-  }
-
-  async function disableCodigoConducta(item: CodigoConducta) {
-    if (!window.confirm(`¿Desactivar ${item.codigo}?`)) return;
-    try {
-      await desactivarCodigoConducta(item.id);
-      setCatalogStatus('Código de conducta desactivado.');
-      await loadCodigosConducta();
-    } catch (err) {
-      setCatalogStatus(err instanceof ApiError ? err.message : 'No se pudo desactivar el código de conducta.');
-    }
-  }
+  useEffect(() => {
+    const initial: Record<number, string[]> = {};
+    for (const asistencia of data.rasgoAsistencias) initial[asistencia.alumnoId] = asistencia.codigos ?? [];
+    setCodigosPorAlumno(initial);
+  }, [data.rasgoAsistencias]);
 
   const [claseActual, setClaseActual] = useState<ClaseActualDto | null>(null);
   const [autoTemaAplicado, setAutoTemaAplicado] = useState(false);
@@ -502,16 +462,14 @@ export function ClassView({ data, reload }: { data: HomeResponse; reload: () => 
 
   return (
     <div className="two-column">
-      {canManageCodes && <section className="panel" style={{ gridColumn: '1 / -1' }}>
-        <div className="class-card-head"><div><span>Administración</span><h3>Catálogo de conducta</h3></div></div>
-        <form className="form-grid" onSubmit={saveCodigoConducta}>
-          <label>Código<input value={nuevoCodigo} maxLength={10} placeholder="Ej.: N10" onChange={(event) => setNuevoCodigo(event.target.value.toUpperCase())} required /></label>
-          <label>Descripción<input value={nuevaDescripcion} maxLength={255} placeholder="Descripción del rasgo" onChange={(event) => setNuevaDescripcion(event.target.value)} required /></label>
-          <span className="admin-actions"><button className="button" type="submit">Agregar código</button></span>
-        </form>
-        <div className="admin-list">{codigosConducta.map((item) => <div key={item.id}><span><strong>{item.codigo}</strong> {item.descripcion}</span><button className="button danger" type="button" onClick={() => void disableCodigoConducta(item)}>Desactivar</button></div>)}</div>
-        {catalogStatus && <p className="notice" role="status">{catalogStatus}</p>}
-      </section>}
+      {canManageCodes && <CatalogoConductaPanel onCodesChange={setCodigosConducta} />}
+      {!puedeIniciarClase && mensajeBloqueo && (
+        <div className="panel" style={{ gridColumn: '1 / -1', marginBottom: 0 }}>
+          <div className="notice error" style={{ marginBottom: 12 }}>
+            <p style={{ margin: 0 }}>{mensajeBloqueo}</p>
+          </div>
+        </div>
+      )}
       {claseActual?.hasClaseAhora && claseActual.cursoId === data.selCurso?.id && claseActual.asignacionId === selectedAsignacionId && (
         <div className="panel" style={{ gridColumn: '1 / -1', marginBottom: 0 }}>
           <div className="notice" role="status" style={{ margin: 0 }}>
