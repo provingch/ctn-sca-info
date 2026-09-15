@@ -2,25 +2,24 @@ package ctn.informatica.sca.service;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.ClientAnchor;
 import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.Drawing;
-import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
-import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.ss.util.CellRangeAddress;
@@ -37,10 +36,13 @@ import ctn.informatica.sca.model.HorarioSlot;
 import ctn.informatica.sca.util.AcademicPeriod;
 
 /**
- * Genera el xlsx de la plantilla de plan curricular de forma dinámica en base a
- * la config del profesor (meses + bloques por mes). Escribe una hoja oculta
- * <code>_META</code> con el layout JSON para que el parser pueda recuperar la
- * configuración exacta al procesar el archivo entregado.
+ * Genera el xlsx de la plantilla de plan curricular a partir de la plantilla real del
+ * colegio (recursos {@code plan-curricular-plantilla*.xlsx}): carga el archivo, ajusta
+ * qué hojas de mes quedan y cuántos bloques tiene cada una, y completa los 7 campos de
+ * cabecera. El resto del formato (logos, colores, bordes, page setup) viene tal cual de
+ * la plantilla. Escribe además una hoja oculta <code>_META</code> con el layout JSON
+ * para que el parser pueda recuperar la configuración exacta al procesar el archivo
+ * entregado.
  */
 @Service
 public class PlanCurricularTemplateBuilder {
@@ -54,6 +56,16 @@ public class PlanCurricularTemplateBuilder {
     public static final int COL_INDICADORES = 34;
     public static final String META_SHEET = "_META";
     public static final int MAX_BLOCKS_PER_MONTH = 20;
+
+    private static final String TEMPLATE_ETAPA_1 = "/plan-curricular-plantilla.xlsx";
+    private static final String TEMPLATE_ETAPA_2 = "/plan-curricular-plantilla-etapa2.xlsx";
+    private static final String HOJA_INSTRUCCIONES = "Instrucciones";
+
+    /** Columna de la etiqueta vertical ("1ra./2da. Etapa"), fila donde arranca su merge. */
+    private static final int LABEL_COL = 1;
+    private static final int LABEL_ROW = 11;
+    /** Fila (0-indexed) del segundo bloque real de la plantilla: sirve de modelo de estilos. */
+    private static final int MODEL_BLOCK_ROW = BLOCK_START_ROW + BLOCK_STRIDE - 1;
 
     private static final Map<String, List<String>> MESES_POR_ETAPA;
     /** Pool viejo (sin Julio en etapa 1) usado por el endpoint GET legacy. */
@@ -134,25 +146,62 @@ public class PlanCurricularTemplateBuilder {
 
         byte[] firmaProfesor = decodeFirma(a.getProfesorId());
 
-        try (Workbook wb = new XSSFWorkbook();
-             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-
-            Styles styles = new Styles(wb);
-
-            for (PlanTemplateConfigDto.MesConfig mc : mesesConfig) {
-                Sheet sh = wb.createSheet(mc.mes);
-                setColumnWidths(sh);
-                writeHeader(sh, title, disciplina, docente, curso, seccion, turno, especialidad, styles);
-                writeBlocks(sh, mc.bloques, styles);
-
-                int signatureRow = BLOCK_START_ROW + mc.bloques * BLOCK_STRIDE + 2;
-                writeSignatureArea(wb, sh, signatureRow, firmaProfesor, null, styles);
+        String templateResource = "1".equals(etapaActual) ? TEMPLATE_ETAPA_1 : TEMPLATE_ETAPA_2;
+        try (InputStream templateIn = getClass().getResourceAsStream(templateResource)) {
+            if (templateIn == null) {
+                throw new IllegalStateException("No se encontró el recurso de plantilla: " + templateResource);
             }
+            try (Workbook wb = new XSSFWorkbook(templateIn);
+                 ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
-            writeMetaSheet(wb, etapaActual, AcademicPeriod.current(), asignacionId, mesesConfig);
+                // OJO: _META se crea ANTES de borrar hojas de mes sobrantes. Si se crea después,
+                // wb.createSheet reutiliza el nombre de parte físico (sheetN.xml) de una hoja recién
+                // borrada por removeSheetAt, y arrastra su _rels/sheetN.xml.rels huérfano (apunta a
+                // un drawing ya eliminado) -> xlsx que POI abre con "Skipped invalid entry". Crear
+                // _META mientras todas las hojas originales siguen presentes le asigna un nombre de
+                // parte nunca usado antes, así que no hay colisión posible.
+                writeMetaSheet(wb, etapaActual, AcademicPeriod.current(), asignacionId, mesesConfig);
 
-            wb.write(out);
-            return out.toByteArray();
+                selectAndOrderSheets(wb, etapaActual, mesesConfig);
+
+                CellStyle signatureLabelStyle = buildSignatureLabelStyle(wb);
+                for (PlanTemplateConfigDto.MesConfig mc : mesesConfig) {
+                    Sheet sh = wb.getSheet(mc.mes);
+                    fillHeaderData(sh, title, disciplina, docente, curso, seccion, turno, especialidad);
+                    regenerateBlocks(sh, mc.bloques);
+
+                    int signatureRow = signatureRowFor(mc.bloques, BLOCK_START_ROW, BLOCK_STRIDE);
+                    CellStyle signatureBoxStyle = sh.getRow(BLOCK_START_ROW).getCell(COL_CAPACIDADES).getCellStyle();
+                    writeSignatureArea(wb, sh, signatureRow, firmaProfesor, null, signatureBoxStyle, signatureLabelStyle);
+                }
+
+                wb.write(out);
+                return out.toByteArray();
+            }
+        }
+    }
+
+    /** Deja en el workbook sólo las hojas de mes pedidas por el config, en ese orden. */
+    private void selectAndOrderSheets(Workbook wb, String etapaActual, List<PlanTemplateConfigDto.MesConfig> mesesConfig) {
+        Set<String> requeridos = new LinkedHashSet<>();
+        for (PlanTemplateConfigDto.MesConfig mc : mesesConfig) requeridos.add(mc.mes);
+
+        for (String mes : requeridos) {
+            if (wb.getSheet(mes) == null) {
+                throw new IllegalArgumentException("La plantilla de la etapa " + etapaActual + " no tiene la hoja: " + mes);
+            }
+        }
+
+        for (int i = wb.getNumberOfSheets() - 1; i >= 0; i--) {
+            String nombre = wb.getSheetName(i);
+            if (!HOJA_INSTRUCCIONES.equals(nombre) && !META_SHEET.equals(nombre) && !requeridos.contains(nombre)) {
+                wb.removeSheetAt(i);
+            }
+        }
+
+        int posicion = wb.getSheetIndex(HOJA_INSTRUCCIONES) + 1;
+        for (PlanTemplateConfigDto.MesConfig mc : mesesConfig) {
+            wb.setSheetOrder(mc.mes, posicion++);
         }
     }
 
@@ -216,94 +265,113 @@ public class PlanCurricularTemplateBuilder {
         }
     }
 
-    private void setColumnWidths(Sheet sh) {
-        sh.setColumnWidth(1, 3 * 256);
-        for (int c = COL_CAPACIDADES; c < COL_TEMAS; c++) sh.setColumnWidth(c, 12 * 256);
-        for (int c = COL_TEMAS; c < COL_ACTIVIDADES; c++) sh.setColumnWidth(c, 12 * 256);
-        for (int c = COL_ACTIVIDADES; c < COL_INSTRUMENTOS; c++) sh.setColumnWidth(c, 12 * 256);
-        for (int c = COL_INSTRUMENTOS; c < COL_INDICADORES; c++) sh.setColumnWidth(c, 12 * 256);
-        for (int c = COL_INDICADORES; c < COL_INDICADORES + 7; c++) sh.setColumnWidth(c, 12 * 256);
+    /** Escribe sólo los 7 campos de datos de la cabecera; labels, merges y estilos ya vienen de la plantilla. */
+    private void fillHeaderData(Sheet sh, String title, String disciplina, String docente,
+                                String curso, String seccion, String turno, String especialidad) {
+        setValueOnly(sh, 4, 1, title);
+        setValueOnly(sh, 6, 1, "Disciplina: " + disciplina);
+        setValueOnly(sh, 6, 22, "Docente: " + docente);
+        setValueOnly(sh, 8, 1, "Curso: " + curso);
+        setValueOnly(sh, 8, 12, "Sección: " + seccion);
+        setValueOnly(sh, 8, 18, "Turno: " + turno);
+        setValueOnly(sh, 8, 22, "Especialidad: " + especialidad);
     }
 
-    private void writeHeader(Sheet sh, String title, String disciplina, String docente,
-                             String curso, String seccion, String turno, String especialidad,
-                             Styles styles) {
-        setCell(sh, 4, 1, title, styles.title);
-        mergeSafely(sh, 4, 4, 1, 40);
-
-        setCell(sh, 6, 1, "Disciplina: " + disciplina, styles.header);
-        mergeSafely(sh, 6, 6, 1, 20);
-        setCell(sh, 6, 22, "Docente: " + docente, styles.header);
-        mergeSafely(sh, 6, 6, 22, 40);
-
-        setCell(sh, 8, 1, "Curso: " + curso, styles.label);
-        mergeSafely(sh, 8, 8, 1, 10);
-        setCell(sh, 8, 12, "Sección: " + seccion, styles.label);
-        mergeSafely(sh, 8, 8, 12, 16);
-        setCell(sh, 8, 18, "Turno: " + turno, styles.label);
-        mergeSafely(sh, 8, 8, 18, 20);
-        setCell(sh, 8, 22, "Especialidad: " + especialidad, styles.label);
-        mergeSafely(sh, 8, 8, 22, 40);
-
-        // fila 12: encabezados de columnas
-        setCell(sh, 12, COL_CAPACIDADES, "Capacidades", styles.columnHeader);
-        mergeSafely(sh, 12, 12, COL_CAPACIDADES, COL_TEMAS - 1);
-        setCell(sh, 12, COL_TEMAS, "Temas / Contenidos", styles.columnHeader);
-        mergeSafely(sh, 12, 12, COL_TEMAS, COL_ACTIVIDADES - 1);
-        setCell(sh, 12, COL_ACTIVIDADES, "Actividades", styles.columnHeader);
-        mergeSafely(sh, 12, 12, COL_ACTIVIDADES, COL_INSTRUMENTOS - 1);
-        setCell(sh, 12, COL_INSTRUMENTOS, "Instrumentos de Evaluación", styles.columnHeader);
-        mergeSafely(sh, 12, 12, COL_INSTRUMENTOS, COL_INDICADORES - 1);
-        setCell(sh, 12, COL_INDICADORES, "Indicadores", styles.columnHeader);
-        mergeSafely(sh, 12, 12, COL_INDICADORES, COL_INDICADORES + 6);
+    private void setValueOnly(Sheet sh, int rowIndex, int colIndex, String value) {
+        Row r = sh.getRow(rowIndex);
+        if (r == null) r = sh.createRow(rowIndex);
+        Cell c = r.getCell(colIndex);
+        if (c == null) c = r.createCell(colIndex);
+        c.setCellValue(value == null ? "" : value);
     }
 
-    private void writeBlocks(Sheet sh, int bloques, Styles styles) {
-        for (int i = 0; i < bloques; i++) {
-            int row = BLOCK_START_ROW + i * BLOCK_STRIDE;
-            setCell(sh, row, 1, "B" + (i + 1), styles.blockLabel);
-            mergeSafely(sh, row, row + 4, 1, 1);
-            fillBordered(sh, row, COL_CAPACIDADES, row + 4, COL_TEMAS - 1, styles.cell);
-            fillBordered(sh, row, COL_TEMAS, row + 4, COL_ACTIVIDADES - 1, styles.cell);
-            fillBordered(sh, row, COL_ACTIVIDADES, row + 4, COL_INSTRUMENTOS - 1, styles.cell);
-            fillBordered(sh, row, COL_INSTRUMENTOS, row + 4, COL_INDICADORES - 1, styles.cell);
-            // Indicadores: 3 sub-filas para conceptual/procedimental/actitudinal en (row, row+2, row+4)
-            fillBordered(sh, row, COL_INDICADORES, row + 1, COL_INDICADORES + 6, styles.cell);
-            fillBordered(sh, row + 2, COL_INDICADORES, row + 3, COL_INDICADORES + 6, styles.cell);
-            fillBordered(sh, row + 4, COL_INDICADORES, row + 4, COL_INDICADORES + 6, styles.cell);
-        }
-    }
+    /**
+     * Borra el área de bloques (fila BLOCK_START_ROW en adelante) y la vuelve a escribir
+     * con N bloques, clonando celda por celda el estilo del segundo bloque real de la
+     * plantilla (fila {@link #MODEL_BLOCK_ROW}, único que sigue el patrón stride=7 sin el
+     * contenido de ejemplo). El bloque 1 original NO se usa como modelo.
+     */
+    private void regenerateBlocks(Sheet sh, int bloques) {
+        int lastDataCol = COL_INDICADORES + 1;
 
-    private void fillBordered(Sheet sh, int r1, int c1, int r2, int c2, CellStyle style) {
-        for (int r = r1; r <= r2; r++) {
-            Row row = sh.getRow(r);
-            if (row == null) row = sh.createRow(r);
-            for (int c = c1; c <= c2; c++) {
-                Cell cell = row.getCell(c);
-                if (cell == null) cell = row.createCell(c);
-                if (cell.getCellStyle() == null || cell.getCellStyle().getIndex() == 0) {
-                    cell.setCellStyle(style);
-                }
+        CellStyle[][] modelStyle = new CellStyle[BLOCK_STRIDE][lastDataCol + 1];
+        float[] modelHeight = new float[BLOCK_STRIDE];
+        for (int ro = 0; ro < BLOCK_STRIDE; ro++) {
+            Row modelRow = sh.getRow(MODEL_BLOCK_ROW + ro);
+            modelHeight[ro] = modelRow != null ? modelRow.getHeightInPoints() : -1f;
+            for (int c = LABEL_COL; c <= lastDataCol; c++) {
+                Cell cell = modelRow != null ? modelRow.getCell(c) : null;
+                modelStyle[ro][c] = cell != null ? cell.getCellStyle() : null;
             }
         }
-        mergeSafely(sh, r1, r2, c1, c2);
+
+        removeVerticalLabelMerge(sh);
+        for (int i = sh.getNumMergedRegions() - 1; i >= 0; i--) {
+            if (sh.getMergedRegion(i).getFirstRow() >= BLOCK_START_ROW) {
+                sh.removeMergedRegion(i);
+            }
+        }
+        for (int r = sh.getLastRowNum(); r >= BLOCK_START_ROW; r--) {
+            Row row = sh.getRow(r);
+            if (row != null) sh.removeRow(row);
+        }
+
+        int lastRow = BLOCK_START_ROW - 1;
+        for (int i = 0; i < bloques; i++) {
+            int row0 = BLOCK_START_ROW + i * BLOCK_STRIDE;
+            lastRow = row0 + BLOCK_STRIDE - 1;
+
+            for (int ro = 0; ro < BLOCK_STRIDE; ro++) {
+                Row row = sh.createRow(row0 + ro);
+                if (modelHeight[ro] >= 0) row.setHeightInPoints(modelHeight[ro]);
+                for (int c = LABEL_COL; c <= lastDataCol; c++) {
+                    CellStyle style = modelStyle[ro][c];
+                    if (style == null) continue;
+                    row.createCell(c).setCellStyle(style);
+                }
+            }
+
+            mergeRegion(sh, row0, row0 + 6, COL_CAPACIDADES, COL_TEMAS - 1);
+            mergeRegion(sh, row0, row0 + 6, COL_TEMAS, COL_ACTIVIDADES - 1);
+            mergeRegion(sh, row0, row0 + 6, COL_ACTIVIDADES, COL_INSTRUMENTOS - 1);
+            mergeRegion(sh, row0, row0 + 6, COL_INSTRUMENTOS, COL_INSTRUMENTOS + 3);
+            mergeRegion(sh, row0, row0 + 1, COL_INDICADORES, COL_INDICADORES + 1);
+            mergeRegion(sh, row0 + 2, row0 + 3, COL_INDICADORES, COL_INDICADORES + 1);
+            mergeRegion(sh, row0 + 4, row0 + 6, COL_INDICADORES, COL_INDICADORES + 1);
+        }
+
+        mergeRegion(sh, LABEL_ROW, lastRow, LABEL_COL, LABEL_COL);
     }
 
-    private void mergeSafely(Sheet sh, int r1, int r2, int c1, int c2) {
+    /** Saca el merge vertical de la etiqueta de etapa (B12:B..); el resto de merges con fila < BLOCK_START_ROW no se tocan. */
+    private void removeVerticalLabelMerge(Sheet sh) {
+        for (int i = sh.getNumMergedRegions() - 1; i >= 0; i--) {
+            CellRangeAddress region = sh.getMergedRegion(i);
+            if (region.getFirstColumn() == LABEL_COL && region.getLastColumn() == LABEL_COL
+                    && region.getFirstRow() < BLOCK_START_ROW) {
+                sh.removeMergedRegion(i);
+            }
+        }
+    }
+
+    private void mergeRegion(Sheet sh, int r1, int r2, int c1, int c2) {
         if (r1 == r2 && c1 == c2) return;
-        try { sh.addMergedRegion(new CellRangeAddress(r1, r2, c1, c2)); }
-        catch (IllegalStateException ignored) { }
+        sh.addMergedRegion(new CellRangeAddress(r1, r2, c1, c2));
+    }
+
+    static int signatureRowFor(int bloques, int blockStartRow, int blockStride) {
+        return blockStartRow + bloques * blockStride + 2;
     }
 
     private void writeSignatureArea(Workbook wb, Sheet sh, int row, byte[] firmaProfesor,
-                                    byte[] firmaEvaluador, Styles styles) {
-        setCell(sh, row, 1, "Firma del Profesor", styles.signatureLabel);
-        mergeSafely(sh, row, row, 1, 15);
-        setCell(sh, row, 22, "Firma del Evaluador", styles.signatureLabel);
-        mergeSafely(sh, row, row, 22, 36);
+                                    byte[] firmaEvaluador, CellStyle boxStyle, CellStyle labelStyle) {
+        setCell(sh, row, 1, "Firma del Profesor", labelStyle);
+        mergeRegion(sh, row, row, 1, 15);
+        setCell(sh, row, 22, "Firma del Evaluador", labelStyle);
+        mergeRegion(sh, row, row, 22, 36);
 
-        fillBordered(sh, row + 1, 1, row + 6, 15, styles.cell);
-        fillBordered(sh, row + 1, 22, row + 6, 36, styles.cell);
+        fillBoxStyle(sh, row + 1, 1, row + 6, 15, boxStyle);
+        fillBoxStyle(sh, row + 1, 22, row + 6, 36, boxStyle);
 
         if (firmaProfesor != null) {
             insertPicture(wb, sh, firmaProfesor, row + 1, 2, row + 6, 14);
@@ -311,6 +379,29 @@ public class PlanCurricularTemplateBuilder {
         if (firmaEvaluador != null) {
             insertPicture(wb, sh, firmaEvaluador, row + 1, 23, row + 6, 35);
         }
+    }
+
+    private void fillBoxStyle(Sheet sh, int r1, int c1, int r2, int c2, CellStyle style) {
+        for (int r = r1; r <= r2; r++) {
+            Row row = sh.getRow(r);
+            if (row == null) row = sh.createRow(r);
+            for (int c = c1; c <= c2; c++) {
+                Cell cell = row.getCell(c);
+                if (cell == null) cell = row.createCell(c);
+                cell.setCellStyle(style);
+            }
+        }
+        mergeRegion(sh, r1, r2, c1, c2);
+    }
+
+    private CellStyle buildSignatureLabelStyle(Workbook wb) {
+        CellStyle s = wb.createCellStyle();
+        Font f = wb.createFont();
+        f.setBold(true);
+        f.setItalic(true);
+        s.setFont(f);
+        s.setAlignment(HorizontalAlignment.CENTER);
+        return s;
     }
 
     private void insertPicture(Workbook wb, Sheet sh, byte[] png, int r1, int c1, int r2, int c2) {
@@ -461,7 +552,7 @@ public class PlanCurricularTemplateBuilder {
                 if (sh == null) continue;
                 int bloques = meta != null && meta.bloquesPorMes.containsKey(hoja)
                         ? meta.bloquesPorMes.get(hoja) : 4;
-                int signatureRow = startRow + bloques * stride + 2;
+                int signatureRow = signatureRowFor(bloques, startRow, stride);
                 insertPicture(wb, sh, firma, signatureRow + 1, 23, signatureRow + 6, 35);
             }
             wb.write(out);
@@ -478,97 +569,5 @@ public class PlanCurricularTemplateBuilder {
         if (c == null) c = r.createCell(colIndex);
         c.setCellValue(value == null ? "" : value);
         if (style != null) c.setCellStyle(style);
-    }
-
-    // ---- Estilos ----
-
-    private static final class Styles {
-        final CellStyle title;
-        final CellStyle header;
-        final CellStyle label;
-        final CellStyle columnHeader;
-        final CellStyle cell;
-        final CellStyle blockLabel;
-        final CellStyle signatureLabel;
-
-        Styles(Workbook wb) {
-            this.title = buildTitle(wb);
-            this.header = buildHeader(wb);
-            this.label = buildLabel(wb);
-            this.columnHeader = buildColumnHeader(wb);
-            this.cell = buildCell(wb);
-            this.blockLabel = buildBlockLabel(wb);
-            this.signatureLabel = buildSignatureLabel(wb);
-        }
-
-        private CellStyle buildTitle(Workbook wb) {
-            CellStyle s = wb.createCellStyle();
-            Font f = wb.createFont(); f.setBold(true); f.setFontHeightInPoints((short) 14);
-            s.setFont(f); s.setAlignment(HorizontalAlignment.CENTER);
-            s.setVerticalAlignment(VerticalAlignment.CENTER);
-            return s;
-        }
-
-        private CellStyle buildHeader(Workbook wb) {
-            CellStyle s = wb.createCellStyle();
-            Font f = wb.createFont(); f.setBold(true);
-            s.setFont(f); s.setAlignment(HorizontalAlignment.LEFT);
-            return s;
-        }
-
-        private CellStyle buildLabel(Workbook wb) {
-            CellStyle s = wb.createCellStyle();
-            Font f = wb.createFont(); f.setBold(true);
-            s.setFont(f);
-            return s;
-        }
-
-        private CellStyle buildColumnHeader(Workbook wb) {
-            CellStyle s = wb.createCellStyle();
-            Font f = wb.createFont(); f.setBold(true); f.setColor(IndexedColors.WHITE.getIndex());
-            s.setFont(f);
-            s.setAlignment(HorizontalAlignment.CENTER);
-            s.setVerticalAlignment(VerticalAlignment.CENTER);
-            s.setFillForegroundColor(IndexedColors.GREY_50_PERCENT.getIndex());
-            s.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            applyBorders(s);
-            return s;
-        }
-
-        private CellStyle buildCell(Workbook wb) {
-            CellStyle s = wb.createCellStyle();
-            s.setAlignment(HorizontalAlignment.LEFT);
-            s.setVerticalAlignment(VerticalAlignment.TOP);
-            s.setWrapText(true);
-            applyBorders(s);
-            return s;
-        }
-
-        private CellStyle buildBlockLabel(Workbook wb) {
-            CellStyle s = wb.createCellStyle();
-            Font f = wb.createFont(); f.setBold(true);
-            s.setFont(f);
-            s.setAlignment(HorizontalAlignment.CENTER);
-            s.setVerticalAlignment(VerticalAlignment.CENTER);
-            s.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-            s.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            applyBorders(s);
-            return s;
-        }
-
-        private CellStyle buildSignatureLabel(Workbook wb) {
-            CellStyle s = wb.createCellStyle();
-            Font f = wb.createFont(); f.setBold(true); f.setItalic(true);
-            s.setFont(f);
-            s.setAlignment(HorizontalAlignment.CENTER);
-            return s;
-        }
-
-        private static void applyBorders(CellStyle s) {
-            s.setBorderTop(BorderStyle.THIN);
-            s.setBorderBottom(BorderStyle.THIN);
-            s.setBorderLeft(BorderStyle.THIN);
-            s.setBorderRight(BorderStyle.THIN);
-        }
     }
 }
