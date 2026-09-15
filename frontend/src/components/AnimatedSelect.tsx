@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import './AnimatedSelect.css';
+import { createPortal } from 'react-dom';
 
 export interface AnimatedSelectOption {
   value: string | number;
@@ -8,7 +9,9 @@ export interface AnimatedSelectOption {
 }
 
 interface AnimatedSelectProps {
-  value: string | number;
+  value: string | number | string[];
+  multiple?: boolean;
+  portal?: boolean;
   options: AnimatedSelectOption[];
   onChange: (value: string) => void;
   placeholder?: string;
@@ -31,11 +34,15 @@ export default function AnimatedSelect({
   required = false,
   disabled = false,
   className = '',
+  multiple = false,
+  portal = false,
 }: AnimatedSelectProps) {
   const generatedId = useId().replace(/:/g, '');
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState<CSSProperties>({});
   const [open, setOpen] = useState(false);
   const [openUpward, setOpenUpward] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -44,6 +51,8 @@ export default function AnimatedSelect({
   const stringValue = String(value ?? '');
   const selectedIndex = options.findIndex((option) => String(option.value) === stringValue);
   const selected = selectedIndex >= 0 ? options[selectedIndex] : null;
+  const values = Array.isArray(value) ? value : [stringValue];
+  const selectedLabel = multiple ? options.filter((option) => values.includes(String(option.value))).map((option) => option.label).join(', ') : selected?.label;
   const listboxId = `animated-select-list-${generatedId}`;
 
   const updateGradients = useCallback(() => {
@@ -71,17 +80,42 @@ export default function AnimatedSelect({
   useEffect(() => {
     if (!open) return;
     const closeOutside = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      if (!rootRef.current?.contains(event.target as Node) && !popoverRef.current?.contains(event.target as Node)) setOpen(false);
     };
     document.addEventListener('pointerdown', closeOutside);
     return () => document.removeEventListener('pointerdown', closeOutside);
   }, [open]);
 
   useEffect(() => {
+    if (!open || !portal) return;
+    const place = () => {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const below = window.innerHeight - rect.bottom - 12;
+      const upward = below < 260 && rect.top > below;
+      const width = Math.min(Math.max(rect.width, 220), window.innerWidth - 24);
+      setPosition({ position: 'fixed', width,
+        left: Math.max(12, Math.min(rect.left, window.innerWidth - width - 12)),
+        top: upward ? 'auto' : rect.bottom + 6, bottom: upward ? window.innerHeight - rect.top + 6 : 'auto',
+        '--select-list-height': `${Math.max(80, Math.min(300, (upward ? rect.top - 12 : below) - 20))}px`,
+      } as CSSProperties);
+    };
+    place();
+    const onScroll = (event: Event) => { if (!popoverRef.current?.contains(event.target as Node)) place(); };
+    window.addEventListener('resize', place); document.addEventListener('scroll', onScroll, true);
+    return () => { window.removeEventListener('resize', place); document.removeEventListener('scroll', onScroll, true); };
+  }, [open, portal]);
+
+  useEffect(() => {
     if (!open) return;
     const frame = requestAnimationFrame(() => {
       updateGradients();
-      listRef.current?.querySelector<HTMLElement>(`[data-option-index="${activeIndex}"]`)?.scrollIntoView({ block: 'nearest' });
+      const list = listRef.current;
+      const option = list?.querySelector<HTMLElement>(`[data-option-index="${activeIndex}"]`);
+      if (list && option) {
+        if (option.offsetTop < list.scrollTop) list.scrollTop = option.offsetTop;
+        else if (option.offsetTop + option.offsetHeight > list.scrollTop + list.clientHeight) list.scrollTop = option.offsetTop + option.offsetHeight - list.clientHeight;
+      }
     });
     return () => cancelAnimationFrame(frame);
   }, [activeIndex, open, updateGradients]);
@@ -103,7 +137,7 @@ export default function AnimatedSelect({
     if (!option || option.disabled) return;
     onChange(String(option.value));
     setActiveIndex(index);
-    setOpen(false);
+    if (!multiple) setOpen(false);
     triggerRef.current?.focus();
   }
 
@@ -134,6 +168,37 @@ export default function AnimatedSelect({
     }
   }
 
+  const popover = <div ref={popoverRef} className={`animated-select-popover ${portal ? "animated-select-portal" : ""}`} style={portal ? position : undefined} data-specialty={portal ? rootRef.current?.closest("[data-specialty]")?.getAttribute("data-specialty") ?? undefined : undefined}>
+      <div
+        ref={listRef}
+        id={listboxId}
+        className="animated-select-list"
+        role="listbox"
+        aria-multiselectable={multiple || undefined}
+        aria-label={ariaLabel}
+        onScroll={updateGradients}
+      >
+        {options.length === 0 && <div className="animated-select-empty">No hay opciones disponibles</div>}
+        {options.map((option, index) => <button
+          id={`${listboxId}-option-${index}`}
+          data-option-index={index}
+          type="button"
+          role="option"
+          aria-selected={(multiple ? values.includes(String(option.value)) : index === selectedIndex)}
+          disabled={option.disabled}
+          key={String(option.value)}
+          className={`animated-select-option ${index === activeIndex ? 'active' : ''} ${(multiple ? values.includes(String(option.value)) : index === selectedIndex) ? 'selected' : ''}`}
+          style={{ animationDelay: `${Math.min(index * 22, 176)}ms` } as CSSProperties}
+          onPointerEnter={() => setActiveIndex(index)}
+          onClick={() => choose(index)}
+        >
+          <span>{option.label}</span><i aria-hidden="true">✓</i>
+        </button>)}
+      </div>
+      <div className="animated-select-gradient top" style={{ opacity: topGradientOpacity }} />
+      <div className="animated-select-gradient bottom" style={{ opacity: bottomGradientOpacity }} />
+    </div>;
+
   return <div ref={rootRef} className={`animated-select ${open ? 'open' : ''} ${openUpward ? 'open-upward' : ''} ${disabled ? 'disabled' : ''} ${className}`}>
     <select
       className="animated-select-native"
@@ -142,7 +207,8 @@ export default function AnimatedSelect({
       name={name}
       required={required}
       disabled={disabled}
-      value={stringValue}
+      value={multiple ? values : stringValue}
+      multiple={multiple}
       onChange={() => undefined}
       onInvalid={(event) => {
         event.preventDefault();
@@ -168,37 +234,9 @@ export default function AnimatedSelect({
       onClick={() => open ? setOpen(false) : openList()}
       onKeyDown={handleKeyDown}
     >
-      <span className={selected ? '' : 'placeholder'}>{selected?.label ?? placeholder}</span>
+      <span className={selectedLabel ? '' : 'placeholder'}>{selectedLabel || placeholder}</span>
       <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7.5 5 5 5-5" /></svg>
     </button>
-    {open && <div className="animated-select-popover">
-      <div
-        ref={listRef}
-        id={listboxId}
-        className="animated-select-list"
-        role="listbox"
-        aria-label={ariaLabel}
-        onScroll={updateGradients}
-      >
-        {options.length === 0 && <div className="animated-select-empty">No hay opciones disponibles</div>}
-        {options.map((option, index) => <button
-          id={`${listboxId}-option-${index}`}
-          data-option-index={index}
-          type="button"
-          role="option"
-          aria-selected={index === selectedIndex}
-          disabled={option.disabled}
-          key={String(option.value)}
-          className={`animated-select-option ${index === activeIndex ? 'active' : ''} ${index === selectedIndex ? 'selected' : ''}`}
-          style={{ animationDelay: `${Math.min(index * 22, 176)}ms` } as CSSProperties}
-          onPointerEnter={() => setActiveIndex(index)}
-          onClick={() => choose(index)}
-        >
-          <span>{option.label}</span><i aria-hidden="true">✓</i>
-        </button>)}
-      </div>
-      <div className="animated-select-gradient top" style={{ opacity: topGradientOpacity }} />
-      <div className="animated-select-gradient bottom" style={{ opacity: bottomGradientOpacity }} />
-    </div>}
+    {open && (portal ? createPortal(popover, document.body) : popover)}
   </div>;
 }

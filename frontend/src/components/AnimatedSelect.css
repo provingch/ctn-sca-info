@@ -45,3 +45,6 @@
   .animated-select-popover, .animated-select-option { animation: none; opacity: 1; transform: none; }
   .animated-select-trigger, .animated-select-trigger svg, .animated-select-gradient { transition: none; }
 }
+
+.animated-select-popover.animated-select-portal { position: fixed; right: auto; z-index: 1500; margin: 0; }
+.animated-select-portal .animated-select-list { max-height: var(--select-list-height, 300px); }
