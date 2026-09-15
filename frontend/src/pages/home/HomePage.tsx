@@ -145,6 +145,18 @@ export default function HomePage() {
     }
   }, [especialidadId]);
 
+  // Hidrata curso y sección desde `cursoId` en la URL (deep link a catedra/clase
+  // o a planillas). Se ejecuta después del efecto de arriba: si ese efecto resetea
+  // por venir sin especialidadId, esta hidratación sigue corriendo y prevalece.
+  useEffect(() => {
+    if (!data || !cursoId) return;
+    if (selectedNivel !== null || selectedSeccion !== '') return;
+    const curso = data.cursos.find((c) => c.id === cursoId);
+    if (!curso) return;
+    setSelectedNivel(Number(curso.curso) || null);
+    setSelectedSeccion(curso.seccion);
+  }, [cursoId, data, selectedNivel, selectedSeccion]);
+
   if (!view) return <AppShell title="Inicio" hero={false}>
     <HomeLauncher
       data={data}
@@ -305,6 +317,40 @@ function humanizeActivityDate(raw: string): string {
   return `${d}/${mo} ${time}`;
 }
 
+const RECENT_MATERIAS_KEY = 'sca:materias-recientes:v1';
+const RECENT_MATERIAS_LIMIT = 10;
+
+function readRecentMaterias(): number[] {
+  try {
+    const raw = localStorage.getItem(RECENT_MATERIAS_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((id): id is number => typeof id === 'number') : [];
+  } catch {
+    return [];
+  }
+}
+
+function recordMateriaReciente(asignacionId: number) {
+  try {
+    const current = readRecentMaterias().filter((id) => id !== asignacionId);
+    current.unshift(asignacionId);
+    localStorage.setItem(RECENT_MATERIAS_KEY, JSON.stringify(current.slice(0, RECENT_MATERIAS_LIMIT)));
+  } catch {
+    /* sin localStorage disponible: el orden simplemente no persiste */
+  }
+}
+
+function sortByRecentUsage(asignaciones: AsignacionCompleta[]): AsignacionCompleta[] {
+  const recent = readRecentMaterias();
+  const rank = new Map(recent.map((id, idx) => [id, idx]));
+  return [...asignaciones].sort((a, b) => {
+    const ra = rank.get(a.id) ?? Number.MAX_SAFE_INTEGER;
+    const rb = rank.get(b.id) ?? Number.MAX_SAFE_INTEGER;
+    return ra - rb;
+  });
+}
+
 function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChange, onSelect }: {
   data: HomeResponse | null;
   especialidades: Especialidad[];
@@ -414,16 +460,29 @@ function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChan
         )}
       </aside>
     </div>
-    {data && data.cursos.length > 0 && (
-      <div className="launcher-courses">
-        <h3>Tus cursos</h3>
-        <div className="launcher-courses-grid">
-          {data.cursos.map((curso) => (
-            <button type="button" key={curso.id} className="launcher-course-chip" onClick={() => onSelect('planillas', { cursoId: String(curso.id) })}>
-              <strong>{curso.curso}° {curso.seccion}</strong>
-              <span>{curso.especialidad}</span>
-            </button>
-          ))}
+    {asignaciones && asignaciones.length > 0 && (
+      <div className="launcher-materias">
+        <h3>Tus materias</h3>
+        <div className="launcher-materias-list">
+          {sortByRecentUsage(asignaciones).map((asignacion) => {
+            const estado = asignacion.estadoPlan === 'RECHAZADO'
+              ? { tone: 'tone-danger', label: 'Plan rechazado' }
+              : asignacion.estadoPlan === 'NO_CARGADO'
+                ? { tone: 'tone-warning', label: 'Plan sin cargar' }
+                : null;
+            return (
+              <button type="button" key={asignacion.id} className="launcher-materia-row" onClick={() => {
+                recordMateriaReciente(asignacion.id);
+                onSelect('catedra', { subview: 'clase', cursoId: String(asignacion.cursoId) });
+              }}>
+                <span className="launcher-materia-info">
+                  <strong>{asignacion.materiaNombre}</strong>
+                  <span>{asignacion.cursoOrdinal}° {asignacion.seccion}</span>
+                </span>
+                {estado && <span className={`launcher-materia-status ${estado.tone}`} role="img" aria-label={estado.label} title={estado.label} />}
+              </button>
+            );
+          })}
         </div>
       </div>
     )}
@@ -603,7 +662,9 @@ export function ClassView({ data, reload }: { data: HomeResponse; reload: () => 
     }
     submitting.current = true; setSaving(true);
     try {
-      await createClass({ cursoId: data.selCurso.id, asignacionId: selectedAsignacionId ?? asignacionActual?.id ?? null, etapa: data.selEtapa, instrumentoId, turno: 'turno', tema, alumnosAusentes: ausentes, codigosPorAlumno });
+      const asignacionUsada = selectedAsignacionId ?? asignacionActual?.id ?? null;
+      await createClass({ cursoId: data.selCurso.id, asignacionId: asignacionUsada, etapa: data.selEtapa, instrumentoId, turno: 'turno', tema, alumnosAusentes: ausentes, codigosPorAlumno });
+      if (asignacionUsada) recordMateriaReciente(asignacionUsada);
       clearForm();
       setStatus('Clase registrada.');
       await reload();
