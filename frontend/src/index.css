@@ -221,6 +221,19 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .class-field input, .class-field select, .class-field textarea { width: 100%; border: 1px solid var(--line-strong); border-radius: 10px; padding: 11px 12px; background: var(--paper-raised); color: var(--ink); box-shadow: inset 0 1px 2px rgba(14, 23, 38, .02); }
 .class-field textarea { min-height: 88px; resize: vertical; }
 .class-field--hours input { max-width: 180px; height: 42px; padding: 8px 12px; font-weight: 400; }
+.class-register-form .class-card-head { align-items: flex-start; }
+.class-register-form .class-card-head h2 { margin: 5px 0 8px; font-size: 1.5rem; }
+.class-register-form .class-card-head p { margin: 0; color: var(--muted); font-size: .85rem; line-height: 1.5; }
+.class-register-form .class-card > h3 { margin: 0; font-size: 1.15rem; }
+.class-register-form .class-grid { gap: 20px; }
+.class-schedule { min-width: 0; margin: 0; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.class-schedule legend { padding: 0 7px; font-size: .9rem; font-weight: 700; }
+.class-schedule-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.class-schedule small { display: block; margin-top: 10px; color: var(--muted); }
+.class-register-form input[readonly] { background: var(--bg-soft); color: var(--muted); }
+.class-attendance-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.class-attendance-toolbar p { flex: 1 1 320px; margin: 0 0 0 8px; font-size: .84rem; color: var(--muted); line-height: 1.5; }
+@media (max-width: 640px) { .class-register-form .class-grid, .class-schedule-grid { grid-template-columns: 1fr; } .class-register-form .class-card-head { text-align: left; } .class-attendance-toolbar p { margin-left: 0; } }
 .class-field input:focus, .class-field select:focus, .class-field textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent); }
 .rasgos-conductuales-cell { position: relative; min-width: 190px; }
 .rasgos-conductuales-trigger { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; padding: 11px 12px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--paper-raised); color: var(--ink); text-align: left; }
