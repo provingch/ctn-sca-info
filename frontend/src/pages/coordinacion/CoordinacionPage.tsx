@@ -5,10 +5,11 @@ import { getAdminQuejas, type QuejaItem } from '../../api/quejas';
 import { getAdminCatalog } from '../../api/admin';
 import { useSearchParams } from 'react-router-dom';
 import { formatSqlDateTime } from '../../utils/date';
+import CatalogoConductaPanel from '../../components/CatalogoConductaPanel';
 
 export default function CoordinacionPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [view, setView] = useState<'menu' | 'quejas' | 'detalle'>(() => searchParams.get('view') === 'quejas' ? 'quejas' : 'menu');
+  const [view, setView] = useState<'menu' | 'quejas' | 'conducta' | 'detalle'>(() => searchParams.get('view') === 'quejas' ? 'quejas' : searchParams.get('view') === 'conducta' ? 'conducta' : 'menu');
   const [status, setStatus] = useState('');
   const [quejas, setQuejas] = useState<QuejaItem[]>([]);
   const [usuariosPorId, setUsuariosPorId] = useState<Map<number, string>>(new Map());
@@ -16,12 +17,13 @@ export default function CoordinacionPage() {
   const UMBRAL = 5; // valor visual por defecto si backend no expone el umbral
 
   useEffect(() => {
-    setView(searchParams.get('view') === 'quejas' ? 'quejas' : 'menu');
+    const nextView = searchParams.get('view');
+    setView(nextView === 'quejas' || nextView === 'conducta' ? nextView : 'menu');
   }, [searchParams]);
 
-  function changeView(nextView: 'menu' | 'quejas') {
+  function changeView(nextView: 'menu' | 'quejas' | 'conducta') {
     setView(nextView);
-    setSearchParams(nextView === 'quejas' ? { view: 'quejas' } : {});
+    setSearchParams(nextView === 'menu' ? {} : { view: nextView });
   }
 
   useEffect(() => {
@@ -61,6 +63,7 @@ export default function CoordinacionPage() {
     return <AppShell title="Coordinación Pedagógica">
       <div className="choice-grid">
         <button type="button" onClick={() => changeView('quejas')}><span>01</span><h2>Quejas por profesor</h2><p>Ver y revisar quejas cargadas por la administración.</p></button>
+        <button type="button" onClick={() => changeView('conducta')}><span>02</span><h2>Reportes conductuales</h2><p>Crear y administrar los códigos N usados para registrar el comportamiento de los alumnos.</p></button>
       </div>
     </AppShell>;
   }
@@ -99,6 +102,13 @@ export default function CoordinacionPage() {
           </div>
         </section>
       )}
+    </AppShell>;
+  }
+
+  if (view === 'conducta') {
+    return <AppShell title="Reportes conductuales">
+      <button type="button" className="button secondary" onClick={() => changeView('menu')} style={{ marginBottom: 16 }}>← Volver</button>
+      <CatalogoConductaPanel />
     </AppShell>;
   }
 
