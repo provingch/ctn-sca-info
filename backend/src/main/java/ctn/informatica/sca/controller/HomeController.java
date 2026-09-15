@@ -5,6 +5,7 @@ import ctn.informatica.sca.dao.AsignacionDao;
 import ctn.informatica.sca.dao.ConfiguracionSistemaDao;
 import ctn.informatica.sca.dao.CursoBaseDao;
 import ctn.informatica.sca.dao.CursoDao;
+import ctn.informatica.sca.dao.EspecialidadDao;
 import ctn.informatica.sca.dao.HorarioSlotDao;
 import ctn.informatica.sca.dao.IncumplimientoRevisionDao;
 import ctn.informatica.sca.dao.InstrumentoDao;
@@ -34,6 +35,7 @@ import ctn.informatica.sca.google.GoogleClassroomService;
 import ctn.informatica.sca.model.Alumno;
 import ctn.informatica.sca.model.Asignacion;
 import ctn.informatica.sca.model.Curso;
+import ctn.informatica.sca.model.Especialidad;
 import ctn.informatica.sca.model.HorarioSlot;
 import ctn.informatica.sca.model.Instrumento;
 import ctn.informatica.sca.model.Planilla;
@@ -677,7 +679,7 @@ public class HomeController {
     }
 
     @PostMapping("/quejas")
-    @PreAuthorize("hasAnyRole('LEVEL_1','LEVEL_2','LEVEL_3','LEVEL_5')")
+    @PreAuthorize("hasRole('LEVEL_3')")
     public void registrarQueja(@RequestBody Map<String, Object> payload, Authentication authentication) {
         User current = requireUser(authentication);
         if (payload == null) {
@@ -707,6 +709,51 @@ public class HomeController {
             if (id <= 0) {
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo registrar la queja");
             }
+            String nombreProfesorQueja = null;
+            try {
+                Profesor profesorQueja = profesorDao.findById(profesorId);
+                nombreProfesorQueja = profesorQueja == null ? null : (profesorQueja.getNombre() + " " + profesorQueja.getApellido()).trim();
+            } catch (Exception ex) {
+                log.warn("No se pudo resolver el nombre del profesor {} para notificar la queja {}: {}", profesorId, id, ex.getMessage());
+            }
+            String nombreProfesorParaAviso = nombreProfesorQueja == null || nombreProfesorQueja.isBlank()
+                    ? "el profesor #" + profesorId
+                    : nombreProfesorQueja;
+            try {
+                String especialidadNombre = null;
+                try {
+                    Especialidad especialidad = new EspecialidadDao().findById(especialidadId);
+                    especialidadNombre = especialidad == null ? null : especialidad.getNombre();
+                } catch (Exception ex) {
+                    log.warn("No se pudo resolver el nombre de la especialidad {} para notificar la queja {}: {}", especialidadId, id, ex.getMessage());
+                }
+                String titulo = "Nueva queja registrada";
+                String cuerpo = "Se registró una queja sobre " + nombreProfesorParaAviso
+                        + (especialidadNombre != null && !especialidadNombre.isBlank() ? " (" + especialidadNombre + ")" : "") + ".";
+                List<User> coordinadores = userDao.findAllByLevel(5);
+                for (User coordinador : coordinadores) {
+                    if (coordinador == null) continue;
+                    String userType = NotificacionDao.resolveUserType(userDao, coordinador.getId());
+                    boolean created = notificacionDao.crear(
+                            coordinador.getId(),
+                            userType,
+                            "QUEJA_NUEVA",
+                            titulo,
+                            cuerpo,
+                            "QUEJA",
+                            (long) id);
+                    if (created) {
+                        try {
+                            PushNotificationService.sendToUser(coordinador.getId(), userType, titulo, cuerpo, "/coordinacion?view=quejas");
+                        } catch (Exception ex) {
+                            log.warn("No se pudo enviar push a coordinador {} por la nueva queja {}: {}", coordinador.getId(), id, ex.getMessage());
+                        }
+                    }
+                }
+            } catch (Exception ex) {
+                // La queja ya está guardada: no provocar un reenvío por un fallo de notificación.
+                log.error("Queja {} registrada, pero no se pudo notificar la nueva queja a coordinación", id, ex);
+            }
             try {
                 long total = quejaDao.contarPorProfesor(profesorId);
                 int umbral = configuracionSistemaDao.getInt("umbral_quejas_coordinacion", 5);
@@ -716,7 +763,7 @@ public class HomeController {
                         if (coordinador == null) continue;
                         String userType = NotificacionDao.resolveUserType(userDao, coordinador.getId());
                         String titulo = "Profesor con quejas acumuladas";
-                        String cuerpo = "El profesor " + profesorId + " alcanzó " + total + " quejas. Requiere revisión de coordinación pedagógica.";
+                        String cuerpo = "El profesor " + nombreProfesorParaAviso + " alcanzó " + total + " quejas. Requiere revisión de coordinación pedagógica.";
                         boolean created = notificacionDao.crear(
                                 coordinador.getId(),
                                 userType,

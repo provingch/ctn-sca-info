@@ -1,11 +1,71 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import AppShell from '../../components/AppShell';
 import ContentState from '../../components/ui/ContentState';
-import { getAdminQuejas, type QuejaItem } from '../../api/quejas';
+import { ApiError } from '../../api/client';
+import { acceptQueja, getAdminQuejas, quejaEstado, rejectQueja, type QuejaAceptacion, type QuejaItem, type QuejaRechazo, type QuejaResolucion, type QuejaRevision } from '../../api/quejas';
 import { getAdminCatalog } from '../../api/admin';
 import { useSearchParams } from 'react-router-dom';
 import { formatSqlDateTime } from '../../utils/date';
 import CatalogoConductaPanel from '../../components/CatalogoConductaPanel';
+import ComplaintReview from '../../components/quejas/ComplaintReview';
+import ComplaintDocuments from '../../components/quejas/ComplaintDocuments';
+
+const ESTADO_LABEL: Record<ReturnType<typeof quejaEstado>, string> = {
+  pendiente: 'Pendiente', aceptada: 'Aceptada', revisada: 'Revisada', resuelta: 'Resuelta', rechazada: 'Rechazada',
+};
+
+function QuejaPendienteActions({ queja, onAccepted, onRejected }: {
+  queja: QuejaItem;
+  onAccepted: (result: QuejaAceptacion) => void;
+  onRejected: (result: QuejaRechazo) => void;
+}) {
+  const [rejecting, setRejecting] = useState(false);
+  const [motivo, setMotivo] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const inFlight = useRef(false);
+
+  async function accept() {
+    if (inFlight.current) return;
+    inFlight.current = true; setBusy(true); setError('');
+    try {
+      onAccepted(await acceptQueja(queja.id));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo aceptar la queja. Reintentá.');
+    } finally {
+      inFlight.current = false; setBusy(false);
+    }
+  }
+
+  async function confirmReject(event: FormEvent) {
+    event.preventDefault();
+    if (inFlight.current || !motivo.trim()) return;
+    inFlight.current = true; setBusy(true); setError('');
+    try {
+      onRejected(await rejectQueja(queja.id, motivo.trim()));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo rechazar la queja. El motivo se conservó para reintentar.');
+    } finally {
+      inFlight.current = false; setBusy(false);
+    }
+  }
+
+  if (rejecting) return <form className="complaint-review-form form-grid" aria-label={`Rechazo de queja #${queja.id}`} onSubmit={confirmReject}>
+    <label htmlFor={`motivo-rechazo-${queja.id}`}>Motivo del rechazo</label>
+    <textarea id={`motivo-rechazo-${queja.id}`} autoFocus rows={3} required disabled={busy} value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Explicá por qué se rechaza esta queja." />
+    {error && <p className="notice error" role="alert">{error}</p>}
+    <div className="complaint-review-buttons">
+      <button className="button secondary" type="button" disabled={busy} onClick={() => { setRejecting(false); setError(''); }}>Cancelar</button>
+      <button className="button" type="submit" disabled={busy || !motivo.trim()}>{busy ? 'Rechazando…' : 'Confirmar rechazo'}</button>
+    </div>
+  </form>;
+
+  return <div className="complaint-review-buttons">
+    <button className="button secondary" type="button" disabled={busy} onClick={() => setRejecting(true)}>Rechazar</button>
+    <button className="button" type="button" disabled={busy} onClick={() => void accept()}>{busy ? 'Aceptando…' : 'Aceptar'}</button>
+    {error && <p className="notice error" role="alert">{error}</p>}
+  </div>;
+}
 
 export default function CoordinacionPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -38,6 +98,10 @@ export default function CoordinacionPage() {
 
   function nombreCreador(creadaPor: number): string {
     return usuariosPorId.get(creadaPor) ?? `Usuario #${creadaPor}`;
+  }
+
+  function updateQueja(id: number, changes: Partial<QuejaItem>) {
+    setQuejas((current) => current.map((item) => item.id === id ? { ...item, ...changes } : item));
   }
 
   const agrupadas = useMemo(() => {
@@ -126,22 +190,49 @@ export default function CoordinacionPage() {
         <ContentState title="Sin quejas" detail="No se encontraron quejas para este profesor." tone="empty" />
       ) : (
         <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-          {detalleQuejas.map((q) => (
-            <li key={q.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: 12, borderBottom: '1px solid var(--line)' }}>
+          {detalleQuejas.map((q) => {
+            const estado = quejaEstado(q);
+            return <li key={q.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: 12, borderBottom: '1px solid var(--line)' }}>
               <div className="avatar" style={{ width: 40, height: 40, borderRadius: 999, fontSize: '0.85rem', display: 'grid', placeItems: 'center', background: 'var(--bg-soft)', color: 'var(--muted)' }}>{(q.cursoEspecialidad ?? 'C').slice(0, 1)}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <strong>{q.motivo}</strong>
-                  <span className="badge" style={{ marginLeft: 'auto' }}>{`${q.cursoEspecialidad ?? ''} ${q.cursoNivel ?? ''}° ${q.cursoSeccion ?? ''}`.trim()}</span>
+                  <span className={`complaint-status ${estado}`} style={{ marginLeft: 'auto' }}>{ESTADO_LABEL[estado]}</span>
+                  <span className="badge">{`${q.cursoEspecialidad ?? ''} ${q.cursoNivel ?? ''}° ${q.cursoSeccion ?? ''}`.trim()}</span>
                 </div>
                 <div style={{ marginTop: 6 }}>
                   <small style={{ color: 'var(--muted)' }}>
                     Cargada por {nombreCreador(q.creadaPor)} — {formatSqlDateTime(q.creadaEn)}
                   </small>
                 </div>
+                <div style={{ marginTop: 10 }}>
+                  {estado === 'pendiente' && (
+                    <QuejaPendienteActions
+                      queja={q}
+                      onAccepted={(result) => updateQueja(q.id, { ...result, estado: 'aceptada' })}
+                      onRejected={(result) => updateQueja(q.id, { ...result, estado: 'rechazada' })}
+                    />
+                  )}
+                  {estado === 'rechazada' && (
+                    <div className="complaint-resolution">
+                      <strong>Motivo del rechazo</strong>
+                      <p>{q.motivoRechazo || 'Sin motivo registrado.'}</p>
+                      <small>Rechazada el {formatSqlDateTime(q.rechazadaEn)}{q.rechazadaPor != null && <> · Por {nombreCreador(q.rechazadaPor)}</>}</small>
+                    </div>
+                  )}
+                  {estado === 'aceptada' && (
+                    <ComplaintReview queja={q} onReviewed={(revision: QuejaRevision) => updateQueja(q.id, revision)} />
+                  )}
+                  {(estado === 'revisada' || estado === 'resuelta') && (
+                    <>
+                      <ComplaintReview queja={q} reviewerName={q.revisadaPor != null ? nombreCreador(q.revisadaPor) : undefined} onReviewed={(revision: QuejaRevision) => updateQueja(q.id, revision)} />
+                      <ComplaintDocuments queja={q} onResolved={(resolution: QuejaResolucion) => updateQueja(q.id, resolution)} />
+                    </>
+                  )}
+                </div>
               </div>
-            </li>
-          ))}
+            </li>;
+          })}
         </ul>
       )}
     </section>

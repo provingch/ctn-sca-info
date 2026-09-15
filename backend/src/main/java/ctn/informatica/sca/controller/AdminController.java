@@ -6,6 +6,7 @@ import ctn.informatica.sca.dao.CursoBaseDao;
 import ctn.informatica.sca.dao.CursoDao;
 import ctn.informatica.sca.dao.EspecialidadDao;
 import ctn.informatica.sca.dao.MateriaDao;
+import ctn.informatica.sca.dao.NotificacionDao;
 import ctn.informatica.sca.dao.PadreDao;
 import ctn.informatica.sca.dao.ProfesorDao;
 import ctn.informatica.sca.dao.QuejaDao;
@@ -13,6 +14,7 @@ import ctn.informatica.sca.dao.TareaDao;
 import ctn.informatica.sca.dao.SalaDao;
 import ctn.informatica.sca.dao.GradeDao;
 import ctn.informatica.sca.dao.PlanillaDao;
+import ctn.informatica.sca.dao.UserDao;
 import ctn.informatica.sca.model.Alumno;
 import ctn.informatica.sca.model.Asignacion;
 import ctn.informatica.sca.model.Curso;
@@ -30,8 +32,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ctn.informatica.sca.service.ActivityLogService;
 import ctn.informatica.sca.service.PlanillaService;
+import ctn.informatica.sca.util.PushNotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -226,6 +230,7 @@ public class AdminController {
     }
 
     @PutMapping("/quejas/{id}/resolucion")
+    @PreAuthorize("hasRole('LEVEL_5')")
     public QuejaDao.Resolucion resolverQueja(@PathVariable long id, @RequestBody QuejaResolucionInput input, Authentication auth) {
         int userId = ApiAuth.requireUserId(auth);
         if (input == null || !textoValido(input.procesoRevision(), 5000) || !textoValido(input.solucionAplicada(), 5000) || !textoValido(input.corregidaPorNombre(), 200))
@@ -242,6 +247,7 @@ public class AdminController {
     private static boolean textoValido(String text, int max) { return text != null && !text.isBlank() && text.trim().length() <= max; }
 
     @GetMapping("/quejas/{id}/reporte-solucion.pdf")
+    @PreAuthorize("hasRole('LEVEL_5')")
     public org.springframework.http.ResponseEntity<byte[]> quejaSolucionPdf(@PathVariable long id, Authentication auth) {
         try {
             var q = quejaAutorizada(id, auth);
@@ -253,6 +259,7 @@ public class AdminController {
     }
 
     @GetMapping("/quejas/{id}/solicitud-revision.xlsx")
+    @PreAuthorize("hasRole('LEVEL_5')")
     public org.springframework.http.ResponseEntity<byte[]> quejaSolicitudExcel(@PathVariable long id, Authentication auth) {
         try {
             var q = quejaAutorizada(id, auth);
@@ -270,6 +277,7 @@ public class AdminController {
     }
 
     @PutMapping("/quejas/{id}/revision")
+    @PreAuthorize("hasRole('LEVEL_5')")
     public QuejaDao.Revision revisarQueja(@PathVariable long id, @RequestBody QuejaRevisionInput input, Authentication auth) {
         int userId = ApiAuth.requireUserId(auth);
         if (input == null || input.conclusion() == null || input.conclusion().isBlank() || input.conclusion().trim().length() > 5000) {
@@ -283,10 +291,64 @@ public class AdminController {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes revisar quejas fuera de tu especialidad");
             }
             QuejaDao.Revision revision = quejaDao.completarRevision(id, specialty, input.conclusion().trim(), userId);
-            if (revision == null) throw new ResponseStatusException(HttpStatus.CONFLICT, "La queja ya fue revisada o cambió. Actualizá el historial");
+            if (revision == null) throw new ResponseStatusException(HttpStatus.CONFLICT, "La queja debe estar aceptada y sin revisión previa. Actualizá el historial");
             return revision;
         } catch (ResponseStatusException ex) { throw ex; }
         catch (SQLException ex) { throw failure("No se pudo guardar la revisión", ex); }
+    }
+
+    public record QuejaRechazoInput(String motivoRechazo) {}
+
+    @PutMapping("/quejas/{id}/aceptacion")
+    @PreAuthorize("hasRole('LEVEL_5')")
+    public QuejaDao.Aceptacion aceptarQueja(@PathVariable long id, Authentication auth) {
+        int userId = ApiAuth.requireUserId(auth);
+        try {
+            QuejaDao.Aceptacion result = quejaDao.aceptar(id, userId);
+            if (result == null) throw new ResponseStatusException(HttpStatus.CONFLICT, "La queja ya fue aceptada o rechazada");
+            notificarAdvertenciaProfesor(id);
+            return result;
+        } catch (ResponseStatusException ex) { throw ex; }
+        catch (SQLException ex) { throw failure("No se pudo aceptar la queja", ex); }
+    }
+
+    @PutMapping("/quejas/{id}/rechazo")
+    @PreAuthorize("hasRole('LEVEL_5')")
+    public QuejaDao.Rechazo rechazarQueja(@PathVariable long id, @RequestBody QuejaRechazoInput input, Authentication auth) {
+        int userId = ApiAuth.requireUserId(auth);
+        if (input == null || !textoValido(input.motivoRechazo(), 5000)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El motivo de rechazo es requerido (hasta 5000 caracteres)");
+        }
+        try {
+            QuejaDao.Rechazo result = quejaDao.rechazar(id, userId, input.motivoRechazo().trim());
+            if (result == null) throw new ResponseStatusException(HttpStatus.CONFLICT, "La queja ya fue aceptada o rechazada");
+            return result;
+        } catch (ResponseStatusException ex) { throw ex; }
+        catch (SQLException ex) { throw failure("No se pudo rechazar la queja", ex); }
+    }
+
+    // El profesor recibe una advertencia genérica: nunca el motivo, curso, especialidad ni quién la registró.
+    // Un fallo al notificar no revierte ni repite la aceptación, que ya quedó guardada.
+    private void notificarAdvertenciaProfesor(long quejaId) {
+        try {
+            Integer profesorId = quejaDao.findProfesorId(quejaId);
+            if (profesorId == null) return;
+            UserDao userDao = new UserDao();
+            NotificacionDao notificacionDao = new NotificacionDao();
+            String userType = NotificacionDao.resolveUserType(userDao, profesorId);
+            String titulo = "Advertencia de Coordinación Pedagógica";
+            String cuerpo = "Recibiste una advertencia de Coordinación Pedagógica. Comunicate con Coordinación Pedagógica para más detalles.";
+            boolean created = notificacionDao.crear(profesorId, userType, "ADVERTENCIA", titulo, cuerpo, "ADVERTENCIA", (long) profesorId);
+            if (created) {
+                try {
+                    PushNotificationService.sendToUser(profesorId, userType, titulo, cuerpo, "/perfil");
+                } catch (Exception ex) {
+                    log.warn("No se pudo enviar push de advertencia al profesor {}: {}", profesorId, ex.getMessage());
+                }
+            }
+        } catch (Exception ex) {
+            log.error("Queja {} aceptada, pero no se pudo notificar la advertencia al profesor", quejaId, ex);
+        }
     }
 
     @GetMapping("/salas")

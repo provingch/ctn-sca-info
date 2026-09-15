@@ -448,10 +448,27 @@ CREATE TABLE IF NOT EXISTS queja (
     motivo TEXT NOT NULL,
     creada_por INT NOT NULL COMMENT 'admin/delegado que cargó la queja',
     creada_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    aceptada_en DATETIME NULL,
+    aceptada_por INT NULL,
+    rechazada_en DATETIME NULL,
+    rechazada_por INT NULL,
+    motivo_rechazo TEXT NULL,
+    revisada_en DATETIME NULL,
+    revisada_por INT NULL,
+    conclusion TEXT NULL,
+    proceso_revision TEXT NULL,
+    solucion_aplicada TEXT NULL,
+    corregida_por_nombre VARCHAR(200) NULL,
+    resuelta_en DATETIME NULL,
+    resolucion_registrada_por INT NULL,
     CONSTRAINT fk_queja_profesor FOREIGN KEY (profesor_id) REFERENCES usuario(id),
     CONSTRAINT fk_queja_curso FOREIGN KEY (curso_id) REFERENCES curso_base(id),
     CONSTRAINT fk_queja_creada_por FOREIGN KEY (creada_por) REFERENCES usuario(id),
-    CONSTRAINT fk_queja_especialidad FOREIGN KEY (especialidad_id) REFERENCES especialidad(id)
+    CONSTRAINT fk_queja_especialidad FOREIGN KEY (especialidad_id) REFERENCES especialidad(id),
+    CONSTRAINT fk_queja_aceptada_por FOREIGN KEY (aceptada_por) REFERENCES usuario(id),
+    CONSTRAINT fk_queja_rechazada_por FOREIGN KEY (rechazada_por) REFERENCES usuario(id),
+    CONSTRAINT fk_queja_revisada_por FOREIGN KEY (revisada_por) REFERENCES usuario(id),
+    CONSTRAINT fk_queja_resolucion_usuario FOREIGN KEY (resolucion_registrada_por) REFERENCES usuario(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE IF NOT EXISTS configuracion_sistema (

@@ -5,10 +5,8 @@ import SpecialtyIcon from '../../components/SpecialtyIcon';
 import { normalizeSpecialty } from '../../theme/theme';
 import { ApiError } from '../../api/client';
 import type { AdminCatalog } from '../../api/admin';
-import { createQueja, getAdminQuejas, quejaEstado, type QuejaItem, type QuejaRevision, type QuejaResolucion } from '../../api/quejas';
+import { createQueja, getAdminQuejas, quejaEstado, type QuejaItem } from '../../api/quejas';
 import { formatSqlDateTime } from '../../utils/date';
-import ComplaintReview from './ComplaintReview';
-import ComplaintDocuments from './ComplaintDocuments';
 
 const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
@@ -95,14 +93,14 @@ export default function AdminQuejasPanel({ data, status, isGlobalAdmin }: { data
     return map;
   }, new Map<string, { key: string; name: string; items: QuejaItem[] }>()).values())
     .sort((a, b) => a.name.localeCompare(b.name, 'es'));
+  const pendingCount = (lista ?? []).filter((q) => quejaEstado(q) === 'pendiente').length;
+  const acceptedCount = (lista ?? []).filter((q) => quejaEstado(q) === 'aceptada').length;
   const reviewedCount = (lista ?? []).filter((q) => quejaEstado(q) === 'revisada').length;
   const resolvedCount = (lista ?? []).filter((q) => quejaEstado(q) === 'resuelta').length;
-  function updateQueja(id: number, changes: QuejaRevision | QuejaResolucion) {
-    requestId.current += 1;
-    setListLoading(false);
-    setLista((current) => current?.map((item) => item.id === id ? { ...item, ...changes } : item) ?? null);
-    status(changes.estado === 'resuelta' ? 'Solución registrada.' : 'Revisión completada.');
-  }
+  const rejectedCount = (lista ?? []).filter((q) => quejaEstado(q) === 'rechazada').length;
+  const estadoLabel: Record<ReturnType<typeof quejaEstado>, string> = {
+    pendiente: 'Pendiente', aceptada: 'Aceptada', revisada: 'Revisada', resuelta: 'Resuelta', rechazada: 'Rechazada',
+  };
 
   return <div className="complaints-workspace">
     <section className="panel complaints-register" aria-labelledby="complaints-register-title">
@@ -140,9 +138,11 @@ export default function AdminQuejasPanel({ data, status, isGlobalAdmin }: { data
       </header>
       {lista !== null && <dl className="complaints-summary" aria-label="Resumen del historial de quejas" aria-live="polite">
         <div><dt>Total de quejas</dt><dd>{lista.length}</dd></div>
-        <div className="complaints-summary-pending"><dt>Quejas pendientes</dt><dd>{lista.length - reviewedCount - resolvedCount}</dd></div>
+        <div className="complaints-summary-pending"><dt>Quejas pendientes</dt><dd>{pendingCount}</dd></div>
+        <div><dt>Quejas aceptadas</dt><dd>{acceptedCount}</dd></div>
         <div className="complaints-summary-reviewed"><dt>Quejas revisadas</dt><dd>{reviewedCount}</dd></div>
         <div className="complaints-summary-resolved"><dt>Quejas resueltas</dt><dd>{resolvedCount}</dd></div>
+        <div><dt>Quejas rechazadas</dt><dd>{rejectedCount}</dd></div>
       </dl>}
       {lista !== null && lista.length > 0 && <div className="complaints-search form-grid">
         <label>Buscar en las quejas<input type="search" placeholder="Profesor, curso, especialidad o motivo" value={query} onChange={(e) => { setQuery(e.target.value); setExpandedGroups({}); }} /></label>
@@ -167,12 +167,30 @@ export default function AdminQuejasPanel({ data, status, isGlobalAdmin }: { data
       <ul className="complaints-list">{group.items.map((q) => <li key={q.id}>
         <article className="complaint-record">
           <div className="complaint-record-heading"><h4>{[q.profesorNombre, q.profesorApellido].filter(Boolean).join(' ') || ('Profesor #' + q.profesorId)}</h4><span className="complaint-reference">Registro #{q.id}</span></div>
-          <span className={`complaint-status ${quejaEstado(q)}`}>{quejaEstado(q) === 'resuelta' ? 'Resuelta' : quejaEstado(q) === 'revisada' ? 'Revisada' : 'Pendiente'}</span>
+          <span className={`complaint-status ${quejaEstado(q)}`}>{estadoLabel[quejaEstado(q)]}</span>
           <p className="complaint-course">{[q.cursoEspecialidad, q.cursoNivel ? q.cursoNivel + '°' : null, q.cursoSeccion ? 'Sección ' + q.cursoSeccion : null].filter(Boolean).join(' · ') || ('Curso #' + q.cursoId)}</p>
           <p className="complaint-reason">{q.motivo}</p>
           <footer>{formatSqlDateTime(q.creadaEn)} · Registrada por {usuariosPorId.get(q.creadaPor) ?? ('Usuario #' + q.creadaPor)}</footer>
-          <ComplaintReview queja={q} reviewerName={q.revisadaPor != null ? usuariosPorId.get(q.revisadaPor) : undefined} onReviewed={(revision) => updateQueja(q.id, revision)} />
-          <ComplaintDocuments queja={q} onResolved={(resolution) => updateQueja(q.id, resolution)} />
+          {quejaEstado(q) === 'rechazada' && (
+            <div className="complaint-resolution">
+              <strong>Rechazada por Coordinación Pedagógica</strong>
+              <p>{q.rechazadaEn ? `El ${formatSqlDateTime(q.rechazadaEn)}` : 'Sin fecha registrada.'}{q.rechazadaPor != null && <> · Por {usuariosPorId.get(q.rechazadaPor) ?? ('Usuario #' + q.rechazadaPor)}</>}</p>
+            </div>
+          )}
+          {(quejaEstado(q) === 'revisada' || quejaEstado(q) === 'resuelta') && (
+            <div className="complaint-resolution">
+              <strong>Conclusión de la revisión</strong>
+              <p>{q.conclusion || 'Sin conclusión registrada.'}</p>
+              <small>Revisada el {formatSqlDateTime(q.revisadaEn)}{q.revisadaPor != null && <> · Por {usuariosPorId.get(q.revisadaPor) ?? ('Usuario #' + q.revisadaPor)}</>}</small>
+            </div>
+          )}
+          {quejaEstado(q) === 'resuelta' && (
+            <div className="complaint-resolution">
+              <strong>Solución aplicada</strong>
+              <p>{q.solucionAplicada}</p>
+              <small>Corregida por {q.corregidaPorNombre} · Resuelta el {formatSqlDateTime(q.resueltaEn)}</small>
+            </div>
+          )}
         </article>
       </li>)}</ul></div>
         </section>;
