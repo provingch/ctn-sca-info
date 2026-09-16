@@ -9,6 +9,7 @@ import { formatSqlDateTime } from '../../utils/date';
 import CatalogoConductaPanel from '../../components/CatalogoConductaPanel';
 import ComplaintReview from '../../components/quejas/ComplaintReview';
 import ComplaintDocuments from '../../components/quejas/ComplaintDocuments';
+import LauncherCards, { launcherIcons } from '../../components/LauncherCards';
 
 const ESTADO_LABEL: Record<ReturnType<typeof quejaEstado>, string> = {
   pendiente: 'Pendiente', aceptada: 'Aceptada', revisada: 'Revisada', resuelta: 'Resuelta', rechazada: 'Rechazada',
@@ -125,10 +126,10 @@ export default function CoordinacionPage() {
 
   if (view === 'menu') {
     return <AppShell title="Coordinación Pedagógica">
-      <div className="choice-grid">
-        <button type="button" onClick={() => changeView('quejas')}><span>01</span><h2>Quejas por profesor</h2><p>Ver y revisar quejas cargadas por la administración.</p></button>
-        <button type="button" onClick={() => changeView('conducta')}><span>02</span><h2>Reportes conductuales</h2><p>Crear y administrar los códigos N usados para registrar el comportamiento de los alumnos.</p></button>
-      </div>
+      <LauncherCards className="launcher-cards-grid" options={[
+        { key: 'quejas', icon: launcherIcons.quejas, title: 'Quejas por profesor', description: 'Ver y revisar quejas cargadas por la administración.', onSelect: () => changeView('quejas') },
+        { key: 'conducta', icon: launcherIcons.conducta, title: 'Reportes conductuales', description: 'Crear y administrar los códigos N usados para registrar el comportamiento de los alumnos.', onSelect: () => changeView('conducta') },
+      ]} />
     </AppShell>;
   }
 

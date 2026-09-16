@@ -8,6 +8,7 @@ import AnimatedSelect from '../../components/AnimatedSelect';
 import ReviewPlanesView from './ReviewPlanesView';
 import SeguimientoPlanesView from './SeguimientoPlanesView';
 import { useSearchParams } from 'react-router-dom';
+import LauncherCards, { launcherIcons } from '../../components/LauncherCards';
 
 type EvaluationView = 'menu' | 'planillas' | 'planes' | 'seguimiento';
 
@@ -86,11 +87,11 @@ export default function EvaluacionPage() {
 
   if (view === 'menu') {
     return <AppShell title="Panel de Evaluación">
-      <div className="choice-grid">
-        <button type="button" onClick={() => changeView('planillas')}><span>01</span><h2>Descargar planillas</h2><p>Exportá planillas completadas de los cursos.</p></button>
-        <button type="button" onClick={() => changeView('planes')}><span>02</span><h2>Revisar plan curricular</h2><p>Aprobá o rechazá planes de profesores.</p></button>
-        <button type="button" onClick={() => changeView('seguimiento')}><span>03</span><h2>Seguimiento de profesores</h2><p>Consultá cumplimiento de planes y resolvé incumplimientos.</p></button>
-      </div>
+      <LauncherCards className="launcher-cards-grid" options={[
+        { key: 'planillas', icon: launcherIcons.descargarPlanillas, title: 'Descargar planillas', description: 'Exportá planillas completadas de los cursos.', onSelect: () => changeView('planillas') },
+        { key: 'planes', icon: launcherIcons.revisarPlanes, title: 'Revisar plan curricular', description: 'Aprobá o rechazá planes de profesores.', onSelect: () => changeView('planes') },
+        { key: 'seguimiento', icon: launcherIcons.seguimiento, title: 'Seguimiento de profesores', description: 'Consultá cumplimiento de planes y resolvé incumplimientos.', onSelect: () => changeView('seguimiento') },
+      ]} />
     </AppShell>;
   }
 
