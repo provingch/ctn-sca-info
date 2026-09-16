@@ -251,6 +251,9 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 
 .page-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 52px; padding: 14px 18px; margin-bottom: 20px; border-radius: var(--radius); background: var(--accent-soft); }
 .page-banner-text { display: grid; gap: 2px; }
+.page-banner-title-row { display: flex; align-items: center; gap: 10px; }
+.page-banner-back { padding: 0; border: 0; background: transparent; color: var(--accent-deep); opacity: .68; font-size: .78rem; font-weight: 700; cursor: pointer; }
+.page-banner-back:hover { opacity: 1; }
 .page-banner-text h1 { margin: 0; color: var(--accent-deep); font-size: 1.05rem; font-weight: 800; }
 .page-banner-text span { color: var(--accent-deep); opacity: .82; font-size: .82rem; }
 .page-banner-emblem { flex: 0 0 auto; width: 52px; height: 52px; display: grid; place-items: center; border-radius: 14px; background: var(--paper); }
@@ -273,6 +276,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .launcher-badge.tone-warning { background: color-mix(in srgb, var(--warning) 12%, var(--paper)); color: var(--warning); }
 .launcher-badge.tone-success { background: color-mix(in srgb, var(--success) 12%, var(--paper)); color: var(--success); }
 .launcher-badge.tone-accent { background: var(--accent-soft); color: var(--accent-deep); }
+.launcher-badge.tone-neutral { background: var(--bg-soft); color: var(--muted); }
 .launcher-activity { display: flex; flex-direction: column; padding: 18px 20px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); box-shadow: var(--shadow-sm); }
 .launcher-activity h3 { margin: 0 0 12px; font-size: 1rem; }
 .launcher-activity-list { display: grid; gap: 10px; }
@@ -294,6 +298,16 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .launcher-materia-status { flex: 0 0 auto; width: 8px; height: 8px; border-radius: 999px; }
 .launcher-materia-status.tone-danger { background: var(--danger); }
 .launcher-materia-status.tone-warning { background: var(--warning); }
+.launcher-recientes { margin-top: 20px; }
+.launcher-recientes h3 { margin: 0 0 12px; font-size: 1rem; }
+.launcher-recientes-list { display: grid; }
+.launcher-recientes-item { display: grid; min-width: 0; gap: 2px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.launcher-recientes-item:last-child { border-bottom: 0; padding-bottom: 0; }
+.launcher-recientes-head { display: flex; min-width: 0; align-items: baseline; justify-content: space-between; gap: 12px; }
+.launcher-recientes-materia { overflow: hidden; min-width: 0; color: var(--ink); font-weight: 700; font-size: .9rem; white-space: nowrap; text-overflow: ellipsis; }
+.launcher-recientes-fecha { flex: 0 0 auto; color: var(--muted); font-size: .72rem; }
+.launcher-recientes-tema { display: block; overflow: hidden; min-width: 0; color: var(--muted); font-size: .85rem; white-space: nowrap; text-overflow: ellipsis; }
+.launcher-recientes-link { margin-top: 14px; }
 @media (max-width: 900px) {
   .launcher-body { grid-template-columns: 1fr; }
   .launcher-body, .launcher-cards { gap: 14px; }

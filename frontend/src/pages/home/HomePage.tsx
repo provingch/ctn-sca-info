@@ -3,7 +3,7 @@ import { useToast } from '../../context/toast';
 import { getAsignacionesDisponibles, getMisAsignaciones, type AsignacionOption, type AsignacionCompleta } from '../../api/planCurricular';
 import { getProfile } from '../../api/profile';
 import { Link, useSearchParams } from 'react-router-dom';
-import { createClass, getClaseActual, getHome, listarCodigosConducta, type ClaseActualDto, type CodigoConducta, type HomeResponse, type PlanillaResumenDto } from '../../api/home';
+import { createClass, getClaseActual, getHome, getMisClases, listarCodigosConducta, type ClaseActualDto, type ClaseDadaDto, type CodigoConducta, type HomeResponse, type PlanillaResumenDto } from '../../api/home';
 import { ApiError } from '../../api/client';
 import AppShell from '../../components/AppShell';
 import PageBanner from '../../components/PageBanner';
@@ -252,8 +252,14 @@ export default function HomePage() {
       .idle-dot:nth-child(2) { animation-delay: 0.15s; }
       .idle-dot:nth-child(3) { animation-delay: 0.3s; }
     `}</style>
-    <AppShell title="Panel SCA del curso" specialty={selectedEspecialidad?.nombre ?? null}><div className="toolbar filters"><button type="button" className="button secondary" onClick={() => setSearch({})}>← Inicio</button>
-      {showSelector && <>
+    <AppShell title="Panel SCA del curso" specialty={selectedEspecialidad?.nombre ?? null} hero={false}>
+      <PageBanner
+        title="Panel SCA del curso"
+        context={view === 'catedra' && !subview ? `${data.cursos.length} curso${data.cursos.length === 1 ? '' : 's'}${selectedEspecialidad ? ` · ${selectedEspecialidad.nombre}` : ''}` : undefined}
+        specialty={selectedEspecialidad?.nombre ?? null}
+        onBack={() => setSearch({})}
+      />
+      {showSelector && <div className="toolbar filters">
         <label className="inline-filter">Especialidad
           <AnimatedSelect ariaLabel="Especialidad" value={especialidadId || ''} onChange={(value) => {
             setSelectedNivel(null);
@@ -284,15 +290,10 @@ export default function HomePage() {
           }} disabled={!hasEspecialidad || selectedCourseNivel == null || visibleCursos.length === 0} placeholder={isPlanillasView ? 'Todas las secciones' : 'Seleccione la sección'} options={[{ value: '', label: isPlanillasView ? 'Todas las secciones' : 'Seleccione la sección' }, ...sectionOptions]} />
         </label>
         {isPlanillasView && hasActiveFilter && <button type="button" className="button secondary planillas-toolbar-clear" onClick={clearFilter}>Limpiar filtro</button>}
-      </>}
-    </div>
+      </div>}
       {view === 'catedra' ? (
         !subview ? (
-          <LauncherCards className="launcher-cards-grid" options={[
-            { key: 'clase', icon: launcherIcons.clase, title: 'Iniciar clase', description: 'Asistencia, rasgos e historial del curso.', onSelect: () => params({ subview: 'clase' }) },
-            { key: 'plan-curricular', icon: launcherIcons.planCurricular, title: 'Plan curricular', description: 'Cargá y revisá tu plan curricular anual.', onSelect: () => params({ subview: 'plan-curricular' }) },
-            { key: 'mis-clases', icon: launcherIcons.clasesDadas, title: 'Clases dadas', description: 'Historial de clases; justificar ausencias.', onSelect: () => params({ subview: 'mis-clases' }) },
-          ]} />
+          <CatedraMenu params={params} />
         ) : subview === 'plan-curricular' ? (
           <PlanCurricularView />
         ) : subview === 'mis-clases' ? (
@@ -517,6 +518,95 @@ function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChan
       </div>
     )}
   </div>;
+}
+
+function parseFechaClase(value: string | null): Date | null {
+  if (!value) return null;
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function diasDesde(date: Date): number {
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  return Math.max(0, Math.round((startOfDay(new Date()) - startOfDay(date)) / 86400000));
+}
+
+function CatedraMenu({ params }: { params: (next: Record<string, string>) => void }) {
+  const [asignaciones, setAsignaciones] = useState<AsignacionCompleta[] | null>(null);
+  const [misClases, setMisClases] = useState<ClaseDadaDto[] | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void getMisAsignaciones().then((list) => { if (active) setAsignaciones(list); }).catch(() => { /* sin datos: no se muestra badge de plan curricular */ });
+    void getMisClases().then((list) => { if (active) setMisClases(list); }).catch(() => { /* sin datos: no se muestran badges ni la franja de últimas clases */ });
+    return () => { active = false; };
+  }, []);
+
+  const rechazados = asignaciones?.filter((a) => a.estadoPlan === 'RECHAZADO').length ?? 0;
+  const noCargados = asignaciones?.filter((a) => a.estadoPlan === 'NO_CARGADO').length ?? 0;
+
+  const clasesConFecha = (misClases ?? [])
+    .map((clase) => ({ clase, fecha: parseFechaClase(clase.fechaClase) }))
+    .filter((item): item is { clase: ClaseDadaDto; fecha: Date } => item.fecha !== null)
+    .sort((a, b) => b.fecha.getTime() - a.fecha.getTime());
+  const ultimasClases = clasesConFecha.slice(0, 3);
+  const diasUltimaClase = clasesConFecha.length > 0 ? diasDesde(clasesConFecha[0].fecha) : null;
+
+  return <>
+    <LauncherCards className="launcher-cards-grid" options={[
+      {
+        key: 'clase',
+        icon: launcherIcons.clase,
+        title: 'Iniciar clase',
+        description: 'Asistencia, rasgos e historial del curso.',
+        onSelect: () => params({ subview: 'clase' }),
+        badges: diasUltimaClase != null
+          ? <span className="launcher-badge tone-accent">{diasUltimaClase === 0 ? 'Última clase hoy' : `Última clase hace ${diasUltimaClase} día${diasUltimaClase === 1 ? '' : 's'}`}</span>
+          : undefined,
+      },
+      {
+        key: 'plan-curricular',
+        icon: launcherIcons.planCurricular,
+        title: 'Plan curricular',
+        description: 'Cargá y revisá tu plan curricular anual.',
+        onSelect: () => params({ subview: 'plan-curricular' }),
+        badges: asignaciones && asignaciones.length > 0
+          ? (rechazados > 0
+            ? <span className="launcher-badge tone-danger">{rechazados} plan{rechazados === 1 ? '' : 'es'} rechazado{rechazados === 1 ? '' : 's'}</span>
+            : noCargados > 0
+              ? <span className="launcher-badge tone-warning">{noCargados} plan{noCargados === 1 ? '' : 'es'} sin cargar</span>
+              : <span className="launcher-badge tone-success">Planes al día</span>)
+          : undefined,
+      },
+      {
+        key: 'mis-clases',
+        icon: launcherIcons.clasesDadas,
+        title: 'Clases dadas',
+        description: 'Historial de clases; justificar ausencias.',
+        onSelect: () => params({ subview: 'mis-clases' }),
+        badges: misClases && misClases.length > 0
+          ? <span className="launcher-badge tone-neutral">{misClases.length} clase{misClases.length === 1 ? '' : 's'} registrada{misClases.length === 1 ? '' : 's'}</span>
+          : undefined,
+      },
+    ]} />
+    {ultimasClases.length > 0 && (
+      <div className="launcher-recientes">
+        <h3>Últimas clases registradas</h3>
+        <div className="launcher-recientes-list">
+          {ultimasClases.map(({ clase, fecha }) => (
+            <div className="launcher-recientes-item" key={clase.id}>
+              <div className="launcher-recientes-head">
+                <span className="launcher-recientes-materia">{clase.materiaNombre ? `${clase.materiaNombre} · ${clase.cursoDescripcion}` : clase.cursoDescripcion}</span>
+                <span className="launcher-recientes-fecha">{fecha.toLocaleDateString('es-PY', { day: 'numeric', month: 'short' })}</span>
+              </div>
+              <span className="launcher-recientes-tema">{clase.tema}</span>
+            </div>
+          ))}
+        </div>
+        <button type="button" className="table-row-action launcher-recientes-link" onClick={() => params({ subview: 'mis-clases' })}>Ver todas las clases dadas →</button>
+      </div>
+    )}
+  </>;
 }
 
 export function PlanillasView({ data, syncingProp, setSyncingProp, especialidadNombre, nivel, seccion, materiaId, hasActiveFilter, onClearFilter }: {
