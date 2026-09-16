@@ -82,6 +82,15 @@ export function updateRasgoCodigos(asistenciaId: number, codigos: string[]) {
   return apiRequest<void>('/api/home/update-rasgo-codigos', { method: 'POST', body: { asistenciaId, codigos } });
 }
 
+export interface UpdateClaseRequest {
+  tema: string;
+  asistencias: Array<{ asistenciaId: number; estado: 'presente' | 'ausente'; codigos: string[] }>;
+}
+
+export function updateClase(planillaId: number, payload: UpdateClaseRequest) {
+  return apiRequest<void>(`/api/home/mis-clases/${planillaId}`, { method: 'PUT', body: payload });
+}
+
 export function listarCodigosConducta() {
   return apiRequest<CodigoConducta[]>('/api/codigos-conducta', { method: 'GET' });
 }

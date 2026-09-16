@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError } from '../../api/client';
-import { getMiClase, getMisClases, updateAttendance, type ClaseDadaDto, type ClaseDetalleDto } from '../../api/home';
+import { getMiClase, getMisClases, listarCodigosConducta, updateAttendance, updateClase, type ClaseDadaDto, type ClaseDetalleDto, type CodigoConducta } from '../../api/home';
 import ContentState from '../../components/ui/ContentState';
 import { useToast } from '../../context/toast';
+import RasgosAsistenciaEditor from './RasgosAsistenciaEditor';
 
 function estadoLabel(estado: string): string {
   switch (estado) {
@@ -14,6 +15,17 @@ function estadoLabel(estado: string): string {
   }
 }
 
+function edicionVigente(fechaClase: string | null): boolean {
+  if (!fechaClase) return false;
+  const fecha = new Date(`${fechaClase}T00:00:00`);
+  if (Number.isNaN(fecha.getTime())) return false;
+  const limite = new Date(fecha);
+  limite.setDate(limite.getDate() + 7);
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  return hoy <= limite;
+}
+
 export default function MisClasesView() {
   const [clases, setClases] = useState<ClaseDadaDto[] | null>(null);
   const [error, setError] = useState('');
@@ -21,7 +33,17 @@ export default function MisClasesView() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [saving, setSaving] = useState<number | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editTema, setEditTema] = useState('');
+  const [editAusentes, setEditAusentes] = useState<number[]>([]);
+  const [editCodigos, setEditCodigos] = useState<Record<number, string[]>>({});
+  const [codigosConducta, setCodigosConducta] = useState<CodigoConducta[]>([]);
   const { showToast } = useToast();
+
+  useEffect(() => {
+    void listarCodigosConducta().then(setCodigosConducta).catch(() => setCodigosConducta([]));
+  }, []);
 
   const load = useCallback(async () => {
     setError('');
@@ -36,6 +58,7 @@ export default function MisClasesView() {
 
   const openDetail = async (planillaId: number) => {
     setSelectedId(planillaId);
+    setEditing(false);
     setDetailLoading(true);
     try {
       setSelected(await getMiClase(planillaId));
@@ -44,6 +67,37 @@ export default function MisClasesView() {
       setSelected(null);
     } finally {
       setDetailLoading(false);
+    }
+  };
+
+  const beginEdit = () => {
+    if (!selected || !edicionVigente(selected.fechaClase)) return;
+    setEditTema(selected.tema);
+    setEditAusentes(selected.asistencias.filter((item) => item.estado === 'ausente' || item.estado === 'ausente_justificado').map((item) => item.alumnoId));
+    setEditCodigos(Object.fromEntries(selected.asistencias.map((item) => [item.alumnoId, item.codigos ?? []])));
+    setEditing(true);
+  };
+
+  const saveEdit = async () => {
+    if (!selectedId || !selected || editSaving) return;
+    setEditSaving(true);
+    try {
+      await updateClase(selectedId, {
+        tema: editTema.trim(),
+        asistencias: selected.asistencias.map((item) => ({
+          asistenciaId: item.id,
+          estado: editAusentes.includes(item.alumnoId) ? 'ausente' : 'presente',
+          codigos: editCodigos[item.alumnoId] ?? [],
+        })),
+      });
+      showToast('Clase actualizada.');
+      setEditing(false);
+      await openDetail(selectedId);
+      await load();
+    } catch (e) {
+      showToast(e instanceof ApiError ? e.message : 'No se pudo actualizar la clase.');
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -106,6 +160,30 @@ export default function MisClasesView() {
               <ContentState tone="loading" title="Cargando detalle…" />
             ) : (
               <>
+                <div className="signature-modal-actions" style={{ justifyContent: 'flex-start', marginBottom: 12 }}>
+                  {edicionVigente(selected.fechaClase) ? <button type="button" className="button secondary" onClick={beginEdit}>Editar</button> : <span className="tag">El plazo de edición ya venció.</span>}
+                </div>
+                {editing ? <>
+                  <RasgosAsistenciaEditor
+                    alumnos={selected.asistencias.map((item) => ({ id: item.alumnoId, nombre: item.alumnoNombreCompleto, apellido: '' }))}
+                    tema={editTema}
+                    onTemaChange={setEditTema}
+                    ausentes={editAusentes}
+                    onAusenteChange={(alumnoId, ausente) => setEditAusentes((current) => ausente ? [...current, alumnoId] : current.filter((id) => id !== alumnoId))}
+                    codigosPorAlumno={editCodigos}
+                    onCodigoChange={(alumnoId, codigo) => setEditCodigos((current) => {
+                      const actual = current[alumnoId] ?? [];
+                      return { ...current, [alumnoId]: actual.includes(codigo) ? actual.filter((item) => item !== codigo) : [...actual, codigo] };
+                    })}
+                    codigosConducta={codigosConducta}
+                    titulo="Editar asistencia y justificativos"
+                    descripcion="Actualizá el tema, la asistencia y los rasgos conductuales de esta clase."
+                  />
+                  <div className="signature-modal-actions">
+                    <button type="button" className="button secondary" disabled={editSaving} onClick={() => setEditing(false)}>Cancelar</button>
+                    <button type="button" className="button" disabled={editSaving || !editTema.trim()} onClick={() => void saveEdit()}>{editSaving ? 'Guardando…' : 'Guardar cambios'}</button>
+                  </div>
+                </> : <>
                 <p><strong>Tema:</strong> {selected.tema}</p>
                 <p><strong>Fecha:</strong> {selected.fechaClase ?? 'Sin fecha'}</p>
                 <table className="grade-table" style={{ marginTop: 12, width: '100%' }}>
@@ -133,6 +211,7 @@ export default function MisClasesView() {
                     ))}
                   </tbody>
                 </table>
+                </>}
               </>
             )}
         </div>

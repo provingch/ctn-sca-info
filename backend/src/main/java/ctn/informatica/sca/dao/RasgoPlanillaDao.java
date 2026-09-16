@@ -5,6 +5,7 @@ import ctn.informatica.sca.clases.conexion;
 import ctn.informatica.sca.model.Alumno;
 import ctn.informatica.sca.model.RasgoAsistencia;
 import ctn.informatica.sca.model.RasgoPlanilla;
+import ctn.informatica.sca.dto.UpdateRasgoAsistenciaRequest;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -550,6 +551,87 @@ public class RasgoPlanillaDao extends conexion {
                 ps.setInt(index, asistenciaId);
                 return ps.executeUpdate() == 1;
             }
+        }
+    }
+
+    public void actualizarPlanillaRasgo(int planillaId, String tema, List<UpdateRasgoAsistenciaRequest> asistencias) throws SQLException {
+        try (Connection con = getCon()) {
+            boolean[] supportsRespuestaColumns = supportsColumns(con, "rasgo_asistencia", "falta_codigo", "falta_observacion", "responded_at");
+            String respuestaSql = buildRespuestaUpdateSql(supportsRespuestaColumns[0], supportsRespuestaColumns[1], supportsRespuestaColumns[2]);
+            boolean originalAutoCommit = con.getAutoCommit();
+            con.setAutoCommit(false);
+            try {
+                try (PreparedStatement planilla = con.prepareStatement("UPDATE planilla_rasgo SET tema = ? WHERE id = ?")) {
+                    planilla.setString(1, tema);
+                    planilla.setInt(2, planillaId);
+                    if (planilla.executeUpdate() != 1) {
+                        throw new SQLException("La planilla de rasgos no existe");
+                    }
+                }
+
+                if (asistencias != null) {
+                    try (PreparedStatement asistencia = con.prepareStatement(respuestaSql)) {
+                        for (UpdateRasgoAsistenciaRequest request : asistencias) {
+                            if (request == null || request.asistenciaId() == null || request.asistenciaId() <= 0) {
+                                throw new IllegalArgumentException("El id de asistencia es requerido.");
+                            }
+                            String estado = normalizarEstadoEditable(request.estado());
+                            if (!perteneceAPlanilla(con, request.asistenciaId(), planillaId)) {
+                                throw new IllegalArgumentException("Una asistencia no pertenece a esta clase.");
+                            }
+                            validarCodigos(con, request.codigos());
+                            int index = 1;
+                            asistencia.setString(index++, estado);
+                            if (supportsRespuestaColumns[0]) asistencia.setNull(index++, java.sql.Types.VARCHAR);
+                            if (supportsRespuestaColumns[1]) asistencia.setNull(index++, java.sql.Types.VARCHAR);
+                            asistencia.setInt(index, request.asistenciaId());
+                            asistencia.addBatch();
+                        }
+                        asistencia.executeBatch();
+                    }
+                    for (UpdateRasgoAsistenciaRequest request : asistencias) {
+                        reemplazarCodigos(con, request.asistenciaId(), request.codigos());
+                    }
+                }
+                con.commit();
+            } catch (SQLException | IllegalArgumentException ex) {
+                con.rollback();
+                throw ex;
+            } finally {
+                con.setAutoCommit(originalAutoCommit);
+            }
+        }
+    }
+
+    private String normalizarEstadoEditable(String estado) {
+        if ("presente".equalsIgnoreCase(estado)) return "presente";
+        if ("ausente".equalsIgnoreCase(estado)) return "ausente";
+        throw new IllegalArgumentException("El estado de asistencia debe ser presente o ausente.");
+    }
+
+    private boolean perteneceAPlanilla(Connection con, int asistenciaId, int planillaId) throws SQLException {
+        try (PreparedStatement ps = con.prepareStatement("SELECT 1 FROM rasgo_asistencia WHERE id = ? AND planilla_rasgo_id = ?")) {
+            ps.setInt(1, asistenciaId);
+            ps.setInt(2, planillaId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    private void reemplazarCodigos(Connection con, int asistenciaId, List<String> codigos) throws SQLException {
+        Set<String> validos = validarCodigos(con, codigos);
+        try (PreparedStatement delete = con.prepareStatement("DELETE FROM rasgo_asistencia_codigo WHERE rasgo_asistencia_id = ?")) {
+            delete.setInt(1, asistenciaId);
+            delete.executeUpdate();
+        }
+        try (PreparedStatement insert = con.prepareStatement("INSERT INTO rasgo_asistencia_codigo (rasgo_asistencia_id, codigo) VALUES (?, ?)")) {
+            for (String codigo : validos) {
+                insert.setInt(1, asistenciaId);
+                insert.setString(2, codigo);
+                insert.addBatch();
+            }
+            insert.executeBatch();
         }
     }
 
