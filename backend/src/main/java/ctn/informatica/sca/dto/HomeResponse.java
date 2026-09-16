@@ -9,6 +9,7 @@ public record HomeResponse(
         int selEtapa,
         String viewMode,
         List<PlanillaDto> planillas,
+        List<PlanillaResumenDto> planillasResumen,
         boolean showPlanillaCards,
         Map<String, Integer> classroomPlanillaMap,
         Map<String, Integer> classroomPlanillaMateriaMap,

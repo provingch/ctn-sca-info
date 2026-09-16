@@ -27,6 +27,7 @@ import ctn.informatica.sca.dto.HomeMateriaDto;
 import ctn.informatica.sca.dto.HomeResponse;
 import ctn.informatica.sca.dto.InstrumentoDto;
 import ctn.informatica.sca.dto.PlanillaDto;
+import ctn.informatica.sca.dto.PlanillaResumenDto;
 import ctn.informatica.sca.dto.RasgoAsistenciaDto;
 import ctn.informatica.sca.dto.RasgoPlanillaDto;
 import ctn.informatica.sca.dto.SubmitRasgoAsistenciaRequest;
@@ -201,6 +202,17 @@ public class HomeController {
         int selectedEtapa = etapa != null && (etapa == 1 || etapa == 2) ? etapa : 1;
         String viewMode = resolveViewMode(view);
 
+        // Sin cursoId, el profesor todavía no eligió curso: mostrale todas sus
+        // planillas de una, en vez de forzarlo a elegir curso y sección primero.
+        List<PlanillaResumenDto> planillasResumen = Collections.emptyList();
+        if (cursoId == null || cursoId <= 0) {
+            try {
+                planillasResumen = planillaDao.consultarResumenPlanillasProfesor(user.getId(), selectedEtapa);
+            } catch (SQLException ex) {
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al cargar las planillas", ex);
+            }
+        }
+
         boolean googleClassroomConnected = false;
         String googleClassroomError = null;
         String googleClassroomPlaceholder = null;
@@ -362,6 +374,7 @@ public class HomeController {
                 selectedEtapa,
                 viewMode,
                 planillas.stream().map(this::toPlanillaDto).collect(Collectors.toList()),
+                planillasResumen,
                 !planillas.isEmpty(),
                 classroomPlanillaMap,
                 classroomPlanillaMateriaMap,
