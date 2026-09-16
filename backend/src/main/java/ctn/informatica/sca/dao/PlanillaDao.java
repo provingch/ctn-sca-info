@@ -6,6 +6,8 @@ package ctn.informatica.sca.dao;
 
 import org.springframework.stereotype.Repository;
 import ctn.informatica.sca.clases.conexion;
+import ctn.informatica.sca.dto.PlanillaResumenDto;
+import ctn.informatica.sca.model.Curso;
 import ctn.informatica.sca.model.Materia;
 import ctn.informatica.sca.model.Planilla;
 import java.sql.Connection;
@@ -138,6 +140,59 @@ public class PlanillaDao extends conexion {
                 planillas.add(p);
             }
             return planillas;
+        }
+    }
+
+    // Listado liviano para el home sin cursoId seleccionado: todas las planillas del
+    // profesor en todos sus cursos, con lo que necesita cada tarjeta. tienePortada se
+    // calcula con "portada IS NOT NULL" en la misma consulta (nunca la imagen), para
+    // evitar tanto N+1 como mandar varios MB en una sola respuesta.
+    public List<PlanillaResumenDto> consultarResumenPlanillasProfesor(int userId, int etapaIndex) throws SQLException {
+        Set<Integer> allowedMateriaIds = findAllowedMateriaIdsForProfesor(userId);
+        if (allowedMateriaIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<String> placeholders = new ArrayList<>(allowedMateriaIds.size());
+        for (int ignored = 0; ignored < allowedMateriaIds.size(); ignored++) {
+            placeholders.add("?");
+        }
+
+        String sql = "SELECT p.id, p.materia_id, m.nombre AS materia_nombre, "
+                + "p.curso_id, c.especialidad_id, e.nombre AS especialidad_nombre, c.promocion, c.seccion, "
+                + "p.etapa, (p.portada IS NOT NULL) AS tiene_portada "
+                + "FROM planilla p "
+                + "JOIN materia m ON m.id = p.materia_id "
+                + "JOIN curso c ON c.id = p.curso_id "
+                + "JOIN especialidad e ON e.id = c.especialidad_id "
+                + "WHERE p.usuario_id = ? AND p.etapa = ? AND p.periodo = ? AND p.materia_id IN (" + String.join(", ", placeholders) + ") "
+                + "ORDER BY e.nombre, c.promocion DESC, c.seccion, m.nombre";
+        try (Connection con = getCon(); PreparedStatement stm = con.prepareStatement(sql)) {
+            int index = 1;
+            stm.setInt(index++, userId);
+            stm.setString(index++, normalizeEtapa(etapaIndex));
+            stm.setInt(index++, DEFAULT_PERIOD);
+            for (Integer materiaId : allowedMateriaIds) {
+                stm.setInt(index++, materiaId);
+            }
+            List<PlanillaResumenDto> out = new ArrayList<>();
+            try (ResultSet rs = stm.executeQuery()) {
+                while (rs.next()) {
+                    String especialidadNombre = rs.getString("especialidad_nombre");
+                    Curso curso = new Curso(rs.getInt("curso_id"), especialidadNombre, rs.getInt("promocion"), rs.getString("seccion"));
+                    out.add(new PlanillaResumenDto(
+                            rs.getInt("id"),
+                            rs.getInt("materia_id"),
+                            rs.getString("materia_nombre"),
+                            rs.getInt("curso_id"),
+                            curso.getCursoOrdinal(),
+                            curso.getSeccion(),
+                            especialidadNombre,
+                            "segunda".equals(rs.getString("etapa")) ? 2 : 1,
+                            rs.getBoolean("tiene_portada")));
+                }
+            }
+            return out;
         }
     }
 
@@ -332,6 +387,30 @@ public class PlanillaDao extends conexion {
             ps.setBoolean(1, confirmed);
             ps.setInt(2, planillaId);
             return ps.executeUpdate() == 1;
+        }
+    }
+
+    public boolean updatePortada(int planillaId, String portadaDataUri) throws SQLException {
+        String sql = "UPDATE planilla SET portada = ?, portada_actualizada_en = ? WHERE id = ?";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, portadaDataUri);
+            if (portadaDataUri == null) {
+                ps.setNull(2, java.sql.Types.TIMESTAMP);
+            } else {
+                ps.setTimestamp(2, new java.sql.Timestamp(System.currentTimeMillis()));
+            }
+            ps.setInt(3, planillaId);
+            return ps.executeUpdate() == 1;
+        }
+    }
+
+    public String findPortada(int planillaId) throws SQLException {
+        String sql = "SELECT portada FROM planilla WHERE id = ?";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, planillaId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getString(1) : null;
+            }
         }
     }
 

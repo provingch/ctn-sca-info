@@ -149,7 +149,12 @@ public class AsignacionDao extends conexion {
     }
 
     public List<Asignacion> findByProfesor(int profesorId) throws SQLException {
-        String sql = "SELECT a.id, a.usuario_id AS profesor_id, a.materia_id, a.curso_base_id AS curso_id, "
+        // cr resuelve el curso_base (id de especialidad/nivel/sección, sin año) al curso
+        // real vigente (curso.id, ligado a una promoción concreta): mismo criterio de
+        // "promoción vigente" que Curso.getCurso() (promocion = period - nivel + 3), y
+        // el UNIQUE(especialidad_id, promocion, seccion) de curso garantiza a lo sumo una
+        // fila. Sin match (p.ej. curso_base sin curso creado todavía) queda NULL.
+        String sql = "SELECT a.id, a.usuario_id AS profesor_id, a.materia_id, a.curso_base_id AS curso_id, cr.id AS curso_real_id, "
                 + "m.nombre AS materia_nombre, e.id AS especialidad_id, e.nombre AS especialidad, c.nivel AS nivel, c.seccion, "
                 + "COALESCE(p.estado, 'NO_CARGADO') AS plan_estado "
                 + "FROM asignacion a "
@@ -157,13 +162,16 @@ public class AsignacionDao extends conexion {
                 + "JOIN curso_base c ON c.id = a.curso_base_id "
                 + "JOIN especialidad e ON e.id = c.especialidad_id "
                 + "LEFT JOIN plan_curricular p ON p.asignacion_id = a.id AND p.etapa = ? AND p.anio_lectivo = ? "
+                + "LEFT JOIN curso cr ON cr.especialidad_id = c.especialidad_id AND cr.seccion = c.seccion AND cr.promocion = (? - c.nivel + 3) "
                 + "WHERE a.usuario_id = ? "
                 + "ORDER BY m.nombre, e.nombre, c.nivel DESC, c.seccion";
         List<Asignacion> out = new ArrayList<>();
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
+            int currentYear = LocalDate.now().getYear();
             ps.setInt(1, ctn.informatica.sca.util.AcademicPeriod.currentEtapa());
-            ps.setInt(2, LocalDate.now().getYear());
-            ps.setInt(3, profesorId);
+            ps.setInt(2, currentYear);
+            ps.setInt(3, currentYear);
+            ps.setInt(4, profesorId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Asignacion a = new Asignacion();
@@ -171,6 +179,7 @@ public class AsignacionDao extends conexion {
                     a.setProfesorId(rs.getInt("profesor_id"));
                     a.setMateriaId(rs.getInt("materia_id"));
                     a.setCursoId(rs.getInt("curso_id"));
+                    a.setCursoRealId((Integer) rs.getObject("curso_real_id"));
                     a.setMateriaNombre(rs.getString("materia_nombre"));
                     String especialidad = rs.getString("especialidad");
                     int nivel = rs.getInt("nivel");

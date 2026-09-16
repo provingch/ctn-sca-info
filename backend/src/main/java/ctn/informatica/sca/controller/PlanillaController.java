@@ -34,6 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -507,6 +508,109 @@ public class PlanillaController {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al confirmar Etapa 2", ex);
         }
     }
+
+    // 600 KB, no 1.5 MB como la foto de perfil: es una imagen decorativa y
+    // van varias por pantalla en una grilla.
+    private static final int PORTADA_MAX_BYTES = 600_000;
+    private static final List<String> PORTADA_PREFIJOS_PERMITIDOS = List.of(
+            "data:image/png;base64,", "data:image/jpeg;base64,", "data:image/webp;base64,");
+
+    @PutMapping("/{planillaId}/portada")
+    public void guardarPortada(@PathVariable int planillaId, @RequestBody PortadaInput input, Authentication authentication) {
+        int userId = ApiAuth.requireUserId(authentication);
+        try {
+            Planilla planilla = requireOwnedPlanillaById(planillaId, userId);
+            String portada = validatePortadaDataUri(input == null ? null : input.portada());
+            boolean updated = planillaDao.updatePortada(planillaId, portada);
+            if (!updated) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Planilla no encontrada");
+            }
+            registrarActividadPortada(userId, planilla, "Actualizó la portada de la planilla");
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (SQLException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo guardar la portada", ex);
+        }
+    }
+
+    @DeleteMapping("/{planillaId}/portada")
+    public void eliminarPortada(@PathVariable int planillaId, Authentication authentication) {
+        int userId = ApiAuth.requireUserId(authentication);
+        try {
+            Planilla planilla = requireOwnedPlanillaById(planillaId, userId);
+            boolean updated = planillaDao.updatePortada(planillaId, null);
+            if (!updated) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Planilla no encontrada");
+            }
+            registrarActividadPortada(userId, planilla, "Eliminó la portada de la planilla");
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (SQLException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo eliminar la portada", ex);
+        }
+    }
+
+    @GetMapping("/{planillaId}/portada")
+    public ResponseEntity<byte[]> getPortada(@PathVariable int planillaId, Authentication authentication) {
+        int userId = ApiAuth.requireUserId(authentication);
+        try {
+            requireOwnedPlanillaById(planillaId, userId);
+            String dataUri = planillaDao.findPortada(planillaId);
+            if (dataUri == null || dataUri.isBlank()) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "La planilla no tiene portada");
+            }
+            int commaIdx = dataUri.indexOf(',');
+            int semicolonIdx = dataUri.indexOf(';');
+            if (commaIdx < 0 || semicolonIdx < 0 || semicolonIdx > commaIdx) {
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "La portada guardada está corrupta");
+            }
+            String mimeType = dataUri.substring("data:".length(), semicolonIdx);
+            byte[] bytes = java.util.Base64.getDecoder().decode(dataUri.substring(commaIdx + 1));
+            return ResponseEntity.ok()
+                    .header("Content-Type", mimeType)
+                    .header("Cache-Control", "private, max-age=86400")
+                    .body(bytes);
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (SQLException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo cargar la portada", ex);
+        }
+    }
+
+    private String validatePortadaDataUri(String raw) {
+        if (raw == null || raw.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La portada es requerida");
+        }
+        String dataUri = raw.trim();
+        String prefijo = PORTADA_PREFIJOS_PERMITIDOS.stream().filter(dataUri::startsWith).findFirst().orElse(null);
+        if (prefijo == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La portada debe ser una imagen PNG, JPEG o WEBP");
+        }
+        String payload = dataUri.substring(prefijo.length());
+        int approxBytes = Math.round((float) payload.length() * 3f / 4f);
+        if (approxBytes > PORTADA_MAX_BYTES) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La portada es demasiado grande. Reduce el tamaño antes de guardar.");
+        }
+        return dataUri;
+    }
+
+    private void registrarActividadPortada(int userId, Planilla planilla, String accion) {
+        try {
+            if (activityLogService == null) {
+                return;
+            }
+            String materiaNombre = null;
+            if (planilla.getMateriaId() > 0) {
+                Materia materia = new MateriaDao().findById(planilla.getMateriaId());
+                materiaNombre = materia == null ? null : materia.getNombre();
+            }
+            activityLogService.registrar(userId, accion + " — " + (materiaNombre == null || materiaNombre.isBlank() ? "materia sin nombre" : materiaNombre));
+        } catch (Exception ex) {
+            log.warn("No se pudo registrar actividad de portada para usuario {}: {}", userId, ex.getMessage());
+        }
+    }
+
+    public record PortadaInput(String portada) {}
 
     private Planilla requireOwnedPlanillaById(int planillaId, int userId) throws SQLException {
         Planilla planilla = planillaDao.findById(planillaId);

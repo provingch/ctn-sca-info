@@ -9,6 +9,10 @@ public class Asignacion {
     private int profesorId;
     private int materiaId;
     private int cursoId;
+    // id real de la tabla `curso` (año-específico) para el curso_base de esta
+    // asignación, resuelto a la promoción vigente. Null si no hay curso creado
+    // todavía para esa combinación especialidad/nivel/sección.
+    private Integer cursoRealId;
 
     // Display helpers
     private String profesorNombre;
@@ -44,6 +48,9 @@ public class Asignacion {
 
     public int getCursoId() { return cursoId; }
     public void setCursoId(int cursoId) { this.cursoId = cursoId; }
+
+    public Integer getCursoRealId() { return cursoRealId; }
+    public void setCursoRealId(Integer cursoRealId) { this.cursoRealId = cursoRealId; }
 
     public String getProfesorNombre() { return profesorNombre; }
     public void setProfesorNombre(String profesorNombre) { this.profesorNombre = profesorNombre; }

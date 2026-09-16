@@ -168,6 +168,8 @@ CREATE TABLE planilla (
     etapa1_confirmada BOOLEAN NOT NULL DEFAULT FALSE,
     fecha_cierre_etapa2 DATE NULL,
     etapa2_confirmada BOOLEAN NOT NULL DEFAULT FALSE,
+    portada LONGTEXT NULL,
+    portada_actualizada_en DATETIME NULL,
     PRIMARY KEY (id),
     UNIQUE (curso_id, materia_id, periodo, etapa),
     FOREIGN KEY (curso_id)
