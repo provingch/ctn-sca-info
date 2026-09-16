@@ -19,6 +19,13 @@ describe('notificationDestination', () => {
       .toBe('/evaluacion?view=seguimiento&tab=incumplimientos');
   });
 
+  it('manda al profesor a la pestaña de plan curricular ante incumplimientos, no al menú', () => {
+    expect(notificationDestination({ ...base, tipo: 'INCUMPLIMIENTO', entidadTipo: 'INCUMPLIMIENTO_REVISION' }, 1))
+      .toBe('/home?view=catedra&subview=plan-curricular');
+    expect(notificationDestination({ ...base, tipo: 'INCUMPLIMIENTO_RESUELTO' }, 1))
+      .toBe('/home?view=catedra&subview=plan-curricular');
+  });
+
   it('devuelve null para avisos informativos sin un destino conocido', () => {
     expect(notificationDestination({ ...base, tipo: 'GENERAL' }, 1)).toBeNull();
   });
