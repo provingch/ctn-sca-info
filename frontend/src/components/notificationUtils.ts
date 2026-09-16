@@ -13,10 +13,10 @@ export function notificationDestination(notification: NotificacionItem, userLeve
     return userLevel === 5 ? '/coordinacion?view=quejas' : '/admin/quejas';
   }
   if (type === 'INCUMPLIMIENTO' || entityType === 'INCUMPLIMIENTO' || entityType === 'INCUMPLIMIENTO_REVISION') {
-    return userLevel === 2 ? '/evaluacion?view=seguimiento&tab=incumplimientos' : '/home?view=catedra';
+    return userLevel === 2 ? '/evaluacion?view=seguimiento&tab=incumplimientos' : '/home?view=catedra&subview=plan-curricular';
   }
   if (type === 'INCUMPLIMIENTO_RESUELTO') {
-    return '/home?view=catedra';
+    return '/home?view=catedra&subview=plan-curricular';
   }
   return null;
 }
