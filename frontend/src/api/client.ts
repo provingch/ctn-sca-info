@@ -258,6 +258,34 @@ export async function apiDownloadPost(path: string, body: unknown, fallbackFilen
   return filename;
 }
 
+/**
+ * Descarga un recurso binario autenticado y devuelve el Blob crudo (con su
+ * Content-Type real), para usos que no son "guardar archivo" sino renderizar
+ * en la página (ej.: portada de planilla en un <img>). Lanza ApiError en
+ * respuestas no-2xx, incluido el 404 cuando el recurso no existe.
+ */
+export async function apiBlob(path: string): Promise<Blob> {
+  let response = await rawRequest(path, { method: 'GET' });
+
+  if (response.status === 401) {
+    const refreshed = await tryRefresh();
+    if (refreshed) {
+      response = await rawRequest(path, { method: 'GET' });
+    } else {
+      setAccessToken(null);
+      onAuthExpired?.();
+    }
+  }
+
+  if (!response.ok) {
+    const body = await parseBody(response);
+    const message = extractErrorMessage(body, `${response.status}`, path);
+    throw new ApiError(response.status, message, body);
+  }
+
+  return response.blob();
+}
+
 function extractFilename(contentDisposition: string): string | null {
   if (!contentDisposition) return null;
   // ejemplo: attachment; filename="planilla-5.xlsx"

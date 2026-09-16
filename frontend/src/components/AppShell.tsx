@@ -1,14 +1,11 @@
 import { useEffect, type ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import ScaLogo from './ScaLogo';
 import { normalizeSpecialty } from '../theme/theme';
 import { useSpecialty } from '../context/SpecialtyContext';
 import AppNavbar from './AppNavbar';
-import { getRoleNavigation } from '../config/navigation';
+import PageBanner from './PageBanner';
 
 export default function AppShell({ children, title, subtitle, specialty, hero = true }: { children: ReactNode; title?: string; subtitle?: string; specialty?: string | null; hero?: boolean }) {
-  const { user } = useAuth();
   const { name: selectedSpecialty, selectSpecialty } = useSpecialty();
   const effectiveSpecialty = selectedSpecialty || specialty || null;
 
@@ -27,7 +24,7 @@ export default function AppShell({ children, title, subtitle, specialty, hero = 
       <a className="skip-link" href="#main-content">Saltar al contenido principal</a>
       <AppNavbar />
       <main id="main-content" className="app-main" tabIndex={-1}>
-        {hero && title && <section className="page-hero"><div className="hero-content"><span className="hero-kicker"><i />{user ? getRoleNavigation(user.level).roleLabel : 'SCA'}</span><h1>{title}</h1><p>{subtitle || 'Sistema de Carpetas Académicas del Colegio Técnico Nacional'}</p></div><div className="hero-emblem"><ScaLogo /></div></section>}
+        {hero && title && <PageBanner title={title} context={subtitle} specialty={effectiveSpecialty} />}
         {children}
       </main>
       <footer className="app-footer">

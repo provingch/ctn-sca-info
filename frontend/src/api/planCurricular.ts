@@ -68,7 +68,10 @@ export interface AsignacionCompleta {
   materiaNombre: string;
   especialidadId: number;
   especialidadNombre: string;
+  /** id de curso_base (especialidad+nivel+sección, sin año) — no cruzar con CursoDto.id. */
   cursoId: number;
+  /** id real de `curso` (el mismo que CursoDto.id), o null si esa promoción no existe todavía. */
+  cursoRealId: number | null;
   cursoOrdinal: string;
   seccion: string;
   estadoPlan: 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' | 'NO_CARGADO';
