@@ -7,6 +7,7 @@ import { createClass, getClaseActual, getHome, listarCodigosConducta, type Clase
 import { ApiError } from '../../api/client';
 import AppShell from '../../components/AppShell';
 import PageBanner from '../../components/PageBanner';
+import LauncherCards, { launcherIcons } from '../../components/LauncherCards';
 import SpecialtyIcon from '../../components/SpecialtyIcon';
 import ContentState from '../../components/ui/ContentState';
 import { deletePortada, getEspecialidades, getPortadaBlob, resolvePlanilla, savePortada, syncClassroom, type Especialidad } from '../../api/academics';
@@ -287,11 +288,11 @@ export default function HomePage() {
     </div>
       {view === 'catedra' ? (
         !subview ? (
-          <div className="choice-grid">
-            <button type="button" onClick={() => params({ subview: 'clase' })}><span>01</span><h2>Iniciar clase</h2><p>Asistencia, rasgos e historial del curso.</p></button>
-            <button type="button" onClick={() => params({ subview: 'plan-curricular' })}><span>02</span><h2>Plan curricular</h2><p>Cargá y revisá tu plan curricular anual.</p></button>
-            <button type="button" onClick={() => params({ subview: 'mis-clases' })}><span>03</span><h2>Clases dadas</h2><p>Historial de clases; justificar ausencias.</p></button>
-          </div>
+          <LauncherCards className="launcher-cards-grid" options={[
+            { key: 'clase', icon: launcherIcons.clase, title: 'Iniciar clase', description: 'Asistencia, rasgos e historial del curso.', onSelect: () => params({ subview: 'clase' }) },
+            { key: 'plan-curricular', icon: launcherIcons.planCurricular, title: 'Plan curricular', description: 'Cargá y revisá tu plan curricular anual.', onSelect: () => params({ subview: 'plan-curricular' }) },
+            { key: 'mis-clases', icon: launcherIcons.clasesDadas, title: 'Clases dadas', description: 'Historial de clases; justificar ausencias.', onSelect: () => params({ subview: 'mis-clases' }) },
+          ]} />
         ) : subview === 'plan-curricular' ? (
           <PlanCurricularView />
         ) : subview === 'mis-clases' ? (
@@ -432,35 +433,31 @@ function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChan
       )}
     />
     <div className="launcher-body">
-      <div className="launcher-cards">
-        <button type="button" className="launcher-card" onClick={() => onSelect('catedra')}>
-          <div className="launcher-card-head">
-            <span className="launcher-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 5.5c2.2-1 5-1 8 .3V19c-3-1.3-5.8-1.3-8-.3V5.5Z" /><path d="M20 5.5c-2.2-1-5-1-8 .3V19c3-1.3 5.8-1.3 8-.3V5.5Z" /></svg></span>
-            <h2>Libro de Cátedra</h2>
-            <span className="launcher-card-arrow" aria-hidden="true">→</span>
-          </div>
-          <p>Plan curricular e inicio de clases.</p>
-          <div className="launcher-badges">
-            {asignaciones && (rechazados > 0
-              ? <span className="launcher-badge tone-danger">{rechazados} plan{rechazados === 1 ? '' : 'es'} rechazado{rechazados === 1 ? '' : 's'}</span>
-              : noCargados > 0
-                ? <span className="launcher-badge tone-warning">{noCargados} plan{noCargados === 1 ? '' : 'es'} sin cargar</span>
-                : <span className="launcher-badge tone-success">Planes al día</span>)}
-          </div>
-        </button>
-        <button type="button" className="launcher-card" onClick={() => onSelect('planillas')}>
-          <div className="launcher-card-head">
-            <span className="launcher-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="6" y="4" width="12" height="17" rx="2" /><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" /><path d="M9 11h6M9 15h6" /></svg></span>
-            <h2>Gestionar planillas</h2>
-            <span className="launcher-card-arrow" aria-hidden="true">→</span>
-          </div>
-          <p>Tareas, puntajes y sincronización con Classroom.</p>
-          <div className="launcher-badges">
+      <LauncherCards options={[
+        {
+          key: 'catedra',
+          icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 5.5c2.2-1 5-1 8 .3V19c-3-1.3-5.8-1.3-8-.3V5.5Z" /><path d="M20 5.5c-2.2-1-5-1-8 .3V19c3-1.3 5.8-1.3 8-.3V5.5Z" /></svg>,
+          title: 'Libro de Cátedra',
+          description: 'Plan curricular e inicio de clases.',
+          onSelect: () => onSelect('catedra'),
+          badges: asignaciones && (rechazados > 0
+            ? <span className="launcher-badge tone-danger">{rechazados} plan{rechazados === 1 ? '' : 'es'} rechazado{rechazados === 1 ? '' : 's'}</span>
+            : noCargados > 0
+              ? <span className="launcher-badge tone-warning">{noCargados} plan{noCargados === 1 ? '' : 'es'} sin cargar</span>
+              : <span className="launcher-badge tone-success">Planes al día</span>),
+        },
+        {
+          key: 'planillas',
+          icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="6" y="4" width="12" height="17" rx="2" /><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" /><path d="M9 11h6M9 15h6" /></svg>,
+          title: 'Gestionar planillas',
+          description: 'Tareas, puntajes y sincronización con Classroom.',
+          onSelect: () => onSelect('planillas'),
+          badges: <>
             {data && data.planillas.length > 0 && <span className="launcher-badge tone-accent">{data.planillas.length} planilla{data.planillas.length === 1 ? '' : 's'} activa{data.planillas.length === 1 ? '' : 's'}</span>}
             {data && data.googleClassroomConnected === false && <span className="launcher-badge tone-warning">Classroom sin conectar</span>}
-          </div>
-        </button>
-      </div>
+          </>,
+        },
+      ]} />
       <aside className="launcher-activity">
         <h3>Actividad reciente</h3>
         {activity === null ? (
