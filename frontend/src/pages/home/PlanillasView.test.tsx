@@ -131,4 +131,21 @@ describe('PlanillasView', () => {
     await screen.findByText('Programación');
     expect(getPortadaBlob).not.toHaveBeenCalled();
   });
+
+  it('el botón "Agregar portada" abre el selector de archivos sin navegar a la planilla', async () => {
+    // Regresión: el wrapper de los controles llamaba preventDefault() sobre el
+    // click burbujeado del <input type="file"> oculto (disparado por
+    // inputRef.current.click()), lo que cancelaba la apertura del selector de
+    // archivos antes de que cualquier código de subida llegara a ejecutarse.
+    const { container } = show(baseData([planilla({ id: 7 })]));
+    const button = await screen.findByRole('button', { name: 'Agregar portada' });
+    fireEvent.click(button);
+
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
+    const notPrevented = input.dispatchEvent(clickEvent);
+
+    expect(notPrevented).toBe(true);
+    expect(screen.queryByText('Planilla abierta')).not.toBeInTheDocument();
+  });
 });
