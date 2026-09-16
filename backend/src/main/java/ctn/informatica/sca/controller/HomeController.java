@@ -32,6 +32,7 @@ import ctn.informatica.sca.dto.RasgoAsistenciaDto;
 import ctn.informatica.sca.dto.RasgoPlanillaDto;
 import ctn.informatica.sca.dto.SubmitRasgoAsistenciaRequest;
 import ctn.informatica.sca.dto.UpdateRasgoCodigosRequest;
+import ctn.informatica.sca.dto.UpdateRasgoPlanillaRequest;
 import ctn.informatica.sca.google.GoogleClassroomService;
 import ctn.informatica.sca.model.Alumno;
 import ctn.informatica.sca.model.Asignacion;
@@ -70,6 +71,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -486,6 +488,42 @@ public class HomeController {
             throw ex;
         } catch (SQLException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo cargar el detalle de la clase", ex);
+        }
+    }
+
+    @PutMapping("/mis-clases/{planillaId}")
+    @PreAuthorize("hasRole('LEVEL_1')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void actualizarClase(
+            @org.springframework.web.bind.annotation.PathVariable("planillaId") int planillaId,
+            @RequestBody UpdateRasgoPlanillaRequest request,
+            Authentication authentication) {
+        User user = requireUser(authentication);
+        if (request == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El request es requerido.");
+        }
+        String tema = safeTrim(request.tema());
+        if (tema.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El tema es requerido.");
+        }
+        try {
+            RasgoPlanilla planilla = rasgoPlanillaDao.findPlanillaById(planillaId);
+            if (planilla == null) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Clase no encontrada");
+            }
+            if (planilla.getProfesorId() != user.getId()) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes acceso a esta clase");
+            }
+            if (planilla.getFechaClase() == null || LocalDate.now().isAfter(planilla.getFechaClase().toLocalDate().plusDays(7))) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El plazo de edición de esta clase ya venció.");
+            }
+            rasgoPlanillaDao.actualizarPlanillaRasgo(planillaId, tema, request.asistencias());
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        } catch (SQLException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo actualizar la clase", ex);
         }
     }
 
