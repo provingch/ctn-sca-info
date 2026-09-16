@@ -651,7 +651,7 @@ function PlanillaExistingCard({ item, tienePortada, onPortadaChanged }: {
 }) {
   const [coverVersion, setCoverVersion] = useState(0);
   return (
-    <Link className="planilla-card" to={`/planilla/${item.id}`}>
+    <article className="planilla-card">
       <div className="planilla-card-cover">
         <PlanillaCover planillaId={item.id} tienePortada={tienePortada} especialidadNombre={item.especialidadNombre} version={coverVersion} />
         <PlanillaCoverControls
@@ -662,10 +662,10 @@ function PlanillaExistingCard({ item, tienePortada, onPortadaChanged }: {
       </div>
       <div className="planilla-card-body">
         <span>{item.especialidadNombre}</span>
-        <h2>{item.materiaNombre}</h2>
+        <h2><Link className="planilla-card-link" to={`/planilla/${item.id}`}>{item.materiaNombre}</Link></h2>
         <p>{item.cursoOrdinal} {item.seccion} · Etapa {item.etapa}</p>
       </div>
-    </Link>
+    </article>
   );
 }
 
@@ -735,7 +735,7 @@ function PlanillaCoverControls({ planillaId, tienePortada, onChanged }: {
 
   return <>
     {busy && <div className="planilla-card-cover-progress">Subiendo…</div>}
-    <div className="planilla-card-cover-controls" onClick={(event) => event.stopPropagation()}>
+    <div className="planilla-card-cover-controls">
       <input
         ref={inputRef}
         type="file"
