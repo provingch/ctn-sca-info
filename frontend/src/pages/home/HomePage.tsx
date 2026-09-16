@@ -735,7 +735,7 @@ function PlanillaCoverControls({ planillaId, tienePortada, onChanged }: {
 
   return <>
     {busy && <div className="planilla-card-cover-progress">Subiendo…</div>}
-    <div className="planilla-card-cover-controls" onClick={(event) => { event.preventDefault(); event.stopPropagation(); }}>
+    <div className="planilla-card-cover-controls" onClick={(event) => event.stopPropagation()}>
       <input
         ref={inputRef}
         type="file"
