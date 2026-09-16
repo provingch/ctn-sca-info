@@ -3,12 +3,13 @@ import { useToast } from '../../context/toast';
 import { getAsignacionesDisponibles, getMisAsignaciones, type AsignacionOption, type AsignacionCompleta } from '../../api/planCurricular';
 import { getProfile } from '../../api/profile';
 import { Link, useSearchParams } from 'react-router-dom';
-import { createClass, getClaseActual, getHome, listarCodigosConducta, type ClaseActualDto, type CodigoConducta, type HomeResponse } from '../../api/home';
+import { createClass, getClaseActual, getHome, listarCodigosConducta, type ClaseActualDto, type CodigoConducta, type HomeResponse, type PlanillaResumenDto } from '../../api/home';
 import { ApiError } from '../../api/client';
 import AppShell from '../../components/AppShell';
+import PageBanner from '../../components/PageBanner';
 import SpecialtyIcon from '../../components/SpecialtyIcon';
 import ContentState from '../../components/ui/ContentState';
-import { getEspecialidades, resolvePlanilla, syncClassroom, type Especialidad } from '../../api/academics';
+import { deletePortada, getEspecialidades, getPortadaBlob, resolvePlanilla, savePortada, syncClassroom, type Especialidad } from '../../api/academics';
 import { useNavigate } from 'react-router-dom';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import { useSpecialty } from '../../context/SpecialtyContext';
@@ -18,6 +19,7 @@ import CatalogoConductaPanel from '../../components/CatalogoConductaPanel';
 import useAccessibleDialog from '../../hooks/useAccessibleDialog';
 import { useAuth } from '../../context/AuthContext';
 import { classEndTime, HORARIOS_CATEDRA } from './classFormUtils';
+import { resizeImageToDataUri } from '../../utils/imageResize';
 
 const normalizeSpecialtyName = (value: string) => value
   .trim()
@@ -37,6 +39,7 @@ export default function HomePage() {
   const view = search.get('view') || '';
   const subview = search.get('subview') || '';
   const cursoId = Number(search.get('cursoId') || 0);
+  const materiaIdFiltro = Number(search.get('materiaId') || 0);
   const etapa = Number(search.get('etapa') || 1);
   const especialidadId = Number(search.get('especialidadId') || 0);
   const selectedEspecialidad = especialidades.find((item) => item.id === especialidadId);
@@ -50,27 +53,35 @@ export default function HomePage() {
   const hasCursoSeleccionado = !!cursoId;
   const selectedCourseNivel = selectedNivel;
   const hasSeccionSeleccionada = !!selectedSeccion;
+  const isClaseView = view === 'catedra' && subview === 'clase';
+  const isPlanillasView = view === 'planillas';
 
   const setCourseSelection = (value: string | number) => {
     const nextNivel = Number(value) || null;
-    setSelectionLoading(true);
+    if (!isPlanillasView) setSelectionLoading(true);
     setSelectedNivel(nextNivel);
     setSelectedSeccion('');
     params({ cursoId: '' });
   };
 
+  // En planillas, cursoId es un filtro local sobre la lista ya cargada, no un
+  // parámetro de la request: effectiveCursoId se mantiene en `undefined` pase
+  // lo que pase con los selectores, así `load` no cambia de identidad y el
+  // useEffect de abajo no dispara una request nueva por cada cambio de filtro.
+  const effectiveCursoId = isClaseView ? (cursoId || undefined) : undefined;
+
   const load = useCallback(async () => {
     const request = ++loadId.current;
     try {
-      const homeView = view === 'catedra' && subview === 'clase' ? 'clase' : 'planillas';
-      const result = await getHome({ cursoId: cursoId || undefined, etapa, view: homeView });
+      const homeView = isClaseView ? 'clase' : 'planillas';
+      const result = await getHome({ cursoId: effectiveCursoId, etapa, view: homeView });
       if (request === loadId.current) { setData(result); setError(''); }
     } catch (e) {
       if (request === loadId.current) setError(e instanceof ApiError ? e.message : 'Error al cargar el inicio.');
     } finally {
       if (request === loadId.current) setSelectionLoading(false);
     }
-  }, [cursoId, etapa, subview, view]);
+  }, [effectiveCursoId, etapa, isClaseView]);
 
   useEffect(() => {
     let active = true;
@@ -203,6 +214,13 @@ export default function HomePage() {
 
   const showSelectionWait = !hasEspecialidad || !hasCursoSeleccionado || !hasSeccionSeleccionada;
   const showSelector = view === 'planillas' || (view === 'catedra' && subview === 'clase');
+  const hasActiveFilter = hasEspecialidad || selectedCourseNivel != null || hasSeccionSeleccionada;
+  const clearFilter = () => {
+    setSelectedNivel(null);
+    setSelectedSeccion('');
+    setSearch({ view, etapa: String(data.selEtapa) });
+    resetSpecialty();
+  };
 
   return <>
     <style>{`
@@ -247,23 +265,24 @@ export default function HomePage() {
             } else {
               resetSpecialty();
             }
-          }} placeholder="Seleccione la especialidad" options={[{ value: '', label: 'Seleccione la especialidad' }, ...especialidades.map((item) => ({ value: item.id, label: item.nombre }))]} />
+          }} placeholder={isPlanillasView ? 'Todas las especialidades' : 'Seleccione la especialidad'} options={[{ value: '', label: isPlanillasView ? 'Todas las especialidades' : 'Seleccione la especialidad' }, ...especialidades.map((item) => ({ value: item.id, label: item.nombre }))]} />
         </label>
         <label className="inline-filter">Curso
           <AnimatedSelect ariaLabel="Curso" value={selectedCourseNivel ?? ''} onChange={(value) => {
             setCourseSelection(value);
-          }} disabled={!hasEspecialidad || visibleCursos.length === 0} placeholder="Seleccione el curso" options={[{ value: '', label: 'Seleccione el curso' }, ...courseOptions]} />
+          }} disabled={!hasEspecialidad || visibleCursos.length === 0} placeholder={isPlanillasView ? 'Todos los cursos' : 'Seleccione el curso'} options={[{ value: '', label: isPlanillasView ? 'Todos los cursos' : 'Seleccione el curso' }, ...courseOptions]} />
         </label>
         <label className="inline-filter">Sección
             <AnimatedSelect ariaLabel="Sección" value={selectedSeccion ?? ''} onChange={(value) => {
-            setSelectionLoading(true);
+            if (!isPlanillasView) setSelectionLoading(true);
             setSelectedSeccion(value);
             const nivel = selectedCourseNivel ?? undefined;
             const seccion = String(value);
             const match = visibleCursos.find((c) => (nivel == null || Number(c.curso) === nivel) && c.seccion === seccion && (!selectedEspecialidad || c.especialidad === selectedEspecialidad.nombre));
             params({ cursoId: match ? String(match.id) : '' });
-          }} disabled={!hasEspecialidad || selectedCourseNivel == null || visibleCursos.length === 0} placeholder="Seleccione la sección" options={[{ value: '', label: 'Seleccione la sección' }, ...sectionOptions]} />
+          }} disabled={!hasEspecialidad || selectedCourseNivel == null || visibleCursos.length === 0} placeholder={isPlanillasView ? 'Todas las secciones' : 'Seleccione la sección'} options={[{ value: '', label: isPlanillasView ? 'Todas las secciones' : 'Seleccione la sección' }, ...sectionOptions]} />
         </label>
+        {isPlanillasView && hasActiveFilter && <button type="button" className="button secondary planillas-toolbar-clear" onClick={clearFilter}>Limpiar filtro</button>}
       </>}
     </div>
       {view === 'catedra' ? (
@@ -284,12 +303,18 @@ export default function HomePage() {
         ) : (
           <ClassView key={data.selCurso?.id} data={data} reload={load} />
         )
-      ) : selectionLoading ? (
-        <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Cargando planilla…</h2><p>Esperá un momento mientras cargamos la planilla seleccionada.</p></section>
-      ) : showSelectionWait ? (
-        <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Esperando selección</h2><p>Elegí una especialidad, un curso y una sección para continuar.</p></section>
       ) : (
-        <PlanillasView data={data} syncingProp={syncingAll} setSyncingProp={setSyncingAll} />
+        <PlanillasView
+          data={data}
+          syncingProp={syncingAll}
+          setSyncingProp={setSyncingAll}
+          especialidadNombre={selectedEspecialidad?.nombre ?? null}
+          nivel={selectedNivel}
+          seccion={selectedSeccion}
+          materiaId={materiaIdFiltro || null}
+          hasActiveFilter={hasActiveFilter}
+          onClearFilter={clearFilter}
+        />
       )}
     </AppShell>
   </>;
@@ -359,6 +384,7 @@ function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChan
   onSelect: (view: string, extra?: Record<string, string>) => void;
 }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [asignaciones, setAsignaciones] = useState<AsignacionCompleta[] | null>(null);
   const [activity, setActivity] = useState<string[] | null>(null);
 
@@ -395,20 +421,16 @@ function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChan
   const selectedEspecialidad = especialidades.find((item) => item.id === especialidadId);
 
   return <div className="home-launcher">
-    <div className="launcher-context">
-      <div className="launcher-greeting">
-        <strong>{firstName ? `Hola, ${firstName}` : 'Hola'}</strong>
-        {data && <span>{todayLabel} · {data.cursos.length} curso{data.cursos.length === 1 ? '' : 's'}{selectedEspecialidad ? ` · ${selectedEspecialidad.nombre}` : ''}</span>}
-      </div>
-      {especialidades.length > 1 && (
+    <PageBanner
+      title={firstName ? `Hola, ${firstName}` : 'Hola'}
+      context={data && `${todayLabel} · ${data.cursos.length} curso${data.cursos.length === 1 ? '' : 's'}${selectedEspecialidad ? ` · ${selectedEspecialidad.nombre}` : ''}`}
+      specialty={selectedEspecialidad?.nombre ?? (especialidades.length === 1 ? especialidades[0].nombre : '')}
+      selector={especialidades.length > 1 && (
         <label className="inline-filter">Especialidad
           <AnimatedSelect ariaLabel="Especialidad" value={especialidadId || ''} onChange={onEspecialidadChange} placeholder="Seleccione la especialidad" options={[{ value: '', label: 'Seleccione la especialidad' }, ...especialidades.map((item) => ({ value: item.id, label: item.nombre }))]} />
         </label>
       )}
-      <div className="launcher-emblem">
-        <SpecialtyIcon name={selectedEspecialidad?.nombre ?? (especialidades.length === 1 ? especialidades[0].nombre : '')} />
-      </div>
-    </div>
+    />
     <div className="launcher-body">
       <div className="launcher-cards">
         <button type="button" className="launcher-card" onClick={() => onSelect('catedra')}>
@@ -473,7 +495,18 @@ function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChan
             return (
               <button type="button" key={asignacion.id} className="launcher-materia-row" onClick={() => {
                 recordMateriaReciente(asignacion.id);
-                onSelect('catedra', { subview: 'clase', cursoId: String(asignacion.cursoId) });
+                const planillaExistente = asignacion.cursoRealId != null
+                  ? data?.planillasResumen.find((p) => p.materiaId === asignacion.materiaId && p.cursoId === asignacion.cursoRealId)
+                  : undefined;
+                if (planillaExistente) {
+                  navigate(`/planilla/${planillaExistente.id}`);
+                  return;
+                }
+                onSelect('planillas', {
+                  materiaId: String(asignacion.materiaId),
+                  especialidadId: String(asignacion.especialidadId),
+                  ...(asignacion.cursoRealId != null ? { cursoId: String(asignacion.cursoRealId) } : {}),
+                });
               }}>
                 <span className="launcher-materia-info">
                   <strong>{asignacion.materiaNombre}</strong>
@@ -489,19 +522,40 @@ function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChan
   </div>;
 }
 
-function PlanillasView({ data, syncingProp, setSyncingProp }: { data: HomeResponse; syncingProp?: boolean; setSyncingProp?: (v: boolean) => void }) {
+export function PlanillasView({ data, syncingProp, setSyncingProp, especialidadNombre, nivel, seccion, materiaId, hasActiveFilter, onClearFilter }: {
+  data: HomeResponse;
+  syncingProp?: boolean;
+  setSyncingProp?: (v: boolean) => void;
+  especialidadNombre: string | null;
+  nivel: number | null;
+  seccion: string | number | '';
+  materiaId: number | null;
+  hasActiveFilter: boolean;
+  onClearFilter: () => void;
+}) {
   const navigate = useNavigate();
-  const existingMateriaIds = new Set(data.planillas.map((p) => p.materiaId));
-  async function openMateria(materiaId: number) { if (!data.selCurso) return; const result = await resolvePlanilla(data.selCurso.id, materiaId, data.selEtapa); navigate(`/planilla/${result.planillaId}`); }
-  // Auto-sync planillas in background when Classroom is connected
+  const { showToast } = useToast();
+  const [asignaciones, setAsignaciones] = useState<AsignacionCompleta[] | null>(null);
+  const [portadaOverrides, setPortadaOverrides] = useState<Record<number, boolean>>({});
+  const [creatingKey, setCreatingKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void getMisAsignaciones()
+      .then((list) => { if (active) setAsignaciones(list); })
+      .catch(() => { if (active) setAsignaciones([]); });
+    return () => { active = false; };
+  }, []);
+
+  // Auto-sync planillas in background when Classroom is connected. Ahora cubre
+  // todos los cursos (planillasResumen), no solo el que antes quedaba fijado.
   useEffect(() => {
     if (!data.googleClassroomConnected) return;
     let cancelled = false;
     (async () => {
       setSyncingProp?.(true);
-      try 
-      {
-        for (const p of data.planillas) {
+      try {
+        for (const p of data.planillasResumen) {
           if (cancelled) break;
           try {
             await syncClassroom(p.id);
@@ -519,11 +573,180 @@ function PlanillasView({ data, syncingProp, setSyncingProp }: { data: HomeRespon
       }
     })();
     return () => { cancelled = true; setSyncingProp?.(false); };
-  }, [data.googleClassroomConnected, data.planillas, navigate, setSyncingProp]);
+  }, [data.googleClassroomConnected, data.planillasResumen, navigate, setSyncingProp]);
 
   const syncing = syncingProp ?? false;
 
-  return <><section className="summary-grid"><article className="metric"><span>Curso</span><strong>{data.selCurso?.curso}° {data.selCurso?.seccion}</strong></article><article className="metric"><span>Planillas</span><strong>{data.planillas.length}</strong></article><article className="metric"><span>Classroom</span><strong>{syncing ? 'Sincronizando…' : (data.googleClassroomConnected ? 'Conectado' : 'Sin conexión')}</strong></article></section><div className="card-grid">{data.planillas.map((p) => <Link className="nav-card" key={p.id} to={`/planilla/${p.id}`}><span>{p.periodo}</span><h2>{p.nombre}</h2><p>{p.tareasCount} tareas registradas</p><strong>Abrir planilla →</strong></Link>)}{data.materiasDetectadas.filter((m) => !existingMateriaIds.has(m.id)).map((m) => <button type="button" className="nav-card add-card" key={m.id} onClick={() => openMateria(m.id)}><span>{m.categoria}</span><h2>{m.nombre}</h2><p>Crear la planilla para esta etapa.</p><strong>Crear y abrir →</strong></button>)}{data.planillas.length === 0 && data.materiasDetectadas.length === 0 && <section className="panel empty-state"><h2>Sin materias asignadas</h2><p>Consultá con administración para asociar materias al curso.</p></section>}</div></>;
+  const matchesFilter = (item: { especialidadNombre: string; cursoOrdinal: string; seccion: string }) => {
+    if (especialidadNombre && item.especialidadNombre !== especialidadNombre) return false;
+    if (nivel != null && parseInt(item.cursoOrdinal, 10) !== nivel) return false;
+    if (seccion && item.seccion !== String(seccion)) return false;
+    return true;
+  };
+
+  const planillasFiltradas = data.planillasResumen
+    .filter(matchesFilter)
+    .filter((p) => !materiaId || p.materiaId === materiaId);
+
+  const existentes = new Set(data.planillasResumen.map((p) => `${p.materiaId}:${p.cursoId}`));
+  const candidatosTodos = (asignaciones ?? []).filter((a) => a.cursoRealId != null && !existentes.has(`${a.materiaId}:${a.cursoRealId}`));
+  const candidatos = candidatosTodos
+    .filter(matchesFilter)
+    .filter((a) => !materiaId || a.materiaId === materiaId);
+
+  async function crearPlanilla(candidato: AsignacionCompleta) {
+    if (candidato.cursoRealId == null || creatingKey) return;
+    const key = `${candidato.materiaId}:${candidato.cursoRealId}`;
+    setCreatingKey(key);
+    try {
+      const result = await resolvePlanilla(candidato.cursoRealId, candidato.materiaId, data.selEtapa);
+      navigate(`/planilla/${result.planillaId}`);
+    } catch (err) {
+      showToast(err instanceof ApiError ? err.message : 'No se pudo crear la planilla.', { tone: 'error', autoDismiss: true });
+      setCreatingKey(null);
+    }
+  }
+
+  const cargandoCandidatos = asignaciones === null;
+  const totalSinFiltro = data.planillasResumen.length + candidatosTodos.length;
+  const totalConFiltro = planillasFiltradas.length + candidatos.length;
+
+  return <>
+    <section className="summary-grid">
+      <article className="metric"><span>Planillas</span><strong>{data.planillasResumen.length}</strong></article>
+      <article className="metric"><span>Classroom</span><strong>{syncing ? 'Sincronizando…' : (data.googleClassroomConnected ? 'Conectado' : 'Sin conexión')}</strong></article>
+    </section>
+    {totalSinFiltro === 0 && !cargandoCandidatos ? (
+      <section className="panel empty-state"><h2>Todavía no tenés planillas</h2><p>Cuando tengas materias asignadas vas a poder crearlas acá.</p></section>
+    ) : hasActiveFilter && totalConFiltro === 0 && !cargandoCandidatos ? (
+      <section className="panel empty-state"><h2>No hay planillas con ese filtro</h2><p>Probá con otra especialidad, curso o sección.</p><button type="button" className="button secondary" onClick={onClearFilter}>Limpiar filtro</button></section>
+    ) : (
+      <div className="card-grid">
+        {planillasFiltradas.map((p) => (
+          <PlanillaExistingCard
+            key={p.id}
+            item={p}
+            tienePortada={portadaOverrides[p.id] ?? p.tienePortada}
+            onPortadaChanged={(tienePortada) => setPortadaOverrides((current) => ({ ...current, [p.id]: tienePortada }))}
+          />
+        ))}
+        {candidatos.map((a) => {
+          const key = `${a.materiaId}:${a.cursoRealId}`;
+          return <button type="button" key={key} className="planilla-create-card" disabled={creatingKey != null} onClick={() => void crearPlanilla(a)}>
+            <span className="planilla-create-card-plus" aria-hidden="true">+</span>
+            <strong>{a.materiaNombre}</strong>
+            <span>{a.cursoOrdinal} {a.seccion}</span>
+            <span>{creatingKey === key ? 'Creando…' : 'Crear planilla'}</span>
+          </button>;
+        })}
+      </div>
+    )}
+  </>;
+}
+
+function PlanillaExistingCard({ item, tienePortada, onPortadaChanged }: {
+  item: PlanillaResumenDto;
+  tienePortada: boolean;
+  onPortadaChanged: (tienePortada: boolean) => void;
+}) {
+  const [coverVersion, setCoverVersion] = useState(0);
+  return (
+    <Link className="planilla-card" to={`/planilla/${item.id}`}>
+      <div className="planilla-card-cover">
+        <PlanillaCover planillaId={item.id} tienePortada={tienePortada} especialidadNombre={item.especialidadNombre} version={coverVersion} />
+        <PlanillaCoverControls
+          planillaId={item.id}
+          tienePortada={tienePortada}
+          onChanged={(next) => { onPortadaChanged(next); setCoverVersion((v) => v + 1); }}
+        />
+      </div>
+      <div className="planilla-card-body">
+        <span>{item.especialidadNombre}</span>
+        <h2>{item.materiaNombre}</h2>
+        <p>{item.cursoOrdinal} {item.seccion} · Etapa {item.etapa}</p>
+      </div>
+    </Link>
+  );
+}
+
+function PlanillaCover({ planillaId, tienePortada, especialidadNombre, version }: {
+  planillaId: number;
+  tienePortada: boolean;
+  especialidadNombre: string;
+  version: number;
+}) {
+  const [url, setUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!tienePortada) { setUrl(null); return; }
+    let active = true;
+    let objectUrl: string | null = null;
+    void getPortadaBlob(planillaId).then((blob) => {
+      if (!active || !blob) return;
+      objectUrl = URL.createObjectURL(blob);
+      setUrl(objectUrl);
+    });
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [planillaId, tienePortada, version]);
+
+  if (tienePortada && url) return <img src={url} alt="" />;
+  return <div className="planilla-card-cover-fallback"><SpecialtyIcon name={especialidadNombre} /></div>;
+}
+
+function PlanillaCoverControls({ planillaId, tienePortada, onChanged }: {
+  planillaId: number;
+  tienePortada: boolean;
+  onChanged: (tienePortada: boolean) => void;
+}) {
+  const { showToast } = useToast();
+  const [busy, setBusy] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  async function handleFile(file: File) {
+    setBusy(true);
+    try {
+      const dataUri = await resizeImageToDataUri(file);
+      await savePortada(planillaId, dataUri);
+      onChanged(true);
+      showToast('Portada actualizada.', { autoDismiss: true });
+    } catch (err) {
+      showToast(err instanceof ApiError ? err.message : 'No se pudo subir la portada.', { tone: 'error', autoDismiss: true });
+    } finally {
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  }
+
+  async function handleRemove() {
+    setBusy(true);
+    try {
+      await deletePortada(planillaId);
+      onChanged(false);
+      showToast('Portada eliminada.', { autoDismiss: true });
+    } catch (err) {
+      showToast(err instanceof ApiError ? err.message : 'No se pudo eliminar la portada.', { tone: 'error', autoDismiss: true });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return <>
+    {busy && <div className="planilla-card-cover-progress">Subiendo…</div>}
+    <div className="planilla-card-cover-controls" onClick={(event) => { event.preventDefault(); event.stopPropagation(); }}>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        style={{ display: 'none' }}
+        onChange={(event) => { const file = event.target.files?.[0]; if (file) void handleFile(file); }}
+      />
+      <button type="button" className="planilla-card-cover-btn" disabled={busy} onClick={() => inputRef.current?.click()}>{tienePortada ? 'Cambiar portada' : 'Agregar portada'}</button>
+      {tienePortada && <button type="button" className="planilla-card-cover-btn" disabled={busy} onClick={() => void handleRemove()}>Quitar</button>}
+    </div>
+  </>;
 }
 
 export function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise<void> }) {

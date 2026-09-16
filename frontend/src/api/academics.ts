@@ -1,4 +1,4 @@
-import { api } from './client';
+import { api, apiBlob } from './client';
 
 export interface Instrumento { id: number; nombre: string }
 export interface Tarea {
@@ -27,6 +27,17 @@ export const confirmEtapa2 = (planillaId: number) => api.post<void>(`/api/planil
 export interface ClassroomSyncResponse { planillaId: number; googleCourseId?: string | null; classroomCourseMapped: boolean; importedCourseworks: number; linkedStudents: number; importedGrades: number; courseName?: string | null; courseSection?: string | null; courseAlternateLink?: string | null; message: string }
 export const syncClassroom = (id: number) => api.post<ClassroomSyncResponse>(`/api/planillas/${id}/sync/classroom`);
 export const confirmClassroomMapping = (planillaId: number, googleCourseId: string) => api.post<{ message: string }>(`/api/planillas/${planillaId}/classroom`, { googleCourseId });
+
+export const savePortada = (planillaId: number, portada: string) => api.put<void>(`/api/planillas/${planillaId}/portada`, { portada });
+export const deletePortada = (planillaId: number) => api.delete<void>(`/api/planillas/${planillaId}/portada`);
+/** Blob crudo de la portada, o null si la planilla no tiene (404). */
+export async function getPortadaBlob(planillaId: number): Promise<Blob | null> {
+  try {
+    return await apiBlob(`/api/planillas/${planillaId}/portada`);
+  } catch {
+    return null;
+  }
+}
 
 export const getInstrumentos = () => api.get<Instrumento[]>('/api/instrumentos');
 export const getTarea = (id: number) => api.get<Tarea>(`/api/tareas/${id}`);

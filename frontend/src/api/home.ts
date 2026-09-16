@@ -31,12 +31,26 @@ export interface PlanillaDto {
   materiaId: number;
 }
 
+/** Item liviano para el listado de planillas sin cursoId (todas las del profesor). */
+export interface PlanillaResumenDto {
+  id: number;
+  materiaId: number;
+  materiaNombre: string;
+  cursoId: number;
+  cursoOrdinal: string;
+  seccion: string;
+  especialidadNombre: string;
+  etapa: number;
+  tienePortada: boolean;
+}
+
 export interface HomeResponse {
   cursos: CursoDto[];
   selCurso: CursoDto | null;
   selEtapa: number;
   viewMode: string;
   planillas: PlanillaDto[];
+  planillasResumen: PlanillaResumenDto[];
   showPlanillaCards: boolean;
   // classroomPlanillaMap, classroomPlanillaMateriaMap, materiasDetectadas,
   // googleClassroom*, rasgoPlanillas, rasgoPlanillaSeleccionada,
