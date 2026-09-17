@@ -227,14 +227,28 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .class-attendance-toolbar p { flex: 1 1 320px; margin: 0 0 0 8px; font-size: .84rem; color: var(--muted); line-height: 1.5; }
 @media (max-width: 640px) { .class-register-form .class-grid, .class-schedule-grid { grid-template-columns: 1fr; } .class-register-form .class-card-head { text-align: left; } .class-attendance-toolbar p { margin-left: 0; } }
 .class-field input:focus, .class-field select:focus, .class-field textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent); }
-.rasgos-conductuales-cell { position: relative; min-width: 190px; }
-.rasgos-conductuales-trigger { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; padding: 11px 12px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--paper-raised); color: var(--ink); text-align: left; }
-.rasgos-conductuales-trigger:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent); }
-.rasgos-conductuales-menu { position: absolute; z-index: 10; top: calc(100% + 4px); left: 0; right: 0; display: grid; gap: 2px; max-height: 220px; overflow-y: auto; padding: 8px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--paper-raised); box-shadow: 0 12px 28px rgba(14, 23, 38, .18); }
-.rasgos-conductuales-option { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 6px; cursor: pointer; }
-.rasgos-conductuales-option:hover { background: var(--accent-soft); }
-.rasgos-conducta-empty { display: block; color: var(--muted); font-size: .82rem; }
+.rasgos-conducta-empty { display: block; margin: 0 0 12px; color: var(--muted); font-size: .82rem; }
 .student-pill { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; margin-right: 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--accent-soft); color: var(--accent-deep); font-size: .75rem; font-weight: 800; }
+.attendance-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px; margin: 4px 0 16px; }
+.attendance-chip { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px 10px; border: 1px solid color-mix(in srgb, var(--success) 45%, var(--line)); border-radius: var(--radius-sm); background: color-mix(in srgb, var(--success) 12%, var(--paper)); color: var(--ink); font-size: .84rem; font-weight: 700; text-align: left; cursor: pointer; transition: background-color .15s ease, border-color .15s ease; }
+.attendance-chip:hover { background: color-mix(in srgb, var(--success) 20%, var(--paper)); }
+.attendance-chip:focus-visible { outline: none; box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent); }
+.attendance-chip.tone-danger { border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); background: color-mix(in srgb, var(--danger) 12%, var(--paper)); }
+.attendance-chip.tone-danger:hover { background: color-mix(in srgb, var(--danger) 20%, var(--paper)); }
+.attendance-chip-order { flex: 0 0 auto; color: var(--muted); font-weight: 800; }
+.attendance-chip-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.attendance-chip-badge { flex: 0 0 auto; padding: 2px 7px; border-radius: 999px; background: var(--paper); color: var(--ink); font-size: .68rem; font-weight: 800; }
+.rasgo-add-panel { margin-bottom: 16px; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--bg-soft); }
+.rasgo-add-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.rasgos-list { display: grid; gap: 10px; margin: 0 0 16px; padding: 0; list-style: none; }
+.rasgo-row { padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--bg-soft); }
+.rasgo-row-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.rasgo-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.rasgo-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 6px 4px 10px; border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line)); border-radius: 999px; background: var(--accent-soft); color: var(--accent-deep); font-size: .76rem; font-weight: 800; }
+.rasgo-chip button { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border: 0; border-radius: 50%; background: transparent; color: inherit; font-size: .95rem; line-height: 1; cursor: pointer; }
+.rasgo-chip button:hover { background: color-mix(in srgb, var(--accent) 25%, transparent); }
+.rasgo-row-meanings { margin: 8px 0 0; color: var(--muted); font-size: .72rem; }
+.rasgos-empty { margin: 0 0 16px; padding: 18px; border: 1px dashed var(--line); border-radius: var(--radius); color: var(--muted); text-align: center; }
 .table-responsive { overflow-x: auto; }
 .table-striped { width: 100%; min-width: 540px; border-collapse: collapse; }
 .table-striped th, .table-striped td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; }

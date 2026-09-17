@@ -45,20 +45,39 @@ describe('Inicio de clase', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Guardar inicio de clase' })).toBeEnabled());
     expect(screen.queryByText('No hay asignaciones disponibles para este curso.')).not.toBeInTheDocument();
   });
-  it('no copia rasgos de clases anteriores y muestra opciones fuera de la tabla', async () => {
+  it('no copia rasgos de clases anteriores y permite agregar uno nuevo desde el selector de dos pasos', async () => {
     show();
     await waitFor(() => expect(screen.getByLabelText('Disciplina')).toHaveValue('Redes II'));
-    const trigger = screen.getByRole('button', { name: 'Rasgos conductuales de Ana Pérez' });
-    expect(trigger).toHaveTextContent('Seleccione');
-    fireEvent.click(trigger);
-    const list = screen.getByRole('listbox');
-    expect(list.closest('table')).toBeNull();
-    expect(list).toHaveAttribute('aria-multiselectable', 'true');
-    fireEvent.click(screen.getByRole('option', { name: 'N1' }));
-    expect(screen.getByRole('option', { name: 'N1' })).toHaveAttribute('aria-selected', 'true');
-    fireEvent.keyDown(trigger, { key: 'Escape' });
+    expect(screen.getByText('No hay rasgos registrados en esta clase.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar rasgo' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Alumno para el nuevo rasgo' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Pérez, Ana' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Código del nuevo rasgo' }));
+    fireEvent.click(screen.getByRole('option', { name: 'N1 — Conducta' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }));
+
+    expect(screen.queryByText('No hay rasgos registrados en esta clase.')).not.toBeInTheDocument();
+    expect(screen.getByText('N1: Conducta')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Pérez, Ana, presente, rasgos N1' })).toBeInTheDocument();
+
     fireEvent.click(screen.getByRole('button', { name: 'Limpiar formulario' }));
-    expect(trigger).toHaveTextContent('Seleccione');
+    expect(screen.getByText('No hay rasgos registrados en esta clase.')).toBeInTheDocument();
+  });
+  it('quita un rasgo asignado con la × de su pastilla', async () => {
+    show();
+    await waitFor(() => expect(screen.getByLabelText('Disciplina')).toHaveValue('Redes II'));
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar rasgo' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Alumno para el nuevo rasgo' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Pérez, Ana' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Código del nuevo rasgo' }));
+    fireEvent.click(screen.getByRole('option', { name: 'N1 — Conducta' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar' }));
+    expect(screen.getByText('N1: Conducta')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Quitar N1 de Pérez, Ana' }));
+    expect(screen.queryByText('N1: Conducta')).not.toBeInTheDocument();
+    expect(screen.getByText('No hay rasgos registrados en esta clase.')).toBeInTheDocument();
   });
   it('no autocompleta datos de otro curso ni sobrescribe un tema escrito', async () => {
     let resolve!: (value: Awaited<ReturnType<typeof getClaseActual>>) => void;
@@ -92,14 +111,14 @@ describe('Inicio de clase', () => {
     show();
     await waitFor(() => expect(screen.getByRole('button', { name: 'Guardar inicio de clase' })).toBeEnabled());
     fireEvent.change(screen.getByLabelText('Contenido específico desarrollado'), { target: { value: 'Tema atrasado' } });
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Ausente' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pérez, Ana, presente' }));
     fireEvent.click(screen.getByRole('button', { name: 'Guardar inicio de clase' }));
 
     const textarea = await screen.findByLabelText('Justificación del atraso');
     expect(textarea).toHaveFocus();
     expect(screen.getByText('El tema está atrasado según el plan curricular. Contá el motivo para poder registrar la clase.')).toBeInTheDocument();
     expect(screen.getByLabelText('Contenido específico desarrollado')).toHaveValue('Tema atrasado');
-    expect(screen.getByRole('checkbox', { name: 'Ausente' })).toBeChecked();
+    expect(screen.getByRole('button', { name: 'Pérez, Ana, ausente' })).toHaveAttribute('aria-pressed', 'true');
 
     fireEvent.change(textarea, { target: { value: 'Paro la semana pasada' } });
     fireEvent.click(screen.getByRole('button', { name: 'Guardar inicio de clase' }));
@@ -127,7 +146,7 @@ describe('Inicio de clase', () => {
     expect(screen.getByRole('button', { name: 'Guardar inicio de clase' })).toBeEnabled();
     fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
     await waitFor(() => expect(screen.queryByText('No se pudieron cargar los rasgos conductuales. Error de catálogo')).not.toBeInTheDocument());
-    expect(screen.getByRole('button', { name: 'Rasgos conductuales de Ana Pérez' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Agregar rasgo' })).toBeEnabled();
   });
   it('distingue el catálogo vacío del catálogo que no cargó', async () => {
     vi.mocked(listarCodigosConducta).mockReset();
@@ -135,7 +154,7 @@ describe('Inicio de clase', () => {
     show();
     await waitFor(() => expect(screen.getByLabelText('Disciplina')).toHaveValue('Redes II'));
     expect(screen.getByText('Sin códigos cargados. Los carga el evaluador o el administrador.')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Rasgos conductuales de Ana Pérez' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Agregar rasgo' })).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: '¿Qué significa cada código?' }));
     expect(screen.getAllByText('Sin códigos cargados. Los carga el evaluador o el administrador.').length).toBe(2);
   });
