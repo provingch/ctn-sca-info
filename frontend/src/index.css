@@ -260,6 +260,19 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .rasgo-chip button:hover { background: color-mix(in srgb, var(--accent) 25%, transparent); }
 .rasgo-row-meanings { margin: 8px 0 0; color: var(--muted); font-size: .72rem; }
 .rasgos-empty { margin: 0 0 16px; padding: 18px; border: 1px dashed var(--line); border-radius: var(--radius); color: var(--muted); text-align: center; }
+.horario-hoy-list { display: grid; gap: 8px; margin: 4px 0 16px; padding: 0; list-style: none; }
+.horario-hoy-bloque { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 44px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--paper-raised); color: var(--ink); text-align: left; cursor: pointer; transition: border-color .15s ease, background-color .15s ease; }
+.horario-hoy-bloque:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); background: var(--accent-soft); }
+.horario-hoy-bloque:focus-visible { outline: none; box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent); }
+.horario-hoy-bloque.registrada { cursor: default; opacity: .62; background: var(--bg-soft); }
+.horario-hoy-horario { flex: 0 0 auto; min-width: 92px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.horario-hoy-info { flex: 1 1 auto; min-width: 0; display: grid; gap: 2px; }
+.horario-hoy-info small { color: var(--muted); }
+.horario-hoy-estado { flex: 0 0 auto; font-size: .82rem; font-weight: 800; color: var(--accent-deep); }
+.horario-hoy-bloque.registrada .horario-hoy-estado { color: var(--success); }
+.horario-hoy-contexto { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 12px 14px; margin-bottom: 4px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--bg-soft); font-size: .88rem; }
+.horario-hoy-contexto strong { font-size: .95rem; }
+.horario-hoy-contexto span { color: var(--muted); }
 .table-responsive { overflow-x: auto; }
 .table-striped { width: 100%; min-width: 540px; border-collapse: collapse; }
 .table-striped th, .table-striped td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; }

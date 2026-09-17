@@ -109,20 +109,20 @@ export interface GetHomeParams {
   view?: 'clase' | 'planillas';
 }
 
-export interface ClaseActualDto {
-  hasClaseAhora: boolean;
-  asignacionId?: number;
-  cursoId?: number;
-  materia?: string;
-  cursoDescripcion?: string;
-  etapa?: number;
-  horaInicio?: string;
-  horaFin?: string;
-  temaSugerido?: string;
+export interface HorarioBloqueHoyDto {
+  asignacionId: number;
+  cursoId: number;
+  materiaNombre: string;
+  cursoDescripcion: string;
+  salaNombre: string | null;
+  horaInicio: string;
+  horaFin: string;
+  horasCatedra: number;
+  registrada: boolean;
 }
 
-export function getClaseActual(): Promise<ClaseActualDto> {
-  return apiRequest<ClaseActualDto>('/api/home/clase-actual', { method: 'GET' });
+export function getMiHorarioHoy(): Promise<HorarioBloqueHoyDto[]> {
+  return apiRequest<HorarioBloqueHoyDto[]>('/api/home/mi-horario/hoy', { method: 'GET' });
 }
 
 export interface ClaseDadaDto {

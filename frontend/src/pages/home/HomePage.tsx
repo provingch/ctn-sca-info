@@ -3,7 +3,7 @@ import { useToast } from '../../context/toast';
 import { getAsignacionesDisponibles, getMisAsignaciones, type AsignacionOption, type AsignacionCompleta } from '../../api/planCurricular';
 import { getProfile } from '../../api/profile';
 import { Link, useSearchParams } from 'react-router-dom';
-import { createClass, getClaseActual, getHome, listarCodigosConducta, type ClaseActualDto, type CodigoConducta, type HomeResponse, type PlanillaResumenDto } from '../../api/home';
+import { createClass, getHome, getMiHorarioHoy, listarCodigosConducta, type CodigoConducta, type HomeResponse, type HorarioBloqueHoyDto, type PlanillaResumenDto } from '../../api/home';
 import { ApiError } from '../../api/client';
 import AppShell from '../../components/AppShell';
 import PageBanner from '../../components/PageBanner';
@@ -838,6 +838,12 @@ export function ClassView({ data, reload }: { data: HomeResponse; reload: () => 
   const justificacionRef = useRef<HTMLTextAreaElement>(null);
   const canManageCodes = user?.level === 2 || user?.level === 3;
 
+  const [bloquesHoy, setBloquesHoy] = useState<HorarioBloqueHoyDto[] | null>(null);
+  const [bloquesHoyError, setBloquesHoyError] = useState('');
+  const [bloquesHoyAttempt, setBloquesHoyAttempt] = useState(0);
+  const [origenFormulario, setOrigenFormulario] = useState<'bloque' | 'manual' | null>(null);
+  const [bloqueActivo, setBloqueActivo] = useState<HorarioBloqueHoyDto | null>(null);
+
   useEffect(() => {
     let active = true;
     setCodigosConductaError('');
@@ -853,12 +859,6 @@ export function ClassView({ data, reload }: { data: HomeResponse; reload: () => 
   useEffect(() => {
     if (requiereJustificacion) justificacionRef.current?.focus();
   }, [requiereJustificacion]);
-
-  const [claseActual, setClaseActual] = useState<ClaseActualDto | null>(null);
-  const [autoTemaAplicado, setAutoTemaAplicado] = useState(false);
-  const autoFieldsApplied = useRef<number | null>(null);
-  const temaTouched = useRef(false);
-  const scheduleTouched = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -878,36 +878,26 @@ export function ClassView({ data, reload }: { data: HomeResponse; reload: () => 
   }, [selectedCursoId, assignmentAttempt]);
 
   useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        const info = await getClaseActual();
-        if (active) setClaseActual(info);
-      } catch {
-        if (active) setClaseActual(null);
-      }
-    })();
-    return () => { active = false; };
-  }, []);
-
-  useEffect(() => {
-    if (claseActual?.hasClaseAhora && claseActual.cursoId === selectedCursoId && asignacionesDisponibles.some((a) => a.id === claseActual.asignacionId)) {
-      setSelectedAsignacionId((current) => current ?? claseActual.asignacionId!);
-    }
-  }, [claseActual, selectedCursoId, asignacionesDisponibles]);
-
-  useEffect(() => {
     const assignment = asignacionesDisponibles.find((a) => a.id === selectedAsignacionId);
     setDisciplina(assignment?.materiaNombre ?? '');
-    if (!assignment || !claseActual?.hasClaseAhora || claseActual.cursoId !== data.selCurso?.id || claseActual.asignacionId !== assignment.id) return;
-    if (autoFieldsApplied.current === assignment.id) return;
-    autoFieldsApplied.current = assignment.id;
-    if (claseActual.temaSugerido && !temaTouched.current) {
-      setTema(claseActual.temaSugerido.slice(0, 150)); setAutoTemaAplicado(true);
-    }
-    const start = claseActual.horaInicio?.replace(/^0/, '');
-    if (!scheduleTouched.current && start && HORARIOS_CATEDRA.includes(start)) { setHorario(start); setCantidadHoras('1'); }
-  }, [claseActual, data.selCurso?.id, asignacionesDisponibles, selectedAsignacionId]);
+  }, [asignacionesDisponibles, selectedAsignacionId]);
+
+  // Horario del día: se muestra antes que cualquier selector. Lista vacía o caída
+  // no bloquean al profesor — "Registrar otra clase" siempre abre el camino manual.
+  useEffect(() => {
+    let active = true;
+    setBloquesHoyError('');
+    void getMiHorarioHoy().then((list) => {
+      if (!active) return;
+      setBloquesHoy(list);
+      if (list.length === 0) setOrigenFormulario((current) => current ?? 'manual');
+    }).catch((err) => {
+      if (!active) return;
+      setBloquesHoy([]);
+      setBloquesHoyError(err instanceof ApiError ? err.message : 'No se pudo cargar tu horario de hoy.');
+    });
+    return () => { active = false; };
+  }, [bloquesHoyAttempt]);
 
   function toggleCodigo(alumnoId: number, codigo: string) {
     const codigosActuales = codigosPorAlumno[alumnoId] ?? [];
@@ -918,7 +908,6 @@ export function ClassView({ data, reload }: { data: HomeResponse; reload: () => 
   }
 
   const handleCantidadHorasInput = (value: string) => {
-    scheduleTouched.current = true;
     const sanitized = value.replace(/\D/g, '').slice(0, 2);
     setCantidadHoras(sanitized);
   };
@@ -926,39 +915,81 @@ export function ClassView({ data, reload }: { data: HomeResponse; reload: () => 
   // La selección debe pertenecer a las asignaciones cargadas para este curso.
   const asignacionActual = asignacionesDisponibles.find((a) => a.id === selectedAsignacionId)
     ?? (asignacionesDisponibles.length === 1 ? asignacionesDisponibles[0] : undefined);
-  const puedeIniciarClase = !assignmentsLoading && !assignmentError && !!asignacionActual && !saving;
+
+  const enBloque = origenFormulario === 'bloque' && !!bloqueActivo;
+  const puedeIniciarClaseManual = !assignmentsLoading && !assignmentError && !!asignacionActual && !saving;
+  const puedeIniciarClase = enBloque ? !saving : puedeIniciarClaseManual;
 
   let mensajeBloqueo = '';
-  if (assignmentsLoading) {
-    mensajeBloqueo = 'Cargando asignaciones…';
-  } else if (assignmentError) {
-    mensajeBloqueo = assignmentError;
-  } else if (asignacionesDisponibles.length === 0) {
-    mensajeBloqueo = 'No hay asignaciones disponibles para este curso.';
-  } else if (asignacionesDisponibles.length > 1 && !selectedAsignacionId) {
-    mensajeBloqueo = 'Elegí primero tu asignación.';
+  if (!enBloque) {
+    if (assignmentsLoading) {
+      mensajeBloqueo = 'Cargando asignaciones…';
+    } else if (assignmentError) {
+      mensajeBloqueo = assignmentError;
+    } else if (asignacionesDisponibles.length === 0) {
+      mensajeBloqueo = 'No hay asignaciones disponibles para este curso.';
+    } else if (asignacionesDisponibles.length > 1 && !selectedAsignacionId) {
+      mensajeBloqueo = 'Elegí primero tu asignación.';
+    }
   }
 
   const horarioFinal = classEndTime(horario, Number(cantidadHoras));
 
+  function elegirBloque(bloque: HorarioBloqueHoyDto) {
+    if (bloque.registrada) return;
+    setBloqueActivo(bloque);
+    setOrigenFormulario('bloque');
+    setSelectedAsignacionId(bloque.asignacionId);
+    setTema('');
+    setHorario(bloque.horaInicio);
+    setCantidadHoras(String(bloque.horasCatedra));
+    setModalidad('Presencial');
+    setInstrumentoId(0);
+    setObservaciones('');
+    setAusentes([]);
+    setCodigosPorAlumno({});
+    setRequiereJustificacion(false);
+    setJustificacionAtraso('');
+    setStatus('');
+  }
+
+  function abrirManual() {
+    setOrigenFormulario('manual');
+    setBloqueActivo(null);
+    setTema('');
+    setHorario('');
+    setCantidadHoras('');
+    setModalidad('Presencial');
+    setInstrumentoId(0);
+    setObservaciones('');
+    setAusentes([]);
+    setCodigosPorAlumno({});
+    setRequiereJustificacion(false);
+    setJustificacionAtraso('');
+    setStatus('');
+  }
+
   async function create(e: FormEvent) {
     e.preventDefault();
     if (submitting.current) return;
-    if (!data.selCurso || !puedeIniciarClase) {
+    const cursoIdEnvio = enBloque ? bloqueActivo!.cursoId : data.selCurso?.id;
+    if (!cursoIdEnvio || !puedeIniciarClase) {
       setStatus(mensajeBloqueo || 'No puedes iniciar clases en este momento.');
       return;
     }
     submitting.current = true; setSaving(true);
     try {
-      const asignacionUsada = selectedAsignacionId ?? asignacionActual?.id ?? null;
+      const asignacionUsada = enBloque ? bloqueActivo!.asignacionId : (selectedAsignacionId ?? asignacionActual?.id ?? null);
       await createClass({
-        cursoId: data.selCurso.id, asignacionId: asignacionUsada, etapa: data.selEtapa, instrumentoId,
+        cursoId: cursoIdEnvio, asignacionId: asignacionUsada, etapa: data.selEtapa, instrumentoId,
         horaInicio: horario, horasCatedra: cantidadHoras ? Number(cantidadHoras) : null, modalidad, observaciones,
         tema, justificacionAtraso: requiereJustificacion ? justificacionAtraso : undefined,
         alumnosAusentes: ausentes, codigosPorAlumno,
       });
       if (asignacionUsada) recordMateriaReciente(asignacionUsada);
+      const volviendoDeBloque = enBloque;
       clearForm();
+      if (volviendoDeBloque) setBloquesHoyAttempt((n) => n + 1);
       setStatus('Clase registrada.');
       await reload();
     } catch (err) {
@@ -972,8 +1003,6 @@ export function ClassView({ data, reload }: { data: HomeResponse; reload: () => 
   }
 
   function clearForm() {
-    scheduleTouched.current = true;
-    temaTouched.current = true; setAutoTemaAplicado(false);
     setCodigosPorAlumno({});
     setTema('');
     setHorario('');
@@ -985,11 +1014,34 @@ export function ClassView({ data, reload }: { data: HomeResponse; reload: () => 
     setRequiereJustificacion(false);
     setJustificacionAtraso('');
     setStatus('');
+    if (enBloque) {
+      // Volver a la lista de bloques: un formulario vacío con selectores no es
+      // un estado al que se llegue por este camino.
+      setOrigenFormulario(null);
+      setBloqueActivo(null);
+      setSelectedAsignacionId(null);
+    }
   }
 
-  return (
-    <div className="two-column">
-      {canManageCodes && <CatalogoConductaPanel onCodesChange={setCodigosConducta} />}
+  const camposComunes = (
+    <>
+      <div className="class-field">
+        <label>Modalidad</label>
+        <AnimatedSelect ariaLabel="Modalidad de la clase" value={modalidad} onChange={setModalidad} options={[{ value: 'Presencial', label: 'Presencial' }, { value: 'Virtual', label: 'Virtual' }]} />
+      </div>
+      <div className="class-field">
+        <label htmlFor="instrumentoId">Tipo de clase</label>
+        <AnimatedSelect ariaLabel="Instrumento" value={instrumentoId} onChange={(value) => setInstrumentoId(Number(value))} options={[{ value: 0, label: 'Sin instrumento' }, ...data.instrumentos.map((item) => ({ value: item.id, label: item.nombre }))]} />
+      </div>
+      <div className="class-field class-field--full">
+        <label htmlFor="observacionesGenerales">Observaciones generales</label>
+        <textarea id="observacionesGenerales" rows={3} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Cualquier eventualidad general de la clase..." style={{ resize: 'none' }} />
+      </div>
+    </>
+  );
+
+  const cuerpoFormulario = (
+    <>
       {!puedeIniciarClase && mensajeBloqueo && (
         <div className="panel" style={{ gridColumn: '1 / -1', marginBottom: 0 }}>
           <div className="notice error" style={{ marginBottom: 12 }}>
@@ -997,22 +1049,28 @@ export function ClassView({ data, reload }: { data: HomeResponse; reload: () => 
           </div>
         </div>
       )}
-      {claseActual?.hasClaseAhora && claseActual.cursoId === data.selCurso?.id && claseActual.asignacionId === selectedAsignacionId && (
-        <div className="panel" style={{ gridColumn: '1 / -1', marginBottom: 0 }}>
-          <div className="notice" role="status" style={{ margin: 0 }}>
-            <p style={{ margin: 0 }}>
-              <strong>Clase en curso según tu horario:</strong> {claseActual.materia} — {claseActual.cursoDescripcion}
-              {claseActual.horaInicio ? ` (${claseActual.horaInicio}${claseActual.horaFin ? '–' + claseActual.horaFin : ''})` : ''}
-              {autoTemaAplicado ? '. Se autocompletó el tema según tu plan curricular aprobado.' : '.'}
-            </p>
+      <form className="panel class-register-form" onSubmit={create} aria-busy={saving} style={{ display: 'grid', gap: 12, gridColumn: '1 / -1' }}>
+      <input type="hidden" name="action" value="create-rasgo-planilla" />
+      <input type="hidden" name="cursoId" value={String((enBloque ? bloqueActivo!.cursoId : data.selCurso?.id) ?? '')} id="formCursoId" />
+      <input type="hidden" name="etapa" value={String(data.selEtapa)} />
+
+      {enBloque ? (
+        <div className="class-card">
+          <div className="class-card-head">
+            <div><span className="eyebrow">Inicio de clase</span><h2>Registro de clase</h2><p>Confirmá el contenido y registrá la asistencia.</p></div>
+            <button type="button" className="button secondary" id="clearButton" disabled={saving} onClick={clearForm}>Limpiar formulario</button>
+          </div>
+          <div className="horario-hoy-contexto">
+            <strong>{bloqueActivo!.materiaNombre}</strong>
+            <span>{bloqueActivo!.cursoDescripcion}</span>
+            <span>{bloqueActivo!.horaInicio}–{bloqueActivo!.horaFin}</span>
+            {bloqueActivo!.salaNombre && <span>{bloqueActivo!.salaNombre}</span>}
+          </div>
+          <div className="class-grid">
+            {camposComunes}
           </div>
         </div>
-      )}
-      <form className="panel class-register-form" onSubmit={create} aria-busy={saving} style={{ display: 'grid', gap: 12, gridColumn: '1 / -1' }}>
-        <input type="hidden" name="action" value="create-rasgo-planilla" />
-        <input type="hidden" name="cursoId" value={data.selCurso ? String(data.selCurso.id) : ''} id="formCursoId" />
-        <input type="hidden" name="etapa" value={String(data.selEtapa)} />
-
+      ) : (
         <div className="class-card">
           <div className="class-card-head">
             <div><span className="eyebrow">Inicio de clase</span><h2>Registro de clase</h2><p>Confirmá la asignación, completá el contenido y registrá la asistencia.</p></div>
@@ -1021,7 +1079,7 @@ export function ClassView({ data, reload }: { data: HomeResponse; reload: () => 
           <div className="class-grid">
             <div className="class-field">
               <label>Asignación / materia</label>
-              <AnimatedSelect ariaLabel="Asignación de la clase" value={selectedAsignacionId ?? ''} placeholder={assignmentsLoading ? "Cargando asignaciones…" : "Seleccioná la asignación"} disabled={assignmentsLoading || saving || asignacionesDisponibles.length === 0} onChange={(value) => { setSelectedAsignacionId(value ? Number(value) : null); setTema(''); temaTouched.current = false; setAutoTemaAplicado(false); autoFieldsApplied.current = null; scheduleTouched.current = false; setHorario(''); setCantidadHoras(''); }} options={asignacionesDisponibles.map((a) => ({ value: a.id, label: a.materiaNombre ?? ('Asignación ' + a.id) }))} />
+              <AnimatedSelect ariaLabel="Asignación de la clase" value={selectedAsignacionId ?? ''} placeholder={assignmentsLoading ? "Cargando asignaciones…" : "Seleccioná la asignación"} disabled={assignmentsLoading || saving || asignacionesDisponibles.length === 0} onChange={(value) => { setSelectedAsignacionId(value ? Number(value) : null); setTema(''); setHorario(''); setCantidadHoras(''); }} options={asignacionesDisponibles.map((a) => ({ value: a.id, label: a.materiaNombre ?? ('Asignación ' + a.id) }))} />
             </div>
             <div className="class-field">
               <label htmlFor="disciplinaClase">Disciplina</label>
@@ -1029,70 +1087,105 @@ export function ClassView({ data, reload }: { data: HomeResponse; reload: () => 
             </div>
             <fieldset className="class-field--full class-schedule"><legend>Horario de la clase</legend>
               <div className="class-schedule-grid">
-                <div className="class-field"><label>Inicio de clase</label><AnimatedSelect ariaLabel="Inicio de clase" value={horario} placeholder="Seleccioná el horario" onChange={(value) => { scheduleTouched.current = true; setHorario(value); }} options={HORARIOS_CATEDRA.map((hora) => ({ value: hora, label: hora }))} /></div>
+                <div className="class-field"><label>Inicio de clase</label><AnimatedSelect ariaLabel="Inicio de clase" value={horario} placeholder="Seleccioná el horario" onChange={setHorario} options={HORARIOS_CATEDRA.map((hora) => ({ value: hora, label: hora }))} /></div>
                 <div className="class-field"><label htmlFor="cantidadHoras">Horas cátedra</label><input id="cantidadHoras" type="number" min={1} max={8} value={cantidadHoras} onChange={(e) => handleCantidadHorasInput(e.target.value)} placeholder="Ej.: 2" /></div>
                 <div className="class-field"><label htmlFor="horarioFinalClase">Final de la clase</label><input id="horarioFinalClase" value={horarioFinal} placeholder="Según inicio y duración" readOnly /></div>
               </div>
               {!!horario && !!cantidadHoras && !horarioFinal && <small>La duración debe corresponder a horas disponibles dentro del mismo turno.</small>}
             </fieldset>
-            <div className="class-field">
-              <label>Modalidad</label>
-              <AnimatedSelect ariaLabel="Modalidad de la clase" value={modalidad} onChange={setModalidad} options={[{ value: 'Presencial', label: 'Presencial' }, { value: 'Virtual', label: 'Virtual' }]} />
-            </div>
-            <div className="class-field">
-              <label htmlFor="instrumentoId">Tipo de clase</label>
-              <AnimatedSelect ariaLabel="Instrumento" value={instrumentoId} onChange={(value) => setInstrumentoId(Number(value))} options={[{ value: 0, label: 'Sin instrumento' }, ...data.instrumentos.map((item) => ({ value: item.id, label: item.nombre }))]} />
-            </div>
-            <div className="class-field class-field--full">
-              <label htmlFor="observacionesGenerales">Observaciones generales</label>
-              <textarea id="observacionesGenerales" rows={3} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Cualquier eventualidad general de la clase..." style={{ resize: 'none' }} />
-            </div>
+            {camposComunes}
           </div>
         </div>
+      )}
 
-        <RasgosAsistenciaEditor
-          alumnos={data.rasgoAlumnosValidos}
-          tema={tema}
-          onTemaChange={(value) => { temaTouched.current = true; setAutoTemaAplicado(false); setTema(value); }}
-          ausentes={ausentes}
-          onAusenteChange={(alumnoId, ausente) => setAusentes((current) => ausente ? [...current, alumnoId] : current.filter((id) => id !== alumnoId))}
-          codigosPorAlumno={codigosPorAlumno}
-          onCodigoChange={toggleCodigo}
-          codigosConducta={codigosConducta}
-          codigosConductaError={codigosConductaError}
-          onRetryCodigosConducta={() => setCodigosConductaAttempt((n) => n + 1)}
-        />
+      <RasgosAsistenciaEditor
+        alumnos={data.rasgoAlumnosValidos}
+        tema={tema}
+        onTemaChange={setTema}
+        ausentes={ausentes}
+        onAusenteChange={(alumnoId, ausente) => setAusentes((current) => ausente ? [...current, alumnoId] : current.filter((id) => id !== alumnoId))}
+        codigosPorAlumno={codigosPorAlumno}
+        onCodigoChange={toggleCodigo}
+        codigosConducta={codigosConducta}
+        codigosConductaError={codigosConductaError}
+        onRetryCodigosConducta={() => setCodigosConductaAttempt((n) => n + 1)}
+      />
 
-        {requiereJustificacion && (
-          <div className="class-card">
-            <div className="notice" role="status" style={{ marginBottom: 12 }}>
-              <p style={{ margin: 0 }}>El tema está atrasado según el plan curricular. Contá el motivo para poder registrar la clase.</p>
-            </div>
-            <div className="class-field class-field--full">
-              <label htmlFor="justificacionAtraso">Justificación del atraso</label>
-              <textarea
-                ref={justificacionRef}
-                id="justificacionAtraso"
-                rows={3}
-                value={justificacionAtraso}
-                onChange={(event) => setJustificacionAtraso(event.target.value)}
-                placeholder="Contá brevemente el motivo del atraso."
-                style={{ resize: 'none' }}
-              />
-            </div>
+      {requiereJustificacion && (
+        <div className="class-card">
+          <div className="notice" role="status" style={{ marginBottom: 12 }}>
+            <p style={{ margin: 0 }}>El tema está atrasado según el plan curricular. Contá el motivo para poder registrar la clase.</p>
           </div>
-        )}
-
-        {status && <p className="notice" role="status">{status}</p>}
-
-        <div className="class-card" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-          <button type="submit" className="button" disabled={!puedeIniciarClase} title={!puedeIniciarClase ? mensajeBloqueo : undefined}>{saving ? "Guardando…" : "Guardar inicio de clase"}</button>
-          {assignmentError && <button type="button" className="button secondary" onClick={() => setAssignmentAttempt((n) => n + 1)}>Reintentar asignaciones</button>}
+          <div className="class-field class-field--full">
+            <label htmlFor="justificacionAtraso">Justificación del atraso</label>
+            <textarea
+              ref={justificacionRef}
+              id="justificacionAtraso"
+              rows={3}
+              value={justificacionAtraso}
+              onChange={(event) => setJustificacionAtraso(event.target.value)}
+              placeholder="Contá brevemente el motivo del atraso."
+              style={{ resize: 'none' }}
+            />
+          </div>
         </div>
+      )}
 
-      </form>
+      {status && <p className="notice" role="status">{status}</p>}
 
-      {/* Right-side attendance & history panel removed as requested */}
+      <div className="class-card" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        <button type="submit" className="button" disabled={!puedeIniciarClase} title={!puedeIniciarClase ? mensajeBloqueo : undefined}>{saving ? "Guardando…" : "Guardar inicio de clase"}</button>
+        {!enBloque && assignmentError && <button type="button" className="button secondary" onClick={() => setAssignmentAttempt((n) => n + 1)}>Reintentar asignaciones</button>}
+      </div>
+    </form>
+    </>
+  );
+
+  return (
+    <div className="two-column">
+      {canManageCodes && <CatalogoConductaPanel onCodesChange={setCodigosConducta} />}
+
+      {origenFormulario !== null ? cuerpoFormulario : bloquesHoyError ? (
+        <div className="panel" style={{ gridColumn: '1 / -1' }}>
+          <div className="notice error" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <p style={{ margin: 0, flex: 1 }}>No se pudo cargar tu horario de hoy. {bloquesHoyError}</p>
+            <button type="button" className="button secondary" onClick={() => setBloquesHoyAttempt((n) => n + 1)}>Reintentar</button>
+          </div>
+          <button type="button" className="button secondary" onClick={abrirManual}>Registrar otra clase</button>
+        </div>
+      ) : bloquesHoy === null ? (
+        <div className="panel" style={{ gridColumn: '1 / -1' }}><p style={{ margin: 0 }}>Cargando tu horario de hoy…</p></div>
+      ) : (
+        <div className="panel" style={{ gridColumn: '1 / -1' }}>
+          <div className="class-card-head">
+            <div><span className="eyebrow">Inicio de clase</span><h2>Tu horario de hoy</h2><p>Elegí el bloque que vas a dar para registrar la clase.</p></div>
+          </div>
+          <ul className="horario-hoy-list">
+            {bloquesHoy.map((bloque) => {
+              const contenido = (
+                <>
+                  <span className="horario-hoy-horario">{bloque.horaInicio}–{bloque.horaFin}</span>
+                  <span className="horario-hoy-info">
+                    <strong>{bloque.materiaNombre}</strong>
+                    <small>{bloque.cursoDescripcion}{bloque.salaNombre ? ` · ${bloque.salaNombre}` : ''} · {bloque.horasCatedra} horas cátedra</small>
+                  </span>
+                  <span className="horario-hoy-estado" aria-hidden="true">{bloque.registrada ? '✓ Registrada' : 'Registrar'}</span>
+                </>
+              );
+              return (
+                <li key={`${bloque.asignacionId}-${bloque.horaInicio}`}>
+                  {bloque.registrada ? (
+                    <div className="horario-hoy-bloque registrada">{contenido}<span className="visually-hidden">, ya registrada</span></div>
+                  ) : (
+                    <button type="button" className="horario-hoy-bloque" onClick={() => elegirBloque(bloque)}>{contenido}</button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          <button type="button" className="button secondary" onClick={abrirManual}>Registrar otra clase</button>
+        </div>
+      )}
     </div>
   );
 }

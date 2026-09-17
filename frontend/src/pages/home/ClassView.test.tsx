@@ -4,21 +4,25 @@ import { ClassView } from './HomePage';
 import { ToastProvider } from '../../context/ToastContext';
 import { ApiError } from '../../api/client';
 import { getAsignacionesDisponibles } from '../../api/planCurricular';
-import { createClass, getClaseActual, listarCodigosConducta, type HomeResponse } from '../../api/home';
+import { createClass, getMiHorarioHoy, listarCodigosConducta, type HomeResponse, type HorarioBloqueHoyDto } from '../../api/home';
 import { classEndTime } from './classFormUtils';
 
 vi.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: { level: 1 } }) }));
 vi.mock('../../api/planCurricular', () => ({ getAsignacionesDisponibles: vi.fn() }));
-vi.mock('../../api/home', () => ({ getClaseActual: vi.fn(), listarCodigosConducta: vi.fn(), createClass: vi.fn() }));
+vi.mock('../../api/home', () => ({ getMiHorarioHoy: vi.fn(), listarCodigosConducta: vi.fn(), createClass: vi.fn() }));
 const data = { selCurso: { id: 7, curso: '2', seccion: 'A', especialidad: 'Informática' }, selEtapa: 1,
   instrumentos: [], rasgoAsistencias: [{ id: 9, alumnoId: 1, codigos: ['N1'] }],
   rasgoAlumnosValidos: [{ id: 1, nombre: 'Ana', apellido: 'Pérez' }], rasgoAlumnosInvalidos: [],
 } as unknown as HomeResponse;
+const bloqueHoy: HorarioBloqueHoyDto = {
+  asignacionId: 21, cursoId: 8, materiaNombre: 'Redes II', cursoDescripcion: '3° A Informática',
+  salaNombre: 'Aula 2', horaInicio: '07:00', horaFin: '07:35', horasCatedra: 1, registrada: false,
+};
 const show = () => render(<ToastProvider><ClassView data={data} reload={vi.fn().mockResolvedValue(undefined)} /></ToastProvider>);
 beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(getAsignacionesDisponibles).mockResolvedValue([{ id: 21, materiaId: 3, materiaNombre: 'Redes II' }]);
-  vi.mocked(getClaseActual).mockResolvedValue({ hasClaseAhora: false });
+  vi.mocked(getMiHorarioHoy).mockResolvedValue([]);
   vi.mocked(listarCodigosConducta).mockResolvedValue([{ id: 1, codigo: 'N1', descripcion: 'Conducta', activo: true }]);
 });
 
@@ -29,6 +33,7 @@ describe('Inicio de clase', () => {
       let resolve!: (items: []) => void;
       vi.mocked(getAsignacionesDisponibles).mockReturnValue(new Promise((done) => { resolve = done; }));
       show();
+      await act(async () => {}); // deja resolver el horario de hoy (vacío) y activar el camino manual
       expect(screen.queryByText('No hay asignaciones disponibles para este curso.')).not.toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Guardar inicio de clase' })).toBeDisabled();
       await act(async () => { resolve([]); });
@@ -84,24 +89,71 @@ describe('Inicio de clase', () => {
     fireEvent.pointerDown(document.body);
     expect(screen.queryByRole('listbox', { name: 'Códigos para Pérez, Ana' })).not.toBeInTheDocument();
   });
-  it('no autocompleta datos de otro curso ni sobrescribe un tema escrito', async () => {
-    let resolve!: (value: Awaited<ReturnType<typeof getClaseActual>>) => void;
-    vi.mocked(getClaseActual).mockReturnValue(new Promise((done) => { resolve = done; }));
+  it('muestra el horario de hoy antes que cualquier selector y distingue bloques registrados de los que no', async () => {
+    vi.mocked(getMiHorarioHoy).mockResolvedValue([
+      bloqueHoy,
+      { ...bloqueHoy, asignacionId: 22, horaInicio: '07:35', horaFin: '08:10', materiaNombre: 'Física', registrada: true },
+    ]);
     show();
-    fireEvent.change(screen.getByLabelText('Contenido específico desarrollado'), { target: { value: 'Tema escrito' } });
-    await act(async () => resolve({ hasClaseAhora: true, cursoId: 99, asignacionId: 21, temaSugerido: 'Tema ajeno' }));
-    expect(screen.getByLabelText('Contenido específico desarrollado')).toHaveValue('Tema escrito');
-    expect(screen.queryByText('Clase en curso según tu horario:')).not.toBeInTheDocument();
+    await screen.findByText('Tu horario de hoy');
+    expect(screen.queryByLabelText('Asignación de la clase')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Disciplina')).not.toBeInTheDocument();
+
+    const disponible = screen.getByRole('button', { name: /Redes II/ });
+    expect(disponible).toHaveTextContent('Registrar');
+    const registrado = screen.getByText('Física').closest('div');
+    expect(registrado).toHaveTextContent('Registrada');
+    expect(registrado?.tagName).toBe('DIV');
   });
-  it('autocompleta la asignación y el tema compatibles y no repone un formulario limpiado', async () => {
-    vi.mocked(getClaseActual).mockResolvedValue({ hasClaseAhora: true, cursoId: 7, asignacionId: 21, horaInicio: '07:00', temaSugerido: 'Redes locales' });
+  it('precarga materia, curso, horario y horas cátedra desde el bloque elegido, sin selectores para tocar', async () => {
+    vi.mocked(getMiHorarioHoy).mockResolvedValue([bloqueHoy]);
+    vi.mocked(createClass).mockResolvedValue(undefined);
     show();
-    await waitFor(() => expect(screen.getByLabelText('Contenido específico desarrollado')).toHaveValue('Redes locales'));
-    expect(screen.getByLabelText('Final de la clase')).toHaveValue('7:35');
+    fireEvent.click(await screen.findByRole('button', { name: /Redes II/ }));
+
+    expect(screen.getByText('3° A Informática')).toBeInTheDocument();
+    expect(screen.getByText('07:00–07:35')).toBeInTheDocument();
+    expect(screen.getByText('Aula 2')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Asignación de la clase')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Inicio de clase')).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Contenido específico desarrollado'), { target: { value: 'Repaso de subredes' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar inicio de clase' }));
+
+    await waitFor(() => expect(createClass).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(createClass).mock.calls[0][0]).toMatchObject({
+      cursoId: 8, asignacionId: 21, horaInicio: '07:00', horasCatedra: 1, tema: 'Repaso de subredes',
+    });
+  });
+  it('vuelve a la lista de bloques al limpiar un formulario abierto desde un bloque', async () => {
+    vi.mocked(getMiHorarioHoy).mockResolvedValue([bloqueHoy]);
+    show();
+    fireEvent.click(await screen.findByRole('button', { name: /Redes II/ }));
+    expect(screen.queryByText('Tu horario de hoy')).not.toBeInTheDocument();
+
     fireEvent.click(screen.getByRole('button', { name: 'Limpiar formulario' }));
-    expect(screen.getByLabelText('Contenido específico desarrollado')).toHaveValue('');
-    expect(screen.getByLabelText('Disciplina')).toHaveValue('Redes II');
-    expect(createClass).not.toHaveBeenCalled();
+    expect(await screen.findByText('Tu horario de hoy')).toBeInTheDocument();
+  });
+  it('abre el camino manual directamente cuando no hay horario cargado para hoy', async () => {
+    vi.mocked(getMiHorarioHoy).mockResolvedValue([]);
+    show();
+    await waitFor(() => expect(screen.getByLabelText('Disciplina')).toHaveValue('Redes II'));
+    expect(screen.queryByText('Tu horario de hoy')).not.toBeInTheDocument();
+  });
+  it('permite registrar otra clase a mano desde la lista de bloques', async () => {
+    vi.mocked(getMiHorarioHoy).mockResolvedValue([bloqueHoy]);
+    show();
+    await screen.findByText('Tu horario de hoy');
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar otra clase' }));
+    await waitFor(() => expect(screen.getByLabelText('Disciplina')).toHaveValue('Redes II'));
+    expect(screen.getByLabelText('Asignación de la clase')).toBeInTheDocument();
+  });
+  it('avisa si el horario de hoy no carga y deja registrar otra clase igual', async () => {
+    vi.mocked(getMiHorarioHoy).mockRejectedValueOnce(new ApiError(500, 'Error de horario'));
+    show();
+    await screen.findByText('No se pudo cargar tu horario de hoy. Error de horario');
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar otra clase' }));
+    await waitFor(() => expect(screen.getByLabelText('Disciplina')).toHaveValue('Redes II'));
   });
   it('calcula la última hora sin incluir recreos ni cruzar turnos', () => {
     expect(classEndTime('8:45', 1)).toBe('9:20');
