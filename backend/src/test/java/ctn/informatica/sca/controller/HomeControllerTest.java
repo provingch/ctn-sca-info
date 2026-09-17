@@ -22,6 +22,7 @@ import ctn.informatica.sca.dao.ConfiguracionSistemaDao;
 import ctn.informatica.sca.dao.CursoBaseDao;
 import ctn.informatica.sca.dao.CursoDao;
 import ctn.informatica.sca.dao.HoraCatedraDao;
+import ctn.informatica.sca.dao.HorarioSlotDao;
 import ctn.informatica.sca.dao.IncumplimientoRevisionDao;
 import ctn.informatica.sca.dao.InstrumentoDao;
 import ctn.informatica.sca.dao.MateriaDao;
@@ -33,11 +34,13 @@ import ctn.informatica.sca.dao.QuejaDao;
 import ctn.informatica.sca.dao.RasgoPlanillaDao;
 import ctn.informatica.sca.dao.UserDao;
 import ctn.informatica.sca.dto.CreateRasgoPlanillaRequest;
+import ctn.informatica.sca.dto.HorarioBloqueHoyDto;
 import ctn.informatica.sca.dto.SubmitRasgoAsistenciaRequest;
 import ctn.informatica.sca.model.Alumno;
 import ctn.informatica.sca.model.Asignacion;
 import ctn.informatica.sca.model.Curso;
 import ctn.informatica.sca.model.HoraCatedra;
+import ctn.informatica.sca.model.HorarioSlot;
 import ctn.informatica.sca.model.RasgoAsistencia;
 import ctn.informatica.sca.model.RasgoPlanilla;
 import ctn.informatica.sca.model.User;
@@ -335,6 +338,88 @@ class HomeControllerTest {
         }
 
         verify(notificacionDao, times(2)).crear(any(Integer.class), any(String.class), eq("INCUMPLIMIENTO"), any(String.class), any(String.class), eq("INCUMPLIMIENTO_REVISION"), eq((long) 41));
+    }
+
+    @Test
+    void agrupaHorasCatedraConsecutivasDeLaMismaAsignacionEnUnBloqueYResuelveElCursoReal() throws Exception {
+        HorarioSlotDao horarioSlotDao = mock(HorarioSlotDao.class);
+        AsignacionDao asignacionDao = mock(AsignacionDao.class);
+        RasgoPlanillaDao rasgoPlanillaDao = mock(RasgoPlanillaDao.class);
+
+        HorarioSlot bloque1a = slotDeHoy(1, 30, 5, "Redes", "Informática 3° A", 4, "08:45", "09:20");
+        HorarioSlot bloque1b = slotDeHoy(2, 30, 5, "Redes", "Informática 3° A", 5, "09:40", "10:15");
+        HorarioSlot bloque2 = slotDeHoy(3, 31, 5, "Física", "Informática 3° A", 7, "10:50", "11:25");
+        when(horarioSlotDao.findByProfesorYDia(eq(7), any(Integer.class)))
+                .thenReturn(List.of(bloque1a, bloque1b, bloque2));
+
+        Asignacion asignacion30 = new Asignacion();
+        asignacion30.setId(30);
+        asignacion30.setCursoRealId(10);
+        Asignacion asignacion31 = new Asignacion();
+        asignacion31.setId(31);
+        asignacion31.setCursoRealId(11);
+        when(asignacionDao.findByProfesor(7)).thenReturn(List.of(asignacion30, asignacion31));
+
+        when(rasgoPlanillaDao.existeClaseParaAsignacionYFecha(eq(30), any())).thenReturn(false);
+        when(rasgoPlanillaDao.existeClaseParaAsignacionYFecha(eq(31), any())).thenReturn(true);
+
+        HomeController controller = new HomeController(
+                mock(CursoDao.class), mock(CursoBaseDao.class), asignacionDao, mock(ProfesorDao.class),
+                mock(PlanillaDao.class), mock(MateriaDao.class), mock(AlumnoDao.class), rasgoPlanillaDao,
+                mock(InstrumentoDao.class), mock(UserDao.class), mock(PlanCurricularDao.class),
+                mock(TemaVerificacionService.class), mock(ActivityLogService.class), mock(ConfiguracionSistemaDao.class),
+                mock(IncumplimientoRevisionDao.class), mock(NotificacionDao.class), mock(QuejaDao.class),
+                horarioSlotDao, mock(HoraCatedraDao.class));
+
+        List<HorarioBloqueHoyDto> bloques = controller.miHorarioHoy(authentication(7));
+
+        assertEquals(2, bloques.size());
+        HorarioBloqueHoyDto primero = bloques.get(0);
+        assertEquals(30, primero.asignacionId());
+        assertEquals(10, primero.cursoId());
+        assertEquals("08:45", primero.horaInicio());
+        assertEquals("10:15", primero.horaFin());
+        assertEquals(2, primero.horasCatedra());
+        assertEquals(false, primero.registrada());
+
+        HorarioBloqueHoyDto segundo = bloques.get(1);
+        assertEquals(31, segundo.asignacionId());
+        assertEquals(11, segundo.cursoId());
+        assertEquals(1, segundo.horasCatedra());
+        assertEquals(true, segundo.registrada());
+    }
+
+    @Test
+    void omiteBloquesSinCursoRealCreadoTodaviaParaLaPromocionVigente() throws Exception {
+        HorarioSlotDao horarioSlotDao = mock(HorarioSlotDao.class);
+        AsignacionDao asignacionDao = mock(AsignacionDao.class);
+        when(horarioSlotDao.findByProfesorYDia(eq(7), any(Integer.class)))
+                .thenReturn(List.of(slotDeHoy(1, 30, 5, "Redes", "Informática 1° A", 4, "08:45", "09:20")));
+        when(asignacionDao.findByProfesor(7)).thenReturn(List.of());
+
+        HomeController controller = new HomeController(
+                mock(CursoDao.class), mock(CursoBaseDao.class), asignacionDao, mock(ProfesorDao.class),
+                mock(PlanillaDao.class), mock(MateriaDao.class), mock(AlumnoDao.class), mock(RasgoPlanillaDao.class),
+                mock(InstrumentoDao.class), mock(UserDao.class), mock(PlanCurricularDao.class),
+                mock(TemaVerificacionService.class), mock(ActivityLogService.class), mock(ConfiguracionSistemaDao.class),
+                mock(IncumplimientoRevisionDao.class), mock(NotificacionDao.class), mock(QuejaDao.class),
+                horarioSlotDao, mock(HoraCatedraDao.class));
+
+        assertEquals(List.of(), controller.miHorarioHoy(authentication(7)));
+    }
+
+    private HorarioSlot slotDeHoy(int id, int asignacionId, int usuarioId, String materia, String cursoDescripcion,
+            int horaCatedraNumero, String horaInicio, String horaFin) {
+        HorarioSlot slot = new HorarioSlot();
+        slot.setId(id);
+        slot.setAsignacionId(asignacionId);
+        slot.setUsuarioId(usuarioId);
+        slot.setMateriaNombre(materia);
+        slot.setCursoDescripcion(cursoDescripcion);
+        slot.setHoraCatedraNumero(horaCatedraNumero);
+        slot.setHoraInicio(horaInicio);
+        slot.setHoraFin(horaFin);
+        return slot;
     }
 
     private HomeController controller(RasgoPlanillaDao rasgoPlanillaDao, UserDao userDao,
