@@ -24,6 +24,7 @@ import ctn.informatica.sca.dto.CursoDto;
 import ctn.informatica.sca.dto.ClaseDadaDto;
 import ctn.informatica.sca.dto.CreateRasgoPlanillaRequest;
 import ctn.informatica.sca.dto.HomeGoogleClassroomCourseDto;
+import ctn.informatica.sca.dto.HorarioBloqueHoyDto;
 import ctn.informatica.sca.dto.HomeMateriaDto;
 import ctn.informatica.sca.dto.HomeResponse;
 import ctn.informatica.sca.dto.InstrumentoDto;
@@ -401,53 +402,72 @@ public class HomeController {
     }
 
     /**
-     * Devuelve la clase en curso del profesor según su horario ahora mismo.
-     * Si tiene plan curricular APROBADO para la etapa actual, incluye temaSugerido (próximo bloque PENDIENTE).
+     * Bloques de clase del profesor para hoy, agrupando hora_catedra consecutivas
+     * de la misma asignación. Cada bloque trae ya resuelto el curso real (no
+     * curso_base) para poder registrar la clase con un solo click.
      */
-    @GetMapping("/clase-actual")
+    @GetMapping("/mi-horario/hoy")
     @PreAuthorize("hasRole('LEVEL_1')")
-    public java.util.Map<String, Object> claseActual(Authentication authentication) {
+    public List<HorarioBloqueHoyDto> miHorarioHoy(Authentication authentication) throws SQLException {
         int usuarioId = ApiAuth.requireUserId(authentication);
         LocalDate hoy = LocalDate.now();
-        LocalTime ahora = LocalTime.now();
         int diaSemana = hoy.getDayOfWeek().getValue(); // Lunes=1 … Domingo=7
         if (diaSemana == 7) {
-            return java.util.Map.of("hasClaseAhora", false);
-        }
-        HorarioSlot slot;
-        try {
-            slot = horarioSlotDao.findCurrentSlot(usuarioId, diaSemana, ahora);
-        } catch (SQLException ex) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo consultar el horario", ex);
-        }
-        if (slot == null) {
-            return java.util.Map.of("hasClaseAhora", false);
+            return List.of();
         }
 
-        int mes = hoy.getMonthValue();
-        int etapa = mes >= 3 && mes <= 7 ? 1 : 2;
-        int anio = hoy.getYear();
-
-        String temaSugerido = null;
-        try {
-            temaSugerido = planCurricularDao.findProximoTemaPendiente(slot.getAsignacionId(), String.valueOf(etapa), anio);
-        } catch (SQLException ex) {
-            log.warn("No se pudo consultar próximo tema pendiente para asignacion {}: {}", slot.getAsignacionId(), ex.getMessage());
+        List<HorarioSlot> slots = horarioSlotDao.findByProfesorYDia(usuarioId, diaSemana);
+        if (slots.isEmpty()) {
+            return List.of();
         }
 
-        Map<String, Object> out = new HashMap<>();
-        out.put("hasClaseAhora", true);
-        out.put("asignacionId", slot.getAsignacionId());
-        out.put("cursoId", slot.getCursoId());
-        out.put("materia", slot.getMateriaNombre());
-        out.put("cursoDescripcion", slot.getCursoDescripcion());
-        out.put("etapa", etapa);
-        out.put("horaInicio", slot.getHoraInicio());
-        out.put("horaFin", slot.getHoraFin());
-        if (temaSugerido != null) {
-            out.put("temaSugerido", temaSugerido);
+        Map<Integer, Integer> cursoRealPorAsignacion = asignacionDao.findByProfesor(usuarioId).stream()
+                .filter(a -> a.getCursoRealId() != null)
+                .collect(Collectors.toMap(Asignacion::getId, Asignacion::getCursoRealId, (a, b) -> a));
+
+        List<HorarioBloqueHoyDto> bloques = new ArrayList<>();
+        List<HorarioSlot> grupo = new ArrayList<>();
+        for (HorarioSlot slot : slots) {
+            if (!grupo.isEmpty()) {
+                HorarioSlot previo = grupo.get(grupo.size() - 1);
+                boolean consecutivo = slot.getAsignacionId() == previo.getAsignacionId()
+                        && slot.getHoraCatedraNumero() != null && previo.getHoraCatedraNumero() != null
+                        && slot.getHoraCatedraNumero().equals(previo.getHoraCatedraNumero() + 1);
+                if (!consecutivo) {
+                    agregarBloqueHoy(bloques, grupo, cursoRealPorAsignacion, hoy);
+                    grupo = new ArrayList<>();
+                }
+            }
+            grupo.add(slot);
         }
-        return out;
+        agregarBloqueHoy(bloques, grupo, cursoRealPorAsignacion, hoy);
+        return bloques;
+    }
+
+    private void agregarBloqueHoy(List<HorarioBloqueHoyDto> bloques, List<HorarioSlot> grupo,
+            Map<Integer, Integer> cursoRealPorAsignacion, LocalDate hoy) throws SQLException {
+        if (grupo.isEmpty()) {
+            return;
+        }
+        HorarioSlot primero = grupo.get(0);
+        HorarioSlot ultimo = grupo.get(grupo.size() - 1);
+        Integer cursoRealId = cursoRealPorAsignacion.get(primero.getAsignacionId());
+        if (cursoRealId == null) {
+            // Sin curso real creado todavía para la promoción vigente de este curso_base:
+            // no hay a qué curso registrar la clase, así que el bloque no se ofrece.
+            return;
+        }
+        boolean registrada = rasgoPlanillaDao.existeClaseParaAsignacionYFecha(primero.getAsignacionId(), hoy);
+        bloques.add(new HorarioBloqueHoyDto(
+                primero.getAsignacionId(),
+                cursoRealId,
+                primero.getMateriaNombre(),
+                primero.getCursoDescripcion(),
+                primero.getSalaNombre(),
+                primero.getHoraInicio(),
+                ultimo.getHoraFin(),
+                grupo.size(),
+                registrada));
     }
 
     /**

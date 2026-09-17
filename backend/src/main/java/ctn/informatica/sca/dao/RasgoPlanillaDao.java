@@ -13,6 +13,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Types;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -243,6 +244,17 @@ public class RasgoPlanillaDao extends conexion {
             ps.setInt(2, usuarioId);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? rs.getInt(1) : 0;
+            }
+        }
+    }
+
+    public boolean existeClaseParaAsignacionYFecha(int asignacionId, LocalDate fecha) throws SQLException {
+        String sql = "SELECT 1 FROM planilla_rasgo WHERE asignacion_id = ? AND fecha_clase = ? LIMIT 1";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, asignacionId);
+            ps.setDate(2, java.sql.Date.valueOf(fecha));
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
             }
         }
     }
