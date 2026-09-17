@@ -18,9 +18,13 @@ interface RasgosAsistenciaEditorProps {
   codigosPorAlumno: Record<number, string[]>;
   onCodigoChange: (alumnoId: number, codigo: string) => void;
   codigosConducta: CodigoConducta[];
+  codigosConductaError?: string;
+  onRetryCodigosConducta?: () => void;
   titulo?: string;
   descripcion?: string;
 }
+
+const SIN_CODIGOS_TEXTO = 'Sin códigos cargados. Los carga el evaluador o el administrador.';
 
 export default function RasgosAsistenciaEditor({
   alumnos,
@@ -31,6 +35,8 @@ export default function RasgosAsistenciaEditor({
   codigosPorAlumno,
   onCodigoChange,
   codigosConducta,
+  codigosConductaError,
+  onRetryCodigosConducta,
   titulo = 'Asistencia general y justificativos',
   descripcion = 'Marcá ausentes en la lista. Los no marcados se guardan como presentes.',
 }: RasgosAsistenciaEditorProps) {
@@ -40,6 +46,7 @@ export default function RasgosAsistenciaEditor({
   const totalPresentes = alumnos.length - totalAusentes;
   const porcentajeAsistencia = alumnos.length > 0 ? Math.round((totalPresentes * 100) / alumnos.length) : 0;
   const porcentajeAusencia = alumnos.length > 0 ? 100 - porcentajeAsistencia : 0;
+  const sinCodigosCargados = !codigosConductaError && codigosConducta.length === 0;
 
   return <>
     <div className="class-card">
@@ -51,6 +58,12 @@ export default function RasgosAsistenciaEditor({
 
     <div className="class-card">
       <h3>{titulo}</h3>
+      {codigosConductaError && (
+        <div className="notice error" style={{ marginBottom: 12, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <p style={{ margin: 0, flex: 1 }}>No se pudieron cargar los rasgos conductuales. {codigosConductaError}</p>
+          {onRetryCodigosConducta && <button type="button" className="button secondary" onClick={onRetryCodigosConducta}>Reintentar</button>}
+        </div>
+      )}
       <div className="class-attendance-toolbar">
         <span className="student-pill">Habilitados: <strong>{alumnos.length}</strong></span>
         <p>{descripcion}</p>
@@ -71,7 +84,11 @@ export default function RasgosAsistenciaEditor({
                   </label>
                 </td>
                 <td className="rasgos-conductuales-cell">
-                  <AnimatedSelect multiple portal ariaLabel={`Rasgos conductuales de ${alumno.nombre} ${alumno.apellido}`} value={codigosPorAlumno[alumno.id] ?? []} placeholder="Seleccione…" onChange={(codigo) => onCodigoChange(alumno.id, codigo)} options={codigosConducta.map((item) => ({ value: item.codigo, label: item.codigo }))} />
+                  {sinCodigosCargados ? (
+                    <span className="rasgos-conducta-empty">{SIN_CODIGOS_TEXTO}</span>
+                  ) : (
+                    <AnimatedSelect multiple portal ariaLabel={`Rasgos conductuales de ${alumno.nombre} ${alumno.apellido}`} value={codigosPorAlumno[alumno.id] ?? []} placeholder="Seleccione…" onChange={(codigo) => onCodigoChange(alumno.id, codigo)} options={codigosConducta.map((item) => ({ value: item.codigo, label: item.codigo }))} />
+                  )}
                 </td>
               </tr>
             ))}
@@ -91,7 +108,16 @@ export default function RasgosAsistenciaEditor({
     {showCodeHelp && <div ref={codeHelpDialogRef} role="dialog" aria-modal="true" aria-labelledby="code-help-title" tabIndex={-1} style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'grid', placeItems: 'center', padding: 20, background: 'rgba(0, 0, 0, .55)' }} onClick={() => setShowCodeHelp(false)}>
       <section className="panel" style={{ width: 'min(620px, 100%)', maxHeight: '80vh', overflow: 'auto' }} onClick={(event) => event.stopPropagation()}>
         <div className="class-card-head"><h3 id="code-help-title">Significado de códigos</h3><button type="button" className="button secondary" data-dialog-initial-focus onClick={() => setShowCodeHelp(false)}>Cerrar</button></div>
-        <table className="table table-striped"><caption className="visually-hidden">Códigos de rasgos conductuales</caption><thead><tr><th>Código</th><th>Significado</th></tr></thead><tbody>{codigosConducta.map((item) => <tr key={item.codigo}><td><strong>{item.codigo}</strong></td><td>{item.descripcion}</td></tr>)}</tbody></table>
+        {codigosConductaError ? (
+          <div className="notice error" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <p style={{ margin: 0, flex: 1 }}>No se pudieron cargar los rasgos conductuales. {codigosConductaError}</p>
+            {onRetryCodigosConducta && <button type="button" className="button secondary" onClick={onRetryCodigosConducta}>Reintentar</button>}
+          </div>
+        ) : sinCodigosCargados ? (
+          <p>{SIN_CODIGOS_TEXTO}</p>
+        ) : (
+          <table className="table table-striped"><caption className="visually-hidden">Códigos de rasgos conductuales</caption><thead><tr><th>Código</th><th>Significado</th></tr></thead><tbody>{codigosConducta.map((item) => <tr key={item.codigo}><td><strong>{item.codigo}</strong></td><td>{item.descripcion}</td></tr>)}</tbody></table>
+        )}
       </section>
     </div>}
   </>;

@@ -811,7 +811,6 @@ function PlanillaCoverControls({ planillaId, tienePortada, onChanged }: {
 }
 
 export function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise<void> }) {
-  const { showToast } = useToast();
   const selectedCursoId = data.selCurso?.id;
   const { user } = useAuth();
   const [tema, setTema] = useState('');
@@ -832,15 +831,28 @@ export function ClassView({ data, reload }: { data: HomeResponse; reload: () => 
   const [observaciones, setObservaciones] = useState('');
   const [codigosPorAlumno, setCodigosPorAlumno] = useState<Record<number, string[]>>({});
   const [codigosConducta, setCodigosConducta] = useState<CodigoConducta[]>([]);
+  const [codigosConductaError, setCodigosConductaError] = useState('');
+  const [codigosConductaAttempt, setCodigosConductaAttempt] = useState(0);
+  const [requiereJustificacion, setRequiereJustificacion] = useState(false);
+  const [justificacionAtraso, setJustificacionAtraso] = useState('');
+  const justificacionRef = useRef<HTMLTextAreaElement>(null);
   const canManageCodes = user?.level === 2 || user?.level === 3;
 
   useEffect(() => {
     let active = true;
+    setCodigosConductaError('');
     void listarCodigosConducta()
       .then((codes) => { if (active) setCodigosConducta(codes); })
-      .catch(() => { /* el formulario sigue usable sin catálogo */ });
+      .catch((err) => {
+        if (!active) return;
+        setCodigosConductaError(err instanceof ApiError ? err.message : 'No se pudieron cargar los códigos de conducta.');
+      });
     return () => { active = false; };
-  }, []);
+  }, [codigosConductaAttempt]);
+
+  useEffect(() => {
+    if (requiereJustificacion) justificacionRef.current?.focus();
+  }, [requiereJustificacion]);
 
   const [claseActual, setClaseActual] = useState<ClaseActualDto | null>(null);
   const [autoTemaAplicado, setAutoTemaAplicado] = useState(false);
@@ -860,10 +872,10 @@ export function ClassView({ data, reload }: { data: HomeResponse; reload: () => 
     }).catch((err) => {
       if (!active) return;
       const message = err instanceof ApiError ? err.message : 'No se pudieron consultar las asignaciones. Reintentá la carga.';
-      setAssignmentError(message); showToast(message, { tone: 'error', autoDismiss: true });
+      setAssignmentError(message);
     }).finally(() => { if (active) setAssignmentsLoading(false); });
     return () => { active = false; };
-  }, [selectedCursoId, assignmentAttempt, showToast]);
+  }, [selectedCursoId, assignmentAttempt]);
 
   useEffect(() => {
     let active = true;
@@ -939,13 +951,23 @@ export function ClassView({ data, reload }: { data: HomeResponse; reload: () => 
     submitting.current = true; setSaving(true);
     try {
       const asignacionUsada = selectedAsignacionId ?? asignacionActual?.id ?? null;
-      await createClass({ cursoId: data.selCurso.id, asignacionId: asignacionUsada, etapa: data.selEtapa, instrumentoId, horaInicio: horario, horasCatedra: cantidadHoras ? Number(cantidadHoras) : null, modalidad, observaciones, tema, alumnosAusentes: ausentes, codigosPorAlumno });
+      await createClass({
+        cursoId: data.selCurso.id, asignacionId: asignacionUsada, etapa: data.selEtapa, instrumentoId,
+        horaInicio: horario, horasCatedra: cantidadHoras ? Number(cantidadHoras) : null, modalidad, observaciones,
+        tema, justificacionAtraso: requiereJustificacion ? justificacionAtraso : undefined,
+        alumnosAusentes: ausentes, codigosPorAlumno,
+      });
       if (asignacionUsada) recordMateriaReciente(asignacionUsada);
       clearForm();
       setStatus('Clase registrada.');
       await reload();
     } catch (err) {
-      setStatus(err instanceof ApiError ? err.message : 'No se pudo registrar la clase.');
+      if (err instanceof ApiError && err.status === 400 && err.message === 'Se requiere justificar el atraso para este tema.') {
+        setRequiereJustificacion(true);
+        setStatus('');
+      } else {
+        setStatus(err instanceof ApiError ? err.message : 'No se pudo registrar la clase.');
+      }
     } finally { submitting.current = false; setSaving(false); }
   }
 
@@ -960,6 +982,8 @@ export function ClassView({ data, reload }: { data: HomeResponse; reload: () => 
     setInstrumentoId(0);
     setAusentes([]);
     setObservaciones('');
+    setRequiereJustificacion(false);
+    setJustificacionAtraso('');
     setStatus('');
   }
 
@@ -1035,7 +1059,29 @@ export function ClassView({ data, reload }: { data: HomeResponse; reload: () => 
           codigosPorAlumno={codigosPorAlumno}
           onCodigoChange={toggleCodigo}
           codigosConducta={codigosConducta}
+          codigosConductaError={codigosConductaError}
+          onRetryCodigosConducta={() => setCodigosConductaAttempt((n) => n + 1)}
         />
+
+        {requiereJustificacion && (
+          <div className="class-card">
+            <div className="notice" role="status" style={{ marginBottom: 12 }}>
+              <p style={{ margin: 0 }}>El tema está atrasado según el plan curricular. Contá el motivo para poder registrar la clase.</p>
+            </div>
+            <div className="class-field class-field--full">
+              <label htmlFor="justificacionAtraso">Justificación del atraso</label>
+              <textarea
+                ref={justificacionRef}
+                id="justificacionAtraso"
+                rows={3}
+                value={justificacionAtraso}
+                onChange={(event) => setJustificacionAtraso(event.target.value)}
+                placeholder="Contá brevemente el motivo del atraso."
+                style={{ resize: 'none' }}
+              />
+            </div>
+          </div>
+        )}
 
         {status && <p className="notice" role="status">{status}</p>}
 
