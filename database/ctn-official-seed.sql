@@ -406,7 +406,12 @@ INSERT INTO usuario (
     (141, 'CoordinadorPedagogico', '2', 'cpdg2', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 17, null, null, null, null, 5, NULL, null),
     (142, 'CoordinadorPedagogico', '3', 'cpdg3', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 18, null, null, null, null, 5, NULL, null),
     (143, 'CoordinadorPedagogico', '4', 'cpdg4', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 19, null, null, null, null, 5, NULL, null),
-    (144, 'CoordinadorPedagogico', '5', 'cpdg5', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 20, null, null, null, null, 5, NULL, null)
+    (144, 'CoordinadorPedagogico', '5', 'cpdg5', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', 20, null, null, null, null, 5, NULL, null),
+
+    -- Profesores de Informática sin ficha completa (horario "Horario de Clases 2026")
+    (146, 'Andres', 'Rojas', 'andres.rojas', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', null, null, null, null, null, 1, NULL, null),
+    (147, 'Daniel', 'Lenguaza', 'daniel.lenguaza', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', null, null, null, null, null, 1, NULL, null),
+    (148, 'Luz', 'Angulo', 'luz.angulo', '$2a$12$RPIBll3ykfHDr1h1qqPBb.89ekEfpsDjOVV8ehqR9yTrVMVRzcEEq', null, null, null, null, null, 1, NULL, null)
 
     -- Padres (deben ser creados a traves del flujo de autenticacion de Google, por lo que no se insertan aca)
 ON DUPLICATE KEY UPDATE
@@ -1486,8 +1491,8 @@ INSERT INTO asignacion (usuario_id, materia_id, curso_base_id) VALUES
         (111, 2, 2), (111, 2, 3), (111, 2, 4), (111, 2, 5), (111, 2, 6),
         -- Ciencias 1ro B, 2do A, 2do B, 3ro A, 3ro B - Laura Rivas
 
-        (76, 3, 5), (76, 3, 6),
-        -- Economía y Gestión 3ro A, 3ro B - Rolando Lenguaza
+        (147, 3, 5), (147, 3, 6),
+        -- Economía y Gestión 3ro A, 3ro B - Daniel Lenguaza
 
         (102, 4, 1), (102, 4, 3), (102, 4, 5),
         -- Educación Física 1ro A, 2do A, 3ro A - Gerardo Ovelar
@@ -1528,8 +1533,8 @@ INSERT INTO asignacion (usuario_id, materia_id, curso_base_id) VALUES
         (33, 10, 1), (33, 10, 2), (33, 10, 3), (33, 10, 4),
         -- Inglés 1ro A, 1ro B, 2do A, 2do B - Alcira Caceres
 
-        (115, 11, 1), (115, 11, 2), (115, 11, 3), (115, 11, 4), (115, 11, 5), (115, 11, 6),
-        -- Matemática Común 1ro A, 1ro B, 2do A, 2do B, 3ro A, 3ro B - Cesar Andres Rojas
+        (146, 11, 1), (146, 11, 2), (146, 11, 3), (146, 11, 4), (146, 11, 5), (146, 11, 6),
+        -- Matemática Común 1ro A, 1ro B, 2do A, 2do B, 3ro A, 3ro B - Andres Rojas
 
         (82, 12, 1),
         -- Orientación 1ro A - Graciela Maidana
@@ -1546,8 +1551,8 @@ INSERT INTO asignacion (usuario_id, materia_id, curso_base_id) VALUES
         (73, 14, 1), (73, 14, 3),
         -- Química 1ro A, 2do A - Oscar Ibarrola
 
-        (128, 14, 2), (128, 14, 4),
-        -- Química 1ro B, 2do B - Maria Valiente (Angulo)
+        (148, 14, 2), (148, 14, 4),
+        -- Química 1ro B, 2do B - Luz Angulo
 
         (58, 15, 3), (58, 15, 4),
         -- Administración Financiera 2do A, 2do B - Lourdes Galeano
@@ -1582,8 +1587,8 @@ INSERT INTO asignacion (usuario_id, materia_id, curso_base_id) VALUES
         (66, 47, 1), (66, 47, 2),
         -- Laboratorio Web 1ro A, 1ro B - Federico Gonzalez
 
-        (115, 48, 1), (115, 48, 2), (115, 48, 3), (115, 48, 4), (115, 48, 5), (115, 48, 6),
-        -- Matemática Aplicada 1ro A, 1ro B, 2do A, 2do B, 3ro A, 3ro B - Cesar Andres Rojas
+        (146, 48, 1), (146, 48, 2), (146, 48, 3), (146, 48, 4), (146, 48, 5), (146, 48, 6),
+        -- Matemática Aplicada 1ro A, 1ro B, 2do A, 2do B, 3ro A, 3ro B - Andres Rojas
 
         (17, 49, 2),
         -- Plan de Lectura 1ro B - Susana Alvarenga
@@ -2025,7 +2030,7 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     -- ============================================================
     ('oscar.ibarrola', 14, 1, 'A', 1, 1, 2),       -- Lunes: Química
     ('mirian.montania', 6, 1, 'A', 1, 3, 2),       -- Lunes: Ética
-    ('cesar.rojas', 11, 1, 'A', 1, 5, 4),         -- Lunes: Mate_Común
+    ('andres.rojas', 11, 1, 'A', 1, 5, 4),         -- Lunes: Mate_Común
     ('federico.gonzalez', 47, 1, 'A', 2, 1, 4),    -- Martes: Laboratorio Web
     ('mirian.montania', 9, 1, 'A', 2, 5, 2),       -- Martes: Historia
     ('zully.nunez', 8, 1, 'A', 2, 7, 2),           -- Martes: Guaraní
@@ -2040,7 +2045,7 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     ('cristian.delgado', 44, 1, 'A', 5, 5, 4),     -- Viernes: Laboratorio Linux
     ('gerardo.ovelar', 4, 1, 'A', 1, 9, 2),        -- Lunes tarde: E. Física
     ('alcira.caceres', 10, 1, 'A', 2, 9, 2),       -- Martes tarde: Inglés
-    ('cesar.rojas', 48, 1, 'A', 3, 9, 2),         -- Miércoles tarde: Mate_Aplicada
+    ('andres.rojas', 48, 1, 'A', 3, 9, 2),         -- Miércoles tarde: Mate_Aplicada
     ('graciela.maidana', 12, 1, 'A', 3, 11, 2),    -- Miércoles tarde: Orientación
 
     -- ============================================================
@@ -2057,10 +2062,10 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     ('zully.nunez', 8, 2, 'A', 1, 5, 2),
     ('federico.gonzalez', 46, 2, 'A', 1, 7, 2),
     ('cristian.delgado', 53, 2, 'A', 2, 5, 2),
-    ('cesar.rojas', 11, 2, 'A', 2, 7, 4),
+    ('andres.rojas', 11, 2, 'A', 2, 7, 4),
     ('oscar.ibarrola', 14, 2, 'A', 3, 5, 4),
     ('federico.gonzalez', 45, 2, 'A', 4, 5, 4),
-    ('cesar.rojas', 48, 2, 'A', 5, 5, 2),
+    ('andres.rojas', 48, 2, 'A', 5, 5, 2),
     ('mirian.montania', 5, 2, 'A', 1, 9, 2),
     ('zully.nunez', 8, 2, 'A', 1, 11, 2),
     -- REVISAR CON LA FUENTE ORIGINAL: en el PDF, Martes 13:00-14:10 (horas 9-10)
@@ -2076,7 +2081,7 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     -- ============================================================
     -- SECCIÓN A — 3er año  (verificado contra el PDF, sin cambios)
     -- ============================================================
-    ('cesar.rojas', 11, 3, 'A', 1, 1, 4),
+    ('andres.rojas', 11, 3, 'A', 1, 1, 4),
     ('ruth.roman', 15, 3, 'A', 2, 1, 2),
     ('mirian.montania', 9, 3, 'A', 2, 3, 2),
     ('federico.gonzalez', 42, 3, 'A', 3, 1, 4),
@@ -2089,9 +2094,9 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     ('irma.cardozo', 13, 3, 'A', 4, 5, 4),
     ('laura.rivas', 2, 3, 'A', 5, 5, 2),
     ('claudia.burgos', 7, 3, 'A', 5, 7, 2),
-    ('rolando.lenguaza', 3, 3, 'A', 1, 9, 4),
+    ('daniel.lenguaza', 3, 3, 'A', 1, 9, 4),
     ('susana.alvarenga', 16, 3, 'A', 2, 9, 2),
-    ('cesar.rojas', 48, 3, 'A', 2, 11, 2),
+    ('andres.rojas', 48, 3, 'A', 2, 11, 2),
     ('cristian.delgado', 51, 3, 'A', 3, 9, 4),
     ('ruth.estigarribia', 12, 3, 'A', 4, 9, 2),
     ('gerardo.ovelar', 4, 3, 'A', 5, 9, 2),
@@ -2101,8 +2106,8 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     -- ============================================================
     ('federico.gonzalez', 47, 1, 'B', 1, 1, 4),
     ('emilce.jara', 1, 1, 'B', 1, 5, 2),
-    ('maria.valiente', 14, 1, 'B', 1, 7, 2),           -- Química
-    ('cesar.rojas', 11, 1, 'B', 1, 9, 4),         -- Mate_Común
+    ('luz.angulo', 14, 1, 'B', 1, 7, 2),           -- Química
+    ('andres.rojas', 11, 1, 'B', 1, 9, 4),         -- Mate_Común
     ('graciela.lopez', 41, 1, 'B', 2, 1, 4),
     ('susana.alvarenga', 16, 1, 'B', 2, 5, 2),
     ('mirian.montania', 6, 1, 'B', 2, 7, 2),
@@ -2118,7 +2123,7 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     ('laura.rivas', 2, 1, 'B', 4, 11, 2),
     ('cristian.delgado', 44, 1, 'B', 5, 1, 4),
     ('romy.aguilera', 8, 1, 'B', 5, 5, 2),
-    ('cesar.rojas', 48, 1, 'B', 5, 7, 2),
+    ('andres.rojas', 48, 1, 'B', 5, 7, 2),
 
     -- ============================================================
     -- SECCIÓN B — 2do año  (la más desordenada del seed anterior)
@@ -2127,7 +2132,7 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     ('federico.gonzalez', 46, 2, 'B', 1, 5, 4),    -- Laboratorio SQL
     ('zully.nunez', 46, 2, 'B', 1, 9, 2),
     ('laura.rivas', 2, 2, 'B', 1, 11, 2),
-    ('cesar.rojas', 48, 2, 'B', 2, 1, 2),         -- Mate_Aplicada
+    ('andres.rojas', 48, 2, 'B', 2, 1, 2),         -- Mate_Aplicada
     ('abner.alcaraz', 9, 2, 'B', 2, 3, 2),         -- Historia
     ('zully.nunez', 8, 2, 'B', 2, 5, 2),           -- Guaraní
     ('maria.mequer', 4, 2, 'B', 2, 7, 2),           -- E. Física
@@ -2138,21 +2143,21 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     ('susana.alvarenga', 16, 2, 'B', 3, 7, 2),     -- Literatura
     ('federico.gonzalez', 45, 2, 'B', 3, 9, 4),
     ('lourdes.galeano', 15, 2, 'B', 4, 1, 2),
-    ('maria.valiente', 14, 2, 'B', 4, 3, 2),           -- Química bloque 1
+    ('luz.angulo', 14, 2, 'B', 4, 3, 2),           -- Química bloque 1
     ('graciela.lopez', 41, 2, 'B', 4, 5, 4),       -- Algorítmica
     ('alcira.caceres', 10, 2, 'B', 4, 9, 2),
-    ('maria.valiente', 14, 2, 'B', 4, 11, 2),          -- Química bloque 2 (este ya estaba bien)
-    ('cesar.rojas', 11, 2, 'B', 5, 1, 4),         -- Mate_Común
+    ('luz.angulo', 14, 2, 'B', 4, 11, 2),          -- Química bloque 2 (este ya estaba bien)
+    ('andres.rojas', 11, 2, 'B', 5, 1, 4),         -- Mate_Común
     ('susana.alvarenga', 16, 2, 'B', 5, 5, 3),     -- Literatura, 3 períodos
 
     -- ============================================================
     -- SECCIÓN B — 3er año
     -- ============================================================
-    ('rolando.lenguaza', 3, 3, 'B', 1, 1, 4),       -- Economía y Gestión
+    ('daniel.lenguaza', 3, 3, 'B', 1, 1, 4),       -- Economía y Gestión
     ('cristian.delgado', 51, 3, 'B', 1, 5, 4),     -- Seguridad en Riesgos
     ('graciela.maidana', 13, 3, 'B', 1, 9, 2),     -- Psicología bloque 1
     ('susana.alvarenga', 16, 3, 'B', 2, 1, 4),     -- Literatura
-    ('cesar.rojas', 48, 3, 'B', 2, 5, 2),         -- Mate_Aplicada
+    ('andres.rojas', 48, 3, 'B', 2, 5, 2),         -- Mate_Aplicada
     ('claudia.burgos', 7, 3, 'B', 2, 7, 2),        -- Física Aplicada
     ('federico.gonzalez', 43, 3, 'B', 2, 9, 4),    -- Laboratorio Java
     ('cristian.delgado', 50, 3, 'B', 3, 1, 4),
@@ -2161,7 +2166,7 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     ('gustavo.ramirez', 9, 3, 'B', 3, 11, 2),      -- Historia
     ('oscar.villasanti', 4, 3, 'B', 3, 13, 2),
     ('ruth.roman', 15, 3, 'B', 4, 1, 4),
-    ('cesar.rojas', 11, 3, 'B', 4, 5, 4),         -- Mate_Común
+    ('andres.rojas', 11, 3, 'B', 4, 5, 4),         -- Mate_Común
     ('federico.gonzalez', 42, 3, 'B', 4, 9, 4),    -- Laboratorio Android
     ('laura.rivas', 2, 3, 'B', 5, 1, 2),
     ('graciela.maidana', 13, 3, 'B', 5, 3, 2),     -- Psicología bloque 2
