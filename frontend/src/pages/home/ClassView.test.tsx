@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ClassView } from './HomePage';
 import { ToastProvider } from '../../context/ToastContext';
+import { ApiError } from '../../api/client';
 import { getAsignacionesDisponibles } from '../../api/planCurricular';
 import { createClass, getClaseActual, listarCodigosConducta, type HomeResponse } from '../../api/home';
 import { classEndTime } from './classFormUtils';
@@ -22,7 +23,7 @@ beforeEach(() => {
 });
 
 describe('Inicio de clase', () => {
-  it('espera la consulta antes de avisar y retira la notificación automáticamente', async () => {
+  it('espera la consulta antes de avisar y mantiene el aviso mientras el curso siga sin asignaciones', async () => {
     vi.useFakeTimers();
     try {
       let resolve!: (items: []) => void;
@@ -33,7 +34,8 @@ describe('Inicio de clase', () => {
       await act(async () => { resolve([]); });
       expect(screen.getByText('No hay asignaciones disponibles para este curso.')).toBeInTheDocument();
       await act(async () => { vi.advanceTimersByTime(4300); });
-      expect(screen.queryByText('No hay asignaciones disponibles para este curso.')).not.toBeInTheDocument();
+      expect(screen.getByText('No hay asignaciones disponibles para este curso.')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Guardar inicio de clase' })).toBeDisabled();
     } finally { vi.useRealTimers(); }
   });
   it('distingue un fallo de consulta y permite reintentar', async () => {
@@ -82,5 +84,59 @@ describe('Inicio de clase', () => {
     expect(classEndTime('11:25', 1)).toBe('12:00');
     expect(classEndTime('17:25', 1)).toBe('18:00');
     expect(classEndTime('11:25', 2)).toBe('');
+  });
+  it('pide justificar el atraso, conserva la asistencia marcada y reenvía con la justificación', async () => {
+    vi.mocked(createClass)
+      .mockRejectedValueOnce(new ApiError(400, 'Se requiere justificar el atraso para este tema.'))
+      .mockResolvedValueOnce(undefined);
+    show();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Guardar inicio de clase' })).toBeEnabled());
+    fireEvent.change(screen.getByLabelText('Contenido específico desarrollado'), { target: { value: 'Tema atrasado' } });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Ausente' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar inicio de clase' }));
+
+    const textarea = await screen.findByLabelText('Justificación del atraso');
+    expect(textarea).toHaveFocus();
+    expect(screen.getByText('El tema está atrasado según el plan curricular. Contá el motivo para poder registrar la clase.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Contenido específico desarrollado')).toHaveValue('Tema atrasado');
+    expect(screen.getByRole('checkbox', { name: 'Ausente' })).toBeChecked();
+
+    fireEvent.change(textarea, { target: { value: 'Paro la semana pasada' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar inicio de clase' }));
+
+    await waitFor(() => expect(createClass).toHaveBeenCalledTimes(2));
+    expect(vi.mocked(createClass).mock.calls[1][0]).toMatchObject({ tema: 'Tema atrasado', justificacionAtraso: 'Paro la semana pasada' });
+    await waitFor(() => expect(screen.queryByLabelText('Justificación del atraso')).not.toBeInTheDocument());
+  });
+  it('no muestra la justificación de atraso ante otro 400 del mismo endpoint', async () => {
+    vi.mocked(createClass).mockRejectedValueOnce(new ApiError(400, 'No hay alumnos válidos para crear la planilla de rasgos.'));
+    show();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Guardar inicio de clase' })).toBeEnabled());
+    fireEvent.change(screen.getByLabelText('Contenido específico desarrollado'), { target: { value: 'Tema' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar inicio de clase' }));
+    await screen.findByText('No hay alumnos válidos para crear la planilla de rasgos.');
+    expect(screen.queryByLabelText('Justificación del atraso')).not.toBeInTheDocument();
+  });
+  it('avisa si el catálogo de rasgos no carga y permite reintentar sin bloquear el formulario', async () => {
+    vi.mocked(listarCodigosConducta).mockReset();
+    vi.mocked(listarCodigosConducta)
+      .mockRejectedValueOnce(new ApiError(500, 'Error de catálogo'))
+      .mockResolvedValueOnce([{ id: 1, codigo: 'N1', descripcion: 'Conducta', activo: true }]);
+    show();
+    await screen.findByText('No se pudieron cargar los rasgos conductuales. Error de catálogo');
+    expect(screen.getByRole('button', { name: 'Guardar inicio de clase' })).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+    await waitFor(() => expect(screen.queryByText('No se pudieron cargar los rasgos conductuales. Error de catálogo')).not.toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'Rasgos conductuales de Ana Pérez' })).toBeInTheDocument();
+  });
+  it('distingue el catálogo vacío del catálogo que no cargó', async () => {
+    vi.mocked(listarCodigosConducta).mockReset();
+    vi.mocked(listarCodigosConducta).mockResolvedValue([]);
+    show();
+    await waitFor(() => expect(screen.getByLabelText('Disciplina')).toHaveValue('Redes II'));
+    expect(screen.getByText('Sin códigos cargados. Los carga el evaluador o el administrador.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Rasgos conductuales de Ana Pérez' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '¿Qué significa cada código?' }));
+    expect(screen.getAllByText('Sin códigos cargados. Los carga el evaluador o el administrador.').length).toBe(2);
   });
 });
