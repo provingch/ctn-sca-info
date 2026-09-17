@@ -6,6 +6,7 @@ import ctn.informatica.sca.dao.ConfiguracionSistemaDao;
 import ctn.informatica.sca.dao.CursoBaseDao;
 import ctn.informatica.sca.dao.CursoDao;
 import ctn.informatica.sca.dao.EspecialidadDao;
+import ctn.informatica.sca.dao.HoraCatedraDao;
 import ctn.informatica.sca.dao.HorarioSlotDao;
 import ctn.informatica.sca.dao.IncumplimientoRevisionDao;
 import ctn.informatica.sca.dao.InstrumentoDao;
@@ -38,6 +39,7 @@ import ctn.informatica.sca.model.Alumno;
 import ctn.informatica.sca.model.Asignacion;
 import ctn.informatica.sca.model.Curso;
 import ctn.informatica.sca.model.Especialidad;
+import ctn.informatica.sca.model.HoraCatedra;
 import ctn.informatica.sca.model.HorarioSlot;
 import ctn.informatica.sca.model.Instrumento;
 import ctn.informatica.sca.model.Planilla;
@@ -106,12 +108,13 @@ public class HomeController {
     private final NotificacionDao notificacionDao;
     private final QuejaDao quejaDao;
     private final HorarioSlotDao horarioSlotDao;
+    private final HoraCatedraDao horaCatedraDao;
 
     public HomeController() {
-        this(new CursoDao(), new CursoBaseDao(), new AsignacionDao(), new ProfesorDao(), new PlanillaDao(), new MateriaDao(), new AlumnoDao(), new RasgoPlanillaDao(), new InstrumentoDao(), new UserDao(), new PlanCurricularDao(), new TemaVerificacionService(), new ActivityLogService(), new ConfiguracionSistemaDao(), new IncumplimientoRevisionDao(), new NotificacionDao(), new QuejaDao(), new HorarioSlotDao());
+        this(new CursoDao(), new CursoBaseDao(), new AsignacionDao(), new ProfesorDao(), new PlanillaDao(), new MateriaDao(), new AlumnoDao(), new RasgoPlanillaDao(), new InstrumentoDao(), new UserDao(), new PlanCurricularDao(), new TemaVerificacionService(), new ActivityLogService(), new ConfiguracionSistemaDao(), new IncumplimientoRevisionDao(), new NotificacionDao(), new QuejaDao(), new HorarioSlotDao(), new HoraCatedraDao());
     }
 
-    /** Compat constructor for tests written before HorarioSlotDao was injected. */
+    /** Compat constructor for tests written before HorarioSlotDao/HoraCatedraDao were injected. */
     public HomeController(
             CursoDao cursoDao,
             CursoBaseDao cursoBaseDao,
@@ -130,7 +133,7 @@ public class HomeController {
             IncumplimientoRevisionDao incumplimientoRevisionDao,
             NotificacionDao notificacionDao,
             QuejaDao quejaDao) {
-        this(cursoDao, cursoBaseDao, asignacionDao, profesorDao, planillaDao, materiaDao, alumnoDao, rasgoPlanillaDao, instrumentoDao, userDao, planCurricularDao, temaVerificacionService, activityLogService, configuracionSistemaDao, incumplimientoRevisionDao, notificacionDao, quejaDao, null);
+        this(cursoDao, cursoBaseDao, asignacionDao, profesorDao, planillaDao, materiaDao, alumnoDao, rasgoPlanillaDao, instrumentoDao, userDao, planCurricularDao, temaVerificacionService, activityLogService, configuracionSistemaDao, incumplimientoRevisionDao, notificacionDao, quejaDao, null, null);
     }
 
     @Autowired
@@ -152,7 +155,8 @@ public class HomeController {
             IncumplimientoRevisionDao incumplimientoRevisionDao,
             NotificacionDao notificacionDao,
             QuejaDao quejaDao,
-            HorarioSlotDao horarioSlotDao) {
+            HorarioSlotDao horarioSlotDao,
+            HoraCatedraDao horaCatedraDao) {
         this.cursoDao = cursoDao;
         this.cursoBaseDao = cursoBaseDao;
         this.asignacionDao = asignacionDao;
@@ -171,6 +175,7 @@ public class HomeController {
         this.notificacionDao = notificacionDao;
         this.quejaDao = quejaDao;
         this.horarioSlotDao = horarioSlotDao;
+        this.horaCatedraDao = horaCatedraDao;
     }
 
     @GetMapping
@@ -593,17 +598,37 @@ public class HomeController {
             }
         }
 
-        String temaPersistido = composeTemaConContexto(request.instrumentoId() == null ? 0 : request.instrumentoId(), request.turno(), tema);
+        Integer horasCatedra = request.horasCatedra();
+        if (horasCatedra != null && (horasCatedra < 1 || horasCatedra > 8)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Las horas cátedra deben estar entre 1 y 8.");
+        }
+        String modalidad = safeTrim(request.modalidad());
+        if (!modalidad.isEmpty() && !"Presencial".equals(modalidad) && !"Virtual".equals(modalidad)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La modalidad debe ser Presencial o Virtual.");
+        }
+        String observaciones = safeTrim(request.observaciones());
+        if (observaciones.length() > OBSERVACIONES_MAX_LEN) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Las observaciones no pueden superar los " + OBSERVACIONES_MAX_LEN + " caracteres.");
+        }
+        Integer instrumentoId = request.instrumentoId() == null || request.instrumentoId() <= 0 ? null : request.instrumentoId();
+        HorarioClase horario = resolverHorarioClase(request.horaInicio(), horasCatedra);
+
         try {
             int planillaId = rasgoPlanillaDao.crearPlanillaRasgo(
                     cursoId,
                     user.getId(),
-                    temaPersistido,
+                    tema,
                     justificacionPersistida,
                     elegibles,
                     ausentes,
                     request.codigosPorAlumno(),
-                    request.asignacionId());
+                    request.asignacionId(),
+                    horario == null ? null : horario.horaInicio(),
+                    horasCatedra,
+                    horario == null ? null : horario.horaFin(),
+                    modalidad.isEmpty() ? null : modalidad,
+                    observaciones.isEmpty() ? null : observaciones,
+                    instrumentoId);
             String cursoLabel = "curso " + cursoId;
             try {
                 Curso curso = cursoDao.findById(cursoId);
@@ -987,27 +1012,77 @@ public class HomeController {
         return !nombre.isEmpty() && !apellido.isEmpty() && nombre.length() >= 2 && apellido.length() >= 2;
     }
 
-    private String composeTemaConContexto(int instrumentoId, String turno, String temaBase) {
-        StringBuilder contexto = new StringBuilder();
-        if (turno != null && !turno.isBlank()) {
-            contexto.append("[Turno: ").append(turno).append("] ");
-        }
-        if (instrumentoId <= 0) {
-            return contexto.append(temaBase).toString();
-        }
-        for (Instrumento instrumento : loadInstrumentos()) {
-            if (instrumento.getId() == instrumentoId) {
-                return contexto.append("[").append(instrumento.getNombre()).append("] ").append(temaBase).toString();
-            }
-        }
-        return contexto.append(temaBase).toString();
+    private static final int OBSERVACIONES_MAX_LEN = 2000;
+
+    private record HorarioClase(LocalTime horaInicio, LocalTime horaFin) {
     }
 
-    private List<Instrumento> loadInstrumentos() {
+    /**
+     * Resuelve y valida horaInicio/horasCatedra contra el catálogo real de hora_catedra
+     * (nunca contra el classEndTime que calcula el cliente): hora_fin sale del hora_fin
+     * real del último bloque cubierto, y el tramo tiene que caer dentro de un mismo
+     * turno (misma etiqueta 'M'/'T' en todos los bloques, numeración consecutiva).
+     * Ambos campos son opcionales: si no viene horaInicio, no se registra horario.
+     */
+    private HorarioClase resolverHorarioClase(String horaInicioTexto, Integer horasCatedra) {
+        String horaInicioTrim = safeTrim(horaInicioTexto);
+        if (horaInicioTrim.isEmpty()) {
+            if (horasCatedra != null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El horario de inicio es requerido junto con las horas cátedra.");
+            }
+            return null;
+        }
+        if (horasCatedra == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Las horas cátedra son requeridas junto con el horario de inicio.");
+        }
+
+        LocalTime horaInicio = parseHora(horaInicioTrim);
+
+        List<HoraCatedra> catalogo;
         try {
-            return instrumentoDao.findAll();
+            catalogo = horaCatedraDao.findAll();
         } catch (SQLException ex) {
-            return Collections.emptyList();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo validar el horario de la clase", ex);
+        }
+
+        int startIndex = -1;
+        for (int i = 0; i < catalogo.size(); i++) {
+            if (horaInicio.equals(catalogo.get(i).getHoraInicio())) {
+                startIndex = i;
+                break;
+            }
+        }
+        if (startIndex < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El horario de inicio no corresponde a ninguna hora cátedra del catálogo.");
+        }
+
+        int endIndex = startIndex + horasCatedra - 1;
+        if (endIndex >= catalogo.size()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Las horas cátedra exceden el horario disponible.");
+        }
+
+        HoraCatedra bloqueInicial = catalogo.get(startIndex);
+        for (int i = startIndex; i <= endIndex; i++) {
+            HoraCatedra bloque = catalogo.get(i);
+            boolean mismoTurno = java.util.Objects.equals(bloque.getEtiqueta(), bloqueInicial.getEtiqueta());
+            boolean numeracionConsecutiva = bloque.getNumero() == bloqueInicial.getNumero() + (i - startIndex);
+            if (!mismoTurno || !numeracionConsecutiva) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Las horas cátedra deben corresponder a bloques consecutivos del mismo turno.");
+            }
+        }
+
+        return new HorarioClase(horaInicio, catalogo.get(endIndex).getHoraFin());
+    }
+
+    private LocalTime parseHora(String value) {
+        String[] partes = value.split(":");
+        if (partes.length != 2) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Formato de horario inválido.");
+        }
+        try {
+            return LocalTime.of(Integer.parseInt(partes[0].trim()), Integer.parseInt(partes[1].trim()));
+        } catch (NumberFormatException | java.time.DateTimeException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Formato de horario inválido.");
         }
     }
 

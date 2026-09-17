@@ -939,7 +939,7 @@ export function ClassView({ data, reload }: { data: HomeResponse; reload: () => 
     submitting.current = true; setSaving(true);
     try {
       const asignacionUsada = selectedAsignacionId ?? asignacionActual?.id ?? null;
-      await createClass({ cursoId: data.selCurso.id, asignacionId: asignacionUsada, etapa: data.selEtapa, instrumentoId, turno: 'turno', tema, alumnosAusentes: ausentes, codigosPorAlumno });
+      await createClass({ cursoId: data.selCurso.id, asignacionId: asignacionUsada, etapa: data.selEtapa, instrumentoId, horaInicio: horario, horasCatedra: cantidadHoras ? Number(cantidadHoras) : null, modalidad, observaciones, tema, alumnosAusentes: ausentes, codigosPorAlumno });
       if (asignacionUsada) recordMateriaReciente(asignacionUsada);
       clearForm();
       setStatus('Clase registrada.');
@@ -987,7 +987,6 @@ export function ClassView({ data, reload }: { data: HomeResponse; reload: () => 
       <form className="panel class-register-form" onSubmit={create} aria-busy={saving} style={{ display: 'grid', gap: 12, gridColumn: '1 / -1' }}>
         <input type="hidden" name="action" value="create-rasgo-planilla" />
         <input type="hidden" name="cursoId" value={data.selCurso ? String(data.selCurso.id) : ''} id="formCursoId" />
-        <input type="hidden" name="turno" value="turno" id="formTurno" />
         <input type="hidden" name="etapa" value={String(data.selEtapa)} />
 
         <div className="class-card">

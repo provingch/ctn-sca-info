@@ -70,7 +70,7 @@ export interface HomeResponse {
   [key: string]: unknown;
 }
 
-export function createClass(payload: { cursoId: number; asignacionId?: number | null; etapa: number; instrumentoId: number; turno: string; tema: string; alumnosAusentes: number[]; codigosPorAlumno: Record<number, string[]> }) {
+export function createClass(payload: { cursoId: number; asignacionId?: number | null; etapa: number; instrumentoId: number; horaInicio: string; horasCatedra: number | null; modalidad: string; observaciones: string; tema: string; alumnosAusentes: number[]; codigosPorAlumno: Record<number, string[]> }) {
   return apiRequest<void>('/api/home/create-rasgo-planilla', { method: 'POST', body: payload });
 }
 
