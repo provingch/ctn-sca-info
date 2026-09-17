@@ -124,7 +124,7 @@ public class AdminController {
                 return Integer.compare(a.id(), b.id());
             });
             List<Asignacion> asignacionesDb = actingSpecialtyId == null ? new AsignacionDao().findAll() : new AsignacionDao().findByEspecialidad(actingSpecialtyId);
-            List<AssignmentItem> asignaciones = asignacionesDb.stream().map(a -> new AssignmentItem(a.getId(), a.getProfesorId(), a.getMateriaId(), a.getCursoId(), a.getProfesorNombre(), a.getMateriaNombre(), a.getCursoDescripcion())).toList();
+            List<AssignmentItem> asignaciones = asignacionesDb.stream().map(a -> new AssignmentItem(a.getId(), a.getProfesorId(), a.getMateriaId(), a.getCursoBaseId(), a.getProfesorNombre(), a.getMateriaNombre(), a.getCursoDescripcion())).toList();
             CatalogAlumnos catalogAlumnos = loadCatalogAlumnos(actingSpecialtyId);
             List<StudentItem> alumnos = catalogAlumnos.alumnos();
             List<CursoBase> cursosDb = actingSpecialtyId == null ? new CursoBaseDao().findAll() : new CursoBaseDao().findAllByEspecialidadId(actingSpecialtyId);
@@ -600,7 +600,7 @@ public class AdminController {
             Integer actingSpecialtyId = getSpecialtyAdminIdForUser(ApiAuth.requireUserId(auth));
             Asignacion existente = new AsignacionDao().findById(id);
             if (existente == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Asignación no encontrada");
-            if (actingSpecialtyId != null && !canAccessAsignacion(actingSpecialtyId, existente.getCursoId())) {
+            if (actingSpecialtyId != null && !canAccessAsignacion(actingSpecialtyId, existente.getCursoBaseId())) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes eliminar asignaciones fuera de tu especialidad");
             }
             if (!new AsignacionDao().eliminar(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Asignación no encontrada");
@@ -714,7 +714,7 @@ public class AdminController {
             AsignacionDao dao = new AsignacionDao();
             Asignacion existente = dao.findById(id);
             if (existente == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Asignación no encontrada");
-            if (actingSpecialtyId != null && !canAccessAsignacion(actingSpecialtyId, existente.getCursoId())) {
+            if (actingSpecialtyId != null && !canAccessAsignacion(actingSpecialtyId, existente.getCursoBaseId())) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes editar asignaciones fuera de tu especialidad");
             }
             if (actingSpecialtyId != null && !canAccessAsignacion(actingSpecialtyId, input.cursoId())) {

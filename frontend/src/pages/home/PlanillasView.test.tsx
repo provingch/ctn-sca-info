@@ -27,7 +27,7 @@ function planilla(overrides: Partial<PlanillaResumenDto>): PlanillaResumenDto {
 function asignacion(overrides: Partial<AsignacionCompleta>): AsignacionCompleta {
   return {
     id: 1, materiaId: 1, materiaNombre: 'Programación', especialidadId: 21, especialidadNombre: 'Informática',
-    cursoId: 1, cursoRealId: 1, cursoOrdinal: '4º', seccion: 'A', estadoPlan: 'PENDIENTE',
+    cursoBaseId: 1, cursoRealId: 1, cursoOrdinal: '4º', seccion: 'A', estadoPlan: 'PENDIENTE',
     ...overrides,
   };
 }

@@ -899,7 +899,7 @@ public class HomeController {
             Integer cursoBaseId = especialidadId <= 0
                     ? null
                     : cursoBaseDao.findId(especialidadId, curso.getNivel(), curso.getSeccion());
-            if (cursoBaseId == null || asignacion.getCursoId() != cursoBaseId) {
+            if (cursoBaseId == null || asignacion.getCursoBaseId() != cursoBaseId) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "La asignación no corresponde al curso indicado");
             }
         } catch (ResponseStatusException ex) {

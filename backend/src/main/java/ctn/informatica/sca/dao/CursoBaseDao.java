@@ -1,6 +1,7 @@
 package ctn.informatica.sca.dao;
 
 import ctn.informatica.sca.clases.conexion;
+import ctn.informatica.sca.model.Curso;
 import ctn.informatica.sca.model.CursoBase;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -81,6 +82,25 @@ public class CursoBaseDao extends conexion {
                 return rs.next() ? rs.getInt("id") : null;
             }
         }
+    }
+
+    /**
+     * Traduce un id de `curso` (año-específico, ligado a una promoción concreta)
+     * al `curso_base` (especialidad + nivel + sección, sin año) que le
+     * corresponde. Usa el mismo cálculo de nivel vigente que {@link Curso#getNivel()}.
+     * Null si el curso no existe o no hay curso_base para esa combinación.
+     */
+    public Integer findIdForCursoReal(int cursoRealId) throws SQLException {
+        CursoDao cursoDao = new CursoDao();
+        Curso curso = cursoDao.findById(cursoRealId);
+        if (curso == null) {
+            return null;
+        }
+        int especialidadId = cursoDao.findEspecialidadId(cursoRealId);
+        if (especialidadId <= 0) {
+            return null;
+        }
+        return findId(especialidadId, curso.getNivel(), curso.getSeccion());
     }
 
     public boolean exists(int especialidadId, int nivel, String seccion) throws SQLException {

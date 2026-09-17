@@ -19,7 +19,7 @@ import ctn.informatica.sca.model.CursoBase;
 public class AsignacionDao extends conexion {
 
     public List<Asignacion> findAll() throws SQLException {
-        String sql = "SELECT a.id, a.usuario_id AS profesor_id, a.materia_id, a.curso_base_id AS curso_id, "
+        String sql = "SELECT a.id, a.usuario_id AS profesor_id, a.materia_id, a.curso_base_id, "
                 + "u.nombre AS profesor_nombre, u.apellido AS profesor_apellido, "
                 + "m.nombre AS materia_nombre, e.id AS especialidad_id, e.nombre AS especialidad, cb.nivel, cb.seccion "
                 + "FROM asignacion a "
@@ -35,7 +35,7 @@ public class AsignacionDao extends conexion {
                 a.setId(rs.getInt("id"));
                 a.setProfesorId(rs.getInt("profesor_id"));
                 a.setMateriaId(rs.getInt("materia_id"));
-                a.setCursoId(rs.getInt("curso_id"));
+                a.setCursoBaseId(rs.getInt("curso_base_id"));
                 String profName = rs.getString("profesor_nombre");
                 String profLast = rs.getString("profesor_apellido");
                 a.setProfesorNombre((profLast == null ? "" : profLast) + (profName == null ? "" : (profName.isBlank() ? "" : (" " + profName))));
@@ -53,7 +53,7 @@ public class AsignacionDao extends conexion {
     }
 
         public List<Asignacion> findByEspecialidad(int especialidadId) throws SQLException {
-            String sql = "SELECT a.id, a.usuario_id AS profesor_id, a.materia_id, a.curso_base_id AS curso_id, "
+            String sql = "SELECT a.id, a.usuario_id AS profesor_id, a.materia_id, a.curso_base_id, "
                     + "u.nombre AS profesor_nombre, u.apellido AS profesor_apellido, "
                     + "m.nombre AS materia_nombre, e.id AS especialidad_id, e.nombre AS especialidad, cb.nivel, cb.seccion "
                     + "FROM asignacion a "
@@ -72,7 +72,7 @@ public class AsignacionDao extends conexion {
                         a.setId(rs.getInt("id"));
                         a.setProfesorId(rs.getInt("profesor_id"));
                         a.setMateriaId(rs.getInt("materia_id"));
-                        a.setCursoId(rs.getInt("curso_id"));
+                        a.setCursoBaseId(rs.getInt("curso_base_id"));
                         String profName = rs.getString("profesor_nombre");
                         String profLast = rs.getString("profesor_apellido");
                         a.setProfesorNombre((profLast == null ? "" : profLast) + (profName == null ? "" : (profName.isBlank() ? "" : (" " + profName))));
@@ -91,7 +91,7 @@ public class AsignacionDao extends conexion {
         }
 
     public Asignacion findById(int id) throws SQLException {
-        String sql = "SELECT a.id, a.usuario_id AS profesor_id, a.materia_id, a.curso_base_id AS curso_id, "
+        String sql = "SELECT a.id, a.usuario_id AS profesor_id, a.materia_id, a.curso_base_id, "
                 + "u.nombre AS profesor_nombre, u.apellido AS profesor_apellido, "
                 + "m.nombre AS materia_nombre, e.id AS especialidad_id, e.nombre AS especialidad, cb.nivel, cb.seccion "
                 + "FROM asignacion a "
@@ -110,7 +110,7 @@ public class AsignacionDao extends conexion {
                 a.setId(rs.getInt("id"));
                 a.setProfesorId(rs.getInt("profesor_id"));
                 a.setMateriaId(rs.getInt("materia_id"));
-                a.setCursoId(rs.getInt("curso_id"));
+                a.setCursoBaseId(rs.getInt("curso_base_id"));
                 String profName = rs.getString("profesor_nombre");
                 String profLast = rs.getString("profesor_apellido");
                 a.setProfesorNombre((profLast == null ? "" : profLast) + (profName == null ? "" : (profName.isBlank() ? "" : (" " + profName))));
@@ -154,7 +154,7 @@ public class AsignacionDao extends conexion {
         // "promoción vigente" que Curso.getCurso() (promocion = period - nivel + 3), y
         // el UNIQUE(especialidad_id, promocion, seccion) de curso garantiza a lo sumo una
         // fila. Sin match (p.ej. curso_base sin curso creado todavía) queda NULL.
-        String sql = "SELECT a.id, a.usuario_id AS profesor_id, a.materia_id, a.curso_base_id AS curso_id, cr.id AS curso_real_id, "
+        String sql = "SELECT a.id, a.usuario_id AS profesor_id, a.materia_id, a.curso_base_id, cr.id AS curso_real_id, "
                 + "m.nombre AS materia_nombre, e.id AS especialidad_id, e.nombre AS especialidad, c.nivel AS nivel, c.seccion, "
                 + "COALESCE(p.estado, 'NO_CARGADO') AS plan_estado "
                 + "FROM asignacion a "
@@ -178,7 +178,7 @@ public class AsignacionDao extends conexion {
                     a.setId(rs.getInt("id"));
                     a.setProfesorId(rs.getInt("profesor_id"));
                     a.setMateriaId(rs.getInt("materia_id"));
-                    a.setCursoId(rs.getInt("curso_id"));
+                    a.setCursoBaseId(rs.getInt("curso_base_id"));
                     a.setCursoRealId((Integer) rs.getObject("curso_real_id"));
                     a.setMateriaNombre(rs.getString("materia_nombre"));
                     String especialidad = rs.getString("especialidad");
@@ -199,7 +199,7 @@ public class AsignacionDao extends conexion {
         int currentYear = LocalDate.now().getYear();
         int currentEtapa = ctn.informatica.sca.util.AcademicPeriod.currentEtapa();
 
-        String sql = "SELECT a.id, a.usuario_id AS profesor_id, a.materia_id, a.curso_base_id AS curso_id, "
+        String sql = "SELECT a.id, a.usuario_id AS profesor_id, a.materia_id, a.curso_base_id, "
                 + "m.nombre AS materia_nombre, e.id AS especialidad_id, e.nombre AS especialidad, c.nivel AS nivel, c.seccion, "
                 + "COALESCE(p.estado, 'NO_CARGADO') AS plan_estado "
                 + "FROM asignacion a "
@@ -221,7 +221,7 @@ public class AsignacionDao extends conexion {
                     a.setId(rs.getInt("id"));
                     a.setProfesorId(rs.getInt("profesor_id"));
                     a.setMateriaId(rs.getInt("materia_id"));
-                    a.setCursoId(rs.getInt("curso_id"));
+                    a.setCursoBaseId(rs.getInt("curso_base_id"));
                     a.setMateriaNombre(rs.getString("materia_nombre"));
                     String especialidad = rs.getString("especialidad");
                     int nivel = rs.getInt("nivel");
@@ -265,7 +265,7 @@ public class AsignacionDao extends conexion {
         asignacion.setEspecialidadId(especialidadId);
         asignacion.setEspecialidad(especialidad);
         asignacion.setCursoNivel(nivel);
-        asignacion.setCursoOrdinal(new CursoBase(asignacion.getCursoId(), especialidadId, especialidad, nivel, seccion).getCursoOrdinal());
+        asignacion.setCursoOrdinal(new CursoBase(asignacion.getCursoBaseId(), especialidadId, especialidad, nivel, seccion).getCursoOrdinal());
         asignacion.setCursoSeccion(seccion);
     }
 

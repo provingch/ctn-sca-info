@@ -110,7 +110,7 @@ public class HorarioController {
             if (asignacion == null) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Asignación no encontrada");
             }
-            authorizeCourse(asignacion.getCursoId(), auth);
+            authorizeCourse(asignacion.getCursoBaseId(), auth);
             return new HorarioSlotDao().findByAsignacion(asignacionId).stream()
                     .map(this::toHorarioSlotDto)
                     .toList();
@@ -135,27 +135,27 @@ public class HorarioController {
             if (asignacion == null) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Asignación no encontrada");
             }
-            authorizeCourse(asignacion.getCursoId(), auth);
+            authorizeCourse(asignacion.getCursoBaseId(), auth);
 
             HorarioSlotDao dao = new HorarioSlotDao();
             if (dao.existeProfesorConflict(asignacion.getProfesorId(), input.diaSemana(), input.horaCatedraId())) {
                 throw conflictProfesor(dao, asignacion, input.diaSemana(), input.horaCatedraId());
             }
-            if (dao.existeCursoConflict(asignacion.getCursoId(), input.diaSemana(), input.horaCatedraId())) {
+            if (dao.existeCursoConflict(asignacion.getCursoBaseId(), input.diaSemana(), input.horaCatedraId())) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Ese curso ya tiene otra materia asignada en ese día y hora.");
             }
-            validateSalaForCourse(input.salaId(), asignacion.getCursoId());
+            validateSalaForCourse(input.salaId(), asignacion.getCursoBaseId());
             if (input.salaId() != null && dao.existeSalaConflict(input.salaId(), input.diaSemana(), input.horaCatedraId())) {
                 HorarioSlot occupying = dao.findSalaConflictDetail(input.salaId(), input.diaSemana(), input.horaCatedraId());
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Esa sala ya está ocupada en ese horario" + (occupying == null ? "." : " por " + occupying.getMateriaNombre() + " de " + occupying.getCursoDescripcion() + "."));
             }
 
-            int id = dao.crear(asignacionId, asignacion.getProfesorId(), asignacion.getCursoId(), input.diaSemana(), input.horaCatedraId(), input.salaId());
+            int id = dao.crear(asignacionId, asignacion.getProfesorId(), asignacion.getCursoBaseId(), input.diaSemana(), input.horaCatedraId(), input.salaId());
             HorarioSlot slot = new HorarioSlot();
             slot.setId(id);
             slot.setAsignacionId(asignacionId);
             slot.setUsuarioId(asignacion.getProfesorId());
-            slot.setCursoId(asignacion.getCursoId());
+            slot.setCursoId(asignacion.getCursoBaseId());
             slot.setDiaSemana(input.diaSemana());
             slot.setHoraCatedraId(input.horaCatedraId());
             slot.setSalaId(input.salaId());
@@ -357,7 +357,7 @@ public class HorarioController {
     public List<AsignacionResumenDto> asignacionesPorCurso(@RequestParam int cursoId, Authentication auth) {
         authorizeCourse(cursoId, auth);
         try {
-            return new AsignacionDao().findAll().stream().filter(a -> a.getCursoId() == cursoId)
+            return new AsignacionDao().findAll().stream().filter(a -> a.getCursoBaseId() == cursoId)
                     .map(a -> new AsignacionResumenDto(a.getId(), a.getMateriaNombre(), a.getProfesorNombre())).toList();
         } catch (Exception ex) { throw failure("No se pudieron cargar las asignaciones del curso", ex); }
     }
