@@ -230,16 +230,27 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .rasgos-conducta-empty { display: block; margin: 0 0 12px; color: var(--muted); font-size: .82rem; }
 .student-pill { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; margin-right: 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--accent-soft); color: var(--accent-deep); font-size: .75rem; font-weight: 800; }
 .attendance-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px; margin: 4px 0 16px; }
-.attendance-chip { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px 10px; border: 1px solid color-mix(in srgb, var(--success) 45%, var(--line)); border-radius: var(--radius-sm); background: color-mix(in srgb, var(--success) 12%, var(--paper)); color: var(--ink); font-size: .84rem; font-weight: 700; text-align: left; cursor: pointer; transition: background-color .15s ease, border-color .15s ease; }
-.attendance-chip:hover { background: color-mix(in srgb, var(--success) 20%, var(--paper)); }
-.attendance-chip:focus-visible { outline: none; box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent); }
-.attendance-chip.tone-danger { border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); background: color-mix(in srgb, var(--danger) 12%, var(--paper)); }
-.attendance-chip.tone-danger:hover { background: color-mix(in srgb, var(--danger) 20%, var(--paper)); }
+.attendance-chip-wrap { position: relative; display: flex; align-items: stretch; min-height: 44px; border: 1px solid color-mix(in srgb, var(--success) 45%, var(--line)); border-radius: var(--radius-sm); background: color-mix(in srgb, var(--success) 12%, var(--paper)); transition: background-color .15s ease, border-color .15s ease; }
+.attendance-chip-wrap.tone-danger { border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); background: color-mix(in srgb, var(--danger) 12%, var(--paper)); }
+.attendance-chip-wrap.rasgos-open { z-index: 30; }
+.attendance-chip { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 6px; padding: 8px 10px; border: 0; background: transparent; color: var(--ink); font-size: .84rem; font-weight: 700; text-align: left; cursor: pointer; }
+.attendance-chip:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); }
+.attendance-chip:focus-visible { outline: none; box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
 .attendance-chip-order { flex: 0 0 auto; color: var(--muted); font-weight: 800; }
 .attendance-chip-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.attendance-chip-badge { flex: 0 0 auto; padding: 2px 7px; border-radius: 999px; background: var(--paper); color: var(--ink); font-size: .68rem; font-weight: 800; }
-.rasgo-add-panel { margin-bottom: 16px; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--bg-soft); }
-.rasgo-add-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.attendance-chip-rasgos { flex: 0 0 40px; width: 40px; display: flex; align-items: center; justify-content: center; border: 0; border-left: 1px solid color-mix(in srgb, var(--ink) 14%, transparent); background: transparent; color: var(--ink); font-size: .68rem; font-weight: 800; cursor: pointer; }
+.attendance-chip-rasgos:hover:not(:disabled) { background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.attendance-chip-rasgos:focus-visible { outline: none; box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
+.attendance-chip-rasgos:disabled { cursor: not-allowed; opacity: .5; }
+.attendance-chip-rasgos-none { color: color-mix(in srgb, var(--muted) 80%, transparent); font-weight: 700; }
+.rasgos-popover { position: absolute; z-index: 10; top: calc(100% + 4px); right: 0; min-width: 240px; max-width: 300px; max-height: 240px; overflow-y: auto; display: grid; gap: 2px; padding: 6px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--paper-raised); box-shadow: 0 12px 28px rgba(14, 23, 38, .18); }
+.rasgos-popover-option { display: flex; align-items: baseline; gap: 8px; padding: 7px 8px; border: 0; border-radius: 6px; background: transparent; color: var(--ink); text-align: left; cursor: pointer; }
+.rasgos-popover-option:hover { background: var(--accent-soft); }
+.rasgos-popover-option.selected { background: var(--accent-soft); color: var(--accent-deep); }
+.rasgos-popover-option-code { flex: 0 0 auto; font-weight: 800; }
+.rasgos-popover-option-desc { flex: 1 1 auto; min-width: 0; color: var(--muted); font-size: .82rem; }
+.rasgos-popover-option.selected .rasgos-popover-option-desc { color: inherit; }
+.rasgos-popover-option-check { flex: 0 0 auto; font-weight: 800; }
 .rasgos-list { display: grid; gap: 10px; margin: 0 0 16px; padding: 0; list-style: none; }
 .rasgo-row { padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--bg-soft); }
 .rasgo-row-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
