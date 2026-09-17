@@ -28,7 +28,7 @@ export default function LauncherCards({ options, className = 'launcher-cards' }:
   return (
     <div className={className}>
       {options.map((option) => (
-        <button type="button" key={option.key} className="launcher-card" onClick={option.onSelect}>
+        <button type="button" key={option.key} className="launcher-card" aria-label={option.title} onClick={option.onSelect}>
           <div className="launcher-card-head">
             <span className="launcher-card-icon">{option.icon}</span>
             <h2>{option.title}</h2>

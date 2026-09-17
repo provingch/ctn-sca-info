@@ -199,7 +199,7 @@ export default function AppNavbar() {
           <NotificationTrigger count={notifCount} open={notifOpen} onClick={openNotifications} />
         </div>
         <div className="navbar-user-menu">
-          <button className="navbar-user-trigger" type="button" aria-haspopup="menu" aria-expanded={userMenuOpen} onClick={() => { setNotifOpen(false); setUserMenuOpen((open) => !open); }}>
+          <button className="navbar-user-trigger" type="button" aria-label={`Menú de ${displayName}`} aria-haspopup="menu" aria-expanded={userMenuOpen} onClick={() => { setNotifOpen(false); setUserMenuOpen((open) => !open); }}>
             {user?.fotoPerfil ? <img className="navbar-avatar" src={user.fotoPerfil} alt="" /> : (user?.especialidadNombre ? <span className="navbar-avatar" aria-hidden="true"><AvatarEspecialidad name={user.especialidadNombre} size={32} /></span> : <span className="navbar-avatar" aria-hidden="true">{initials}</span>)}
             <span className="navbar-user-copy"><strong>{displayName}</strong><small>{config.roleLabel}</small></span>
             <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m6 8 4 4 4-4" /></svg>
