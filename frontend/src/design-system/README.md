@@ -1,6 +1,14 @@
-# SCA · Sistema de diseño / Fase 1
+# SCA · Sistema de diseño
 
-Biblioteca aislada para revisión. No modifica rutas, pantallas, tema global, autenticación ni APIs del sistema. No importa `index.css`. Todas sus reglas usan el contenedor `.sca-ds` y variables `--ds-*`; los únicos estilos de documento están en el HTML independiente de la muestra.
+Biblioteca reutilizable con galería independiente y adaptación a la aplicación. Las reglas de los componentes usan `.sca-ds` y variables `--ds-*`.
+
+## Integración en la aplicación
+
+`ApplicationDesign` se monta dentro de `SpecialtyProvider` y antes de los proveedores de autenticación y notificaciones. Publica los tokens en el documento para incluir menús portados a `body`, sigue los cambios de especialidad y respeta el selector claro/oscuro. Limpia sus variables al desmontarse.
+
+`application.css` adapta los componentes existentes al diseño: navegación con permisos y notificaciones, encabezados, tarjetas, formularios, botones, tablas, perfil y pantallas de acceso. La estructura funcional de cada pantalla se conserva. El inicio utiliza `Card`, `ActivityItem`, `EmptyState` y `Skeleton`; el acceso usa `Button` y los estados compartidos usan `Skeleton`. Las especialidades locales en tarjetas conservan su identidad mediante `data-specialty`.
+
+Los textos comerciales y datos ficticios de la galería no se importan a producción. La frase inicial de la muestra no forma parte de la aplicación. No se modificaron endpoints, permisos ni reglas académicas.
 
 ## Revisar la propuesta
 
@@ -87,4 +95,4 @@ Todos los componentes y tipos se exportan desde `index.ts`. Cada archivo declara
 
 `npx vitest run src/design-system/design-system.test.tsx` verifica contrastes WCAG, acento dinámico, alias, aislamiento, estados y semántica. Revisar también la galería con teclado, zoom y viewport móvil.
 
-No reemplazar componentes actuales ni importar esta biblioteca en las pantallas hasta aprobar la propuesta. La fase 2 hará esa adopción pantalla por pantalla.
+La aplicación ya utiliza la base aprobada; la galería sigue disponible para revisar futuras variantes sin modificar datos reales. Ejecutar además `ApplicationDesign.test.tsx` para comprobar identidad, aislamiento y alternancia de tema.
