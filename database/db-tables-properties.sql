@@ -268,6 +268,12 @@ CREATE TABLE planilla_rasgo (
     curso_id INT NOT NULL,
     usuario_id INT NOT NULL,
     tema VARCHAR(150) NOT NULL,
+    hora_inicio TIME NULL,
+    horas_catedra TINYINT UNSIGNED NULL,
+    hora_fin TIME NULL,
+    modalidad VARCHAR(20) NULL,
+    observaciones TEXT NULL,
+    instrumento_id INT NULL,
     fecha_clase DATE NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     KEY idx_planilla_rasgo_curso (curso_id),
@@ -277,7 +283,10 @@ CREATE TABLE planilla_rasgo (
         ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT fk_planilla_rasgo_usuario FOREIGN KEY (usuario_id)
         REFERENCES usuario (id)
-        ON UPDATE CASCADE ON DELETE CASCADE
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_planilla_rasgo_instrumento FOREIGN KEY (instrumento_id)
+        REFERENCES instrumento (id)
+        ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE plan_curricular (
@@ -300,10 +309,15 @@ CREATE TABLE plan_curricular (
         REFERENCES usuario (id) ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Add columns to planilla_rasgo for plan curricular linkage and estado_verificacion_tema
+-- Add columns to planilla_rasgo for plan curricular linkage and estado_verificacion_tema.
+-- El ENUM tiene que cubrir los 5 valores que TemaVerificacionService y
+-- PlanCurricularController realmente escriben (ver estado_verificacion_tema
+-- en RasgoPlanillaDao): faltaba 'ATRASADO', que es justamente el caso de un
+-- tema fuera de fecha con justificación — sin este valor el INSERT fallaba
+-- en una instalación nueva.
 ALTER TABLE planilla_rasgo
     ADD COLUMN asignacion_id INT NULL,
-    ADD COLUMN estado_verificacion_tema ENUM('OK','DUDOSO','NO_COINCIDE','SIN_PLAN') NOT NULL DEFAULT 'SIN_PLAN',
+    ADD COLUMN estado_verificacion_tema ENUM('OK','ATRASADO','DUDOSO','NO_COINCIDE','SIN_PLAN') NOT NULL DEFAULT 'SIN_PLAN',
     ADD COLUMN tema_plan_curricular_id INT NULL;
 
 CREATE TABLE rasgo_asistencia (

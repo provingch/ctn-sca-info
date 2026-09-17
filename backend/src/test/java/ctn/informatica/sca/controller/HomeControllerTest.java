@@ -3,7 +3,9 @@ package ctn.informatica.sca.controller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -19,6 +21,7 @@ import ctn.informatica.sca.dao.AsignacionDao;
 import ctn.informatica.sca.dao.ConfiguracionSistemaDao;
 import ctn.informatica.sca.dao.CursoBaseDao;
 import ctn.informatica.sca.dao.CursoDao;
+import ctn.informatica.sca.dao.HoraCatedraDao;
 import ctn.informatica.sca.dao.IncumplimientoRevisionDao;
 import ctn.informatica.sca.dao.InstrumentoDao;
 import ctn.informatica.sca.dao.MateriaDao;
@@ -31,13 +34,17 @@ import ctn.informatica.sca.dao.RasgoPlanillaDao;
 import ctn.informatica.sca.dao.UserDao;
 import ctn.informatica.sca.dto.CreateRasgoPlanillaRequest;
 import ctn.informatica.sca.dto.SubmitRasgoAsistenciaRequest;
+import ctn.informatica.sca.model.Alumno;
 import ctn.informatica.sca.model.Asignacion;
 import ctn.informatica.sca.model.Curso;
+import ctn.informatica.sca.model.HoraCatedra;
 import ctn.informatica.sca.model.RasgoAsistencia;
 import ctn.informatica.sca.model.RasgoPlanilla;
 import ctn.informatica.sca.model.User;
 import ctn.informatica.sca.service.ActivityLogService;
 import ctn.informatica.sca.service.TemaVerificacionService;
+import ctn.informatica.sca.service.VerificacionResultado;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Collections;
 import org.junit.jupiter.api.Test;
@@ -84,13 +91,115 @@ class HomeControllerTest {
         when(asignacionDao.findById(30)).thenReturn(ajena);
         when(cursoDao.findById(10)).thenReturn(new Curso(10, "Informática", 2026, "A"));
         CreateRasgoPlanillaRequest request = new CreateRasgoPlanillaRequest(
-                10, 30, 1, null, null, "Tema", null, List.of(), Collections.emptyMap());
+                10, 30, 1, null, null, null, null, null, "Tema", null, List.of(), Collections.emptyMap());
 
         ResponseStatusException error = assertThrows(ResponseStatusException.class,
                 () -> controller.createRasgoPlanilla(request, authentication(7)));
 
         assertEquals(403, error.getStatusCode().value());
         verify(alumnoDao, never()).findByCursoId(any(Integer.class));
+    }
+
+    @Test
+    void calculaHoraFinDesdeElCatalogoRealYPersisteHorarioModalidadObservacionesEInstrumento() throws Exception {
+        RasgoPlanillaDao rasgoPlanillaDao = mock(RasgoPlanillaDao.class);
+        UserDao userDao = mock(UserDao.class);
+        AsignacionDao asignacionDao = mock(AsignacionDao.class);
+        CursoDao cursoDao = mock(CursoDao.class);
+        CursoBaseDao cursoBaseDao = mock(CursoBaseDao.class);
+        AlumnoDao alumnoDao = mock(AlumnoDao.class);
+        IncumplimientoRevisionDao incumplimientoRevisionDao = mock(IncumplimientoRevisionDao.class);
+        TemaVerificacionService temaVerificacionService = mock(TemaVerificacionService.class);
+        HoraCatedraDao horaCatedraDao = mock(HoraCatedraDao.class);
+        HomeController controller = new HomeController(
+                cursoDao, cursoBaseDao, asignacionDao, mock(ProfesorDao.class), mock(PlanillaDao.class),
+                mock(MateriaDao.class), alumnoDao, rasgoPlanillaDao, mock(InstrumentoDao.class),
+                userDao, mock(PlanCurricularDao.class), temaVerificacionService, mock(ActivityLogService.class),
+                mock(ConfiguracionSistemaDao.class), incumplimientoRevisionDao, mock(NotificacionDao.class),
+                mock(QuejaDao.class), null, horaCatedraDao);
+
+        when(userDao.findById(7)).thenReturn(new User(7, "profesor", "Profesor", 1));
+        when(asignacionDao.findById(30)).thenReturn(new Asignacion(30, 7, 2, 5));
+        Curso curso = new Curso(10, "Informática", 2026, "A");
+        when(cursoDao.findById(10)).thenReturn(curso);
+        when(cursoDao.findEspecialidadId(10)).thenReturn(1);
+        when(cursoBaseDao.findId(eq(1), any(Integer.class), eq("A"))).thenReturn(5);
+
+        Alumno alumno = new Alumno();
+        alumno.setId(1);
+        alumno.setNombre("Ana");
+        alumno.setApellido("Gómez");
+        when(alumnoDao.findByCursoId(10)).thenReturn(List.of(alumno));
+        when(incumplimientoRevisionDao.existeBloqueoActivo(30)).thenReturn(false);
+        when(temaVerificacionService.verificar(30, "Clase de prueba"))
+                .thenReturn(new VerificacionResultado("SIN_PLAN", null, false));
+
+        // Bloques 4 y 5 (M): 08:45-09:20 y 09:40-10:15 — hay un recreo entre
+        // ambos, así que el hora_fin real (09:40 + 35) coincide con lo que
+        // calcularía el front, pero por una razón distinta: acá sale del
+        // catálogo, no de sumar 35 minutos a ciegas.
+        when(horaCatedraDao.findAll()).thenReturn(List.of(
+                new HoraCatedra(4, 4, "M", LocalTime.of(8, 45), LocalTime.of(9, 20)),
+                new HoraCatedra(5, 5, "M", LocalTime.of(9, 40), LocalTime.of(10, 15))));
+        when(rasgoPlanillaDao.crearPlanillaRasgo(
+                anyInt(), anyInt(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(99);
+
+        CreateRasgoPlanillaRequest request = new CreateRasgoPlanillaRequest(
+                10, 30, 1, 5, "8:45", 2, "Presencial", "Todo bien",
+                "Clase de prueba", null, List.of(), Collections.emptyMap());
+
+        controller.createRasgoPlanilla(request, authentication(7));
+
+        verify(rasgoPlanillaDao).crearPlanillaRasgo(
+                eq(10), eq(7), eq("Clase de prueba"), isNull(),
+                any(), any(), any(), eq(30),
+                eq(LocalTime.of(8, 45)), eq(2), eq(LocalTime.of(10, 15)),
+                eq("Presencial"), eq("Todo bien"), eq(5));
+    }
+
+    @Test
+    void rechazaHorasCatedraFueraDeRango() throws Exception {
+        RasgoPlanillaDao rasgoPlanillaDao = mock(RasgoPlanillaDao.class);
+        UserDao userDao = mock(UserDao.class);
+        AsignacionDao asignacionDao = mock(AsignacionDao.class);
+        CursoDao cursoDao = mock(CursoDao.class);
+        CursoBaseDao cursoBaseDao = mock(CursoBaseDao.class);
+        AlumnoDao alumnoDao = mock(AlumnoDao.class);
+        IncumplimientoRevisionDao incumplimientoRevisionDao = mock(IncumplimientoRevisionDao.class);
+        TemaVerificacionService temaVerificacionService = mock(TemaVerificacionService.class);
+        HomeController controller = new HomeController(
+                cursoDao, cursoBaseDao, asignacionDao, mock(ProfesorDao.class), mock(PlanillaDao.class),
+                mock(MateriaDao.class), alumnoDao, rasgoPlanillaDao, mock(InstrumentoDao.class),
+                userDao, mock(PlanCurricularDao.class), temaVerificacionService, mock(ActivityLogService.class),
+                mock(ConfiguracionSistemaDao.class), incumplimientoRevisionDao, mock(NotificacionDao.class),
+                mock(QuejaDao.class), null, mock(HoraCatedraDao.class));
+
+        when(userDao.findById(7)).thenReturn(new User(7, "profesor", "Profesor", 1));
+        when(asignacionDao.findById(30)).thenReturn(new Asignacion(30, 7, 2, 5));
+        Curso curso = new Curso(10, "Informática", 2026, "A");
+        when(cursoDao.findById(10)).thenReturn(curso);
+        when(cursoDao.findEspecialidadId(10)).thenReturn(1);
+        when(cursoBaseDao.findId(eq(1), any(Integer.class), eq("A"))).thenReturn(5);
+        Alumno alumno = new Alumno();
+        alumno.setId(1);
+        alumno.setNombre("Ana");
+        alumno.setApellido("Gómez");
+        when(alumnoDao.findByCursoId(10)).thenReturn(List.of(alumno));
+        when(incumplimientoRevisionDao.existeBloqueoActivo(30)).thenReturn(false);
+        when(temaVerificacionService.verificar(30, "Clase de prueba"))
+                .thenReturn(new VerificacionResultado("SIN_PLAN", null, false));
+
+        CreateRasgoPlanillaRequest request = new CreateRasgoPlanillaRequest(
+                10, 30, 1, null, "8:45", 9, null, null,
+                "Clase de prueba", null, List.of(), Collections.emptyMap());
+
+        ResponseStatusException error = assertThrows(ResponseStatusException.class,
+                () -> controller.createRasgoPlanilla(request, authentication(7)));
+
+        assertEquals(400, error.getStatusCode().value());
+        verify(rasgoPlanillaDao, never()).crearPlanillaRasgo(
+                anyInt(), anyInt(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test

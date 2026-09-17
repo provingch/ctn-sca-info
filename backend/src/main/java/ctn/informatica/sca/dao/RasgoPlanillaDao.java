@@ -11,6 +11,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Time;
+import java.sql.Types;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -152,20 +155,20 @@ public class RasgoPlanillaDao extends conexion {
 
     // Nueva sobrecarga: permite persistir asignacion_id si se conoce
     public int crearPlanillaRasgo(int cursoId, int profesorId, String tema, List<Alumno> alumnos, Set<Integer> alumnosAusentes, Map<Integer, List<String>> codigosPorAlumno, Integer asignacionId) throws SQLException {
-        return crearPlanillaRasgo(cursoId, profesorId, tema, null, alumnos, alumnosAusentes, codigosPorAlumno, asignacionId);
+        return crearPlanillaRasgo(cursoId, profesorId, tema, null, alumnos, alumnosAusentes, codigosPorAlumno, asignacionId, null, null, null, null, null, null);
     }
 
-    public int crearPlanillaRasgo(int cursoId, int profesorId, String tema, String justificacionAtraso, List<Alumno> alumnos, Set<Integer> alumnosAusentes, Map<Integer, List<String>> codigosPorAlumno, Integer asignacionId) throws SQLException {
+    public int crearPlanillaRasgo(int cursoId, int profesorId, String tema, String justificacionAtraso,
+            List<Alumno> alumnos, Set<Integer> alumnosAusentes, Map<Integer, List<String>> codigosPorAlumno,
+            Integer asignacionId, LocalTime horaInicio, Integer horasCatedra, LocalTime horaFin,
+            String modalidad, String observaciones, Integer instrumentoId) throws SQLException {
         if (alumnos == null || alumnos.isEmpty()) {
             throw new SQLException("No hay alumnos elegibles para crear la planilla de rasgos");
         }
 
-        String insertPlanillaSql;
-        if (asignacionId != null) {
-            insertPlanillaSql = "INSERT INTO planilla_rasgo (curso_id, usuario_id, asignacion_id, tema, justificacion_atraso, fecha_clase) VALUES (?, ?, ?, ?, ?, CURRENT_DATE())";
-        } else {
-            insertPlanillaSql = "INSERT INTO planilla_rasgo (curso_id, usuario_id, tema, justificacion_atraso, fecha_clase) VALUES (?, ?, ?, ?, CURRENT_DATE())";
-        }
+        String insertPlanillaSql = "INSERT INTO planilla_rasgo "
+                + "(curso_id, usuario_id, asignacion_id, tema, justificacion_atraso, hora_inicio, horas_catedra, hora_fin, modalidad, observaciones, instrumento_id, fecha_clase) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_DATE())";
 
         try (Connection con = getCon()) {
             boolean[] supportsFaltaColumns = supportsColumns(con, "rasgo_asistencia", "falta_codigo", "falta_observacion");
@@ -177,22 +180,19 @@ public class RasgoPlanillaDao extends conexion {
                 try (PreparedStatement ps = con.prepareStatement(insertPlanillaSql, Statement.RETURN_GENERATED_KEYS)) {
                     ps.setInt(1, cursoId);
                     ps.setInt(2, profesorId);
-                    if (asignacionId != null) {
-                        ps.setInt(3, asignacionId);
-                        ps.setString(4, tema);
-                        if (justificacionAtraso == null || justificacionAtraso.isBlank()) {
-                            ps.setNull(5, java.sql.Types.VARCHAR);
-                        } else {
-                            ps.setString(5, justificacionAtraso.trim());
-                        }
+                    if (asignacionId != null) ps.setInt(3, asignacionId); else ps.setNull(3, Types.INTEGER);
+                    ps.setString(4, tema);
+                    if (justificacionAtraso == null || justificacionAtraso.isBlank()) {
+                        ps.setNull(5, Types.VARCHAR);
                     } else {
-                        ps.setString(3, tema);
-                        if (justificacionAtraso == null || justificacionAtraso.isBlank()) {
-                            ps.setNull(4, java.sql.Types.VARCHAR);
-                        } else {
-                            ps.setString(4, justificacionAtraso.trim());
-                        }
+                        ps.setString(5, justificacionAtraso.trim());
                     }
+                    if (horaInicio == null) ps.setNull(6, Types.TIME); else ps.setTime(6, Time.valueOf(horaInicio));
+                    if (horasCatedra == null) ps.setNull(7, Types.TINYINT); else ps.setInt(7, horasCatedra);
+                    if (horaFin == null) ps.setNull(8, Types.TIME); else ps.setTime(8, Time.valueOf(horaFin));
+                    if (modalidad == null || modalidad.isBlank()) ps.setNull(9, Types.VARCHAR); else ps.setString(9, modalidad);
+                    if (observaciones == null || observaciones.isBlank()) ps.setNull(10, Types.VARCHAR); else ps.setString(10, observaciones.trim());
+                    if (instrumentoId == null || instrumentoId <= 0) ps.setNull(11, Types.INTEGER); else ps.setInt(11, instrumentoId);
                     ps.executeUpdate();
                     try (ResultSet keys = ps.getGeneratedKeys()) {
                         if (!keys.next()) throw new SQLException("No se pudo generar la planilla de rasgos");

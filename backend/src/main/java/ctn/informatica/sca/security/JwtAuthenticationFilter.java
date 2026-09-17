@@ -5,6 +5,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,12 +19,16 @@ import java.util.List;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+
     private final JwtService jwtService;
     private final UserDao userDao;
+    private final JwtAuthenticationEntryPoint entryPoint;
 
-    public JwtAuthenticationFilter(JwtService jwtService, UserDao userDao) {
+    public JwtAuthenticationFilter(JwtService jwtService, UserDao userDao, JwtAuthenticationEntryPoint entryPoint) {
         this.jwtService = jwtService;
         this.userDao = userDao;
+        this.entryPoint = entryPoint;
     }
 
     @Override
@@ -31,15 +37,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String header = request.getHeader("Authorization");
         if (header == null || !header.startsWith("Bearer ")) {
-            chain.doFilter(request, response); // sin token: sigue, SecurityConfig decide si la ruta lo requiere
+            chain.doFilter(request, response); // sin token: sigue anónimo, SecurityConfig decide si la ruta lo requiere
             return;
         }
 
         String token = header.substring(7);
 
         if (!jwtService.isValid(token) || !jwtService.isAccessToken(token)) {
-            chain.doFilter(request, response); // token inválido o es un temp token: sigue sin autenticar
-            return;                             // SecurityConfig lo va a rechazar si la ruta requiere auth
+            // token presente pero inválido, vencido, o es un temp token usado donde no corresponde: 401 directo,
+            // no lo dejamos pasar como anónimo (eso es lo que hacía que el cliente nunca disparara el refresh).
+            entryPoint.writeUnauthorized(response, "Token inválido o vencido.");
+            return;
         }
 
         Long userId = jwtService.extractUserId(token);
@@ -50,11 +58,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             UserDao.SessionState state = userDao.findSessionState(userId.intValue());
             if (state == null || level == null || sessionVersion == null
                     || state.level() != level || state.version() != sessionVersion) {
-                chain.doFilter(request, response);
+                entryPoint.writeUnauthorized(response, "La sesión ya no es válida.");
                 return;
             }
-        } catch (Exception ignored) {
-            chain.doFilter(request, response);
+        } catch (Exception e) {
+            log.warn("No se pudo validar el estado de sesión para el token entrante", e);
+            entryPoint.writeUnauthorized(response, "No se pudo validar la sesión.");
             return;
         }
 
