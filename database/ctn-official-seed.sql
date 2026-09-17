@@ -1480,144 +1480,132 @@ INSERT INTO sala (nombre, especialidad_id) VALUES
 -- Usuario - Materia
 INSERT INTO asignacion (usuario_id, materia_id, curso_base_id) VALUES
     -- Informatica
-        (16, 1, 1), (16, 1, 2),
-        -- Antropologia 1ro A/B - Emilce Jara
+        (74, 1, 1), (74, 1, 2),
+        -- Antropología 1ro A, 1ro B - Emilce Jara
 
-        (24, 2, 1), (24, 2, 2), (24, 2, 3),
-        (24, 2, 4), (24, 2, 5), (24, 2, 6),
-        -- Ciencias 1ro, 2do, 3ro A/B - Laura Rivas
+        (111, 2, 2), (111, 2, 3), (111, 2, 4), (111, 2, 5), (111, 2, 6),
+        -- Ciencias 1ro B, 2do A, 2do B, 3ro A, 3ro B - Laura Rivas
 
-        (15, 3, 5), (15, 3, 6),
-        -- Economia y Gestion 3ro A/B - Daniel Lenguaza
+        (76, 3, 5), (76, 3, 6),
+        -- Economía y Gestión 3ro A, 3ro B - Rolando Lenguaza
 
-        (18, 4, 1), (18, 4, 3), (18, 4, 5),
-        -- Educacion Fisica 1ro, 2do, 3ro A - Gerardo Ovelar
+        (102, 4, 1), (102, 4, 3), (102, 4, 5),
+        -- Educación Física 1ro A, 2do A, 3ro A - Gerardo Ovelar
 
-        (35, 4, 2),
-        -- Educacion Fisica 1ro B - Chavez
+        (39, 4, 2),
+        -- Educación Física 1ro B - Luis Chavez
 
-        (36, 4, 4),
-        -- Educacion Fisica 2do B - Mequer
+        (87, 4, 4),
+        -- Educación Física 2do B - Maria Mequer
 
-        (29, 4, 6),
-        -- Educacion Fisica 3ro B - Oscar Villasanti
+        (133, 4, 6),
+        -- Educación Física 3ro B - Oscar Villasanti
 
-        (27, 5, 3), (27, 5, 4),
-        -- Educacion Vial 2do A/B - Mirian Montania
+        (92, 5, 3), (92, 5, 4),
+        -- Educación Vial 2do A, 2do B - Mirian Montania
 
-        (27, 6, 1), (27, 6, 2),
-        -- Etica 1ro A/B - Mirian Montania
+        (92, 6, 1), (92, 6, 2),
+        -- Formacion Ética y Ciudadana 1ro A, 1ro B - Mirian Montania
 
-        (13, 7, 1), (13, 7, 2),
-        (13, 7, 3), (13, 7, 4),
-        -- Fisica 1ro, 2do A/B - Claudia Burgos
+        (29, 7, 1), (29, 7, 2), (29, 7, 3), (29, 7, 4), (29, 7, 5), (29, 7, 6),
+        -- Física 1ro A, 1ro B, 2do A, 2do B, 3ro A, 3ro B - Claudia Burgos
 
-        (34, 8, 1), (34, 8, 3), (34, 8, 4),
-        -- Guarani 1ro A, 2do A/B - Zully Nuñez
+        (96, 8, 1), (96, 8, 3), (96, 8, 4),
+        -- Guaraní 1ro A, 2do A, 2do B - Zully Nuñez
 
-        (30, 8, 2),
-        -- Guarani 1ro B - Romy Aguilera
+        (12, 8, 2),
+        -- Guaraní 1ro B - Romy Aguilera
 
-        (27, 9, 1), (27, 9, 3), (27, 9, 5),
-        -- Historia 1ro, 2do, 3ro A - Mirian Montania
+        (92, 9, 1), (92, 9, 3), (92, 9, 5),
+        -- Historia 1ro A, 2do A, 3ro A - Mirian Montania
 
-        (21, 9, 2), (21, 9, 6),
-        -- Historia 1ro, 3ro B - Gustavo Ramirez
+        (106, 9, 2), (106, 9, 6),
+        -- Historia 1ro B, 3ro B - Gustavo Ramirez
 
-        (10, 9, 4),
+        (13, 9, 4),
         -- Historia 2do B - Abner Alcaraz
 
-        (11, 10, 1), (11, 10, 2),
-        (11, 10, 3), (11, 10, 4),
-        -- Ingles 1ro, 2do A/B - Alcira Caceres
+        (33, 10, 1), (33, 10, 2), (33, 10, 3), (33, 10, 4),
+        -- Inglés 1ro A, 1ro B, 2do A, 2do B - Alcira Caceres
 
-        (12, 11, 1), (12, 11, 2), (12, 11, 3),
-        (12, 11, 4), (12, 11, 5), (12, 11, 6),
-        -- Matematica Comun 1ro, 2do, 3ro A/B - Andres Rojas
+        (115, 11, 1), (115, 11, 2), (115, 11, 3), (115, 11, 4), (115, 11, 5), (115, 11, 6),
+        -- Matemática Común 1ro A, 1ro B, 2do A, 2do B, 3ro A, 3ro B - Cesar Andres Rojas
 
-        (20, 12, 1),
-        -- Orientacion 1ro A - Graciela Maidana
+        (82, 12, 1),
+        -- Orientación 1ro A - Graciela Maidana
 
-        (31, 12, 2), (31, 12, 5), (31, 12, 6),
-        -- Orientacion 1ro B, 3ro A/B - Ruth Estigarribia
+        (51, 12, 2), (51, 12, 5), (51, 12, 6),
+        -- Orientación 1ro B, 3ro A, 3ro B - Ruth Estigarribia
 
-        (22, 13, 5),
-        -- Psicologia 3ro A - Irma Cardozo
+        (35, 13, 5),
+        -- Psicología 3ro A - Irma Cardozo
 
-        (20, 13, 5),
-        -- Psicologia 3ro B - Graciela Maidana
+        (82, 13, 6),
+        -- Psicología 3ro B - Graciela Maidana
 
-        (28, 14, 1), (28, 14, 3),
-        -- Quimica 1ro, 2do A - Oscar Ibarrola
+        (73, 14, 1), (73, 14, 3),
+        -- Química 1ro A, 2do A - Oscar Ibarrola
 
-        (26, 14, 2), (26, 14, 4),
-        -- Quimica 2do B - Luz Angulo
+        (128, 14, 2), (128, 14, 4),
+        -- Química 1ro B, 2do B - Maria Valiente (Angulo)
 
-        (25, 15, 3), (25, 15, 4),
-        -- Administracion Financiera 2do A/B - Lourdes Galeano
+        (58, 15, 3), (58, 15, 4),
+        -- Administración Financiera 2do A, 2do B - Lourdes Galeano
 
-        (32, 15, 5), (32, 15, 6),
-        -- Administracion Financiera 3ro A/B - Ruth Roman
+        (117, 15, 5), (117, 15, 6),
+        -- Administración Financiera 3ro A, 3ro B - Ruth Roman
 
-        (33, 16, 1), (33, 16, 2), (33, 16, 3),
-        (33, 16, 4), (33, 16, 5), (33, 16, 6),
-        -- Literatura 1ro, 2do, 3ro A/B - Susana Alvarenga
+        (17, 16, 1), (17, 16, 2), (17, 16, 3), (17, 16, 4), (17, 16, 5), (17, 16, 6),
+        -- Literatura 1ro A, 1ro B, 2do A, 2do B, 3ro A, 3ro B - Susana Alvarenga
 
-        (19, 41, 1), (19, 41, 2), (19, 41, 3),
-        (19, 41, 4), (19, 41, 5), (19, 41, 6),
-        -- Algoritmica 1ro, 2do, 3ro A/B - Graciela Lopez
+        (81, 41, 1), (81, 41, 2), (81, 41, 3), (81, 41, 4), (81, 41, 5), (81, 41, 6),
+        -- Algorítmica 1ro A, 1ro B, 2do A, 2do B, 3ro A, 3ro B - Graciela Lopez
 
-        (17, 42, 5), (17, 42, 6),
-        -- Laboratorio Android 3ro A/B - Federico Gonzalez
+        (66, 42, 5), (66, 42, 6),
+        -- Laboratorio Android 3ro A, 3ro B - Federico Gonzalez
 
-        (17, 43, 5), (17, 43, 6),
-        -- Laboratorio Java 3ro A/B - Federico Gonzalez
+        (66, 43, 5), (66, 43, 6),
+        -- Laboratorio Java 3ro A, 3ro B - Federico Gonzalez
 
-        (14, 44, 1), (14, 44, 2),
-        -- Laboratorio Linux 1ro A/B - Cristian Delgado
+        (43, 44, 1), (43, 44, 2),
+        -- Laboratorio Linux 1ro A, 1ro B - Cristian Delgado
 
-        (17, 45, 3), (17, 45, 4),
-        -- Laboratorio Python 2do A/B - Federico Gonzalez
+        (66, 45, 3), (66, 45, 4),
+        -- Laboratorio Python 2do A, 2do B - Federico Gonzalez
 
-        (17, 46, 3), (17, 46, 4),
-        -- Laboratorio SQL 2do A/B - Federico Gonzalez
+        (66, 46, 3), (66, 46, 4),
+        -- Laboratorio SQL 2do A, 2do B - Federico Gonzalez
 
-        (17, 47, 1), (17, 47, 2),
-        -- Laboratorio Web 1ro A/B - Federico Gonzalez
+        (96, 46, 4),
+        -- Laboratorio SQL 2do B - Zully Nuñez
 
-        (12, 48, 1), (12, 48, 2), (12, 48, 3),
-        (12, 48, 4), (12, 48, 5), (12, 48, 6),
-        -- Matematica Aplicada 1ro, 2do, 3ro A/B - Andres Rojas
+        (66, 47, 1), (66, 47, 2),
+        -- Laboratorio Web 1ro A, 1ro B - Federico Gonzalez
 
-        (33, 49, 2),
+        (115, 48, 1), (115, 48, 2), (115, 48, 3), (115, 48, 4), (115, 48, 5), (115, 48, 6),
+        -- Matemática Aplicada 1ro A, 1ro B, 2do A, 2do B, 3ro A, 3ro B - Cesar Andres Rojas
+
+        (17, 49, 2),
         -- Plan de Lectura 1ro B - Susana Alvarenga
 
-        (14, 50, 5), (14, 50, 6),
-        -- Laboratorio Redes 3ro A/B - Cristian Delgado
+        (43, 50, 5), (43, 50, 6),
+        -- Laboratorio Redes 3ro A, 3ro B - Cristian Delgado
 
-        (14, 51, 5), (14, 51, 6),
-        -- Seguridad en Riesgos Electricos 3ro A/B - Cristian Delgado
+        (43, 51, 5), (43, 51, 6),
+        -- Seguridad en Riesgos Eléctricos 3ro A, 3ro B - Cristian Delgado
 
-        (23, 52, 1), (23, 52, 2),
-        -- Dibujo Tecnico 1ro A/B - Juan Acosta
+        (111, 52, 1),
+        -- Dibujo Técnico 1ro A - Laura Rivas
 
-        (14, 53, 1), (14, 53, 2),
-        (14, 53, 3), (14, 53, 4),
-        -- Info General 1ro, 2do A/B - Cristian Delgado
+        (10, 52, 1), (10, 52, 2),
+        -- Dibujo Técnico 1ro A, 1ro B - Juan Acosta
 
-        (14, 54, 3), (14, 54, 4);
-        -- Laboratorio Hardware 2do A/B - Cristian Delgado
+        (43, 53, 1), (43, 53, 2), (43, 53, 3), (43, 53, 4),
+        -- Info General 1ro A, 1ro B, 2do A, 2do B - Cristian Delgado
 
-UPDATE asignacion
-   SET curso_base_id = 6
- WHERE usuario_id = 20 AND materia_id = 13 AND curso_base_id = 5;
- -- (usuario_id 20 = graciela.maidana; deja intacta la fila de usuario_id 22 = irma.cardozo)
+        (43, 54, 3), (43, 54, 4);
+        -- Laboratorio Hardware 2do A, 2do B - Cristian Delgado
 
--- 2) A Claudia Burgos (Física) le faltaba la asignación para 3er año
---    (A y B) — el PDF muestra "Física Aplicada" con ella en ambas
---    secciones de 3er año, pero asignacion solo la vinculaba a 1ro/2do.
-INSERT IGNORE INTO asignacion (usuario_id, materia_id, curso_base_id) VALUES
-    (13, 7, 5), (13, 7, 6);
 
 -- ========================================
 -- ASIGNACION — Electricidad (curso_base 16-21)
@@ -2037,7 +2025,7 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     -- ============================================================
     ('oscar.ibarrola', 14, 1, 'A', 1, 1, 2),       -- Lunes: Química
     ('mirian.montania', 6, 1, 'A', 1, 3, 2),       -- Lunes: Ética
-    ('andres.rojas', 11, 1, 'A', 1, 5, 4),         -- Lunes: Mate_Común
+    ('cesar.rojas', 11, 1, 'A', 1, 5, 4),         -- Lunes: Mate_Común
     ('federico.gonzalez', 47, 1, 'A', 2, 1, 4),    -- Martes: Laboratorio Web
     ('mirian.montania', 9, 1, 'A', 2, 5, 2),       -- Martes: Historia
     ('zully.nunez', 8, 1, 'A', 2, 7, 2),           -- Martes: Guaraní
@@ -2052,7 +2040,7 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     ('cristian.delgado', 44, 1, 'A', 5, 5, 4),     -- Viernes: Laboratorio Linux
     ('gerardo.ovelar', 4, 1, 'A', 1, 9, 2),        -- Lunes tarde: E. Física
     ('alcira.caceres', 10, 1, 'A', 2, 9, 2),       -- Martes tarde: Inglés
-    ('andres.rojas', 48, 1, 'A', 3, 9, 2),         -- Miércoles tarde: Mate_Aplicada
+    ('cesar.rojas', 48, 1, 'A', 3, 9, 2),         -- Miércoles tarde: Mate_Aplicada
     ('graciela.maidana', 12, 1, 'A', 3, 11, 2),    -- Miércoles tarde: Orientación
 
     -- ============================================================
@@ -2069,10 +2057,10 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     ('zully.nunez', 8, 2, 'A', 1, 5, 2),
     ('federico.gonzalez', 46, 2, 'A', 1, 7, 2),
     ('cristian.delgado', 53, 2, 'A', 2, 5, 2),
-    ('andres.rojas', 11, 2, 'A', 2, 7, 4),
+    ('cesar.rojas', 11, 2, 'A', 2, 7, 4),
     ('oscar.ibarrola', 14, 2, 'A', 3, 5, 4),
     ('federico.gonzalez', 45, 2, 'A', 4, 5, 4),
-    ('andres.rojas', 48, 2, 'A', 5, 5, 2),
+    ('cesar.rojas', 48, 2, 'A', 5, 5, 2),
     ('mirian.montania', 5, 2, 'A', 1, 9, 2),
     ('zully.nunez', 8, 2, 'A', 1, 11, 2),
     -- REVISAR CON LA FUENTE ORIGINAL: en el PDF, Martes 13:00-14:10 (horas 9-10)
@@ -2088,7 +2076,7 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     -- ============================================================
     -- SECCIÓN A — 3er año  (verificado contra el PDF, sin cambios)
     -- ============================================================
-    ('andres.rojas', 11, 3, 'A', 1, 1, 4),
+    ('cesar.rojas', 11, 3, 'A', 1, 1, 4),
     ('ruth.roman', 15, 3, 'A', 2, 1, 2),
     ('mirian.montania', 9, 3, 'A', 2, 3, 2),
     ('federico.gonzalez', 42, 3, 'A', 3, 1, 4),
@@ -2101,9 +2089,9 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     ('irma.cardozo', 13, 3, 'A', 4, 5, 4),
     ('laura.rivas', 2, 3, 'A', 5, 5, 2),
     ('claudia.burgos', 7, 3, 'A', 5, 7, 2),
-    ('daniel.lenguaza', 3, 3, 'A', 1, 9, 4),
+    ('rolando.lenguaza', 3, 3, 'A', 1, 9, 4),
     ('susana.alvarenga', 16, 3, 'A', 2, 9, 2),
-    ('andres.rojas', 48, 3, 'A', 2, 11, 2),
+    ('cesar.rojas', 48, 3, 'A', 2, 11, 2),
     ('cristian.delgado', 51, 3, 'A', 3, 9, 4),
     ('ruth.estigarribia', 12, 3, 'A', 4, 9, 2),
     ('gerardo.ovelar', 4, 3, 'A', 5, 9, 2),
@@ -2113,13 +2101,13 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     -- ============================================================
     ('federico.gonzalez', 47, 1, 'B', 1, 1, 4),
     ('emilce.jara', 1, 1, 'B', 1, 5, 2),
-    ('luz.angulo', 14, 1, 'B', 1, 7, 2),           -- Química
-    ('andres.rojas', 11, 1, 'B', 1, 9, 4),         -- Mate_Común
+    ('maria.valiente', 14, 1, 'B', 1, 7, 2),           -- Química
+    ('cesar.rojas', 11, 1, 'B', 1, 9, 4),         -- Mate_Común
     ('graciela.lopez', 41, 1, 'B', 2, 1, 4),
     ('susana.alvarenga', 16, 1, 'B', 2, 5, 2),
     ('mirian.montania', 6, 1, 'B', 2, 7, 2),
     ('alcira.caceres', 10, 1, 'B', 3, 1, 2),
-    ('null.chavez', 4, 1, 'B', 3, 3, 2),           -- E. Física
+    ('luis.chavez', 4, 1, 'B', 3, 3, 2),           -- E. Física
     ('susana.alvarenga', 16, 1, 'B', 3, 5, 2),
     ('ruth.estigarribia', 12, 1, 'B', 3, 7, 2),
     ('gustavo.ramirez', 9, 1, 'B', 3, 9, 2),
@@ -2130,7 +2118,7 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     ('laura.rivas', 2, 1, 'B', 4, 11, 2),
     ('cristian.delgado', 44, 1, 'B', 5, 1, 4),
     ('romy.aguilera', 8, 1, 'B', 5, 5, 2),
-    ('andres.rojas', 48, 1, 'B', 5, 7, 2),
+    ('cesar.rojas', 48, 1, 'B', 5, 7, 2),
 
     -- ============================================================
     -- SECCIÓN B — 2do año  (la más desordenada del seed anterior)
@@ -2139,10 +2127,10 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     ('federico.gonzalez', 46, 2, 'B', 1, 5, 4),    -- Laboratorio SQL
     ('zully.nunez', 46, 2, 'B', 1, 9, 2),
     ('laura.rivas', 2, 2, 'B', 1, 11, 2),
-    ('andres.rojas', 48, 2, 'B', 2, 1, 2),         -- Mate_Aplicada
+    ('cesar.rojas', 48, 2, 'B', 2, 1, 2),         -- Mate_Aplicada
     ('abner.alcaraz', 9, 2, 'B', 2, 3, 2),         -- Historia
     ('zully.nunez', 8, 2, 'B', 2, 5, 2),           -- Guaraní
-    ('null.mequer', 4, 2, 'B', 2, 7, 2),           -- E. Física
+    ('maria.mequer', 4, 2, 'B', 2, 7, 2),           -- E. Física
     ('cristian.delgado', 53, 2, 'B', 2, 9, 2),     -- Info Gral
     ('mirian.montania', 5, 2, 'B', 2, 11, 2),      -- Educación Vial
     ('claudia.burgos', 7, 2, 'B', 3, 1, 4),
@@ -2150,21 +2138,21 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     ('susana.alvarenga', 16, 2, 'B', 3, 7, 2),     -- Literatura
     ('federico.gonzalez', 45, 2, 'B', 3, 9, 4),
     ('lourdes.galeano', 15, 2, 'B', 4, 1, 2),
-    ('luz.angulo', 14, 2, 'B', 4, 3, 2),           -- Química bloque 1
+    ('maria.valiente', 14, 2, 'B', 4, 3, 2),           -- Química bloque 1
     ('graciela.lopez', 41, 2, 'B', 4, 5, 4),       -- Algorítmica
     ('alcira.caceres', 10, 2, 'B', 4, 9, 2),
-    ('luz.angulo', 14, 2, 'B', 4, 11, 2),          -- Química bloque 2 (este ya estaba bien)
-    ('andres.rojas', 11, 2, 'B', 5, 1, 4),         -- Mate_Común
+    ('maria.valiente', 14, 2, 'B', 4, 11, 2),          -- Química bloque 2 (este ya estaba bien)
+    ('cesar.rojas', 11, 2, 'B', 5, 1, 4),         -- Mate_Común
     ('susana.alvarenga', 16, 2, 'B', 5, 5, 3),     -- Literatura, 3 períodos
 
     -- ============================================================
     -- SECCIÓN B — 3er año
     -- ============================================================
-    ('daniel.lenguaza', 3, 3, 'B', 1, 1, 4),       -- Economía y Gestión
+    ('rolando.lenguaza', 3, 3, 'B', 1, 1, 4),       -- Economía y Gestión
     ('cristian.delgado', 51, 3, 'B', 1, 5, 4),     -- Seguridad en Riesgos
     ('graciela.maidana', 13, 3, 'B', 1, 9, 2),     -- Psicología bloque 1
     ('susana.alvarenga', 16, 3, 'B', 2, 1, 4),     -- Literatura
-    ('andres.rojas', 48, 3, 'B', 2, 5, 2),         -- Mate_Aplicada
+    ('cesar.rojas', 48, 3, 'B', 2, 5, 2),         -- Mate_Aplicada
     ('claudia.burgos', 7, 3, 'B', 2, 7, 2),        -- Física Aplicada
     ('federico.gonzalez', 43, 3, 'B', 2, 9, 4),    -- Laboratorio Java
     ('cristian.delgado', 50, 3, 'B', 3, 1, 4),
@@ -2173,7 +2161,7 @@ INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, 
     ('gustavo.ramirez', 9, 3, 'B', 3, 11, 2),      -- Historia
     ('oscar.villasanti', 4, 3, 'B', 3, 13, 2),
     ('ruth.roman', 15, 3, 'B', 4, 1, 4),
-    ('andres.rojas', 11, 3, 'B', 4, 5, 4),         -- Mate_Común
+    ('cesar.rojas', 11, 3, 'B', 4, 5, 4),         -- Mate_Común
     ('federico.gonzalez', 42, 3, 'B', 4, 9, 4),    -- Laboratorio Android
     ('laura.rivas', 2, 3, 'B', 5, 1, 2),
     ('graciela.maidana', 13, 3, 'B', 5, 3, 2),     -- Psicología bloque 2
