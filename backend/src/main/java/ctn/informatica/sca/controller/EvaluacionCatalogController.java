@@ -248,7 +248,7 @@ public class EvaluacionCatalogController {
 
     private java.util.Set<Integer> allowedCursoIdsForUser(int userId) throws Exception {
         return asignacionDao.findByProfesor(userId).stream()
-                .map(Asignacion::getCursoId)
+                .map(Asignacion::getCursoBaseId)
                 .filter(id -> id > 0)
                 .collect(java.util.stream.Collectors.toSet());
     }

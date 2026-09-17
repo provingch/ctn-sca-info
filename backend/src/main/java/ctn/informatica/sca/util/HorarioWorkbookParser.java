@@ -30,7 +30,7 @@ public class HorarioWorkbookParser {
 
     public List<HorarioImportRowDto> parse(InputStream input, int cursoId) throws IOException, java.sql.SQLException {
         Map<String, Asignacion> assignments = new HashMap<>();
-        for (Asignacion assignment : new AsignacionDao().findAll()) if (assignment.getCursoId() == cursoId) assignments.putIfAbsent(normalize(assignment.getMateriaNombre()), assignment);
+        for (Asignacion assignment : new AsignacionDao().findAll()) if (assignment.getCursoBaseId() == cursoId) assignments.putIfAbsent(normalize(assignment.getMateriaNombre()), assignment);
         Map<String, HoraCatedra> hours = new HashMap<>();
         for (HoraCatedra hour : new HoraCatedraDao().findAll()) hours.put(key(hour.getHoraInicio(), hour.getHoraFin()), hour);
         int specialtyId = new CursoBaseDao().findEspecialidadId(cursoId);

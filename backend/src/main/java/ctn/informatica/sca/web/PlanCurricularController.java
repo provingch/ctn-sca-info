@@ -1,6 +1,7 @@
 package ctn.informatica.sca.web;
 
 import ctn.informatica.sca.dao.AsignacionDao;
+import ctn.informatica.sca.dao.CursoBaseDao;
 import ctn.informatica.sca.dao.PlanCurricularDao;
 import ctn.informatica.sca.dao.RasgoPlanillaDao;
 import ctn.informatica.sca.dao.UserDao;
@@ -47,6 +48,9 @@ public class PlanCurricularController {
 
     @Autowired
     private AsignacionDao asignacionDao;
+
+    @Autowired
+    private CursoBaseDao cursoBaseDao;
 
     @Autowired
     private UserDao userDao;
@@ -214,11 +218,18 @@ public class PlanCurricularController {
         return ResponseEntity.ok(plan);
     }
 
+    /**
+     * @param cursoId id real de `curso` (año-específico, el mismo que {@code data.selCurso.id}
+     *                en el frontend) — no un id de `curso_base`. Se traduce internamente antes
+     *                de consultar asignaciones, que se guardan contra curso_base.
+     */
     @GetMapping("/asignaciones-disponibles")
     public ResponseEntity<?> asignacionesDisponibles(@RequestParam("cursoId") int cursoId) throws Exception {
         if (!isProfessor(getCurrentUser())) return ResponseEntity.status(403).build();
         long userId = getCurrentUserId();
-        var list = asignacionDao.findByProfesorAndCurso((int)userId, cursoId);
+        Integer cursoBaseId = cursoBaseDao.findIdForCursoReal(cursoId);
+        if (cursoBaseId == null) return ResponseEntity.ok(List.of());
+        var list = asignacionDao.findByProfesorAndCurso((int)userId, cursoBaseId);
         return ResponseEntity.ok(list);
     }
 
