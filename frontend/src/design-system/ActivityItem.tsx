@@ -1,11 +1,11 @@
 import { Icon, type IconName } from './Icon';
-const eventIcons: Record<ActivityItemProps['type'], IconName> = { class: 'book', grades: 'document', review: 'check', profile: 'user' };
+const eventIcons: Record<ActivityItemProps['type'], IconName> = { class: 'book', grades: 'document', review: 'check', profile: 'user', other: 'bell' };
 export interface ActivityItemProps {
-  type: 'class' | 'grades' | 'review' | 'profile';
+  type: 'class' | 'grades' | 'review' | 'profile' | 'other';
   text: string;
   detail?: string;
   /** ISO 8601, with timezone for an instant. Display text supplied by caller. */
-  dateTime: string;
+  dateTime?: string;
   timestamp: string;
   href?: string;
 }

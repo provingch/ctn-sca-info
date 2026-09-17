@@ -12,7 +12,7 @@ export default function PageBanner({ title, context, specialty, selector, onBack
     <div className="page-banner">
       <div className="page-banner-text">
         <div className="page-banner-title-row">
-          {onBack && <button type="button" className="page-banner-back" onClick={onBack}>← Inicio</button>}
+          {onBack && <button type="button" className="page-banner-back" aria-label="Volver al inicio" onClick={onBack}>← Inicio</button>}
           <h1>{title}</h1>
         </div>
         {context && <span>{context}</span>}

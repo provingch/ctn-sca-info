@@ -21,6 +21,7 @@ import { useAuth } from '../../context/AuthContext';
 import { classEndTime, HORARIOS_CATEDRA } from './classFormUtils';
 import { resizeImageToDataUri } from '../../utils/imageResize';
 import RasgosAsistenciaEditor from './RasgosAsistenciaEditor';
+import { ActivityItem, Card, EmptyState, Skeleton } from '../../design-system';
 
 const normalizeSpecialtyName = (value: string) => value
   .trim()
@@ -460,25 +461,23 @@ function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChan
           </>,
         },
       ]} />
-      <aside className="launcher-activity">
-        <h3>Actividad reciente</h3>
+      <aside className="sca-ds launcher-activity-design">
+        <Card title="Actividad reciente" headingLevel={2}>
         {activity === null ? (
-          <p className="launcher-activity-empty">Cargando actividad…</p>
+          <Skeleton label="Cargando actividad…" />
         ) : recentActivity.length === 0 ? (
-          <p className="launcher-activity-empty">Todavía no hay actividad registrada.</p>
+          <EmptyState title="Todavía no hay actividad registrada." description="" />
         ) : (
-          <div className="launcher-activity-list">
+          <ul className="ds-activity-list">
             {recentActivity.map((line, idx) => {
               const parsed = splitActivityLine(line);
-              return <div className="launcher-activity-item" key={idx}>
-                {parsed ? <>
-                  <span className="launcher-activity-message">{parsed.message}</span>
-                  <span className="launcher-activity-date">{humanizeActivityDate(parsed.date)}</span>
-                </> : <span className="launcher-activity-raw">{line}</span>}
-              </div>;
+              if (!parsed) return <li className="ds-activity" key={idx}>{line}</li>;
+              const type = /clase/i.test(parsed.message) ? 'class' : /planilla|tarea|puntaje/i.test(parsed.message) ? 'grades' : /revis|aprob|rechaz/i.test(parsed.message) ? 'review' : /perfil|contraseña/i.test(parsed.message) ? 'profile' : 'other';
+              return <ActivityItem key={idx} type={type} text={parsed.message} dateTime={/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(parsed.date) ? parsed.date.replace(' ', 'T') : undefined} timestamp={humanizeActivityDate(parsed.date)} />;
             })}
-          </div>
+          </ul>
         )}
+        </Card>
       </aside>
     </div>
     {asignaciones && asignaciones.length > 0 && (
