@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { Icon, Skeleton } from '../../design-system';
 
 export type ContentStateTone = 'loading' | 'empty' | 'error';
 
@@ -23,19 +22,18 @@ export default function ContentState({
   const role = tone === 'error' ? 'alert' : 'status';
 
   return <section
-    className={`sca-ds content-state content-state--${tone}${compact ? ' content-state--compact' : ''}${className ? ` ${className}` : ''}`}
+    className={`content-state content-state--${tone}${compact ? ' content-state--compact' : ''}${className ? ` ${className}` : ''}`}
     role={role}
     aria-live={tone === 'error' ? 'assertive' : 'polite'}
     aria-busy={tone === 'loading' || undefined}
   >
     <span className="content-state-icon" aria-hidden="true">
-      {tone === 'loading' ? <i /> : tone === 'error' ? '!' : <Icon name="empty" />}
+      {tone === 'loading' ? <i /> : tone === 'error' ? '!' : '—'}
     </span>
     <div className="content-state-copy">
       <h2>{title}</h2>
       {detail && <p>{detail}</p>}
     </div>
     {actions && <div className="content-state-actions">{actions}</div>}
-    {tone === 'loading' && <Skeleton decorative lines={compact ? 2 : 3} />}
   </section>;
 }

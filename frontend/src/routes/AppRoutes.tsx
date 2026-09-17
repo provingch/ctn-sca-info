@@ -18,12 +18,11 @@ import AdminPage from '../pages/admin/AdminPage';
 import ParentPage from '../pages/parent/ParentPage';
 import StyleguidePage from '../pages/styleguide/StyleguidePage';
 import OfflinePage from '../pages/OfflinePage';
-import { ApplicationDesign } from '../design-system/ApplicationDesign';
 
 const protect = (element: React.ReactNode, allowedLevels?: number[]) => <ProtectedRoute allowedLevels={allowedLevels}>{element}</ProtectedRoute>;
 
 export default function AppRoutes() {
-  return <BrowserRouter><SpecialtyProvider><ApplicationDesign><ToastProvider><AuthProvider><Routes>
+  return <BrowserRouter><SpecialtyProvider><ToastProvider><AuthProvider><Routes>
     <Route path="/login" element={<LoginPage />} />
     <Route path="/privacidad" element={<LegalPage />} />
     <Route path="/terminos" element={<LegalPage />} />
@@ -55,5 +54,5 @@ export default function AppRoutes() {
     <Route path="/styleguide" element={protect(<StyleguidePage />, [3])} />
     <Route path="/offline" element={<OfflinePage />} />
     <Route path="*" element={<RoleLanding />} />
-  </Routes></AuthProvider></ToastProvider></ApplicationDesign></SpecialtyProvider></BrowserRouter>;
+  </Routes></AuthProvider></ToastProvider></SpecialtyProvider></BrowserRouter>;
 }
