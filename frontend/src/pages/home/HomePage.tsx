@@ -49,6 +49,9 @@ export default function HomePage() {
   const [selectionLoading, setSelectionLoading] = useState(false);
   const [syncingAll, setSyncingAll] = useState(false);
   const { selectSpecialty, resetSpecialty } = useSpecialty();
+  // Empieza en 'bloques' para no mostrar el selector mientras ClassView todavía
+  // está resolviendo si el profesor tiene horario cargado hoy.
+  const [claseModo, setClaseModo] = useState<'bloques' | 'manual'>('bloques');
 
   const hasEspecialidad = !!especialidadId;
   const hasCursoSeleccionado = !!cursoId;
@@ -214,7 +217,7 @@ export default function HomePage() {
   const sectionOptions = (selectedCourseNivel != null ? seccionesForNivel(selectedCourseNivel) : []).map((s) => ({ value: s, label: String(s) }));
 
   const showSelectionWait = !hasEspecialidad || !hasCursoSeleccionado || !hasSeccionSeleccionada;
-  const showSelector = view === 'planillas' || (view === 'catedra' && subview === 'clase');
+  const showSelector = view === 'planillas' || (view === 'catedra' && subview === 'clase' && claseModo === 'manual');
   const hasActiveFilter = hasEspecialidad || selectedCourseNivel != null || hasSeccionSeleccionada;
   const clearFilter = () => {
     setSelectedNivel(null);
@@ -303,7 +306,7 @@ export default function HomePage() {
           ) : showSelectionWait ? (
             <p className="catedra-select-hint">Elegí una especialidad, un curso y una sección para continuar.</p>
           ) : (
-            <ClassView key={data.selCurso?.id} data={data} reload={load} />
+            <ClassView key={data.selCurso?.id} data={data} reload={load} onModoChange={setClaseModo} />
           )}
         </div>
       ) : (
@@ -810,7 +813,7 @@ function PlanillaCoverControls({ planillaId, tienePortada, onChanged }: {
   </>;
 }
 
-export function ClassView({ data, reload }: { data: HomeResponse; reload: () => Promise<void> }) {
+export function ClassView({ data, reload, onModoChange }: { data: HomeResponse; reload: () => Promise<void>; onModoChange?: (modo: 'bloques' | 'manual') => void }) {
   const selectedCursoId = data.selCurso?.id;
   const { user } = useAuth();
   const [tema, setTema] = useState('');
@@ -843,6 +846,10 @@ export function ClassView({ data, reload }: { data: HomeResponse; reload: () => 
   const [bloquesHoyAttempt, setBloquesHoyAttempt] = useState(0);
   const [origenFormulario, setOrigenFormulario] = useState<'bloque' | 'manual' | null>(null);
   const [bloqueActivo, setBloqueActivo] = useState<HorarioBloqueHoyDto | null>(null);
+
+  useEffect(() => {
+    if (origenFormulario) onModoChange?.(origenFormulario === 'manual' ? 'manual' : 'bloques');
+  }, [origenFormulario, onModoChange]);
 
   useEffect(() => {
     let active = true;

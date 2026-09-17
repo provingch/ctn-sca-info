@@ -155,6 +155,21 @@ describe('Inicio de clase', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Registrar otra clase' }));
     await waitFor(() => expect(screen.getByLabelText('Disciplina')).toHaveValue('Redes II'));
   });
+  it('avisa al padre del modo (bloques o manual) para que sepa cuándo mostrar su propio selector', async () => {
+    vi.mocked(getMiHorarioHoy).mockResolvedValue([bloqueHoy]);
+    const onModoChange = vi.fn();
+    render(<ToastProvider><ClassView data={data} reload={vi.fn().mockResolvedValue(undefined)} onModoChange={onModoChange} /></ToastProvider>);
+    await screen.findByText('Tu horario de hoy');
+    expect(onModoChange).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: /Redes II/ }));
+    await waitFor(() => expect(onModoChange).toHaveBeenLastCalledWith('bloques'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Limpiar formulario' }));
+    await screen.findByText('Tu horario de hoy');
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar otra clase' }));
+    await waitFor(() => expect(onModoChange).toHaveBeenLastCalledWith('manual'));
+  });
   it('calcula la última hora sin incluir recreos ni cruzar turnos', () => {
     expect(classEndTime('8:45', 1)).toBe('9:20');
     expect(classEndTime('11:25', 1)).toBe('12:00');
