@@ -6,7 +6,6 @@ import ScaLogo from '../../components/ScaLogo';
 import PasswordInput from '../../components/PasswordInput';
 import { applyTheme, getInitialTheme } from '../../theme/theme';
 import { authFeedback, formatRetryTime, type AuthFeedback } from './loginLockout';
-import { Button } from '../../design-system';
 
 type Step = 'credentials' | 'twofactor';
 
@@ -112,7 +111,7 @@ export default function LoginPage() {
       <div className="auth-page" data-specialty="general">
         <div className="public-theme-toggle"><ThemeToggle /></div>
         <div className="auth-brand-panel"><span className="auth-brand-mark"><ScaLogo /></span><p>Sistema de Carpetas Académicas</p><h2>La gestión académica, clara y conectada.</h2><small>Colegio Técnico Nacional · Asunción</small></div>
-        <form onSubmit={handle2faSubmit} className="auth-form sca-ds">
+        <form onSubmit={handle2faSubmit} className="auth-form">
           <h1>Verificación en dos pasos</h1>
           <p>Ingresá el código de tu app de autenticación.</p>
           <label htmlFor="totp-code">
@@ -129,9 +128,9 @@ export default function LoginPage() {
             />
           </label>
           {error && <AuthFeedbackNotice feedback={error} remainingSeconds={remainingLockSeconds} title="No pudimos verificar el código" />}
-          <Button type="submit" aria-label="Verificar" loading={submitting} loadingLabel="Verificando" disabled={remainingLockSeconds > 0}>
+          <button type="submit" disabled={submitting || remainingLockSeconds > 0}>
             {submitting ? 'Verificando…' : 'Verificar'}
-          </Button>
+          </button>
         </form>
       </div>
     );
@@ -141,7 +140,7 @@ export default function LoginPage() {
     <div className="auth-page" data-specialty="general">
       <div className="public-theme-toggle"><ThemeToggle /></div>
       <div className="auth-brand-panel"><span className="auth-brand-mark"><ScaLogo /></span><p>Sistema de Carpetas Académicas</p><h2>La gestión académica, clara y conectada.</h2><small>Colegio Técnico Nacional · Asunción</small></div>
-      <form onSubmit={handleCredentialsSubmit} className="auth-form sca-ds">
+      <form onSubmit={handleCredentialsSubmit} className="auth-form">
         <h1>Iniciar sesión</h1>
         <label htmlFor="login-username">
           Usuario o Cédula
@@ -167,9 +166,9 @@ export default function LoginPage() {
           Recordarme en este dispositivo
         </label>
         {error && <AuthFeedbackNotice feedback={error} remainingSeconds={remainingLockSeconds} title="No se pudo iniciar sesión" />}
-        <Button type="submit" aria-label="Ingresar" loading={submitting} loadingLabel="Ingresando" disabled={remainingLockSeconds > 0}>
+        <button type="submit" disabled={submitting || remainingLockSeconds > 0}>
           {submitting ? 'Ingresando…' : 'Ingresar'}
-        </Button>
+        </button>
       </form>
     </div>
   );
