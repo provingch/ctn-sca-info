@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import useAccessibleDialog from '../../hooks/useAccessibleDialog';
 import type { CodigoConducta } from '../../api/home';
@@ -26,6 +26,10 @@ interface RasgosAsistenciaEditorProps {
 
 const SIN_CODIGOS_TEXTO = 'Sin códigos cargados. Los carga el evaluador o el administrador.';
 
+function nombreCompleto(alumno: RasgoEditorAlumno) {
+  return alumno.apellido ? `${alumno.apellido}, ${alumno.nombre}` : alumno.nombre;
+}
+
 export default function RasgosAsistenciaEditor({
   alumnos,
   tema,
@@ -38,15 +42,46 @@ export default function RasgosAsistenciaEditor({
   codigosConductaError,
   onRetryCodigosConducta,
   titulo = 'Asistencia general y justificativos',
-  descripcion = 'Marcá ausentes en la lista. Los no marcados se guardan como presentes.',
+  descripcion = 'Tocá un alumno para marcarlo ausente. Los no marcados se guardan como presentes.',
 }: RasgosAsistenciaEditorProps) {
   const [showCodeHelp, setShowCodeHelp] = useState(false);
   const codeHelpDialogRef = useAccessibleDialog(showCodeHelp, () => setShowCodeHelp(false));
+  const [addingRasgo, setAddingRasgo] = useState(false);
+  const [nuevoAlumnoId, setNuevoAlumnoId] = useState('');
+  const [nuevoCodigo, setNuevoCodigo] = useState('');
+
   const totalAusentes = alumnos.filter((alumno) => ausentes.includes(alumno.id)).length;
   const totalPresentes = alumnos.length - totalAusentes;
   const porcentajeAsistencia = alumnos.length > 0 ? Math.round((totalPresentes * 100) / alumnos.length) : 0;
   const porcentajeAusencia = alumnos.length > 0 ? 100 - porcentajeAsistencia : 0;
   const sinCodigosCargados = !codigosConductaError && codigosConducta.length === 0;
+  const puedeAgregarRasgo = codigosConducta.length > 0;
+
+  const descripcionPorCodigo = useMemo(
+    () => new Map(codigosConducta.map((item) => [item.codigo, item.descripcion])),
+    [codigosConducta],
+  );
+  const alumnosConRasgos = alumnos.filter((alumno) => (codigosPorAlumno[alumno.id] ?? []).length > 0);
+  const codigosYaAsignados = nuevoAlumnoId ? (codigosPorAlumno[Number(nuevoAlumnoId)] ?? []) : [];
+  const codigosDisponibles = codigosConducta.filter((item) => !codigosYaAsignados.includes(item.codigo));
+
+  function abrirAgregarRasgo() {
+    setNuevoAlumnoId('');
+    setNuevoCodigo('');
+    setAddingRasgo(true);
+  }
+
+  function cerrarAgregarRasgo() {
+    setAddingRasgo(false);
+    setNuevoAlumnoId('');
+    setNuevoCodigo('');
+  }
+
+  function confirmarNuevoRasgo() {
+    if (!nuevoAlumnoId || !nuevoCodigo) return;
+    onCodigoChange(Number(nuevoAlumnoId), nuevoCodigo);
+    cerrarAgregarRasgo();
+  }
 
   return <>
     <div className="class-card">
@@ -58,44 +93,40 @@ export default function RasgosAsistenciaEditor({
 
     <div className="class-card">
       <h3>{titulo}</h3>
-      {codigosConductaError && (
-        <div className="notice error" style={{ marginBottom: 12, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-          <p style={{ margin: 0, flex: 1 }}>No se pudieron cargar los rasgos conductuales. {codigosConductaError}</p>
-          {onRetryCodigosConducta && <button type="button" className="button secondary" onClick={onRetryCodigosConducta}>Reintentar</button>}
-        </div>
-      )}
       <div className="class-attendance-toolbar">
         <span className="student-pill">Habilitados: <strong>{alumnos.length}</strong></span>
         <p>{descripcion}</p>
       </div>
-      <div className="table-responsive" style={{ marginBottom: 8 }}>
-        <table className="table table-striped" id="tablaAsistencia">
-          <caption className="visually-hidden">Asistencia y rasgos conductuales de alumnos</caption>
-          <thead><tr><th>#</th><th>Apellido(s) y nombre(s)</th><th style={{ textAlign: 'right', width: 140 }}>Estado (P/A)</th><th style={{ width: 190 }}>Rasgos conductuales</th></tr></thead>
-          <tbody>
-            {alumnos.map((alumno, index) => (
-              <tr key={alumno.id}>
-                <td>{index + 1}</td>
-                <td>{alumno.apellido ? `${alumno.apellido}, ${alumno.nombre}` : alumno.nombre}</td>
-                <td style={{ textAlign: 'right' }}>
-                  <label style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
-                    <input className="ausente-checkbox" type="checkbox" checked={ausentes.includes(alumno.id)} onChange={(event) => onAusenteChange(alumno.id, event.target.checked)} />
-                    Ausente
-                  </label>
-                </td>
-                <td className="rasgos-conductuales-cell">
-                  {sinCodigosCargados ? (
-                    <span className="rasgos-conducta-empty">{SIN_CODIGOS_TEXTO}</span>
-                  ) : (
-                    <AnimatedSelect multiple portal ariaLabel={`Rasgos conductuales de ${alumno.nombre} ${alumno.apellido}`} value={codigosPorAlumno[alumno.id] ?? []} placeholder="Seleccione…" onChange={(codigo) => onCodigoChange(alumno.id, codigo)} options={codigosConducta.map((item) => ({ value: item.codigo, label: item.codigo }))} />
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <button type="button" className="button secondary" onClick={() => setShowCodeHelp(true)}>¿Qué significa cada código?</button>
+
+      {alumnos.length === 0 ? (
+        <p>No hay alumnos habilitados para tomar asistencia.</p>
+      ) : (
+        <div className="attendance-grid" role="group" aria-label="Asistencia de alumnos">
+          {alumnos.map((alumno, index) => {
+            const ausente = ausentes.includes(alumno.id);
+            const codigos = codigosPorAlumno[alumno.id] ?? [];
+            const nombre = nombreCompleto(alumno);
+            const estado = ausente ? 'ausente' : 'presente';
+            const badge = codigos.length > 0 ? `${codigos[0]}${codigos.length > 1 ? ` +${codigos.length - 1}` : ''}` : null;
+            return (
+              <button
+                type="button"
+                key={alumno.id}
+                className={`attendance-chip ${ausente ? 'tone-danger' : 'tone-success'}`}
+                aria-pressed={ausente}
+                title={nombre}
+                aria-label={`${nombre}, ${estado}${codigos.length > 0 ? `, rasgos ${codigos.join(', ')}` : ''}`}
+                onClick={() => onAusenteChange(alumno.id, !ausente)}
+              >
+                <span className="attendance-chip-order" aria-hidden="true">{index + 1}.</span>
+                <span className="attendance-chip-name" aria-hidden="true">{nombre}</span>
+                {badge && <span className="attendance-chip-badge" aria-hidden="true">{badge}</span>}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       <div className="attendance-summary" role="status" aria-live="polite" aria-atomic="true">
         <strong>Resumen de asistencia</strong>
         {alumnos.length > 0 ? <>
@@ -103,6 +134,84 @@ export default function RasgosAsistenciaEditor({
           <small>Se actualiza al marcar ausentes. Incluye solo alumnos habilitados.</small>
         </> : <p>No hay alumnos habilitados para calcular la asistencia.</p>}
       </div>
+    </div>
+
+    <div className="class-card">
+      <div className="class-card-head">
+        <h3>Rasgos conductuales</h3>
+        <button type="button" className="button secondary" disabled={!puedeAgregarRasgo} onClick={abrirAgregarRasgo}>Agregar rasgo</button>
+      </div>
+
+      {codigosConductaError && (
+        <div className="notice error" style={{ marginBottom: 12, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <p style={{ margin: 0, flex: 1 }}>No se pudieron cargar los rasgos conductuales. {codigosConductaError}</p>
+          {onRetryCodigosConducta && <button type="button" className="button secondary" onClick={onRetryCodigosConducta}>Reintentar</button>}
+        </div>
+      )}
+      {sinCodigosCargados && <p className="rasgos-conducta-empty">{SIN_CODIGOS_TEXTO}</p>}
+
+      {addingRasgo && (
+        <div className="rasgo-add-panel">
+          <div className="class-grid">
+            <div className="class-field">
+              <label>Alumno</label>
+              <AnimatedSelect
+                ariaLabel="Alumno para el nuevo rasgo"
+                value={nuevoAlumnoId}
+                placeholder="Elegí un alumno…"
+                onChange={(value) => { setNuevoAlumnoId(value); setNuevoCodigo(''); }}
+                options={alumnos.map((alumno) => ({ value: alumno.id, label: nombreCompleto(alumno) }))}
+              />
+            </div>
+            <div className="class-field">
+              <label>Código</label>
+              <AnimatedSelect
+                ariaLabel="Código del nuevo rasgo"
+                value={nuevoCodigo}
+                disabled={!nuevoAlumnoId}
+                placeholder={nuevoAlumnoId ? 'Elegí un código…' : 'Elegí un alumno primero'}
+                onChange={setNuevoCodigo}
+                options={codigosDisponibles.map((item) => ({ value: item.codigo, label: `${item.codigo} — ${item.descripcion}` }))}
+              />
+            </div>
+          </div>
+          <div className="rasgo-add-actions">
+            <button type="button" className="button secondary" onClick={cerrarAgregarRasgo}>Cancelar</button>
+            <button type="button" className="button" disabled={!nuevoAlumnoId || !nuevoCodigo} onClick={confirmarNuevoRasgo}>Confirmar</button>
+          </div>
+        </div>
+      )}
+
+      {alumnosConRasgos.length === 0 ? (
+        <p className="rasgos-empty">No hay rasgos registrados en esta clase.</p>
+      ) : (
+        <ul className="rasgos-list">
+          {alumnosConRasgos.map((alumno) => {
+            const codigos = codigosPorAlumno[alumno.id] ?? [];
+            const nombre = nombreCompleto(alumno);
+            return (
+              <li className="rasgo-row" key={alumno.id}>
+                <div className="rasgo-row-head">
+                  <strong>{nombre}</strong>
+                  <div className="rasgo-chips">
+                    {codigos.map((codigo) => (
+                      <span className="rasgo-chip" key={codigo}>
+                        {codigo}
+                        <button type="button" onClick={() => onCodigoChange(alumno.id, codigo)} aria-label={`Quitar ${codigo} de ${nombre}`}>×</button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <p className="rasgo-row-meanings">
+                  {codigos.map((codigo) => `${codigo}: ${descripcionPorCodigo.get(codigo) ?? 'Sin descripción'}`).join(' · ')}
+                </p>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      <button type="button" className="button secondary" onClick={() => setShowCodeHelp(true)}>¿Qué significa cada código?</button>
     </div>
 
     {showCodeHelp && <div ref={codeHelpDialogRef} role="dialog" aria-modal="true" aria-labelledby="code-help-title" tabIndex={-1} style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'grid', placeItems: 'center', padding: 20, background: 'rgba(0, 0, 0, .55)' }} onClick={() => setShowCodeHelp(false)}>
