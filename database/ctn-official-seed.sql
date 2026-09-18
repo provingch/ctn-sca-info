@@ -671,212 +671,6 @@ INSERT INTO instrumento (id, nombre) VALUES
 -- ========================================
 -- ALUMNOS
 -- ========================================
--- Los alumnos corresponden solamente a informatica
--- los demas deben ser cargados luego
--- ¡¡TODOS LOS ALUMNOS CORRESPONDEN AL AÑO 2026!!
-
--- Informática
-    -- 3º A (curso_id = 31)
-    INSERT INTO alumno
-    (nombre, apellido, curso_id, ci)
-    VALUES
-    ('PAZ FIORELLA', 'ACUÑA RODRIGUEZ', 31, 6552138),
-    ('GABRIELA ELIZABETH', 'ALEGRE ORTIZ', 31, 6520371),
-    ('CESAR EZEQUIEL', 'AMARILLA ETTIENE', 31, 7011624),
-    ('FERNANDO JOSE', 'BARRETO ROCHE', 31, 6271898),
-    ('MARIA CECILIA', 'BENITEZ BARRIOS', 31, 7350265),
-    ('SOFIA ESMERALDA', 'BENITEZ MARTINEZ', 31, 7290536),
-    ('VALERIA ALEJANDRA', 'CACERES ACHUCARRO', 31, 7536039),
-    ('CARLOS ANTONIO', 'CANDIA ROMERO', 31, 6895905),
-    ('JONAS ALEXANDER', 'CUBILLA MORINIGO', 31, 7979695),
-    ('ALICE GISSELLE', 'DIAZ AMARILLA', 31, 6274837),
-    ('KEVIN MATIAS', 'DURE AQUINO', 31, 6711232),
-    ('THIAGO DAVID', 'ESTIGARRIBIA DELGADILLO', 31, 6911572),
-    ('GLORIA MILENA', 'FARIÑA NUÑEZ', 31, 6363114),
-    ('LUCIO ALESSANDRO', 'GAMARRA AGUAYO', 31, 6216256),
-    ('LUZ NAHIARA', 'GAYOZO AVALOS', 31, 6218519),
-    ('THIAGO ALEXANDER', 'LEON CORONEL', 31, 6168091),
-    ('LUCAS ABDIEL', 'MARTINEZ GONZALEZ', 31, 6219481),
-    ('CHRISTOPHER IVAN', 'MARTINEZ INSFRAN', 31, 7449854),
-    ('MARCOS DANIEL', 'MOLINAS LEON', 31, 6820120),
-    ('JOSHUA FABRIZIO', 'MONGELOS CAMACHO', 31, 6656584),
-    ('MIANE MARIA VERONICA', 'NOGUERA AVILA', 31, 6298042),
-    ('ALAN ENRIQUE DAMIAN', 'OJEDA OLIVER', 31, 6840108),
-    ('ALEXANDER AGUSTIN', 'OLMEDO RODRIGUEZ', 31, 6658507),
-    ('SAMUEL JESUS', 'SCHMIDT SILVEIRA', 31, 6595852),
-    ('JOSE FEDERICO', 'SOLER VAZQUEZ', 31, 7309281),
-    ('MIKAHELA', 'SUAREZ ARZA', 31, 6711101),
-    ('LEONARDO', 'VALINOTTI  PAREDES', 31, 6761746),
-    ('FACUNDO BENJAMIN', 'VERA SALINAS', 31, 7007217);
-
-    -- 3º B (curso_id = 32)
-    INSERT INTO alumno
-    (nombre, apellido, curso_id, ci)
-    VALUES
-    ('JORGE JOAQUIN', 'GONZALEZ BAEZ', 32, 6300937),
-    ('EMILIO ANDRES', 'ALMIRON RUIZ', 32, 8651544),
-    ('JORGE DAVID', 'AVEIRO DURE', 32, 6763135),
-    ('GABRIELA DENISSE', 'BENITEZ CAMPUZANO', 32, 6248031),
-    ('PAMELA MONSERRAT', 'CABALLERO ZARACHO', 32, 6122730),
-    ('FABRICIO NICOLAS', 'CUBAS VAZQUEZ', 32, 6299174),
-    ('JESUS MARIA', 'DAVID RESQUIN', 32, 7112304),
-    ('SANTIAGO DIDIER DAMASO', 'DELVALLE CABRAL', 32, 6323522),
-    ('PAULO GASTON', 'DUARTE ORUE', 32, 6506158),
-    ('ALBA MARIA ELIZABETH', 'FARIÑA MORAN', 32, 6682899),
-    ('EVELYN CECILIA', 'GALEANO DUARTE', 32, 6254779),
-    ('FRANCO GONZALO', 'GARCIA GARCIA', 32, 6378044),
-    ('ANGELO GASTON', 'GONZALEZ AMARILLA', 32, 6306858),
-    ('JUANA DAMARIS', 'HUACCA ALEJO', 32, 9132227),
-    ('MILAGROS MICAELA', 'JIMENEZ ROJAS', 32, 6276848),
-    ('LUCAS   MANUEL', 'LOPEZ ALDERETE', 32, 6709236),
-    ('PABLO LEANDRO', 'LOPEZ PULLARES', 32, 6128349),
-    ('LUNA MIA', 'MENDIETA', 32, 6521146),
-    ('VICTOR MANUEL', 'MENDIETA PEREIRA', 32, 7965966),
-    ('GAIA VIOLETA MARIA', 'MOREL AREVALOS', 32, 6315503),
-    ('FACUNDO MATHIAS', 'PRIETO CACERES', 32, 7277773),
-    ('AIDEE FIORELLA', 'RECALDE CASTILLO', 32, 7116092),
-    ('YANARA AYELEN DOMINGA', 'RODAS VALDEZ', 32, 6337830),
-    ('FIORELLA ANAHI', 'SOSA AMARILLA', 32, 7934035),
-    ('SANTIAGO', 'SOSA OVELAR', 32, 6138828),
-    ('ANA BELEN', 'VARGAS VALIENTE', 32, 6597209),
-    ('HEATHER PATRICIA', 'WATTIEZ BAREIRO', 32, 6600003),
-    ('ELIAS SEBASTIAN', 'ZORRILLA BENITEZ', 32, 6355776);
-
-    -- 2º A (curso_id = 33)
-    INSERT INTO alumno
-    (nombre, apellido, curso_id, ci) VALUES
-    ('MARIELA CHONG AH', 'ACOSTA POSADAS', 33, 6634030),
-    ('PEDRO JOSÉ', 'ALDERETE PÁEZ', 33, 6599141),
-    ('GUILLERMO MANUEL', 'APONTE RAMÍREZ', 33, 6375687),
-    ('ARIEL MAXIMILIANO', 'ARAUJO SOSA', 33, 7868229),
-    ('TYRA SELENE', 'BARBOZA CABRERA', 33, 6514004),
-    ('JUAN GABRIEL', 'CORONEL VILLALBA', 33, 6780823),
-    ('MICAELLA VALENTINA', 'ESPINOZA BELLOTO', 33, 6323591),
-    ('IVAN ALEXANDER', 'FERNÁNDEZ MEZA', 33, 6674310),
-    ('JUAN FABRICIO', 'FLEITAS IBÁÑEZ', 33, 7208277),
-    ('LIA JAZMIN', 'FLEITAS PÉREZ', 33, 8177227),
-    ('BRAYAN', 'GARCÍA FERNÁNDEZ', 33, 8563705),
-    ('MARIANA EMILIA', 'GONZÁLEZ CASTRO', 33, 6738451),
-    ('RAFFAELL', 'GONZÁLEZ LARREA', 33, 6623572),
-    ('ÁNGEL JOSÉ IVAN', 'MACIEL RUÍZ DÍAZ', 33, 8079060),
-    ('RICARDO GERMAN', 'MARTÍNEZ ROJAS', 33, 7488331),
-    ('MOISES', 'MELGAREJO SAUCEDO', 33, 7230274),
-    ('RODRIGO GABRIEL', 'MOREL MORENO', 33, 7383873),
-    ('EMILIO JOSÉ', 'MORÍNIGO PEÑA', 33, 7071354),
-    ('ANGÉLICA SUSANA', 'ORUÉ AYALA', 33, 6619509),
-    ('TANIA GUADALUPE', 'PAIVA SOTELO', 33, 7209622),
-    ('JUAN JOSÉ', 'PALMA RODRÍGUEZ', 33, 6813981),
-    ('ALEJANDRO JOSÍAS', 'PÉREZ ÁVALOS', 33, 6534642),
-    ('VINICIUS', 'RODRÍGUEZ DE OLIVEIRA', 33, 8758628),
-    ('JOSÍAS ALEXANDER', 'SANTACRUZ OTAZU', 33, 6632204),
-    ('ALESSANDRO JULIÁN', 'UNZAIN INSFRÁN', 33, 6599080),
-    ('SOFÍA ARAMÍ', 'VERA MARTÍNEZ', 33, 6658849),
-    ('FABIOLA LUJÁN', 'VERÓN MONGELÓS', 33, 6625127),
-    ('WENDY AYELÉN', 'ZÁRATE ROJAS', 33, 6781794);
-
-    -- 2º B (curso_id = 34)
-    INSERT INTO alumno
-    (nombre, apellido, curso_id, ci)
-    VALUES
-    ('FELIX HERNAN', 'ALCARAZ MEZA', 34, 6549365),
-    ('YAGO LAREN', 'AMARILLA LEGUIZAMON', 34, 6581374),
-    ('MONSERRAT ANAHI', 'AYALA GAUTO', 34, 6693608),
-    ('DYLAN VIRGILIO', 'BURGOS ROTELA', 34, 7401358),
-    ('ISAAC ULISES', 'CUEVAS SAAVEDRA', 34, 6613266),
-    ('ANGEL GABRIEL', 'DIAZ CAÑETE', 34, 7293215),
-    ('FEDERICO AMIN', 'DOMINGUEZ SOSA', 34, 6538527),
-    ('ALEJANDRA ANAHI', 'ESCOBAR OJEDA', 34, 6833279),
-    ('EDEL JAZMIN', 'FRANCO MACIEL', 34, 6593803),
-    ('ALEXIS DANIEL', 'FRETEZ VILLAMAYOR', 34, 6582254),
-    ('SAULO EZEQUIEL', 'GALEANO RIVEROS', 34, 6704166),
-    ('LUCAS GABRIEL', 'GAUTO NUÑEZ', 34, 6325567),
-    ('ADRIAN', 'GRASSO RAMOS', 34, 6617987),
-    ('MILAGROS MARGARITA YERUTI', 'GUPPI BORDON', 34, 8506321),
-    ('AMILCAR ANDRES', 'JARA AGUILERA', 34, 7138719),
-    ('DANAE ABIGAIL', 'JARA MARTINEZ', 34, 7551072),
-    ('MATEO FERNANDO', 'LENCINA AREVALOS', 34, 6883337),
-    ('MARTIN ALEJANDRO', 'LEZCANO MONTIEL', 34, 6626178),
-    ('THIAGO VALENTINO', 'MARTINEZ FERNANDEZ', 34, 6727372),
-    ('TOBIAS EZEQUIEL', 'MEDINA GONZALEZ', 34, 6512532),
-    ('VALERIA NOEMI', 'MONTIEL TRIVERO', 34, 7337850),
-    ('NATHALIA MARIELA', 'ORTIZ RODRIGUEZ', 34, 6532910),
-    ('OSIAS BENJAMIN', 'RUBIO SAMUDIO', 34, 6971481),
-    ('GIOVANNI JOSE', 'RUIZ ROMAN', 34, 7099638),
-    ('SAMYRA ANAHI', 'SANCHEZ AGUILAR', 34, 7086918),
-    ('ENZO SIMON', 'SANCHEZ VERON', 34, 6966829),
-    ('MARIA TANIA', 'SOILAN SOSA', 34, 6634375),
-    ('FIORELLA MAGALI', 'VILLAMAYOR VAZQUEZ', 34, 7225342);
-
-    -- 1º A (curso_id = 35)
-    INSERT INTO alumno
-    (nombre, apellido, curso_id, ci)
-    VALUES
-    ('EDGAR ARTURO', 'ALVAREZ BENITEZ', 35, 7090557),
-    ('ANNA GABRIELA', 'ARAMBULO GONZALEZ', 35, 7357449),
-    ('SEBASTIAN', 'BALBUENA GAONA', 35, 7159693),
-    ('NAOMI ABIGAIL', 'BENITES NOGUERA', 35, 6763142),
-    ('JOSÉ TOMÁS', 'BENÍTEZ BARRIOS', 35, 7370289),
-    ('SANTINO RAÚL', 'BENÍTEZ ROA', 35, 7761410),
-    ('LUCAS SEBASTIAN', 'CACERES CARDOZO', 35, 7726370),
-    ('MATIAS DANIEL', 'CANDIA ALFONSO', 35, 6950228),
-    ('ALEJANDRO NICOLAS', 'CENTURION CENTURION', 35, 6719867),
-    ('SANTIAGO BENJAMIN', 'COCCO FRUTOS', 35, 6740205),
-    ('SOFÍA', 'DA COSTA VALDEZ', 35, 7304888),
-    ('JORGE ANDRES', 'DE LA BARRA ZOILAN', 35, 7399317),
-    ('ELENA ISABELLA EDITH', 'DELGADILLO ESTIGARRIBIA', 35, 7211626),
-    ('EDUARDO SEBASTIAN', 'DUARTE CASTILLO', 35, 6707283),
-    ('ELIAN ANDRES', 'ESTIGARRIBIA UGARTE', 35, 6937627),
-    ('KAREN GUADALUPE', 'FRUTOS MORALES', 35, 6926830),
-    ('JUAN ENRIQUE', 'LECKIE ROLÓN', 35, 6751503),
-    ('ANNA MEI', 'NOGUERA PENG', 35, 6870160),
-    ('NATALIA BELEN', 'NUÑEZ VILLAMAYOR', 35, 7918425),
-    ('NAHOMI BELÉN', 'OCAMPOS ACOSTA', 35, 6822731),
-    ('RODRIGO MARTÍN', 'OLMEDO ZÁRATE', 35, 6977116),
-    ('MARÍA LUJÁN', 'OVELAR CENTURIÓN', 35, 7045854),
-    ('ALEXIA', 'OVELAR MARTÍNEZ', 35, 6766800),
-    ('JOSE GIOVANNI', 'PORTILLO RIVEROS', 35, 6887445),
-    ('JOSUE SEBASTIAN', 'QUINTANA BURGOS', 35, 6887564),
-    ('ANIBAL', 'RAMIREZ ORTIZ', 35, 6741348),
-    ('PEDRO DANIEL', 'RECALDE ROMERO', 35, 6864091),
-    ('ANNELISE MARIA JOSÉ', 'SANABRIA DELPADRE', 35, 7047256);
-
-    -- 1º B (curso_id = 36)
-    INSERT INTO alumno
-    (nombre, apellido, curso_id, ci)
-    VALUES
-    ('ENRIQUE DAMIÁN', 'ACOSTA MEDINA', 36, 7286222),
-    ('RODRIGO JAVIER', 'AYALA NAVARRO', 36, 7052595),
-    ('GUILLERMO DANIEL', 'AYALA OCHIPINTTI', 36, 6803972),
-    ('SANTIAGO DARIO', 'BÁEZ BORDON', 36, 6805076),
-    ('JAVIER DE JESUS', 'BOGADO PERALTA', 36, 6754519),
-    ('FABRIZIO BENJAMÍN', 'CABALLERO VILLANUEVA', 36, 6682833),
-    ('JORGE BENJAMIN', 'DOMINGUEZ GALEANO', 36, 7088828),
-    ('FERNANDA ISABEL', 'GALEANO RUIZ DÍAZ', 36, 7484939),
-    ('HORACIO JOSE', 'GIMENEZ MEZA', 36, 6722653),
-    ('MARIA JOSÉ', 'GIMENEZ TREVISON', 36, 6852970),
-    ('LUCAS DANIEL', 'GÓMEZ MORENO', 36, 6698773),
-    ('GUILLERMO FACUNDO', 'MARTÍNEZ BENÍTEZ', 36, 7313005),
-    ('RODRIGO DANIEL', 'MARTINEZ MARTINO', 36, 7064807),
-    ('MARTIN RAFAEL', 'MONGELOS BRITEZ', 36, 7037983),
-    ('THIAGO ALEXANDER', 'OCAMPOS RIVAS', 36, 6752851),
-    ('MARCELO JAVIER', 'PÉREZ VELÁZQUEZ', 36, 7228240),
-    ('ALEXANDER DAVID', 'PORTILLO OLMEDO', 36, 6820649),
-    ('ALEJANDRO ABEL', 'RIVELA TORALES', 36, 7565497),
-    ('FABRIZIO ARIEL', 'RODAS CABRERA', 36, 6799915),
-    ('MARIA ISABEL', 'RODRIGUEZ ACOSTA', 36, 6742018),
-    ('FACUNDO DANIEL', 'RODRIGUEZ LIMA', 36, 6802446),
-    ('DULCE MARIA GUADALUPE', 'SAUCEDO PARRA', 36, 6711084),
-    ('IANN DANIEL', 'TOLEDO ARANDA', 36, 6818642),
-    ('ISAAC ISMAEL', 'TORALES OVELAR', 36, 6923315),
-    ('GIULIANNA ARAMI', 'VALDEZ FERNÁNDEZ', 36, 8187153),
-    ('EZEQUIEL', 'VALENZUELA CABALLERO', 36, 7319899),
-    ('MATEO RAFAEL', 'VELAZQUEZ AMADI', 36, 7138069),
-    ('FRANCISCO RAFAEL', 'ZARZA MARTÍNEZ', 36, 6788083);
-
--- 1er Curso 2026 — resto de las especialidades (Informática 1º ya está más arriba).
--- Cargado desde 'LISTAS 1er CURSO 2026 SG.xls' (Secretaría General, ago-2026).
--- promocion = 2028 para todo 1er curso del período 2026.
-
 -- Construcciones Civiles 1º A (curso_id = 7)
     INSERT INTO alumno
     (nombre, apellido, curso_id, ci)
@@ -1205,6 +999,204 @@ INSERT INTO instrumento (id, nombre) VALUES
     ('DANTE DE JESUS', 'VERA MIERES', 30, 7070833),
     ('INGRID MONSERRATH', 'VERDUN GONZALEZ', 30, 6879393),
     ('EZEQUIEL', 'VILLALBA CHIRIANI', 30, 7551342);
+
+-- Informática
+    -- 3º A (curso_id = 31)
+    INSERT INTO alumno
+    (nombre, apellido, curso_id, ci)
+    VALUES
+    ('PAZ FIORELLA', 'ACUÑA RODRIGUEZ', 31, 6552138),
+    ('GABRIELA ELIZABETH', 'ALEGRE ORTIZ', 31, 6520371),
+    ('CESAR EZEQUIEL', 'AMARILLA ETTIENE', 31, 7011624),
+    ('FERNANDO JOSE', 'BARRETO ROCHE', 31, 6271898),
+    ('MARIA CECILIA', 'BENITEZ BARRIOS', 31, 7350265),
+    ('SOFIA ESMERALDA', 'BENITEZ MARTINEZ', 31, 7290536),
+    ('VALERIA ALEJANDRA', 'CACERES ACHUCARRO', 31, 7536039),
+    ('CARLOS ANTONIO', 'CANDIA ROMERO', 31, 6895905),
+    ('JONAS ALEXANDER', 'CUBILLA MORINIGO', 31, 7979695),
+    ('ALICE GISSELLE', 'DIAZ AMARILLA', 31, 6274837),
+    ('KEVIN MATIAS', 'DURE AQUINO', 31, 6711232),
+    ('THIAGO DAVID', 'ESTIGARRIBIA DELGADILLO', 31, 6911572),
+    ('GLORIA MILENA', 'FARIÑA NUÑEZ', 31, 6363114),
+    ('LUCIO ALESSANDRO', 'GAMARRA AGUAYO', 31, 6216256),
+    ('LUZ NAHIARA', 'GAYOZO AVALOS', 31, 6218519),
+    ('THIAGO ALEXANDER', 'LEON CORONEL', 31, 6168091),
+    ('LUCAS ABDIEL', 'MARTINEZ GONZALEZ', 31, 6219481),
+    ('CHRISTOPHER IVAN', 'MARTINEZ INSFRAN', 31, 7449854),
+    ('MARCOS DANIEL', 'MOLINAS LEON', 31, 6820120),
+    ('JOSHUA FABRIZIO', 'MONGELOS CAMACHO', 31, 6656584),
+    ('MIANE MARIA VERONICA', 'NOGUERA AVILA', 31, 6298042),
+    ('ALAN ENRIQUE DAMIAN', 'OJEDA OLIVER', 31, 6840108),
+    ('ALEXANDER AGUSTIN', 'OLMEDO RODRIGUEZ', 31, 6658507),
+    ('SAMUEL JESUS', 'SCHMIDT SILVEIRA', 31, 6595852),
+    ('JOSE FEDERICO', 'SOLER VAZQUEZ', 31, 7309281),
+    ('MIKAHELA', 'SUAREZ ARZA', 31, 6711101),
+    ('LEONARDO', 'VALINOTTI  PAREDES', 31, 6761746),
+    ('FACUNDO BENJAMIN', 'VERA SALINAS', 31, 7007217);
+
+    -- 3º B (curso_id = 32)
+    INSERT INTO alumno
+    (nombre, apellido, curso_id, ci)
+    VALUES
+    ('JORGE JOAQUIN', 'GONZALEZ BAEZ', 32, 6300937),
+    ('EMILIO ANDRES', 'ALMIRON RUIZ', 32, 8651544),
+    ('JORGE DAVID', 'AVEIRO DURE', 32, 6763135),
+    ('GABRIELA DENISSE', 'BENITEZ CAMPUZANO', 32, 6248031),
+    ('PAMELA MONSERRAT', 'CABALLERO ZARACHO', 32, 6122730),
+    ('FABRICIO NICOLAS', 'CUBAS VAZQUEZ', 32, 6299174),
+    ('JESUS MARIA', 'DAVID RESQUIN', 32, 7112304),
+    ('SANTIAGO DIDIER DAMASO', 'DELVALLE CABRAL', 32, 6323522),
+    ('PAULO GASTON', 'DUARTE ORUE', 32, 6506158),
+    ('ALBA MARIA ELIZABETH', 'FARIÑA MORAN', 32, 6682899),
+    ('EVELYN CECILIA', 'GALEANO DUARTE', 32, 6254779),
+    ('FRANCO GONZALO', 'GARCIA GARCIA', 32, 6378044),
+    ('ANGELO GASTON', 'GONZALEZ AMARILLA', 32, 6306858),
+    ('JUANA DAMARIS', 'HUACCA ALEJO', 32, 9132227),
+    ('MILAGROS MICAELA', 'JIMENEZ ROJAS', 32, 6276848),
+    ('LUCAS   MANUEL', 'LOPEZ ALDERETE', 32, 6709236),
+    ('PABLO LEANDRO', 'LOPEZ PULLARES', 32, 6128349),
+    ('LUNA MIA', 'MENDIETA', 32, 6521146),
+    ('VICTOR MANUEL', 'MENDIETA PEREIRA', 32, 7965966),
+    ('GAIA VIOLETA MARIA', 'MOREL AREVALOS', 32, 6315503),
+    ('FACUNDO MATHIAS', 'PRIETO CACERES', 32, 7277773),
+    ('AIDEE FIORELLA', 'RECALDE CASTILLO', 32, 7116092),
+    ('YANARA AYELEN DOMINGA', 'RODAS VALDEZ', 32, 6337830),
+    ('FIORELLA ANAHI', 'SOSA AMARILLA', 32, 7934035),
+    ('SANTIAGO', 'SOSA OVELAR', 32, 6138828),
+    ('ANA BELEN', 'VARGAS VALIENTE', 32, 6597209),
+    ('HEATHER PATRICIA', 'WATTIEZ BAREIRO', 32, 6600003),
+    ('ELIAS SEBASTIAN', 'ZORRILLA BENITEZ', 32, 6355776);
+
+    -- 2º A (curso_id = 33)
+    INSERT INTO alumno
+    (nombre, apellido, curso_id, ci) VALUES
+    ('MARIELA CHONG AH', 'ACOSTA POSADAS', 33, 6634030),
+    ('PEDRO JOSÉ', 'ALDERETE PÁEZ', 33, 6599141),
+    ('GUILLERMO MANUEL', 'APONTE RAMÍREZ', 33, 6375687),
+    ('ARIEL MAXIMILIANO', 'ARAUJO SOSA', 33, 7868229),
+    ('TYRA SELENE', 'BARBOZA CABRERA', 33, 6514004),
+    ('JUAN GABRIEL', 'CORONEL VILLALBA', 33, 6780823),
+    ('MICAELLA VALENTINA', 'ESPINOZA BELLOTO', 33, 6323591),
+    ('IVAN ALEXANDER', 'FERNÁNDEZ MEZA', 33, 6674310),
+    ('JUAN FABRICIO', 'FLEITAS IBÁÑEZ', 33, 7208277),
+    ('LIA JAZMIN', 'FLEITAS PÉREZ', 33, 8177227),
+    ('BRAYAN', 'GARCÍA FERNÁNDEZ', 33, 8563705),
+    ('MARIANA EMILIA', 'GONZÁLEZ CASTRO', 33, 6738451),
+    ('RAFFAELL', 'GONZÁLEZ LARREA', 33, 6623572),
+    ('ÁNGEL JOSÉ IVAN', 'MACIEL RUÍZ DÍAZ', 33, 8079060),
+    ('RICARDO GERMAN', 'MARTÍNEZ ROJAS', 33, 7488331),
+    ('MOISES', 'MELGAREJO SAUCEDO', 33, 7230274),
+    ('RODRIGO GABRIEL', 'MOREL MORENO', 33, 7383873),
+    ('EMILIO JOSÉ', 'MORÍNIGO PEÑA', 33, 7071354),
+    ('ANGÉLICA SUSANA', 'ORUÉ AYALA', 33, 6619509),
+    ('TANIA GUADALUPE', 'PAIVA SOTELO', 33, 7209622),
+    ('JUAN JOSÉ', 'PALMA RODRÍGUEZ', 33, 6813981),
+    ('ALEJANDRO JOSÍAS', 'PÉREZ ÁVALOS', 33, 6534642),
+    ('VINICIUS', 'RODRÍGUEZ DE OLIVEIRA', 33, 8758628),
+    ('JOSÍAS ALEXANDER', 'SANTACRUZ OTAZU', 33, 6632204),
+    ('ALESSANDRO JULIÁN', 'UNZAIN INSFRÁN', 33, 6599080),
+    ('SOFÍA ARAMÍ', 'VERA MARTÍNEZ', 33, 6658849),
+    ('FABIOLA LUJÁN', 'VERÓN MONGELÓS', 33, 6625127),
+    ('WENDY AYELÉN', 'ZÁRATE ROJAS', 33, 6781794);
+
+    -- 2º B (curso_id = 34)
+    INSERT INTO alumno
+    (nombre, apellido, curso_id, ci)
+    VALUES
+    ('FELIX HERNAN', 'ALCARAZ MEZA', 34, 6549365),
+    ('YAGO LAREN', 'AMARILLA LEGUIZAMON', 34, 6581374),
+    ('MONSERRAT ANAHI', 'AYALA GAUTO', 34, 6693608),
+    ('DYLAN VIRGILIO', 'BURGOS ROTELA', 34, 7401358),
+    ('ISAAC ULISES', 'CUEVAS SAAVEDRA', 34, 6613266),
+    ('ANGEL GABRIEL', 'DIAZ CAÑETE', 34, 7293215),
+    ('FEDERICO AMIN', 'DOMINGUEZ SOSA', 34, 6538527),
+    ('ALEJANDRA ANAHI', 'ESCOBAR OJEDA', 34, 6833279),
+    ('EDEL JAZMIN', 'FRANCO MACIEL', 34, 6593803),
+    ('ALEXIS DANIEL', 'FRETEZ VILLAMAYOR', 34, 6582254),
+    ('SAULO EZEQUIEL', 'GALEANO RIVEROS', 34, 6704166),
+    ('LUCAS GABRIEL', 'GAUTO NUÑEZ', 34, 6325567),
+    ('ADRIAN', 'GRASSO RAMOS', 34, 6617987),
+    ('MILAGROS MARGARITA YERUTI', 'GUPPI BORDON', 34, 8506321),
+    ('AMILCAR ANDRES', 'JARA AGUILERA', 34, 7138719),
+    ('DANAE ABIGAIL', 'JARA MARTINEZ', 34, 7551072),
+    ('MATEO FERNANDO', 'LENCINA AREVALOS', 34, 6883337),
+    ('MARTIN ALEJANDRO', 'LEZCANO MONTIEL', 34, 6626178),
+    ('THIAGO VALENTINO', 'MARTINEZ FERNANDEZ', 34, 6727372),
+    ('TOBIAS EZEQUIEL', 'MEDINA GONZALEZ', 34, 6512532),
+    ('VALERIA NOEMI', 'MONTIEL TRIVERO', 34, 7337850),
+    ('NATHALIA MARIELA', 'ORTIZ RODRIGUEZ', 34, 6532910),
+    ('OSIAS BENJAMIN', 'RUBIO SAMUDIO', 34, 6971481),
+    ('GIOVANNI JOSE', 'RUIZ ROMAN', 34, 7099638),
+    ('SAMYRA ANAHI', 'SANCHEZ AGUILAR', 34, 7086918),
+    ('ENZO SIMON', 'SANCHEZ VERON', 34, 6966829),
+    ('MARIA TANIA', 'SOILAN SOSA', 34, 6634375),
+    ('FIORELLA MAGALI', 'VILLAMAYOR VAZQUEZ', 34, 7225342);
+
+    -- 1º A (curso_id = 35)
+    INSERT INTO alumno
+    (nombre, apellido, curso_id, ci)
+    VALUES
+    ('EDGAR ARTURO', 'ALVAREZ BENITEZ', 35, 7090557),
+    ('ANNA GABRIELA', 'ARAMBULO GONZALEZ', 35, 7357449),
+    ('SEBASTIAN', 'BALBUENA GAONA', 35, 7159693),
+    ('NAOMI ABIGAIL', 'BENITES NOGUERA', 35, 6763142),
+    ('JOSÉ TOMÁS', 'BENÍTEZ BARRIOS', 35, 7370289),
+    ('SANTINO RAÚL', 'BENÍTEZ ROA', 35, 7761410),
+    ('LUCAS SEBASTIAN', 'CACERES CARDOZO', 35, 7726370),
+    ('MATIAS DANIEL', 'CANDIA ALFONSO', 35, 6950228),
+    ('ALEJANDRO NICOLAS', 'CENTURION CENTURION', 35, 6719867),
+    ('SANTIAGO BENJAMIN', 'COCCO FRUTOS', 35, 6740205),
+    ('SOFÍA', 'DA COSTA VALDEZ', 35, 7304888),
+    ('JORGE ANDRES', 'DE LA BARRA ZOILAN', 35, 7399317),
+    ('ELENA ISABELLA EDITH', 'DELGADILLO ESTIGARRIBIA', 35, 7211626),
+    ('EDUARDO SEBASTIAN', 'DUARTE CASTILLO', 35, 6707283),
+    ('ELIAN ANDRES', 'ESTIGARRIBIA UGARTE', 35, 6937627),
+    ('KAREN GUADALUPE', 'FRUTOS MORALES', 35, 6926830),
+    ('JUAN ENRIQUE', 'LECKIE ROLÓN', 35, 6751503),
+    ('ANNA MEI', 'NOGUERA PENG', 35, 6870160),
+    ('NATALIA BELEN', 'NUÑEZ VILLAMAYOR', 35, 7918425),
+    ('NAHOMI BELÉN', 'OCAMPOS ACOSTA', 35, 6822731),
+    ('RODRIGO MARTÍN', 'OLMEDO ZÁRATE', 35, 6977116),
+    ('MARÍA LUJÁN', 'OVELAR CENTURIÓN', 35, 7045854),
+    ('ALEXIA', 'OVELAR MARTÍNEZ', 35, 6766800),
+    ('JOSE GIOVANNI', 'PORTILLO RIVEROS', 35, 6887445),
+    ('JOSUE SEBASTIAN', 'QUINTANA BURGOS', 35, 6887564),
+    ('ANIBAL', 'RAMIREZ ORTIZ', 35, 6741348),
+    ('PEDRO DANIEL', 'RECALDE ROMERO', 35, 6864091),
+    ('ANNELISE MARIA JOSÉ', 'SANABRIA DELPADRE', 35, 7047256);
+
+    -- 1º B (curso_id = 36)
+    INSERT INTO alumno
+    (nombre, apellido, curso_id, ci)
+    VALUES
+    ('ENRIQUE DAMIÁN', 'ACOSTA MEDINA', 36, 7286222),
+    ('RODRIGO JAVIER', 'AYALA NAVARRO', 36, 7052595),
+    ('GUILLERMO DANIEL', 'AYALA OCHIPINTTI', 36, 6803972),
+    ('SANTIAGO DARIO', 'BÁEZ BORDON', 36, 6805076),
+    ('JAVIER DE JESUS', 'BOGADO PERALTA', 36, 6754519),
+    ('FABRIZIO BENJAMÍN', 'CABALLERO VILLANUEVA', 36, 6682833),
+    ('JORGE BENJAMIN', 'DOMINGUEZ GALEANO', 36, 7088828),
+    ('FERNANDA ISABEL', 'GALEANO RUIZ DÍAZ', 36, 7484939),
+    ('HORACIO JOSE', 'GIMENEZ MEZA', 36, 6722653),
+    ('MARIA JOSÉ', 'GIMENEZ TREVISON', 36, 6852970),
+    ('LUCAS DANIEL', 'GÓMEZ MORENO', 36, 6698773),
+    ('GUILLERMO FACUNDO', 'MARTÍNEZ BENÍTEZ', 36, 7313005),
+    ('RODRIGO DANIEL', 'MARTINEZ MARTINO', 36, 7064807),
+    ('MARTIN RAFAEL', 'MONGELOS BRITEZ', 36, 7037983),
+    ('THIAGO ALEXANDER', 'OCAMPOS RIVAS', 36, 6752851),
+    ('MARCELO JAVIER', 'PÉREZ VELÁZQUEZ', 36, 7228240),
+    ('ALEXANDER DAVID', 'PORTILLO OLMEDO', 36, 6820649),
+    ('ALEJANDRO ABEL', 'RIVELA TORALES', 36, 7565497),
+    ('FABRIZIO ARIEL', 'RODAS CABRERA', 36, 6799915),
+    ('MARIA ISABEL', 'RODRIGUEZ ACOSTA', 36, 6742018),
+    ('FACUNDO DANIEL', 'RODRIGUEZ LIMA', 36, 6802446),
+    ('DULCE MARIA GUADALUPE', 'SAUCEDO PARRA', 36, 6711084),
+    ('IANN DANIEL', 'TOLEDO ARANDA', 36, 6818642),
+    ('ISAAC ISMAEL', 'TORALES OVELAR', 36, 6923315),
+    ('GIULIANNA ARAMI', 'VALDEZ FERNÁNDEZ', 36, 8187153),
+    ('EZEQUIEL', 'VALENZUELA CABALLERO', 36, 7319899),
+    ('MATEO RAFAEL', 'VELAZQUEZ AMADI', 36, 7138069),
+    ('FRANCISCO RAFAEL', 'ZARZA MARTÍNEZ', 36, 6788083);
 
 -- Mecánica General 1º A (curso_id = 41)
     INSERT INTO alumno
@@ -1613,6 +1605,66 @@ INSERT INTO asignacion (usuario_id, materia_id, curso_base_id) VALUES
 
 
 -- ========================================
+-- ASIGNACION — Construcciones Civiles (curso_base 7-15)
+-- ========================================
+-- Fuente: "Horario de Clases 2026" de Construcciones Civiles.
+-- 1ro y 3ro: versión 12/05/2026 (más reciente disponible para esos
+-- cursos). 2do: solo existe la versión 30/03/2026 (no se encontró
+-- actualización posterior para 2do), es la única fuente y por lo
+-- tanto la vigente. Cruzado contra fichas individuales.
+-- curso_base: 7=1roA, 8=1roB, 9=1roC, 10=2doA, 11=2doB, 12=2doC,
+-- 13=3roA, 14=3roB, 15=3roC.
+INSERT INTO asignacion (usuario_id, materia_id, curso_base_id) VALUES
+    (128, 14, 7), (122, 14, 8), (128, 14, 9), (128, 14, 10), (128, 14, 11), (128, 14, 12),
+    -- Química
+    (75, 8, 7), (21, 8, 8), (120, 8, 9), (120, 8, 10), (21, 8, 11), (75, 8, 12),
+    -- Guaraní
+    (126, 11, 7), (45, 11, 8), (126, 11, 9), (126, 11, 10), (45, 11, 11), (126, 11, 12), (126, 11, 13), (45, 11, 14), (126, 11, 15),
+    -- Matemática Común
+    (67, 6, 7), (83, 6, 8), (67, 6, 9),
+    -- Ética / Formación Ética y Ciudadana
+    (68, 62, 7), (100, 62, 8), (34, 62, 9), (34, 62, 10), (34, 62, 11), (34, 62, 12), (38, 62, 13), (34, 62, 14), (38, 62, 15),
+    -- Laboratorio (Construcciones)
+    (29, 7, 7), (29, 7, 8), (29, 7, 9), (29, 7, 10), (59, 7, 11), (77, 7, 12),
+    -- Física
+    (68, 63, 7), (100, 63, 8), (34, 63, 9), (34, 63, 10), (34, 63, 11), (34, 63, 12), (38, 63, 13), (34, 63, 14), (38, 63, 15),
+    -- Tecnología (Construcciones)
+    (36, 65, 7), (36, 65, 8), (36, 65, 9), (32, 65, 10), (32, 65, 11), (32, 65, 12), (94, 65, 13), (34, 65, 14), (34, 65, 15),
+    -- Taller (Construcciones)
+    (23, 61, 7), (100, 61, 8), (23, 61, 9), (23, 61, 10), (23, 61, 11), (23, 61, 12), (104, 61, 13), (100, 61, 14), (100, 61, 15),
+    -- Proyecto y Dibujo
+    (106, 9, 7), (106, 9, 8), (106, 9, 9), (106, 9, 10), (67, 9, 11), (13, 9, 12), (13, 9, 14),
+    -- Historia
+    (36, 64, 7), (68, 64, 8), (34, 64, 9), (72, 64, 10), (72, 64, 11), (100, 64, 12), (36, 64, 13), (100, 64, 14), (100, 64, 15),
+    -- Técnicas Instrumentales
+    (92, 12, 7), (110, 12, 8), (13, 12, 9), (18, 12, 13), (18, 12, 14), (18, 12, 15),
+    -- Orientación
+    (67, 1, 7), (106, 1, 8), (13, 1, 9),
+    -- Antropología
+    (61, 10, 7), (61, 10, 8), (61, 10, 9), (61, 10, 10), (61, 10, 11), (61, 10, 12),
+    -- Inglés
+    (102, 4, 7), (102, 4, 8), (102, 4, 9), (102, 4, 10), (39, 4, 11), (91, 4, 12), (102, 4, 13), (133, 4, 14),
+    -- Educación Física
+    (27, 16, 7), (27, 16, 8), (27, 16, 9), (27, 16, 10), (27, 16, 11), (27, 16, 12), (27, 16, 13), (27, 16, 14), (27, 16, 15),
+    -- Literatura
+    (77, 66, 10), (77, 66, 11), (77, 66, 12), (77, 66, 13), (77, 66, 14), (77, 66, 15),
+    -- Resistencia de Materiales
+    (97, 67, 10), (97, 67, 11),
+    -- Topografía
+    (32, 18, 10), (32, 18, 11), (32, 18, 12), (94, 18, 13), (94, 18, 15),
+    -- Instalaciones Industriales
+    (92, 5, 10), (13, 5, 11),
+    -- Educación Vial
+    (72, 68, 13), (72, 68, 14), (72, 68, 15),
+    -- AutoCAD
+    (32, 69, 13), (32, 69, 14), (32, 69, 15),
+    -- Proyecto Educativo (Construcciones)
+    (35, 13, 13), (35, 13, 14), (35, 13, 15),
+    -- Psicología
+    (78, 3, 13), (113, 3, 14), (76, 3, 15);
+    -- Economía y Gestión
+
+-- ========================================
 -- ASIGNACION — Electricidad (curso_base 16-21)
 -- ========================================
 -- Fuente: "Horario de Clases 2026" de Electricidad, versión 06/05/2026
@@ -1741,6 +1793,133 @@ INSERT INTO asignacion (usuario_id, materia_id, curso_base_id) VALUES
     -- Educación Vial 2do B - Graciela González
 
 -- ========================================
+-- ASIGNACION -- Electrónica (curso_base 22-30, 1ro/2do/3ro completos)
+-- ========================================
+-- Fuente: "Horario 2026" de Electrónica del Colegio Técnico Nacional
+-- de la Asunción (= de la Capital), vigencia 18/05/2026 en adelante --
+-- páginas 4-6 de 74e9282b-WhatsApp_Scan_20260908_at_11.11.08_compressed.pdf.
+-- Reemplaza integramente la entrega anterior (que solo cubria 1ro/2do,
+-- version 30/03/2026).
+-- curso_base: 22=1roA, 23=1roB, 24=1roC, 25=2doA, 26=2doB, 27=2doC,
+--             28=3roA, 29=3roB, 30=3roC.
+INSERT INTO asignacion (usuario_id, materia_id, curso_base_id) VALUES
+    (11, 14, 22), (11, 14, 24), (11, 14, 23), (11, 14, 25), (11, 14, 27), (11, 14, 26),
+    -- Química
+    (121, 16, 22), (27, 16, 24), (17, 16, 23), (27, 16, 25), (27, 16, 27), (27, 16, 26), (27, 16, 28), (17, 16, 30), (27, 16, 29),
+    -- Literatura
+    (124, 11, 22), (124, 11, 24), (124, 11, 23), (124, 11, 25), (124, 11, 27), (124, 11, 26), (124, 11, 28), (124, 11, 30), (124, 11, 29),
+    -- Matemática Común
+    (64, 168, 22), (64, 168, 24), (64, 168, 23),
+    -- Seguridad e Higiene (Electrónica)
+    (102, 4, 22), (91, 4, 24), (91, 4, 23), (87, 4, 25), (102, 4, 28), (102, 4, 30), (46, 4, 29),
+    -- Educación Física
+    (82, 12, 22), (51, 12, 24), (110, 12, 23), (92, 12, 28), (92, 12, 30), (92, 12, 29),
+    -- Orientación
+    (131, 161, 22), (131, 161, 24), (42, 161, 23), (95, 161, 25), (95, 161, 27), (125, 161, 26), (101, 161, 28), (101, 161, 30), (101, 161, 29),
+    -- Electrónica Analógica (Eca. Analógica)
+    (90, 162, 22), (90, 162, 24), (125, 162, 25), (95, 162, 27), (125, 162, 26), (88, 162, 28), (95, 162, 30), (88, 162, 29),
+    -- Electrónica Digital (Eca. Digital)
+    (131, 164, 22), (131, 164, 24), (131, 164, 23),
+    -- Electrotecnia (Electrónica)
+    (62, 6, 22), (13, 6, 24), (67, 6, 23),
+    -- Formación Ética y Ciudadana (Ética)
+    (90, 163, 22), (90, 163, 24), (90, 163, 23), (95, 163, 25), (95, 163, 27), (125, 163, 26), (132, 163, 28), (132, 163, 30), (132, 163, 29),
+    -- Laboratorio de Electrónica
+    (98, 2, 22), (98, 2, 24), (98, 2, 23), (98, 2, 25), (98, 2, 27), (98, 2, 28), (98, 2, 30), (98, 2, 29),
+    -- Ciencias
+    (65, 10, 22), (33, 10, 24), (33, 10, 23), (33, 10, 25), (33, 10, 27), (33, 10, 26),
+    -- Inglés
+    (38, 167, 22), (38, 167, 24), (38, 167, 23),
+    -- Dibujo Técnico (Electrónica)
+    (67, 9, 22), (67, 9, 24), (13, 9, 23), (83, 9, 25), (13, 9, 27), (13, 9, 26), (13, 9, 28), (83, 9, 30), (67, 9, 29),
+    -- Historia
+    (114, 7, 22), (71, 7, 24), (114, 7, 23), (29, 7, 25), (29, 7, 27), (29, 7, 26),
+    -- Física
+    (12, 8, 22), (12, 8, 24), (120, 8, 23), (120, 8, 25), (75, 8, 27), (12, 8, 26),
+    -- Guaraní
+    (74, 1, 22), (67, 1, 24), (74, 1, 23),
+    -- Antropología
+    (110, 5, 25), (13, 5, 27), (13, 5, 26),
+    -- Educación Vial
+    (90, 17, 25), (89, 17, 27), (90, 17, 26), (101, 17, 28), (119, 17, 30), (84, 17, 29),
+    -- Informática
+    (125, 166, 25), (95, 166, 27), (131, 166, 26), (101, 166, 28), (101, 166, 30), (101, 166, 29),
+    -- Electrónica Industrial (Eca. Industrial)
+    (42, 165, 25), (95, 165, 27),
+    -- Elementos
+    (74, 13, 28), (19, 13, 30), (74, 13, 29),
+    -- Psicología
+    (42, 169, 28), (42, 169, 30), (42, 169, 29),
+    -- Optativa (Electrónica)
+    (95, 170, 28), (95, 170, 30), (95, 170, 29),
+    -- Proyecto (Electrónica)
+    (76, 3, 28), (76, 3, 30), (83, 3, 29);
+    -- Economía y Gestión
+
+-- ========================================
+-- ASIGNACION — Electromecánica (curso_base 31-36)
+-- ========================================
+-- Fuente: "Horario de Clases 2026" de Electromecánica. 1ro y 2do:
+-- única versión disponible (9/4/2026 y 30/3/2026, sin actualización
+-- posterior encontrada para esos cursos). 3ro: existen 3 versiones
+-- (30/3, 7/5 y 22/5/2026); se usó la más reciente (22/5/2026), que
+-- difiere de las anteriores en que Instalaciones Ind. de 3ro A/B pasó
+-- de TSMI Fernando Espinoza a Lic. Robert Caballero. Cruzado contra
+-- fichas individuales para confirmar especialidad.
+-- curso_base: 31=1roA, 32=1roB, 33=2doA, 34=2doB, 35=3roA, 36=3roB.
+INSERT INTO asignacion (usuario_id, materia_id, curso_base_id) VALUES
+    (108, 14, 31), (108, 14, 32), (108, 14, 33), (108, 14, 34),
+    -- Química
+    (100, 147, 31), (100, 147, 32),
+    -- Dibujo Técnico (Electromecánica)
+    (109, 141, 31), (109, 141, 32), (109, 141, 33), (109, 141, 34), (109, 141, 35), (109, 141, 36),
+    -- Refrigeración
+    (130, 17, 31), (130, 17, 32), (130, 17, 33), (130, 17, 34),
+    -- Informática
+    (41, 7, 31), (41, 7, 32), (41, 7, 33), (41, 7, 34),
+    -- Física
+    (40, 2, 31), (98, 2, 32), (40, 2, 33), (98, 2, 34), (98, 2, 36),
+    -- Ciencias
+    (87, 4, 31), (133, 4, 32), (87, 4, 33), (91, 4, 34), (87, 4, 35), (102, 4, 36),
+    -- Educación Física
+    (67, 6, 31), (67, 6, 32),
+    -- Formación Ética y Ciudadana (Ética)
+    (67, 1, 31), (110, 1, 32),
+    -- Antropología
+    (82, 12, 31), (82, 12, 32), (74, 12, 33), (82, 12, 34),
+    -- Orientación
+    (60, 145, 31), (60, 145, 32), (60, 145, 33), (60, 145, 34), (60, 145, 35), (60, 145, 36),
+    -- Electrotecnia (Electromecánica)
+    (41, 11, 31), (45, 11, 32), (126, 11, 33), (126, 11, 34), (126, 11, 35), (126, 11, 36),
+    -- Matemática Común
+    (114, 19, 31), (114, 19, 32), (94, 19, 33), (94, 19, 34),
+    -- Taller de Mecánica (Taller Mecánico)
+    (94, 18, 31), (30, 18, 32), (50, 18, 33), (30, 18, 34), (30, 18, 35), (30, 18, 36),
+    -- Instalaciones Industriales
+    (106, 9, 32), (106, 9, 33), (106, 9, 34), (106, 9, 35), (106, 9, 36),
+    -- Historia
+    (96, 8, 32), (67, 8, 33), (12, 8, 34),
+    -- Guaraní
+    (96, 16, 32), (27, 16, 33), (96, 16, 34), (27, 16, 35), (96, 16, 36),
+    -- Literatura
+    (33, 10, 32), (65, 10, 33), (33, 10, 34),
+    -- Inglés
+    (95, 146, 33), (95, 146, 34), (95, 146, 35), (95, 146, 36),
+    -- Electrónica (Electromecánica)
+    (92, 5, 33), (110, 5, 34),
+    -- Educación Vial
+    (52, 142, 35), (52, 142, 36),
+    -- Neumática e Hidráulica
+    (30, 144, 35), (30, 144, 36),
+    -- Diseño y Mantenimiento Industrial
+    (52, 143, 35), (52, 143, 36),
+    -- PLC
+    (35, 13, 35), (35, 13, 36),
+    -- Psicología
+    (76, 3, 35), (76, 3, 36);
+    -- Economía y Gestión
+
+-- ========================================
 -- ASIGNACION — Química Industrial (curso_base 49-57)
 -- ========================================
 -- Fuente: "Horario de Clases 2026" de Química Industrial, única
@@ -1813,193 +1992,6 @@ INSERT INTO asignacion (usuario_id, materia_id, curso_base_id) VALUES
     -- Tecnología (Química)
     (100, 138, 49), (68, 138, 50), (38, 138, 51);
     -- Dibujo Técnico (Química Industrial)
-
--- ========================================
--- ASIGNACION — Construcciones Civiles (curso_base 7-15)
--- ========================================
--- Fuente: "Horario de Clases 2026" de Construcciones Civiles.
--- 1ro y 3ro: versión 12/05/2026 (más reciente disponible para esos
--- cursos). 2do: solo existe la versión 30/03/2026 (no se encontró
--- actualización posterior para 2do), es la única fuente y por lo
--- tanto la vigente. Cruzado contra fichas individuales.
--- curso_base: 7=1roA, 8=1roB, 9=1roC, 10=2doA, 11=2doB, 12=2doC,
--- 13=3roA, 14=3roB, 15=3roC.
-INSERT INTO asignacion (usuario_id, materia_id, curso_base_id) VALUES
-    (128, 14, 7), (122, 14, 8), (128, 14, 9), (128, 14, 10), (128, 14, 11), (128, 14, 12),
-    -- Química
-    (75, 8, 7), (21, 8, 8), (120, 8, 9), (120, 8, 10), (21, 8, 11), (75, 8, 12),
-    -- Guaraní
-    (126, 11, 7), (45, 11, 8), (126, 11, 9), (126, 11, 10), (45, 11, 11), (126, 11, 12), (126, 11, 13), (45, 11, 14), (126, 11, 15),
-    -- Matemática Común
-    (67, 6, 7), (83, 6, 8), (67, 6, 9),
-    -- Ética / Formación Ética y Ciudadana
-    (68, 62, 7), (100, 62, 8), (34, 62, 9), (34, 62, 10), (34, 62, 11), (34, 62, 12), (38, 62, 13), (34, 62, 14), (38, 62, 15),
-    -- Laboratorio (Construcciones)
-    (29, 7, 7), (29, 7, 8), (29, 7, 9), (29, 7, 10), (59, 7, 11), (77, 7, 12),
-    -- Física
-    (68, 63, 7), (100, 63, 8), (34, 63, 9), (34, 63, 10), (34, 63, 11), (34, 63, 12), (38, 63, 13), (34, 63, 14), (38, 63, 15),
-    -- Tecnología (Construcciones)
-    (36, 65, 7), (36, 65, 8), (36, 65, 9), (32, 65, 10), (32, 65, 11), (32, 65, 12), (94, 65, 13), (34, 65, 14), (34, 65, 15),
-    -- Taller (Construcciones)
-    (23, 61, 7), (100, 61, 8), (23, 61, 9), (23, 61, 10), (23, 61, 11), (23, 61, 12), (104, 61, 13), (100, 61, 14), (100, 61, 15),
-    -- Proyecto y Dibujo
-    (106, 9, 7), (106, 9, 8), (106, 9, 9), (106, 9, 10), (67, 9, 11), (13, 9, 12), (13, 9, 14),
-    -- Historia
-    (36, 64, 7), (68, 64, 8), (34, 64, 9), (72, 64, 10), (72, 64, 11), (100, 64, 12), (36, 64, 13), (100, 64, 14), (100, 64, 15),
-    -- Técnicas Instrumentales
-    (92, 12, 7), (110, 12, 8), (13, 12, 9), (18, 12, 13), (18, 12, 14), (18, 12, 15),
-    -- Orientación
-    (67, 1, 7), (106, 1, 8), (13, 1, 9),
-    -- Antropología
-    (61, 10, 7), (61, 10, 8), (61, 10, 9), (61, 10, 10), (61, 10, 11), (61, 10, 12),
-    -- Inglés
-    (102, 4, 7), (102, 4, 8), (102, 4, 9), (102, 4, 10), (39, 4, 11), (91, 4, 12), (102, 4, 13), (133, 4, 14),
-    -- Educación Física
-    (27, 16, 7), (27, 16, 8), (27, 16, 9), (27, 16, 10), (27, 16, 11), (27, 16, 12), (27, 16, 13), (27, 16, 14), (27, 16, 15),
-    -- Literatura
-    (77, 66, 10), (77, 66, 11), (77, 66, 12), (77, 66, 13), (77, 66, 14), (77, 66, 15),
-    -- Resistencia de Materiales
-    (97, 67, 10), (97, 67, 11),
-    -- Topografía
-    (32, 18, 10), (32, 18, 11), (32, 18, 12), (94, 18, 13), (94, 18, 15),
-    -- Instalaciones Industriales
-    (92, 5, 10), (13, 5, 11),
-    -- Educación Vial
-    (72, 68, 13), (72, 68, 14), (72, 68, 15),
-    -- AutoCAD
-    (32, 69, 13), (32, 69, 14), (32, 69, 15),
-    -- Proyecto Educativo (Construcciones)
-    (35, 13, 13), (35, 13, 14), (35, 13, 15),
-    -- Psicología
-    (78, 3, 13), (113, 3, 14), (76, 3, 15);
-    -- Economía y Gestión
-
--- ========================================
--- ASIGNACION — Electromecánica (curso_base 31-36)
--- ========================================
--- Fuente: "Horario de Clases 2026" de Electromecánica. 1ro y 2do:
--- única versión disponible (9/4/2026 y 30/3/2026, sin actualización
--- posterior encontrada para esos cursos). 3ro: existen 3 versiones
--- (30/3, 7/5 y 22/5/2026); se usó la más reciente (22/5/2026), que
--- difiere de las anteriores en que Instalaciones Ind. de 3ro A/B pasó
--- de TSMI Fernando Espinoza a Lic. Robert Caballero. Cruzado contra
--- fichas individuales para confirmar especialidad.
--- curso_base: 31=1roA, 32=1roB, 33=2doA, 34=2doB, 35=3roA, 36=3roB.
-INSERT INTO asignacion (usuario_id, materia_id, curso_base_id) VALUES
-    (108, 14, 31), (108, 14, 32), (108, 14, 33), (108, 14, 34),
-    -- Química
-    (100, 147, 31), (100, 147, 32),
-    -- Dibujo Técnico (Electromecánica)
-    (109, 141, 31), (109, 141, 32), (109, 141, 33), (109, 141, 34), (109, 141, 35), (109, 141, 36),
-    -- Refrigeración
-    (130, 17, 31), (130, 17, 32), (130, 17, 33), (130, 17, 34),
-    -- Informática
-    (41, 7, 31), (41, 7, 32), (41, 7, 33), (41, 7, 34),
-    -- Física
-    (40, 2, 31), (98, 2, 32), (40, 2, 33), (98, 2, 34), (98, 2, 36),
-    -- Ciencias
-    (87, 4, 31), (133, 4, 32), (87, 4, 33), (91, 4, 34), (87, 4, 35), (102, 4, 36),
-    -- Educación Física
-    (67, 6, 31), (67, 6, 32),
-    -- Formación Ética y Ciudadana (Ética)
-    (67, 1, 31), (110, 1, 32),
-    -- Antropología
-    (82, 12, 31), (82, 12, 32), (74, 12, 33), (82, 12, 34),
-    -- Orientación
-    (60, 145, 31), (60, 145, 32), (60, 145, 33), (60, 145, 34), (60, 145, 35), (60, 145, 36),
-    -- Electrotecnia (Electromecánica)
-    (41, 11, 31), (45, 11, 32), (126, 11, 33), (126, 11, 34), (126, 11, 35), (126, 11, 36),
-    -- Matemática Común
-    (114, 19, 31), (114, 19, 32), (94, 19, 33), (94, 19, 34),
-    -- Taller de Mecánica (Taller Mecánico)
-    (94, 18, 31), (30, 18, 32), (50, 18, 33), (30, 18, 34), (30, 18, 35), (30, 18, 36),
-    -- Instalaciones Industriales
-    (106, 9, 32), (106, 9, 33), (106, 9, 34), (106, 9, 35), (106, 9, 36),
-    -- Historia
-    (96, 8, 32), (67, 8, 33), (12, 8, 34),
-    -- Guaraní
-    (96, 16, 32), (27, 16, 33), (96, 16, 34), (27, 16, 35), (96, 16, 36),
-    -- Literatura
-    (33, 10, 32), (65, 10, 33), (33, 10, 34),
-    -- Inglés
-    (95, 146, 33), (95, 146, 34), (95, 146, 35), (95, 146, 36),
-    -- Electrónica (Electromecánica)
-    (92, 5, 33), (110, 5, 34),
-    -- Educación Vial
-    (52, 142, 35), (52, 142, 36),
-    -- Neumática e Hidráulica
-    (30, 144, 35), (30, 144, 36),
-    -- Diseño y Mantenimiento Industrial
-    (52, 143, 35), (52, 143, 36),
-    -- PLC
-    (35, 13, 35), (35, 13, 36),
-    -- Psicología
-    (76, 3, 35), (76, 3, 36);
-    -- Economía y Gestión
-
--- ========================================
--- ASIGNACION -- Electrónica (curso_base 22-30, 1ro/2do/3ro completos)
--- ========================================
--- Fuente: "Horario 2026" de Electrónica del Colegio Técnico Nacional
--- de la Asunción (= de la Capital), vigencia 18/05/2026 en adelante --
--- páginas 4-6 de 74e9282b-WhatsApp_Scan_20260908_at_11.11.08_compressed.pdf.
--- Reemplaza integramente la entrega anterior (que solo cubria 1ro/2do,
--- version 30/03/2026).
--- curso_base: 22=1roA, 23=1roB, 24=1roC, 25=2doA, 26=2doB, 27=2doC,
---             28=3roA, 29=3roB, 30=3roC.
-INSERT INTO asignacion (usuario_id, materia_id, curso_base_id) VALUES
-    (11, 14, 22), (11, 14, 24), (11, 14, 23), (11, 14, 25), (11, 14, 27), (11, 14, 26),
-    -- Química
-    (121, 16, 22), (27, 16, 24), (17, 16, 23), (27, 16, 25), (27, 16, 27), (27, 16, 26), (27, 16, 28), (17, 16, 30), (27, 16, 29),
-    -- Literatura
-    (124, 11, 22), (124, 11, 24), (124, 11, 23), (124, 11, 25), (124, 11, 27), (124, 11, 26), (124, 11, 28), (124, 11, 30), (124, 11, 29),
-    -- Matemática Común
-    (64, 168, 22), (64, 168, 24), (64, 168, 23),
-    -- Seguridad e Higiene (Electrónica)
-    (102, 4, 22), (91, 4, 24), (91, 4, 23), (87, 4, 25), (102, 4, 28), (102, 4, 30), (46, 4, 29),
-    -- Educación Física
-    (82, 12, 22), (51, 12, 24), (110, 12, 23), (92, 12, 28), (92, 12, 30), (92, 12, 29),
-    -- Orientación
-    (131, 161, 22), (131, 161, 24), (42, 161, 23), (95, 161, 25), (95, 161, 27), (125, 161, 26), (101, 161, 28), (101, 161, 30), (101, 161, 29),
-    -- Electrónica Analógica (Eca. Analógica)
-    (90, 162, 22), (90, 162, 24), (125, 162, 25), (95, 162, 27), (125, 162, 26), (88, 162, 28), (95, 162, 30), (88, 162, 29),
-    -- Electrónica Digital (Eca. Digital)
-    (131, 164, 22), (131, 164, 24), (131, 164, 23),
-    -- Electrotecnia (Electrónica)
-    (62, 6, 22), (13, 6, 24), (67, 6, 23),
-    -- Formación Ética y Ciudadana (Ética)
-    (90, 163, 22), (90, 163, 24), (90, 163, 23), (95, 163, 25), (95, 163, 27), (125, 163, 26), (132, 163, 28), (132, 163, 30), (132, 163, 29),
-    -- Laboratorio de Electrónica
-    (98, 2, 22), (98, 2, 24), (98, 2, 23), (98, 2, 25), (98, 2, 27), (98, 2, 28), (98, 2, 30), (98, 2, 29),
-    -- Ciencias
-    (65, 10, 22), (33, 10, 24), (33, 10, 23), (33, 10, 25), (33, 10, 27), (33, 10, 26),
-    -- Inglés
-    (38, 167, 22), (38, 167, 24), (38, 167, 23),
-    -- Dibujo Técnico (Electrónica)
-    (67, 9, 22), (67, 9, 24), (13, 9, 23), (83, 9, 25), (13, 9, 27), (13, 9, 26), (13, 9, 28), (83, 9, 30), (67, 9, 29),
-    -- Historia
-    (114, 7, 22), (71, 7, 24), (114, 7, 23), (29, 7, 25), (29, 7, 27), (29, 7, 26),
-    -- Física
-    (12, 8, 22), (12, 8, 24), (120, 8, 23), (120, 8, 25), (75, 8, 27), (12, 8, 26),
-    -- Guaraní
-    (74, 1, 22), (67, 1, 24), (74, 1, 23),
-    -- Antropología
-    (110, 5, 25), (13, 5, 27), (13, 5, 26),
-    -- Educación Vial
-    (90, 17, 25), (89, 17, 27), (90, 17, 26), (101, 17, 28), (119, 17, 30), (84, 17, 29),
-    -- Informática
-    (125, 166, 25), (95, 166, 27), (131, 166, 26), (101, 166, 28), (101, 166, 30), (101, 166, 29),
-    -- Electrónica Industrial (Eca. Industrial)
-    (42, 165, 25), (95, 165, 27),
-    -- Elementos
-    (74, 13, 28), (19, 13, 30), (74, 13, 29),
-    -- Psicología
-    (42, 169, 28), (42, 169, 30), (42, 169, 29),
-    -- Optativa (Electrónica)
-    (95, 170, 28), (95, 170, 30), (95, 170, 29),
-    -- Proyecto (Electrónica)
-    (76, 3, 28), (76, 3, 30), (83, 3, 29);
-    -- Economía y Gestión
 
 -- ========================================================================
 -- Reemplazo de horario_slot para Informática
@@ -2198,375 +2190,6 @@ DROP TEMPORARY TABLE horario_slot_staging;
 --   WHERE cb.especialidad_id = 5 GROUP BY cb.nivel, cb.seccion;
 -- (comparar cantidad de slots contra lo esperado por el PDF)
 -- ========================================================================
-
--- ========================================================================
--- horario_slot para Electricidad (curso_base 16-21)
--- ========================================================================
--- Fuente: mismos horarios usados para la asignacion de Electricidad (ver
--- 03_curso_base_y_asignacion_electricidad.sql), version 06/05/2026.
--- El documento fuente de Electricidad NO trae columna de aula/sala, asi que
--- sala_id queda NULL para todas las filas (no se inventa ninguna aula).
-DELETE hs FROM horario_slot hs
-JOIN curso_base cb ON cb.id = hs.curso_base_id
-WHERE cb.especialidad_id = (SELECT id FROM especialidad WHERE nombre = 'Electricidad');
-
-CREATE TEMPORARY TABLE horario_slot_staging (
-    profesor_usuario VARCHAR(45) NOT NULL,
-    materia_id INT NOT NULL,
-    nivel TINYINT NOT NULL,
-    seccion ENUM('A', 'B', 'C') NOT NULL,
-    dia_semana TINYINT UNSIGNED NOT NULL,
-    hora_numero TINYINT UNSIGNED NOT NULL,
-    duracion TINYINT UNSIGNED NOT NULL
-);
-
-CREATE TEMPORARY TABLE horario_slot_span (
-    n TINYINT UNSIGNED NOT NULL PRIMARY KEY
-);
-
-INSERT INTO horario_slot_span (n) VALUES (1), (2), (3), (4);
-
-INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, dia_semana, hora_numero, duracion) VALUES
-    ('liz.duarte', 11, 1, 'A', 2, 1, 3),  -- Matematica
-    ('gerardo.ovelar', 4, 1, 'A', 4, 1, 2),  -- Educ Fisica
-    ('graciela.gonzalez', 1, 1, 'A', 4, 3, 2),  -- Antropologia
-    ('victor.bogarin', 101, 1, 'A', 5, 1, 3),  -- Taller
-    ('nidia.samudio', 8, 1, 'A', 1, 5, 2),  -- Guarani
-    ('gerardo.centurion', 17, 1, 'A', 2, 5, 2),  -- Informatica
-    ('christian.ramos', 10, 1, 'A', 4, 5, 2),  -- Ingles
-    ('victor.bogarin', 102, 1, 'A', 5, 5, 2),  -- Diseno
-    ('abel.admen', 14, 1, 'A', 1, 7, 2),  -- Quimica
-    ('emilce.jara', 12, 1, 'A', 4, 7, 2),  -- Orientacion
-    ('victor.bogarin', 103, 1, 'A', 5, 7, 2),  -- Dibujo Tecnico
-    ('javier.lopez', 104, 1, 'A', 1, 9, 2),  -- Lab Electrotecnia
-    ('javier.lopez', 104, 1, 'A', 2, 9, 2),  -- Lab Electrotecnia
-    ('jorge.echague', 105, 1, 'A', 3, 9, 2),  -- Electronica
-    ('celso.rojas', 19, 1, 'A', 5, 9, 3),  -- Taller Mecanico
-    ('javier.lopez', 104, 1, 'A', 3, 11, 2),  -- Lab Electrotecnia
-    ('gustavo.ramirez', 9, 1, 'A', 2, 11, 2),  -- Historia
-    ('gustavo.ramirez', 6, 1, 'A', 1, 13, 2),  -- Etica
-    ('zully.nunez', 16, 1, 'A', 2, 13, 2),  -- Literatura
-    ('javier.lopez', 7, 1, 'A', 3, 13, 2),  -- Fisica
-    ('hugo.olmedo', 2, 1, 'A', 1, 15, 2),  -- Ciencias N
-    ('javier.lopez', 104, 1, 'B', 1, 1, 2),  -- Lab Electrotecnia
-    ('jorge.echague', 105, 1, 'B', 1, 3, 2),  -- Electronica
-    ('javier.lopez', 104, 1, 'B', 2, 1, 3),  -- Lab Electrotecnia
-    ('victor.bogarin', 101, 1, 'B', 4, 1, 4),  -- Taller
-    ('christian.ramos', 10, 1, 'B', 1, 5, 2),  -- Ingles
-    ('hugo.olmedo', 2, 1, 'B', 1, 7, 2),  -- Ciencias N
-    ('javier.lopez', 7, 1, 'B', 2, 5, 3),  -- Fisica
-    ('liz.duarte', 11, 1, 'B', 2, 8, 1),  -- Matematica
-    ('victor.bogarin', 102, 1, 'B', 4, 5, 2),  -- Diseno
-    ('victor.bogarin', 103, 1, 'B', 4, 7, 2),  -- Dibujo Tecnico
-    ('celso.rojas', 19, 1, 'B', 2, 9, 3),  -- Taller Mecanico
-    ('monica.vera', 17, 1, 'B', 3, 9, 1),  -- Informatica
-    ('liz.duarte', 11, 1, 'B', 4, 9, 3),  -- Matematica
-    ('abner.alcaraz', 12, 1, 'B', 3, 10, 2),  -- Orientacion
-    ('zully.nunez', 16, 1, 'B', 5, 11, 2),  -- Literatura
-    ('christian.ramos', 10, 2, 'A', 1, 1, 2),  -- Ingles
-    ('zully.nunez', 16, 2, 'A', 1, 3, 2),  -- Literatura
-    ('victor.bogarin', 101, 2, 'A', 2, 1, 3),  -- Taller e Instalac
-    ('abel.admen', 14, 2, 'A', 3, 1, 2),  -- Quimica
-    ('abner.alcaraz', 9, 2, 'A', 3, 3, 2),  -- Historia
-    ('laura.rivas', 2, 2, 'A', 4, 1, 2),  -- Ciencias N
-    ('abel.admen', 14, 2, 'A', 4, 3, 2),  -- Quimica
-    ('jorge.echague', 104, 2, 'A', 1, 5, 2),  -- Lab Electrotecnia
-    ('jorge.echague', 105, 2, 'A', 2, 5, 3),  -- Electronica
-    ('jorge.echague', 104, 2, 'A', 3, 5, 3),  -- Lab Electrotecnia
-    ('monica.vera', 17, 2, 'A', 4, 5, 3),  -- Informatica
-    ('liz.duarte', 11, 2, 'A', 5, 5, 2),  -- Matematica
-    ('maria.valiente', 7, 2, 'A', 1, 9, 4),  -- Fisica
-    ('victor.bogarin', 102, 2, 'A', 3, 9, 3),  -- Diseno
-    ('alba.arrua', 8, 2, 'A', 5, 9, 3),  -- Guarani
-    ('mirian.montania', 5, 2, 'A', 3, 13, 2),  -- Educacion Vial
-    ('oscar.villasanti', 4, 2, 'A', 5, 13, 2),  -- Educ Fisica
-    ('christian.ramos', 10, 2, 'A', 3, 15, 2),  -- Ingles
-    ('victor.bogarin', 105, 2, 'B', 1, 2, 3),  -- Electronica
-    ('christian.ramos', 10, 2, 'B', 2, 1, 2),  -- Ingles
-    ('maria.mequer', 4, 2, 'B', 2, 3, 2),  -- Educ Fisica
-    ('victor.bogarin', 104, 2, 'B', 3, 1, 3),  -- Lab Electrotecnia
-    ('monica.vera', 17, 2, 'B', 1, 5, 2),  -- Informatica
-    ('victor.bogarin', 104, 2, 'B', 2, 5, 2),  -- Lab Electrotecnia
-    ('liz.duarte', 11, 2, 'B', 3, 5, 2),  -- Matematica
-    ('hernan.jara', 8, 2, 'B', 4, 5, 3),  -- Guarani
-    ('abel.admen', 14, 2, 'B', 3, 7, 2),  -- Quimica
-    ('graciela.gonzalez', 5, 2, 'B', 1, 9, 2),  -- Educacion Vial
-    ('abel.admen', 14, 2, 'B', 1, 11, 2),  -- Quimica
-    ('maria.valiente', 7, 2, 'B', 2, 9, 3),  -- Fisica
-    ('victor.bogarin', 102, 2, 'B', 4, 9, 3),  -- Diseno
-    ('victor.bogarin', 101, 2, 'B', 5, 9, 3),  -- Taller
-    ('liz.duarte', 11, 2, 'B', 1, 13, 2),  -- Matematica
-    ('christian.ramos', 10, 2, 'B', 4, 13, 2),  -- Ingles
-    ('hugo.olmedo', 2, 2, 'B', 4, 15, 2),  -- Ciencias N
-    ('zully.nunez', 16, 2, 'B', 5, 13, 2),  -- Literatura
-    ('cynthia.diaz', 9, 2, 'B', 5, 15, 2),  -- Historia y G
-    ('oscar.azuaga', 18, 3, 'A', 1, 1, 2),  -- Instalaciones
-    ('graciela.maidana', 12, 3, 'A', 2, 1, 2),  -- Orientacion
-    ('laura.rivas', 2, 3, 'A', 3, 1, 2),  -- Ciencias N
-    ('rolando.lenguaza', 3, 3, 'A', 4, 1, 2),  -- Economia y G
-    ('abel.admen', 106, 3, 'A', 5, 1, 2),  -- Proyecto
-    ('oscar.azuaga', 102, 3, 'A', 2, 3, 2),  -- Diseno
-    ('rolando.lenguaza', 3, 3, 'A', 3, 3, 2),  -- Economia y G
-    ('jorge.echague', 105, 3, 'A', 4, 3, 2),  -- Electronica
-    ('emilce.jara', 13, 3, 'A', 5, 3, 2),  -- Psicologia
-    ('oscar.azuaga', 18, 3, 'A', 1, 5, 2),  -- Instalaciones
-    ('gerardo.ovelar', 4, 3, 'A', 3, 5, 2),  -- Educ Fisica
-    ('zully.nunez', 16, 3, 'A', 1, 7, 2),  -- Literatura
-    ('liz.duarte', 11, 3, 'A', 3, 7, 2),  -- Matematica
-    ('oscar.azuaga', 104, 3, 'A', 1, 9, 4),  -- Laboratorio
-    ('victor.bogarin', 107, 3, 'A', 2, 9, 2),  -- Optativa
-    ('oscar.azuaga', 104, 3, 'A', 3, 9, 2),  -- Laboratorio
-    ('gustavo.ramirez', 9, 3, 'A', 4, 15, 2),  -- Historia y G
-    ('jorge.echague', 105, 3, 'B', 2, 1, 2),  -- Electronica
-    ('oscar.azuaga', 18, 3, 'B', 3, 1, 2),  -- Instalaciones
-    ('hugo.olmedo', 2, 3, 'B', 4, 1, 2),  -- Ciencias N
-    ('oscar.azuaga', 104, 3, 'B', 5, 1, 2),  -- Laboratorio
-    ('rolando.lenguaza', 3, 3, 'B', 4, 3, 2),  -- Economia y G
-    ('edgar.aquino', 12, 3, 'B', 4, 5, 2),  -- Orientacion
-    ('graciela.maidana', 13, 3, 'B', 2, 7, 2),  -- Psicologia
-    ('francisco.molinas', 4, 3, 'B', 3, 7, 2),  -- Educ Fisica
-    ('alicia.martinez', 9, 3, 'B', 4, 7, 2),  -- Historia y G
-    ('liz.duarte', 11, 3, 'B', 5, 7, 2),  -- Matematica
-    ('victor.bogarin', 107, 3, 'B', 1, 9, 2),  -- Optativa
-    ('zully.nunez', 16, 3, 'B', 2, 9, 2),  -- Literatura
-    ('rolando.lenguaza', 3, 3, 'B', 4, 9, 2),  -- Economia y G
-    ('oscar.azuaga', 102, 3, 'B', 3, 11, 2),  -- Diseno
-    ('oscar.azuaga', 104, 3, 'B', 4, 11, 2),  -- Laboratorio
-    ('graciela.maidana', 13, 3, 'B', 1, 13, 2),  -- Psicologia
-    ('abel.admen', 106, 3, 'B', 1, 15, 2);  -- Proyecto
-
-INSERT IGNORE INTO horario_slot (asignacion_id, usuario_id, curso_base_id, dia_semana, hora_catedra_id, sala_id)
-SELECT DISTINCT
-    a.id,
-    u.id,
-    cb.id,
-    s.dia_semana,
-    hc.id,
-    NULL
-FROM horario_slot_staging s
-JOIN usuario u ON u.usuario = s.profesor_usuario
-JOIN curso_base cb ON cb.especialidad_id = (SELECT id FROM especialidad WHERE nombre = 'Electricidad')
-    AND cb.nivel = s.nivel AND cb.seccion = s.seccion
-JOIN asignacion a ON a.usuario_id = u.id AND a.materia_id = s.materia_id AND a.curso_base_id = cb.id
-JOIN horario_slot_span span ON span.n <= s.duracion
-JOIN hora_catedra hc ON hc.numero = s.hora_numero + (span.n - 1)
-ORDER BY cb.nivel, cb.seccion, s.dia_semana, hc.numero;
-
-DROP TEMPORARY TABLE horario_slot_span;
-DROP TEMPORARY TABLE horario_slot_staging;
-
--- ========================================================================
--- horario_slot para Química Industrial (curso_base 49-57)
--- ========================================================================
--- Fuente: "Horario de Clases 2026" de Química Industrial, unica version
--- disponible (30/03/2026), paginas 13-15 (1ro/2do/3ro, secciones A/B/C).
--- curso_base: 49=1roA, 50=1roB, 51=1roC, 52=2doA, 53=2doB, 54=2doC,
--- 55=3roA, 56=3roB, 57=3roC.
--- El documento fuente NO trae columna de aula/sala, asi que sala_id queda
--- NULL para todas las filas (no se inventa ninguna aula), igual que en
--- Electricidad.
-DELETE hs FROM horario_slot hs
-JOIN curso_base cb ON cb.id = hs.curso_base_id
-WHERE cb.especialidad_id = (SELECT id FROM especialidad WHERE nombre = 'Química Industrial');
-
-CREATE TEMPORARY TABLE horario_slot_staging (
-    profesor_usuario VARCHAR(45) NOT NULL,
-    materia_id INT NOT NULL,
-    nivel TINYINT NOT NULL,
-    seccion ENUM('A', 'B', 'C') NOT NULL,
-    dia_semana TINYINT UNSIGNED NOT NULL,
-    hora_numero TINYINT UNSIGNED NOT NULL,
-    duracion TINYINT UNSIGNED NOT NULL
-);
-
-CREATE TEMPORARY TABLE horario_slot_span (
-    n TINYINT UNSIGNED NOT NULL PRIMARY KEY
-);
-
-INSERT INTO horario_slot_span (n) VALUES (1), (2), (3), (4), (5), (6), (7), (8);
-
-INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, dia_semana, hora_numero, duracion) VALUES
-    ('angel.ruiz', 1, 1, 'A', 1, 1, 2),  -- Antropologia
-    ('ruth.estigarribia', 12, 1, 'A', 2, 1, 2),  -- Orientacion
-    ('paolo.zucchini', 121, 1, 'A', 3, 1, 8),  -- Quimica General
-    ('daniela.ratzlaff', 128, 1, 'A', 4, 1, 2),  -- Seguridad e Higiene
-    ('ana.fernandez', 11, 1, 'A', 1, 3, 2),  -- Matematica
-    ('luis.codas', 127, 1, 'A', 2, 3, 2),  -- Recursos Naturales
-    ('ana.fernandez', 11, 1, 'A', 4, 3, 2),  -- Matematica
-    ('aracely.ortiz', 138, 1, 'A', 1, 5, 4),  -- Dibujo Tecnico
-    ('laura.rivas', 2, 1, 'A', 2, 5, 2),  -- Ciencias N
-    ('nidia.samudio', 8, 1, 'A', 4, 5, 2),  -- Guarani
-    ('graciela.gonzalez', 6, 1, 'A', 2, 7, 2),  -- Etica
-    ('paolo.zucchini', 121, 1, 'A', 1, 9, 2),  -- Quimica General
-    ('victor.benitez', 7, 1, 'A', 5, 9, 3),  -- Fisica
-    ('leticia.bogado', 16, 1, 'A', 1, 11, 2),  -- Literatura
-    ('bernarda.gonzalez', 10, 1, 'A', 5, 12, 1),  -- Ingles
-    ('pedro.garcete', 9, 1, 'A', 1, 13, 2),  -- Historia
-    ('maria.roman', 122, 1, 'A', 5, 13, 3),  -- Quimica Practica
-    ('francisco.molinas', 4, 1, 'A', 1, 15, 2),  -- Educ Fisica
-    ('luis.codas', 127, 1, 'C', 2, 1, 2),  -- Recursos Naturales
-    ('daniel.rios', 6, 1, 'C', 4, 1, 2),  -- Etica
-    ('daniel.rios', 12, 1, 'C', 2, 3, 2),  -- Orientacion
-    ('daniela.ratzlaff', 128, 1, 'C', 4, 3, 2),  -- Seguridad e Higiene
-    ('ana.fernandez', 11, 1, 'C', 2, 5, 3),  -- Matematica
-    ('daniela.ratzlaff', 122, 1, 'C', 4, 5, 3),  -- Quimica Practica
-    ('ana.fernandez', 11, 1, 'C', 1, 9, 2),  -- Matematica
-    ('victor.cerquetti', 138, 1, 'C', 2, 9, 4),  -- Dibujo Tecnico
-    ('gerardo.ovelar', 4, 1, 'C', 3, 9, 2),  -- Educ Fisica
-    ('abner.alcaraz', 9, 1, 'C', 4, 9, 2),  -- Historia
-    ('bernarda.gonzalez', 10, 1, 'C', 5, 9, 3),  -- Ingles
-    ('paolo.zucchini', 121, 1, 'C', 1, 11, 6),  -- Quimica General
-    ('laura.rivas', 2, 1, 'C', 3, 11, 2),  -- Ciencias Nat
-    ('leticia.bogado', 16, 1, 'C', 4, 11, 2),  -- Literatura
-    ('victor.benitez', 7, 1, 'C', 5, 12, 3),  -- Fisica
-    ('paolo.zucchini', 121, 1, 'C', 3, 13, 4),  -- Quimica General
-    ('emilce.jara', 1, 1, 'C', 4, 13, 2),  -- Antropologia
-    ('nidia.samudio', 8, 1, 'C', 5, 15, 2),  -- Guarani
-    ('victor.benitez', 7, 1, 'B', 1, 1, 3),  -- Fisica
-    ('gladys.vallejos', 121, 1, 'B', 3, 1, 4),  -- Quimica General
-    ('luis.codas', 127, 1, 'B', 1, 4, 1),  -- Recursos Naturales
-    ('bernarda.gonzalez', 10, 1, 'B', 3, 5, 2),  -- Ingles
-    ('laura.rivas', 2, 1, 'B', 1, 6, 2),  -- Ciencias Nat
-    ('daniela.ratzlaff', 128, 1, 'B', 3, 7, 2),  -- Seguridad e Higiene
-    ('pedro.garcete', 9, 1, 'B', 1, 9, 2),  -- Historia
-    ('ana.gallardo', 11, 1, 'B', 2, 9, 5),  -- Matematica
-    ('gladys.vallejos', 121, 1, 'B', 3, 9, 6),  -- Quimica General
-    ('maria.egusquiza', 1, 1, 'B', 4, 9, 2),  -- Antropologia
-    ('hernan.jara', 8, 1, 'B', 5, 9, 2),  -- Guarani
-    ('alicia.martinez', 6, 1, 'B', 1, 11, 2),  -- Etica
-    ('ruth.estigarribia', 12, 1, 'B', 4, 11, 2),  -- Orientacion
-    ('raquel.gonzalez', 138, 1, 'B', 5, 11, 4),  -- Dibujo Tecnico
-    ('oscar.villasanti', 4, 1, 'B', 1, 13, 2),  -- Educ Fisica
-    ('maria.roman', 122, 1, 'B', 4, 13, 3),  -- Quimica Practica
-    ('leticia.bogado', 16, 1, 'B', 3, 15, 2),  -- Literatura
-    ('luis.codas', 2, 2, 'A', 1, 1, 2),  -- Ciencias Nat
-    ('oscar.ibarrola', 125, 2, 'A', 1, 3, 5),  -- Operaciones Unitarias
-    ('daniela.ratzlaff', 123, 2, 'A', 2, 1, 7),  -- Quimica Analitica
-    ('oscar.ibarrola', 124, 2, 'A', 3, 1, 4),  -- Fisicoquimica
-    ('luis.chavez', 4, 2, 'A', 3, 5, 2),  -- Educ Fisica
-    ('bernarda.gonzalez', 10, 2, 'A', 3, 7, 2),  -- Ingles
-    ('liz.duarte', 11, 2, 'A', 4, 1, 5),  -- Matematica
-    ('juan.gonzalez', 129, 2, 'A', 4, 6, 3),  -- Taller
-    ('daniela.ratzlaff', 123, 2, 'A', 5, 1, 6),  -- Quimica Analitica
-    ('leticia.bogado', 16, 2, 'A', 5, 7, 2),  -- Literatura
-    ('oscar.ibarrola', 126, 2, 'A', 1, 9, 4),  -- Analisis Instrumental
-    ('alicia.martinez', 5, 2, 'A', 1, 13, 2),  -- Educacion Vial
-    ('pedro.garcete', 9, 2, 'A', 1, 15, 2),  -- Historia
-    ('victor.benitez', 7, 2, 'A', 3, 9, 4),  -- Fisica
-    ('bernarda.gonzalez', 10, 2, 'A', 3, 13, 2),  -- Ingles
-    ('nidia.samudio', 8, 2, 'A', 5, 9, 4),  -- Guarani
-    ('juan.gonzalez', 129, 2, 'C', 1, 1, 3),  -- Taller
-    ('victor.benitez', 7, 2, 'C', 1, 4, 2),  -- Fisica
-    ('ana.fernandez', 11, 2, 'C', 1, 6, 3),  -- Matematica
-    ('mirian.montania', 5, 2, 'C', 2, 1, 2),  -- Educacion Vial
-    ('ana.fernandez', 11, 2, 'C', 2, 3, 2),  -- Matematica
-    ('luis.codas', 2, 2, 'C', 4, 1, 2),  -- Ciencias N
-    ('nidia.samudio', 8, 2, 'C', 4, 3, 2),  -- Guarani
-    ('oscar.ibarrola', 126, 2, 'C', 4, 5, 4),  -- Analisis Instrumental
-    ('leticia.bogado', 16, 2, 'C', 1, 9, 2),  -- Literatura
-    ('pedro.garcete', 9, 2, 'C', 1, 11, 2),  -- Historia
-    ('oscar.ibarrola', 125, 2, 'C', 1, 13, 4),  -- Operaciones Unitarias
-    ('igor.fernandez', 123, 2, 'C', 2, 9, 5),  -- Quimica Analitica
-    ('bernarda.gonzalez', 10, 2, 'C', 3, 9, 2),  -- Ingles
-    ('oscar.villasanti', 4, 2, 'C', 3, 11, 2),  -- Educ Fisica
-    ('oscar.ibarrola', 125, 2, 'C', 3, 13, 1),  -- Operaciones Unitarias
-    ('victor.benitez', 7, 2, 'C', 3, 14, 3),  -- Fisica
-    ('maria.roman', 124, 2, 'C', 4, 9, 4),  -- Fisicoquimica
-    ('nidia.samudio', 8, 2, 'C', 4, 13, 2),  -- Guarani
-    ('igor.fernandez', 123, 2, 'C', 5, 9, 7),  -- Quimica Analitica
-    ('alcira.caceres', 10, 2, 'B', 1, 1, 4),  -- Ingles
-    ('hernan.jara', 8, 2, 'B', 1, 5, 4),  -- Guarani
-    ('oscar.ibarrola', 125, 2, 'B', 2, 1, 5),  -- Operaciones Unitarias
-    ('carmen.franco', 123, 2, 'B', 2, 6, 3),  -- Quimica Analitica
-    ('victor.benitez', 7, 2, 'B', 3, 1, 2),  -- Fisica
-    ('ana.fernandez', 11, 2, 'B', 3, 3, 6),  -- Matematica
-    ('oscar.ibarrola', 126, 2, 'B', 4, 1, 4),  -- Analisis Instrumental
-    ('luis.codas', 2, 2, 'B', 4, 5, 2),  -- Ciencias N
-    ('carmen.franco', 123, 2, 'B', 4, 7, 2),  -- Quimica Analitica
-    ('leticia.bogado', 16, 2, 'B', 5, 1, 2),  -- Literatura
-    ('juan.gonzalez', 129, 2, 'B', 5, 3, 3),  -- Taller
-    ('alicia.martinez', 5, 2, 'B', 1, 9, 2),  -- Educacion Vial
-    ('oscar.villasanti', 4, 2, 'B', 1, 11, 2),  -- Educ Fisica
-    ('oscar.ibarrola', 124, 2, 'B', 3, 9, 4),  -- Fisicoquimica
-    ('victor.benitez', 7, 2, 'B', 3, 13, 1),  -- Fisica
-    ('carmen.franco', 123, 2, 'B', 4, 9, 4),  -- Quimica Analitica
-    ('pedro.garcete', 9, 2, 'B', 4, 13, 4),  -- Historia
-    ('liz.montiel', 135, 3, 'A', 1, 1, 3),  -- Plan Optativo
-    ('maria.roman', 130, 3, 'A', 2, 1, 8),  -- Analisis Industrial
-    ('genoveva.valdez', 13, 3, 'A', 3, 1, 4),  -- Psicologia
-    ('zonia.ramirez', 131, 3, 'A', 4, 1, 4),  -- Microbiologia
-    ('andrea.perez', 132, 3, 'A', 5, 1, 8),  -- Tecnologia y A de Alim
-    ('juan.gonzalez', 133, 3, 'A', 1, 4, 3),  -- Energia
-    ('liz.montiel', 134, 3, 'A', 3, 5, 2),  -- Proyecto Industrial
-    ('rolando.lenguaza', 3, 3, 'A', 4, 5, 4),  -- Economia y G
-    ('luis.codas', 2, 3, 'A', 1, 7, 2),  -- Ciencias N
-    ('graciela.maidana', 12, 3, 'A', 3, 7, 2),  -- Orientacion
-    ('gerardo.ovelar', 4, 3, 'A', 1, 9, 2),  -- Educ Fisica
-    ('liz.duarte', 11, 3, 'A', 3, 9, 2),  -- Matematica
-    ('andrea.perez', 132, 3, 'A', 5, 9, 2),  -- Tecnologia y A de Alim
-    ('pedro.garcete', 9, 3, 'A', 3, 11, 2),  -- Historia y G
-    ('leticia.bogado', 16, 3, 'A', 5, 11, 2),  -- Literatura
-    ('liz.montiel', 136, 3, 'A', 3, 13, 2),  -- Proyecto Educ
-    ('liz.montiel', 134, 3, 'A', 5, 13, 1),  -- Proyecto Industrial
-    ('liz.montiel', 137, 3, 'A', 3, 15, 2),  -- Tecnologia
-    ('liz.montiel', 137, 3, 'A', 5, 14, 2),  -- Tecnologia
-    ('liz.montiel', 134, 3, 'C', 3, 1, 3),  -- Proyecto Industrial
-    ('ana.fernandez', 11, 3, 'C', 4, 1, 2),  -- Matematica
-    ('liz.montiel', 137, 3, 'C', 3, 4, 1),  -- Tecnologia
-    ('juan.gonzalez', 133, 3, 'C', 4, 3, 3),  -- Energia
-    ('luis.codas', 2, 3, 'C', 1, 5, 2),  -- Ciencias N
-    ('irma.cardozo', 13, 3, 'C', 3, 5, 4),  -- Psicologia
-    ('liz.montiel', 135, 3, 'C', 5, 5, 4),  -- Plan Optativo
-    ('gerardo.ovelar', 4, 3, 'C', 1, 7, 2),  -- Educ Fisica
-    ('maria.roman', 130, 3, 'C', 1, 9, 8),  -- Analisis Industrial
-    ('andrea.perez', 132, 3, 'C', 2, 9, 8),  -- Tecnologia y A de Alim
-    ('leticia.bogado', 16, 3, 'C', 3, 9, 2),  -- Literatura
-    ('andrea.perez', 132, 3, 'C', 4, 9, 2),  -- Tecnologia y A de Alim
-    ('liz.montiel', 137, 3, 'C', 5, 9, 2),  -- Tecnologia
-    ('liz.montiel', 136, 3, 'C', 3, 11, 2),  -- Proyecto Educ
-    ('rolando.lenguaza', 3, 3, 'C', 4, 11, 2),  -- Economia y G
-    ('rolando.lenguaza', 3, 3, 'C', 3, 13, 2),  -- Economia y G
-    ('igor.fernandez', 131, 3, 'C', 4, 13, 4),  -- Microbiologia
-    ('pedro.garcete', 9, 3, 'C', 3, 15, 2),  -- Historia y G
-    ('maria.roman', 130, 3, 'B', 1, 1, 7),  -- Analisis Industrial
-    ('liz.montiel', 135, 3, 'B', 1, 8, 1),  -- Plan Optativo
-    ('ana.fernandez', 11, 3, 'B', 2, 1, 2),  -- Matematica
-    ('gerardo.ovelar', 4, 3, 'B', 2, 3, 2),  -- Educ Fisica
-    ('oscar.ibarrola', 134, 3, 'B', 2, 6, 3),  -- Proyecto Industrial
-    ('andrea.perez', 132, 3, 'B', 3, 1, 8),  -- Tecnologia y A de Alim
-    ('genoveva.valdez', 13, 3, 'B', 4, 1, 2),  -- Psicologia
-    ('luis.codas', 2, 3, 'B', 4, 3, 2),  -- Ciencias N
-    ('alicia.martinez', 9, 3, 'B', 4, 5, 2),  -- Historia y G
-    ('ruth.estigarribia', 12, 3, 'B', 4, 7, 2),  -- Orientacion
-    ('liz.montiel', 137, 3, 'B', 5, 1, 4),  -- Tecnologia
-    ('juan.gonzalez', 133, 3, 'B', 5, 6, 3),  -- Energia
-    ('liz.montiel', 137, 3, 'B', 1, 9, 2),  -- Tecnologia
-    ('liz.montiel', 136, 3, 'B', 1, 11, 2),  -- Proyecto Educ
-    ('igor.fernandez', 131, 3, 'B', 1, 13, 4),  -- Microbiologia
-    ('rolando.lenguaza', 3, 3, 'B', 3, 9, 4),  -- Economia y G
-    ('genoveva.valdez', 13, 3, 'B', 3, 13, 2),  -- Psicologia
-    ('leticia.bogado', 16, 3, 'B', 4, 9, 2),  -- Literatura
-    ('andrea.perez', 132, 3, 'B', 4, 11, 2);  -- Tecnologia y A de Alim
-
-INSERT IGNORE INTO horario_slot (asignacion_id, usuario_id, curso_base_id, dia_semana, hora_catedra_id, sala_id)
-SELECT DISTINCT
-    a.id,
-    u.id,
-    cb.id,
-    s.dia_semana,
-    hc.id,
-    NULL
-FROM horario_slot_staging s
-JOIN usuario u ON u.usuario = s.profesor_usuario
-JOIN curso_base cb ON cb.especialidad_id = (SELECT id FROM especialidad WHERE nombre = 'Química Industrial')
-    AND cb.nivel = s.nivel AND cb.seccion = s.seccion
-JOIN asignacion a ON a.usuario_id = u.id AND a.materia_id = s.materia_id AND a.curso_base_id = cb.id
-JOIN horario_slot_span span ON span.n <= s.duracion
-JOIN hora_catedra hc ON hc.numero = s.hora_numero + (span.n - 1)
-ORDER BY cb.nivel, cb.seccion, s.dia_semana, hc.numero;
-
-DROP TEMPORARY TABLE horario_slot_span;
-DROP TEMPORARY TABLE horario_slot_staging;
 
 -- ========================================================================
 -- horario_slot para Construcciones Civiles (curso_base 7-15)
@@ -2797,16 +2420,15 @@ DROP TEMPORARY TABLE horario_slot_span;
 DROP TEMPORARY TABLE horario_slot_staging;
 
 -- ========================================================================
--- horario_slot para Electromecanica (curso_base 31-36)
+-- horario_slot para Electricidad (curso_base 16-21)
 -- ========================================================================
--- Fuente: mismos horarios usados para la asignacion de Electromecanica (ver
--- 08_asignacion_electromecanica.sql). 1ro y 2do: version 7/5/2026. 3ro:
--- version 22/5/2026 (Instalaciones Ind. de 3ro A/B con Robert Caballero).
--- El documento fuente NO trae columna de aula/sala, asi que sala_id queda
--- NULL para todas las filas (no se inventa ninguna aula).
+-- Fuente: mismos horarios usados para la asignacion de Electricidad (ver
+-- 03_curso_base_y_asignacion_electricidad.sql), version 06/05/2026.
+-- El documento fuente de Electricidad NO trae columna de aula/sala, asi que
+-- sala_id queda NULL para todas las filas (no se inventa ninguna aula).
 DELETE hs FROM horario_slot hs
 JOIN curso_base cb ON cb.id = hs.curso_base_id
-WHERE cb.especialidad_id = (SELECT id FROM especialidad WHERE nombre = 'Electromecánica');
+WHERE cb.especialidad_id = (SELECT id FROM especialidad WHERE nombre = 'Electricidad');
 
 CREATE TEMPORARY TABLE horario_slot_staging (
     profesor_usuario VARCHAR(45) NOT NULL,
@@ -2822,117 +2444,116 @@ CREATE TEMPORARY TABLE horario_slot_span (
     n TINYINT UNSIGNED NOT NULL PRIMARY KEY
 );
 
-INSERT INTO horario_slot_span (n) VALUES (1), (2), (3), (4), (5), (6);
+INSERT INTO horario_slot_span (n) VALUES (1), (2), (3), (4);
 
 INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, dia_semana, hora_numero, duracion) VALUES
-    ('daniela.ratzlaff', 14, 1, 'A', 3, 1, 2),  -- Quimica
-    ('aracely.ortiz', 147, 1, 'A', 3, 3, 3),  -- Dibujo Tecnico
-    ('jorge.recalde', 141, 1, 'A', 3, 6, 1),  -- Refrigeracion
-    ('monica.vera', 17, 1, 'A', 4, 1, 3),  -- Informatica
-    ('crispin.coeffier', 7, 1, 'A', 4, 4, 3),  -- Fisica
-    ('luis.codas', 2, 1, 'A', 4, 7, 2),  -- Ciencias
-    ('celso.rojas', 19, 1, 'A', 4, 9, 2),  -- Taller Mecanico
-    ('justo.mora', 18, 1, 'A', 4, 11, 3),  -- Instalaciones Industriales
-    ('jorge.recalde', 141, 1, 'A', 4, 14, 3),  -- Refrigeracion
-    ('maria.mequer', 4, 1, 'A', 5, 1, 2),  -- Educacion Fisica
-    ('graciela.gonzalez', 6, 1, 'A', 5, 3, 2),  -- Etica
-    ('graciela.gonzalez', 1, 1, 'A', 5, 5, 2),  -- Antropologia
-    ('graciela.maidana', 12, 1, 'A', 5, 7, 2),  -- Orientacion
-    ('ana.gallardo', 145, 1, 'A', 1, 9, 3),  -- Electrotecnia
-    ('crispin.coeffier', 11, 1, 'A', 1, 12, 5),  -- Matematica Comun
-    ('celso.rojas', 19, 1, 'A', 2, 13, 4),  -- Taller Mecanico
-    ('liz.duarte', 11, 1, 'B', 3, 1, 3),  -- Matematica Comun
-    ('daniela.ratzlaff', 14, 1, 'B', 3, 4, 2),  -- Quimica
-    ('aracely.ortiz', 147, 1, 'B', 3, 6, 3),  -- Dibujo Tecnico
-    ('daniel.rios', 1, 1, 'B', 2, 7, 2),  -- Antropologia
-    ('jorge.recalde', 141, 1, 'B', 5, 1, 4),  -- Refrigeracion
-    ('robert.caballero', 18, 1, 'B', 5, 5, 3),  -- Instalaciones Industriales
-    ('hugo.olmedo', 2, 1, 'B', 1, 9, 2),  -- Ciencias
-    ('graciela.gonzalez', 6, 1, 'B', 1, 11, 2),  -- Etica
-    ('zully.nunez', 16, 1, 'B', 1, 13, 2),  -- Literatura
-    ('alcira.caceres', 10, 1, 'B', 1, 15, 2),  -- Ingles
-    ('gustavo.ramirez', 9, 1, 'B', 2, 9, 2),  -- Historia
-    ('zully.nunez', 8, 1, 'B', 2, 11, 2),  -- Guarani
-    ('ana.gallardo', 145, 1, 'B', 2, 14, 3),  -- Electrotecnia
-    ('crispin.coeffier', 7, 1, 'B', 4, 9, 3),  -- Fisica
-    ('oscar.villasanti', 4, 1, 'B', 4, 13, 2),  -- Educacion Fisica
-    ('monica.vera', 17, 1, 'B', 5, 9, 3),  -- Informatica
-    ('celso.rojas', 19, 1, 'B', 5, 12, 4),  -- Taller Mecanico
-    ('graciela.maidana', 12, 1, 'B', 3, 13, 2),  -- Orientacion
-    ('daniela.ratzlaff', 14, 2, 'A', 1, 1, 4),  -- Quimica
-    ('ana.gallardo', 145, 2, 'A', 1, 5, 4),  -- Electrotecnia
-    ('bernarda.gonzalez', 10, 2, 'A', 2, 1, 4),  -- Ingles
-    ('maria.mequer', 4, 2, 'A', 2, 5, 2),  -- Educacion Fisica
-    ('justo.mora', 19, 2, 'A', 3, 1, 4),  -- Taller Mecanico
-    ('mirian.montania', 5, 2, 'A', 3, 5, 2),  -- Educacion Vial
-    ('gustavo.ramirez', 9, 2, 'A', 3, 7, 2),  -- Historia
-    ('emilce.jara', 12, 2, 'A', 5, 1, 2),  -- Orientacion
-    ('ivan.nunez', 146, 2, 'A', 5, 3, 2),  -- Electronica
-    ('esperanza.torales', 11, 2, 'A', 5, 5, 3),  -- Matematica Comun
-    ('crispin.coeffier', 7, 2, 'A', 1, 9, 2),  -- Fisica
-    ('luis.codas', 2, 2, 'A', 1, 11, 2),  -- Ciencias
-    ('monica.vera', 17, 2, 'A', 1, 13, 3),  -- Informatica
-    ('esperanza.torales', 11, 2, 'A', 2, 9, 2),  -- Matematica Comun
-    ('graciela.gonzalez', 8, 2, 'A', 2, 11, 2),  -- Guarani
-    ('graciela.gonzalez', 8, 2, 'A', 3, 9, 2),  -- Guarani
-    ('leticia.bogado', 16, 2, 'A', 3, 13, 2),  -- Literatura
-    ('jorge.recalde', 141, 2, 'A', 4, 9, 5),  -- Refrigeracion
-    ('crispin.coeffier', 7, 2, 'A', 4, 14, 3),  -- Fisica
-    ('fernando.espinoza', 18, 2, 'A', 5, 9, 6),  -- Instalaciones Industriales
-    ('daniela.ratzlaff', 14, 2, 'B', 1, 7, 2),  -- Quimica
-    ('esperanza.torales', 11, 2, 'B', 2, 1, 5),  -- Matematica Comun
-    ('jorge.recalde', 141, 2, 'B', 2, 6, 1),  -- Refrigeracion
-    ('ivan.nunez', 146, 2, 'B', 2, 7, 2),  -- Electronica
-    ('jorge.recalde', 141, 2, 'B', 3, 1, 4),  -- Refrigeracion
-    ('justo.mora', 19, 2, 'B', 3, 5, 4),  -- Taller Mecanico
-    ('crispin.coeffier', 7, 2, 'B', 4, 1, 2),  -- Fisica
-    ('alcira.caceres', 10, 2, 'B', 4, 3, 4),  -- Ingles
-    ('daniel.rios', 5, 2, 'B', 4, 7, 2),  -- Educacion Vial
-    ('romy.aguilera', 8, 2, 'B', 5, 1, 4),  -- Guarani
-    ('graciela.maidana', 12, 2, 'B', 5, 5, 2),  -- Orientacion
-    ('zully.nunez', 16, 2, 'B', 5, 7, 2),  -- Literatura
-    ('daniela.ratzlaff', 14, 2, 'B', 1, 9, 2),  -- Quimica
-    ('francisco.molinas', 4, 2, 'B', 1, 11, 2),  -- Educacion Fisica
-    ('robert.caballero', 18, 2, 'B', 1, 13, 4),  -- Instalaciones Industriales
-    ('crispin.coeffier', 7, 2, 'B', 3, 9, 3),  -- Fisica
-    ('robert.caballero', 18, 2, 'B', 3, 15, 2),  -- Instalaciones Industriales
-    ('gustavo.ramirez', 9, 2, 'B', 4, 9, 2),  -- Historia
-    ('hugo.olmedo', 2, 2, 'B', 4, 11, 2),  -- Ciencias
-    ('ana.gallardo', 145, 2, 'B', 4, 13, 4),  -- Electrotecnia
-    ('nemesio.fernandez', 142, 3, 'A', 1, 1, 5),  -- Neumatica e Hidraulica
-    ('nemesio.fernandez', 143, 3, 'A', 1, 6, 3),  -- PLC
-    ('ana.gallardo', 145, 3, 'A', 2, 1, 5),  -- Electrotecnia
-    ('robert.caballero', 144, 3, 'A', 3, 1, 4),  -- Diseno y Mantenimiento Industrial
-    ('jorge.recalde', 141, 3, 'A', 3, 5, 1),  -- Refrigeracion
-    ('robert.caballero', 18, 3, 'A', 4, 1, 4),  -- Instalaciones Industriales
-    ('jorge.recalde', 141, 3, 'A', 4, 5, 4),  -- Refrigeracion
-    ('esperanza.torales', 11, 3, 'A', 5, 1, 2),  -- Matematica Comun
-    ('leticia.bogado', 16, 3, 'A', 5, 3, 2),  -- Literatura
-    ('irma.cardozo', 13, 3, 'A', 5, 5, 4),  -- Psicologia
-    ('ivan.nunez', 146, 3, 'A', 1, 9, 2),  -- Electronica
-    ('maria.mequer', 4, 3, 'A', 1, 11, 2),  -- Educacion Fisica
-    ('rolando.lenguaza', 3, 3, 'A', 2, 9, 4),  -- Economia y Gestion
-    ('nemesio.fernandez', 143, 3, 'A', 4, 9, 2),  -- PLC
-    ('ivan.nunez', 146, 3, 'A', 4, 11, 2),  -- Electronica
-    ('robert.caballero', 18, 3, 'A', 4, 13, 2),  -- Instalaciones Industriales
-    ('gustavo.ramirez', 9, 3, 'A', 4, 15, 2),  -- Historia
-    ('zully.nunez', 16, 3, 'B', 1, 1, 2),  -- Literatura
-    ('hugo.olmedo', 2, 3, 'B', 1, 3, 2),  -- Ciencias
-    ('rolando.lenguaza', 3, 3, 'B', 1, 5, 4),  -- Economia y Gestion
-    ('ivan.nunez', 146, 3, 'B', 2, 3, 4),  -- Electronica
-    ('esperanza.torales', 11, 3, 'B', 2, 7, 2),  -- Matematica Comun
-    ('ana.gallardo', 145, 3, 'B', 3, 3, 4),  -- Electrotecnia
-    ('nemesio.fernandez', 143, 3, 'B', 1, 9, 5),  -- PLC
-    ('nemesio.fernandez', 142, 3, 'B', 1, 14, 1),  -- Neumatica e Hidraulica
-    ('gustavo.ramirez', 9, 3, 'B', 1, 15, 2),  -- Historia
-    ('nemesio.fernandez', 142, 3, 'B', 2, 9, 4),  -- Neumatica e Hidraulica
-    ('robert.caballero', 144, 3, 'B', 2, 13, 4),  -- Diseno y Mantenimiento Industrial
-    ('robert.caballero', 18, 3, 'B', 3, 9, 6),  -- Instalaciones Industriales
-    ('jorge.recalde', 141, 3, 'B', 3, 15, 1),  -- Refrigeracion
-    ('irma.cardozo', 13, 3, 'B', 4, 9, 4),  -- Psicologia
-    ('gerardo.ovelar', 4, 3, 'B', 4, 13, 2),  -- Educacion Fisica
-    ('jorge.recalde', 141, 3, 'B', 5, 9, 4),  -- Refrigeracion
-    ('robert.caballero', 144, 3, 'B', 5, 13, 4);  -- Diseno y Mantenimiento Industrial
+    ('liz.duarte', 11, 1, 'A', 2, 1, 3),  -- Matematica
+    ('gerardo.ovelar', 4, 1, 'A', 4, 1, 2),  -- Educ Fisica
+    ('graciela.gonzalez', 1, 1, 'A', 4, 3, 2),  -- Antropologia
+    ('victor.bogarin', 101, 1, 'A', 5, 1, 3),  -- Taller
+    ('nidia.samudio', 8, 1, 'A', 1, 5, 2),  -- Guarani
+    ('gerardo.centurion', 17, 1, 'A', 2, 5, 2),  -- Informatica
+    ('christian.ramos', 10, 1, 'A', 4, 5, 2),  -- Ingles
+    ('victor.bogarin', 102, 1, 'A', 5, 5, 2),  -- Diseno
+    ('abel.admen', 14, 1, 'A', 1, 7, 2),  -- Quimica
+    ('emilce.jara', 12, 1, 'A', 4, 7, 2),  -- Orientacion
+    ('victor.bogarin', 103, 1, 'A', 5, 7, 2),  -- Dibujo Tecnico
+    ('javier.lopez', 104, 1, 'A', 1, 9, 2),  -- Lab Electrotecnia
+    ('javier.lopez', 104, 1, 'A', 2, 9, 2),  -- Lab Electrotecnia
+    ('jorge.echague', 105, 1, 'A', 3, 9, 2),  -- Electronica
+    ('celso.rojas', 19, 1, 'A', 5, 9, 3),  -- Taller Mecanico
+    ('javier.lopez', 104, 1, 'A', 3, 11, 2),  -- Lab Electrotecnia
+    ('gustavo.ramirez', 9, 1, 'A', 2, 11, 2),  -- Historia
+    ('gustavo.ramirez', 6, 1, 'A', 1, 13, 2),  -- Etica
+    ('zully.nunez', 16, 1, 'A', 2, 13, 2),  -- Literatura
+    ('javier.lopez', 7, 1, 'A', 3, 13, 2),  -- Fisica
+    ('hugo.olmedo', 2, 1, 'A', 1, 15, 2),  -- Ciencias N
+    ('javier.lopez', 104, 1, 'B', 1, 1, 2),  -- Lab Electrotecnia
+    ('jorge.echague', 105, 1, 'B', 1, 3, 2),  -- Electronica
+    ('javier.lopez', 104, 1, 'B', 2, 1, 3),  -- Lab Electrotecnia
+    ('victor.bogarin', 101, 1, 'B', 4, 1, 4),  -- Taller
+    ('christian.ramos', 10, 1, 'B', 1, 5, 2),  -- Ingles
+    ('hugo.olmedo', 2, 1, 'B', 1, 7, 2),  -- Ciencias N
+    ('javier.lopez', 7, 1, 'B', 2, 5, 3),  -- Fisica
+    ('liz.duarte', 11, 1, 'B', 2, 8, 1),  -- Matematica
+    ('victor.bogarin', 102, 1, 'B', 4, 5, 2),  -- Diseno
+    ('victor.bogarin', 103, 1, 'B', 4, 7, 2),  -- Dibujo Tecnico
+    ('celso.rojas', 19, 1, 'B', 2, 9, 3),  -- Taller Mecanico
+    ('monica.vera', 17, 1, 'B', 3, 9, 1),  -- Informatica
+    ('liz.duarte', 11, 1, 'B', 4, 9, 3),  -- Matematica
+    ('abner.alcaraz', 12, 1, 'B', 3, 10, 2),  -- Orientacion
+    ('zully.nunez', 16, 1, 'B', 5, 11, 2),  -- Literatura
+    ('christian.ramos', 10, 2, 'A', 1, 1, 2),  -- Ingles
+    ('zully.nunez', 16, 2, 'A', 1, 3, 2),  -- Literatura
+    ('victor.bogarin', 101, 2, 'A', 2, 1, 3),  -- Taller e Instalac
+    ('abel.admen', 14, 2, 'A', 3, 1, 2),  -- Quimica
+    ('abner.alcaraz', 9, 2, 'A', 3, 3, 2),  -- Historia
+    ('laura.rivas', 2, 2, 'A', 4, 1, 2),  -- Ciencias N
+    ('abel.admen', 14, 2, 'A', 4, 3, 2),  -- Quimica
+    ('jorge.echague', 104, 2, 'A', 1, 5, 2),  -- Lab Electrotecnia
+    ('jorge.echague', 105, 2, 'A', 2, 5, 3),  -- Electronica
+    ('jorge.echague', 104, 2, 'A', 3, 5, 3),  -- Lab Electrotecnia
+    ('monica.vera', 17, 2, 'A', 4, 5, 3),  -- Informatica
+    ('liz.duarte', 11, 2, 'A', 5, 5, 2),  -- Matematica
+    ('maria.valiente', 7, 2, 'A', 1, 9, 4),  -- Fisica
+    ('victor.bogarin', 102, 2, 'A', 3, 9, 3),  -- Diseno
+    ('alba.arrua', 8, 2, 'A', 5, 9, 3),  -- Guarani
+    ('mirian.montania', 5, 2, 'A', 3, 13, 2),  -- Educacion Vial
+    ('oscar.villasanti', 4, 2, 'A', 5, 13, 2),  -- Educ Fisica
+    ('christian.ramos', 10, 2, 'A', 3, 15, 2),  -- Ingles
+    ('victor.bogarin', 105, 2, 'B', 1, 2, 3),  -- Electronica
+    ('christian.ramos', 10, 2, 'B', 2, 1, 2),  -- Ingles
+    ('maria.mequer', 4, 2, 'B', 2, 3, 2),  -- Educ Fisica
+    ('victor.bogarin', 104, 2, 'B', 3, 1, 3),  -- Lab Electrotecnia
+    ('monica.vera', 17, 2, 'B', 1, 5, 2),  -- Informatica
+    ('victor.bogarin', 104, 2, 'B', 2, 5, 2),  -- Lab Electrotecnia
+    ('liz.duarte', 11, 2, 'B', 3, 5, 2),  -- Matematica
+    ('hernan.jara', 8, 2, 'B', 4, 5, 3),  -- Guarani
+    ('abel.admen', 14, 2, 'B', 3, 7, 2),  -- Quimica
+    ('graciela.gonzalez', 5, 2, 'B', 1, 9, 2),  -- Educacion Vial
+    ('abel.admen', 14, 2, 'B', 1, 11, 2),  -- Quimica
+    ('maria.valiente', 7, 2, 'B', 2, 9, 3),  -- Fisica
+    ('victor.bogarin', 102, 2, 'B', 4, 9, 3),  -- Diseno
+    ('victor.bogarin', 101, 2, 'B', 5, 9, 3),  -- Taller
+    ('liz.duarte', 11, 2, 'B', 1, 13, 2),  -- Matematica
+    ('christian.ramos', 10, 2, 'B', 4, 13, 2),  -- Ingles
+    ('hugo.olmedo', 2, 2, 'B', 4, 15, 2),  -- Ciencias N
+    ('zully.nunez', 16, 2, 'B', 5, 13, 2),  -- Literatura
+    ('cynthia.diaz', 9, 2, 'B', 5, 15, 2),  -- Historia y G
+    ('oscar.azuaga', 18, 3, 'A', 1, 1, 2),  -- Instalaciones
+    ('graciela.maidana', 12, 3, 'A', 2, 1, 2),  -- Orientacion
+    ('laura.rivas', 2, 3, 'A', 3, 1, 2),  -- Ciencias N
+    ('rolando.lenguaza', 3, 3, 'A', 4, 1, 2),  -- Economia y G
+    ('abel.admen', 106, 3, 'A', 5, 1, 2),  -- Proyecto
+    ('oscar.azuaga', 102, 3, 'A', 2, 3, 2),  -- Diseno
+    ('rolando.lenguaza', 3, 3, 'A', 3, 3, 2),  -- Economia y G
+    ('jorge.echague', 105, 3, 'A', 4, 3, 2),  -- Electronica
+    ('emilce.jara', 13, 3, 'A', 5, 3, 2),  -- Psicologia
+    ('oscar.azuaga', 18, 3, 'A', 1, 5, 2),  -- Instalaciones
+    ('gerardo.ovelar', 4, 3, 'A', 3, 5, 2),  -- Educ Fisica
+    ('zully.nunez', 16, 3, 'A', 1, 7, 2),  -- Literatura
+    ('liz.duarte', 11, 3, 'A', 3, 7, 2),  -- Matematica
+    ('oscar.azuaga', 104, 3, 'A', 1, 9, 4),  -- Laboratorio
+    ('victor.bogarin', 107, 3, 'A', 2, 9, 2),  -- Optativa
+    ('oscar.azuaga', 104, 3, 'A', 3, 9, 2),  -- Laboratorio
+    ('gustavo.ramirez', 9, 3, 'A', 4, 15, 2),  -- Historia y G
+    ('jorge.echague', 105, 3, 'B', 2, 1, 2),  -- Electronica
+    ('oscar.azuaga', 18, 3, 'B', 3, 1, 2),  -- Instalaciones
+    ('hugo.olmedo', 2, 3, 'B', 4, 1, 2),  -- Ciencias N
+    ('oscar.azuaga', 104, 3, 'B', 5, 1, 2),  -- Laboratorio
+    ('rolando.lenguaza', 3, 3, 'B', 4, 3, 2),  -- Economia y G
+    ('edgar.aquino', 12, 3, 'B', 4, 5, 2),  -- Orientacion
+    ('graciela.maidana', 13, 3, 'B', 2, 7, 2),  -- Psicologia
+    ('francisco.molinas', 4, 3, 'B', 3, 7, 2),  -- Educ Fisica
+    ('alicia.martinez', 9, 3, 'B', 4, 7, 2),  -- Historia y G
+    ('liz.duarte', 11, 3, 'B', 5, 7, 2),  -- Matematica
+    ('victor.bogarin', 107, 3, 'B', 1, 9, 2),  -- Optativa
+    ('zully.nunez', 16, 3, 'B', 2, 9, 2),  -- Literatura
+    ('rolando.lenguaza', 3, 3, 'B', 4, 9, 2),  -- Economia y G
+    ('oscar.azuaga', 102, 3, 'B', 3, 11, 2),  -- Diseno
+    ('oscar.azuaga', 104, 3, 'B', 4, 11, 2),  -- Laboratorio
+    ('graciela.maidana', 13, 3, 'B', 1, 13, 2),  -- Psicologia
+    ('abel.admen', 106, 3, 'B', 1, 15, 2);  -- Proyecto
 
 INSERT IGNORE INTO horario_slot (asignacion_id, usuario_id, curso_base_id, dia_semana, hora_catedra_id, sala_id)
 SELECT DISTINCT
@@ -2944,7 +2565,7 @@ SELECT DISTINCT
     NULL
 FROM horario_slot_staging s
 JOIN usuario u ON u.usuario = s.profesor_usuario
-JOIN curso_base cb ON cb.especialidad_id = (SELECT id FROM especialidad WHERE nombre = 'Electromecánica')
+JOIN curso_base cb ON cb.especialidad_id = (SELECT id FROM especialidad WHERE nombre = 'Electricidad')
     AND cb.nivel = s.nivel AND cb.seccion = s.seccion
 JOIN asignacion a ON a.usuario_id = u.id AND a.materia_id = s.materia_id AND a.curso_base_id = cb.id
 JOIN horario_slot_span span ON span.n <= s.duracion
@@ -3188,6 +2809,376 @@ JOIN horario_slot_span span ON span.n <= s.duracion
 JOIN hora_catedra hc ON hc.numero = s.hora_numero + (span.n - 1)
 LEFT JOIN sala sa ON sa.nombre = s.sala_nombre
     AND sa.especialidad_id = (SELECT id FROM especialidad WHERE nombre = 'Electrónica')
+ORDER BY cb.nivel, cb.seccion, s.dia_semana, hc.numero;
+
+DROP TEMPORARY TABLE horario_slot_span;
+DROP TEMPORARY TABLE horario_slot_staging;
+-- ========================================================================
+-- horario_slot para Electromecanica (curso_base 31-36)
+-- ========================================================================
+-- Fuente: mismos horarios usados para la asignacion de Electromecanica (ver
+-- 08_asignacion_electromecanica.sql). 1ro y 2do: version 7/5/2026. 3ro:
+-- version 22/5/2026 (Instalaciones Ind. de 3ro A/B con Robert Caballero).
+-- El documento fuente NO trae columna de aula/sala, asi que sala_id queda
+-- NULL para todas las filas (no se inventa ninguna aula).
+DELETE hs FROM horario_slot hs
+JOIN curso_base cb ON cb.id = hs.curso_base_id
+WHERE cb.especialidad_id = (SELECT id FROM especialidad WHERE nombre = 'Electromecánica');
+
+CREATE TEMPORARY TABLE horario_slot_staging (
+    profesor_usuario VARCHAR(45) NOT NULL,
+    materia_id INT NOT NULL,
+    nivel TINYINT NOT NULL,
+    seccion ENUM('A', 'B', 'C') NOT NULL,
+    dia_semana TINYINT UNSIGNED NOT NULL,
+    hora_numero TINYINT UNSIGNED NOT NULL,
+    duracion TINYINT UNSIGNED NOT NULL
+);
+
+CREATE TEMPORARY TABLE horario_slot_span (
+    n TINYINT UNSIGNED NOT NULL PRIMARY KEY
+);
+
+INSERT INTO horario_slot_span (n) VALUES (1), (2), (3), (4), (5), (6);
+
+INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, dia_semana, hora_numero, duracion) VALUES
+    ('daniela.ratzlaff', 14, 1, 'A', 3, 1, 2),  -- Quimica
+    ('aracely.ortiz', 147, 1, 'A', 3, 3, 3),  -- Dibujo Tecnico
+    ('jorge.recalde', 141, 1, 'A', 3, 6, 1),  -- Refrigeracion
+    ('monica.vera', 17, 1, 'A', 4, 1, 3),  -- Informatica
+    ('crispin.coeffier', 7, 1, 'A', 4, 4, 3),  -- Fisica
+    ('luis.codas', 2, 1, 'A', 4, 7, 2),  -- Ciencias
+    ('celso.rojas', 19, 1, 'A', 4, 9, 2),  -- Taller Mecanico
+    ('justo.mora', 18, 1, 'A', 4, 11, 3),  -- Instalaciones Industriales
+    ('jorge.recalde', 141, 1, 'A', 4, 14, 3),  -- Refrigeracion
+    ('maria.mequer', 4, 1, 'A', 5, 1, 2),  -- Educacion Fisica
+    ('graciela.gonzalez', 6, 1, 'A', 5, 3, 2),  -- Etica
+    ('graciela.gonzalez', 1, 1, 'A', 5, 5, 2),  -- Antropologia
+    ('graciela.maidana', 12, 1, 'A', 5, 7, 2),  -- Orientacion
+    ('ana.gallardo', 145, 1, 'A', 1, 9, 3),  -- Electrotecnia
+    ('crispin.coeffier', 11, 1, 'A', 1, 12, 5),  -- Matematica Comun
+    ('celso.rojas', 19, 1, 'A', 2, 13, 4),  -- Taller Mecanico
+    ('liz.duarte', 11, 1, 'B', 3, 1, 3),  -- Matematica Comun
+    ('daniela.ratzlaff', 14, 1, 'B', 3, 4, 2),  -- Quimica
+    ('aracely.ortiz', 147, 1, 'B', 3, 6, 3),  -- Dibujo Tecnico
+    ('daniel.rios', 1, 1, 'B', 2, 7, 2),  -- Antropologia
+    ('jorge.recalde', 141, 1, 'B', 5, 1, 4),  -- Refrigeracion
+    ('robert.caballero', 18, 1, 'B', 5, 5, 3),  -- Instalaciones Industriales
+    ('hugo.olmedo', 2, 1, 'B', 1, 9, 2),  -- Ciencias
+    ('graciela.gonzalez', 6, 1, 'B', 1, 11, 2),  -- Etica
+    ('zully.nunez', 16, 1, 'B', 1, 13, 2),  -- Literatura
+    ('alcira.caceres', 10, 1, 'B', 1, 15, 2),  -- Ingles
+    ('gustavo.ramirez', 9, 1, 'B', 2, 9, 2),  -- Historia
+    ('zully.nunez', 8, 1, 'B', 2, 11, 2),  -- Guarani
+    ('ana.gallardo', 145, 1, 'B', 2, 14, 3),  -- Electrotecnia
+    ('crispin.coeffier', 7, 1, 'B', 4, 9, 3),  -- Fisica
+    ('oscar.villasanti', 4, 1, 'B', 4, 13, 2),  -- Educacion Fisica
+    ('monica.vera', 17, 1, 'B', 5, 9, 3),  -- Informatica
+    ('celso.rojas', 19, 1, 'B', 5, 12, 4),  -- Taller Mecanico
+    ('graciela.maidana', 12, 1, 'B', 3, 13, 2),  -- Orientacion
+    ('daniela.ratzlaff', 14, 2, 'A', 1, 1, 4),  -- Quimica
+    ('ana.gallardo', 145, 2, 'A', 1, 5, 4),  -- Electrotecnia
+    ('bernarda.gonzalez', 10, 2, 'A', 2, 1, 4),  -- Ingles
+    ('maria.mequer', 4, 2, 'A', 2, 5, 2),  -- Educacion Fisica
+    ('justo.mora', 19, 2, 'A', 3, 1, 4),  -- Taller Mecanico
+    ('mirian.montania', 5, 2, 'A', 3, 5, 2),  -- Educacion Vial
+    ('gustavo.ramirez', 9, 2, 'A', 3, 7, 2),  -- Historia
+    ('emilce.jara', 12, 2, 'A', 5, 1, 2),  -- Orientacion
+    ('ivan.nunez', 146, 2, 'A', 5, 3, 2),  -- Electronica
+    ('esperanza.torales', 11, 2, 'A', 5, 5, 3),  -- Matematica Comun
+    ('crispin.coeffier', 7, 2, 'A', 1, 9, 2),  -- Fisica
+    ('luis.codas', 2, 2, 'A', 1, 11, 2),  -- Ciencias
+    ('monica.vera', 17, 2, 'A', 1, 13, 3),  -- Informatica
+    ('esperanza.torales', 11, 2, 'A', 2, 9, 2),  -- Matematica Comun
+    ('graciela.gonzalez', 8, 2, 'A', 2, 11, 2),  -- Guarani
+    ('graciela.gonzalez', 8, 2, 'A', 3, 9, 2),  -- Guarani
+    ('leticia.bogado', 16, 2, 'A', 3, 13, 2),  -- Literatura
+    ('jorge.recalde', 141, 2, 'A', 4, 9, 5),  -- Refrigeracion
+    ('crispin.coeffier', 7, 2, 'A', 4, 14, 3),  -- Fisica
+    ('fernando.espinoza', 18, 2, 'A', 5, 9, 6),  -- Instalaciones Industriales
+    ('daniela.ratzlaff', 14, 2, 'B', 1, 7, 2),  -- Quimica
+    ('esperanza.torales', 11, 2, 'B', 2, 1, 5),  -- Matematica Comun
+    ('jorge.recalde', 141, 2, 'B', 2, 6, 1),  -- Refrigeracion
+    ('ivan.nunez', 146, 2, 'B', 2, 7, 2),  -- Electronica
+    ('jorge.recalde', 141, 2, 'B', 3, 1, 4),  -- Refrigeracion
+    ('justo.mora', 19, 2, 'B', 3, 5, 4),  -- Taller Mecanico
+    ('crispin.coeffier', 7, 2, 'B', 4, 1, 2),  -- Fisica
+    ('alcira.caceres', 10, 2, 'B', 4, 3, 4),  -- Ingles
+    ('daniel.rios', 5, 2, 'B', 4, 7, 2),  -- Educacion Vial
+    ('romy.aguilera', 8, 2, 'B', 5, 1, 4),  -- Guarani
+    ('graciela.maidana', 12, 2, 'B', 5, 5, 2),  -- Orientacion
+    ('zully.nunez', 16, 2, 'B', 5, 7, 2),  -- Literatura
+    ('daniela.ratzlaff', 14, 2, 'B', 1, 9, 2),  -- Quimica
+    ('francisco.molinas', 4, 2, 'B', 1, 11, 2),  -- Educacion Fisica
+    ('robert.caballero', 18, 2, 'B', 1, 13, 4),  -- Instalaciones Industriales
+    ('crispin.coeffier', 7, 2, 'B', 3, 9, 3),  -- Fisica
+    ('robert.caballero', 18, 2, 'B', 3, 15, 2),  -- Instalaciones Industriales
+    ('gustavo.ramirez', 9, 2, 'B', 4, 9, 2),  -- Historia
+    ('hugo.olmedo', 2, 2, 'B', 4, 11, 2),  -- Ciencias
+    ('ana.gallardo', 145, 2, 'B', 4, 13, 4),  -- Electrotecnia
+    ('nemesio.fernandez', 142, 3, 'A', 1, 1, 5),  -- Neumatica e Hidraulica
+    ('nemesio.fernandez', 143, 3, 'A', 1, 6, 3),  -- PLC
+    ('ana.gallardo', 145, 3, 'A', 2, 1, 5),  -- Electrotecnia
+    ('robert.caballero', 144, 3, 'A', 3, 1, 4),  -- Diseno y Mantenimiento Industrial
+    ('jorge.recalde', 141, 3, 'A', 3, 5, 1),  -- Refrigeracion
+    ('robert.caballero', 18, 3, 'A', 4, 1, 4),  -- Instalaciones Industriales
+    ('jorge.recalde', 141, 3, 'A', 4, 5, 4),  -- Refrigeracion
+    ('esperanza.torales', 11, 3, 'A', 5, 1, 2),  -- Matematica Comun
+    ('leticia.bogado', 16, 3, 'A', 5, 3, 2),  -- Literatura
+    ('irma.cardozo', 13, 3, 'A', 5, 5, 4),  -- Psicologia
+    ('ivan.nunez', 146, 3, 'A', 1, 9, 2),  -- Electronica
+    ('maria.mequer', 4, 3, 'A', 1, 11, 2),  -- Educacion Fisica
+    ('rolando.lenguaza', 3, 3, 'A', 2, 9, 4),  -- Economia y Gestion
+    ('nemesio.fernandez', 143, 3, 'A', 4, 9, 2),  -- PLC
+    ('ivan.nunez', 146, 3, 'A', 4, 11, 2),  -- Electronica
+    ('robert.caballero', 18, 3, 'A', 4, 13, 2),  -- Instalaciones Industriales
+    ('gustavo.ramirez', 9, 3, 'A', 4, 15, 2),  -- Historia
+    ('zully.nunez', 16, 3, 'B', 1, 1, 2),  -- Literatura
+    ('hugo.olmedo', 2, 3, 'B', 1, 3, 2),  -- Ciencias
+    ('rolando.lenguaza', 3, 3, 'B', 1, 5, 4),  -- Economia y Gestion
+    ('ivan.nunez', 146, 3, 'B', 2, 3, 4),  -- Electronica
+    ('esperanza.torales', 11, 3, 'B', 2, 7, 2),  -- Matematica Comun
+    ('ana.gallardo', 145, 3, 'B', 3, 3, 4),  -- Electrotecnia
+    ('nemesio.fernandez', 143, 3, 'B', 1, 9, 5),  -- PLC
+    ('nemesio.fernandez', 142, 3, 'B', 1, 14, 1),  -- Neumatica e Hidraulica
+    ('gustavo.ramirez', 9, 3, 'B', 1, 15, 2),  -- Historia
+    ('nemesio.fernandez', 142, 3, 'B', 2, 9, 4),  -- Neumatica e Hidraulica
+    ('robert.caballero', 144, 3, 'B', 2, 13, 4),  -- Diseno y Mantenimiento Industrial
+    ('robert.caballero', 18, 3, 'B', 3, 9, 6),  -- Instalaciones Industriales
+    ('jorge.recalde', 141, 3, 'B', 3, 15, 1),  -- Refrigeracion
+    ('irma.cardozo', 13, 3, 'B', 4, 9, 4),  -- Psicologia
+    ('gerardo.ovelar', 4, 3, 'B', 4, 13, 2),  -- Educacion Fisica
+    ('jorge.recalde', 141, 3, 'B', 5, 9, 4),  -- Refrigeracion
+    ('robert.caballero', 144, 3, 'B', 5, 13, 4);  -- Diseno y Mantenimiento Industrial
+
+INSERT IGNORE INTO horario_slot (asignacion_id, usuario_id, curso_base_id, dia_semana, hora_catedra_id, sala_id)
+SELECT DISTINCT
+    a.id,
+    u.id,
+    cb.id,
+    s.dia_semana,
+    hc.id,
+    NULL
+FROM horario_slot_staging s
+JOIN usuario u ON u.usuario = s.profesor_usuario
+JOIN curso_base cb ON cb.especialidad_id = (SELECT id FROM especialidad WHERE nombre = 'Electromecánica')
+    AND cb.nivel = s.nivel AND cb.seccion = s.seccion
+JOIN asignacion a ON a.usuario_id = u.id AND a.materia_id = s.materia_id AND a.curso_base_id = cb.id
+JOIN horario_slot_span span ON span.n <= s.duracion
+JOIN hora_catedra hc ON hc.numero = s.hora_numero + (span.n - 1)
+ORDER BY cb.nivel, cb.seccion, s.dia_semana, hc.numero;
+
+DROP TEMPORARY TABLE horario_slot_span;
+DROP TEMPORARY TABLE horario_slot_staging;
+
+-- ========================================================================
+-- horario_slot para Química Industrial (curso_base 49-57)
+-- ========================================================================
+-- Fuente: "Horario de Clases 2026" de Química Industrial, unica version
+-- disponible (30/03/2026), paginas 13-15 (1ro/2do/3ro, secciones A/B/C).
+-- curso_base: 49=1roA, 50=1roB, 51=1roC, 52=2doA, 53=2doB, 54=2doC,
+-- 55=3roA, 56=3roB, 57=3roC.
+-- El documento fuente NO trae columna de aula/sala, asi que sala_id queda
+-- NULL para todas las filas (no se inventa ninguna aula), igual que en
+-- Electricidad.
+DELETE hs FROM horario_slot hs
+JOIN curso_base cb ON cb.id = hs.curso_base_id
+WHERE cb.especialidad_id = (SELECT id FROM especialidad WHERE nombre = 'Química Industrial');
+
+CREATE TEMPORARY TABLE horario_slot_staging (
+    profesor_usuario VARCHAR(45) NOT NULL,
+    materia_id INT NOT NULL,
+    nivel TINYINT NOT NULL,
+    seccion ENUM('A', 'B', 'C') NOT NULL,
+    dia_semana TINYINT UNSIGNED NOT NULL,
+    hora_numero TINYINT UNSIGNED NOT NULL,
+    duracion TINYINT UNSIGNED NOT NULL
+);
+
+CREATE TEMPORARY TABLE horario_slot_span (
+    n TINYINT UNSIGNED NOT NULL PRIMARY KEY
+);
+
+INSERT INTO horario_slot_span (n) VALUES (1), (2), (3), (4), (5), (6), (7), (8);
+
+INSERT INTO horario_slot_staging (profesor_usuario, materia_id, nivel, seccion, dia_semana, hora_numero, duracion) VALUES
+    ('angel.ruiz', 1, 1, 'A', 1, 1, 2),  -- Antropologia
+    ('ruth.estigarribia', 12, 1, 'A', 2, 1, 2),  -- Orientacion
+    ('paolo.zucchini', 121, 1, 'A', 3, 1, 8),  -- Quimica General
+    ('daniela.ratzlaff', 128, 1, 'A', 4, 1, 2),  -- Seguridad e Higiene
+    ('ana.fernandez', 11, 1, 'A', 1, 3, 2),  -- Matematica
+    ('luis.codas', 127, 1, 'A', 2, 3, 2),  -- Recursos Naturales
+    ('ana.fernandez', 11, 1, 'A', 4, 3, 2),  -- Matematica
+    ('aracely.ortiz', 138, 1, 'A', 1, 5, 4),  -- Dibujo Tecnico
+    ('laura.rivas', 2, 1, 'A', 2, 5, 2),  -- Ciencias N
+    ('nidia.samudio', 8, 1, 'A', 4, 5, 2),  -- Guarani
+    ('graciela.gonzalez', 6, 1, 'A', 2, 7, 2),  -- Etica
+    ('paolo.zucchini', 121, 1, 'A', 1, 9, 2),  -- Quimica General
+    ('victor.benitez', 7, 1, 'A', 5, 9, 3),  -- Fisica
+    ('leticia.bogado', 16, 1, 'A', 1, 11, 2),  -- Literatura
+    ('bernarda.gonzalez', 10, 1, 'A', 5, 12, 1),  -- Ingles
+    ('pedro.garcete', 9, 1, 'A', 1, 13, 2),  -- Historia
+    ('maria.roman', 122, 1, 'A', 5, 13, 3),  -- Quimica Practica
+    ('francisco.molinas', 4, 1, 'A', 1, 15, 2),  -- Educ Fisica
+    ('luis.codas', 127, 1, 'C', 2, 1, 2),  -- Recursos Naturales
+    ('daniel.rios', 6, 1, 'C', 4, 1, 2),  -- Etica
+    ('daniel.rios', 12, 1, 'C', 2, 3, 2),  -- Orientacion
+    ('daniela.ratzlaff', 128, 1, 'C', 4, 3, 2),  -- Seguridad e Higiene
+    ('ana.fernandez', 11, 1, 'C', 2, 5, 3),  -- Matematica
+    ('daniela.ratzlaff', 122, 1, 'C', 4, 5, 3),  -- Quimica Practica
+    ('ana.fernandez', 11, 1, 'C', 1, 9, 2),  -- Matematica
+    ('victor.cerquetti', 138, 1, 'C', 2, 9, 4),  -- Dibujo Tecnico
+    ('gerardo.ovelar', 4, 1, 'C', 3, 9, 2),  -- Educ Fisica
+    ('abner.alcaraz', 9, 1, 'C', 4, 9, 2),  -- Historia
+    ('bernarda.gonzalez', 10, 1, 'C', 5, 9, 3),  -- Ingles
+    ('paolo.zucchini', 121, 1, 'C', 1, 11, 6),  -- Quimica General
+    ('laura.rivas', 2, 1, 'C', 3, 11, 2),  -- Ciencias Nat
+    ('leticia.bogado', 16, 1, 'C', 4, 11, 2),  -- Literatura
+    ('victor.benitez', 7, 1, 'C', 5, 12, 3),  -- Fisica
+    ('paolo.zucchini', 121, 1, 'C', 3, 13, 4),  -- Quimica General
+    ('emilce.jara', 1, 1, 'C', 4, 13, 2),  -- Antropologia
+    ('nidia.samudio', 8, 1, 'C', 5, 15, 2),  -- Guarani
+    ('victor.benitez', 7, 1, 'B', 1, 1, 3),  -- Fisica
+    ('gladys.vallejos', 121, 1, 'B', 3, 1, 4),  -- Quimica General
+    ('luis.codas', 127, 1, 'B', 1, 4, 1),  -- Recursos Naturales
+    ('bernarda.gonzalez', 10, 1, 'B', 3, 5, 2),  -- Ingles
+    ('laura.rivas', 2, 1, 'B', 1, 6, 2),  -- Ciencias Nat
+    ('daniela.ratzlaff', 128, 1, 'B', 3, 7, 2),  -- Seguridad e Higiene
+    ('pedro.garcete', 9, 1, 'B', 1, 9, 2),  -- Historia
+    ('ana.gallardo', 11, 1, 'B', 2, 9, 5),  -- Matematica
+    ('gladys.vallejos', 121, 1, 'B', 3, 9, 6),  -- Quimica General
+    ('maria.egusquiza', 1, 1, 'B', 4, 9, 2),  -- Antropologia
+    ('hernan.jara', 8, 1, 'B', 5, 9, 2),  -- Guarani
+    ('alicia.martinez', 6, 1, 'B', 1, 11, 2),  -- Etica
+    ('ruth.estigarribia', 12, 1, 'B', 4, 11, 2),  -- Orientacion
+    ('raquel.gonzalez', 138, 1, 'B', 5, 11, 4),  -- Dibujo Tecnico
+    ('oscar.villasanti', 4, 1, 'B', 1, 13, 2),  -- Educ Fisica
+    ('maria.roman', 122, 1, 'B', 4, 13, 3),  -- Quimica Practica
+    ('leticia.bogado', 16, 1, 'B', 3, 15, 2),  -- Literatura
+    ('luis.codas', 2, 2, 'A', 1, 1, 2),  -- Ciencias Nat
+    ('oscar.ibarrola', 125, 2, 'A', 1, 3, 5),  -- Operaciones Unitarias
+    ('daniela.ratzlaff', 123, 2, 'A', 2, 1, 7),  -- Quimica Analitica
+    ('oscar.ibarrola', 124, 2, 'A', 3, 1, 4),  -- Fisicoquimica
+    ('luis.chavez', 4, 2, 'A', 3, 5, 2),  -- Educ Fisica
+    ('bernarda.gonzalez', 10, 2, 'A', 3, 7, 2),  -- Ingles
+    ('liz.duarte', 11, 2, 'A', 4, 1, 5),  -- Matematica
+    ('juan.gonzalez', 129, 2, 'A', 4, 6, 3),  -- Taller
+    ('daniela.ratzlaff', 123, 2, 'A', 5, 1, 6),  -- Quimica Analitica
+    ('leticia.bogado', 16, 2, 'A', 5, 7, 2),  -- Literatura
+    ('oscar.ibarrola', 126, 2, 'A', 1, 9, 4),  -- Analisis Instrumental
+    ('alicia.martinez', 5, 2, 'A', 1, 13, 2),  -- Educacion Vial
+    ('pedro.garcete', 9, 2, 'A', 1, 15, 2),  -- Historia
+    ('victor.benitez', 7, 2, 'A', 3, 9, 4),  -- Fisica
+    ('bernarda.gonzalez', 10, 2, 'A', 3, 13, 2),  -- Ingles
+    ('nidia.samudio', 8, 2, 'A', 5, 9, 4),  -- Guarani
+    ('juan.gonzalez', 129, 2, 'C', 1, 1, 3),  -- Taller
+    ('victor.benitez', 7, 2, 'C', 1, 4, 2),  -- Fisica
+    ('ana.fernandez', 11, 2, 'C', 1, 6, 3),  -- Matematica
+    ('mirian.montania', 5, 2, 'C', 2, 1, 2),  -- Educacion Vial
+    ('ana.fernandez', 11, 2, 'C', 2, 3, 2),  -- Matematica
+    ('luis.codas', 2, 2, 'C', 4, 1, 2),  -- Ciencias N
+    ('nidia.samudio', 8, 2, 'C', 4, 3, 2),  -- Guarani
+    ('oscar.ibarrola', 126, 2, 'C', 4, 5, 4),  -- Analisis Instrumental
+    ('leticia.bogado', 16, 2, 'C', 1, 9, 2),  -- Literatura
+    ('pedro.garcete', 9, 2, 'C', 1, 11, 2),  -- Historia
+    ('oscar.ibarrola', 125, 2, 'C', 1, 13, 4),  -- Operaciones Unitarias
+    ('igor.fernandez', 123, 2, 'C', 2, 9, 5),  -- Quimica Analitica
+    ('bernarda.gonzalez', 10, 2, 'C', 3, 9, 2),  -- Ingles
+    ('oscar.villasanti', 4, 2, 'C', 3, 11, 2),  -- Educ Fisica
+    ('oscar.ibarrola', 125, 2, 'C', 3, 13, 1),  -- Operaciones Unitarias
+    ('victor.benitez', 7, 2, 'C', 3, 14, 3),  -- Fisica
+    ('maria.roman', 124, 2, 'C', 4, 9, 4),  -- Fisicoquimica
+    ('nidia.samudio', 8, 2, 'C', 4, 13, 2),  -- Guarani
+    ('igor.fernandez', 123, 2, 'C', 5, 9, 7),  -- Quimica Analitica
+    ('alcira.caceres', 10, 2, 'B', 1, 1, 4),  -- Ingles
+    ('hernan.jara', 8, 2, 'B', 1, 5, 4),  -- Guarani
+    ('oscar.ibarrola', 125, 2, 'B', 2, 1, 5),  -- Operaciones Unitarias
+    ('carmen.franco', 123, 2, 'B', 2, 6, 3),  -- Quimica Analitica
+    ('victor.benitez', 7, 2, 'B', 3, 1, 2),  -- Fisica
+    ('ana.fernandez', 11, 2, 'B', 3, 3, 6),  -- Matematica
+    ('oscar.ibarrola', 126, 2, 'B', 4, 1, 4),  -- Analisis Instrumental
+    ('luis.codas', 2, 2, 'B', 4, 5, 2),  -- Ciencias N
+    ('carmen.franco', 123, 2, 'B', 4, 7, 2),  -- Quimica Analitica
+    ('leticia.bogado', 16, 2, 'B', 5, 1, 2),  -- Literatura
+    ('juan.gonzalez', 129, 2, 'B', 5, 3, 3),  -- Taller
+    ('alicia.martinez', 5, 2, 'B', 1, 9, 2),  -- Educacion Vial
+    ('oscar.villasanti', 4, 2, 'B', 1, 11, 2),  -- Educ Fisica
+    ('oscar.ibarrola', 124, 2, 'B', 3, 9, 4),  -- Fisicoquimica
+    ('victor.benitez', 7, 2, 'B', 3, 13, 1),  -- Fisica
+    ('carmen.franco', 123, 2, 'B', 4, 9, 4),  -- Quimica Analitica
+    ('pedro.garcete', 9, 2, 'B', 4, 13, 4),  -- Historia
+    ('liz.montiel', 135, 3, 'A', 1, 1, 3),  -- Plan Optativo
+    ('maria.roman', 130, 3, 'A', 2, 1, 8),  -- Analisis Industrial
+    ('genoveva.valdez', 13, 3, 'A', 3, 1, 4),  -- Psicologia
+    ('zonia.ramirez', 131, 3, 'A', 4, 1, 4),  -- Microbiologia
+    ('andrea.perez', 132, 3, 'A', 5, 1, 8),  -- Tecnologia y A de Alim
+    ('juan.gonzalez', 133, 3, 'A', 1, 4, 3),  -- Energia
+    ('liz.montiel', 134, 3, 'A', 3, 5, 2),  -- Proyecto Industrial
+    ('rolando.lenguaza', 3, 3, 'A', 4, 5, 4),  -- Economia y G
+    ('luis.codas', 2, 3, 'A', 1, 7, 2),  -- Ciencias N
+    ('graciela.maidana', 12, 3, 'A', 3, 7, 2),  -- Orientacion
+    ('gerardo.ovelar', 4, 3, 'A', 1, 9, 2),  -- Educ Fisica
+    ('liz.duarte', 11, 3, 'A', 3, 9, 2),  -- Matematica
+    ('andrea.perez', 132, 3, 'A', 5, 9, 2),  -- Tecnologia y A de Alim
+    ('pedro.garcete', 9, 3, 'A', 3, 11, 2),  -- Historia y G
+    ('leticia.bogado', 16, 3, 'A', 5, 11, 2),  -- Literatura
+    ('liz.montiel', 136, 3, 'A', 3, 13, 2),  -- Proyecto Educ
+    ('liz.montiel', 134, 3, 'A', 5, 13, 1),  -- Proyecto Industrial
+    ('liz.montiel', 137, 3, 'A', 3, 15, 2),  -- Tecnologia
+    ('liz.montiel', 137, 3, 'A', 5, 14, 2),  -- Tecnologia
+    ('liz.montiel', 134, 3, 'C', 3, 1, 3),  -- Proyecto Industrial
+    ('ana.fernandez', 11, 3, 'C', 4, 1, 2),  -- Matematica
+    ('liz.montiel', 137, 3, 'C', 3, 4, 1),  -- Tecnologia
+    ('juan.gonzalez', 133, 3, 'C', 4, 3, 3),  -- Energia
+    ('luis.codas', 2, 3, 'C', 1, 5, 2),  -- Ciencias N
+    ('irma.cardozo', 13, 3, 'C', 3, 5, 4),  -- Psicologia
+    ('liz.montiel', 135, 3, 'C', 5, 5, 4),  -- Plan Optativo
+    ('gerardo.ovelar', 4, 3, 'C', 1, 7, 2),  -- Educ Fisica
+    ('maria.roman', 130, 3, 'C', 1, 9, 8),  -- Analisis Industrial
+    ('andrea.perez', 132, 3, 'C', 2, 9, 8),  -- Tecnologia y A de Alim
+    ('leticia.bogado', 16, 3, 'C', 3, 9, 2),  -- Literatura
+    ('andrea.perez', 132, 3, 'C', 4, 9, 2),  -- Tecnologia y A de Alim
+    ('liz.montiel', 137, 3, 'C', 5, 9, 2),  -- Tecnologia
+    ('liz.montiel', 136, 3, 'C', 3, 11, 2),  -- Proyecto Educ
+    ('rolando.lenguaza', 3, 3, 'C', 4, 11, 2),  -- Economia y G
+    ('rolando.lenguaza', 3, 3, 'C', 3, 13, 2),  -- Economia y G
+    ('igor.fernandez', 131, 3, 'C', 4, 13, 4),  -- Microbiologia
+    ('pedro.garcete', 9, 3, 'C', 3, 15, 2),  -- Historia y G
+    ('maria.roman', 130, 3, 'B', 1, 1, 7),  -- Analisis Industrial
+    ('liz.montiel', 135, 3, 'B', 1, 8, 1),  -- Plan Optativo
+    ('ana.fernandez', 11, 3, 'B', 2, 1, 2),  -- Matematica
+    ('gerardo.ovelar', 4, 3, 'B', 2, 3, 2),  -- Educ Fisica
+    ('oscar.ibarrola', 134, 3, 'B', 2, 6, 3),  -- Proyecto Industrial
+    ('andrea.perez', 132, 3, 'B', 3, 1, 8),  -- Tecnologia y A de Alim
+    ('genoveva.valdez', 13, 3, 'B', 4, 1, 2),  -- Psicologia
+    ('luis.codas', 2, 3, 'B', 4, 3, 2),  -- Ciencias N
+    ('alicia.martinez', 9, 3, 'B', 4, 5, 2),  -- Historia y G
+    ('ruth.estigarribia', 12, 3, 'B', 4, 7, 2),  -- Orientacion
+    ('liz.montiel', 137, 3, 'B', 5, 1, 4),  -- Tecnologia
+    ('juan.gonzalez', 133, 3, 'B', 5, 6, 3),  -- Energia
+    ('liz.montiel', 137, 3, 'B', 1, 9, 2),  -- Tecnologia
+    ('liz.montiel', 136, 3, 'B', 1, 11, 2),  -- Proyecto Educ
+    ('igor.fernandez', 131, 3, 'B', 1, 13, 4),  -- Microbiologia
+    ('rolando.lenguaza', 3, 3, 'B', 3, 9, 4),  -- Economia y G
+    ('genoveva.valdez', 13, 3, 'B', 3, 13, 2),  -- Psicologia
+    ('leticia.bogado', 16, 3, 'B', 4, 9, 2),  -- Literatura
+    ('andrea.perez', 132, 3, 'B', 4, 11, 2);  -- Tecnologia y A de Alim
+
+INSERT IGNORE INTO horario_slot (asignacion_id, usuario_id, curso_base_id, dia_semana, hora_catedra_id, sala_id)
+SELECT DISTINCT
+    a.id,
+    u.id,
+    cb.id,
+    s.dia_semana,
+    hc.id,
+    NULL
+FROM horario_slot_staging s
+JOIN usuario u ON u.usuario = s.profesor_usuario
+JOIN curso_base cb ON cb.especialidad_id = (SELECT id FROM especialidad WHERE nombre = 'Química Industrial')
+    AND cb.nivel = s.nivel AND cb.seccion = s.seccion
+JOIN asignacion a ON a.usuario_id = u.id AND a.materia_id = s.materia_id AND a.curso_base_id = cb.id
+JOIN horario_slot_span span ON span.n <= s.duracion
+JOIN hora_catedra hc ON hc.numero = s.hora_numero + (span.n - 1)
 ORDER BY cb.nivel, cb.seccion, s.dia_semana, hc.numero;
 
 DROP TEMPORARY TABLE horario_slot_span;
