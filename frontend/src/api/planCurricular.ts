@@ -5,9 +5,16 @@ export interface PlanTemplateMesConfig {
   bloques: number;
 }
 
+export interface PlanTemplateRsaConfig {
+  etapas: '1' | '2' | 'AMBAS';
+  puntos: number;
+  toleranciaFaltas: number;
+}
+
 export interface PlanTemplateConfigDto {
   etapa: string;
   meses: PlanTemplateMesConfig[];
+  rsa?: PlanTemplateRsaConfig;
 }
 
 export interface AsignacionOption {
