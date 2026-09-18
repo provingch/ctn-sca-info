@@ -217,7 +217,8 @@ export default function HomePage() {
   const sectionOptions = (selectedCourseNivel != null ? seccionesForNivel(selectedCourseNivel) : []).map((s) => ({ value: s, label: String(s) }));
 
   const showSelectionWait = !hasEspecialidad || !hasCursoSeleccionado || !hasSeccionSeleccionada;
-  const showSelector = view === 'planillas' || (view === 'catedra' && subview === 'clase' && claseModo === 'manual');
+  const showSelector = view === 'planillas'
+    || (view === 'catedra' && subview === 'clase' && (claseModo === 'manual' || showSelectionWait));
   const hasActiveFilter = hasEspecialidad || selectedCourseNivel != null || hasSeccionSeleccionada;
   const clearFilter = () => {
     setSelectedNivel(null);
