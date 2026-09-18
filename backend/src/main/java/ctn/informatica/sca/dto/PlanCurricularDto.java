@@ -12,6 +12,9 @@ public class PlanCurricularDto {
     public String turno;
     public String especialidad;
     public List<TemaPlanDto> temas;
+    public String rsaEtapas;
+    public Integer rsaPuntos;
+    public Integer rsaToleranciaFaltas;
     
     // Campos para consulta por id/asignación
     public Integer id;
