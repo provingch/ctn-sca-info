@@ -79,11 +79,11 @@ function ConfigPlantillaModal({ asignacionId, etapa, onClose }: { asignacionId: 
   const puedeDescargar = seleccionados.length > 0 && seleccionados.every(([, cfg]) => cfg.bloques >= 1 && cfg.bloques <= MAX_BLOQUES_POR_MES);
   const puntosRsa = Number(rsaPuntos);
   const toleranciaRsa = Number(rsaTolerancia);
-  const rsaValido = Number.isInteger(puntosRsa) && puntosRsa > 0
-    && Number.isInteger(toleranciaRsa) && toleranciaRsa >= 0;
+  const rsaValido = rsaPuntos.trim() !== '' && Number.isInteger(puntosRsa) && puntosRsa > 0
+    && rsaTolerancia.trim() !== '' && Number.isInteger(toleranciaRsa) && toleranciaRsa >= 0;
 
   async function descargar() {
-    if (!puedeDescargar || !meses) return;
+    if (!puedeDescargar || !meses || !rsaValido) return;
     const config: planCurricularApi.PlanTemplateConfigDto = {
       etapa,
       meses: meses
