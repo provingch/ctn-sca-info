@@ -829,18 +829,65 @@ build_frontend() {
 
   require_command npm
   echo "==> Building frontend into backend/src/main/resources/static"
-  if [[ -f "$FRONTEND_DIR/package-lock.json" ]]; then
-    npm --prefix "$FRONTEND_DIR" ci
-  else
-    npm --prefix "$FRONTEND_DIR" install
+  # Precheck: ensure repository files are owned by the expected app user. If
+  # there are files owned by root (common after running npm as root), abort
+  # early to avoid long failing builds.
+  if find "$REPO_DIR" ! -user "$APP_USER" -print -quit | grep -q .; then
+    log_err "Permisos incorrectos detectados en $REPO_DIR: algunos archivos no pertenecen a $APP_USER"
+    log_err "Corregí con: sudo chown -R \"$APP_USER:$APP_GROUP\" \"$REPO_DIR\""
+    return 1
   fi
-  npm --prefix "$FRONTEND_DIR" run build
+
+  local build_start_ts
+  build_start_ts=$(date +%s)
+
+  if [[ -f "$FRONTEND_DIR/package-lock.json" ]]; then
+    if ! npm --prefix "$FRONTEND_DIR" ci; then
+      log_err "npm ci falló. Puede ser un problema de permisos en frontend/node_modules."
+      log_err "Intentá: sudo chown -R \"$APP_USER:$APP_GROUP\" \"$REPO_DIR\""
+      return 1
+    fi
+  else
+    if ! npm --prefix "$FRONTEND_DIR" install; then
+      log_err "npm install falló. Puede ser un problema de permisos en frontend/node_modules."
+      log_err "Intentá: sudo chown -R \"$APP_USER:$APP_GROUP\" \"$REPO_DIR\""
+      return 1
+    fi
+  fi
+
+  if ! npm --prefix "$FRONTEND_DIR" run build; then
+    log_err "npm run build falló durante la compilación del frontend. Revisa los logs de npm para más detalles."
+    return 1
+  fi
+
+  # Verificar que los assets realmente se generaron en el backend resources
+  local assets_dir="$PROJECT_DIR/src/main/resources/static/assets"
+  if [[ ! -d "$assets_dir" ]]; then
+    log_err "No se encontraron assets en $assets_dir luego del build del frontend"
+    return 1
+  fi
+  local newest_asset
+  newest_asset=$(find "$assets_dir" -type f -print0 2>/dev/null | xargs -0 ls -1t 2>/dev/null | head -n1 || true)
+  if [[ -z "$newest_asset" ]]; then
+    log_err "No hay archivos en $assets_dir tras el build del frontend"
+    return 1
+  fi
+  local newest_mtime
+  newest_mtime=$(stat -c %Y "$newest_asset" 2>/dev/null || echo 0)
+  if (( newest_mtime <= build_start_ts )); then
+    log_err "Los assets en $assets_dir no parecen haberse actualizado durante este build"
+    return 1
+  fi
 }
 
 update_system() {
   require_command find
   require_command systemctl
   require_command sudo
+  # Timestamp to validate that produced artifacts are fresher than the start
+  # of this update run.
+  local update_start_ts
+  update_start_ts=$(date +%s)
   normalize_db_type
   validate_project_layout
 
@@ -865,13 +912,27 @@ update_system() {
 
   section "🏗️   Compilación"
   log_info "Compilando el backend (Spring Boot)..."
-  mvn -f "$PROJECT_DIR/pom.xml" clean package -DskipTests
+  # Ejecutar Maven y chequear explícitamente el resultado para evitar falsos
+  # positivos cuando 'set -e' queda desactivado por llamadas dentro de 'if'.
+  if ! mvn -f "$PROJECT_DIR/pom.xml" clean package -DskipTests; then
+    log_err "Maven build falló. Revisá permisos en $PROJECT_DIR/node_modules o en el filesystem."
+    log_err "Si los errores hablan de EACCES/permission denied, intentá: sudo chown -R \"$APP_USER:$APP_GROUP\" \"$REPO_DIR\""
+    return 1
+  fi
   log_ok "JAR compilado correctamente"
 
   local built_jar
   built_jar="$(find "$PROJECT_DIR/target" -maxdepth 1 -type f -name '*.jar' ! -name 'original-*.jar' | head -n 1)"
   if [[ -z "$built_jar" ]]; then
     log_err "No se encontró un .jar ejecutable en $PROJECT_DIR/target"
+    return 1
+  fi
+
+  # Verificar que el jar encontrado sea realmente nuevo (mtime > update_start_ts)
+  local built_mtime
+  built_mtime=$(stat -c %Y "$built_jar" 2>/dev/null || echo 0)
+  if (( built_mtime <= update_start_ts )); then
+    log_err "El jar encontrado ($built_jar) es anterior al inicio de este deploy — la compilación no produjo un artefacto nuevo"
     return 1
   fi
 
@@ -1339,7 +1400,14 @@ MENU
     case "$choice" in
       1) if ! install_requirements; then echo "Requirement installation failed."; fi; pause_menu ;;
       2) if ! ensure_database_initialized; then echo "Database initialization failed."; fi; pause_menu ;;
-      3) if ! update_system; then echo "System update failed."; fi; pause_menu ;;
+      3)
+        update_system
+        status=$?
+        if (( status != 0 )); then
+          echo "System update failed."
+        fi
+        pause_menu
+        ;;
       4) if ! load_default_database; then echo "Database load failed."; fi; pause_menu ;;
       5) if ! edit_linux_service; then echo "Service editor is unavailable."; fi; pause_menu ;;
       6) if ! health_monitor; then echo "Health monitor failed."; pause_menu; fi ;;
