@@ -17,7 +17,6 @@ import { useSpecialty } from '../../context/SpecialtyContext';
 import PlanCurricularView from './PlanCurricularView';
 import MisClasesView from './MisClasesView';
 import RsaView from './RsaView';
-import CatalogoConductaPanel from '../../components/CatalogoConductaPanel';
 import { useAuth } from '../../context/AuthContext';
 import { classEndTime, HORARIOS_CATEDRA } from './classFormUtils';
 import { resizeImageToDataUri } from '../../utils/imageResize';
@@ -820,7 +819,6 @@ function PlanillaCoverControls({ planillaId, tienePortada, onChanged }: {
 
 export function ClassView({ data, reload, onModoChange }: { data: HomeResponse; reload: () => Promise<void>; onModoChange?: (modo: 'bloques' | 'manual') => void }) {
   const selectedCursoId = data.selCurso?.id;
-  const { user } = useAuth();
   const [tema, setTema] = useState('');
   const [asignacionesDisponibles, setAsignacionesDisponibles] = useState<AsignacionOption[]>([]);
   const [assignmentsLoading, setAssignmentsLoading] = useState(true);
@@ -844,7 +842,6 @@ export function ClassView({ data, reload, onModoChange }: { data: HomeResponse; 
   const [requiereJustificacion, setRequiereJustificacion] = useState(false);
   const [justificacionAtraso, setJustificacionAtraso] = useState('');
   const justificacionRef = useRef<HTMLTextAreaElement>(null);
-  const canManageCodes = user?.level === 2 || user?.level === 3;
 
   const [bloquesHoy, setBloquesHoy] = useState<HorarioBloqueHoyDto[] | null>(null);
   const [bloquesHoyError, setBloquesHoyError] = useState('');
@@ -1155,8 +1152,6 @@ export function ClassView({ data, reload, onModoChange }: { data: HomeResponse; 
 
   return (
     <div className="two-column">
-      {canManageCodes && <CatalogoConductaPanel onCodesChange={setCodigosConducta} />}
-
       {origenFormulario !== null ? cuerpoFormulario : bloquesHoyError ? (
         <div className="panel" style={{ gridColumn: '1 / -1' }}>
           <div className="notice error" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>

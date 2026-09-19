@@ -132,8 +132,8 @@ export default function RsaView() {
     <div className="class-card" style={{ gridColumn: '1 / -1' }}>
       <div className="class-card-head"><h3>RSA (Rasgos Socioacadémicos)</h3></div>
       <p style={{ margin: 0, color: 'var(--muted)' }}>
-        Opcional, por planilla. Cada código de conducta (N1–N8) asignado a un alumno en la etapa cuenta como una falta; por cada falta que supere la tolerancia se descuenta 1 punto del RSA.
-        Los puntos de RSA se suman al TP de la planilla y a la nota de cada alumno.
+        Opcional, por planilla. Cada código de conducta asignado a un alumno en la etapa cuenta como una falta; por cada falta que supere la tolerancia se descuenta 1 punto del RSA.
+        Los puntos de RSA se suman al TP de la planilla y a la nota de cada alumno. Coordinación Pedagógica administra los códigos disponibles.
       </p>
     </div>
 
@@ -163,7 +163,7 @@ export default function RsaView() {
               ? <><strong>RSA activo:</strong> {actual.puntos} {actual.puntos === 1 ? 'punto' : 'puntos'}, tolerancia de {describirTolerancia(actual.toleranciaValor, actual.toleranciaUnidad)}.</>
               : <><strong>RSA desactivado</strong> para esta planilla.</>}
           </p>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: 12 }}>
+          <label className="checkbox-label" style={{ gap: 8, cursor: 'pointer', marginBottom: 12 }}>
             <input type="checkbox" checked={activar} disabled={guardando} onChange={(event) => setActivar(event.target.checked)} />
             <span>Activar RSA en esta planilla</span>
           </label>
