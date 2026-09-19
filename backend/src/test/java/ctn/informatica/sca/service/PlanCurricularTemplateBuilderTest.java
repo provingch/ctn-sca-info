@@ -101,24 +101,6 @@ public class PlanCurricularTemplateBuilderTest {
     }
 
     @Test
-    public void generado_debeConservarConfiguracionRsaEnMeta() throws Exception {
-        PlanTemplateConfigDto config = configCon("1", mes("Marzo", 4));
-        config.rsa = new PlanTemplateConfigDto.RsaConfig();
-        config.rsa.etapas = "AMBAS";
-        config.rsa.puntos = 12;
-        config.rsa.toleranciaFaltas = 3;
-
-        byte[] xlsx = generar(config);
-        try (Workbook wb = WorkbookFactory.create(new ByteArrayInputStream(xlsx))) {
-            PlanCurricularTemplateBuilder.MetaInfo meta = new PlanCurricularTemplateBuilder().readMeta(wb);
-            assertNotNull(meta);
-            assertEquals("AMBAS", meta.rsaEtapas);
-            assertEquals(12, meta.rsaPuntos);
-            assertEquals(3, meta.rsaToleranciaFaltas);
-        }
-    }
-
-    @Test
     public void generado_noDebeTraerContenidoDeEjemplo() throws Exception {
         PlanTemplateConfigDto config = configCon("1", mes("Marzo", 4), mes("Abril", 4), mes("Mayo", 4));
         byte[] xlsx = generar(config);

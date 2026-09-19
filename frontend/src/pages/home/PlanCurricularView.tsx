@@ -53,9 +53,6 @@ const DEFAULT_BLOQUES = 4;
 function ConfigPlantillaModal({ asignacionId, etapa, onClose }: { asignacionId: number; etapa: string; onClose: () => void }) {
   const [meses, setMeses] = useState<string[] | null>(null);
   const [seleccion, setSeleccion] = useState<Record<string, { activo: boolean; bloques: number }>>({});
-  const [rsaEtapas, setRsaEtapas] = useState<planCurricularApi.PlanTemplateRsaConfig['etapas']>('1');
-  const [rsaPuntos, setRsaPuntos] = useState('');
-  const [rsaTolerancia, setRsaTolerancia] = useState('');
   const [errorMeses, setErrorMeses] = useState('');
   const [descargando, setDescargando] = useState(false);
   const { showToast } = useToast();
@@ -77,19 +74,14 @@ function ConfigPlantillaModal({ asignacionId, etapa, onClose }: { asignacionId: 
 
   const seleccionados = Object.entries(seleccion).filter(([, cfg]) => cfg.activo);
   const puedeDescargar = seleccionados.length > 0 && seleccionados.every(([, cfg]) => cfg.bloques >= 1 && cfg.bloques <= MAX_BLOQUES_POR_MES);
-  const puntosRsa = Number(rsaPuntos);
-  const toleranciaRsa = Number(rsaTolerancia);
-  const rsaValido = rsaPuntos.trim() !== '' && Number.isInteger(puntosRsa) && puntosRsa > 0
-    && rsaTolerancia.trim() !== '' && Number.isInteger(toleranciaRsa) && toleranciaRsa >= 0;
 
   async function descargar() {
-    if (!puedeDescargar || !meses || !rsaValido) return;
+    if (!puedeDescargar || !meses) return;
     const config: planCurricularApi.PlanTemplateConfigDto = {
       etapa,
       meses: meses
         .filter((m) => seleccion[m]?.activo)
         .map((m) => ({ mes: m, bloques: seleccion[m].bloques })),
-      rsa: { etapas: rsaEtapas, puntos: puntosRsa, toleranciaFaltas: toleranciaRsa },
     };
     setDescargando(true);
     try {
@@ -143,26 +135,9 @@ function ConfigPlantillaModal({ asignacionId, etapa, onClose }: { asignacionId: 
             </div>;
           })}
         </div>}
-      <div className="class-card" style={{ marginTop: 16, padding: 14 }}>
-        <h4 style={{ margin: 0 }}>Aplicación de RSA</h4>
-        <div className="class-grid" style={{ marginTop: 12 }}>
-          <div className="class-field">
-            <label>Etapas</label>
-            <AnimatedSelect ariaLabel="Etapas de aplicación de RSA" value={rsaEtapas} onChange={(value) => setRsaEtapas(value as planCurricularApi.PlanTemplateRsaConfig['etapas'])} options={[{ value: '1', label: 'Primera etapa' }, { value: '2', label: 'Segunda etapa' }, { value: 'AMBAS', label: 'Ambas etapas' }]} />
-          </div>
-          <label className="class-field">
-            <span>Cantidad de puntos RSA</span>
-            <input type="number" min={1} step={1} value={rsaPuntos} aria-label="Cantidad de puntos RSA" onChange={(event) => { setRsaPuntos(event.target.value); if (!event.target.value || !Number.isInteger(Number(event.target.value)) || Number(event.target.value) <= 0) setRsaTolerancia(''); }} />
-          </label>
-          <label className="class-field">
-            <span>Tolerancia de faltas</span>
-            <textarea rows={1} inputMode="numeric" value={rsaTolerancia} disabled={!Number.isInteger(puntosRsa) || puntosRsa <= 0} onChange={(event) => setRsaTolerancia(event.target.value)} aria-label="Tolerancia de faltas" placeholder="Cantidad de faltas" />
-          </label>
-        </div>
-      </div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
         <button type="button" className="button secondary" onClick={onClose} disabled={descargando}>Cancelar</button>
-        <button type="button" className="button" data-dialog-initial-focus disabled={!puedeDescargar || !rsaValido || descargando} onClick={() => void descargar()}>
+        <button type="button" className="button" data-dialog-initial-focus disabled={!puedeDescargar || descargando} onClick={() => void descargar()}>
           {descargando ? 'Descargando…' : 'Descargar plantilla'}
         </button>
       </div>

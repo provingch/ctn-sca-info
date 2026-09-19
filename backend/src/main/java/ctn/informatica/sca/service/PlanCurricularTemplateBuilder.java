@@ -123,7 +123,6 @@ public class PlanCurricularTemplateBuilder {
     public byte[] buildForAsignacion(int asignacionId, PlanTemplateConfigDto config) throws Exception {
         Asignacion a = asignacionDao.findById(asignacionId);
         if (a == null) throw new IllegalArgumentException("Asignación no encontrada");
-        validateRsaConfig(config == null ? null : config.rsa);
 
         String etapaActual;
         if (config != null && config.etapa != null
@@ -161,7 +160,7 @@ public class PlanCurricularTemplateBuilder {
                 // un drawing ya eliminado) -> xlsx que POI abre con "Skipped invalid entry". Crear
                 // _META mientras todas las hojas originales siguen presentes le asigna un nombre de
                 // parte nunca usado antes, así que no hay colisión posible.
-                writeMetaSheet(wb, etapaActual, AcademicPeriod.current(), asignacionId, mesesConfig, config == null ? null : config.rsa);
+                writeMetaSheet(wb, etapaActual, AcademicPeriod.current(), asignacionId, mesesConfig);
 
                 selectAndOrderSheets(wb, etapaActual, mesesConfig);
 
@@ -418,8 +417,7 @@ public class PlanCurricularTemplateBuilder {
     }
 
     private void writeMetaSheet(Workbook wb, String etapa, int anio, int asignacionId,
-                                List<PlanTemplateConfigDto.MesConfig> mesesConfig,
-                                PlanTemplateConfigDto.RsaConfig rsaConfig) {
+                                List<PlanTemplateConfigDto.MesConfig> mesesConfig) {
         Sheet meta = wb.createSheet(META_SHEET);
         // Formato simple: cada fila es "clave" | "valor". Para la lista de meses,
         // se marcan filas contiguas con clave "mes" y columnas mes/bloques/ordenMes.
@@ -434,11 +432,6 @@ public class PlanCurricularTemplateBuilder {
         putKV(meta, r++, "colActividades", String.valueOf(COL_ACTIVIDADES));
         putKV(meta, r++, "colInstrumentos", String.valueOf(COL_INSTRUMENTOS));
         putKV(meta, r++, "colIndicadores", String.valueOf(COL_INDICADORES));
-        if (rsaConfig != null) {
-            putKV(meta, r++, "rsaEtapas", rsaConfig.etapas);
-            putKV(meta, r++, "rsaPuntos", String.valueOf(rsaConfig.puntos));
-            putKV(meta, r++, "rsaToleranciaFaltas", String.valueOf(rsaConfig.toleranciaFaltas));
-        }
         for (PlanTemplateConfigDto.MesConfig mc : mesesConfig) {
             Row row = meta.createRow(r++);
             row.createCell(0).setCellValue("mes");
@@ -471,9 +464,6 @@ public class PlanCurricularTemplateBuilder {
         public List<String> meses = new ArrayList<>();
         public Map<String, Integer> bloquesPorMes = new LinkedHashMap<>();
         public Map<String, Integer> ordenPorMes = new LinkedHashMap<>();
-        public String rsaEtapas;
-        public int rsaPuntos;
-        public int rsaToleranciaFaltas;
     }
 
     public MetaInfo readMeta(Workbook wb) {
@@ -507,9 +497,6 @@ public class PlanCurricularTemplateBuilder {
                 case "colActividades": info.colActividades = parseIntOr(v1, COL_ACTIVIDADES); break;
                 case "colInstrumentos": info.colInstrumentos = parseIntOr(v1, COL_INSTRUMENTOS); break;
                 case "colIndicadores": info.colIndicadores = parseIntOr(v1, COL_INDICADORES); break;
-                case "rsaEtapas": info.rsaEtapas = v1; hadAnything = true; break;
-                case "rsaPuntos": info.rsaPuntos = parseIntOr(v1, 0); hadAnything = true; break;
-                case "rsaToleranciaFaltas": info.rsaToleranciaFaltas = parseIntOr(v1, 0); hadAnything = true; break;
                 default: break;
             }
         }
@@ -534,19 +521,6 @@ public class PlanCurricularTemplateBuilder {
     private static int parseIntOr(String s, int def) {
         if (s == null) return def;
         try { return Integer.parseInt(s.trim()); } catch (Exception e) { return def; }
-    }
-
-    private void validateRsaConfig(PlanTemplateConfigDto.RsaConfig rsa) {
-        if (rsa == null) return;
-        if (!("1".equals(rsa.etapas) || "2".equals(rsa.etapas) || "AMBAS".equalsIgnoreCase(rsa.etapas))) {
-            throw new IllegalArgumentException("La etapa de RSA debe ser Primera etapa, Segunda etapa o Ambas etapas");
-        }
-        if (rsa.puntos <= 0) {
-            throw new IllegalArgumentException("La cantidad de puntos RSA debe ser un entero mayor que cero");
-        }
-        if (rsa.toleranciaFaltas < 0) {
-            throw new IllegalArgumentException("La tolerancia de faltas no puede ser negativa");
-        }
     }
 
     /** Estampa la firma del evaluador en un xlsx ya generado. No-op si el usuario no tiene firma. */

@@ -80,11 +80,6 @@ public class PlanCurricularParser {
             PlanCurricularDto out = new PlanCurricularDto();
             out.etapa = etapaAnio.etapa();
             out.anio = etapaAnio.anio();
-            if (meta != null && meta.rsaEtapas != null) {
-                out.rsaEtapas = meta.rsaEtapas;
-                out.rsaPuntos = meta.rsaPuntos;
-                out.rsaToleranciaFaltas = meta.rsaToleranciaFaltas;
-            }
             out.disciplina = extractAfterColon(getCellString(primerSheet, 6, 1));
             out.turno = extractAfterColon(getCellString(primerSheet, 8, 18));
             out.curso = extractAfterColon(getCellString(primerSheet, 8, 1));
