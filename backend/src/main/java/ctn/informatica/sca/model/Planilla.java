@@ -90,20 +90,25 @@ public class Planilla{
         return 2;
     }
 
+    private static final int ESCALA_OFICIAL_MIN = 10;
+    private static final int ESCALA_OFICIAL_MAX = 150;
+
     public double getExigencia(String categoria) {
-        String normalized = categoria == null ? "" : categoria.trim().toLowerCase();
-        return switch (normalized) {
-            case "comun" -> .7;
-            case "especifico" -> .8;
-            default -> .7;
-        };
+        // Todas las materias usan la tabla oficial del 70% del Servicio de Evaluación;
+        // la categoría ya no influye en la exigencia (se conserva la firma por compatibilidad).
+        return .7;
     }
 
     public void computeGradeRanges(int totalPossiblePoints) {
         this.limiteSuperior = Math.max(0, totalPossiblePoints);
-        // compute lower limit (li) as ceil(exigencia * totalPossiblePoints)
         this.exigencia = getExigencia(categoria);
-        int li = (int) Math.ceil(this.exigencia * totalPossiblePoints);
+        // La tabla oficial cubre 10..150 puntos: li = round(0.7 * TP) con aritmética entera.
+        // Fuera de ese rango no hay datos oficiales y se mantiene el cálculo anterior.
+        boolean escalaOficial = totalPossiblePoints >= ESCALA_OFICIAL_MIN
+                && totalPossiblePoints <= ESCALA_OFICIAL_MAX;
+        int li = escalaOficial
+                ? (7 * totalPossiblePoints + 5) / 10
+                : (int) Math.ceil(this.exigencia * totalPossiblePoints);
         if (li < 1) {
             li = 1;
         }
@@ -126,25 +131,37 @@ public class Planilla{
         int rem = inclusiveCount % 4;
 
         int c2 = base, c3 = base, c4 = base, c5 = base;
-        // Reparto del resto empezando por la nota más alta: garantiza que la nota 5
-        // (y por lo tanto el puntaje máximo, ls) siempre tenga al menos 1 punto de
-        // rango disponible en cuanto haya algo para repartir, sin importar cuán
-        // chico sea el total de la planilla.
-        switch (rem) {
-            case 1:
-                c5 += 1;
-                break;
-            case 2:
-                c5 += 1;
-                c4 += 1;
-                break;
-            case 3:
-                c5 += 1;
-                c4 += 1;
+        if (escalaOficial) {
+            // Orden de la hoja oficial: el resto va a la nota 3, luego 4, luego 2; nunca a la 5.
+            if (rem >= 1) {
                 c3 += 1;
-                break;
-            default:
-                break;
+            }
+            if (rem >= 2) {
+                c4 += 1;
+            }
+            if (rem >= 3) {
+                c2 += 1;
+            }
+        } else {
+            // Respaldo fuera de la tabla oficial: el resto empieza por la nota más alta,
+            // así la nota 5 (y el puntaje máximo, ls) siempre tiene al menos 1 punto
+            // cuando hay algo para repartir, sin importar cuán chico sea el total.
+            switch (rem) {
+                case 1:
+                    c5 += 1;
+                    break;
+                case 2:
+                    c5 += 1;
+                    c4 += 1;
+                    break;
+                case 3:
+                    c5 += 1;
+                    c4 += 1;
+                    c3 += 1;
+                    break;
+                default:
+                    break;
+            }
         }
 
         int start = li;

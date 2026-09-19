@@ -15,11 +15,12 @@ class ParentSummaryItemTest {
     }
 
     @Test
-    void usaLaExigenciaMayorDeUnaMateriaEspecifica() {
+    void usaLaMismaExigenciaEnUnaMateriaEspecifica() {
+        // Todas las materias usan la escala oficial del 70%: TP=100 -> nota 2 = 70..77
         ParentSummaryItem item = summary("especifico", 75, 100);
 
         assertEquals(75, item.getPorcentaje());
-        assertEquals(1, item.getNota());
+        assertEquals(2, item.getNota());
     }
 
     private ParentSummaryItem summary(String categoria, int puntos, int total) {
