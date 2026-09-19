@@ -1047,6 +1047,10 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .student-total-cell,
 .student-percentage-cell { font-weight: 850; font-variant-numeric: tabular-nums; }
 .student-total-cell small { display: block; margin-top: 2px; color: var(--muted); font-size: .65rem; font-weight: 650; }
+.rsa-column { --rsa-bg: #fff3b0; --rsa-ink: #5c4600; background: var(--rsa-bg); color: var(--rsa-ink); }
+:root[data-theme="dark"] .rsa-column { --rsa-bg: #4a3d0d; --rsa-ink: #ffe27a; }
+.student-rsa-cell { font-weight: 850; font-variant-numeric: tabular-nums; text-align: center; }
+.student-rsa-cell small { display: block; margin-top: 2px; color: inherit; opacity: .75; font-size: .65rem; font-weight: 650; }
 .grade-chip.student-grade-pill { min-width: 36px; min-height: 28px; display: inline-flex; align-items: center; justify-content: center; margin: 0; padding: 5px 10px; border-radius: 999px; font-size: .82rem; line-height: 1; box-shadow: none; }
 .planilla-grade-table .planilla-student-empty { padding: 36px 20px; color: var(--muted); font-weight: 700; text-align: center; }
 

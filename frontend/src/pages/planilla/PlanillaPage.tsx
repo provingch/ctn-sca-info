@@ -181,7 +181,8 @@ export default function PlanillaPage() {
   const computedRows = useMemo(() => {
     if (!data) return [];
     return data.rows.map((row, originalIndex) => {
-      const total = data.tareas.reduce((sum, task) => sum + Number(values[`${row.alumnoId}:${task.id}`] || 0), 0);
+      // El TP del encabezado ya incluye los puntos de RSA, así que el total del alumno también.
+      const total = data.tareas.reduce((sum, task) => sum + Number(values[`${row.alumnoId}:${task.id}`] || 0), 0) + row.rsaPuntos;
       const percentage = data.planilla.totalPossiblePoints ? Math.round(total * 100 / data.planilla.totalPossiblePoints) : 0;
       return { row, originalIndex, total, percentage };
     });
@@ -371,6 +372,8 @@ export default function PlanillaPage() {
   const isEtapa2Locked = data.planilla.etapaIndex === 2 && Boolean(data.planilla.etapa2Confirmada);
   // La etapa que se está mostrando está cerrada (bloquea edición de notas/tareas).
   const isStageLocked = isEtapa1Locked || isEtapa2Locked;
+  // Sin RSA activo en la planilla la columna no se muestra.
+  const rsaActivo = data.planilla.rsaPuntos != null;
   const isGlobalAdmin = user?.level === 3 && user.especialidadId === null;
   // Piso de "1": todo lo que caiga por debajo del mínimo de "2" (igual que
   // en Planilla.jsp: "${gradeRanges['2'][0] - 1} o menos").
@@ -552,6 +555,7 @@ export default function PlanillaPage() {
                   </button>
                 </th>;
               })}
+              {rsaActivo && <th className="rsa-column" scope="col">RSA</th>}
             </tr>
           </thead>
           <tbody>
@@ -581,8 +585,9 @@ export default function PlanillaPage() {
               <td className="student-total-cell">{total}<small>de {data.planilla.totalPossiblePoints}</small></td>
               <td className="student-percentage-cell">{percentage}%</td>
               <td><GradeChip grade={row.nota} className="student-grade-pill" /></td>
+              {rsaActivo && <td className="rsa-column student-rsa-cell">{row.rsaPuntos}<small>de {data.planilla.rsaPuntos}</small></td>}
             </tr>)}
-            {visibleRows.length === 0 && <tr><td className="planilla-student-empty" colSpan={data.tareas.length + 5}>No se encontraron alumnos con ese nombre.</td></tr>}
+            {visibleRows.length === 0 && <tr><td className="planilla-student-empty" colSpan={data.tareas.length + 5 + (rsaActivo ? 1 : 0)}>No se encontraron alumnos con ese nombre.</td></tr>}
           </tbody>
         </table>
       </div>

@@ -2,6 +2,7 @@ package ctn.informatica.sca.model;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
@@ -128,5 +129,63 @@ public class PlanillaTest {
         assertArrayEquals(new int[]{s3, e3}, p.getGradeRanges().get(3), "nota 3, TP=" + tp);
         assertArrayEquals(new int[]{s4, e4}, p.getGradeRanges().get(4), "nota 4, TP=" + tp);
         assertArrayEquals(new int[]{s5, e5}, p.getGradeRanges().get(5), "nota 5, TP=" + tp);
+    }
+
+    private static Planilla conRsa(Integer puntos, String valor, String unidad) {
+        Planilla p = new Planilla();
+        p.setRsaPuntos(puntos);
+        p.setRsaToleranciaValor(valor == null ? null : new BigDecimal(valor));
+        p.setRsaToleranciaUnidad(unidad);
+        return p;
+    }
+
+    @Test
+    public void testComputeRsaScore_sinRsa_devuelveCero() {
+        assertEquals(0, new Planilla().computeRsaScore(0, 20));
+        assertEquals(0, new Planilla().computeRsaScore(9, 20));
+    }
+
+    @Test
+    public void testComputeRsaScore_faltasDentroDeLaTolerancia_mantieneLosPuntos() {
+        Planilla p = conRsa(10, "3", "CANTIDAD");
+        assertEquals(10, p.computeRsaScore(0, 20));
+        assertEquals(10, p.computeRsaScore(3, 20), "Justo en la tolerancia no descuenta");
+    }
+
+    @Test
+    public void testComputeRsaScore_excesoEnCantidad_descuentaUnoAUno() {
+        Planilla p = conRsa(10, "3", "CANTIDAD");
+        assertEquals(9, p.computeRsaScore(4, 20));
+        assertEquals(6, p.computeRsaScore(7, 20));
+    }
+
+    @Test
+    public void testComputeRsaScore_excesoEnPorcentaje_usaClasesDadas() {
+        Planilla p = conRsa(10, "10", "PORCENTAJE");
+        // 10% de 20 clases = 2 de tolerancia
+        assertEquals(10, p.computeRsaScore(2, 20));
+        assertEquals(7, p.computeRsaScore(5, 20));
+    }
+
+    @Test
+    public void testComputeRsaScore_porcentajeRedondeaMitadHaciaArriba() {
+        Planilla p = conRsa(10, "10", "PORCENTAJE");
+        // 10% de 25 = 2.5 -> Math.round = 3
+        assertEquals(10, p.computeRsaScore(3, 25));
+        assertEquals(9, p.computeRsaScore(4, 25));
+    }
+
+    @Test
+    public void testComputeRsaScore_excesoMayorQueLosPuntos_nuncaEsNegativo() {
+        Planilla p = conRsa(5, "1", "CANTIDAD");
+        assertEquals(0, p.computeRsaScore(6, 20));
+        assertEquals(0, p.computeRsaScore(50, 20));
+    }
+
+    @Test
+    public void testComputeRsaScore_sinClasesDadasEnPorcentaje_toleranciaCero() {
+        Planilla p = conRsa(10, "10", "PORCENTAJE");
+        assertEquals(10, p.computeRsaScore(0, 0));
+        assertEquals(9, p.computeRsaScore(1, 0));
     }
 }

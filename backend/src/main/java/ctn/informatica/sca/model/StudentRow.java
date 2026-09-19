@@ -20,6 +20,7 @@ public class StudentRow {
     private int total;                   // sum of puntos
     private int porcentaje;              // rounded percentage of totalPossiblePoints
     private int nota;                    // final grade (can be different from porcentaje)
+    private int rsaPuntos;               // puntaje RSA con el descuento ya aplicado, 0 si no aplica
 
     public StudentRow() {
     }
@@ -112,5 +113,13 @@ public class StudentRow {
                ", porcentaje=" + porcentaje +
                ", nota=" + nota +
                '}';
+    }
+
+    public int getRsaPuntos() {
+        return rsaPuntos;
+    }
+
+    public void setRsaPuntos(int rsaPuntos) {
+        this.rsaPuntos = rsaPuntos;
     }
 }

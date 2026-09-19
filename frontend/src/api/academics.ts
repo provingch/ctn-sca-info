@@ -6,11 +6,13 @@ export interface Tarea {
   fechaInicio: string | null; fechaLimite: string | null; googleCourseworkId: string | null;
   googleCourseworkUrl: string | null; gradesCleared?: boolean; warning?: string | null;
 }
+export type RsaToleranciaUnidad = 'PORCENTAJE' | 'CANTIDAD';
+export interface RsaConfigInput { puntos: number | null; toleranciaValor?: number; toleranciaUnidad?: RsaToleranciaUnidad }
 export interface PlanillaDetail {
-  planilla: { id: number; cursoId: number; materiaId: number; materiaNombre: string; categoria: string; etapa: string; etapaIndex: number; etapaSugerida: number; periodo: number; exigenciaPorcentaje: number; totalPossiblePoints: number; planillaDesde: string | null; planillaHasta: string | null; fechaCierreEtapa1: string | null; etapa1Confirmada: boolean; fechaCierreEtapa2: string | null; etapa2Confirmada: boolean; googleCourseId?: string | null };
+  planilla: { id: number; cursoId: number; materiaId: number; materiaNombre: string; categoria: string; etapa: string; etapaIndex: number; etapaSugerida: number; periodo: number; exigenciaPorcentaje: number; totalPossiblePoints: number; planillaDesde: string | null; planillaHasta: string | null; fechaCierreEtapa1: string | null; etapa1Confirmada: boolean; fechaCierreEtapa2: string | null; etapa2Confirmada: boolean; googleCourseId?: string | null; rsaPuntos: number | null; rsaToleranciaValor: number | null; rsaToleranciaUnidad: RsaToleranciaUnidad | null };
   curso: { id: number; especialidad: string; seccion: string; nivel: number } | null;
   tareas: Tarea[];
-  rows: Array<{ registroId: number; alumnoId: number; alumnoNombre: string; grades: Array<{ tareaId: number; puntos: number | null }>; total: number; porcentaje: number; nota: number }>;
+  rows: Array<{ registroId: number; alumnoId: number; alumnoNombre: string; grades: Array<{ tareaId: number; puntos: number | null }>; total: number; porcentaje: number; nota: number; rsaPuntos: number }>;
   gradeRanges: Record<string, { minInclusive: number; maxInclusive: number }>;
   warnings: string[];
 }
@@ -28,6 +30,7 @@ export interface ClassroomSyncResponse { planillaId: number; googleCourseId?: st
 export const syncClassroom = (id: number) => api.post<ClassroomSyncResponse>(`/api/planillas/${id}/sync/classroom`);
 export const confirmClassroomMapping = (planillaId: number, googleCourseId: string) => api.post<{ message: string }>(`/api/planillas/${planillaId}/classroom`, { googleCourseId });
 
+export const saveRsa = (planillaId: number, config: RsaConfigInput) => api.put<void>(`/api/planillas/${planillaId}/rsa`, config);
 export const savePortada = (planillaId: number, portada: string) => api.put<void>(`/api/planillas/${planillaId}/portada`, { portada });
 export const deletePortada = (planillaId: number) => api.delete<void>(`/api/planillas/${planillaId}/portada`);
 /** Blob crudo de la portada, o null si la planilla no tiene (404). */

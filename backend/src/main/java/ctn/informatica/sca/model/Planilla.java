@@ -5,6 +5,7 @@
 package ctn.informatica.sca.model;
 
 import ctn.informatica.sca.dao.CursoDao;
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
@@ -34,6 +35,12 @@ public class Planilla{
     private boolean etapa1Confirmada;
     private LocalDate fechaCierreEtapa2;
     private boolean etapa2Confirmada;
+
+    // RSA (puntaje por Rasgos Socioacadémicos), opcional por planilla. rsaPuntos == null
+    // significa RSA desactivado; en ese caso valor y unidad también son null.
+    private Integer rsaPuntos;
+    private BigDecimal rsaToleranciaValor;
+    private String rsaToleranciaUnidad; // "PORCENTAJE" | "CANTIDAD"
 
     private Map<Integer, int[]> gradeRanges;
     private int limiteInferior;   // li
@@ -179,6 +186,33 @@ public class Planilla{
         gradeRanges.put(3, new int[]{start3, end3});
         gradeRanges.put(4, new int[]{start4, end4});
         gradeRanges.put(5, new int[]{start5, end5});
+    }
+
+    /**
+     * Puntaje RSA de un alumno: parte de {@code rsaPuntos} y descuenta 1 punto por cada
+     * falta que exceda la tolerancia, sin bajar de 0. Devuelve 0 si RSA está desactivado.
+     *
+     * <p>Con unidad PORCENTAJE la tolerancia es {@code valor% * totalClasesDadas}, redondeada
+     * con {@link Math#round(double)} (mitad hacia arriba). Cambiar a {@code Math.floor}
+     * (tolerancia más estricta) o {@code Math.ceil} (más laxa) es un cambio de una línea.
+     * Con unidad CANTIDAD (o sin unidad) la tolerancia es el valor entero.
+     *
+     * @param faltasAlumno cantidad de códigos de conducta asignados al alumno en la etapa
+     * @param totalClasesDadas clases dadas por el profesor a ese curso en la etapa
+     */
+    public int computeRsaScore(int faltasAlumno, int totalClasesDadas) {
+        if (rsaPuntos == null) {
+            return 0;
+        }
+        double valor = rsaToleranciaValor == null ? 0 : rsaToleranciaValor.doubleValue();
+        int tolerancia;
+        if ("PORCENTAJE".equals(rsaToleranciaUnidad)) {
+            tolerancia = (int) Math.round(valor / 100.0 * totalClasesDadas);
+        } else {
+            tolerancia = (int) valor;
+        }
+        int exceso = Math.max(0, faltasAlumno - tolerancia);
+        return Math.max(0, rsaPuntos - exceso);
     }
 
     @Override
@@ -416,6 +450,30 @@ public class Planilla{
 
     public void setLimiteSuperior(int limiteSuperior) {
         this.limiteSuperior = limiteSuperior;
+    }
+
+    public Integer getRsaPuntos() {
+        return rsaPuntos;
+    }
+
+    public void setRsaPuntos(Integer rsaPuntos) {
+        this.rsaPuntos = rsaPuntos;
+    }
+
+    public BigDecimal getRsaToleranciaValor() {
+        return rsaToleranciaValor;
+    }
+
+    public void setRsaToleranciaValor(BigDecimal rsaToleranciaValor) {
+        this.rsaToleranciaValor = rsaToleranciaValor;
+    }
+
+    public String getRsaToleranciaUnidad() {
+        return rsaToleranciaUnidad;
+    }
+
+    public void setRsaToleranciaUnidad(String rsaToleranciaUnidad) {
+        this.rsaToleranciaUnidad = rsaToleranciaUnidad;
     }
 
 }

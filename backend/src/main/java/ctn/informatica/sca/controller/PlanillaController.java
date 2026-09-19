@@ -21,6 +21,7 @@ import ctn.informatica.sca.model.Profesor;
 import ctn.informatica.sca.model.StudentRow;
 import ctn.informatica.sca.model.Tarea;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -509,6 +510,23 @@ public class PlanillaController {
         }
     }
 
+    @PutMapping("/{planillaId}/rsa")
+    public void guardarRsa(@PathVariable int planillaId, @RequestBody RsaInput input, Authentication authentication) {
+        int userId = ApiAuth.requireUserId(authentication);
+        RsaInput config = validateRsaInput(input);
+        try {
+            requireOwnedPlanillaById(planillaId, userId);
+            boolean updated = planillaDao.updateRsa(planillaId, config.puntos(), config.toleranciaValor(), config.toleranciaUnidad());
+            if (!updated) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Planilla no encontrada");
+            }
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (SQLException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo guardar la configuración de RSA", ex);
+        }
+    }
+
     // 600 KB, no 1.5 MB como la foto de perfil: es una imagen decorativa y
     // van varias por pantalla en una grilla.
     private static final int PORTADA_MAX_BYTES = 600_000;
@@ -694,6 +712,10 @@ public class PlanillaController {
             }
         }
 
+        // Con RSA activo el TP se amplía con sus puntos y la nota sale de ese TP ampliado.
+        if (planilla.getRsaPuntos() != null) {
+            totalPossiblePoints += planilla.getRsaPuntos();
+        }
         planilla.computeGradeRanges(totalPossiblePoints);
         List<StudentRow> rows = new StudentRowDao().loadRowsForPlanilla(planilla, tareaMax, totalPossiblePoints);
 
@@ -710,7 +732,8 @@ public class PlanillaController {
                     gradeValues,
                     row.getTotal(),
                     row.getPorcentaje(),
-                    row.getNota()));
+                    row.getNota(),
+                    row.getRsaPuntos()));
         }
 
         Map<String, GradeRangeDto> ranges = new LinkedHashMap<>();
@@ -749,7 +772,10 @@ public class PlanillaController {
                 planilla.getEtapa1Confirmada(),
                 planilla.getFechaCierreEtapa2(),
                 planilla.getEtapa2Confirmada(),
-                planilla.getGoogleCourseId());
+                planilla.getGoogleCourseId(),
+                planilla.getRsaPuntos(),
+                planilla.getRsaToleranciaValor(),
+                planilla.getRsaToleranciaUnidad());
 
         CursoDto cursoDto = curso == null
                 ? null
@@ -780,6 +806,45 @@ public class PlanillaController {
 
     private int resolveDefaultEtapa(LocalDate today) {
         return AcademicPeriod.etapaAt(today);
+    }
+
+    public record RsaInput(Integer puntos, BigDecimal toleranciaValor, String toleranciaUnidad) {
+    }
+
+    /**
+     * Valida el body de {@code PUT /{id}/rsa}. {@code puntos == null} desactiva RSA (las tres
+     * columnas quedan en NULL); si no, puntos debe ser entero > 0, la unidad PORCENTAJE o
+     * CANTIDAD, y la tolerancia >= 0 (CANTIDAD entera, PORCENTAJE hasta 100).
+     */
+    static RsaInput validateRsaInput(RsaInput input) {
+        if (input == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El body es requerido");
+        }
+        if (input.puntos() == null) {
+            return new RsaInput(null, null, null);
+        }
+        if (input.puntos() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "puntos debe ser un entero mayor a 0");
+        }
+        String unidad = input.toleranciaUnidad();
+        if (!"PORCENTAJE".equals(unidad) && !"CANTIDAD".equals(unidad)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "toleranciaUnidad debe ser PORCENTAJE o CANTIDAD");
+        }
+        BigDecimal valor = input.toleranciaValor();
+        if (valor == null || valor.signum() < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "toleranciaValor debe ser mayor o igual a 0");
+        }
+        if ("CANTIDAD".equals(unidad) && valor.stripTrailingZeros().scale() > 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "toleranciaValor debe ser un entero cuando la unidad es CANTIDAD");
+        }
+        if ("PORCENTAJE".equals(unidad) && valor.compareTo(BigDecimal.valueOf(100)) > 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "toleranciaValor no puede superar 100 cuando la unidad es PORCENTAJE");
+        }
+        // DECIMAL(6,2): hasta 9999.99, con dos decimales
+        if (valor.compareTo(BigDecimal.valueOf(9999.99)) > 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "toleranciaValor es demasiado grande");
+        }
+        return new RsaInput(input.puntos(), valor.setScale(2, java.math.RoundingMode.HALF_UP), unidad);
     }
 
     public record ResolvePlanillaRequest(Integer cursoId, Integer materiaId, Integer etapa) {
@@ -846,7 +911,10 @@ public class PlanillaController {
             boolean etapa1Confirmada,
             LocalDate fechaCierreEtapa2,
             boolean etapa2Confirmada,
-            String googleCourseId) {
+            String googleCourseId,
+            Integer rsaPuntos,
+            BigDecimal rsaToleranciaValor,
+            String rsaToleranciaUnidad) {
     }
 
     public record CursoDto(int id, String especialidad, String seccion, int nivel) {
@@ -872,7 +940,8 @@ public class PlanillaController {
             List<GradeValueDto> grades,
             int total,
             int porcentaje,
-            int nota) {
+            int nota,
+            int rsaPuntos) {
     }
 
     public record GradeValueDto(int tareaId, Integer puntos) {

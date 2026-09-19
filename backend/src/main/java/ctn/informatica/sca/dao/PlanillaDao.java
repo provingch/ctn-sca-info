@@ -225,7 +225,8 @@ public class PlanillaDao extends conexion {
     }
 
     public Planilla findById(int id) throws SQLException {// could create an interface
-        String sql = "SELECT p.id, m.nombre AS nombre, curso_id, materia_id, categoria, periodo, etapa, p.usuario_id AS profesor_id, p.google_course_id, p.fecha_cierre_etapa1, p.etapa1_confirmada, p.fecha_cierre_etapa2, p.etapa2_confirmada "
+        String sql = "SELECT p.id, m.nombre AS nombre, curso_id, materia_id, categoria, periodo, etapa, p.usuario_id AS profesor_id, p.google_course_id, p.fecha_cierre_etapa1, p.etapa1_confirmada, p.fecha_cierre_etapa2, p.etapa2_confirmada, "
+                + "p.rsa_puntos, p.rsa_tolerancia_valor, p.rsa_tolerancia_unidad "
                 + "FROM planilla p JOIN materia m ON p.materia_id = m.id "
                 + "WHERE p.id = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -238,7 +239,8 @@ public class PlanillaDao extends conexion {
     }
 
     public Planilla findByCompositeKey(int cursoId, int materiaId, int etapa) throws SQLException {
-        String sql = "SELECT p.id, m.nombre AS nombre, curso_id, materia_id, categoria, periodo, etapa, p.usuario_id AS profesor_id, p.google_course_id, p.fecha_cierre_etapa1, p.etapa1_confirmada, p.fecha_cierre_etapa2, p.etapa2_confirmada "
+        String sql = "SELECT p.id, m.nombre AS nombre, curso_id, materia_id, categoria, periodo, etapa, p.usuario_id AS profesor_id, p.google_course_id, p.fecha_cierre_etapa1, p.etapa1_confirmada, p.fecha_cierre_etapa2, p.etapa2_confirmada, "
+                + "p.rsa_puntos, p.rsa_tolerancia_valor, p.rsa_tolerancia_unidad "
                 + "FROM planilla p JOIN materia m ON p.materia_id = m.id "
                 + "WHERE curso_id = ? AND materia_id = ? AND periodo = ? AND etapa = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -404,6 +406,27 @@ public class PlanillaDao extends conexion {
         }
     }
 
+    /**
+     * Guarda la configuración RSA de la planilla; con {@code puntos == null} la desactiva
+     * y deja las tres columnas en NULL.
+     */
+    public boolean updateRsa(int planillaId, Integer puntos, java.math.BigDecimal toleranciaValor, String toleranciaUnidad) throws SQLException {
+        String sql = "UPDATE planilla SET rsa_puntos = ?, rsa_tolerancia_valor = ?, rsa_tolerancia_unidad = ? WHERE id = ?";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            if (puntos == null) {
+                ps.setNull(1, java.sql.Types.INTEGER);
+                ps.setNull(2, java.sql.Types.DECIMAL);
+                ps.setNull(3, java.sql.Types.VARCHAR);
+            } else {
+                ps.setInt(1, puntos);
+                ps.setBigDecimal(2, toleranciaValor);
+                ps.setString(3, toleranciaUnidad);
+            }
+            ps.setInt(4, planillaId);
+            return ps.executeUpdate() == 1;
+        }
+    }
+
     public String findPortada(int planillaId) throws SQLException {
         String sql = "SELECT portada FROM planilla WHERE id = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -494,9 +517,25 @@ public class PlanillaDao extends conexion {
             } catch (SQLException ex) {
                 // older schema may not include this column
             }
+            Integer rsaPuntos = null;
+            java.math.BigDecimal rsaToleranciaValor = null;
+            String rsaToleranciaUnidad = null;
+            try {
+                int puntos = rs.getInt("rsa_puntos");
+                if (!rs.wasNull()) {
+                    rsaPuntos = puntos;
+                }
+                rsaToleranciaValor = rs.getBigDecimal("rsa_tolerancia_valor");
+                rsaToleranciaUnidad = rs.getString("rsa_tolerancia_unidad");
+            } catch (SQLException ex) {
+                // this query (or an older schema) does not include the RSA columns
+            }
 
             Planilla p = new Planilla(planilla_id, curso_id, materia_id, categoria, nombre, periodo, etapa, profesor_id);
             p.setGoogleCourseId(googleCourseId);
+            p.setRsaPuntos(rsaPuntos);
+            p.setRsaToleranciaValor(rsaToleranciaValor);
+            p.setRsaToleranciaUnidad(rsaToleranciaUnidad);
             // Si estamos cargando la fila de Segunda Etapa y la fecha de cierre
             // de Etapa 1 viene nula (porque en la fila de segunda no se persiste),
             // intentar recuperar la fecha real desde la fila de Primera Etapa

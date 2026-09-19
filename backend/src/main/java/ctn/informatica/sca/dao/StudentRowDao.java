@@ -13,10 +13,13 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import ctn.informatica.sca.util.AcademicPeriod;
 
 /**
  *
@@ -51,10 +54,77 @@ public class StudentRowDao extends conexion {
         return sum;
     }
 
+    /**
+     * Rango de fechas [desde, hasta) de una etapa del período, con el mismo criterio que
+     * {@link AcademicPeriod#etapaAt(LocalDate)} usa para filtrar las tareas: la etapa 1 va
+     * desde el 1 de enero hasta el inicio de la etapa 2, y la etapa 2 hasta fin de año.
+     */
+    static LocalDate[] etapaDateRange(int year, int etapaIndex) {
+        LocalDate inicioEtapa2 = AcademicPeriod.etapaStartDate(year, 2);
+        if (etapaIndex == 2) {
+            return new LocalDate[]{inicioEtapa2, LocalDate.of(year + 1, 1, 1)};
+        }
+        return new LocalDate[]{LocalDate.of(year, 1, 1), inicioEtapa2};
+    }
+
+    private static LocalDate[] etapaDateRange(Planilla planilla) {
+        int year = planilla.getPeriodo() > 0 ? planilla.getPeriodo() : AcademicPeriod.current();
+        return etapaDateRange(year, planilla.getEtapaIndex());
+    }
+
+    /**
+     * Cantidad de faltas RSA por alumno: cada código de conducta (fila de
+     * rasgo_asistencia_codigo) asignado en las clases que el profesor de la planilla dio a ese
+     * curso dentro de la etapa. Una sola consulta agrupada; los alumnos sin códigos no aparecen.
+     */
+    Map<Integer, Integer> countFaltasPorAlumno(Planilla planilla) throws SQLException {
+        LocalDate[] rango = etapaDateRange(planilla);
+        String sql = "SELECT ra.alumno_id, COUNT(rac.id) AS faltas "
+                + "FROM rasgo_asistencia_codigo rac "
+                + "JOIN rasgo_asistencia ra ON ra.id = rac.rasgo_asistencia_id "
+                + "JOIN planilla_rasgo pr ON pr.id = ra.planilla_rasgo_id "
+                + "WHERE pr.curso_id = ? AND pr.usuario_id = ? AND pr.fecha_clase >= ? AND pr.fecha_clase < ? "
+                + "GROUP BY ra.alumno_id";
+        Map<Integer, Integer> faltas = new HashMap<>();
+        try (Connection con = getCon(); PreparedStatement stm = con.prepareStatement(sql)) {
+            stm.setInt(1, planilla.getCursoId());
+            stm.setInt(2, planilla.getProfesorId());
+            stm.setDate(3, java.sql.Date.valueOf(rango[0]));
+            stm.setDate(4, java.sql.Date.valueOf(rango[1]));
+            try (ResultSet rs = stm.executeQuery()) {
+                while (rs.next()) {
+                    faltas.put(rs.getInt("alumno_id"), rs.getInt("faltas"));
+                }
+            }
+        }
+        return faltas;
+    }
+
+    /** Clases dadas por el profesor de la planilla a ese curso dentro de la etapa (base del % de tolerancia). */
+    int countClasesDadas(Planilla planilla) throws SQLException {
+        LocalDate[] rango = etapaDateRange(planilla);
+        String sql = "SELECT COUNT(DISTINCT pr.id) FROM planilla_rasgo pr "
+                + "WHERE pr.curso_id = ? AND pr.usuario_id = ? AND pr.fecha_clase >= ? AND pr.fecha_clase < ?";
+        try (Connection con = getCon(); PreparedStatement stm = con.prepareStatement(sql)) {
+            stm.setInt(1, planilla.getCursoId());
+            stm.setInt(2, planilla.getProfesorId());
+            stm.setDate(3, java.sql.Date.valueOf(rango[0]));
+            stm.setDate(4, java.sql.Date.valueOf(rango[1]));
+            try (ResultSet rs = stm.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        }
+    }
+
     public List<StudentRow> loadRowsForPlanilla(Planilla planilla,
             Map<Integer, Integer> tareaMax,
             int totalPossiblePoints) throws SQLException {
         List<StudentRow> rows = new ArrayList<>();
+        // RSA: solo se consultan faltas y clases dadas si la planilla lo tiene activado, y una
+        // única vez para todos los alumnos (no una consulta por alumno).
+        boolean rsaActivo = planilla != null && planilla.getRsaPuntos() != null;
+        Map<Integer, Integer> faltasPorAlumno = rsaActivo ? countFaltasPorAlumno(planilla) : Map.of();
+        int totalClasesDadas = rsaActivo ? countClasesDadas(planilla) : 0;
         // SQL: get registros (students) and any puntaje (left join)
         // We join registro -> alumno and left join puntaje (to get tarea_id and puntos)
         String sql = "SELECT r.id AS registro_id, a.id AS alumno_id, a.nombre, a.apellido, a.curso_id, "
@@ -103,7 +173,10 @@ public class StudentRowDao extends conexion {
 
                 // compute totals & percentages for each row
                 for (StudentRow r : map.values()) {
-                    int sum = sumRelevantGrades(r.getGrades(), tareaMax);
+                    r.setRsaPuntos(rsaActivo
+                            ? planilla.computeRsaScore(faltasPorAlumno.getOrDefault(r.getAlumnoId(), 0), totalClasesDadas)
+                            : 0);
+                    int sum = sumRelevantGrades(r.getGrades(), tareaMax) + r.getRsaPuntos();
                     r.setTotal(sum);
                     // compute porcentaje = round(sum * 100 / totalPossiblePoints)
                     int porcentaje = 0;
