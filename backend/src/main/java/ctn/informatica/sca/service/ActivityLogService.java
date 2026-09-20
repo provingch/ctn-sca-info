@@ -1,6 +1,7 @@
 package ctn.informatica.sca.service;
 
 import ctn.informatica.sca.dao.UserDao;
+import ctn.informatica.sca.util.RequestIpUtil;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -18,6 +19,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Service
 public class ActivityLogService {
@@ -39,7 +43,16 @@ public class ActivityLogService {
         this.userDao = userDao;
     }
 
+    /**
+     * Registra la acción con la IP de la request en curso (tomada de {@link RequestContextHolder}, así ningún sitio de
+     * llamada tiene que acordarse de pasarla). Fuera de una request, por ejemplo en un job programado, queda "desconocida".
+     */
     public void registrar(int usuarioId, String accion) throws IOException, SQLException {
+        registrar(usuarioId, accion, ipDeLaRequestActual());
+    }
+
+    /** Línea del registro: {@code [fecha hora] (ip: 1.2.3.4) acción}. */
+    public void registrar(int usuarioId, String accion, String ip) throws IOException, SQLException {
         if (usuarioId <= 0) {
             return;
         }
@@ -52,7 +65,8 @@ public class ActivityLogService {
         Files.createDirectories(directory);
 
         Path path = resolveUserLogPath(usuarioId);
-        String linea = "[" + LocalDateTime.now(ZONA_PARAGUAY).format(LINE_FORMATTER) + "] " + accionNormalizada;
+        String ipNormalizada = ip == null || ip.isBlank() ? RequestIpUtil.DESCONOCIDA : ip.trim();
+        String linea = "[" + LocalDateTime.now(ZONA_PARAGUAY).format(LINE_FORMATTER) + "] (ip: " + ipNormalizada + ") " + accionNormalizada;
         Files.write(path,
                 List.of(linea),
                 StandardCharsets.UTF_8,
@@ -64,6 +78,11 @@ public class ActivityLogService {
         if (!canonicalPath.equals(storedPath)) {
             userDao.updateActivityLogPath(usuarioId, canonicalPath);
         }
+    }
+
+    private static String ipDeLaRequestActual() {
+        RequestAttributes atributos = RequestContextHolder.getRequestAttributes();
+        return atributos instanceof ServletRequestAttributes servlet ? RequestIpUtil.resolve(servlet.getRequest()) : RequestIpUtil.DESCONOCIDA;
     }
 
     public List<String> leerUltimas(int usuarioId, int limite) throws IOException, SQLException {
