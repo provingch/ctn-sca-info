@@ -8,8 +8,11 @@ import type { AdminCatalog } from '../../api/admin';
 import { createQueja, getAdminQuejas, quejaEstado, type QuejaItem } from '../../api/quejas';
 import { formatSqlDateTime } from '../../utils/date';
 import { nombreCorto } from '../../utils/nombre';
+import { normalizarTexto as normalize } from '../../utils/texto';
+import DatePicker from '../../components/DatePicker';
+import FiltersToolbar, { FilterField } from '../../components/ui/FiltersToolbar';
+import { filtrarQuejas, hayFiltroQuejas, rangoDeFechasInvalido, SIN_FILTRO_QUEJAS, type FiltroQuejas } from './filtrosListados';
 
-const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
 export default function AdminQuejasPanel({ data, status, isGlobalAdmin }: { data: AdminCatalog; status: (s: string) => void; isGlobalAdmin: boolean }) {
   const [cursoId, setCursoId] = useState<number | ''>('');
@@ -20,7 +23,7 @@ export default function AdminQuejasPanel({ data, status, isGlobalAdmin }: { data
   const [listLoading, setListLoading] = useState(true);
   const [listError, setListError] = useState('');
   const [formError, setFormError] = useState('');
-  const [query, setQuery] = useState('');
+  const [filtro, setFiltro] = useState<FiltroQuejas>(SIN_FILTRO_QUEJAS);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const requestId = useRef(0);
   const submitting = useRef(false);
@@ -73,7 +76,7 @@ export default function AdminQuejasPanel({ data, status, isGlobalAdmin }: { data
     setMotivo('');
     setProfesorId('');
     setCursoId('');
-    setQuery('');
+    setFiltro(SIN_FILTRO_QUEJAS);
     status('Queja registrada.');
     await loadList();
     submitting.current = false;
@@ -82,9 +85,10 @@ export default function AdminQuejasPanel({ data, status, isGlobalAdmin }: { data
 
   const specialtyName = (q: QuejaItem) => data.especialidades.find((s) => s.id === q.especialidadId)?.nombre
     || q.cursoEspecialidad?.trim() || data.cursos.find((c) => c.id === q.cursoId)?.especialidad || 'Especialidad no disponible';
-  const filtered = (lista ?? []).filter((q) => normalize([
+  const cambiarFiltro = (cambios: Partial<FiltroQuejas>) => { setFiltro((actual) => ({ ...actual, ...cambios })); setExpandedGroups({}); };
+  const filtered = filtrarQuejas(lista ?? [], filtro, (q) => [
     q.profesorNombre, q.profesorApellido, specialtyName(q), q.cursoNivel, q.cursoSeccion, q.motivo, q.conclusion,
-  ].join(' ')).includes(normalize(query.trim())));
+  ].join(' '));
   const groups = Array.from(filtered.reduce((map, q) => {
     const name = specialtyName(q);
     const key = q.especialidadId != null ? String(q.especialidadId) : normalize(name);
@@ -145,16 +149,19 @@ export default function AdminQuejasPanel({ data, status, isGlobalAdmin }: { data
         <div className="complaints-summary-resolved"><dt>Quejas resueltas</dt><dd>{resolvedCount}</dd></div>
         <div><dt>Quejas rechazadas</dt><dd>{rejectedCount}</dd></div>
       </dl>}
-      {lista !== null && lista.length > 0 && <div className="complaints-search form-grid">
-        <label>Buscar en las quejas<input type="search" placeholder="Profesor, curso, especialidad o motivo" value={query} onChange={(e) => { setQuery(e.target.value); setExpandedGroups({}); }} /></label>
-        <small>{filtered.length} de {lista.length} registros</small>
-      </div>}
+      {lista !== null && lista.length > 0 && <FiltersToolbar ariaLabel="Filtros del historial de quejas" mostrando={filtered.length} total={lista.length} unidad="registros" activo={hayFiltroQuejas(filtro)} onLimpiar={() => cambiarFiltro(SIN_FILTRO_QUEJAS)}>
+        <FilterField label="Buscar en las quejas"><input type="search" placeholder="Profesor, curso, especialidad o motivo" value={filtro.busqueda} onChange={(e) => cambiarFiltro({ busqueda: e.target.value })} /></FilterField>
+        <FilterField label="Estado" narrow><AnimatedSelect ariaLabel="Estado de la queja" value={filtro.estado} onChange={(estado) => cambiarFiltro({ estado: estado as FiltroQuejas['estado'] })} options={[{ value: '', label: 'Todos los estados' }, ...Object.entries(estadoLabel).map(([value, label]) => ({ value, label }))]} /></FilterField>
+        <FilterField label="Desde" narrow><DatePicker ariaLabel="Quejas desde" value={filtro.desde} invalid={rangoDeFechasInvalido(filtro.desde, filtro.hasta)} onChange={(desde) => cambiarFiltro({ desde })} /></FilterField>
+        <FilterField label="Hasta" narrow><DatePicker ariaLabel="Quejas hasta" value={filtro.hasta} invalid={rangoDeFechasInvalido(filtro.desde, filtro.hasta)} onChange={(hasta) => cambiarFiltro({ hasta })} /></FilterField>
+        {rangoDeFechasInvalido(filtro.desde, filtro.hasta) && <p className="filters-error" role="alert">La fecha “Desde” es posterior a “Hasta”: no hay quejas en ese rango.</p>}
+      </FiltersToolbar>}
       {listError && <ContentState compact tone="error" title="No se pudo actualizar el historial" detail={listError + (lista !== null ? ' Se conserva la última lista cargada.' : '')} />}
       {lista === null && listLoading && <ContentState compact tone="loading" title="Cargando quejas…" />}
       {lista !== null && lista.length === 0 && <ContentState compact title="Todavía no hay quejas registradas" detail="Los nuevos registros aparecerán aquí automáticamente." />}
-      {lista !== null && lista.length > 0 && filtered.length === 0 && <ContentState compact title="Sin coincidencias" detail="Probá con otro nombre, curso o motivo." actions={<button className="button secondary" type="button" onClick={() => setQuery('')}>Limpiar búsqueda</button>} />}
+      {lista !== null && lista.length > 0 && filtered.length === 0 && <ContentState compact title="Sin coincidencias" detail="Probá con otro nombre, curso, motivo, estado o rango de fechas." actions={<button className="button secondary" type="button" onClick={() => cambiarFiltro(SIN_FILTRO_QUEJAS)}>Limpiar filtros</button>} />}
       {groups.length > 0 && <div className="complaints-groups">{groups.map((group) => {
-        const expanded = expandedGroups[group.key] ?? (!!query.trim() || groups.length === 1);
+        const expanded = expandedGroups[group.key] ?? (hayFiltroQuejas(filtro) || groups.length === 1);
         const panelId = `complaints-specialty-${encodeURIComponent(group.key)}`;
         return <section className="complaints-specialty" data-specialty={normalizeSpecialty(group.name)} key={group.key}>
           <h3 className="complaints-specialty-heading"><button type="button" id={`${panelId}-heading`} aria-expanded={expanded} aria-controls={panelId}

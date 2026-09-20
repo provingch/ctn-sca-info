@@ -9,6 +9,9 @@ import PlanesPorEspecialidad from './PlanesPorEspecialidad';
 import { formatFechaClase } from '../../utils/fechaClase';
 import ContentState from '../../components/ui/ContentState';
 import CoberturaTemaCelda from '../../components/CoberturaTemaCelda';
+import AnimatedSelect from '../../components/AnimatedSelect';
+import FiltersToolbar, { FilterField } from '../../components/ui/FiltersToolbar';
+import { filtrarIncumplimientos, hayFiltroIncumplimientos, SIN_FILTRO_INCUMPLIMIENTOS, type FiltroIncumplimientos } from './filtrosIncumplimientos';
 
 type Tab = 'planes' | 'incumplimientos';
 // Local status/state removed; toasts are used instead
@@ -44,6 +47,7 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
   const [incumplimientos, setIncumplimientos] = useState<evaluacionApi.IncumplimientoPendiente[]>([]);
   const [selectedIncumplimientoId, setSelectedIncumplimientoId] = useState<number | null>(null);
   const [notaReactivacion, setNotaReactivacion] = useState('');
+  const [filtroIncumplimientos, setFiltroIncumplimientos] = useState<FiltroIncumplimientos>(SIN_FILTRO_INCUMPLIMIENTOS);
   const [loading, setLoading] = useState(true);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [resolving, setResolving] = useState(false);
@@ -118,9 +122,10 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
   }
 
   const selectedIncumplimiento = incumplimientos.find((item) => item.id === selectedIncumplimientoId);
-  const bloqueos = incumplimientos.filter((item) => BLOQUEOS.includes(item.tipo));
-  const atrasos = incumplimientos.filter((item) => item.tipo === ATRASO);
-  const retroactivas = incumplimientos.filter((item) => item.tipo === RETROACTIVA);
+  const incumplimientosVisibles = filtrarIncumplimientos(incumplimientos, filtroIncumplimientos, professorName);
+  const bloqueos = incumplimientosVisibles.filter((item) => BLOQUEOS.includes(item.tipo));
+  const atrasos = incumplimientosVisibles.filter((item) => item.tipo === ATRASO);
+  const retroactivas = incumplimientosVisibles.filter((item) => item.tipo === RETROACTIVA);
 
   return <>
     <div className="tabs" style={{ marginBottom: 16 }}>
@@ -158,7 +163,11 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
     {tab === 'incumplimientos' && <div className="evaluation-split-layout equal-columns">
       <div className="panel">
         <h3>Casos pendientes{!loading && ` (${incumplimientos.length})`}</h3>
-        {loading ? <ContentState tone="loading" compact title="Cargando incumplimientos…" /> : incumplimientos.length === 0 ? <ContentState compact title="No hay incumplimientos pendientes" detail="Los atrasos, incongruencias y bloqueos por resolver aparecen acá." /> : <div style={{ display: 'grid', gap: 16 }}>
+        {!loading && incumplimientos.length > 0 && <FiltersToolbar ariaLabel="Filtros de incumplimientos" mostrando={incumplimientosVisibles.length} total={incumplimientos.length} unidad="casos" activo={hayFiltroIncumplimientos(filtroIncumplimientos)} onLimpiar={() => setFiltroIncumplimientos(SIN_FILTRO_INCUMPLIMIENTOS)}>
+          <FilterField label="Buscar"><input type="search" placeholder="Profesor o materia" value={filtroIncumplimientos.busqueda} onChange={(event) => setFiltroIncumplimientos((actual) => ({ ...actual, busqueda: event.target.value }))} /></FilterField>
+          <FilterField label="Tipo de caso" narrow><AnimatedSelect ariaLabel="Tipo de caso" value={filtroIncumplimientos.categoria} onChange={(categoria) => setFiltroIncumplimientos((actual) => ({ ...actual, categoria: categoria as FiltroIncumplimientos['categoria'] }))} options={[{ value: '', label: 'Todos los tipos' }, { value: 'bloqueos', label: 'Bloqueos de Iniciar clase' }, { value: 'atrasos', label: 'Atrasos pendientes' }, { value: 'retroactivas', label: 'Incongruencias retroactivas' }]} /></FilterField>
+        </FiltersToolbar>}
+        {loading ? <ContentState tone="loading" compact title="Cargando incumplimientos…" /> : incumplimientos.length === 0 ? <ContentState compact title="No hay incumplimientos pendientes" detail="Los atrasos, incongruencias y bloqueos por resolver aparecen acá." /> : incumplimientosVisibles.length === 0 ? <ContentState compact title="Sin coincidencias" detail="Ningún caso coincide con los filtros elegidos." actions={<button type="button" className="button secondary" onClick={() => setFiltroIncumplimientos(SIN_FILTRO_INCUMPLIMIENTOS)}>Limpiar filtros</button>} /> : <div style={{ display: 'grid', gap: 16 }}>
           {[
             { titulo: 'Bloqueos de Iniciar clase', items: bloqueos, destacado: true },
             { titulo: 'Atrasos pendientes de revisión', items: atrasos, destacado: false },

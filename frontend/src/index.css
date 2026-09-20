@@ -588,8 +588,6 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .parent-stage-comparison { display: flex; flex-wrap: wrap; gap: 9px; padding-top: 2px; }
 .parent-stage-comparison > div { display: flex; align-items: center; gap: 8px; padding: 7px 11px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: .72rem; }
 .parent-stage-comparison strong { color: var(--ink); }
-.parent-subject-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
-.parent-subject-toolbar > span { color: var(--muted); font-size: .76rem; font-weight: 750; }
 .parent-stage-tabs { display: inline-flex; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg-soft); }
 .parent-stage-tabs button { min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); font-size: .78rem; font-weight: 800; box-shadow: none; }
 .parent-stage-tabs button.active { background: var(--accent); color: var(--accent-contrast); }
@@ -872,7 +870,6 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
   .parent-page { gap: 16px; }
   .parent-overview-header,
   .parent-section-heading,
-  .parent-subject-toolbar { align-items: stretch; flex-direction: column; }
   .parent-print-button { width: 100%; }
   .parent-report-actions { justify-content: stretch; }
   .parent-report-actions .button, .parent-report-month { width: 100%; }
@@ -882,7 +879,6 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
   .parent-stage-comparison > div { justify-content: space-between; border-radius: 10px; }
   .parent-stage-tabs { width: 100%; }
   .parent-stage-tabs button { flex: 1 1 0; padding-inline: 9px; }
-  .parent-subject-toolbar > span { padding-inline: 4px; }
   .parent-section-heading { gap: 5px; }
   .parent-section-heading p { max-width: none; text-align: left; }
   .parent-subject-grid { grid-template-columns: 1fr; }
@@ -1097,7 +1093,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
   .app-footer,
   .page-banner,
   .parent-print-button,
-  .parent-subject-toolbar,
+  .parent-page .toolbar.filters,
   .parent-calculation-note { display: none !important; }
   .app-main { width: 100%; padding: 0; }
   .parent-page { gap: 12px; }
@@ -1148,13 +1144,11 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .complaints-count { padding: 3px 8px; border-radius: 6px; background: var(--accent-soft); color: var(--accent-deep); font-size: .78rem; }
 .complaints-form { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 .complaints-field { display: grid; align-content: start; gap: 8px; min-width: 0; }
-.complaints-field small, .complaints-form-footer small, .complaints-search > small { color: var(--muted); line-height: 1.5; }
+.complaints-field small, .complaints-form-footer small { color: var(--muted); line-height: 1.5; }
 .complaints-full { grid-column: 1 / -1; }
 .complaints-form textarea { min-height: 112px; line-height: 1.6; }
 .complaints-form-footer { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
 .complaints-workspace .button { min-height: 40px; padding: 9px 14px; font-size: .85rem; }
-.complaints-search { grid-template-columns: minmax(0, 520px) auto; align-items: end; gap: 14px; margin-bottom: 20px; }
-.complaints-search > small { padding-bottom: 12px; }
 .complaints-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
 .complaints-groups { display: grid; gap: 14px; }
 .complaints-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 0 0 22px; }
@@ -1176,6 +1170,15 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .complaint-status.aceptada { background: var(--accent-soft); color: var(--accent-deep); }
 .complaint-status.rechazada { background: color-mix(in srgb, var(--danger) 14%, var(--paper)); color: var(--danger); }
 .badge--danger { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 16%, var(--paper)); color: var(--danger); }
+/* Barra de filtros compartida (FiltersToolbar): controles con etiqueta, conteo y "Limpiar filtros". */
+.toolbar.filters--fields { align-items: flex-end; gap: 12px 14px; }
+.filter-field { display: grid; flex: 1 1 200px; gap: 6px; min-width: 0; color: var(--ink); font-size: .82rem; font-weight: 700; }
+.filter-field--narrow { flex: 0 1 240px; }
+.filter-field input { min-height: 46px; }
+.filter-field--auto { flex: 0 0 auto; }
+.filters-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-left: auto; color: var(--muted); font-size: .8rem; font-weight: 700; }
+.filters-error { flex: 1 1 100%; margin: 0; color: var(--danger); font-size: .82rem; font-weight: 700; }
+@media (max-width: 640px) { .filter-field, .filter-field--narrow { flex: 1 1 100%; } .filters-summary { margin-left: 0; } }
 .field-required { margin-left: 2px; color: var(--danger); font-weight: 800; }
 .reabrir-dialog { width: min(560px, calc(100vw - 32px)); }
 .reabrir-dialog .reabrir-dialog-field { grid-column: 1 / -1; margin: 0; }
@@ -1232,7 +1235,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .complaint-reference, .complaint-record footer { color: var(--muted); font-size: .76rem; }
 .complaint-course { margin: 6px 0 14px; color: var(--muted); font-size: .82rem; }
 .complaint-reason { margin: 0 0 16px; white-space: pre-wrap; line-height: 1.65; font-size: .9rem; }
-@media (max-width: 640px) { .complaints-form, .complaints-search { grid-template-columns: 1fr; } .complaints-heading { align-items: flex-start; flex-direction: column; } .complaints-form-footer { align-items: stretch; flex-direction: column; } .complaints-search > small { padding-bottom: 0; } }
+@media (max-width: 640px) { .complaints-form { grid-template-columns: 1fr; } .complaints-heading { align-items: flex-start; flex-direction: column; } .complaints-form-footer { align-items: stretch; flex-direction: column; } }
 .planilla-task-heading .planilla-task-tp { justify-content: center; text-align: center; }
 .planilla-task-origin { display: flex; align-items: center; justify-content: center; margin-top: 8px; }
 .planilla-task-origin .planilla-task-origin-icon { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 32px; width: 32px; height: 32px; padding: 5px; box-sizing: border-box; border-radius: 9px; }

@@ -5,6 +5,8 @@ import { normalizeSpecialty } from '../../theme/theme';
 import SpecialtyIcon from '../../components/SpecialtyIcon';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import useAccessibleDialog from '../../hooks/useAccessibleDialog';
+import FiltersToolbar, { FilterField } from '../../components/ui/FiltersToolbar';
+import { filtrarAlumnos, filtrarEgresados, hayFiltroEgresados, SIN_FILTRO_EGRESADOS, type FiltroEgresados } from './filtrosListados';
 
 interface AlumnosPanelProps {
   data: AdminCatalog;
@@ -16,6 +18,8 @@ type ViewStep = 'especialidades' | 'cursos' | 'secciones' | 'tabla' | 'egresados
 
 export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps) {
   const [step, setStep] = useState<ViewStep>('especialidades');
+  const [busquedaAlumnos, setBusquedaAlumnos] = useState('');
+  const [filtroEgresados, setFiltroEgresados] = useState<FiltroEgresados>(SIN_FILTRO_EGRESADOS);
   const [selectedEspecialidadId, setSelectedEspecialidadId] = useState<number | null>(null);
   const [selectedNivel, setSelectedNivel] = useState<number | null>(null);
   const [selectedSeccion, setSelectedSeccion] = useState<string | null>(null);
@@ -50,6 +54,20 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
     () => [...data.egresados].sort((a, b) => (b.promocion ?? 0) - (a.promocion ?? 0) || a.apellido.localeCompare(b.apellido) || a.nombre.localeCompare(b.nombre)),
     [data.egresados],
   );
+
+  const rowsVisibles = useMemo(() => filtrarAlumnos(rows, busquedaAlumnos), [rows, busquedaAlumnos]);
+  const egresadosVisibles = useMemo(() => filtrarEgresados(egresados, filtroEgresados), [egresados, filtroEgresados]);
+  const especialidadesDeEgresados = useMemo(
+    () => [...new Set(egresados.map((item) => item.especialidad).filter((nombre): nombre is string => Boolean(nombre)))].sort((a, b) => a.localeCompare(b, 'es')),
+    [egresados]);
+  const promocionesDeEgresados = useMemo(
+    () => [...new Set(egresados.map((item) => item.promocion).filter((anio): anio is number => anio != null))].sort((a, b) => b - a),
+    [egresados]);
+  // Al cambiar de listado (otra sección, egresados, volver) los filtros arrancan limpios.
+  useEffect(() => {
+    setBusquedaAlumnos('');
+    setFiltroEgresados(SIN_FILTRO_EGRESADOS);
+  }, [step, selectedSeccion, selectedNivel, selectedEspecialidadId]);
 
   const openCreate = () => {
     setEditingId(null);
@@ -209,6 +227,11 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
           <div className="panel">
             <h2>Egresados</h2>
             <p className="muted-copy">Registro histórico de solo lectura: alumnos cuyo curso ya egresó. No se editan ni se eliminan desde acá.</p>
+            {egresados.length > 0 && <FiltersToolbar ariaLabel="Filtros de egresados" mostrando={egresadosVisibles.length} total={egresados.length} unidad="egresados" activo={hayFiltroEgresados(filtroEgresados)} onLimpiar={() => setFiltroEgresados(SIN_FILTRO_EGRESADOS)}>
+              <FilterField label="Buscar egresado"><input type="search" placeholder="Apellido, nombre o cédula" value={filtroEgresados.busqueda} onChange={(event) => setFiltroEgresados((actual) => ({ ...actual, busqueda: event.target.value }))} /></FilterField>
+              <FilterField label="Especialidad" narrow><AnimatedSelect ariaLabel="Especialidad del egresado" value={filtroEgresados.especialidad} onChange={(especialidad) => setFiltroEgresados((actual) => ({ ...actual, especialidad }))} options={[{ value: '', label: 'Todas las especialidades' }, ...especialidadesDeEgresados.map((nombre) => ({ value: nombre, label: nombre }))]} /></FilterField>
+              <FilterField label="Año de egreso" narrow><AnimatedSelect ariaLabel="Año de egreso" value={filtroEgresados.promocion} onChange={(promocion) => setFiltroEgresados((actual) => ({ ...actual, promocion }))} options={[{ value: '', label: 'Todos los años' }, ...promocionesDeEgresados.map((anio) => ({ value: String(anio), label: String(anio) }))]} /></FilterField>
+            </FiltersToolbar>}
             <div className="table-wrap">
               <table className="grade-table" style={{ minWidth: 720 }}>
                 <caption className="visually-hidden">Alumnos egresados</caption>
@@ -224,8 +247,10 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
                 <tbody>
                   {egresados.length === 0 ? (
                     <tr><td colSpan={5}>No hay alumnos egresados.</td></tr>
+                  ) : egresadosVisibles.length === 0 ? (
+                    <tr><td colSpan={5}>Ningún egresado coincide con los filtros elegidos.</td></tr>
                   ) : (
-                    egresados.map((student) => (
+                    egresadosVisibles.map((student) => (
                       <tr key={student.id}>
                         <td>{student.apellido}</td>
                         <td>{student.nombre}</td>
@@ -299,6 +324,9 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
 
           <div className="panel">
             <h2>{currentEspecialidad} · {currentCurso?.nivel}° · {selectedSeccion}</h2>
+            {rows.length > 0 && <FiltersToolbar ariaLabel="Filtros de alumnos" mostrando={rowsVisibles.length} total={rows.length} unidad="alumnos" activo={Boolean(busquedaAlumnos.trim())} onLimpiar={() => setBusquedaAlumnos('')}>
+              <FilterField label="Buscar alumno"><input type="search" placeholder="Apellido, nombre o cédula" value={busquedaAlumnos} onChange={(event) => setBusquedaAlumnos(event.target.value)} /></FilterField>
+            </FiltersToolbar>}
             <div className="table-wrap">
               <table className="grade-table" style={{ minWidth: 760 }}>
                 <caption className="visually-hidden">Alumnos de {currentCurso?.nivel}° {selectedSeccion}</caption>
@@ -314,8 +342,10 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
                 <tbody>
                   {rows.length === 0 ? (
                     <tr><td colSpan={5}>No hay alumnos en esta sección.</td></tr>
+                  ) : rowsVisibles.length === 0 ? (
+                    <tr><td colSpan={5}>Ningún alumno coincide con la búsqueda.</td></tr>
                   ) : (
-                    rows.map((student) => (
+                    rowsVisibles.map((student) => (
                       <tr key={student.id}>
                         <td>{student.apellido}</td>
                         <td>{student.nombre}</td>

@@ -42,12 +42,12 @@ describe('AdminQuejasPanel', () => {
     ];
     vi.mocked(getAdminQuejas).mockResolvedValue(estados);
     render(<AdminQuejasPanel data={data} status={vi.fn()} isGlobalAdmin />);
-    await screen.findByText('Pendiente');
+    await screen.findByText('Pendiente', { selector: '.complaint-status' });
 
-    expect(screen.getByText('Aceptada')).toBeVisible();
-    expect(screen.getByText('Revisada')).toBeVisible();
-    expect(screen.getByText('Resuelta')).toBeVisible();
-    expect(screen.getByText('Rechazada')).toBeVisible();
+    expect(screen.getByText('Aceptada', { selector: '.complaint-status' })).toBeVisible();
+    expect(screen.getByText('Revisada', { selector: '.complaint-status' })).toBeVisible();
+    expect(screen.getByText('Resuelta', { selector: '.complaint-status' })).toBeVisible();
+    expect(screen.getByText('Rechazada', { selector: '.complaint-status' })).toBeVisible();
 
     for (const label of [/Revisar queja/, 'Registrar solución', /Descargar solicitud/, /Descargar reporte/, 'Aceptar', 'Rechazar', 'Completar revisión', 'Marcar como resuelta']) {
       expect(screen.queryByRole('button', { name: label })).not.toBeInTheDocument();
@@ -78,7 +78,7 @@ describe('AdminQuejasPanel', () => {
   it('muestra revisiones guardadas y conserva los totales al buscar', async () => {
     vi.mocked(getAdminQuejas).mockResolvedValue([item, { ...item, id: 43, estado: 'revisada', revisadaEn: '2026-09-14T12:30:00', revisadaPor: 9, conclusion: 'Resuelto mediante reunión.' }]);
     render(<AdminQuejasPanel data={data} status={vi.fn()} isGlobalAdmin />);
-    await screen.findByText('Revisada');
+    await screen.findByText('Revisada', { selector: '.complaint-status' });
     fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'reunion' } });
     expect(screen.getByText('Resuelto mediante reunión.')).toBeVisible();
     expect(screen.getByText('Total de quejas').parentElement).toHaveTextContent('2');
@@ -121,7 +121,7 @@ describe('AdminQuejasPanel', () => {
     render(<AdminQuejasPanel data={data} status={vi.fn()} isGlobalAdmin />);
     expect(await screen.findByText(item.motivo)).toBeInTheDocument();
     expect(getAdminQuejas).toHaveBeenCalledTimes(1);
-    expect(screen.getByText('Pendiente')).toBeInTheDocument();
+    expect(screen.getByText('Pendiente', { selector: '.complaint-status' })).toBeInTheDocument();
     fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'informatica' } });
     expect(screen.getByText(item.motivo)).toBeInTheDocument();
     fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'inexistente' } });

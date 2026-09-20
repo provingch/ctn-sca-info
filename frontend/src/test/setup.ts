@@ -21,3 +21,9 @@ Object.defineProperty(window, 'matchMedia', {
 if (!Element.prototype.scrollIntoView) {
   Element.prototype.scrollIntoView = () => undefined;
 }
+
+// jsdom no implementa <dialog>.showModal/close, que usa DatePicker (y cualquier pantalla que lo monte en un filtro).
+if (typeof HTMLDialogElement !== 'undefined') {
+  if (!HTMLDialogElement.prototype.showModal) HTMLDialogElement.prototype.showModal = function showModal() { this.setAttribute('open', ''); };
+  if (!HTMLDialogElement.prototype.close) HTMLDialogElement.prototype.close = function close() { this.removeAttribute('open'); };
+}

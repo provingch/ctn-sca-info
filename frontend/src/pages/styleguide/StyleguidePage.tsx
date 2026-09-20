@@ -3,6 +3,7 @@ import AnimatedSelect from '../../components/AnimatedSelect';
 import AppShell from '../../components/AppShell';
 import ConnectionState from '../../components/ui/ConnectionState';
 import ContentState from '../../components/ui/ContentState';
+import FiltersToolbar, { FilterField } from '../../components/ui/FiltersToolbar';
 import GradeChip from '../../components/ui/GradeChip';
 import SectionHeading from '../../components/ui/SectionHeading';
 
@@ -100,14 +101,23 @@ export default function StyleguidePage() {
         </div>
       </section>
 
+      <section className="panel styleguide-section">
+        <SectionHeading number="06" title="Filtros de listados" detail="Un listado largo arranca con FiltersToolbar (.toolbar.filters): controles con etiqueta visible, conteo y Limpiar filtros." />
+        <FiltersToolbar ariaLabel="Ejemplo de filtros" mostrando={3} total={12} unidad="notas" activo onLimpiar={() => setStage('primera')}>
+          <FilterField label="Buscar"><input type="search" placeholder="Texto libre" /></FilterField>
+          <FilterField label="Materia" narrow><AnimatedSelect ariaLabel="Materia de ejemplo" value={stage} options={sampleOptions} onChange={setStage} /></FilterField>
+        </FiltersToolbar>
+      </section>
+
       <section className="panel styleguide-section styleguide-guidelines">
-        <SectionHeading number="06" title="Reglas de uso" detail="Criterios mínimos para mantener consistencia y accesibilidad." />
+        <SectionHeading number="07" title="Reglas de uso" detail="Criterios mínimos para mantener consistencia y accesibilidad." />
         <ul>
           <li>Usar variables de <code>index.css</code> para colores, radios y sombras.</li>
           <li>Mostrar siempre una etiqueta visible y un estado de foco en controles.</li>
           <li>Reservar el color rojo para errores o acciones destructivas.</li>
           <li>Usar <code>ContentState</code> para carga, vacío y error, y <code>GradeChip</code> para notas.</li>
           <li>Para volver a la pantalla anterior usar <code>onBack</code> y <code>backLabel</code> de <code>AppShell</code>, no un botón suelto sobre el contenido.</li>
+          <li>Un listado largo lleva <code>FiltersToolbar</code> arriba (<code>AnimatedSelect</code>, <code>DatePicker</code> y buscador según el caso) y <code>ContentState</code> cuando el filtro no devuelve nada.</li>
           <li>Las tablas parten de <code>grade-table</code>; el CSS de cada módulo sólo agrega un modificador (por ejemplo <code>grade-table rooms-table</code>).</li>
           <li>Verificar cada cambio en tema claro, oscuro y en anchos de 320 px en adelante.</li>
         </ul>

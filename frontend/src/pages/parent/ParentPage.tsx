@@ -3,6 +3,9 @@ import AppShell from '../../components/AppShell';
 import GradeChip from '../../components/ui/GradeChip';
 import ContentState from '../../components/ui/ContentState';
 import AnimatedSelect from '../../components/AnimatedSelect';
+import DatePicker from '../../components/DatePicker';
+import FiltersToolbar, { FilterField } from '../../components/ui/FiltersToolbar';
+import { filtrarConducta, filtrarMaterias, hayFiltroConducta, MATERIAS_PARA_BUSCADOR, materiasDeConducta, rangoInvalido, SIN_FILTRO_CONDUCTA, type FiltroConducta } from './parentFilters';
 import { getParentSummary, downloadReporteMensual, downloadLibreta, getRasgosConducta, type ParentResponse, type ParentStage, type ParentSubject, type ParentTaskStatus, type RasgoConducta } from '../../api/parent';
 import { ApiError } from '../../api/client';
 import { normalizeSpecialty } from '../../theme/theme';
@@ -38,6 +41,8 @@ export default function ParentPage() {
   const [downloadMsg, setDownloadMsg] = useState('');
   const [conducta, setConducta] = useState<RasgoConducta[] | null>(null);
   const [conductaError, setConductaError] = useState('');
+  const [busquedaMateria, setBusquedaMateria] = useState('');
+  const [filtroConducta, setFiltroConducta] = useState<FiltroConducta>(SIN_FILTRO_CONDUCTA);
 
   async function handleDownload(kind: 'mensual' | 'libreta', alumnoId: number) {
     setDownloading(kind);
@@ -64,6 +69,7 @@ export default function ParentPage() {
         const preferredStage = availableStages.has(currentStage()) ? currentStage() : result.materias[0]?.etapa ?? currentStage();
         setStage(preferredStage);
         setSelectedPlanillaId(null);
+        setBusquedaMateria('');
       })
       .catch((e) => setError(e instanceof ApiError ? e.message : 'No se pudo cargar el resumen.'));
   }
@@ -75,6 +81,7 @@ export default function ParentPage() {
     const alumnoId = data.selectedAlumnoId;
     setConductaError('');
     setConducta(null);
+    setFiltroConducta(SIN_FILTRO_CONDUCTA);
     getRasgosConducta(alumnoId)
       .then((rows) => setConducta(rows))
       .catch((e) => setConductaError(e instanceof ApiError ? e.message : 'No se pudieron cargar las notas de conducta.'));
@@ -93,7 +100,10 @@ export default function ParentPage() {
   }
 
   const selectedChild = data.hijos.find((child) => child.id === data.selectedAlumnoId);
+  const conductaVisible = conducta ? filtrarConducta(conducta, filtroConducta) : [];
   const subjects = data.materias.filter((subject) => subject.etapa === stage);
+  const materiasVisibles = filtrarMaterias(subjects, busquedaMateria);
+  const mostrarBuscador = subjects.length >= MATERIAS_PARA_BUSCADOR;
   const selectedSubject = subjects.find((subject) => subject.planillaId === selectedPlanillaId) ?? null;
   const stagePoints = subjects.reduce((sum, subject) => sum + subject.puntos, 0);
   const stageTotal = subjects.reduce((sum, subject) => sum + subject.total, 0);
@@ -148,19 +158,22 @@ export default function ParentPage() {
           </div>
         </section>}
 
-        <div className="parent-subject-toolbar">
-          <div className="parent-stage-tabs" role="group" aria-label="Filtrar materias por etapa">
-            {STAGES.map((item) => <button type="button" key={item.value} className={stage === item.value ? 'active' : ''} aria-pressed={stage === item.value} onClick={() => setStage(item.value)}>{item.label}</button>)}
+        <FiltersToolbar ariaLabel="Filtros de materias" mostrando={materiasVisibles.length} total={subjects.length} unidad={subjects.length === 1 ? 'materia publicada' : 'materias publicadas'} activo={Boolean(busquedaMateria)} onLimpiar={() => setBusquedaMateria('')}>
+          <div className="filter-field filter-field--auto">
+            <span>Etapa</span>
+            <div className="parent-stage-tabs" role="group" aria-label="Filtrar materias por etapa">
+              {STAGES.map((item) => <button type="button" key={item.value} className={stage === item.value ? 'active' : ''} aria-pressed={stage === item.value} onClick={() => setStage(item.value)}>{item.label}</button>)}
+            </div>
           </div>
-          <span>{subjects.length} {subjects.length === 1 ? 'materia publicada' : 'materias publicadas'}</span>
-        </div>
+          {mostrarBuscador && <FilterField label="Buscar materia"><input type="search" placeholder="Nombre de la materia" value={busquedaMateria} onChange={(event) => setBusquedaMateria(event.target.value)} /></FilterField>}
+        </FiltersToolbar>
 
         {subjects.length > 0 ? <>
           <section className="parent-subject-section" aria-labelledby="parent-subjects-title">
             <div className="parent-section-heading"><div><span>Materias</span><h2 id="parent-subjects-title">Promedios de {stageLabel(stage).toLowerCase()}</h2></div><p>Seleccioná una materia para ver sus tareas y calificaciones.</p></div>
-            <div className="parent-subject-grid">
-              {subjects.map((subject) => <SubjectCard key={subject.planillaId} subject={subject} selected={subject.planillaId === selectedSubject?.planillaId} onSelect={() => setSelectedPlanillaId(subject.planillaId)} />)}
-            </div>
+            {materiasVisibles.length === 0 ? <ContentState compact title="Ninguna materia coincide" detail={`No hay materias que coincidan con “${busquedaMateria.trim()}”.`} actions={<button type="button" className="button secondary" onClick={() => setBusquedaMateria('')}>Limpiar búsqueda</button>} /> : <div className="parent-subject-grid">
+              {materiasVisibles.map((subject) => <SubjectCard key={subject.planillaId} subject={subject} selected={subject.planillaId === selectedSubject?.planillaId} onSelect={() => setSelectedPlanillaId(subject.planillaId)} />)}
+            </div>}
           </section>
           {selectedSubject && <SubjectDetail subject={selectedSubject} />}
           <details className="panel parent-calculation-note"><summary>¿Cómo se calcula el promedio?</summary><p>El porcentaje de cada materia se obtiene dividiendo los puntos logrados entre los puntos posibles de las tareas publicadas. El promedio general combina los puntos de todas las materias disponibles.</p></details>
@@ -181,8 +194,14 @@ export default function ParentPage() {
               <ContentState tone="loading" title="Cargando notas de conducta…" />
             ) : conducta.length === 0 ? (
               <ContentState tone="empty" title="Sin notas de conducta" detail={`${selectedChild.nombre} no tiene notas conductuales registradas.`} />
-            ) : (
-              <div className="table-scroll">
+            ) : <>
+              <FiltersToolbar ariaLabel="Filtros de notas de conducta" mostrando={conductaVisible.length} total={conducta.length} unidad="notas" activo={hayFiltroConducta(filtroConducta)} onLimpiar={() => setFiltroConducta(SIN_FILTRO_CONDUCTA)}>
+                <FilterField label="Materia"><AnimatedSelect ariaLabel="Materia de la nota de conducta" value={filtroConducta.materia} onChange={(materia) => setFiltroConducta((actual) => ({ ...actual, materia }))} options={[{ value: '', label: 'Todas las materias' }, ...materiasDeConducta(conducta).map((materia) => ({ value: materia, label: materia }))]} /></FilterField>
+                <FilterField label="Desde" narrow><DatePicker ariaLabel="Conducta desde" value={filtroConducta.desde} invalid={rangoInvalido(filtroConducta)} onChange={(desde) => setFiltroConducta((actual) => ({ ...actual, desde }))} /></FilterField>
+                <FilterField label="Hasta" narrow><DatePicker ariaLabel="Conducta hasta" value={filtroConducta.hasta} invalid={rangoInvalido(filtroConducta)} onChange={(hasta) => setFiltroConducta((actual) => ({ ...actual, hasta }))} /></FilterField>
+                {rangoInvalido(filtroConducta) && <p className="filters-error" role="alert">La fecha “Desde” es posterior a “Hasta”: no hay notas en ese rango.</p>}
+              </FiltersToolbar>
+              {conductaVisible.length === 0 ? <ContentState compact title="Sin resultados" detail="Ninguna nota de conducta coincide con los filtros elegidos." actions={<button type="button" className="button secondary" onClick={() => setFiltroConducta(SIN_FILTRO_CONDUCTA)}>Limpiar filtros</button>} /> : <div className="table-scroll">
                 <table className="grade-table" style={{ minWidth: 720 }}>
                   <thead>
                     <tr>
@@ -195,7 +214,7 @@ export default function ParentPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {conducta.map((row, index) => (
+                    {conductaVisible.map((row, index) => (
                       <tr key={`${row.fechaClase ?? 'sf'}-${row.codigo}-${index}`}>
                         <td>{formatDate(row.fechaClase)}</td>
                         <td>{row.materia ?? '—'}</td>
@@ -207,8 +226,8 @@ export default function ParentPage() {
                     ))}
                   </tbody>
                 </table>
-              </div>
-            )}
+              </div>}
+            </>}
           </section>
         )}
       </div>
