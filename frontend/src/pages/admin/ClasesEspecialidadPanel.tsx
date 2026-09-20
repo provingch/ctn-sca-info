@@ -47,13 +47,17 @@ export default function ClasesEspecialidadPanel({ status }: { status: (message: 
           <h2>Clases dadas</h2>
           <p>Historial de clases registradas por los profesores. Vista de solo lectura.</p>
         </div>
-        <input
-          type="search"
-          placeholder="Buscar por profesor, materia, tema o curso…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          style={{ maxWidth: 320 }}
-        />
+        <div className="form-grid" style={{ width: '100%', maxWidth: 420, minWidth: 0 }}>
+          <label htmlFor="clases-profesor-search">Buscar clases
+            <input
+              id="clases-profesor-search"
+              type="search"
+              placeholder="Buscar por profesor, materia, tema o curso…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </label>
+        </div>
       </header>
 
       {filtered.length === 0 ? (

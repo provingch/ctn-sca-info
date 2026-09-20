@@ -40,10 +40,8 @@
 .sca-app .navbar-avatar { border-radius: 50%; background: var(--ds-accent); color: var(--ds-on-accent); border: 1px solid var(--ds-accent-ink); }
 .sca-app .theme-toggle.compact, .sca-app .navbar-notif-trigger { width: 44px; height: 44px; min-height: 44px; border-radius: 8px; }
 .sca-app .app-main { width: min(1200px,calc(100% - 48px)); padding-top: calc(var(--app-header-h) + 32px); }
-.sca-app .page-banner { min-height: 100px; padding: 24px; margin-bottom: 24px; background: var(--paper); border: 1px solid var(--line); border-top: 3px solid var(--ds-accent-ink); border-radius: 16px; gap: 24px; }
-.sca-app .page-banner-text h1 { color: var(--ink); font-size: var(--ds-font-h1); font-weight: 600; }
-.sca-app .page-banner-text > span { color: var(--muted); opacity: 1; font-size: var(--ds-font-small); margin-top: 8px; }
-.sca-app .page-banner-emblem { background: var(--ds-accent-soft); color: var(--ds-accent-ink); }
+/* Page banners keep their original specialty gradients, compact typography
+   and emblem from index.css, including its responsive layout. */
 .sca-app :is(.panel,.metric,.nav-card,.class-card,.launcher-card,.planilla-card,.profile-identity,.content-state) { border-radius: var(--ds-radius-large); border-color: var(--line); box-shadow: none; background-color: var(--paper); }
 .sca-app .panel, .sca-app .class-card { padding: 24px; }
 .sca-app .panel:hover { border-color: var(--line); }
@@ -107,9 +105,6 @@
 }
 @media (max-width: 640px) {
   .sca-app .app-main { width: calc(100% - 32px); padding-top: calc(var(--app-header-h) + 24px); }
-  .sca-app .page-banner { padding: 16px; gap: 16px; flex-wrap: wrap; }
-  .sca-app .page-banner-text { flex: 1 1 180px; }
-  .sca-app .page-banner-text h1 { font-size: var(--ds-font-h2); }
   .sca-app :is(.panel,.class-card,.launcher-card,.launcher-materias) { padding: 16px; }
   .sca-app .launcher-body, .sca-app .profile-card-grid { grid-template-columns: minmax(0,1fr); }
   .sca-app .brand-title { font-size: 12px; }
