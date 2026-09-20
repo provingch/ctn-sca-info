@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ctn.informatica.sca.service.PlanillaReaperturaService;
+import ctn.informatica.sca.service.PlanillaReaperturaService.ReaperturaRequest;
 import ctn.informatica.sca.service.ActivityLogService;
 import ctn.informatica.sca.service.PlanillaService;
 import ctn.informatica.sca.util.PushNotificationService;
@@ -59,6 +61,7 @@ public class AdminController {
     private final QuejaDao quejaDao;
     private final ActivityLogService activityLogService;
     private final AlumnoDao alumnoDao;
+    private final PlanillaReaperturaService planillaReaperturaService;
 
     public AdminController() {
         this(new TareaDao(), new GradeDao(), new PlanillaDao(), new QuejaDao(), new ActivityLogService());
@@ -78,12 +81,20 @@ public class AdminController {
     }
 
     AdminController(TareaDao tareaDao, GradeDao gradeDao, PlanillaDao planillaDao, QuejaDao quejaDao, ActivityLogService activityLogService, AlumnoDao alumnoDao) {
+        this(tareaDao, gradeDao, planillaDao, quejaDao, activityLogService, alumnoDao, null);
+    }
+
+    AdminController(TareaDao tareaDao, GradeDao gradeDao, PlanillaDao planillaDao, QuejaDao quejaDao, ActivityLogService activityLogService, AlumnoDao alumnoDao,
+            PlanillaReaperturaService planillaReaperturaService) {
         this.tareaDao = tareaDao;
         this.gradeDao = gradeDao;
         this.planillaDao = planillaDao;
         this.quejaDao = quejaDao == null ? new QuejaDao() : quejaDao;
         this.activityLogService = activityLogService == null ? new ActivityLogService() : activityLogService;
         this.alumnoDao = alumnoDao == null ? new AlumnoDao() : alumnoDao;
+        this.planillaReaperturaService = planillaReaperturaService == null
+                ? new PlanillaReaperturaService(planillaDao, new NotificacionDao(), new UserDao(), this.activityLogService)
+                : planillaReaperturaService;
     }
     @GetMapping
     public CatalogResponse catalog(Authentication authentication) {
@@ -1175,42 +1186,25 @@ public class AdminController {
 
     /**
      * Herramienta de recuperación: vuelve a abrir una etapa ya confirmada (cerrada de más, por ejemplo). El profesor
-     * recupera la edición de notas y tareas de esa etapa, así que sólo la usa el admin global.
+     * recupera la edición de notas y tareas de esa etapa, así que sólo la usa el admin global y exige un motivo
+     * ({@code {"motivo": "..."}}); la lógica es la misma que la de evaluación ({@link PlanillaReaperturaService}).
      */
     @PostMapping("/planillas/{id}/etapa1/reabrir")
-    public Map<String, Object> reabrirEtapa1(@PathVariable int id, Authentication auth) {
-        return reabrirEtapa(id, 1, auth);
+    public Map<String, Object> reabrirEtapa1(@PathVariable int id, @RequestBody(required = false) ReaperturaRequest body, Authentication auth) {
+        return reabrirEtapa(id, 1, body, auth);
     }
 
     @PostMapping("/planillas/{id}/etapa2/reabrir")
-    public Map<String, Object> reabrirEtapa2(@PathVariable int id, Authentication auth) {
-        return reabrirEtapa(id, 2, auth);
+    public Map<String, Object> reabrirEtapa2(@PathVariable int id, @RequestBody(required = false) ReaperturaRequest body, Authentication auth) {
+        return reabrirEtapa(id, 2, body, auth);
     }
 
-    private Map<String, Object> reabrirEtapa(int id, int etapa, Authentication auth) {
+    private Map<String, Object> reabrirEtapa(int id, int etapa, ReaperturaRequest body, Authentication auth) {
         int actingUserId = ApiAuth.requireUserId(auth);
         requireGlobalAdmin(auth);
         try {
-            Planilla planilla = planillaDao.findById(id);
-            if (planilla == null) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Planilla no encontrada");
-            }
-            boolean cerrada = etapa == 1 ? planilla.getEtapa1Confirmada() : planilla.getEtapa2Confirmada();
-            if (!cerrada) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Etapa " + etapa + " no está cerrada");
-            }
-            boolean updated = etapa == 1 ? planillaDao.updateEtapa1Confirmada(id, false) : planillaDao.updateEtapa2Confirmada(id, false);
-            if (!updated) {
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo reabrir Etapa " + etapa);
-            }
-            try {
-                activityLogService.registrar(actingUserId, "Reabrió Etapa " + etapa + " de la planilla " + id);
-            } catch (Exception ex) {
-                log.warn("No se pudo registrar el log de reapertura de Etapa {} de la planilla {}: {}", etapa, id, ex.getMessage());
-            }
+            planillaReaperturaService.reabrirEtapa(id, etapa, actingUserId, body == null ? null : body.motivo());
             return Map.of("planillaId", id, "etapa" + etapa + "Confirmada", false);
-        } catch (ResponseStatusException ex) {
-            throw ex;
         } catch (SQLException ex) {
             throw failure("No se pudo reabrir Etapa " + etapa, ex);
         }

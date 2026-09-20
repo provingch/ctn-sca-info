@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,6 +31,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/evaluacion")
+@PreAuthorize("hasRole('LEVEL_2')")
 public class EvaluacionExportController {
     @GetMapping("/export")
         public void export(
@@ -41,19 +43,14 @@ public class EvaluacionExportController {
             HttpServletResponse response) {
         ApiAuth.requireUserId(authentication);
         try {
-            Curso curso = new CursoDao().findById(cursoId);
-            if (curso == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Curso no encontrado");
-            int especialidadId = new EspecialidadDao().findAll().stream()
-                    .filter(e -> e.getNombre().equalsIgnoreCase(curso.getEspecialidad()))
-                    .map(e -> e.getId()).findFirst()
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Especialidad no encontrada"));
-            int etapaIndex = "segunda".equalsIgnoreCase(etapa) || "2".equals(etapa) ? 2 : 1;
             PlanillaDao planillaDao = new PlanillaDao();
+            EvaluacionPlanillaSelector.Selection selection = EvaluacionPlanillaSelector.select(
+                    planillaDao, new CursoDao(), new EspecialidadDao(), cursoId, etapa, periodo, materiaId);
+            Curso curso = selection.curso();
+            int etapaIndex = EvaluacionPlanillaSelector.etapaIndex(etapa);
             List<PlanillaProcesoWorkbookBuilder.PlanillaSheetData> sheets = new ArrayList<>();
-            for (PlanillaDao.PlanillaInfo info : planillaDao.findPlanillasByCourse(especialidadId, curso.getPromocion(), curso.getSeccion(), periodo)) {
-                Planilla planilla = planillaDao.findById(info.getPlanilla().getId());
-                if (planilla == null || planilla.getEtapaIndex() != etapaIndex) continue;
-                if (materiaId != null && materiaId.intValue() > 0 && planilla.getMateriaId() != materiaId.intValue()) continue;
+            for (EvaluacionPlanillaSelector.Match match : selection.matches()) {
+                Planilla planilla = match.planilla();
                 List<Tarea> tareas = PlanillaProcesoWorkbookBuilder.filterTasksByEtapa(new TareaDao().consultarTarea(planilla.getId()), etapaIndex);
                 Map<Integer, Integer> maxima = new HashMap<>(); int total = 0;
                 for (Tarea tarea : tareas) { maxima.put(tarea.getId(), tarea.getTotal()); total += tarea.getTotal(); }
@@ -63,7 +60,7 @@ public class EvaluacionExportController {
                 sheets.add(new PlanillaProcesoWorkbookBuilder.PlanillaSheetData(
                         planilla,
                         curso,
-                        info.getMateriaNombre(),
+                        match.materiaNombre(),
                         profesor == null ? "" : profesor.getFullName(),
                         "",
                         tareas,

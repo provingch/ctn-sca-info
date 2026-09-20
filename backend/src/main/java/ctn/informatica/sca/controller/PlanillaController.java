@@ -98,7 +98,7 @@ public class PlanillaController {
         int userId = ApiAuth.requireUserId(authentication);
         try {
             Planilla planilla = requireOwnedPlanillaById(planillaId, userId);
-            return buildPlanillaDetail(planilla);
+            return PlanillaDetailAssembler.build(planilla, true);
         } catch (SQLException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al cargar planilla", ex);
         }
@@ -114,7 +114,7 @@ public class PlanillaController {
         int etapaValue = etapa != null ? etapa : resolveDefaultEtapa(LocalDate.now());
         try {
             Planilla planilla = requireOwnedPlanillaByComposite(cursoId, materiaId, etapaValue, userId);
-            return buildPlanillaDetail(planilla);
+            return PlanillaDetailAssembler.build(planilla, true);
         } catch (SQLException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al cargar planilla", ex);
         }
@@ -172,7 +172,7 @@ public class PlanillaController {
 
         try {
             Planilla planilla = requireOwnedPlanillaById(planillaId, userId);
-            List<Tarea> tareas = filterTasksByEtapa(new TareaDao().consultarTarea(planilla.getId()), planilla.getEtapaIndex());
+            List<Tarea> tareas = PlanillaDetailAssembler.filterTasksByEtapa(new TareaDao().consultarTarea(planilla.getId()), planilla.getEtapaIndex());
             Map<Integer, Integer> tareaMax = new HashMap<>();
             for (Tarea tarea : tareas) {
                 tareaMax.put(tarea.getId(), tarea.getTotal());
@@ -300,7 +300,7 @@ public class PlanillaController {
                 }
             }
 
-            List<Tarea> tareas = filterTasksByEtapa(new TareaDao().consultarTarea(planilla.getId()), planilla.getEtapaIndex());
+            List<Tarea> tareas = PlanillaDetailAssembler.filterTasksByEtapa(new TareaDao().consultarTarea(planilla.getId()), planilla.getEtapaIndex());
             Map<Integer, Integer> maxima = new LinkedHashMap<>();
             int total = 0;
             for (Tarea tarea : tareas) { maxima.put(tarea.getId(), tarea.getTotal()); total += tarea.getTotal(); }
@@ -311,7 +311,7 @@ public class PlanillaController {
             if (planilla.getEtapaIndex() == 2) {
                 Planilla first = new PlanillaDao().findByCompositeKey(planilla.getCursoId(), planilla.getMateriaId(), 1);
                 if (first != null) {
-                    List<Tarea> tareasPrimera = filterTasksByEtapa(new TareaDao().consultarTarea(first.getId()), 1);
+                    List<Tarea> tareasPrimera = PlanillaDetailAssembler.filterTasksByEtapa(new TareaDao().consultarTarea(first.getId()), 1);
                     Map<Integer, Integer> maximaPrim = new LinkedHashMap<>(); int totalPrim = 0;
                     for (Tarea t : tareasPrimera) { maximaPrim.put(t.getId(), t.getTotal()); totalPrim += t.getTotal(); }
                     first.computeGradeRanges(totalPrim);
@@ -684,137 +684,6 @@ public class PlanillaController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes acceso a esta planilla");
         }
         return planilla;
-    }
-
-    private PlanillaDetailResponse buildPlanillaDetail(Planilla planilla) throws SQLException {
-        Materia materia = null;
-        if (planilla.getMateriaId() > 0) {
-            materia = new MateriaDao().findById(planilla.getMateriaId());
-            if (materia != null && materia.getNombre() != null && !materia.getNombre().isBlank()) {
-                planilla.setNombre(materia.getNombre());
-                planilla.setCategoria(materia.getCategoria());
-            }
-        }
-
-        Curso curso = new CursoDao().findById(planilla.getCursoId());
-        new RegistroDao().ensureRegistroRowsForPlanilla(planilla.getId(), planilla.getCursoId());
-
-        List<Tarea> tareas = filterTasksByEtapa(new TareaDao().consultarTarea(planilla.getId()), planilla.getEtapaIndex());
-        Map<Integer, Integer> tareaMax = new LinkedHashMap<>();
-        int totalPossiblePoints = 0;
-        LocalDate maxEnd = null;
-
-        List<TareaDto> tareasDto = new ArrayList<>();
-        for (Tarea t : tareas) {
-            tareasDto.add(new TareaDto(
-                    t.getId(),
-                    t.getPlanillaId(),
-                    t.getInstrumentoId(),
-                    t.getFecha(),
-                    t.getTotal(),
-                    t.getTitulo(),
-                    t.getFechaInicio(),
-                    t.getFechaLimite(),
-                    t.getGoogleCourseworkId(),
-                    t.getGoogleCourseworkUrl()));
-            tareaMax.put(t.getId(), t.getTotal());
-            totalPossiblePoints += t.getTotal();
-
-            if (t.getFechaLimite() != null && (maxEnd == null || t.getFechaLimite().isAfter(maxEnd))) {
-                maxEnd = t.getFechaLimite();
-            }
-        }
-
-        // Con RSA activo el TP se amplía con sus puntos y la nota sale de ese TP ampliado.
-        if (planilla.getRsaPuntos() != null) {
-            totalPossiblePoints += planilla.getRsaPuntos();
-        }
-        planilla.computeGradeRanges(totalPossiblePoints);
-        List<StudentRow> rows = new StudentRowDao().loadRowsForPlanilla(planilla, tareaMax, totalPossiblePoints);
-
-        List<StudentRowDto> rowsDto = new ArrayList<>();
-        for (StudentRow row : rows) {
-            List<GradeValueDto> gradeValues = new ArrayList<>();
-            for (Map.Entry<Integer, Integer> entry : row.getGrades().entrySet()) {
-                gradeValues.add(new GradeValueDto(entry.getKey(), entry.getValue()));
-            }
-            rowsDto.add(new StudentRowDto(
-                    row.getRegistroId(),
-                    row.getAlumnoId(),
-                    row.getAlumnoNombre(),
-                    gradeValues,
-                    row.getTotal(),
-                    row.getPorcentaje(),
-                    row.getNota(),
-                    row.getRsaPuntos()));
-        }
-
-        Map<String, GradeRangeDto> ranges = new LinkedHashMap<>();
-        int li = planilla.getLimiteInferior();
-        if (li > 0) {
-            ranges.put("1", new GradeRangeDto(0, li - 1));
-        }
-        Map<Integer, int[]> computedRanges = planilla.getGradeRanges();
-        if (computedRanges != null) {
-            for (Map.Entry<Integer, int[]> entry : computedRanges.entrySet()) {
-                int[] value = entry.getValue();
-                if (value != null && value.length >= 2) {
-                    ranges.put(String.valueOf(entry.getKey()), new GradeRangeDto(value[0], value[1]));
-                }
-            }
-        }
-
-        PlanillaHeaderDto header = new PlanillaHeaderDto(
-                planilla.getId(),
-                planilla.getCursoId(),
-                planilla.getMateriaId(),
-                planilla.getNombre(),
-                planilla.getCategoria(),
-                planilla.getEtapa(),
-                planilla.getEtapaIndex(),
-                planilla.getEtapaSugerida(),
-                planilla.getPeriodo(),
-                planilla.getProfesorId(),
-                (int) Math.round(100 * planilla.getExigencia()),
-                totalPossiblePoints,
-                AcademicPeriod.etapaStartDate(
-                        planilla.getPeriodo() > 0 ? planilla.getPeriodo() : AcademicPeriod.current(),
-                        planilla.getEtapaIndex()),
-                maxEnd,
-                planilla.getFechaCierreEtapa1(),
-                planilla.getEtapa1Confirmada(),
-                planilla.getFechaCierreEtapa2(),
-                planilla.getEtapa2Confirmada(),
-                planilla.getGoogleCourseId(),
-                planilla.getRsaPuntos(),
-                planilla.getRsaToleranciaValor(),
-                planilla.getRsaToleranciaUnidad());
-
-        CursoDto cursoDto = curso == null
-                ? null
-                : new CursoDto(curso.getId(), curso.getEspecialidad(), curso.getSeccion(), curso.getNivel());
-
-        return new PlanillaDetailResponse(
-                header,
-                cursoDto,
-                tareasDto,
-                rowsDto,
-                ranges,
-                Collections.emptyList());
-    }
-
-    private List<Tarea> filterTasksByEtapa(List<Tarea> tareas, int planillaEtapaIndex) {
-        if (tareas == null || tareas.isEmpty() || (planillaEtapaIndex != 1 && planillaEtapaIndex != 2)) {
-            return tareas;
-        }
-
-        List<Tarea> filtered = new ArrayList<>();
-        for (Tarea tarea : tareas) {
-            if (Tarea.resolveEtapaIndexByPublicationDate(tarea.getFecha()) == planillaEtapaIndex) {
-                filtered.add(tarea);
-            }
-        }
-        return filtered;
     }
 
     private int resolveDefaultEtapa(LocalDate today) {
