@@ -33,3 +33,6 @@ nginx/*.local
 
 # Salida accidental de build/IDE en backend/
 /backend/bin/
+
+# Grafos
+/graphify-out/
