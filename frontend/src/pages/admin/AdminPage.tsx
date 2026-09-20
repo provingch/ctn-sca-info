@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import AppShell from '../../components/AppShell';
 import ContentState from '../../components/ui/ContentState';
 import { getAdminCatalog, type AdminCatalog } from '../../api/admin';
@@ -32,6 +32,7 @@ const modules = [
 
 export default function AdminPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, identityStatus, refreshUserIdentity } = useAuth();
   const selected = modules.find((module) => location.pathname === module.path || location.pathname.startsWith(`${module.path}/`)) ?? null;
   const [data, setData] = useState<AdminCatalog | null>(null);
@@ -65,8 +66,8 @@ export default function AdminPage() {
   const selectedIsRestricted = Boolean(selected && isScopedAdmin && 'globalOnly' in selected && selected.globalOnly);
   const scopeName = user.especialidadNombre ?? data.especialidades.find((item) => item.id === user.especialidadId)?.nombre ?? (user.especialidadId === null ? null : `Especialidad #${user.especialidadId}`);
 
-  return <AppShell title={selected?.title || 'Panel general'} subtitle={scopeName ? `Administración de ${scopeName}` : 'Administración global del sistema'} specialty={scopeName}>
-    <AdminToolbar showBack={Boolean(selected)} scopeName={scopeName} />
+  return <AppShell title={selected?.title || 'Panel general'} subtitle={scopeName ? `Administración de ${scopeName}` : 'Administración global del sistema'} specialty={scopeName} onBack={selected ? () => navigate('/admin') : undefined} backLabel="Panel general">
+    <AdminToolbar scopeName={scopeName} />
     {/* toasts shown globally via ToastProvider */}
     {selectedIsRestricted ? (
       <ContentState tone="error" title="Módulo reservado al administrador global" detail="Tu cuenta administra una especialidad y no tiene acceso a esta herramienta del sistema." actions={<Link className="button" to="/admin">Volver al panel</Link>} />
@@ -91,10 +92,9 @@ export default function AdminPage() {
   </AppShell>;
 }
 
-function AdminToolbar({ showBack, scopeName }: { showBack: boolean; scopeName: string | null }) {
-  if (!showBack && !scopeName) return null;
+function AdminToolbar({ scopeName }: { scopeName: string | null }) {
+  if (!scopeName) return null;
   return <div className="toolbar filters admin-toolbar">
-    {showBack && <Link className="button secondary" to="/admin">← Panel general</Link>}
     {scopeName && <span className="admin-scope-badge"><small>Especialidad gestionada</small><strong className="specialty-card-title"><SpecialtyIcon name={scopeName} />{scopeName}</strong></span>}
   </div>;
 }

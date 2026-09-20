@@ -9,9 +9,10 @@
 .subjects-filters > .button { min-height: 46px; }
 .subjects-results { margin: 18px 0 12px; }
 .subjects-table-wrap { margin: 0; }
-.subjects-table { min-width: 720px; width: 100%; table-layout: fixed; }
-.subjects-table th, .subjects-table td { text-align: left; padding: 14px; vertical-align: middle; }
-.subjects-table th:first-child { width: 24%; overflow-wrap: anywhere; }
+/* Base: .grade-table (index.css). Acá sólo lo propio de este catálogo. */
+.grade-table.subjects-table { min-width: 720px; table-layout: fixed; }
+.grade-table.subjects-table th, .grade-table.subjects-table td { text-align: left; padding: 14px; vertical-align: middle; }
+.grade-table.subjects-table th:first-child { position: static; min-width: 0; width: 24%; overflow-wrap: anywhere; }
 .subjects-table th:nth-child(2) { width: 110px; }
 .subjects-table th:last-child { width: 180px; }
 .subjects-table thead th > button { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 8px; padding: 0; border: 0; color: inherit; background: transparent; font-weight: 750; text-align: left; }
@@ -37,6 +38,4 @@
 .subject-delete-content > p:first-child { margin-top: 0; }
 @media (max-width: 1100px) { .subjects-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .subjects-header { align-items: stretch; flex-direction: column; } .subjects-header .button { align-self: flex-end; } .subjects-filters { grid-template-columns: 1fr; } .subjects-pagination { align-items: flex-start; flex-direction: column; } .subjects-pagination nav { width: 100%; justify-content: space-between; gap: 8px; } }
-.subjects-panel .subjects-table th, .subjects-panel .subjects-table td { text-align: left; padding: 14px; vertical-align: middle; }
-.subjects-panel .subjects-table th:first-child { position: static; left: auto; min-width: 0; width: 24%; }
 .subjects-table-wrap:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }

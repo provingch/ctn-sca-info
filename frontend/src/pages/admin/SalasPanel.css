@@ -10,11 +10,12 @@
 .rooms-breadcrumb button { padding: 6px 0; border: 0; background: transparent; color: var(--accent-deep); text-decoration: underline; text-underline-offset: 3px; }
 .rooms-list { margin: 0; min-width: 0; }
 .rooms-list h3 { margin-top: 0; }
-.rooms-table { width: 100%; min-width: 690px; border-collapse: collapse; text-align: left; }
-.rooms-table th, .rooms-table td { padding: 15px; border-bottom: 1px solid var(--line); }
-.rooms-table thead { background: var(--bg-soft); font-size: .82rem; }
-.rooms-table tbody th { font-weight: 650; }
-.rooms-table tbody tr:last-child > * { border-bottom: 0; }
+/* Base: .grade-table (index.css). Acá sólo lo propio de este listado. */
+.grade-table.rooms-table { min-width: 690px; }
+.grade-table.rooms-table th, .grade-table.rooms-table td { padding: 15px; text-align: left; }
+.grade-table.rooms-table thead { font-size: .82rem; }
+.grade-table.rooms-table tbody th { font-weight: 650; }
+.grade-table.rooms-table tbody tr:last-child > * { border-bottom: 0; }
 .room-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .room-actions .button { font-size: .78rem; padding: 8px 10px; box-shadow: none; }
 .room-usage { font-size: .8rem; font-variant-numeric: tabular-nums; color: var(--ink); }

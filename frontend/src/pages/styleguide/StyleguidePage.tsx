@@ -41,6 +41,7 @@ export default function StyleguidePage() {
           <button className="button danger" type="button">Acción destructiva</button>
           <button className="button" type="button" disabled>Acción no disponible</button>
           <span className="badge">Estado general</span>
+          <span className="badge badge--danger">Requiere atención</span>
         </div>
         <div className="styleguide-grade-row" aria-label="Escala visual de notas">
           {[5, 4, 3, 2, 1].map((grade) => <GradeChip key={grade} grade={grade} label={`Nota ${grade}`} />)}
@@ -69,13 +70,45 @@ export default function StyleguidePage() {
         </div>
       </section>
 
+      <section className="panel styleguide-section">
+        <SectionHeading number="05" title="Listas y tablas" detail="Filas con avatar y estado (activity-row) y tablas sobre grade-table con un modificador propio del módulo." />
+        <ul className="activity-list" aria-label="Ejemplo de lista con avatar y estado">
+          <li className="activity-row">
+            <div className="avatar activity-row-avatar">I</div>
+            <div className="activity-row-body">
+              <div className="activity-row-head"><strong>Motivo de ejemplo</strong><span className="complaint-status pendiente">Pendiente</span><span className="badge">Informática 1° A</span></div>
+              <div className="activity-row-meta"><small>Cargada por Ana Gómez — 10/9/26</small></div>
+            </div>
+          </li>
+          <li className="activity-row">
+            <div className="avatar activity-row-avatar">E</div>
+            <div className="activity-row-body">
+              <div className="activity-row-head"><strong>Otro motivo de ejemplo</strong><span className="complaint-status rechazada">Rechazada</span><span className="badge">Electrónica 2° B</span></div>
+              <div className="activity-row-meta"><small>Cargada por Ana Gómez — 11/9/26</small></div>
+            </div>
+          </li>
+        </ul>
+        <div className="table-wrap">
+          <table className="grade-table">
+            <caption className="visually-hidden">Ejemplo de tabla</caption>
+            <thead><tr><th>Materia</th><th>Curso</th><th>Estado</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Programación</th><td>1° A</td><td><span className="badge">Al día</span></td></tr>
+              <tr><th scope="row">Matemática</th><td>2° B</td><td><span className="badge badge--danger">Atrasada</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <section className="panel styleguide-section styleguide-guidelines">
-        <SectionHeading number="05" title="Reglas de uso" detail="Criterios mínimos para mantener consistencia y accesibilidad." />
+        <SectionHeading number="06" title="Reglas de uso" detail="Criterios mínimos para mantener consistencia y accesibilidad." />
         <ul>
           <li>Usar variables de <code>index.css</code> para colores, radios y sombras.</li>
           <li>Mostrar siempre una etiqueta visible y un estado de foco en controles.</li>
           <li>Reservar el color rojo para errores o acciones destructivas.</li>
           <li>Usar <code>ContentState</code> para carga, vacío y error, y <code>GradeChip</code> para notas.</li>
+          <li>Para volver a la pantalla anterior usar <code>onBack</code> y <code>backLabel</code> de <code>AppShell</code>, no un botón suelto sobre el contenido.</li>
+          <li>Las tablas parten de <code>grade-table</code>; el CSS de cada módulo sólo agrega un modificador (por ejemplo <code>grade-table rooms-table</code>).</li>
           <li>Verificar cada cambio en tema claro, oscuro y en anchos de 320 px en adelante.</li>
         </ul>
       </section>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ApiError } from '../../api/client';
 import { useToast } from '../../context/toast';
+import ContentState from '../../components/ui/ContentState';
 import * as planCurricularApi from '../../api/planCurricular';
 import { formatSqlDateTime } from '../../utils/date';
 import TemasPorMesAccordion from '../../components/TemasPorMesAccordion';
@@ -118,11 +119,11 @@ export default function ReviewPlanesView() {
   return (
     <div className="evaluation-split-layout">
       <div className="panel">
-        <h3>Planes pendientes de revisión ({planes.length})</h3>
+        <h3>Planes pendientes de revisión{!loading && ` (${planes.length})`}</h3>
         {loading ? (
-          <p>Cargando planes...</p>
+          <ContentState tone="loading" compact title="Cargando planes…" />
         ) : planes.length === 0 ? (
-          <p style={{ color: 'var(--muted)' }}>No hay planes pendientes de revisión.</p>
+          <ContentState compact title="No hay planes pendientes" detail="Cuando un profesor suba un plan curricular, aparece acá para revisarlo." />
         ) : (
           <PlanesPorEspecialidad planes={planes}>{(groupPlanes) => <div style={{ display: 'grid', gap: 8 }}>
             {groupPlanes.map((plan) => (
@@ -152,11 +153,11 @@ export default function ReviewPlanesView() {
 
       <div className="panel">
         {!selectedPlanId ? (
-          <p style={{ textAlign: 'center', color: 'var(--muted)' }}>Seleccioná un plan para verlo en detalle.</p>
+          <ContentState compact title="Seleccioná un plan" detail="Elegí uno de la lista para verlo en detalle." />
         ) : loadingDetalle ? (
-          <p>Cargando detalle...</p>
+          <ContentState tone="loading" compact title="Cargando detalle…" />
         ) : !selectedPlan ? (
-          <p style={{ color: 'var(--danger)' }}>No se pudo cargar el plan.</p>
+          <ContentState tone="error" compact title="No se pudo cargar el plan" detail="Volvé a seleccionarlo o recargá la página." />
         ) : (
           <>
             <h3>Detalle del plan curricular</h3>

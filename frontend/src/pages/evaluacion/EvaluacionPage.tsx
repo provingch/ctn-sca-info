@@ -96,21 +96,18 @@ export default function EvaluacionPage() {
   }
 
   if (view === 'planes') {
-    return <AppShell title="Revisar Planes Curriculares">
-      <button type="button" className="button secondary" onClick={() => changeView('menu')} style={{ marginBottom: 16 }}>← Volver</button>
+    return <AppShell title="Revisar Planes Curriculares" onBack={() => changeView('menu')} backLabel="Panel de Evaluación">
       <ReviewPlanesView />
     </AppShell>;
   }
 
   if (view === 'seguimiento') {
-    return <AppShell title="Seguimiento de Profesores">
-      <button type="button" className="button secondary" onClick={() => changeView('menu')} style={{ marginBottom: 16 }}>← Volver</button>
+    return <AppShell title="Seguimiento de Profesores" onBack={() => changeView('menu')} backLabel="Panel de Evaluación">
       <SeguimientoPlanesView initialTab={searchParams.get('tab') === 'incumplimientos' ? 'incumplimientos' : 'planes'} />
     </AppShell>;
   }
 
-  return <AppShell title="Descargar planillas">
-    <button type="button" className="button secondary" onClick={() => changeView('menu')} style={{ marginBottom: 16 }}>← Volver</button>
+  return <AppShell title="Descargar planillas" onBack={() => changeView('menu')} backLabel="Panel de Evaluación">
     <section className="panel form-grid evaluation-filters">
       <p className="lead">Elegí la especialidad, el curso, la sección y el período académico para generar sus planillas.</p>
       {status && <div className="notice error" role="alert">{status}</div>}

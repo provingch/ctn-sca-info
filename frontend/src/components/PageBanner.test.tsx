@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import PageBanner from './PageBanner';
 
 describe('PageBanner', () => {
@@ -13,5 +13,24 @@ describe('PageBanner', () => {
     render(<PageBanner title="Hola, Ana" context="Martes · 3 cursos" selector={<select aria-label="Especialidad"><option>Informática</option></select>} />);
     expect(screen.getByText('Martes · 3 cursos')).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Especialidad' })).toBeInTheDocument();
+  });
+
+  it('no muestra volver si no se pasa onBack', () => {
+    render(<PageBanner title="Panel" />);
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  it('por defecto vuelve al inicio, como en el resto de la app', () => {
+    const onBack = vi.fn();
+    render(<PageBanner title="Panel" onBack={onBack} />);
+    const back = screen.getByRole('button', { name: 'Volver al inicio' });
+    expect(back).toHaveTextContent('← Inicio');
+    fireEvent.click(back);
+    expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('con backLabel dice a dónde vuelve, en el texto y en el nombre accesible', () => {
+    render(<PageBanner title="Quejas por Profesor" onBack={() => {}} backLabel="Coordinación" />);
+    expect(screen.getByRole('button', { name: 'Volver a Coordinación' })).toHaveTextContent('← Coordinación');
   });
 });

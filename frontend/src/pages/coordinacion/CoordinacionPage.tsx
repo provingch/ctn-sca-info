@@ -135,8 +135,7 @@ export default function CoordinacionPage() {
   }
 
   if (view === 'quejas') {
-    return <AppShell title="Quejas por Profesor">
-      <button type="button" className="button secondary" onClick={() => changeView('menu')} style={{ marginBottom: 16 }}>← Volver</button>
+    return <AppShell title="Quejas por Profesor" onBack={() => changeView('menu')} backLabel="Coordinación">
       {status && <div className="notice error" role="alert">{status}</div>}
       {quejas.length === 0 ? (
         <ContentState title="No hay quejas" detail="No se registraron quejas en este alcance." tone="empty" />
@@ -150,18 +149,13 @@ export default function CoordinacionPage() {
                 className={`nav-card${g.count > UMBRAL ? ' flagged' : ''}`}
                 onClick={() => openDetalle(g.profesorId)}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div className="avatar" style={{ width: 44, height: 44, borderRadius: 999, fontSize: '0.95rem' }}>{(g.profesorNombre || 'P').slice(0, 1)}</div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <h2 style={{ margin: 0, fontSize: '1.05rem' }}>{g.nombreVisible}</h2>
-                    <p style={{ margin: '4px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Última: {g.quejas[0]?.motivo ?? '-'}</p>
+                <div className="activity-row activity-row--card">
+                  <div className="avatar">{(g.profesorNombre || 'P').slice(0, 1)}</div>
+                  <div className="activity-row-body">
+                    <h2>{g.nombreVisible}</h2>
+                    <p className="activity-row-summary">Última: {g.quejas[0]?.motivo ?? '-'}</p>
                   </div>
-                  <span
-                    className="badge"
-                    style={g.count > UMBRAL ? { borderColor: 'var(--danger)', background: 'color-mix(in srgb, var(--danger) 16%, var(--paper))', color: 'var(--danger)' } : undefined}
-                  >
-                    {g.count}
-                  </span>
+                  <span className={`badge${g.count > UMBRAL ? ' badge--danger' : ''}`}>{g.count}</span>
                 </div>
               </button>
             ))}
@@ -172,16 +166,14 @@ export default function CoordinacionPage() {
   }
 
   if (view === 'conducta') {
-    return <AppShell title="Reportes conductuales">
-      <button type="button" className="button secondary" onClick={() => changeView('menu')} style={{ marginBottom: 16 }}>← Volver</button>
+    return <AppShell title="Reportes conductuales" onBack={() => changeView('menu')} backLabel="Coordinación">
       <CatalogoConductaPanel />
     </AppShell>;
   }
 
-  return <AppShell title="Detalle de Quejas">
-    <button type="button" className="button secondary" onClick={() => changeView('quejas')} style={{ marginBottom: 16 }}>← Volver</button>
+  return <AppShell title="Detalle de Quejas" onBack={() => changeView('quejas')} backLabel="Quejas">
     <section className="panel">
-      <header className="planilla-table-heading" style={{ borderLeftColor: 'var(--accent)' }}>
+      <header className="planilla-table-heading">
         <div>
           <span>Detalle</span>
           <h2>Quejas del profesor</h2>
@@ -191,23 +183,21 @@ export default function CoordinacionPage() {
       {detalleQuejas.length === 0 ? (
         <ContentState title="Sin quejas" detail="No se encontraron quejas para este profesor." tone="empty" />
       ) : (
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+        <ul className="activity-list">
           {detalleQuejas.map((q) => {
             const estado = quejaEstado(q);
-            return <li key={q.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: 12, borderBottom: '1px solid var(--line)' }}>
-              <div className="avatar" style={{ width: 40, height: 40, borderRadius: 999, fontSize: '0.85rem', display: 'grid', placeItems: 'center', background: 'var(--bg-soft)', color: 'var(--muted)' }}>{(q.cursoEspecialidad ?? 'C').slice(0, 1)}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            return <li key={q.id} className="activity-row">
+              <div className="avatar activity-row-avatar">{(q.cursoEspecialidad ?? 'C').slice(0, 1)}</div>
+              <div className="activity-row-body">
+                <div className="activity-row-head">
                   <strong>{q.motivo}</strong>
-                  <span className={`complaint-status ${estado}`} style={{ marginLeft: 'auto' }}>{ESTADO_LABEL[estado]}</span>
+                  <span className={`complaint-status ${estado}`}>{ESTADO_LABEL[estado]}</span>
                   <span className="badge">{`${q.cursoEspecialidad ?? ''} ${q.cursoNivel ?? ''}° ${q.cursoSeccion ?? ''}`.trim()}</span>
                 </div>
-                <div style={{ marginTop: 6 }}>
-                  <small style={{ color: 'var(--muted)' }}>
-                    Cargada por {nombreCreador(q.creadaPor)} — {formatSqlDateTime(q.creadaEn)}
-                  </small>
+                <div className="activity-row-meta">
+                  <small>Cargada por {nombreCreador(q.creadaPor)} — {formatSqlDateTime(q.creadaEn)}</small>
                 </div>
-                <div style={{ marginTop: 10 }}>
+                <div className="activity-row-actions">
                   {estado === 'pendiente' && (
                     <QuejaPendienteActions
                       queja={q}

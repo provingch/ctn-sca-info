@@ -11,17 +11,20 @@
 .assignment-filters input { min-height: 46px; }
 .assignment-filters input::placeholder { color: var(--muted); opacity: 1; font-weight: 400; }
 .assignment-help { margin: 0; font-size: .82rem; line-height: 1.5; }
-.assignment-table { width: 100%; border-collapse: collapse; text-align: left; }
-.assignment-table th, .assignment-table td { padding: 16px 22px; border-bottom: 1px solid var(--line); }
-.assignment-table thead { background: var(--bg-soft); }
-.assignment-table thead th { font-size: .82rem; }
-.assignment-table tbody th { font-weight: 600; }
-.assignment-table tbody tr:last-child > * { border-bottom: 0; }
-.assignment-table tbody tr:hover { background: var(--bg-soft); }
+.assignment-detail-table { min-width: 760px; }
+/* Base: .grade-table (index.css). Acá sólo lo propio de este listado: texto a la izquierda, filas más aireadas y hover. */
+.grade-table.assignment-table th, .grade-table.assignment-table td { padding: 16px 22px; text-align: left; }
+.grade-table.assignment-table thead th { font-size: .82rem; }
+.grade-table.assignment-table tbody th { font-weight: 600; }
+/* .grade-table th span { display: block } no debe romper el chip de especialidad dentro de la celda del profesor. */
+.grade-table.assignment-table th .specialty-badge { display: inline-flex; }
+.grade-table.assignment-table tbody tr:last-child > * { border-bottom: 0; }
+.grade-table.assignment-table tbody tr:hover > * { background: var(--bg-soft); }
 .assignment-table small { display: block; margin-top: 5px; font-size: .78rem; font-weight: 400; }
 .assignment-sort, .assignment-detail { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; border: 0; border-radius: 6px; background: transparent; color: var(--ink); font-weight: 600; padding: 4px 0; text-align: left; }
 .assignment-detail { color: var(--accent-deep); white-space: nowrap; }
 .assignment-detail:hover { text-decoration: underline; text-underline-offset: 4px; }
+.assignment-table thead .assignment-sort { color: inherit; }
 .assignment-sort:focus-visible, .assignment-detail:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 .assignment-load { width: min(240px, 100%); min-width: 150px; }
 .assignment-load > div:first-child { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
@@ -40,7 +43,7 @@
   .assignment-overview { gap: 8px; }
   .assignment-overview > div { padding: 14px 10px; }
   .assignment-overview span { font-size: .75rem; }
-  .assignment-table th, .assignment-table td { padding: 12px; }
-  .assignment-table { min-width: 560px; }
+  .grade-table.assignment-table th, .grade-table.assignment-table td { padding: 12px; }
+  .grade-table.assignment-table { min-width: 560px; }
   .assignment-pagination nav { width: 100%; }
 }

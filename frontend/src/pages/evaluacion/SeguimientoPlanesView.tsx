@@ -6,6 +6,7 @@ import * as planCurricularApi from '../../api/planCurricular';
 import { formatSqlDateTime } from '../../utils/date';
 import PlanesPorEspecialidad from './PlanesPorEspecialidad';
 import { formatFechaClase } from '../../utils/fechaClase';
+import ContentState from '../../components/ui/ContentState';
 
 type Tab = 'planes' | 'incumplimientos';
 // Local status/state removed; toasts are used instead
@@ -122,13 +123,13 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
   return <>
     <div className="tabs" style={{ marginBottom: 16 }}>
       <button type="button" className={tab === 'planes' ? 'active' : ''} onClick={() => setTab('planes')}>Seguimiento de planes</button>
-      <button type="button" className={tab === 'incumplimientos' ? 'active' : ''} onClick={() => setTab('incumplimientos')}>Incumplimientos ({incumplimientos.length})</button>
+      <button type="button" className={tab === 'incumplimientos' ? 'active' : ''} onClick={() => setTab('incumplimientos')}>Incumplimientos{!loading && ` (${incumplimientos.length})`}</button>
     </div>
 
     {tab === 'planes' && <div className="evaluation-split-layout">
       <div className="panel">
-        <h3>Planes aprobados ({planes.length})</h3>
-        {loading ? <p>Cargando planes...</p> : planes.length === 0 ? <p style={{ color: 'var(--muted)' }}>No hay planes aprobados para seguimiento.</p> : <PlanesPorEspecialidad planes={planes}>{(groupPlanes) => <div style={{ display: 'grid', gap: 8 }}>
+        <h3>Planes aprobados{!loading && ` (${planes.length})`}</h3>
+        {loading ? <ContentState tone="loading" compact title="Cargando planes…" /> : planes.length === 0 ? <ContentState compact title="No hay planes aprobados" detail="Los planes aprobados aparecen acá para seguir su cumplimiento." /> : <PlanesPorEspecialidad planes={planes}>{(groupPlanes) => <div style={{ display: 'grid', gap: 8 }}>
           {groupPlanes.map((plan) => <button key={plan.id} type="button" onClick={() => { setSelectedPlanId(plan.id); }} style={{ padding: 12, background: selectedPlanId === plan.id ? 'var(--accent-strong)' : 'var(--paper-raised)', border: selectedPlanId === plan.id ? '2px solid var(--accent)' : '1px solid var(--line)', borderRadius: 4, cursor: 'pointer', textAlign: 'left', color: 'var(--ink)' }}>
             <strong>{plan.materiaNombre}</strong>
             <div style={{ fontSize: '0.9rem', color: 'var(--muted)', marginTop: 4 }}>{plan.profesorNombreCorto ?? plan.profesorNombre}</div>
@@ -137,7 +138,7 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
         </div>}</PlanesPorEspecialidad>}
       </div>
       <div className="panel">
-        {!selectedPlanId ? <p style={{ textAlign: 'center', color: 'var(--muted)' }}>Seleccioná un plan para consultar su cumplimiento.</p> : loadingDetail ? <p>Cargando detalle...</p> : !selectedPlan ? <p style={{ color: 'var(--danger)' }}>No se pudo cargar el plan.</p> : <>
+        {!selectedPlanId ? <ContentState compact title="Seleccioná un plan" detail="Elegí uno de la lista para consultar su cumplimiento." /> : loadingDetail ? <ContentState tone="loading" compact title="Cargando detalle…" /> : !selectedPlan ? <ContentState tone="error" compact title="No se pudo cargar el plan" detail="Volvé a seleccionarlo o recargá la página." /> : <>
           <h3>Temas y cumplimiento</h3>
           <p className="lead">{selectedPlan.profesorNombreCorto ?? selectedPlan.profesorNombre} · {selectedPlan.materiaNombre}</p>
           <div className="table-responsive">
@@ -153,8 +154,8 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
 
     {tab === 'incumplimientos' && <div className="evaluation-split-layout equal-columns">
       <div className="panel">
-        <h3>Casos pendientes ({incumplimientos.length})</h3>
-        {loading ? <p>Cargando incumplimientos...</p> : incumplimientos.length === 0 ? <p style={{ color: 'var(--muted)' }}>No hay incumplimientos pendientes de resolución.</p> : <div style={{ display: 'grid', gap: 16 }}>
+        <h3>Casos pendientes{!loading && ` (${incumplimientos.length})`}</h3>
+        {loading ? <ContentState tone="loading" compact title="Cargando incumplimientos…" /> : incumplimientos.length === 0 ? <ContentState compact title="No hay incumplimientos pendientes" detail="Los atrasos, incongruencias y bloqueos por resolver aparecen acá." /> : <div style={{ display: 'grid', gap: 16 }}>
           {[
             { titulo: 'Bloqueos de Iniciar clase', items: bloqueos, destacado: true },
             { titulo: 'Atrasos pendientes de revisión', items: atrasos, destacado: false },
@@ -170,7 +171,7 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
         </div>}
       </div>
       <div className="panel">
-        {!selectedIncumplimiento ? <p style={{ textAlign: 'center', color: 'var(--muted)' }}>Seleccioná un incumplimiento para resolverlo.</p> : BLOQUEOS.includes(selectedIncumplimiento.tipo) ? <>
+        {!selectedIncumplimiento ? <ContentState compact title="Seleccioná un caso" detail="Elegí un incumplimiento de la lista para resolverlo." /> : BLOQUEOS.includes(selectedIncumplimiento.tipo) ? <>
           <h3 style={{ color: 'var(--danger)' }}>Reactivar Iniciar clase</h3>
           <p><strong>{professorName(selectedIncumplimiento)}</strong>{selectedIncumplimiento.materiaNombre ? ` · ${selectedIncumplimiento.materiaNombre}` : ''}</p>
           <p className="lead">{selectedIncumplimiento.descripcion}</p>

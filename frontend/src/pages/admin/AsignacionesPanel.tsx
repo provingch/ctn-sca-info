@@ -285,7 +285,7 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
         </div>
         <p className="assignment-help" id="assignment-load-help">La barra compara la cantidad con el máximo de la lista. El promedio incluye a todos los profesores; no representa horas ni un límite de carga.</p>
         <div className="table-wrap">
-          <table className="assignment-table" aria-describedby="assignment-load-help">
+          <table className="grade-table assignment-table" aria-describedby="assignment-load-help">
             <caption className="visually-hidden">Profesores y cantidad de asignaciones</caption>
             <thead>
               <tr>
@@ -329,7 +329,7 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
       <h2>Asignaciones de {selectedProfesor?.apellido}, {selectedProfesor?.nombre}</h2>
 
       <div className="table-wrap">
-        <table className="grade-table" style={{ minWidth: 760 }}>
+        <table className="grade-table assignment-detail-table">
           <caption className="visually-hidden">Asignaciones del profesor seleccionado</caption>
           <thead>
             <tr>

@@ -5,7 +5,11 @@ import { useSpecialty } from '../context/SpecialtyContext';
 import AppNavbar from './AppNavbar';
 import PageBanner from './PageBanner';
 
-export default function AppShell({ children, title, subtitle, specialty, hero = true }: { children: ReactNode; title?: string; subtitle?: string; specialty?: string | null; hero?: boolean }) {
+export default function AppShell({ children, title, subtitle, specialty, hero = true, onBack, backLabel }: {
+  children: ReactNode; title?: string; subtitle?: string; specialty?: string | null; hero?: boolean;
+  /** Vuelta integrada al banner (reemplaza un botón "Volver" suelto arriba del contenido). */
+  onBack?: () => void; backLabel?: string;
+}) {
   const { name: selectedSpecialty, selectSpecialty } = useSpecialty();
   const effectiveSpecialty = selectedSpecialty || specialty || null;
 
@@ -24,7 +28,7 @@ export default function AppShell({ children, title, subtitle, specialty, hero = 
       <a className="skip-link" href="#main-content">Saltar al contenido principal</a>
       <AppNavbar />
       <main id="main-content" className="app-main" tabIndex={-1}>
-        {hero && title && <PageBanner title={title} context={subtitle} specialty={effectiveSpecialty} />}
+        {hero && title && <PageBanner title={title} context={subtitle} specialty={effectiveSpecialty} onBack={onBack} backLabel={backLabel} />}
         {children}
       </main>
       <footer className="app-footer">

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import AppShell from '../../components/AppShell';
 import GradeChip from '../../components/ui/GradeChip';
 import ContentState from '../../components/ui/ContentState';
+import AnimatedSelect from '../../components/AnimatedSelect';
 import { getParentSummary, downloadReporteMensual, downloadLibreta, getRasgosConducta, type ParentResponse, type ParentStage, type ParentSubject, type ParentTaskStatus, type RasgoConducta } from '../../api/parent';
 import { ApiError } from '../../api/client';
 import { normalizeSpecialty } from '../../theme/theme';
@@ -124,12 +125,9 @@ export default function ParentPage() {
           <header className="parent-overview-header">
             <div><span>Resumen académico</span><h2 id="parent-overview-title">{selectedChild.nombre} {selectedChild.apellido}</h2><p>{selectedChild.especialidad} · Actividad hasta {formatDate(latestTaskDate)}</p></div>
             <div className="parent-report-actions">
-              <label className="parent-report-month">
-                <span className="visually-hidden">Mes del reporte</span>
-                <select value={reportMes} onChange={(event) => setReportMes(Number(event.target.value))} aria-label="Mes del reporte">
-                  {MESES.map((label, index) => <option key={label} value={index + 1}>{label}</option>)}
-                </select>
-              </label>
+              <div className="parent-report-month">
+                <AnimatedSelect ariaLabel="Mes del reporte" value={reportMes} onChange={(value) => setReportMes(Number(value))} options={MESES.map((label, index) => ({ value: index + 1, label }))} />
+              </div>
               <button className="button secondary" type="button" disabled={downloading !== null} onClick={() => void handleDownload('mensual', selectedChild.id)}>
                 {downloading === 'mensual' ? 'Generando…' : 'Descargar reporte mensual'}
               </button>
