@@ -22,6 +22,7 @@ import { classEndTime, HORARIOS_CATEDRA } from './classFormUtils';
 import { resizeImageToDataUri } from '../../utils/imageResize';
 import RasgosAsistenciaEditor from './RasgosAsistenciaEditor';
 import { datosFaltantesDeLaClase, mensajeDatosFaltantes } from './claseRequerida';
+import { splitActivityLine } from './activityLine';
 
 const normalizeSpecialtyName = (value: string) => value
   .trim()
@@ -328,13 +329,6 @@ export default function HomePage() {
       )}
     </AppShell>
   </>;
-}
-
-function splitActivityLine(line: string): { date: string; message: string } | null {
-  if (!line.startsWith('[')) return null;
-  const closeIdx = line.indexOf('] ');
-  if (closeIdx <= 0) return null;
-  return { date: line.slice(1, closeIdx), message: line.slice(closeIdx + 2) };
 }
 
 // ActivityLogService escribe fechas con LINE_FORMATTER = "yyyy-MM-dd HH:mm:ss".
