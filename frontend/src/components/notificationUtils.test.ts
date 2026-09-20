@@ -12,6 +12,11 @@ const base: NotificacionItem = {
 };
 
 describe('notificationDestination', () => {
+  it('lleva al profesor a la planilla que se reabrió', () => {
+    expect(notificationDestination({ ...base, tipo: 'PLANILLA_REABIERTA', entidadTipo: 'PLANILLA', entidadId: 42 }, 1)).toBe('/planilla/42');
+    expect(notificationDestination({ ...base, tipo: 'PLANILLA_REABIERTA' }, 1)).toBe('/home');
+  });
+
   it('reconoce los tipos y entidades en mayúsculas que guarda el backend', () => {
     expect(notificationDestination({ ...base, tipo: 'COORDINACION', entidadTipo: 'QUEJA', entidadId: 44 }, 5))
       .toBe('/coordinacion?view=quejas');

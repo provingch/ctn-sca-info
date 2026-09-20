@@ -15,6 +15,10 @@ export function notificationDestination(notification: NotificacionItem, userLeve
   if (type === 'INCUMPLIMIENTO' || entityType === 'INCUMPLIMIENTO' || entityType === 'INCUMPLIMIENTO_REVISION') {
     return userLevel === 2 ? '/evaluacion?view=seguimiento&tab=incumplimientos' : '/home?view=catedra&subview=plan-curricular';
   }
+  if (type === 'PLANILLA_REABIERTA') {
+    // Evaluación o admin reabrió una etapa: lleva al profesor a esa planilla, que vuelve a ser editable.
+    return notification.entidadId ? `/planilla/${notification.entidadId}` : '/home';
+  }
   if (type === 'INCUMPLIMIENTO_RESUELTO' || PROFESOR_PLAN_TYPES.has(type)) {
     return '/home?view=catedra&subview=plan-curricular';
   }

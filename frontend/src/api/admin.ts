@@ -196,8 +196,8 @@ export const wipeAllClassroomSync = () => adminRequest(() => api.post<{ message:
 export const clearUserGoogleTokens = (userId: number) => adminRequest(() => api.post<{ message: string }>(`/api/admin/usuarios/${userId}/google/clear`));
 export const reformatearEtapa1 = (planillaId: number) => adminRequest(() => api.post<{ planillaId: number; etapasReclasificadas: number; fechaCierreEtapa1: string | null; etapa1Confirmada: boolean }>(`/api/admin/planillas/${planillaId}/etapa1/reformatear`, {}));
 
-/** Reabre una etapa ya confirmada (solo admin global): el profesor vuelve a poder editar notas y tareas de esa etapa. */
-export const reabrirEtapa = (planillaId: number, etapa: 1 | 2) => adminRequest(() => api.post<{ planillaId: number; etapa1Confirmada?: boolean; etapa2Confirmada?: boolean }>(`/api/admin/planillas/${planillaId}/etapa${etapa}/reabrir`, {}));
+/** Reabre una etapa ya confirmada (solo admin global) con un motivo obligatorio: el profesor vuelve a poder editar notas y tareas de esa etapa. */
+export const reabrirEtapa = (planillaId: number, etapa: 1 | 2, motivo: string) => adminRequest(() => api.post<{ planillaId: number; etapa1Confirmada?: boolean; etapa2Confirmada?: boolean }>(`/api/admin/planillas/${planillaId}/etapa${etapa}/reabrir`, { motivo }));
 
 export interface ClaseEspecialidadItem {
   id: number;

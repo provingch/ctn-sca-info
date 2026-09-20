@@ -1,35 +1,26 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import AppShell from '../../components/AppShell';
-import { getCursosEvaluacion, getEspecialidades, getMateriasEvaluacion, type CursoEvaluacion, type Especialidad } from '../../api/academics';
+import { descargarPlanillas } from '../../api/evaluacion';
 import { ApiError } from '../../api/client';
-import { useSpecialty } from '../../context/SpecialtyContext';
-import { normalizeSpecialty } from '../../theme/theme';
-import AnimatedSelect from '../../components/AnimatedSelect';
 import ReviewPlanesView from './ReviewPlanesView';
 import SeguimientoPlanesView from './SeguimientoPlanesView';
+import PlanillaDetalleView from './PlanillaDetalleView';
+import { EvaluacionFiltrosCampos, useEvaluacionFiltros } from './useEvaluacionFiltros';
 import { useSearchParams } from 'react-router-dom';
 import LauncherCards, { launcherIcons } from '../../components/LauncherCards';
 
-type EvaluationView = 'menu' | 'planillas' | 'planes' | 'seguimiento';
+type EvaluationView = 'menu' | 'planillas' | 'ver-planillas' | 'planes' | 'seguimiento';
 
 function requestedView(value: string | null): EvaluationView {
-  return value === 'planillas' || value === 'planes' || value === 'seguimiento' ? value : 'menu';
+  return value === 'planillas' || value === 'ver-planillas' || value === 'planes' || value === 'seguimiento' ? value : 'menu';
 }
 
 export default function EvaluacionPage() {
-  const specialty = useSpecialty();
   const [searchParams, setSearchParams] = useSearchParams();
   const [view, setView] = useState<EvaluationView>(() => requestedView(searchParams.get('view')));
-  const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
-  const [cursos, setCursos] = useState<CursoEvaluacion[]>([]);
-  const [especialidadId, setEspecialidadId] = useState(specialty.id ?? 0);
-  const [cursoNivel, setCursoNivel] = useState(0);
-  const [seccion, setSeccion] = useState('');
-  const [etapa, setEtapa] = useState('primera');
-  const [periodo, setPeriodo] = useState(new Date().getFullYear());
-  const [materias, setMaterias] = useState<{ id: number; nombre: string }[]>([]);
-  const [materiaId, setMateriaId] = useState(0);
-  const [status, setStatus] = useState('');
+  const filtros = useEvaluacionFiltros();
+  const [descargando, setDescargando] = useState(false);
+  const [descargaError, setDescargaError] = useState('');
 
   useEffect(() => {
     setView(requestedView(searchParams.get('view')));
@@ -41,57 +32,33 @@ export default function EvaluacionPage() {
     else setSearchParams({ view: nextView, ...(nextView === 'seguimiento' && searchParams.get('tab') ? { tab: searchParams.get('tab')! } : {}) });
   }
 
-  useEffect(() => {
-    getEspecialidades().then((items) => {
-      setEspecialidades(items);
-      if (!especialidadId && specialty.name) {
-        const saved = items.find((item) => normalizeSpecialty(item.nombre) === normalizeSpecialty(specialty.name));
-        if (saved) setEspecialidadId(saved.id);
-      }
-    }).catch((error) => setStatus(error instanceof ApiError ? error.message : 'No se pudieron cargar las especialidades.'));
-  }, [especialidadId, specialty.name]);
-
-  useEffect(() => {
-    setCursoNivel(0);
-    setSeccion('');
-    setCursos([]);
-    setMaterias([]);
-    setMateriaId(0);
-    if (!especialidadId) return;
-    getCursosEvaluacion(especialidadId)
-      .then(setCursos)
-      .catch((error) => setStatus(error instanceof ApiError ? error.message : 'No se pudieron cargar los cursos.'));
-  }, [especialidadId]);
-
-  const niveles = useMemo(() => [...new Set(cursos.map((course) => course.nivel))].sort((a, b) => a - b), [cursos]);
-  const secciones = useMemo(() => [...new Set(cursos.filter((course) => course.nivel === cursoNivel).map((course) => course.seccion))].sort(), [cursos, cursoNivel]);
-  const selected = cursos.find((course) => course.nivel === cursoNivel && course.seccion === seccion);
-  const exportUrl = selected ? `/api/evaluacion/export?cursoId=${selected.id}&etapa=${etapa}&periodo=${periodo}${materiaId > 0 ? `&materiaId=${materiaId}` : ''}` : '#';
-
-  useEffect(() => {
-    setMaterias([]);
-    setMateriaId(0);
-    if (!selected) return;
-    getMateriasEvaluacion(selected.id, periodo)
-      .then((items) => setMaterias(items))
-      .catch((error) => setStatus(error instanceof ApiError ? error.message : 'No se pudieron cargar las materias.'));
-  }, [selected, periodo]);
-
-  function changeSpecialty(id: number) {
-    setEspecialidadId(id);
-    setStatus('');
-    const selectedSpecialty = especialidades.find((item) => item.id === id);
-    if (selectedSpecialty) specialty.selectSpecialty(selectedSpecialty.nombre, selectedSpecialty.id);
-    else specialty.resetSpecialty();
+  async function descargar() {
+    if (!filtros.selected || descargando) return;
+    setDescargando(true);
+    setDescargaError('');
+    try {
+      await descargarPlanillas(filtros.selected.id, filtros.etapa, filtros.periodo, filtros.materiaId);
+    } catch (error) {
+      setDescargaError(error instanceof ApiError ? error.message : 'No se pudo descargar el archivo.');
+    } finally {
+      setDescargando(false);
+    }
   }
 
   if (view === 'menu') {
     return <AppShell title="Panel de Evaluación">
       <LauncherCards className="launcher-cards-grid" options={[
+        { key: 'ver-planillas', icon: launcherIcons.verPlanillas, title: 'Ver planillas', description: 'Consultá las notas de una planilla en pantalla, descargala o reabrí una etapa cerrada.', onSelect: () => changeView('ver-planillas') },
         { key: 'planillas', icon: launcherIcons.descargarPlanillas, title: 'Descargar planillas', description: 'Exportá planillas completadas de los cursos.', onSelect: () => changeView('planillas') },
         { key: 'planes', icon: launcherIcons.revisarPlanes, title: 'Revisar plan curricular', description: 'Aprobá o rechazá planes de profesores.', onSelect: () => changeView('planes') },
         { key: 'seguimiento', icon: launcherIcons.seguimiento, title: 'Seguimiento de profesores', description: 'Consultá cumplimiento de planes y resolvé incumplimientos.', onSelect: () => changeView('seguimiento') },
       ]} />
+    </AppShell>;
+  }
+
+  if (view === 'ver-planillas') {
+    return <AppShell title="Ver planillas" onBack={() => changeView('menu')} backLabel="Panel de Evaluación">
+      <PlanillaDetalleView filtros={filtros} />
     </AppShell>;
   }
 
@@ -110,22 +77,9 @@ export default function EvaluacionPage() {
   return <AppShell title="Descargar planillas" onBack={() => changeView('menu')} backLabel="Panel de Evaluación">
     <section className="panel form-grid evaluation-filters">
       <p className="lead">Elegí la especialidad, el curso, la sección y el período académico para generar sus planillas.</p>
-      {status && <div className="notice error" role="alert">{status}</div>}
-      <label>Especialidad
-        <AnimatedSelect ariaLabel="Especialidad" value={especialidadId || ''} required placeholder="Seleccione una especialidad…" onChange={(value) => changeSpecialty(Number(value))} options={especialidades.map((item) => ({ value: item.id, label: item.nombre }))} />
-      </label>
-      <label>Curso
-        <AnimatedSelect ariaLabel="Curso" value={cursoNivel || ''} required disabled={!especialidadId || niveles.length === 0} placeholder={especialidadId ? 'Seleccione un curso…' : 'Primero seleccione una especialidad'} onChange={(value) => { setCursoNivel(Number(value)); setSeccion(''); }} options={niveles.map((nivel) => ({ value: nivel, label: `${nivel}°` }))} />
-      </label>
-      <label>Sección
-        <AnimatedSelect ariaLabel="Sección" value={seccion} required disabled={!cursoNivel || secciones.length === 0} placeholder={cursoNivel ? 'Seleccione una sección…' : 'Primero seleccione un curso'} onChange={setSeccion} options={secciones.map((item) => ({ value: item, label: `Sección ${item}` }))} />
-      </label>
-      <label>Etapa<AnimatedSelect ariaLabel="Etapa" value={etapa} onChange={setEtapa} options={[{ value: 'primera', label: 'Primera etapa' }, { value: 'segunda', label: 'Segunda etapa' }]} /></label>
-      <label>Materia
-        <AnimatedSelect ariaLabel="Materia" value={materiaId || ''} disabled={!selected || materias.length === 0} placeholder={selected ? 'Seleccione una materia…' : 'Primero seleccione curso y sección'} onChange={(value) => setMateriaId(Number(value))} options={[{ value: 0, label: 'Todas las materias' }, ...materias.map((m) => ({ value: m.id, label: m.nombre }))]} />
-      </label>
-      <label>Período<input type="number" min="2000" value={periodo} onChange={(event) => setPeriodo(Number(event.target.value))} /></label>
-      <a className={`button ${!selected ? 'disabled' : ''}`} href={selected ? exportUrl : undefined} aria-disabled={!selected} tabIndex={selected ? undefined : -1}>Descargar planillas</a>
+      <EvaluacionFiltrosCampos filtros={filtros} />
+      {descargaError && <div className="notice error" role="alert">{descargaError}</div>}
+      <button type="button" className="button" disabled={!filtros.selected || descargando} onClick={() => void descargar()}>{descargando ? 'Generando…' : 'Descargar planillas'}</button>
     </section>
   </AppShell>;
 }

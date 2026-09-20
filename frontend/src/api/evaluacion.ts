@@ -1,4 +1,5 @@
-import { api, apiRequest } from './client';
+import { api, apiDownload, apiRequest } from './client';
+import type { PlanillaDetail } from './academics';
 
 export const TIPO_ATRASO = 'ATRASO';
 export const TIPO_INCONGRUENCIA_RETROACTIVA = 'INCONGRUENCIA_RETROACTIVA';
@@ -55,3 +56,37 @@ export function getMisIncongruencias(): Promise<IncumplimientoPendiente[]> {
 export function justificarIncongruencia(id: number, justificacion: string): Promise<{ ok: boolean }> {
   return api.patch<{ ok: boolean }>(`/api/incumplimientos/${id}/justificar`, { justificacion });
 }
+
+/** Una planilla de un curso, con su profesor y el estado de cierre (vista de evaluación, sólo lectura). */
+export interface PlanillaResumen {
+  id: number;
+  cursoId: number;
+  materiaId: number;
+  materiaNombre: string;
+  profesorId: number;
+  profesorNombre: string;
+  etapaIndex: number;
+  periodo: number;
+  fechaCierreEtapa1: string | null;
+  etapa1Confirmada: boolean;
+  fechaCierreEtapa2: string | null;
+  etapa2Confirmada: boolean;
+}
+
+function planillasQuery(cursoId: number, etapa: string, periodo: number, materiaId?: number): string {
+  return `cursoId=${cursoId}&etapa=${encodeURIComponent(etapa)}&periodo=${periodo}${materiaId && materiaId > 0 ? `&materiaId=${materiaId}` : ''}`;
+}
+
+export const listarPlanillas = (cursoId: number, etapa: string, periodo: number, materiaId?: number) =>
+  api.get<PlanillaResumen[]>(`/api/evaluacion/planillas?${planillasQuery(cursoId, etapa, periodo, materiaId)}`);
+
+/** Mismo detalle que ve el profesor, pero sin exigir ser el dueño y sin crear filas de registro. */
+export const getPlanillaEvaluacion = (id: number) => api.get<PlanillaDetail>(`/api/evaluacion/planillas/${id}`);
+
+/** Reabre una etapa cerrada; el motivo es obligatorio y queda en el registro de actividad. */
+export const reabrirEtapaEvaluacion = (planillaId: number, etapa: 1 | 2, motivo: string) =>
+  api.post<{ planillaId: number }>(`/api/evaluacion/planillas/${planillaId}/etapa${etapa}/reabrir`, { motivo });
+
+/** Descarga el Excel de las planillas que matchean, con la sesión (un <a href> no lleva el token). */
+export const descargarPlanillas = (cursoId: number, etapa: string, periodo: number, materiaId?: number) =>
+  apiDownload(`/api/evaluacion/export?${planillasQuery(cursoId, etapa, periodo, materiaId)}`, 'planillas.xlsx');

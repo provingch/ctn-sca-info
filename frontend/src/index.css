@@ -1175,6 +1175,15 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .complaint-status.aceptada { background: var(--accent-soft); color: var(--accent-deep); }
 .complaint-status.rechazada { background: color-mix(in srgb, var(--danger) 14%, var(--paper)); color: var(--danger); }
 .badge--danger { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 16%, var(--paper)); color: var(--danger); }
+.reabrir-dialog { width: min(560px, calc(100vw - 32px)); }
+.reabrir-dialog .reabrir-dialog-field { grid-column: 1 / -1; margin: 0; }
+.reabrir-dialog textarea { width: 100%; resize: none; }
+.evaluacion-planilla-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; flex-wrap: wrap; margin-bottom: 18px; }
+.evaluacion-planilla-header h2 { margin: 10px 0 4px; }
+.evaluacion-planilla-header p { margin: 4px 0 0; }
+.evaluacion-planilla-acciones { display: flex; flex-wrap: wrap; gap: 9px; }
+.grade-table.evaluacion-planillas-table th, .grade-table.evaluacion-planillas-table td { text-align: left; }
+.grade-table.evaluacion-planillas-table { min-width: 560px; }
 /* Lista de items con avatar + estado (quejas por profesor y su detalle). Ver Sistema de diseño. */
 .activity-list { margin: 0; padding: 0; list-style: none; }
 .activity-row { display: flex; align-items: flex-start; gap: 12px; padding: 12px; border-bottom: 1px solid var(--line); }
