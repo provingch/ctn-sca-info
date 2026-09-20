@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import AppShell from '../../components/AppShell';
 import GradeChip from '../../components/ui/GradeChip';
 import ContentState from '../../components/ui/ContentState';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import DatePicker from '../../components/DatePicker';
 import FiltersToolbar, { FilterField } from '../../components/ui/FiltersToolbar';
-import { filtrarConducta, filtrarMaterias, hayFiltroConducta, MATERIAS_PARA_BUSCADOR, materiasDeConducta, rangoInvalido, SIN_FILTRO_CONDUCTA, type FiltroConducta } from './parentFilters';
+import { agruparTareasPorMes, filtrarConducta, filtrarMaterias, hayFiltroConducta, MATERIAS_PARA_BUSCADOR, materiasDeConducta, mesesConTareas, NOMBRES_MESES, rangoInvalido, SIN_FILTRO_CONDUCTA, type FiltroConducta } from './parentFilters';
 import { getParentSummary, downloadReporteMensual, downloadLibreta, getRasgosConducta, type ParentResponse, type ParentStage, type ParentSubject, type ParentTaskStatus, type RasgoConducta } from '../../api/parent';
 import { ApiError } from '../../api/client';
 import { normalizeSpecialty } from '../../theme/theme';
@@ -14,8 +14,6 @@ const STAGES: Array<{ value: ParentStage; label: string }> = [
   { value: 'primera', label: 'Primera etapa' },
   { value: 'segunda', label: 'Segunda etapa' },
 ];
-
-const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 function currentStage(): ParentStage {
   const today = new Date();
@@ -136,7 +134,7 @@ export default function ParentPage() {
             <div><span>Resumen académico</span><h2 id="parent-overview-title">{selectedChild.nombre} {selectedChild.apellido}</h2><p>{selectedChild.especialidad} · Actividad hasta {formatDate(latestTaskDate)}</p></div>
             <div className="parent-report-actions">
               <div className="parent-report-month">
-                <AnimatedSelect ariaLabel="Mes del reporte" value={reportMes} onChange={(value) => setReportMes(Number(value))} options={MESES.map((label, index) => ({ value: index + 1, label }))} />
+                <AnimatedSelect ariaLabel="Mes del reporte" value={reportMes} onChange={(value) => setReportMes(Number(value))} options={NOMBRES_MESES.map((label, index) => ({ value: index + 1, label }))} />
               </div>
               <button className="button secondary" type="button" disabled={downloading !== null} onClick={() => void handleDownload('mensual', selectedChild.id)}>
                 {downloading === 'mensual' ? 'Generando…' : 'Descargar reporte mensual'}
@@ -175,7 +173,7 @@ export default function ParentPage() {
               {materiasVisibles.map((subject) => <SubjectCard key={subject.planillaId} subject={subject} selected={subject.planillaId === selectedSubject?.planillaId} onSelect={() => setSelectedPlanillaId(subject.planillaId)} />)}
             </div>}
           </section>
-          {selectedSubject && <SubjectDetail subject={selectedSubject} />}
+          {selectedSubject && <SubjectDetail key={selectedSubject.planillaId} subject={selectedSubject} />}
           <details className="panel parent-calculation-note"><summary>¿Cómo se calcula el promedio?</summary><p>El porcentaje de cada materia se obtiene dividiendo los puntos logrados entre los puntos posibles de las tareas publicadas. El promedio general combina los puntos de todas las materias disponibles.</p></details>
         </> : <ContentState title={`Sin calificaciones en ${stageLabel(stage).toLowerCase()}`} detail="Todavía no hay materias ni tareas publicadas para este alumno en la etapa seleccionada." />}
 
@@ -247,18 +245,32 @@ function SubjectCard({ subject, selected, onSelect }: { subject: ParentSubject; 
 }
 
 function SubjectDetail({ subject }: { subject: ParentSubject }) {
+  const [mes, setMes] = useState('');
+  const meses = useMemo(() => mesesConTareas(subject.tareas), [subject.tareas]);
+  const grupos = useMemo(() => agruparTareasPorMes(subject.tareas, mes), [subject.tareas, mes]);
+  const visibles = grupos.reduce((suma, grupo) => suma + grupo.tareas.length, 0);
   return <section className="panel parent-subject-detail" aria-labelledby="parent-subject-detail-title">
     <header className="parent-subject-detail-header">
       <div><span>Detalle de tareas</span><h2 id="parent-subject-detail-title">{subject.materia}</h2><p>{stageLabel(subject.etapa)} · {subject.porcentaje}% de promedio</p></div>
       <GradeChip grade={subject.nota} className="parent-detail-grade" />
     </header>
-    {subject.tareas.length > 0 ? <div className="parent-task-list">
-      {subject.tareas.map((task, index) => <article className={`parent-task-row ${task.estado.toLowerCase().replaceAll('_', '-')}`} key={task.id}>
-        <span className="parent-task-number">{String(index + 1).padStart(2, '0')}</span>
-        <div className="parent-task-copy"><strong>{task.titulo}</strong><small>{formatDate(task.fecha)}</small></div>
-        <TaskResult estado={task.estado} puntos={task.puntos} total={task.total} />
-      </article>)}
-    </div> : <ContentState compact className="parent-task-empty" title="Sin tareas publicadas" detail="Esta materia todavía no tiene actividades disponibles." />}
+    {subject.tareas.length > 0 ? <>
+      {meses.length > 1 && <div className="parent-task-filters">
+        <FiltersToolbar ariaLabel="Filtros de tareas" mostrando={visibles} total={subject.tareas.length} unidad="tareas" activo={Boolean(mes)} onLimpiar={() => setMes('')}>
+          <FilterField label="Mes" narrow><AnimatedSelect ariaLabel="Mes de las tareas" value={mes} onChange={setMes} options={[{ value: '', label: 'Todos los meses' }, ...meses]} /></FilterField>
+        </FiltersToolbar>
+      </div>}
+      {grupos.map((grupo) => <section className="parent-task-month-group" key={grupo.mes} aria-labelledby={`parent-task-month-${grupo.mes}`}>
+        <h3 className="parent-task-month" id={`parent-task-month-${grupo.mes}`}>{grupo.label}<small>{grupo.tareas.length} {grupo.tareas.length === 1 ? 'tarea' : 'tareas'}</small></h3>
+        <div className="parent-task-list">
+          {grupo.tareas.map(({ tarea: task, numero }) => <article className={`parent-task-row ${task.estado.toLowerCase().replaceAll('_', '-')}`} key={task.id}>
+            <span className="parent-task-number">{String(numero).padStart(2, '0')}</span>
+            <div className="parent-task-copy"><strong>{task.titulo}</strong><small>{formatDate(task.fecha)}</small></div>
+            <TaskResult estado={task.estado} puntos={task.puntos} total={task.total} />
+          </article>)}
+        </div>
+      </section>)}
+    </> : <ContentState compact className="parent-task-empty" title="Sin tareas publicadas" detail="Esta materia todavía no tiene actividades disponibles." />}
   </section>;
 }
 

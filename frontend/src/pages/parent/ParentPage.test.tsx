@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getParentSummary, getRasgosConducta, type ParentResponse, type ParentSubject, type RasgoConducta } from '../../api/parent';
+import { getParentSummary, getRasgosConducta, type ParentResponse, type ParentSubject, type ParentTask, type RasgoConducta } from '../../api/parent';
 import ParentPage from './ParentPage';
 
 vi.mock('../../components/AppShell', () => ({ default: ({ children }: { children: React.ReactNode }) => <div>{children}</div> }));
@@ -87,5 +87,85 @@ describe('ParentPage — filtros', () => {
 
     await screen.findByText('Sin notas de conducta');
     await waitFor(() => expect(screen.queryByRole('search', { name: 'Filtros de notas de conducta' })).not.toBeInTheDocument());
+  });
+});
+
+// ---- Detalle de tareas: filtro y agrupación por mes ----------------------------------------------------
+
+const tarea = (id: number, titulo: string, fecha: string): ParentTask => ({ id, titulo, fecha, puntos: 10, total: 20, estado: 'CALIFICADA' });
+const tareasVariosMeses = [tarea(1, 'TP de marzo', '2026-03-10'), tarea(3, 'Examen de mayo', '2026-05-02'), tarea(2, 'TP de marzo 2', '2026-03-25')];
+
+async function mostrarConTareas(tareasPrimera: ParentTask[], tareasSegunda: ParentTask[] = tareasVariosMeses) {
+  vi.mocked(getParentSummary).mockResolvedValue({
+    hijos: [{ id: 7, nombre: 'Camila', apellido: 'Rojas', especialidad: 'Informática', promedio: 80 }],
+    selectedAlumnoId: 7, libretaDisponible: false,
+    materias: [{ ...materia(1, 'Matemática'), tareas: tareasPrimera }, { ...materia(2, 'Física'), tareas: tareasSegunda }],
+  });
+  vi.mocked(getRasgosConducta).mockResolvedValue([]);
+  render(<ParentPage />);
+  await screen.findByRole('heading', { name: 'Matemática', level: 2 });
+}
+
+const mesesMostrados = () => screen.queryAllByRole('heading', { level: 3 }).map((h) => h.childNodes[0]?.textContent).filter((texto) => /\d{4}|Sin fecha/.test(texto ?? ''));
+
+describe('ParentPage — detalle de tareas por mes', () => {
+  it('con "Todos" las tareas quedan agrupadas por mes, en orden cronológico', async () => {
+    await mostrarConTareas(tareasVariosMeses);
+
+    expect(mesesMostrados()).toEqual(['Marzo 2026', 'Mayo 2026']);
+    const marzo = screen.getByRole('heading', { name: /Marzo 2026/ }).closest('section') as HTMLElement;
+    expect(within(marzo).getByText('TP de marzo')).toBeInTheDocument();
+    expect(within(marzo).getByText('TP de marzo 2')).toBeInTheDocument();
+    expect(within(marzo).queryByText('Examen de mayo')).not.toBeInTheDocument();
+  });
+
+  it('el selector de mes ofrece "Todos" y sólo los meses que tienen tareas', async () => {
+    await mostrarConTareas(tareasVariosMeses);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mes de las tareas' }));
+    expect(screen.getAllByRole('option').map((o) => o.textContent?.replace('✓', '').trim())).toEqual(['Todos los meses', 'Marzo 2026', 'Mayo 2026']);
+  });
+
+  it('un mes puntual filtra la lista, conserva el número de cada tarea y se puede limpiar', async () => {
+    await mostrarConTareas(tareasVariosMeses);
+    const barra = screen.getByRole('search', { name: 'Filtros de tareas' });
+    expect(within(barra).getByRole('status')).toHaveTextContent('3 de 3 tareas');
+
+    fireEvent.click(within(barra).getByRole('button', { name: 'Mes de las tareas' }));
+    fireEvent.click(screen.getByRole('option', { name: /Mayo 2026/ }));
+
+    expect(within(barra).getByRole('status')).toHaveTextContent('1 de 3 tareas');
+    expect(mesesMostrados()).toEqual(['Mayo 2026']);
+    expect(screen.queryByText('TP de marzo')).not.toBeInTheDocument();
+    const fila = screen.getByText('Examen de mayo').closest('article') as HTMLElement;
+    expect(fila).toHaveTextContent('03'); // era la tercera tarea cronológica
+
+    fireEvent.click(within(barra).getByRole('button', { name: 'Limpiar filtros' }));
+    expect(mesesMostrados()).toEqual(['Marzo 2026', 'Mayo 2026']);
+  });
+
+  it('con tareas de un solo mes no ofrece el filtro, pero igual muestra el mes', async () => {
+    await mostrarConTareas([tarea(1, 'TP único', '2026-03-10'), tarea(2, 'Otro TP', '2026-03-20')]);
+
+    expect(screen.queryByRole('search', { name: 'Filtros de tareas' })).not.toBeInTheDocument();
+    expect(mesesMostrados()).toEqual(['Marzo 2026']);
+  });
+
+  it('las tareas sin fecha van al final bajo "Sin fecha"', async () => {
+    await mostrarConTareas([tarea(1, 'Con fecha', '2026-03-10'), { ...tarea(2, 'Sin fecha cargada', ''), fecha: '' }]);
+
+    expect(mesesMostrados()).toEqual(['Marzo 2026', 'Sin fecha']);
+  });
+
+  it('al cambiar de materia el filtro de mes vuelve a "Todos"', async () => {
+    await mostrarConTareas(tareasVariosMeses);
+    fireEvent.click(screen.getByRole('button', { name: 'Mes de las tareas' }));
+    fireEvent.click(screen.getByRole('option', { name: /Mayo 2026/ }));
+    expect(mesesMostrados()).toEqual(['Mayo 2026']);
+
+    fireEvent.click(screen.getByRole('button', { name: /Física/ }));
+
+    expect(await screen.findByRole('heading', { name: 'Física', level: 2 })).toBeInTheDocument();
+    expect(mesesMostrados()).toEqual(['Marzo 2026', 'Mayo 2026']);
   });
 });

@@ -616,6 +616,10 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .parent-subject-detail-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px 22px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--paper-raised) 90%, var(--accent-soft)); }
 .parent-detail-grade { min-width: 46px; min-height: 46px; display: grid; place-items: center; flex: 0 0 46px; border-radius: 14px; font-size: 1.15rem; }
 .parent-task-list { display: grid; }
+.parent-task-filters { padding: 16px 20px 0; }
+.parent-task-month { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0; padding: 10px 20px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--bg-soft); color: var(--accent-deep); font-size: .78rem; font-weight: 900; letter-spacing: .09em; text-transform: uppercase; }
+.parent-task-month small { color: var(--muted); font-size: .72rem; font-weight: 750; letter-spacing: 0; text-transform: none; }
+.parent-task-month-group:first-of-type .parent-task-month { border-top: 0; }
 .parent-task-row { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; align-items: center; gap: 13px; min-height: 72px; padding: 12px 20px; border-bottom: 1px solid var(--line); }
 .parent-task-row:last-child { border-bottom: 0; }
 .parent-task-row.no-entregada { box-shadow: inset 3px 0 var(--danger); }
