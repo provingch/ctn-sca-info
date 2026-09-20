@@ -116,7 +116,7 @@ public class PlanCurricularDao extends conexion {
     }
 
     public void rechazar(int id, int evaluadorId, String observaciones) throws SQLException {
-        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("UPDATE plan_curricular SET estado='RECHAZADO', evaluador_id = ?, fecha_revision = CURRENT_TIMESTAMP, observaciones_evaluador = ?, archivo_contenido = NULL WHERE id = ?")) {
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("UPDATE plan_curricular SET estado='RECHAZADO', evaluador_id = ?, fecha_revision = CURRENT_TIMESTAMP, observaciones_evaluador = ? WHERE id = ?")) {
             ps.setInt(1, evaluadorId); ps.setString(2, observaciones); ps.setInt(3, id); ps.executeUpdate();
         }
     }
@@ -260,6 +260,7 @@ public class PlanCurricularDao extends conexion {
                         dto.observacionesEvaluador = rs.getString("observaciones_evaluador");
                         dto.etapa = rs.getString("etapa");
                         dto.anio = rs.getInt("anio_lectivo");
+                        dto.asignacionId = rs.getInt("asignacion_id");
                         String profApellido = rs.getString("profesor_apellido");
                         String profNombre = rs.getString("profesor_nombre");
                         dto.profesorNombre = NombreUtil.completo(profNombre, profApellido);
@@ -353,6 +354,18 @@ public class PlanCurricularDao extends conexion {
             case 3 -> "3º";
             default -> "Desconocido";
         };
+    }
+
+    /** True si la asignación tiene cualquier plan (pendiente, aprobado o rechazado) para esa etapa y año. */
+    public boolean existePlan(int asignacionId, String etapa, int anio) throws SQLException {
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("SELECT EXISTS(SELECT 1 FROM plan_curricular WHERE asignacion_id = ? AND etapa = ? AND anio_lectivo = ?)")) {
+            ps.setInt(1, asignacionId);
+            ps.setString(2, etapa);
+            ps.setInt(3, anio);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getBoolean(1);
+            }
+        }
     }
 
     public boolean existeAprobado(int asignacionId, String etapa, int anio) throws SQLException {

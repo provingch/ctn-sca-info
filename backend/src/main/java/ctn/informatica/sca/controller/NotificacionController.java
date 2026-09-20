@@ -67,7 +67,12 @@ public class NotificacionController {
     public Map<String, Object> marcarLeida(@PathVariable int id, Authentication authentication) {
         int userId = ApiAuth.requireUserId(authentication);
         try {
-            boolean ok = notificacionDao.marcarLeida(id, userId, NotificacionDao.resolveUserType(userDao, userId));
+            String userType = NotificacionDao.resolveUserType(userDao, userId);
+            // El recordatorio de plan pendiente no se descarta a mano: se cierra solo al subir el plan.
+            if (notificacionDao.findTipo(id, userId, userType).filter(NotificacionDao.TIPO_PLAN_PENDIENTE::equals).isPresent()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No podés marcar como leída esta notificación hasta subir tu plan curricular");
+            }
+            boolean ok = notificacionDao.marcarLeida(id, userId, userType);
             if (!ok) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Notificación no encontrada");
             }

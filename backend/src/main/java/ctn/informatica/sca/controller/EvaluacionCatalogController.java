@@ -1,6 +1,7 @@
 package ctn.informatica.sca.controller;
 
 import ctn.informatica.sca.dao.AsignacionDao;
+import ctn.informatica.sca.dao.ConfiguracionSistemaDao;
 import ctn.informatica.sca.dao.CursoDao;
 import ctn.informatica.sca.dao.EspecialidadDao;
 import ctn.informatica.sca.dao.IncumplimientoRevisionDao;
@@ -51,6 +52,7 @@ public class EvaluacionCatalogController {
     private final NotificacionDao notificacionDao;
     private final UserDao userDao;
     private final ProfesorDao profesorDao;
+    private final ConfiguracionSistemaDao configuracionSistemaDao;
 
     public EvaluacionCatalogController(
             CursoDao cursoDao,
@@ -98,6 +100,21 @@ public class EvaluacionCatalogController {
             NotificacionDao notificacionDao,
             UserDao userDao,
             ProfesorDao profesorDao) {
+        this(cursoDao, especialidadDao, instrumentoDao, rasgoPlanillaDao, incumplimientoRevisionDao,
+                asignacionDao, notificacionDao, userDao, profesorDao, new ConfiguracionSistemaDao());
+    }
+
+    public EvaluacionCatalogController(
+            CursoDao cursoDao,
+            EspecialidadDao especialidadDao,
+            InstrumentoDao instrumentoDao,
+            RasgoPlanillaDao rasgoPlanillaDao,
+            IncumplimientoRevisionDao incumplimientoRevisionDao,
+            AsignacionDao asignacionDao,
+            NotificacionDao notificacionDao,
+            UserDao userDao,
+            ProfesorDao profesorDao,
+            ConfiguracionSistemaDao configuracionSistemaDao) {
         this.cursoDao = cursoDao;
         this.especialidadDao = especialidadDao;
         this.instrumentoDao = instrumentoDao;
@@ -107,6 +124,7 @@ public class EvaluacionCatalogController {
         this.notificacionDao = notificacionDao == null ? new NotificacionDao() : notificacionDao;
         this.userDao = userDao == null ? new UserDao() : userDao;
         this.profesorDao = profesorDao == null ? new ProfesorDao() : profesorDao;
+        this.configuracionSistemaDao = configuracionSistemaDao == null ? new ConfiguracionSistemaDao() : configuracionSistemaDao;
     }
 
     public EvaluacionCatalogController(
@@ -309,6 +327,14 @@ public class EvaluacionCatalogController {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el incumplimiento a resolver.");
             }
 
+            String tipo = incumplimiento.get("tipo") instanceof String t ? t : null;
+            if (IncumplimientoRevisionDao.TIPO_INCONGRUENCIA_RETROACTIVA.equals(tipo)) {
+                return resolverIncongruenciaRetroactiva(id, estado, evaluadorId, incumplimiento);
+            }
+            if (IncumplimientoRevisionDao.TIPO_BLOQUEO_INCONGRUENCIA_RETROACTIVA.equals(tipo)) {
+                return levantarBloqueoRetroactivo(id, estado, evaluadorId, payload, incumplimiento);
+            }
+
             LocalDateTime suspensionDesde = parseDateTime(payload.get("suspensionDesde"), "suspensionDesde");
             LocalDateTime suspensionHasta = parseDateTime(payload.get("suspensionHasta"), "suspensionHasta");
             if ("RECHAZADO".equals(estado)) {
@@ -349,6 +375,81 @@ public class EvaluacionCatalogController {
             throw ex;
         } catch (Exception ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo resolver el incumplimiento", ex);
+        }
+    }
+
+    /**
+     * Incongruencia detectada al comparar retroactivamente una clase contra el plan aprobado. Sin fechas de
+     * suspensión: PERMITIDO no cuenta como falta; RECHAZADO sí, y al llegar al umbral bloquea "Iniciar clase"
+     * con una fila BLOQUEO_INCONGRUENCIA_RETROACTIVA hasta que evaluación la levante.
+     */
+    private Map<String, Object> resolverIncongruenciaRetroactiva(int id, String estado, int evaluadorId,
+            Map<String, Object> incumplimiento) throws Exception {
+        if (!"PERMITIDO".equals(estado) && !"RECHAZADO".equals(estado)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El estado debe ser PERMITIDO o RECHAZADO.");
+        }
+        exigirPendiente(incumplimiento);
+        if (!incumplimientoRevisionDao.resolver(id, estado, evaluadorId, null, null)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el incumplimiento a resolver.");
+        }
+
+        int usuarioId = ((Number) incumplimiento.get("usuarioId")).intValue();
+        int asignacionId = ((Number) incumplimiento.get("asignacionId")).intValue();
+        String userType = NotificacionDao.resolveUserType(userDao, usuarioId);
+        notificarSinFallar(usuarioId, userType, "INCUMPLIMIENTO_RESUELTO", "Incongruencia resuelta",
+                "La incongruencia retroactiva #" + id + " fue resuelta como " + ("PERMITIDO".equals(estado) ? "permitida" : "rechazada"),
+                "INCUMPLIMIENTO_REVISION", id);
+
+        boolean bloqueoGenerado = false;
+        if ("RECHAZADO".equals(estado)) {
+            int umbral = configuracionSistemaDao.getInt("umbral_faltas_incongruencia_retroactiva", 3);
+            long faltas = incumplimientoRevisionDao.contarRechazadosRetroactivos(asignacionId, usuarioId);
+            if (faltas >= umbral && !incumplimientoRevisionDao.existePendientePorAsignacionYUsuario(
+                    asignacionId, usuarioId, IncumplimientoRevisionDao.TIPO_BLOQUEO_INCONGRUENCIA_RETROACTIVA)) {
+                int bloqueoId = incumplimientoRevisionDao.registrarBloqueoIncongruenciaRetroactiva(asignacionId, usuarioId,
+                        "Se alcanzaron " + faltas + " faltas por incongruencias retroactivas — Iniciar clase bloqueado hasta revisión de evaluación.");
+                bloqueoGenerado = true;
+                notificarSinFallar(usuarioId, userType, "INICIAR_CLASE_BLOQUEADO", "Iniciar clase bloqueado",
+                        "Se alcanzaron " + faltas + " faltas por incongruencias retroactivas. No podés iniciar clases en esta asignación hasta que evaluación revise tu caso.",
+                        "INCUMPLIMIENTO_REVISION", bloqueoId);
+            }
+        }
+        return Map.of("ok", true, "id", id, "estado", estado, "bloqueoGenerado", bloqueoGenerado);
+    }
+
+    /** Reactivación: el evaluador resuelve la fila de bloqueo como PERMITIDO dejando una nota libre. */
+    private Map<String, Object> levantarBloqueoRetroactivo(int id, String estado, int evaluadorId,
+            Map<String, Object> payload, Map<String, Object> incumplimiento) throws Exception {
+        if (!"PERMITIDO".equals(estado)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Un bloqueo sólo se levanta con estado PERMITIDO.");
+        }
+        String nota = payload.get("nota") instanceof String n ? n.trim() : "";
+        if (nota.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Indicá una nota explicando por qué se reactiva y a qué se llegó.");
+        }
+        exigirPendiente(incumplimiento);
+        if (!incumplimientoRevisionDao.resolver(id, estado, evaluadorId, null, null, nota)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el incumplimiento a resolver.");
+        }
+        int usuarioId = ((Number) incumplimiento.get("usuarioId")).intValue();
+        notificarSinFallar(usuarioId, NotificacionDao.resolveUserType(userDao, usuarioId), "BLOQUEO_RETROACTIVO_LEVANTADO",
+                "Iniciar clase reactivado", "Evaluación reactivó Iniciar clase en tu asignación. Nota: " + nota,
+                "INCUMPLIMIENTO_REVISION", id);
+        return Map.of("ok", true, "id", id, "estado", estado);
+    }
+
+    private static void exigirPendiente(Map<String, Object> incumplimiento) {
+        if (!"PENDIENTE".equals(incumplimiento.get("estado"))) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Este caso ya fue resuelto.");
+        }
+    }
+
+    private void notificarSinFallar(int usuarioId, String userType, String tipo, String titulo, String cuerpo,
+            String entidadTipo, int entidadId) {
+        try {
+            notificacionDao.crear(usuarioId, userType, tipo, titulo, cuerpo, entidadTipo, (long) entidadId);
+        } catch (Exception ex) {
+            log.warn("No se pudo crear la notificación {} para el usuario {}: {}", tipo, usuarioId, ex.getMessage());
         }
     }
 

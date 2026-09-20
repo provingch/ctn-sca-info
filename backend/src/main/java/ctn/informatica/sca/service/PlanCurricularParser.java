@@ -36,6 +36,18 @@ public class PlanCurricularParser {
         MESES_LEGACY.put("2", List.of("Julio", "Agosto", "Septiembre", "Octubre", "Noviembre"));
     }
 
+    private static final Map<String, Integer> NUMERO_DE_MES = Map.ofEntries(
+            Map.entry("Enero", 1), Map.entry("Febrero", 2), Map.entry("Marzo", 3), Map.entry("Abril", 4),
+            Map.entry("Mayo", 5), Map.entry("Junio", 6), Map.entry("Julio", 7), Map.entry("Agosto", 8),
+            Map.entry("Septiembre", 9), Map.entry("Octubre", 10), Map.entry("Noviembre", 11), Map.entry("Diciembre", 12));
+
+    /** Meses calendario (1-12) que cubre una etapa ("1" o "2"); Julio figura en las dos. */
+    public static List<Integer> mesesDeEtapa(String etapa) {
+        List<String> nombres = MESES_POR_ETAPA.get(etapa == null ? "" : etapa.trim());
+        if (nombres == null) return List.of();
+        return nombres.stream().map(NUMERO_DE_MES::get).toList();
+    }
+
     private static int ordenMesEnEtapa(String mes, String etapa) {
         List<String> pool = MESES_POR_ETAPA.get(etapa == null ? "1" : etapa.trim());
         if (pool == null) return 1;

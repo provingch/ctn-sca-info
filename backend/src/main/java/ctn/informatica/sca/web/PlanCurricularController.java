@@ -2,11 +2,13 @@ package ctn.informatica.sca.web;
 
 import ctn.informatica.sca.dao.AsignacionDao;
 import ctn.informatica.sca.dao.CursoBaseDao;
+import ctn.informatica.sca.dao.NotificacionDao;
 import ctn.informatica.sca.dao.PlanCurricularDao;
 import ctn.informatica.sca.dao.RasgoPlanillaDao;
 import ctn.informatica.sca.dao.UserDao;
 import ctn.informatica.sca.dto.PlanCurricularDto;
 import ctn.informatica.sca.service.PlanCurricularParser;
+import ctn.informatica.sca.service.PlanCurricularRetroactivoService;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -60,6 +62,12 @@ public class PlanCurricularController {
 
     @Autowired
     private ActivityLogService activityLogService;
+
+    @Autowired
+    private NotificacionDao notificacionDao;
+
+    @Autowired
+    private PlanCurricularRetroactivoService retroactivoService;
 
     private long getCurrentUserId() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -131,6 +139,15 @@ public class PlanCurricularController {
         // save
         byte[] content = file.getBytes();
         int id = dao.saveOrReplace(asignacionId, dto.etapa, dto.anio, file.getOriginalFilename(), content, dto.temas);
+        // El recordatorio "plan pendiente de subir" (etapa y año en curso) se cierra solo al subir ese plan.
+        try {
+            if (String.valueOf(ctn.informatica.sca.util.AcademicPeriod.currentEtapa()).equals(dto.etapa)
+                    && dto.anio == ctn.informatica.sca.util.AcademicPeriod.current()) {
+                notificacionDao.marcarLeidasPorEntidad("ASIGNACION", asignacionId, NotificacionDao.TIPO_PLAN_PENDIENTE);
+            }
+        } catch (Exception ex) {
+            log.warn("No se pudo cerrar el recordatorio de plan pendiente de la asignación {}: {}", asignacionId, ex.getMessage());
+        }
         try {
             if (activityLogService != null) {
                 activityLogService.registrar((int) getCurrentUserId(), "Subió plan curricular para asignación " + asignacionId + " (etapa " + dto.etapa + ", año " + dto.anio + ")");
@@ -326,7 +343,7 @@ public class PlanCurricularController {
         }
         
         byte[] content = dao.getArchivoOriginal(id);
-        if (content == null) return ResponseEntity.status(404).body("No existe archivo original para este plan (fue rechazado o nunca se subió).");
+        if (content == null) return ResponseEntity.status(404).body("No existe archivo original para este plan.");
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
@@ -376,9 +393,22 @@ public class PlanCurricularController {
                 } catch (Exception e) {
                     log.warn("Error enviando notificación de aprobación al profesor {}: {}", profesorId, e.getMessage());
                 }
+                crearNotificacionPlan(profesorId, "PLAN_ACEPTADO", "Tu plan curricular fue aprobado", "Tu plan curricular fue aprobado", id);
             }
         } catch (Exception ex) {
             log.warn("No se pudo resolver profesor para el plan {}: {}", id, ex.getMessage());
+        }
+
+        // Las clases dadas antes de que hubiera plan (SIN_PLAN) se comparan ahora contra el plan aprobado.
+        // Un fallo acá no debe deshacer la aprobación.
+        try {
+            var plan = dao.findById(id);
+            Integer profesorId = dao.findProfesorIdByPlanId(id);
+            if (plan != null && plan.asignacionId != null && plan.etapa != null && profesorId != null) {
+                retroactivoService.reprocesarClasesPrevias(id, plan.asignacionId, plan.etapa, plan.anio, profesorId);
+            }
+        } catch (Exception ex) {
+            log.warn("No se pudo reprocesar las clases previas del plan {}: {}", id, ex.getMessage());
         }
         return ResponseEntity.ok().build();
     }
@@ -413,11 +443,22 @@ public class PlanCurricularController {
                 } catch (Exception e) {
                     log.warn("Error enviando notificación de rechazo al profesor {}: {}", profesorId, e.getMessage());
                 }
+                crearNotificacionPlan(profesorId, "PLAN_RECHAZADO", "Tu plan curricular fue rechazado", body, id);
             }
         } catch (Exception ex) {
             log.warn("No se pudo resolver profesor para el plan {}: {}", id, ex.getMessage());
         }
         return ResponseEntity.ok().build();
+    }
+
+    /** Deja el aviso en la bandeja in-app del profesor (el push se pierde si no tenía el navegador abierto). */
+    private void crearNotificacionPlan(int profesorId, String tipo, String titulo, String cuerpo, int planId) {
+        try {
+            notificacionDao.crear(profesorId, NotificacionDao.resolveUserType(userDao, profesorId), tipo, titulo, cuerpo,
+                    "PLAN_CURRICULAR", (long) planId);
+        } catch (Exception ex) {
+            log.warn("No se pudo crear la notificación {} para el profesor {}: {}", tipo, profesorId, ex.getMessage());
+        }
     }
 
     private boolean sameValue(String left, String right) {

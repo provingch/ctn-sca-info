@@ -270,6 +270,36 @@ public class RasgoPlanillaDao extends conexion {
         }
     }
 
+    /**
+     * Clases de la asignación que quedaron en SIN_PLAN (dadas antes de que el plan estuviera aprobado),
+     * del año y de los meses indicados, en el orden en que se dieron.
+     */
+    public List<ctn.informatica.sca.dto.ClaseSinPlanDto> listarClasesSinPlan(int asignacionId, int anio, List<Integer> meses) throws SQLException {
+        if (meses == null || meses.isEmpty()) {
+            return List.of();
+        }
+        String placeholders = String.join(",", Collections.nCopies(meses.size(), "?"));
+        String sql = "SELECT id, usuario_id, tema, fecha_clase FROM planilla_rasgo "
+                + "WHERE asignacion_id = ? AND estado_verificacion_tema = 'SIN_PLAN' AND YEAR(fecha_clase) = ? "
+                + "AND MONTH(fecha_clase) IN (" + placeholders + ") ORDER BY fecha_clase ASC, id ASC";
+        List<ctn.informatica.sca.dto.ClaseSinPlanDto> out = new ArrayList<>();
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, asignacionId);
+            ps.setInt(2, anio);
+            for (int i = 0; i < meses.size(); i++) {
+                ps.setInt(3 + i, meses.get(i));
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    out.add(new ctn.informatica.sca.dto.ClaseSinPlanDto(
+                            rs.getInt("id"), rs.getInt("usuario_id"), rs.getString("tema"),
+                            rs.getDate("fecha_clase").toLocalDate()));
+                }
+            }
+        }
+        return out;
+    }
+
     private void guardarCodigosDeAlumnos(Connection con, int planillaId, List<Alumno> alumnos, Map<Integer, List<String>> codigosPorAlumno) throws SQLException {
         if (codigosPorAlumno == null || codigosPorAlumno.isEmpty()) return;
         String sql = "INSERT IGNORE INTO rasgo_asistencia_codigo (rasgo_asistencia_id, codigo) "

@@ -8,6 +8,7 @@ import * as evaluacionApi from '../../api/evaluacion';
 import * as planCurricularApi from '../../api/planCurricular';
 import { formatSqlDateTime } from '../../utils/date';
 import PlanesPorEspecialidad from './PlanesPorEspecialidad';
+import { formatFechaClase } from '../../utils/fechaClase';
 
 type Tab = 'planes' | 'incumplimientos';
 // Local status/state removed; toasts are used instead
@@ -16,6 +17,9 @@ function formatDate(value?: string): string {
   if (!value) return 'Pendiente';
   return formatSqlDateTime(value, { dateStyle: 'short', timeStyle: 'short' }, 'Pendiente');
 }
+
+const RETROACTIVA = evaluacionApi.TIPO_INCONGRUENCIA_RETROACTIVA;
+const BLOQUEO = evaluacionApi.TIPO_BLOQUEO_INCONGRUENCIA_RETROACTIVA;
 
 function professorName(item: evaluacionApi.IncumplimientoPendiente): string {
   return [item.usuarioApellido, item.usuarioNombre].filter(Boolean).join(' ') || `Profesor #${item.usuarioId}`;
@@ -41,6 +45,7 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
   const [estadoResolucion, setEstadoResolucion] = useState<'PERMITIDO' | 'RECHAZADO'>('PERMITIDO');
   const [suspensionDesde, setSuspensionDesde] = useState('');
   const [suspensionHasta, setSuspensionHasta] = useState('');
+  const [notaReactivacion, setNotaReactivacion] = useState('');
   const [loading, setLoading] = useState(true);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [resolving, setResolving] = useState(false);
@@ -93,6 +98,28 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
     setEstadoResolucion('PERMITIDO');
     setSuspensionDesde('');
     setSuspensionHasta('');
+    setNotaReactivacion('');
+  }
+
+  /** Resuelve las incongruencias retroactivas y el bloqueo (sin fechas de suspensión) y recarga la lista. */
+  async function resolverSinSuspension(resolucion: evaluacionApi.ResolucionIncumplimiento, exito: string) {
+    if (selectedIncumplimientoId == null) return;
+    setResolving(true);
+    try {
+      const resultado = await evaluacionApi.resolverIncumplimiento(selectedIncumplimientoId, resolucion);
+      setIncumplimientos(await evaluacionApi.getIncumplimientos());
+      setSelectedIncumplimientoId(null);
+      setNotaReactivacion('');
+      if (resultado.bloqueoGenerado) {
+        showToast('Con este rechazo se alcanzó el umbral: "Iniciar clase" quedó bloqueado en la asignación hasta que lo reactives.', { tone: 'success' });
+      } else {
+        showToast(exito, { tone: 'success', autoDismiss: true });
+      }
+    } catch (error) {
+      showToast(messageFor(error, 'No se pudo resolver el caso.'), { tone: 'error' });
+    } finally {
+      setResolving(false);
+    }
   }
 
   async function handleResolver() {
@@ -125,6 +152,9 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
   }
 
   const selectedIncumplimiento = incumplimientos.find((item) => item.id === selectedIncumplimientoId);
+  const bloqueos = incumplimientos.filter((item) => item.tipo === BLOQUEO);
+  const retroactivas = incumplimientos.filter((item) => item.tipo === RETROACTIVA);
+  const atrasos = incumplimientos.filter((item) => item.tipo !== BLOQUEO && item.tipo !== RETROACTIVA);
 
   return <>
     <div className="tabs" style={{ marginBottom: 16 }}>
@@ -161,16 +191,48 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
     {tab === 'incumplimientos' && <div className="evaluation-split-layout equal-columns">
       <div className="panel">
         <h3>Casos pendientes ({incumplimientos.length})</h3>
-        {loading ? <p>Cargando incumplimientos...</p> : incumplimientos.length === 0 ? <p style={{ color: 'var(--muted)' }}>No hay incumplimientos pendientes de resolución.</p> : <div style={{ display: 'grid', gap: 8 }}>
-          {incumplimientos.map((item) => <button key={item.id} type="button" onClick={() => selectIncumplimiento(item.id)} style={{ padding: 12, background: selectedIncumplimientoId === item.id ? 'var(--accent-strong)' : 'var(--paper-raised)', border: selectedIncumplimientoId === item.id ? '2px solid var(--accent)' : '1px solid var(--line)', borderRadius: 4, cursor: 'pointer', textAlign: 'left', color: 'var(--ink)' }}>
-            <strong>{professorName(item)}</strong>
-            <div style={{ fontSize: '0.9rem', color: 'var(--muted)', marginTop: 4 }}>{item.descripcion}</div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--muted)', marginTop: 4 }}>{item.tipo} · {formatDate(item.fechaCreacion)}</div>
-          </button>)}
+        {loading ? <p>Cargando incumplimientos...</p> : incumplimientos.length === 0 ? <p style={{ color: 'var(--muted)' }}>No hay incumplimientos pendientes de resolución.</p> : <div style={{ display: 'grid', gap: 16 }}>
+          {[
+            { titulo: 'Bloqueos de Iniciar clase', items: bloqueos, destacado: true },
+            { titulo: 'Incongruencias retroactivas', items: retroactivas, destacado: false },
+            { titulo: 'Atrasos en tiempo real', items: atrasos, destacado: false },
+          ].filter((grupo) => grupo.items.length > 0).map((grupo) => <section key={grupo.titulo} aria-label={grupo.titulo} style={{ display: 'grid', gap: 8 }}>
+            <h4 style={{ margin: 0, color: grupo.destacado ? 'var(--danger)' : undefined }}>{grupo.titulo} ({grupo.items.length})</h4>
+            {grupo.items.map((item) => <button key={item.id} type="button" onClick={() => selectIncumplimiento(item.id)} style={{ padding: 12, background: selectedIncumplimientoId === item.id ? 'var(--accent-strong)' : 'var(--paper-raised)', border: selectedIncumplimientoId === item.id ? '2px solid var(--accent)' : grupo.destacado ? '2px solid var(--danger)' : '1px solid var(--line)', borderRadius: 4, cursor: 'pointer', textAlign: 'left', color: 'var(--ink)' }}>
+              <strong>{professorName(item)}</strong>
+              <div style={{ fontSize: '0.9rem', color: 'var(--muted)', marginTop: 4 }}>{item.descripcion}</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--muted)', marginTop: 4 }}>{item.tipo === RETROACTIVA && item.fechaClase ? `Clase del ${formatFechaClase(item.fechaClase)}` : item.tipo} · {formatDate(item.fechaCreacion)}</div>
+            </button>)}
+          </section>)}
         </div>}
       </div>
       <div className="panel">
-        {!selectedIncumplimiento ? <p style={{ textAlign: 'center', color: 'var(--muted)' }}>Seleccioná un incumplimiento para resolverlo.</p> : <>
+        {!selectedIncumplimiento ? <p style={{ textAlign: 'center', color: 'var(--muted)' }}>Seleccioná un incumplimiento para resolverlo.</p> : selectedIncumplimiento.tipo === BLOQUEO ? <>
+          <h3 style={{ color: 'var(--danger)' }}>Reactivar Iniciar clase</h3>
+          <p><strong>{professorName(selectedIncumplimiento)}</strong>{selectedIncumplimiento.materiaNombre ? ` · ${selectedIncumplimiento.materiaNombre}` : ''}</p>
+          <p className="lead">{selectedIncumplimiento.descripcion}</p>
+          <p style={{ color: 'var(--muted)' }}>El bloqueo no vence solo: sigue hasta que lo levantes acá. La nota queda registrada y se le envía al profesor.</p>
+          <div className="form-grid">
+            <div className="form-field"><label htmlFor="nota-reactivacion" className="field-label">Nota de reactivación</label>
+              <textarea id="nota-reactivacion" rows={4} value={notaReactivacion} disabled={resolving} onChange={(event) => setNotaReactivacion(event.target.value)} placeholder="Por qué se reactiva y a qué se llegó" style={{ width: '100%', resize: 'none' }} />
+            </div>
+            <button type="button" className="button" disabled={resolving || !notaReactivacion.trim()} onClick={() => void resolverSinSuspension({ estado: 'PERMITIDO', nota: notaReactivacion.trim() }, 'Iniciar clase reactivado y profesor notificado.')}>{resolving ? 'Reactivando...' : 'Reactivar Iniciar clase'}</button>
+          </div>
+        </> : selectedIncumplimiento.tipo === RETROACTIVA ? <>
+          <h3>Incongruencia retroactiva</h3>
+          <p><strong>{professorName(selectedIncumplimiento)}</strong>{selectedIncumplimiento.materiaNombre ? ` · ${selectedIncumplimiento.materiaNombre}` : ''}</p>
+          <dl style={{ display: 'grid', gap: 8, margin: '8px 0 16px' }}>
+            <div><dt style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>Fecha de la clase</dt><dd style={{ margin: 0 }}>{formatFechaClase(selectedIncumplimiento.fechaClase)}</dd></div>
+            <div><dt style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>Tema ingresado</dt><dd style={{ margin: 0 }}>{selectedIncumplimiento.temaIngresado ?? '—'}</dd></div>
+            <div><dt style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>Tema esperado según el plan</dt><dd style={{ margin: 0 }}>{selectedIncumplimiento.temaEsperado ?? '—'}</dd></div>
+            <div><dt style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>Justificación del profesor</dt><dd style={{ margin: 0 }}>{selectedIncumplimiento.justificacionProfesor?.trim() || 'Sin justificación cargada.'}</dd></div>
+          </dl>
+          <p style={{ color: 'var(--muted)' }}>Aceptar no cuenta como falta. Rechazar suma una falta: al llegar al umbral se bloquea "Iniciar clase" hasta que evaluación lo reactive.</p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button type="button" className="button" disabled={resolving} onClick={() => void resolverSinSuspension({ estado: 'PERMITIDO' }, 'Incongruencia aceptada y profesor notificado.')}>Aceptar</button>
+            <button type="button" className="button secondary" disabled={resolving} onClick={() => void resolverSinSuspension({ estado: 'RECHAZADO' }, 'Incongruencia rechazada y profesor notificado.')}>Rechazar</button>
+          </div>
+        </> : <>
           <h3>Resolver incumplimiento</h3>
           <p><strong>{professorName(selectedIncumplimiento)}</strong></p>
           <p className="lead">{selectedIncumplimiento.descripcion}</p>

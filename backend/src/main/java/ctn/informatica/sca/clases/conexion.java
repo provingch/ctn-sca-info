@@ -4,9 +4,12 @@
  */
 package ctn.informatica.sca.clases;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,16 +42,76 @@ public class conexion {
         }
     }
 
+    /**
+     * Pool compartido por todas las DAOs (cada una hereda de esta clase y se instancia con
+     * {@code new}, asi que el pool tiene que ser estatico). Se indexa por url+usuario+clave
+     * para que los setters de host/base sigan funcionando.
+     */
+    private static final Map<String, HikariDataSource> POOLS = new ConcurrentHashMap<>();
+
+    /**
+     * Devuelve una conexion del pool. Los llamadores siguen usando {@code try (Connection c = getCon())}:
+     * {@code close()} la devuelve al pool en vez de cerrarla de verdad.
+     */
     public Connection getCon() throws SQLException {
-        String url = "jdbc:mysql://" + host + "/" + base + "?useUnicode=true&characterEncoding=UTF-8";
         try {
-            con = DriverManager.getConnection(url, this.usuario, this.contra);
-            Logger.getLogger(conexion.class.getName()).log(Level.INFO, "DB connected to {0}/{1}", new Object[]{host, base});
-            return con;
+            return pool().getConnection();
         } catch (SQLException ex) {
             Logger.getLogger(conexion.class.getName()).log(Level.SEVERE, "DB connection failed: {0}", ex.getMessage());
             throw ex; // propagate so callers can handle the error instead of getting null
         }
+    }
+
+    private HikariDataSource pool() throws SQLException {
+        String url = "jdbc:mysql://" + host + "/" + base + "?useUnicode=true&characterEncoding=UTF-8";
+        String key = url + "|" + usuario + "|" + contra;
+        HikariDataSource existente = POOLS.get(key);
+        if (existente != null) {
+            return existente;
+        }
+        synchronized (POOLS) {
+            existente = POOLS.get(key);
+            if (existente == null) {
+                existente = crearPool(url, usuario, contra);
+                POOLS.put(key, existente);
+            }
+            return existente;
+        }
+    }
+
+    private static HikariDataSource crearPool(String url, String usuario, String contra) throws SQLException {
+        HikariConfig cfg = new HikariConfig();
+        cfg.setPoolName("sca-db");
+        cfg.setJdbcUrl(url);
+        cfg.setUsername(usuario);
+        cfg.setPassword(contra);
+        cfg.setMaximumPoolSize(10);
+        cfg.setMinimumIdle(2);
+        cfg.setConnectionTimeout(5_000);
+        cfg.setIdleTimeout(300_000);
+        // Una conexion que no se devuelve al pool se come un cupo para siempre: que quede en el log.
+        cfg.setLeakDetectionThreshold(60_000);
+        // Con el default (fail-fast) el pool prueba una conexion al crearse; si la base no responde falla
+        // enseguida (como el DriverManager de antes) en vez de esperar connectionTimeout, y no queda en el
+        // mapa: el proximo getCon() vuelve a intentar.
+        try {
+            HikariDataSource ds = new HikariDataSource(cfg);
+            Logger.getLogger(conexion.class.getName()).log(Level.INFO, "Pool de conexiones creado para {0}", url);
+            return ds;
+        } catch (RuntimeException ex) {
+            Throwable causa = ex.getCause() == null ? ex : ex.getCause();
+            throw new SQLException(causa.getMessage(), causa instanceof SQLException sql ? sql.getSQLState() : null, causa);
+        }
+    }
+
+    /** Cierra los pools (apagado de la JVM o tests). */
+    public static void cerrarPools() {
+        POOLS.values().forEach(HikariDataSource::close);
+        POOLS.clear();
+    }
+
+    static {
+        Runtime.getRuntime().addShutdownHook(new Thread(conexion::cerrarPools, "sca-db-pool-shutdown"));
     }
 
     private static String config(String envName, String propertyName, String defaultValue) {

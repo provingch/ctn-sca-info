@@ -6,6 +6,7 @@ import useAccessibleDialog from '../../hooks/useAccessibleDialog';
 import { useToast } from '../../context/toast';
 import { formatSqlDateTime } from '../../utils/date';
 import TemasPorMesAccordion from '../../components/TemasPorMesAccordion';
+import IncongruenciasRetroactivasPanel from './IncongruenciasRetroactivasPanel';
 
 type AssignmentGroup = { id: number; nombre: string; asignaciones: planCurricularApi.AsignacionCompleta[] };
 
@@ -227,6 +228,8 @@ export default function PlanCurricularView() {
       <div className="class-card-head"><h3>Plan curricular</h3></div>
       <p style={{ margin: 0, color: 'var(--muted)' }}>Descargá la plantilla de una de tus asignaciones, completala y subila para su revisión.</p>
     </div>
+
+    <IncongruenciasRetroactivasPanel />
 
     <section className="class-card">
       {errorAsignaciones ? <div className="notice error">{errorAsignaciones} <button type="button" className="button secondary" onClick={() => void loadAsignaciones()}>Reintentar</button></div> : asignaciones === null ? (

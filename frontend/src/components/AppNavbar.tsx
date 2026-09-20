@@ -6,7 +6,7 @@ import { getRoleNavigation, type NavigationItem } from '../config/navigation';
 import ScaLogo from './ScaLogo';
 import ThemeToggle from './ThemeToggle';
 import AvatarEspecialidad from './AvatarEspecialidad';
-import { formatNotificationDate, notificationDestination } from './notificationUtils';
+import { formatNotificationDate, isResolvedAutomatically, notificationDestination } from './notificationUtils';
 
 type NotificationStatus = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -149,7 +149,8 @@ export default function AppNavbar() {
 
   async function handleClickNotif(n: NotificacionItem) {
     setNotifError('');
-    if (!n.leida) {
+    // El recordatorio de plan pendiente no se marca leído (el backend lo rechaza): sólo se navega.
+    if (!n.leida && !isResolvedAutomatically(n)) {
       try {
         await marcarNotificacionLeida(n.id);
         setNotifs((current) => current.map((item) => item.id === n.id ? { ...item, leida: true } : item));
@@ -166,14 +167,18 @@ export default function AppNavbar() {
     }
   }
 
+  const markableCount = notifs.filter((item) => !item.leida && !isResolvedAutomatically(item)).length;
+
   async function markAllNotificationsRead() {
-    if (notifCount === 0 || markingAll) return;
+    if (markableCount === 0 || markingAll) return;
     setMarkingAll(true);
     setNotifError('');
     try {
       await marcarTodasNotificacionesLeidas();
-      setNotifs((current) => current.map((item) => ({ ...item, leida: true })));
-      setNotifCount(0);
+      // Los recordatorios de plan pendiente quedan sin leer (se cierran al subir el plan).
+      const next = notifs.map((item) => isResolvedAutomatically(item) ? item : { ...item, leida: true });
+      setNotifs(next);
+      setNotifCount(next.filter((item) => !item.leida).length);
     } catch {
       setNotifError('No se pudieron marcar todas las notificaciones como leídas.');
     } finally {
@@ -252,7 +257,7 @@ export default function AppNavbar() {
           <span aria-live="polite">{notifCount === 0 ? 'Todo al día' : `${notifCount} sin leer`}</span>
           <div>
             <button type="button" disabled={notifStatus === 'loading'} onClick={() => void loadNotifications()}>Actualizar</button>
-            <button type="button" disabled={notifCount === 0 || markingAll} onClick={() => void markAllNotificationsRead()}>{markingAll ? 'Marcando…' : 'Marcar todas como leídas'}</button>
+            <button type="button" disabled={markableCount === 0 || markingAll} onClick={() => void markAllNotificationsRead()}>{markingAll ? 'Marcando…' : 'Marcar todas como leídas'}</button>
           </div>
         </div>
         {notifError && <div className="notif-error" role="alert">{notifError}</div>}
@@ -267,7 +272,7 @@ export default function AppNavbar() {
                       <button type="button" className="notif-link" onClick={() => void handleClickNotif(notification)} aria-label={`${notification.titulo}. ${notification.leida ? 'Leída' : 'No leída'}${destination ? '. Abrir destino' : ''}`}>
                         <span className="notif-unread-dot" aria-hidden="true" />
                         <span className="notif-message"><strong>{notification.titulo}</strong><span>{notification.cuerpo}</span></span>
-                        <span className="notif-meta"><time dateTime={notification.createdAt}>{formatNotificationDate(notification.createdAt)}</time><small>{destination ? 'Abrir →' : notification.leida ? 'Leída' : 'Marcar como leída'}</small></span>
+                        <span className="notif-meta"><time dateTime={notification.createdAt}>{formatNotificationDate(notification.createdAt)}</time><small>{isResolvedAutomatically(notification) && !notification.leida ? 'Se resuelve sola al subir tu plan' : destination ? 'Abrir →' : notification.leida ? 'Leída' : 'Marcar como leída'}</small></span>
                       </button>
                     </li>;
                   })}

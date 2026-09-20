@@ -58,6 +58,13 @@
 			<artifactId>mysql-connector-j</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+		<!-- Pool de conexiones para conexion.getCon(). Se usa HikariCP directo (el mismo que trae
+		     spring-boot-starter-jdbc) sin el starter: este activaria DataSourceAutoConfiguration, que
+		     no arranca sin spring.datasource.url y no hace falta porque las DAOs no usan Spring JDBC. -->
+		<dependency>
+			<groupId>com.zaxxer</groupId>
+			<artifactId>HikariCP</artifactId>
+		</dependency>
 
 		<!-- Testing Dependencies -->
 		<dependency>
