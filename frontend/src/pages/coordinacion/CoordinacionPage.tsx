@@ -9,6 +9,7 @@ import { formatSqlDateTime } from '../../utils/date';
 import CatalogoConductaPanel from '../../components/CatalogoConductaPanel';
 import ComplaintReview from '../../components/quejas/ComplaintReview';
 import ComplaintDocuments from '../../components/quejas/ComplaintDocuments';
+import ComplaintGroups from '../../components/quejas/ComplaintGroups';
 import LauncherCards, { launcherIcons } from '../../components/LauncherCards';
 import { nombreCorto } from '../../utils/nombre';
 
@@ -75,6 +76,7 @@ export default function CoordinacionPage() {
   const [status, setStatus] = useState('');
   const [quejas, setQuejas] = useState<QuejaItem[]>([]);
   const [usuariosPorId, setUsuariosPorId] = useState<Map<number, string>>(new Map());
+  const [especialidadesPorId, setEspecialidadesPorId] = useState<Map<number, string>>(new Map());
   const [selectedProfesorId, setSelectedProfesorId] = useState<number | null>(null);
   const UMBRAL = 5; // valor visual por defecto si backend no expone el umbral
 
@@ -95,6 +97,7 @@ export default function CoordinacionPage() {
       const map = new Map<number, string>();
       catalog.usuarios.forEach((u) => map.set(u.id, `${u.nombre} ${u.apellido}`.trim()));
       setUsuariosPorId(map);
+      setEspecialidadesPorId(new Map(catalog.especialidades.map(item => [item.id, item.nombre])));
     }).catch(() => { /* el nombre de quien cargó la queja queda con fallback */ });
   }, [view]);
 
@@ -176,15 +179,15 @@ export default function CoordinacionPage() {
       <header className="planilla-table-heading">
         <div>
           <span>Detalle</span>
-          <h2>Quejas del profesor</h2>
+          <h2>Quejas de {agrupadas.find(g => g.profesorId === selectedProfesorId)?.nombreVisible ?? 'este profesor'}</h2>
         </div>
         <small className="muted-copy">{detalleQuejas.length} queja(s) registrada(s)</small>
       </header>
       {detalleQuejas.length === 0 ? (
         <ContentState title="Sin quejas" detail="No se encontraron quejas para este profesor." tone="empty" />
       ) : (
-        <ul className="activity-list">
-          {detalleQuejas.map((q) => {
+        <ComplaintGroups key={selectedProfesorId} quejas={detalleQuejas} specialtyName={q => especialidadesPorId.get(q.especialidadId) || q.cursoEspecialidad?.trim() || 'Especialidad no disponible'}>{items => <ul className="activity-list">
+          {items.map((q) => {
             const estado = quejaEstado(q);
             return <li key={q.id} className="activity-row">
               <div className="avatar activity-row-avatar">{(q.cursoEspecialidad ?? 'C').slice(0, 1)}</div>
@@ -225,7 +228,7 @@ export default function CoordinacionPage() {
               </div>
             </li>;
           })}
-        </ul>
+        </ul>}</ComplaintGroups>
       )}
     </section>
   </AppShell>;

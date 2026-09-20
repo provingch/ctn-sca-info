@@ -1,0 +1,16 @@
+.complaint-state-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.complaint-state-filters .button { min-height: 42px; }
+.complaint-group-count { color: var(--muted); font-size: .85rem; margin: 14px 0; }
+.complaint-specialty-brand { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; padding-left: 10px; border-left: 3px solid var(--accent); color: var(--accent-deep); }
+.complaint-specialty-brand > span:last-child { overflow-wrap: anywhere; }
+.complaint-specialty-body { padding: 16px; }
+.complaint-state-heading { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; }
+.complaint-state-heading .complaint-status { margin: 0; }
+.complaint-specialty-body > section + section { border-top: 1px solid var(--line); margin-top: 20px; padding-top: 20px; }
+.complaint-detail-groups .activity-row-body { min-width: 0; overflow-wrap: anywhere; }
+.complaint-detail-groups .complaint-group-empty { padding: 16px; background: var(--paper-raised); border-radius: var(--radius); }
+@media (max-width: 640px) {
+  .complaint-detail-groups .complaint-specialty-brand { flex-basis: 100%; }
+  .complaint-detail-groups .complaints-specialty-count { margin-left: 10px; }
+  .complaint-specialty-body { padding: 12px; }
+}
