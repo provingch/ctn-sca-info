@@ -1173,6 +1173,49 @@ public class AdminController {
         }
     }
 
+    /**
+     * Herramienta de recuperación: vuelve a abrir una etapa ya confirmada (cerrada de más, por ejemplo). El profesor
+     * recupera la edición de notas y tareas de esa etapa, así que sólo la usa el admin global.
+     */
+    @PostMapping("/planillas/{id}/etapa1/reabrir")
+    public Map<String, Object> reabrirEtapa1(@PathVariable int id, Authentication auth) {
+        return reabrirEtapa(id, 1, auth);
+    }
+
+    @PostMapping("/planillas/{id}/etapa2/reabrir")
+    public Map<String, Object> reabrirEtapa2(@PathVariable int id, Authentication auth) {
+        return reabrirEtapa(id, 2, auth);
+    }
+
+    private Map<String, Object> reabrirEtapa(int id, int etapa, Authentication auth) {
+        int actingUserId = ApiAuth.requireUserId(auth);
+        requireGlobalAdmin(auth);
+        try {
+            Planilla planilla = planillaDao.findById(id);
+            if (planilla == null) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Planilla no encontrada");
+            }
+            boolean cerrada = etapa == 1 ? planilla.getEtapa1Confirmada() : planilla.getEtapa2Confirmada();
+            if (!cerrada) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Etapa " + etapa + " no está cerrada");
+            }
+            boolean updated = etapa == 1 ? planillaDao.updateEtapa1Confirmada(id, false) : planillaDao.updateEtapa2Confirmada(id, false);
+            if (!updated) {
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo reabrir Etapa " + etapa);
+            }
+            try {
+                activityLogService.registrar(actingUserId, "Reabrió Etapa " + etapa + " de la planilla " + id);
+            } catch (Exception ex) {
+                log.warn("No se pudo registrar el log de reapertura de Etapa {} de la planilla {}: {}", etapa, id, ex.getMessage());
+            }
+            return Map.of("planillaId", id, "etapa" + etapa + "Confirmada", false);
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (SQLException ex) {
+            throw failure("No se pudo reabrir Etapa " + etapa, ex);
+        }
+    }
+
     @PostMapping("/cursos/sincronizar")
     public CursosSyncResponse sincronizarCursos(Authentication auth) {
         ApiAuth.requireUserId(auth);

@@ -7,7 +7,7 @@ import ContentState from '../../components/ui/ContentState';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import DatePicker from '../../components/DatePicker';
 import { getPlanilla, resolvePlanilla, syncClassroom, confirmClassroomMapping, saveGrades, saveEtapa1FechaCierre, confirmEtapa1, saveEtapa2FechaCierre, confirmEtapa2, type PlanillaDetail } from '../../api/academics';
-import { reformatearEtapa1 } from '../../api/admin';
+import { reabrirEtapa, reformatearEtapa1 } from '../../api/admin';
 import { ApiError, apiDownload } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/toast';
@@ -58,6 +58,7 @@ export default function PlanillaPage() {
   const [etapa1Date, setEtapa1Date] = useState('');
   const [confirmingEtapa1, setConfirmingEtapa1] = useState(false);
   const [reformattingEtapa1, setReformattingEtapa1] = useState(false);
+  const [reopeningEtapa, setReopeningEtapa] = useState(false);
   const [etapa2Date, setEtapa2Date] = useState('');
   const [confirmingEtapa2, setConfirmingEtapa2] = useState(false);
   const [selectedEtapa, setSelectedEtapa] = useState<number>(1);
@@ -359,6 +360,23 @@ export default function PlanillaPage() {
     }
   }
 
+  // Acción de admin con impacto real: vuelve a permitir editar una etapa ya cerrada, por eso pide confirmación.
+  async function reabrirEtapaAccion(etapa: 1 | 2) {
+    if (!data) return;
+    const ok = window.confirm(`¿Reabrir Etapa ${etapa}? El profesor va a poder volver a editar notas y tareas de esta etapa.`);
+    if (!ok) return;
+    setReopeningEtapa(true);
+    try {
+      await reabrirEtapa(id, etapa);
+      setStatus(`Etapa ${etapa} reabierta.`);
+      applyPlanillaData(await getPlanilla(id));
+    } catch (e) {
+      setStatus(e instanceof ApiError ? e.message : `No se pudo reabrir Etapa ${etapa}.`);
+    } finally {
+      setReopeningEtapa(false);
+    }
+  }
+
   function toggleFreezeStudents(checked: boolean) {
     setFreezeStudents(checked);
     localStorage.setItem('planilla-freeze-students', String(checked));
@@ -451,6 +469,8 @@ export default function PlanillaPage() {
                   {etapa2Date && !etapa2DateReached && <span className="planilla-stage-hint">Se habilita al llegar el {formatShortDate(etapa2Date)}</span>}
                 </>
               )}
+              {isGlobalAdmin && isEtapa1Locked && <button className="button secondary" type="button" disabled={reopeningEtapa} onClick={() => void reabrirEtapaAccion(1)}>{reopeningEtapa ? 'Reabriendo…' : 'Reabrir Etapa 1'}</button>}
+              {isGlobalAdmin && isEtapa2Locked && <button className="button secondary" type="button" disabled={reopeningEtapa} onClick={() => void reabrirEtapaAccion(2)}>{reopeningEtapa ? 'Reabriendo…' : 'Reabrir Etapa 2'}</button>}
               {isGlobalAdmin && data.planilla.etapaIndex === 1 && <button className="button secondary" type="button" disabled={reformattingEtapa1 || !data.planilla.fechaCierreEtapa1} onClick={() => void reformatearEtapa1Accion()}>{reformattingEtapa1 ? 'Reformateando…' : 'Reformatear etapa'}</button>}
               <button className="button secondary" type="button" disabled={syncingClassroom} onClick={() => void performClassroomSync(id)}>{syncingClassroom ? 'Sincronizando…' : 'Sincronizar Classroom'}</button>
               {!isStageLocked && <Link className="button" to={`/planilla/${id}/tarea`}>Agregar tarea</Link>}
