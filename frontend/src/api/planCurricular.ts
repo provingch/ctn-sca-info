@@ -47,6 +47,8 @@ export interface PlanCurricularEstado {
   temas?: TemaPlanDto[];
   etapa?: string;
   anio?: number;
+  /** La etapa de este plan ya cerró: un tema PENDIENTE pasa a "No cumplido". */
+  etapaCerrada?: boolean;
 }
 
 export interface PlanPendienteResumen {

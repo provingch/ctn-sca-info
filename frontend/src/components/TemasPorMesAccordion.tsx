@@ -1,10 +1,14 @@
 import { useState } from 'react';
 import type { TemaPlanDto } from '../api/planCurricular';
+import CoberturaTemaCelda from './CoberturaTemaCelda';
 
 interface Props {
   temas: TemaPlanDto[];
   initiallyOpen?: 'first' | 'all' | 'none';
   compact?: boolean;
+  /** Agrega la columna de cumplimiento; sólo tiene sentido en un plan aprobado (uno en revisión no tiene cobertura). */
+  mostrarCobertura?: boolean;
+  etapaCerrada?: boolean;
 }
 
 function groupByMes(temas: TemaPlanDto[]): { mes: string; ordenMes: number; items: TemaPlanDto[] }[] {
@@ -21,7 +25,7 @@ function groupByMes(temas: TemaPlanDto[]): { mes: string; ordenMes: number; item
   return groups;
 }
 
-export default function TemasPorMesAccordion({ temas, initiallyOpen = 'first', compact = false }: Props) {
+export default function TemasPorMesAccordion({ temas, initiallyOpen = 'first', compact = false, mostrarCobertura = false, etapaCerrada = false }: Props) {
   const grupos = groupByMes(temas);
   const [abiertos, setAbiertos] = useState<Set<string>>(() => {
     if (initiallyOpen === 'all') return new Set(grupos.map((g) => g.mes));
@@ -76,6 +80,7 @@ export default function TemasPorMesAccordion({ temas, initiallyOpen = 'first', c
                   <th>Tema / Contenido</th>
                   <th>Capacidades</th>
                   <th>Actividades</th>
+                  {mostrarCobertura && <th>Cumplimiento</th>}
                 </tr>
               </thead>
               <tbody>
@@ -84,6 +89,7 @@ export default function TemasPorMesAccordion({ temas, initiallyOpen = 'first', c
                   <td>{t.temasContenidos || '—'}</td>
                   <td>{t.capacidades || '—'}</td>
                   <td>{t.actividades || '—'}</td>
+                  {mostrarCobertura && <td><CoberturaTemaCelda tema={t} etapaCerrada={etapaCerrada} /></td>}
                 </tr>)}
               </tbody>
             </table>

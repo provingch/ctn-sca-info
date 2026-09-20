@@ -11,7 +11,7 @@ vi.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: { level: 1
 vi.mock('../../api/planCurricular', () => ({ getAsignacionesDisponibles: vi.fn() }));
 vi.mock('../../api/home', () => ({ getMiHorarioHoy: vi.fn(), listarCodigosConducta: vi.fn(), createClass: vi.fn() }));
 const data = { selCurso: { id: 7, curso: '2', seccion: 'A', especialidad: 'Informática' }, selEtapa: 1,
-  instrumentos: [], rasgoAsistencias: [{ id: 9, alumnoId: 1, codigos: ['N1'] }],
+  instrumentos: [{ id: 5, nombre: 'Práctica' }], rasgoAsistencias: [{ id: 9, alumnoId: 1, codigos: ['N1'] }],
   rasgoAlumnosValidos: [{ id: 1, nombre: 'Ana', apellido: 'Pérez' }], rasgoAlumnosInvalidos: [],
 } as unknown as HomeResponse;
 const bloqueHoy: HorarioBloqueHoyDto = {
@@ -19,6 +19,17 @@ const bloqueHoy: HorarioBloqueHoyDto = {
   salaNombre: 'Aula 2', horaInicio: '07:00', horaFin: '07:35', horasCatedra: 1, registrada: false,
 };
 const show = () => render(<ToastProvider><ClassView data={data} reload={vi.fn().mockResolvedValue(undefined)} /></ToastProvider>);
+/** Horario, horas cátedra y tipo de clase: lo que "Iniciar clase" exige además del tema (modalidad ya viene en Presencial). */
+function completarDatosDeLaClase() {
+  fireEvent.click(screen.getByRole('button', { name: 'Inicio de clase' }));
+  fireEvent.click(screen.getAllByRole('option')[0]);
+  fireEvent.change(screen.getByLabelText(/Horas cátedra/), { target: { value: '2' } });
+  elegirTipoDeClase();
+}
+function elegirTipoDeClase() {
+  fireEvent.click(screen.getByRole('button', { name: 'Instrumento' }));
+  fireEvent.click(screen.getByRole('option', { name: 'Práctica' }));
+}
 beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(getAsignacionesDisponibles).mockResolvedValue([{ id: 21, materiaId: 3, materiaNombre: 'Redes II' }]);
@@ -118,11 +129,12 @@ describe('Inicio de clase', () => {
     expect(screen.queryByLabelText('Inicio de clase')).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Contenido específico desarrollado'), { target: { value: 'Repaso de subredes' } });
+    elegirTipoDeClase(); // el horario y las horas vienen del bloque; el tipo de clase lo elige el profesor
     fireEvent.click(screen.getByRole('button', { name: 'Guardar inicio de clase' }));
 
     await waitFor(() => expect(createClass).toHaveBeenCalledTimes(1));
     expect(vi.mocked(createClass).mock.calls[0][0]).toMatchObject({
-      cursoId: 8, asignacionId: 21, horaInicio: '07:00', horasCatedra: 1, tema: 'Repaso de subredes',
+      cursoId: 8, asignacionId: 21, horaInicio: '07:00', horasCatedra: 1, instrumentoId: 5, tema: 'Repaso de subredes',
     });
   });
   it('vuelve a la lista de bloques al limpiar un formulario abierto desde un bloque', async () => {
@@ -176,6 +188,29 @@ describe('Inicio de clase', () => {
     expect(classEndTime('17:25', 1)).toBe('18:00');
     expect(classEndTime('11:25', 2)).toBe('');
   });
+  it('no envía la clase si faltan horario, horas o tipo de clase y avisa antes de mandar el request', async () => {
+    show();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Guardar inicio de clase' })).toBeEnabled());
+    fireEvent.change(screen.getByLabelText('Contenido específico desarrollado'), { target: { value: 'Tema' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar inicio de clase' }));
+
+    expect(await screen.findByText('Completá el horario de inicio, las horas cátedra y el tipo de clase para registrar la clase.')).toBeInTheDocument();
+    expect(createClass).not.toHaveBeenCalled();
+  });
+  it('con todos los datos obligatorios envía la clase, sin el campo etapa que el backend ya no usa', async () => {
+    vi.mocked(createClass).mockResolvedValue(undefined);
+    show();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Guardar inicio de clase' })).toBeEnabled());
+    fireEvent.change(screen.getByLabelText('Contenido específico desarrollado'), { target: { value: 'Tema' } });
+    completarDatosDeLaClase();
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar inicio de clase' }));
+
+    await waitFor(() => expect(createClass).toHaveBeenCalledTimes(1));
+    const payload = vi.mocked(createClass).mock.calls[0][0];
+    expect(payload).toMatchObject({ instrumentoId: 5, horasCatedra: 2, modalidad: 'Presencial', tema: 'Tema' });
+    expect(payload.horaInicio).toBeTruthy();
+    expect(payload).not.toHaveProperty('etapa');
+  });
   it('pide justificar el atraso, conserva la asistencia marcada y reenvía con la justificación', async () => {
     vi.mocked(createClass)
       .mockRejectedValueOnce(new ApiError(400, 'Se requiere justificar el atraso para este tema.'))
@@ -183,6 +218,7 @@ describe('Inicio de clase', () => {
     show();
     await waitFor(() => expect(screen.getByRole('button', { name: 'Guardar inicio de clase' })).toBeEnabled());
     fireEvent.change(screen.getByLabelText('Contenido específico desarrollado'), { target: { value: 'Tema atrasado' } });
+    completarDatosDeLaClase();
     fireEvent.click(screen.getByRole('button', { name: 'Pérez, Ana, presente' }));
     fireEvent.click(screen.getByRole('button', { name: 'Guardar inicio de clase' }));
 
@@ -204,6 +240,7 @@ describe('Inicio de clase', () => {
     show();
     await waitFor(() => expect(screen.getByRole('button', { name: 'Guardar inicio de clase' })).toBeEnabled());
     fireEvent.change(screen.getByLabelText('Contenido específico desarrollado'), { target: { value: 'Tema' } });
+    completarDatosDeLaClase();
     fireEvent.click(screen.getByRole('button', { name: 'Guardar inicio de clase' }));
     await screen.findByText('No hay alumnos válidos para crear la planilla de rasgos.');
     expect(screen.queryByLabelText('Justificación del atraso')).not.toBeInTheDocument();

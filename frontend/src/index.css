@@ -1175,6 +1175,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .complaint-status.aceptada { background: var(--accent-soft); color: var(--accent-deep); }
 .complaint-status.rechazada { background: color-mix(in srgb, var(--danger) 14%, var(--paper)); color: var(--danger); }
 .badge--danger { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 16%, var(--paper)); color: var(--danger); }
+.field-required { margin-left: 2px; color: var(--danger); font-weight: 800; }
 .reabrir-dialog { width: min(560px, calc(100vw - 32px)); }
 .reabrir-dialog .reabrir-dialog-field { grid-column: 1 / -1; margin: 0; }
 .reabrir-dialog textarea { width: 100%; resize: none; }

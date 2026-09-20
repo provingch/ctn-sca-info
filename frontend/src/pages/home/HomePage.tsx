@@ -21,6 +21,7 @@ import { useAuth } from '../../context/AuthContext';
 import { classEndTime, HORARIOS_CATEDRA } from './classFormUtils';
 import { resizeImageToDataUri } from '../../utils/imageResize';
 import RasgosAsistenciaEditor from './RasgosAsistenciaEditor';
+import { datosFaltantesDeLaClase, mensajeDatosFaltantes } from './claseRequerida';
 
 const normalizeSpecialtyName = (value: string) => value
   .trim()
@@ -986,11 +987,17 @@ export function ClassView({ data, reload, onModoChange }: { data: HomeResponse; 
       setStatus(mensajeBloqueo || 'No puedes iniciar clases en este momento.');
       return;
     }
+    // El backend también lo exige; acá se adelanta el error para que no llegue como un 400 después de enviar.
+    const faltantes = datosFaltantesDeLaClase({ horario, cantidadHoras, modalidad, instrumentoId });
+    if (faltantes.length > 0) {
+      setStatus(mensajeDatosFaltantes(faltantes));
+      return;
+    }
     submitting.current = true; setSaving(true);
     try {
       const asignacionUsada = enBloque ? bloqueActivo!.asignacionId : (selectedAsignacionId ?? asignacionActual?.id ?? null);
       await createClass({
-        cursoId: cursoIdEnvio, asignacionId: asignacionUsada, etapa: data.selEtapa, instrumentoId,
+        cursoId: cursoIdEnvio, asignacionId: asignacionUsada, instrumentoId,
         horaInicio: horario, horasCatedra: cantidadHoras ? Number(cantidadHoras) : null, modalidad, observaciones,
         tema, justificacionAtraso: requiereJustificacion ? justificacionAtraso : undefined,
         alumnosAusentes: ausentes, codigosPorAlumno,
@@ -1035,12 +1042,12 @@ export function ClassView({ data, reload, onModoChange }: { data: HomeResponse; 
   const camposComunes = (
     <>
       <div className="class-field">
-        <label>Modalidad</label>
+        <label>Modalidad <span className="field-required" aria-hidden="true">*</span></label>
         <AnimatedSelect ariaLabel="Modalidad de la clase" value={modalidad} onChange={setModalidad} options={[{ value: 'Presencial', label: 'Presencial' }, { value: 'Virtual', label: 'Virtual' }]} />
       </div>
       <div className="class-field">
-        <label htmlFor="instrumentoId">Tipo de clase</label>
-        <AnimatedSelect ariaLabel="Instrumento" value={instrumentoId} onChange={(value) => setInstrumentoId(Number(value))} options={[{ value: 0, label: 'Sin instrumento' }, ...data.instrumentos.map((item) => ({ value: item.id, label: item.nombre }))]} />
+        <label htmlFor="instrumentoId">Tipo de clase <span className="field-required" aria-hidden="true">*</span></label>
+        <AnimatedSelect ariaLabel="Instrumento" value={instrumentoId || ''} placeholder="Seleccioná el tipo de clase" onChange={(value) => setInstrumentoId(Number(value))} options={data.instrumentos.map((item) => ({ value: item.id, label: item.nombre }))} />
       </div>
       <div className="class-field class-field--full">
         <label htmlFor="observacionesGenerales">Observaciones generales</label>
@@ -1096,8 +1103,8 @@ export function ClassView({ data, reload, onModoChange }: { data: HomeResponse; 
             </div>
             <fieldset className="class-field--full class-schedule"><legend>Horario de la clase</legend>
               <div className="class-schedule-grid">
-                <div className="class-field"><label>Inicio de clase</label><AnimatedSelect ariaLabel="Inicio de clase" value={horario} placeholder="Seleccioná el horario" onChange={setHorario} options={HORARIOS_CATEDRA.map((hora) => ({ value: hora, label: hora }))} /></div>
-                <div className="class-field"><label htmlFor="cantidadHoras">Horas cátedra</label><input id="cantidadHoras" type="number" min={1} max={8} value={cantidadHoras} onChange={(e) => handleCantidadHorasInput(e.target.value)} placeholder="Ej.: 2" /></div>
+                <div className="class-field"><label>Inicio de clase <span className="field-required" aria-hidden="true">*</span></label><AnimatedSelect ariaLabel="Inicio de clase" value={horario} placeholder="Seleccioná el horario" onChange={setHorario} options={HORARIOS_CATEDRA.map((hora) => ({ value: hora, label: hora }))} /></div>
+                <div className="class-field"><label htmlFor="cantidadHoras">Horas cátedra <span className="field-required" aria-hidden="true">*</span></label><input id="cantidadHoras" type="number" min={1} max={8} value={cantidadHoras} onChange={(e) => handleCantidadHorasInput(e.target.value)} placeholder="Ej.: 2" /></div>
                 <div className="class-field"><label htmlFor="horarioFinalClase">Final de la clase</label><input id="horarioFinalClase" value={horarioFinal} placeholder="Según inicio y duración" readOnly /></div>
               </div>
               {!!horario && !!cantidadHoras && !horarioFinal && <small>La duración debe corresponder a horas disponibles dentro del mismo turno.</small>}

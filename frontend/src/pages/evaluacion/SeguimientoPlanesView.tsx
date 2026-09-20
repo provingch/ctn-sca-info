@@ -7,6 +7,7 @@ import { formatSqlDateTime } from '../../utils/date';
 import PlanesPorEspecialidad from './PlanesPorEspecialidad';
 import { formatFechaClase } from '../../utils/fechaClase';
 import ContentState from '../../components/ui/ContentState';
+import CoberturaTemaCelda from '../../components/CoberturaTemaCelda';
 
 type Tab = 'planes' | 'incumplimientos';
 // Local status/state removed; toasts are used instead
@@ -145,7 +146,7 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
             <table className="table table-striped" style={{ fontSize: '0.85rem' }}>
               <caption className="visually-hidden">Cumplimiento de temas del plan curricular</caption>
               <thead><tr><th>Mes</th><th>Tema/Contenido</th><th>Cumplido</th></tr></thead>
-              <tbody>{selectedPlan.temas?.map((tema, index) => <tr key={`${tema.ordenMes}-${index}`}><td>{tema.mes}</td><td>{tema.temasContenidos}</td><td>{tema.estadoCobertura === 'CUBIERTO' ? formatDate(tema.fechaCobertura) : 'Pendiente'}</td></tr>)}</tbody>
+              <tbody>{selectedPlan.temas?.map((tema, index) => <tr key={`${tema.ordenMes}-${index}`}><td>{tema.mes}</td><td>{tema.temasContenidos}</td><td><CoberturaTemaCelda tema={tema} etapaCerrada={selectedPlan.etapaCerrada} /></td></tr>)}</tbody>
             </table>
           </div>
         </>}
