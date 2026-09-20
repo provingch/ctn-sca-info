@@ -570,13 +570,14 @@ function CatedraTabs({ subview, params }: { subview: string; params: (next: Reco
             aria-controls={`catedra-panel-${tab.key}`}
             tabIndex={active ? 0 : -1}
             className={`catedra-tab${active ? ' active' : ''}`}
+            title={tab.key === 'plan-curricular' && estadoPlanTono ? estadoPlanTexto : tab.label}
             onClick={() => params({ subview: tab.key })}
             onKeyDown={(event) => onKeyDown(event, index)}
           >
             {tab.label}
             {tab.key === 'plan-curricular' && estadoPlanTono && <>
               <span className={`catedra-tab-dot tone-${estadoPlanTono}`} aria-hidden="true" />
-              <span className="visually-hidden">{estadoPlanTexto}</span>
+              <span className="catedra-tab-status">{hayRechazados ? 'Rechazados' : 'Sin cargar'}</span>
             </>}
           </button>
         );

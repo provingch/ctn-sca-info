@@ -16,6 +16,7 @@ function NotificationTrigger({ count, open, mobile = false, onClick }: { count: 
     className={`navbar-notif-trigger${mobile ? ' mobile' : ''}`}
     type="button"
     aria-label={`Notificaciones, ${countLabel}`}
+    title={`Notificaciones, ${countLabel}`}
     aria-haspopup="dialog"
     aria-controls="notification-inbox"
     aria-expanded={open}

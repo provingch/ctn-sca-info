@@ -291,7 +291,8 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .page-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 52px; padding: 14px 18px; margin-bottom: 20px; border-radius: var(--radius); background: radial-gradient(circle at 85% 15%, color-mix(in srgb, var(--accent) 18%, transparent) 0%, transparent 55%), linear-gradient(135deg, var(--accent-soft), color-mix(in srgb, var(--accent-soft) 75%, var(--accent) 15%)); box-shadow: 0 8px 20px color-mix(in srgb, var(--accent) 18%, transparent); border-bottom: 2px solid color-mix(in srgb, var(--accent) 30%, transparent); }
 .page-banner-text { display: grid; gap: 4px; }
 .page-banner-title-row { display: flex; align-items: center; gap: 10px; }
-.page-banner-back { padding: 0; border: 0; background: transparent; color: var(--accent-deep); opacity: .68; font-size: .78rem; font-weight: 700; cursor: pointer; }
+.page-banner-back { padding: 8px 12px; min-height: 40px; border: 1px solid var(--line-strong); border-radius: 9px; background: var(--paper); color: var(--ink); font-size: .9rem; font-weight: 700; cursor: pointer; }
+.catedra-tab-status { font-size: .75rem; color: inherit; padding: 2px 6px; border: 1px solid currentColor; border-radius: 6px; }
 .page-banner-back:hover { opacity: 1; }
 .page-banner-text h1 { margin: 0; color: var(--accent-deep); font-size: 1.2rem; font-weight: 800; }
 .page-banner-text span { color: var(--accent-deep); opacity: .82; font-size: .82rem; }

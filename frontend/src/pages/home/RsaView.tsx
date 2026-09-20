@@ -1,3 +1,4 @@
+import './RsaView.css';
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError } from '../../api/client';
 import AnimatedSelect from '../../components/AnimatedSelect';
@@ -15,10 +16,6 @@ function errorMessage(error: unknown, fallback: string) {
   return error instanceof ApiError ? error.message : fallback;
 }
 
-function etapaActual(): '1' | '2' {
-  const hoy = new Date();
-  return hoy < new Date(hoy.getFullYear(), 5, 22) ? '1' : '2';
-}
 
 function describirTolerancia(valor: number, unidad: RsaToleranciaUnidad) {
   return unidad === 'PORCENTAJE' ? `${valor}% de las clases dadas` : `${valor} ${valor === 1 ? 'falta' : 'faltas'}`;
@@ -43,7 +40,7 @@ export default function RsaView() {
   const [curso, setCurso] = useState('');
   const [seccion, setSeccion] = useState('');
   const [materiaId, setMateriaId] = useState('');
-  const [etapa, setEtapa] = useState<string>(etapaActual);
+  const [etapa, setEtapa] = useState('');
 
   const [planillaId, setPlanillaId] = useState<number | null>(null);
   const [actual, setActual] = useState<RsaActual>(null);
@@ -91,7 +88,8 @@ export default function RsaView() {
     setPlanillaId(null);
     setActual(null);
     setErrorPlanilla('');
-    if (cursoRealId == null || materiaSeleccionada == null) return;
+    setCargando(false);
+    if (cursoRealId == null || materiaSeleccionada == null || !etapa) return;
     let active = true;
     setCargando(true);
     resolvePlanilla(cursoRealId, materiaSeleccionada, Number(etapa))
@@ -110,7 +108,7 @@ export default function RsaView() {
   const puedeGuardar = planillaId != null && !guardando && (activar ? errorFormulario === '' : actual != null);
 
   async function guardar(desactivar = false) {
-    if (planillaId == null) return;
+    if (planillaId == null || guardando) return;
     const activarAhora = activar && !desactivar;
     if (activarAhora && errorFormulario) return;
     setGuardando(true);
@@ -120,7 +118,7 @@ export default function RsaView() {
         : { puntos: null });
       const detalle = await getPlanilla(planillaId);
       aplicarPlanilla(detalle.planilla);
-      showToast(activarAhora ? 'RSA guardado. El TP de la planilla se amplió con sus puntos.' : 'RSA desactivado para esta planilla.', { tone: 'success' });
+      showToast(activarAhora ? 'RSA guardado. El total de puntos de la planilla se amplió con sus puntos.' : 'RSA desactivado para esta planilla.', { tone: 'success' });
     } catch (err) {
       showToast(errorMessage(err, 'No se pudo guardar la configuración de RSA.'), { tone: 'error' });
     } finally {
@@ -128,34 +126,38 @@ export default function RsaView() {
     }
   }
 
-  return <div className="two-column">
-    <div className="class-card" style={{ gridColumn: '1 / -1' }}>
-      <div className="class-card-head"><h3>RSA (Rasgos Socioacadémicos)</h3></div>
-      <p style={{ margin: 0, color: 'var(--muted)' }}>
-        Opcional, por planilla. Cada código de conducta asignado a un alumno en la etapa cuenta como una falta; por cada falta que supere la tolerancia se descuenta 1 punto del RSA.
-        Los puntos de RSA se suman al TP de la planilla y a la nota de cada alumno. Coordinación Pedagógica administra los códigos disponibles.
-      </p>
-    </div>
-
-    <section className="class-card">
-      <h4 style={{ margin: '0 0 8px' }}>Planilla</h4>
+  return <div className="rsa-view">
+    <header className="rsa-intro">
+      <div><h3>Configurá los rasgos socioacadémicos</h3><p><strong>Opcional, por planilla.</strong> Elegí dónde querés aplicar el RSA.</p></div>
+      <details className="rsa-help"><summary>¿Cómo funciona el RSA?</summary>
+        <ul>
+          <li><strong>Qué cuenta:</strong> cada código de conducta asignado a un alumno durante la etapa cuenta como una falta de RSA; no es lo mismo que una ausencia.</li>
+          <li><strong>Cuánto descuenta:</strong> la tolerancia es la cantidad de faltas sin descuento. Cada falta adicional resta 1 punto de RSA, sin bajar de cero.</li>
+          <li><strong>Dónde se suma:</strong> una planilla reúne las calificaciones de una materia, un curso y una etapa. El máximo de RSA amplía su TP (total de puntos); cada alumno suma el RSA que conserva a su puntaje.</li>
+          <li><strong>Quién administra los códigos:</strong> Coordinación Pedagógica. Vos configurás los puntos y la tolerancia de cada planilla.</li>
+        </ul>
+        <p>Ejemplo: con 5 puntos de RSA, tolerancia de 2 faltas y 3 faltas registradas, el alumno conserva 4 puntos.</p>
+      </details>
+    </header>
+    <section className="class-card rsa-selection" aria-labelledby="rsa-selection-title">
+      <h4 id="rsa-selection-title">1. Elegí la planilla</h4>
       {errorAsignaciones ? <div className="notice error">{errorAsignaciones}</div>
         : asignaciones === null ? <p>Cargando asignaciones…</p>
         : lista.length === 0 ? <p>No tenés asignaciones disponibles.</p>
-        : <div className="class-grid">
-          {especialidades.length > 1 && <div className="class-field"><label>Especialidad</label><AnimatedSelect ariaLabel="Especialidad" value={especialidadId} onChange={(value) => { setEspecialidadId(value); setCurso(''); setSeccion(''); setMateriaId(''); }} options={[{ value: '', label: 'Seleccione especialidad' }, ...especialidades.map((item) => ({ value: item.especialidadId, label: item.especialidadNombre }))]} /></div>}
-          <div className="class-field"><label>Curso</label><AnimatedSelect ariaLabel="Curso" value={curso} disabled={!especialidadEfectiva} onChange={(value) => { setCurso(value); setSeccion(''); setMateriaId(''); }} options={[{ value: '', label: 'Seleccione curso' }, ...cursos.map((item) => ({ value: item.cursoOrdinal, label: item.cursoOrdinal }))]} /></div>
-          <div className="class-field"><label>Sección</label><AnimatedSelect ariaLabel="Sección" value={seccion} disabled={!curso} onChange={(value) => { setSeccion(value); setMateriaId(''); }} options={[{ value: '', label: 'Seleccione sección' }, ...secciones.map((item) => ({ value: item.seccion, label: item.seccion }))]} /></div>
-          <div className="class-field"><label>Materia</label><AnimatedSelect ariaLabel="Materia" value={materiaId} disabled={!seccion} onChange={setMateriaId} options={[{ value: '', label: 'Seleccione materia' }, ...materias.map((item) => ({ value: item.materiaId, label: item.materiaNombre }))]} /></div>
-          <div className="class-field"><label>Etapa</label><AnimatedSelect ariaLabel="Etapa" value={etapa} onChange={setEtapa} options={[{ value: '1', label: 'Etapa 1' }, { value: '2', label: 'Etapa 2' }]} /></div>
+        : <div className="rsa-selector-grid">
+          {especialidades.length > 1 && <div className="class-field"><label>Especialidad</label><AnimatedSelect ariaLabel="Especialidad" value={especialidadId} disabled={guardando} onChange={(value) => { setEspecialidadId(value); setCurso(''); setSeccion(''); setMateriaId(''); setEtapa(''); }} options={[{ value: '', label: 'Elegí una especialidad' }, ...especialidades.map((item) => ({ value: item.especialidadId, label: item.especialidadNombre }))]} /></div>}
+          <div className="class-field"><label>Curso</label><AnimatedSelect ariaLabel="Curso" value={curso} disabled={!especialidadEfectiva || guardando} describedBy="rsa-curso-help" onChange={(value) => { setCurso(value); setSeccion(''); setMateriaId(''); setEtapa(''); }} options={[{ value: '', label: 'Elegí un curso' }, ...cursos.map((item) => ({ value: item.cursoOrdinal, label: item.cursoOrdinal }))]} /><small id="rsa-curso-help">{especialidadEfectiva ? 'Curso de tu asignación' : 'Primero elegí una especialidad'}</small></div>
+          <div className="class-field"><label>Sección</label><AnimatedSelect ariaLabel="Sección" value={seccion} disabled={!curso || guardando} describedBy="rsa-seccion-help" onChange={(value) => { setSeccion(value); setMateriaId(''); setEtapa(''); }} options={[{ value: '', label: 'Elegí una sección' }, ...secciones.map((item) => ({ value: item.seccion, label: item.seccion }))]} /><small id="rsa-seccion-help">{curso ? 'Secciones de este curso' : 'Primero elegí un curso'}</small></div>
+          <div className="class-field"><label>Materia</label><AnimatedSelect ariaLabel="Materia" value={materiaId} disabled={!seccion || guardando} describedBy="rsa-materia-help" onChange={(value) => { setMateriaId(value); setEtapa(''); }} options={[{ value: '', label: 'Elegí una materia' }, ...materias.map((item) => ({ value: item.materiaId, label: item.materiaNombre }))]} /><small id="rsa-materia-help">{seccion ? 'Materias de esta sección' : 'Primero elegí una sección'}</small></div>
+          <div className="class-field"><label>Etapa</label><AnimatedSelect ariaLabel="Etapa" value={etapa} disabled={!asignacion || guardando} describedBy="rsa-etapa-help" onChange={setEtapa} options={[{ value: '', label: 'Elegí una etapa' }, { value: '1', label: 'Etapa 1' }, { value: '2', label: 'Etapa 2' }]} /><small id="rsa-etapa-help">{asignacion ? 'Período de evaluación' : 'Primero elegí una materia'}</small></div>
         </div>}
       {asignacion && cursoRealId == null && <div className="notice" style={{ marginTop: 12 }}>Ese curso todavía no existe para la promoción actual, así que no tiene planilla.</div>}
     </section>
 
-    <section className="class-card">
-      <h4 style={{ margin: '0 0 8px' }}>Configuración</h4>
-      {!asignacion || cursoRealId == null ? <p style={{ color: 'var(--muted)' }}>Elegí curso, sección, materia y etapa para configurar el RSA de esa planilla.</p>
-        : errorPlanilla ? <div className="notice error">{errorPlanilla}</div>
+    {asignacion && cursoRealId != null && etapa && <section className="class-card rsa-config" aria-labelledby="rsa-config-title">
+      <h4 id="rsa-config-title">2. Configurá el RSA</h4>
+      <p className="rsa-context">{asignacion.especialidadNombre} · {curso} {seccion} · {asignacion.materiaNombre} · Etapa {etapa}</p>
+      {errorPlanilla ? <div className="notice error">{errorPlanilla}</div>
         : cargando || planillaId == null ? <p>Cargando planilla…</p>
         : <>
           <p role="status" style={{ margin: '0 0 12px' }}>
@@ -169,15 +171,15 @@ export default function RsaView() {
           </label>
           <div className="class-grid">
             <div className="class-field"><label htmlFor="rsa-puntos">Puntos de RSA</label><input id="rsa-puntos" type="number" min={1} step={1} inputMode="numeric" value={puntos} disabled={!activar || guardando} onChange={(event) => setPuntos(event.target.value)} /></div>
-            <div className="class-field"><label htmlFor="rsa-tolerancia">Tolerancia</label><input id="rsa-tolerancia" type="number" min={0} step={unidad === 'CANTIDAD' ? 1 : 0.5} inputMode="decimal" value={tolerancia} disabled={!activar || guardando} onChange={(event) => setTolerancia(event.target.value)} /></div>
+            <div className="class-field"><label htmlFor="rsa-tolerancia">Tolerancia sin descuento</label><input id="rsa-tolerancia" aria-describedby="rsa-tolerancia-help" type="number" min={0} step={unidad === 'CANTIDAD' ? 1 : 0.5} inputMode="decimal" value={tolerancia} disabled={!activar || guardando} onChange={(event) => setTolerancia(event.target.value)} /><small id="rsa-tolerancia-help">{unidad === 'CANTIDAD' ? 'Cantidad de faltas permitidas antes de descontar puntos.' : 'Porcentaje de clases dadas convertido a faltas y redondeado al entero más cercano.'}</small></div>
             <div className="class-field"><label>Unidad de la tolerancia</label><AnimatedSelect ariaLabel="Unidad de la tolerancia" value={unidad} disabled={!activar || guardando} onChange={(value) => setUnidad(value as RsaToleranciaUnidad)} options={[{ value: 'CANTIDAD', label: 'Cantidad de faltas' }, { value: 'PORCENTAJE', label: '% de las clases dadas' }]} /></div>
           </div>
           {errorFormulario && <div className="notice error" style={{ marginTop: 12 }}>{errorFormulario}</div>}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16 }}>
+          <div className="rsa-actions">
             {actual && <button type="button" className="button secondary" disabled={guardando} onClick={() => void guardar(true)}>Desactivar RSA</button>}
-            <button type="button" className="button" disabled={!puedeGuardar} onClick={() => void guardar()}>{guardando ? 'Guardando…' : 'Guardar'}</button>
+            <button type="button" className="button rsa-save" disabled={!puedeGuardar} onClick={() => void guardar()}>{guardando ? 'Guardando…' : 'Guardar configuración'}</button>
           </div>
         </>}
-    </section>
+    </section>}
   </div>;
 }
