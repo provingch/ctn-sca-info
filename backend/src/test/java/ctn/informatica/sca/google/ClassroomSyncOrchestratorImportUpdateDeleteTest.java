@@ -51,10 +51,12 @@ public class ClassroomSyncOrchestratorImportUpdateDeleteTest {
         CourseWork cwNew = new CourseWork();
         cwNew.setId("cw-new");
         cwNew.setTitle("Tarea nueva");
+        cwNew.setCreationTime("2026-03-10T12:00:00Z"); // etapa 1, igual que la planilla
 
         CourseWork cwUpdate = new CourseWork();
         cwUpdate.setId("cw-update");
         cwUpdate.setTitle("Tarea actualizada");
+        cwUpdate.setCreationTime("2026-03-11T12:00:00Z");
         cwUpdate.setMaxPoints(20.0);
 
         when(adapter.listCourseWorkForCourse(any(), anyString())).thenReturn(List.of(cwNew, cwUpdate));

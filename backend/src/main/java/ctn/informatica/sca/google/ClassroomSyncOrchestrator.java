@@ -12,6 +12,7 @@ import ctn.informatica.sca.model.Curso;
 import ctn.informatica.sca.model.Planilla;
 import ctn.informatica.sca.model.Profesor;
 import ctn.informatica.sca.model.Tarea;
+import ctn.informatica.sca.util.AcademicPeriod;
 import com.google.api.services.classroom.model.Course;
 import com.google.api.services.classroom.model.CourseWork;
 import org.springframework.stereotype.Component;
@@ -223,13 +224,19 @@ public class ClassroomSyncOrchestrator {
                     continue;
                 }
                 String cwId = courseWork.getId();
+                LocalDate cwFecha = resolveCourseWorkDate(courseWork);
+                // Cada planilla es de una sola etapa: el courseWork de otra etapa no se importa ni se conserva.
+                // Al no entrar en seenGoogleIds, si ya estaba importado lo borra el bloque de huérfanas más abajo.
+                if (AcademicPeriod.etapaAt(cwFecha) != planilla.getEtapaIndex()) {
+                    continue;
+                }
                 seenGoogleIds.add(cwId);
 
                 if (existingByGoogleId.containsKey(cwId)) {
                     Tarea existing = existingByGoogleId.get(cwId);
                     boolean changed = false;
                     String newTitle = courseWork.getTitle() != null && !courseWork.getTitle().isBlank() ? courseWork.getTitle() : "Tarea Classroom";
-                    LocalDate newFecha = resolveCourseWorkDate(courseWork);
+                    LocalDate newFecha = cwFecha;
                     LocalDate newFechaInicio = resolveCourseWorkStartDate(courseWork);
                     LocalDate newFechaLimite = resolveCourseWorkDueDate(courseWork);
                     int newTotal = resolveCourseWorkTotal(courseWork);
@@ -277,7 +284,7 @@ public class ClassroomSyncOrchestrator {
                     tarea.setPlanillaId(planilla.getId());
                     tarea.setInstrumentoId(defaultInstrumentId);
                     tarea.setTitulo(courseWork.getTitle() != null && !courseWork.getTitle().isBlank() ? courseWork.getTitle() : "Tarea Classroom");
-                    tarea.setFecha(resolveCourseWorkDate(courseWork));
+                    tarea.setFecha(cwFecha);
                     tarea.setFechaInicio(resolveCourseWorkStartDate(courseWork));
                     tarea.setFechaLimite(resolveCourseWorkDueDate(courseWork));
                     tarea.setTotal(resolveCourseWorkTotal(courseWork));

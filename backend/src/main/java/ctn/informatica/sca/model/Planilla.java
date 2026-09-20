@@ -73,14 +73,7 @@ public class Planilla{
     }
 
     public int getEtapaIndex() {
-        return switch (this.etapa) {
-            case "primera" ->
-                1;
-            case "segunda" ->
-                2;
-            default ->
-                1;
-        };
+        return "segunda".equals(this.etapa) ? 2 : 1;
     }
 
     public int getEtapaSugerida() {

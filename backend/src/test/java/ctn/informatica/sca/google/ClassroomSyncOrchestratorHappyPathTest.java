@@ -54,6 +54,7 @@ public class ClassroomSyncOrchestratorHappyPathTest {
         CourseWork cw = new CourseWork();
         cw.setId("cw-1");
         cw.setTitle("Tarea 1");
+        cw.setCreationTime("2026-03-10T12:00:00Z"); // etapa 1, igual que la planilla
         when(adapter.listCourseWorkForCourse(any(), anyString())).thenReturn(List.of(cw));
 
         when(tareaDao.getGoogleCourseworkIdsForPlanilla(42)).thenReturn(Set.of());
