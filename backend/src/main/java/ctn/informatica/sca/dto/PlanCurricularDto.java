@@ -24,6 +24,7 @@ public class PlanCurricularDto {
     // Campos adicionales para findPendientes
     public String materiaNombre;
     public String profesorNombre;
+    public String profesorNombreCorto;
     public String cursoDescripcion;
 
     // Campos de historial de planes

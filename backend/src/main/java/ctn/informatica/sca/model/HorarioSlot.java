@@ -14,6 +14,7 @@ public class HorarioSlot {
     private String materiaNombre;
     private String cursoDescripcion;
     private String profesorNombre;
+    private String profesorNombreCorto;
     private Integer horaCatedraNumero;
     private String horaCatedraEtiqueta;
     private String horaInicio;
@@ -107,6 +108,14 @@ public class HorarioSlot {
 
     public void setProfesorNombre(String profesorNombre) {
         this.profesorNombre = profesorNombre;
+    }
+
+    public String getProfesorNombreCorto() {
+        return profesorNombreCorto;
+    }
+
+    public void setProfesorNombreCorto(String profesorNombreCorto) {
+        this.profesorNombreCorto = profesorNombreCorto;
     }
 
     public Integer getHoraCatedraNumero() {

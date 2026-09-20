@@ -358,7 +358,7 @@ public class HorarioController {
         authorizeCourse(cursoId, auth);
         try {
             return new AsignacionDao().findAll().stream().filter(a -> a.getCursoBaseId() == cursoId)
-                    .map(a -> new AsignacionResumenDto(a.getId(), a.getMateriaNombre(), a.getProfesorNombre())).toList();
+                    .map(a -> new AsignacionResumenDto(a.getId(), a.getMateriaNombre(), a.getProfesorNombre(), a.getProfesorNombreCorto())).toList();
         } catch (Exception ex) { throw failure("No se pudieron cargar las asignaciones del curso", ex); }
     }
 
@@ -408,7 +408,8 @@ public class HorarioController {
                 slot.getSalaNombre(),
                 slot.getMateriaNombre(),
                 slot.getCursoDescripcion(),
-                slot.getProfesorNombre());
+                slot.getProfesorNombre(),
+                slot.getProfesorNombreCorto());
     }
 
     private void require(boolean condition, String message) {

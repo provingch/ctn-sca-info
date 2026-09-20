@@ -124,7 +124,7 @@ public class AdminController {
                 return Integer.compare(a.id(), b.id());
             });
             List<Asignacion> asignacionesDb = actingSpecialtyId == null ? new AsignacionDao().findAll() : new AsignacionDao().findByEspecialidad(actingSpecialtyId);
-            List<AssignmentItem> asignaciones = asignacionesDb.stream().map(a -> new AssignmentItem(a.getId(), a.getProfesorId(), a.getMateriaId(), a.getCursoBaseId(), a.getProfesorNombre(), a.getMateriaNombre(), a.getCursoDescripcion())).toList();
+            List<AssignmentItem> asignaciones = asignacionesDb.stream().map(a -> new AssignmentItem(a.getId(), a.getProfesorId(), a.getMateriaId(), a.getCursoBaseId(), a.getProfesorNombre(), a.getProfesorNombreCorto(), a.getMateriaNombre(), a.getCursoDescripcion())).toList();
             CatalogAlumnos catalogAlumnos = loadCatalogAlumnos(actingSpecialtyId);
             List<StudentItem> alumnos = catalogAlumnos.alumnos();
             List<CursoBase> cursosDb = actingSpecialtyId == null ? new CursoBaseDao().findAll() : new CursoBaseDao().findAllByEspecialidadId(actingSpecialtyId);
@@ -1102,7 +1102,7 @@ public class AdminController {
             this(id, nombre, apellido, usuario, nivel, correo, ci, null, null);
         }
     }
-    public record AssignmentItem(int id, int profesorId, int materiaId, int cursoId, String profesor, String materia, String curso) {}
+    public record AssignmentItem(int id, int profesorId, int materiaId, int cursoId, String profesor, String profesorCorto, String materia, String curso) {}
     public record StudentItem(int id, String nombre, String apellido, int cursoId, String ci) {}
     public record EgresadoItem(int id, String nombre, String apellido, String ci, String especialidad, Integer promocion) {}
     public record CourseItem(int id, String especialidad, int nivel, String seccion) {}

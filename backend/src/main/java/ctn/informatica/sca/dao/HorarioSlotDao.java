@@ -2,6 +2,7 @@ package ctn.informatica.sca.dao;
 
 import ctn.informatica.sca.clases.conexion;
 import ctn.informatica.sca.model.HorarioSlot;
+import ctn.informatica.sca.util.NombreUtil;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -36,17 +37,13 @@ public class HorarioSlotDao extends conexion {
     }
 
     private String buildFullName(String apellido, String nombre) {
-        StringBuilder sb = new StringBuilder();
-        if (nombre != null && !nombre.isBlank()) {
-            sb.append(nombre.trim());
-        }
-        if (apellido != null && !apellido.isBlank()) {
-            if (sb.length() > 0) {
-                sb.append(" ");
-            }
-            sb.append(apellido.trim());
-        }
-        return sb.toString();
+        return NombreUtil.completo(nombre, apellido);
+    }
+
+    /** Completa el profesor del bloque: nombre completo (documentos) y corto (pantallas). */
+    private void setProfesor(HorarioSlot slot, String nombre, String apellido) {
+        slot.setProfesorNombre(buildFullName(apellido, nombre));
+        slot.setProfesorNombreCorto(NombreUtil.corto(nombre, apellido));
     }
 
     public List<HorarioSlot> findByAsignacion(int asignacionId) throws SQLException {
@@ -84,7 +81,7 @@ public class HorarioSlotDao extends conexion {
                     int nivel = rs.getInt("nivel");
                     String seccion = rs.getString("seccion");
                     slot.setCursoDescripcion((especialidad == null ? "" : especialidad) + (seccion == null || seccion.isBlank() ? "" : (" " + seccion)));
-                    slot.setProfesorNombre(buildFullName(rs.getString("profesor_apellido"), rs.getString("profesor_nombre")));
+                    setProfesor(slot, rs.getString("profesor_nombre"), rs.getString("profesor_apellido"));
                     slot.setHoraCatedraNumero(rs.getInt("hora_catedra_numero"));
                     slot.setHoraCatedraEtiqueta(rs.getString("hora_catedra_etiqueta"));
                     slot.setHoraInicio(rs.getString("hora_inicio"));
@@ -131,7 +128,7 @@ public class HorarioSlotDao extends conexion {
                     int nivel = rs.getInt("nivel");
                     String seccion = rs.getString("seccion");
                     slot.setCursoDescripcion((especialidad == null ? "" : especialidad) + (seccion == null || seccion.isBlank() ? "" : (" " + seccion)));
-                    slot.setProfesorNombre(buildFullName(rs.getString("profesor_apellido"), rs.getString("profesor_nombre")));
+                    setProfesor(slot, rs.getString("profesor_nombre"), rs.getString("profesor_apellido"));
                     slot.setHoraCatedraNumero(rs.getInt("hora_catedra_numero"));
                     slot.setHoraCatedraEtiqueta(rs.getString("hora_catedra_etiqueta"));
                     slot.setHoraInicio(rs.getString("hora_inicio"));
@@ -178,7 +175,7 @@ public class HorarioSlotDao extends conexion {
                     String especialidad = rs.getString("especialidad");
                     String seccion = rs.getString("seccion");
                     slot.setCursoDescripcion((especialidad == null ? "" : especialidad) + (seccion == null || seccion.isBlank() ? "" : (" " + seccion)));
-                    slot.setProfesorNombre(buildFullName(rs.getString("profesor_apellido"), rs.getString("profesor_nombre")));
+                    setProfesor(slot, rs.getString("profesor_nombre"), rs.getString("profesor_apellido"));
                     slot.setHoraCatedraNumero(rs.getInt("hora_catedra_numero"));
                     slot.setHoraCatedraEtiqueta(rs.getString("hora_catedra_etiqueta"));
                     slot.setHoraInicio(rs.getString("hora_inicio"));
@@ -265,7 +262,7 @@ public class HorarioSlotDao extends conexion {
                     int nivel = rs.getInt("nivel");
                     String seccion = rs.getString("seccion");
                     slot.setCursoDescripcion((especialidad == null ? "" : especialidad) + (seccion == null || seccion.isBlank() ? "" : (" " + seccion)));
-                    slot.setProfesorNombre(buildFullName(rs.getString("profesor_apellido"), rs.getString("profesor_nombre")));
+                    setProfesor(slot, rs.getString("profesor_nombre"), rs.getString("profesor_apellido"));
                     slot.setHoraCatedraNumero(rs.getInt("hora_catedra_numero"));
                     slot.setHoraCatedraEtiqueta(rs.getString("hora_catedra_etiqueta"));
                     slot.setHoraInicio(rs.getString("hora_inicio"));
@@ -353,7 +350,7 @@ public class HorarioSlotDao extends conexion {
                 slot.setSalaId(rs.getObject("sala_id") == null ? null : rs.getInt("sala_id")); slot.setSalaNombre(rs.getString("sala_nombre")); slot.setMateriaNombre(rs.getString("materia_nombre"));
                 String specialty = rs.getString("especialidad"); String section = rs.getString("seccion");
                 slot.setCursoDescripcion((specialty == null ? "" : specialty) + (section == null || section.isBlank() ? "" : " " + section));
-                slot.setProfesorNombre(buildFullName(rs.getString("profesor_apellido"), rs.getString("profesor_nombre")));
+                setProfesor(slot, rs.getString("profesor_nombre"), rs.getString("profesor_apellido"));
                 slot.setHoraCatedraNumero(rs.getInt("hora_catedra_numero")); slot.setHoraCatedraEtiqueta(rs.getString("hora_catedra_etiqueta"));
                 slot.setHoraInicio(rs.getString("hora_inicio")); slot.setHoraFin(rs.getString("hora_fin"));
                 return slot;
@@ -399,7 +396,7 @@ public class HorarioSlotDao extends conexion {
                 slot.setSalaId(rs.getInt("sala_id")); slot.setSalaNombre(rs.getString("sala_nombre")); slot.setMateriaNombre(rs.getString("materia_nombre"));
                 String specialty = rs.getString("especialidad"); String section = rs.getString("seccion");
                 slot.setCursoDescripcion((specialty == null ? "" : specialty) + (section == null || section.isBlank() ? "" : " " + section));
-                slot.setProfesorNombre(buildFullName(rs.getString("profesor_apellido"), rs.getString("profesor_nombre")));
+                setProfesor(slot, rs.getString("profesor_nombre"), rs.getString("profesor_apellido"));
                 slot.setHoraCatedraNumero(rs.getInt("hora_catedra_numero")); slot.setHoraCatedraEtiqueta(rs.getString("hora_catedra_etiqueta"));
                 slot.setHoraInicio(rs.getString("hora_inicio")); slot.setHoraFin(rs.getString("hora_fin"));
                 return slot;

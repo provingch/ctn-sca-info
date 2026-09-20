@@ -4,6 +4,7 @@ import { getProfile } from '../api/profile';
 import { setAccessToken, setOnAuthExpired } from '../api/client';
 import { useSpecialty } from './SpecialtyContext';
 import { resolveIdentitySpecialty } from './authIdentity';
+import { nombreCorto } from '../utils/nombre';
 
 export interface AuthUser {
   level: number;
@@ -70,7 +71,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const profile = await getProfile();
       const owner = profile.profileOwner;
-      const displayName = owner.fullName?.trim() || owner.usuario?.trim() || 'Usuario SCA';
+      // En pantalla (navbar) se muestra el nombre corto; fullName queda para Mi Perfil.
+      const displayName = nombreCorto(owner.nombre, owner.apellido) || owner.usuario?.trim() || 'Usuario SCA';
       const initials = `${owner.nombre?.trim()[0] || owner.usuario?.trim()[0] || 'S'}${owner.apellido?.trim()[0] || ''}`.toUpperCase();
       const specialty = resolveIdentitySpecialty(activeLevel, owner, profile.especialidades);
       setUser((current) => current?.level === activeLevel

@@ -3,6 +3,7 @@ package ctn.informatica.sca.dao;
 import org.springframework.stereotype.Repository;
 import ctn.informatica.sca.clases.conexion;
 import ctn.informatica.sca.model.Alumno;
+import ctn.informatica.sca.util.NombreUtil;
 import ctn.informatica.sca.model.RasgoAsistencia;
 import ctn.informatica.sca.model.RasgoPlanilla;
 import ctn.informatica.sca.dto.UpdateRasgoAsistenciaRequest;
@@ -378,8 +379,8 @@ public class RasgoPlanillaDao extends conexion {
                     String cursoDesc = (especialidadNombre == null ? "" : especialidadNombre)
                             + (promocion == null ? "" : (" " + promocion))
                             + (seccion == null || seccion.isBlank() ? "" : (" " + seccion));
-                    String profesorNombre = ((rs.getString("profesor_apellido") == null ? "" : rs.getString("profesor_apellido")) + " "
-                            + (rs.getString("profesor_nombre") == null ? "" : rs.getString("profesor_nombre"))).trim();
+                    // Pantallas de evaluación: nombre corto (primera palabra de nombre + apellido).
+                    String profesorNombre = NombreUtil.corto(rs.getString("profesor_nombre"), rs.getString("profesor_apellido"));
                     java.sql.Date fecha = rs.getDate("fecha_clase");
                     out.add(new ctn.informatica.sca.dto.ClaseDadaDto(
                             rs.getInt("id"),
@@ -459,7 +460,7 @@ public class RasgoPlanillaDao extends conexion {
     }
 
     public java.util.List<ctn.informatica.sca.dto.VerificacionDudosaDto> listarVerificacionesDudosas() throws SQLException {
-        String sql = "SELECT pr.id AS planilla_id, pr.curso_id, pr.asignacion_id, m.nombre AS materia_nombre, CONCAT(u.apellido, ' ', u.nombre) AS profesor_nombre, pr.tema AS tema_ingresado, t.id AS tema_plan_id, t.temas_contenidos AS tema_esperado, pr.fecha_clase " +
+        String sql = "SELECT pr.id AS planilla_id, pr.curso_id, pr.asignacion_id, m.nombre AS materia_nombre, u.nombre AS profesor_nombre, u.apellido AS profesor_apellido, pr.tema AS tema_ingresado, t.id AS tema_plan_id, t.temas_contenidos AS tema_esperado, pr.fecha_clase " +
                 "FROM planilla_rasgo pr " +
                 "LEFT JOIN asignacion a ON a.id = pr.asignacion_id " +
                 "LEFT JOIN materia m ON m.id = a.materia_id " +
@@ -474,7 +475,7 @@ public class RasgoPlanillaDao extends conexion {
                 int cursoId = rs.getInt("curso_id");
                 Integer asignacionId = rs.getObject("asignacion_id", Integer.class);
                 String materiaNombre = rs.getString("materia_nombre");
-                String profesorNombre = rs.getString("profesor_nombre");
+                String profesorNombre = NombreUtil.corto(rs.getString("profesor_nombre"), rs.getString("profesor_apellido"));
                 String temaIngresado = rs.getString("tema_ingresado");
                 Integer temaPlanId = rs.getObject("tema_plan_id", Integer.class);
                 String temaEsperado = rs.getString("tema_esperado");

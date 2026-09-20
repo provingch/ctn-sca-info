@@ -157,10 +157,21 @@ public class PlanCurricularTemplateBuilderTest {
 
     // ---- helpers ----
 
+    @Test
+    public void generado_docenteUsaElNombreCompletoYNoElCortoDePantalla() throws Exception {
+        byte[] xlsx = generar(configCon("1", mes("Marzo", 4)));
+
+        try (Workbook wb = WorkbookFactory.create(new ByteArrayInputStream(xlsx))) {
+            Cell docente = wb.getSheet("Marzo").getRow(6).getCell(22);
+            assertEquals("Docente: Prof. Prueba", docente.getStringCellValue());
+        }
+    }
+
     private byte[] generar(PlanTemplateConfigDto config) throws Exception {
         Asignacion asignacion = new Asignacion(1, 7, 2, 13);
         asignacion.setMateriaNombre("Matemática");
         asignacion.setProfesorNombre("Prof. Prueba");
+        asignacion.setProfesorNombreCorto("Prof");
         asignacion.setCursoOrdinal("5");
         asignacion.setCursoSeccion("A");
         asignacion.setEspecialidad("Informática");

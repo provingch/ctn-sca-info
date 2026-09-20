@@ -41,6 +41,7 @@ export interface AssignmentItem {
   materiaId: number;
   cursoId: number;
   profesor: string;
+  profesorCorto?: string;
   materia: string;
   curso: string;
 }
@@ -96,6 +97,7 @@ export interface HorarioSlotItem {
   materiaNombre: string | null;
   cursoDescripcion: string | null;
   profesorNombre: string | null;
+  profesorNombreCorto?: string | null;
 }
 
 export interface HorarioResumenCursoItem {
@@ -120,7 +122,7 @@ export interface HorarioImportRowItem {
   detalle: string | null;
 }
 export interface HorarioImportResponse { creados: number; omitidos: number; filas: HorarioImportRowItem[]; }
-export interface AsignacionResumenItem { asignacionId: number; materiaNombre: string; profesorNombre: string; }
+export interface AsignacionResumenItem { asignacionId: number; materiaNombre: string; profesorNombre: string; profesorNombreCorto?: string; }
 export interface SalaItem { id: number; nombre: string; especialidadId: number | null; especialidadNombre: string | null; bloquesAsignados?: number | null; }
 
 export interface MigracionEstadoItem {

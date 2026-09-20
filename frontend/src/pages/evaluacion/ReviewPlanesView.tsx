@@ -141,7 +141,7 @@ export default function ReviewPlanesView() {
                 }}
               >
                 <strong>{plan.materiaNombre}</strong>
-                <div style={{ fontSize: '0.9rem', color: 'var(--muted)', marginTop: 4 }}>{plan.profesorNombre}</div>
+                <div style={{ fontSize: '0.9rem', color: 'var(--muted)', marginTop: 4 }}>{plan.profesorNombreCorto ?? plan.profesorNombre}</div>
                 <div style={{ fontSize: '0.85rem', color: 'var(--muted)', marginTop: 2 }}>{plan.cursoDescripcion}<br />{plan.especialidad && (<><span style={{ color: 'var(--accent-deep)', fontWeight: 750 }}>{plan.especialidad}</span><br /></>)}{formatSqlDateTime(plan.fechaSubida, { dateStyle: 'short' })}</div>
               </button>
             ))}

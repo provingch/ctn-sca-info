@@ -16,6 +16,7 @@ public class Asignacion {
 
     // Display helpers
     private String profesorNombre;
+    private String profesorNombreCorto;
     private String materiaNombre;
     private String cursoDescripcion;
     // New explicit fields for UI: especialidad (nombre), nivel/promocion, seccion
@@ -54,6 +55,8 @@ public class Asignacion {
 
     public String getProfesorNombre() { return profesorNombre; }
     public void setProfesorNombre(String profesorNombre) { this.profesorNombre = profesorNombre; }
+    public String getProfesorNombreCorto() { return profesorNombreCorto; }
+    public void setProfesorNombreCorto(String profesorNombreCorto) { this.profesorNombreCorto = profesorNombreCorto; }
 
     public String getMateriaNombre() { return materiaNombre; }
     public void setMateriaNombre(String materiaNombre) { this.materiaNombre = materiaNombre; }

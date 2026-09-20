@@ -170,7 +170,7 @@ export default function HorarioCursoPage({ cursoId, summary, hours, status, refr
       content: (
         <>
           <strong>{item.materiaNombre}</strong>
-          <small>{item.profesorNombre}{item.salaNombre ? ` · ${item.salaNombre}` : ''}</small>
+          <small>{item.profesorNombreCorto ?? item.profesorNombre}{item.salaNombre ? ` · ${item.salaNombre}` : ''}</small>
         </>
       ),
     };
@@ -338,7 +338,7 @@ export default function HorarioCursoPage({ cursoId, summary, hours, status, refr
 
           <div className="form-grid schedule-course-form">
             <label>Materia - Profesor
-              <AnimatedSelect ariaLabel="Materia y profesor" value={manualAssignment} onChange={setManualAssignment} options={assignments.map((item) => ({ value: item.asignacionId, label: `${item.materiaNombre} — ${item.profesorNombre}` }))} />
+              <AnimatedSelect ariaLabel="Materia y profesor" value={manualAssignment} onChange={setManualAssignment} options={assignments.map((item) => ({ value: item.asignacionId, label: `${item.materiaNombre} — ${item.profesorNombreCorto ?? item.profesorNombre}` }))} />
             </label>
             <label>Día
               <AnimatedSelect ariaLabel="Día de la semana" value={manualDay} onChange={setManualDay} options={SCHEDULE_DAYS.slice(1).map((day, index) => ({ value: index + 1, label: day }))} />
@@ -363,7 +363,7 @@ export default function HorarioCursoPage({ cursoId, summary, hours, status, refr
               <div key={`${block.day}-${block.startHour.id}-${block.slots[0]?.asignacionId ?? 'na'}`}>
                 <span>
                   <strong>{SCHEDULE_DAYS[block.day]} · {block.startHour.horaInicio} - {block.endHour.horaFin}</strong>
-                  <small>{block.slots[0]?.materiaNombre} — {block.slots[0]?.profesorNombre}{block.slots[0]?.salaNombre ? ` · ${block.slots[0].salaNombre}` : ''}</small>
+                  <small>{block.slots[0]?.materiaNombre} — {block.slots[0]?.profesorNombreCorto ?? block.slots[0]?.profesorNombre}{block.slots[0]?.salaNombre ? ` · ${block.slots[0].salaNombre}` : ''}</small>
                 </span>
                 <button className="button danger" type="button" onClick={() => void removeManualBlock(block)}>Quitar</button>
               </div>

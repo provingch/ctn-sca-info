@@ -137,7 +137,7 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
         {loading ? <p>Cargando planes...</p> : planes.length === 0 ? <p style={{ color: 'var(--muted)' }}>No hay planes aprobados para seguimiento.</p> : <div style={{ display: 'grid', gap: 8 }}>
           {planes.map((plan) => <button key={plan.id} type="button" onClick={() => { setSelectedPlanId(plan.id); }} style={{ padding: 12, background: selectedPlanId === plan.id ? 'var(--accent-strong)' : 'var(--paper-raised)', border: selectedPlanId === plan.id ? '2px solid var(--accent)' : '1px solid var(--line)', borderRadius: 4, cursor: 'pointer', textAlign: 'left', color: 'var(--ink)' }}>
             <strong>{plan.materiaNombre}</strong>
-            <div style={{ fontSize: '0.9rem', color: 'var(--muted)', marginTop: 4 }}>{plan.profesorNombre}</div>
+            <div style={{ fontSize: '0.9rem', color: 'var(--muted)', marginTop: 4 }}>{plan.profesorNombreCorto ?? plan.profesorNombre}</div>
             <div style={{ fontSize: '0.85rem', color: 'var(--muted)', marginTop: 2 }}>{plan.cursoDescripcion}<br />Aprobado: {formatDate(plan.fechaRevision)}</div>
           </button>)}
         </div>}
@@ -145,7 +145,7 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
       <div className="panel">
         {!selectedPlanId ? <p style={{ textAlign: 'center', color: 'var(--muted)' }}>Seleccioná un plan para consultar su cumplimiento.</p> : loadingDetail ? <p>Cargando detalle...</p> : !selectedPlan ? <p style={{ color: 'var(--danger)' }}>No se pudo cargar el plan.</p> : <>
           <h3>Temas y cumplimiento</h3>
-          <p className="lead">{selectedPlan.profesorNombre} · {selectedPlan.materiaNombre}</p>
+          <p className="lead">{selectedPlan.profesorNombreCorto ?? selectedPlan.profesorNombre} · {selectedPlan.materiaNombre}</p>
           <div className="table-responsive">
             <table className="table table-striped" style={{ fontSize: '0.85rem' }}>
               <caption className="visually-hidden">Cumplimiento de temas del plan curricular</caption>

@@ -2,6 +2,7 @@ package ctn.informatica.sca.dao;
 
 import ctn.informatica.sca.clases.conexion;
 import ctn.informatica.sca.model.Alumno;
+import ctn.informatica.sca.util.NombreUtil;
 import ctn.informatica.sca.model.Padre;
 import ctn.informatica.sca.model.ParentSummaryItem;
 import ctn.informatica.sca.model.ParentTaskGrade;
@@ -424,9 +425,8 @@ public class PadreDao extends conexion {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     java.sql.Date fecha = rs.getDate("fecha_clase");
-                    String apellido = rs.getString("profesor_apellido");
-                    String nombre = rs.getString("profesor_nombre");
-                    String profesor = ((apellido == null ? "" : apellido) + " " + (nombre == null ? "" : nombre)).trim();
+                    // Pantalla del padre: nombre corto (primera palabra de nombre + apellido).
+                    String profesor = NombreUtil.corto(rs.getString("profesor_nombre"), rs.getString("profesor_apellido"));
                     out.add(new ctn.informatica.sca.dto.RasgoConductaDto(
                             fecha == null ? null : fecha.toString(),
                             rs.getString("materia"),

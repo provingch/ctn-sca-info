@@ -10,6 +10,7 @@ import CatalogoConductaPanel from '../../components/CatalogoConductaPanel';
 import ComplaintReview from '../../components/quejas/ComplaintReview';
 import ComplaintDocuments from '../../components/quejas/ComplaintDocuments';
 import LauncherCards, { launcherIcons } from '../../components/LauncherCards';
+import { nombreCorto } from '../../utils/nombre';
 
 const ESTADO_LABEL: Record<ReturnType<typeof quejaEstado>, string> = {
   pendiente: 'Pendiente', aceptada: 'Aceptada', revisada: 'Revisada', resuelta: 'Resuelta', rechazada: 'Rechazada',
@@ -106,10 +107,10 @@ export default function CoordinacionPage() {
   }
 
   const agrupadas = useMemo(() => {
-    const map = new Map<number, { profesorNombre: string; profesorApellido?: string | null; count: number; quejas: QuejaItem[] }>();
+    const map = new Map<number, { profesorNombre: string; profesorApellido?: string | null; nombreVisible: string; count: number; quejas: QuejaItem[] }>();
     quejas.forEach((q) => {
       const pid = q.profesorId;
-      const cur = map.get(pid) ?? { profesorNombre: q.profesorNombre ?? `Profesor #${pid}`, profesorApellido: q.profesorApellido ?? '', count: 0, quejas: [] };
+      const cur = map.get(pid) ?? { profesorNombre: q.profesorNombre ?? `Profesor #${pid}`, profesorApellido: q.profesorApellido ?? '', nombreVisible: nombreCorto(q.profesorNombre, q.profesorApellido) || `Profesor #${pid}`, count: 0, quejas: [] };
       cur.count += 1;
       cur.quejas.push(q);
       map.set(pid, cur);
@@ -152,7 +153,7 @@ export default function CoordinacionPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div className="avatar" style={{ width: 44, height: 44, borderRadius: 999, fontSize: '0.95rem' }}>{(g.profesorNombre || 'P').slice(0, 1)}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <h2 style={{ margin: 0, fontSize: '1.05rem' }}>{`${g.profesorNombre} ${g.profesorApellido ?? ''}`.trim()}</h2>
+                    <h2 style={{ margin: 0, fontSize: '1.05rem' }}>{g.nombreVisible}</h2>
                     <p style={{ margin: '4px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Última: {g.quejas[0]?.motivo ?? '-'}</p>
                   </div>
                   <span

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Repository;
 import ctn.informatica.sca.clases.conexion;
 import ctn.informatica.sca.model.Asignacion;
 import ctn.informatica.sca.model.CursoBase;
+import ctn.informatica.sca.util.NombreUtil;
 
 @Repository
 public class AsignacionDao extends conexion {
@@ -38,7 +39,8 @@ public class AsignacionDao extends conexion {
                 a.setCursoBaseId(rs.getInt("curso_base_id"));
                 String profName = rs.getString("profesor_nombre");
                 String profLast = rs.getString("profesor_apellido");
-                a.setProfesorNombre((profLast == null ? "" : profLast) + (profName == null ? "" : (profName.isBlank() ? "" : (" " + profName))));
+                a.setProfesorNombre(NombreUtil.completo(profName, profLast));
+                a.setProfesorNombreCorto(NombreUtil.corto(profName, profLast));
                 a.setMateriaNombre(rs.getString("materia_nombre"));
                 String especialidad = rs.getString("especialidad");
                 int nivel = rs.getInt("nivel");
@@ -75,7 +77,8 @@ public class AsignacionDao extends conexion {
                         a.setCursoBaseId(rs.getInt("curso_base_id"));
                         String profName = rs.getString("profesor_nombre");
                         String profLast = rs.getString("profesor_apellido");
-                        a.setProfesorNombre((profLast == null ? "" : profLast) + (profName == null ? "" : (profName.isBlank() ? "" : (" " + profName))));
+                        a.setProfesorNombre(NombreUtil.completo(profName, profLast));
+                a.setProfesorNombreCorto(NombreUtil.corto(profName, profLast));
                         a.setMateriaNombre(rs.getString("materia_nombre"));
                         String especialidad = rs.getString("especialidad");
                         int nivel = rs.getInt("nivel");
@@ -113,7 +116,8 @@ public class AsignacionDao extends conexion {
                 a.setCursoBaseId(rs.getInt("curso_base_id"));
                 String profName = rs.getString("profesor_nombre");
                 String profLast = rs.getString("profesor_apellido");
-                a.setProfesorNombre((profLast == null ? "" : profLast) + (profName == null ? "" : (profName.isBlank() ? "" : (" " + profName))));
+                a.setProfesorNombre(NombreUtil.completo(profName, profLast));
+                a.setProfesorNombreCorto(NombreUtil.corto(profName, profLast));
                 a.setMateriaNombre(rs.getString("materia_nombre"));
                 String especialidad = rs.getString("especialidad");
                 int nivel = rs.getInt("nivel");

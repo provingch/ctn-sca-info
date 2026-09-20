@@ -13,6 +13,7 @@ public record HorarioSlotDto(
         String salaNombre,
         String materiaNombre,
         String cursoDescripcion,
-        String profesorNombre
+        String profesorNombre,
+        String profesorNombreCorto
 ) {
 }

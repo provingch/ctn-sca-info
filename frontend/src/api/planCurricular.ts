@@ -41,6 +41,7 @@ export interface PlanCurricularEstado {
   observacionesEvaluador?: string;
   materiaNombre?: string;
   profesorNombre?: string;
+  profesorNombreCorto?: string;
   cursoDescripcion?: string;
   especialidad?: string;
   temas?: TemaPlanDto[];
@@ -55,6 +56,7 @@ export interface PlanPendienteResumen {
   fechaSubida: string;
   materiaNombre: string;
   profesorNombre: string;
+  profesorNombreCorto?: string;
   cursoDescripcion: string;
   especialidad?: string;
   fechaRevision?: string;

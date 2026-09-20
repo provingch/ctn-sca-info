@@ -7,6 +7,7 @@ import { ApiError } from '../../api/client';
 import type { AdminCatalog } from '../../api/admin';
 import { createQueja, getAdminQuejas, quejaEstado, type QuejaItem } from '../../api/quejas';
 import { formatSqlDateTime } from '../../utils/date';
+import { nombreCorto } from '../../utils/nombre';
 
 const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
@@ -27,7 +28,7 @@ export default function AdminQuejasPanel({ data, status, isGlobalAdmin }: { data
   const usuariosPorId = useMemo(() => new Map(data.usuarios.map((u) => [u.id, (u.nombre + ' ' + u.apellido).trim()])), [data.usuarios]);
   const profesoresForCurso = useMemo(() => Array.from(new Map(data.asignaciones
     .filter((a) => a.cursoId === cursoId)
-    .map((a) => [a.profesorId, a.profesor])).entries())
+    .map((a) => [a.profesorId, a.profesorCorto ?? a.profesor])).entries())
     .map(([id, nombre]) => ({ id, nombre }))
     .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')), [cursoId, data.asignaciones]);
   const validSelection = data.cursos.some((c) => c.id === cursoId) && profesoresForCurso.some((p) => p.id === profesorId);
@@ -166,7 +167,7 @@ export default function AdminQuejasPanel({ data, status, isGlobalAdmin }: { data
           <div id={panelId} role="region" aria-labelledby={`${panelId}-heading`} hidden={!expanded}>
       <ul className="complaints-list">{group.items.map((q) => <li key={q.id}>
         <article className="complaint-record">
-          <div className="complaint-record-heading"><h4>{[q.profesorNombre, q.profesorApellido].filter(Boolean).join(' ') || ('Profesor #' + q.profesorId)}</h4><span className="complaint-reference">Registro #{q.id}</span></div>
+          <div className="complaint-record-heading"><h4>{nombreCorto(q.profesorNombre, q.profesorApellido) || ('Profesor #' + q.profesorId)}</h4><span className="complaint-reference">Registro #{q.id}</span></div>
           <span className={`complaint-status ${quejaEstado(q)}`}>{estadoLabel[quejaEstado(q)]}</span>
           <p className="complaint-course">{[q.cursoEspecialidad, q.cursoNivel ? q.cursoNivel + '°' : null, q.cursoSeccion ? 'Sección ' + q.cursoSeccion : null].filter(Boolean).join(' · ') || ('Curso #' + q.cursoId)}</p>
           <p className="complaint-reason">{q.motivo}</p>

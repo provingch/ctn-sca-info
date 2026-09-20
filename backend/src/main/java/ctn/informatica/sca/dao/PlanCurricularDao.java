@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import ctn.informatica.sca.clases.conexion;
 import ctn.informatica.sca.dto.PlanCurricularDto;
+import ctn.informatica.sca.util.NombreUtil;
 import ctn.informatica.sca.dto.TemaPlanDto;
 
 @Repository
@@ -211,9 +212,8 @@ public class PlanCurricularDao extends conexion {
                     dto.materiaNombre = rs.getString("materia_nombre");
                     String profApellido = rs.getString("profesor_apellido");
                     String profNombre = rs.getString("profesor_nombre");
-                    String profNombreCompleto = (profApellido == null ? "" : profApellido) +
-                            (profNombre == null ? "" : (profNombre.isBlank() ? "" : (" " + profNombre)));
-                    dto.profesorNombre = profNombreCompleto;
+                    dto.profesorNombre = NombreUtil.completo(profNombre, profApellido);
+                    dto.profesorNombreCorto = NombreUtil.corto(profNombre, profApellido);
                     String especialidad = rs.getString("especialidad");
                     String seccion = rs.getString("seccion");
                     String cursoDesc = (especialidad == null ? "" : especialidad) +
@@ -262,8 +262,8 @@ public class PlanCurricularDao extends conexion {
                         dto.anio = rs.getInt("anio_lectivo");
                         String profApellido = rs.getString("profesor_apellido");
                         String profNombre = rs.getString("profesor_nombre");
-                        dto.profesorNombre = (profApellido == null ? "" : profApellido) +
-                            (profNombre == null ? "" : (profNombre.isBlank() ? "" : (" " + profNombre)));
+                        dto.profesorNombre = NombreUtil.completo(profNombre, profApellido);
+                        dto.profesorNombreCorto = NombreUtil.corto(profNombre, profApellido);
                         String especialidad = rs.getString("especialidad");
                         String seccion = rs.getString("seccion");
                         dto.especialidad = especialidad;
