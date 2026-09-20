@@ -10,7 +10,8 @@ import CatalogoConductaPanel from '../../components/CatalogoConductaPanel';
 import ComplaintReview from '../../components/quejas/ComplaintReview';
 import ComplaintDocuments from '../../components/quejas/ComplaintDocuments';
 import ComplaintGroups from '../../components/quejas/ComplaintGroups';
-import LauncherCards, { launcherIcons } from '../../components/LauncherCards';
+import LauncherCards from '../../components/LauncherCards';
+import { launcherIcons } from '../../components/launcherIcons';
 import { nombreCorto } from '../../utils/nombre';
 
 const ESTADO_LABEL: Record<ReturnType<typeof quejaEstado>, string> = {

@@ -1,3 +1,4 @@
+/* oxlint-disable react/only-export-components -- harness de QA manual de Salas/Asignaciones, no forma parte de la app. */
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import SalasPanel from './src/pages/admin/SalasPanel';

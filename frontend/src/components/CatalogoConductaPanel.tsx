@@ -22,6 +22,8 @@ export default function CatalogoConductaPanel({ onCodesChange }: CatalogoConduct
     }
   }
 
+  // Carga inicial única: loadCodigosConducta se recrea en cada render y onCodesChange suele llegar inline.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { void loadCodigosConducta(); }, []);
 
   async function saveCodigoConducta(event: FormEvent) {

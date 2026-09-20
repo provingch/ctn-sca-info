@@ -6,7 +6,8 @@ import ContentState from '../../components/ui/ContentState';
 import GradeChip from '../../components/ui/GradeChip';
 import ReabrirEtapaDialog from '../../components/ReabrirEtapaDialog';
 import { useToast } from '../../context/toast';
-import { EvaluacionFiltrosCampos, type EvaluacionFiltros } from './useEvaluacionFiltros';
+import EvaluacionFiltrosCampos from './EvaluacionFiltrosCampos';
+import type { EvaluacionFiltros } from './useEvaluacionFiltros';
 
 function formatFecha(value: string | null | undefined): string {
   if (!value) return '—';
