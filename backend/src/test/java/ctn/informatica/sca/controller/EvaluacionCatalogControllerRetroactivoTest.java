@@ -32,7 +32,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.server.ResponseStatusException;
 
-/** Resolución de incongruencias retroactivas y del bloqueo que generan (el flujo de atraso en vivo no cambia). */
+/** Resolución individual de incongruencias retroactivas y de atrasos justificados, y de los bloqueos que generan. */
 class EvaluacionCatalogControllerRetroactivoTest {
 
     private static final int EVALUADOR = 14;
@@ -52,6 +52,7 @@ class EvaluacionCatalogControllerRetroactivoTest {
         notificacionDao = mock(NotificacionDao.class);
         configuracionDao = mock(ConfiguracionSistemaDao.class);
         when(configuracionDao.getInt("umbral_faltas_incongruencia_retroactiva", 3)).thenReturn(3);
+        when(configuracionDao.getInt("umbral_atrasos_incumplimiento", 3)).thenReturn(3);
         controller = new EvaluacionCatalogController(mock(CursoDao.class), mock(EspecialidadDao.class),
                 mock(InstrumentoDao.class), mock(RasgoPlanillaDao.class), incumplimientoDao, mock(AsignacionDao.class),
                 notificacionDao, mock(UserDao.class), mock(ProfesorDao.class), configuracionDao);
@@ -81,14 +82,14 @@ class EvaluacionCatalogControllerRetroactivoTest {
 
         assertEquals(false, result.get("bloqueoGenerado"));
         verify(incumplimientoDao).resolver(9, "PERMITIDO", EVALUADOR, null, null);
-        verify(incumplimientoDao, never()).contarRechazadosRetroactivos(anyInt(), anyInt());
-        verify(incumplimientoDao, never()).registrarBloqueoIncongruenciaRetroactiva(anyInt(), anyInt(), anyString());
+        verify(incumplimientoDao, never()).contarRechazadosPorTipo(anyInt(), anyInt(), anyString());
+        verify(incumplimientoDao, never()).registrarBloqueo(anyInt(), anyInt(), anyString(), anyString());
     }
 
     @Test
     void rechazarUnaIncongruenciaNoPideFechasDeSuspension() throws Exception {
         filaPendiente("INCONGRUENCIA_RETROACTIVA");
-        when(incumplimientoDao.contarRechazadosRetroactivos(ASIGNACION, PROFESOR)).thenReturn(1L);
+        when(incumplimientoDao.contarRechazadosPorTipo(ASIGNACION, PROFESOR, "INCONGRUENCIA_RETROACTIVA")).thenReturn(1L);
 
         Map<String, Object> result = controller.resolverIncumplimiento(9, Map.of("estado", "RECHAZADO"), authentication);
 
@@ -99,24 +100,24 @@ class EvaluacionCatalogControllerRetroactivoTest {
     @Test
     void conMenosRechazosQueElUmbralNoBloquea() throws Exception {
         filaPendiente("INCONGRUENCIA_RETROACTIVA");
-        when(incumplimientoDao.contarRechazadosRetroactivos(ASIGNACION, PROFESOR)).thenReturn(2L);
+        when(incumplimientoDao.contarRechazadosPorTipo(ASIGNACION, PROFESOR, "INCONGRUENCIA_RETROACTIVA")).thenReturn(2L);
 
         Map<String, Object> result = controller.resolverIncumplimiento(9, Map.of("estado", "RECHAZADO"), authentication);
 
         assertEquals(false, result.get("bloqueoGenerado"));
-        verify(incumplimientoDao, never()).registrarBloqueoIncongruenciaRetroactiva(anyInt(), anyInt(), anyString());
+        verify(incumplimientoDao, never()).registrarBloqueo(anyInt(), anyInt(), anyString(), anyString());
     }
 
     @Test
     void alLlegarAlUmbralDeRechazosCreaElBloqueoYNotificaAlProfesor() throws Exception {
         filaPendiente("INCONGRUENCIA_RETROACTIVA");
-        when(incumplimientoDao.contarRechazadosRetroactivos(ASIGNACION, PROFESOR)).thenReturn(3L);
-        when(incumplimientoDao.registrarBloqueoIncongruenciaRetroactiva(eq(ASIGNACION), eq(PROFESOR), anyString())).thenReturn(40);
+        when(incumplimientoDao.contarRechazadosPorTipo(ASIGNACION, PROFESOR, "INCONGRUENCIA_RETROACTIVA")).thenReturn(3L);
+        when(incumplimientoDao.registrarBloqueo(eq(ASIGNACION), eq(PROFESOR), eq("BLOQUEO_INCONGRUENCIA_RETROACTIVA"), anyString())).thenReturn(40);
 
         Map<String, Object> result = controller.resolverIncumplimiento(9, Map.of("estado", "RECHAZADO"), authentication);
 
         assertEquals(true, result.get("bloqueoGenerado"));
-        verify(incumplimientoDao).registrarBloqueoIncongruenciaRetroactiva(ASIGNACION, PROFESOR,
+        verify(incumplimientoDao).registrarBloqueo(ASIGNACION, PROFESOR, "BLOQUEO_INCONGRUENCIA_RETROACTIVA",
                 "Se alcanzaron 3 faltas por incongruencias retroactivas — Iniciar clase bloqueado hasta revisión de evaluación.");
         verify(notificacionDao).crear(eq(PROFESOR), eq("profesor"), eq("INICIAR_CLASE_BLOQUEADO"), anyString(), anyString(),
                 eq("INCUMPLIMIENTO_REVISION"), eq(40L));
@@ -125,24 +126,24 @@ class EvaluacionCatalogControllerRetroactivoTest {
     @Test
     void noDuplicaElBloqueoSiYaHayUnoPendiente() throws Exception {
         filaPendiente("INCONGRUENCIA_RETROACTIVA");
-        when(incumplimientoDao.contarRechazadosRetroactivos(ASIGNACION, PROFESOR)).thenReturn(4L);
+        when(incumplimientoDao.contarRechazadosPorTipo(ASIGNACION, PROFESOR, "INCONGRUENCIA_RETROACTIVA")).thenReturn(4L);
         when(incumplimientoDao.existePendientePorAsignacionYUsuario(ASIGNACION, PROFESOR, "BLOQUEO_INCONGRUENCIA_RETROACTIVA")).thenReturn(true);
 
         Map<String, Object> result = controller.resolverIncumplimiento(9, Map.of("estado", "RECHAZADO"), authentication);
 
         assertEquals(false, result.get("bloqueoGenerado"));
-        verify(incumplimientoDao, never()).registrarBloqueoIncongruenciaRetroactiva(anyInt(), anyInt(), anyString());
+        verify(incumplimientoDao, never()).registrarBloqueo(anyInt(), anyInt(), anyString(), anyString());
     }
 
     @Test
     void elUmbralSaleDeLaConfiguracion() throws Exception {
         filaPendiente("INCONGRUENCIA_RETROACTIVA");
         when(configuracionDao.getInt("umbral_faltas_incongruencia_retroactiva", 3)).thenReturn(5);
-        when(incumplimientoDao.contarRechazadosRetroactivos(ASIGNACION, PROFESOR)).thenReturn(4L);
+        when(incumplimientoDao.contarRechazadosPorTipo(ASIGNACION, PROFESOR, "INCONGRUENCIA_RETROACTIVA")).thenReturn(4L);
 
         controller.resolverIncumplimiento(9, Map.of("estado", "RECHAZADO"), authentication);
 
-        verify(incumplimientoDao, never()).registrarBloqueoIncongruenciaRetroactiva(anyInt(), anyInt(), anyString());
+        verify(incumplimientoDao, never()).registrarBloqueo(anyInt(), anyInt(), anyString(), anyString());
     }
 
     @Test
@@ -190,15 +191,101 @@ class EvaluacionCatalogControllerRetroactivoTest {
     }
 
     @Test
-    void elAtrasoEnTiempoRealSigueExigiendoSuspensionParaRechazar() throws Exception {
-        when(incumplimientoDao.findById(9)).thenReturn(fila("ATRASO", "PENDIENTE"));
+    void permitirUnAtrasoNoCuentaComoFaltaNiBloquea() throws Exception {
+        filaPendiente("ATRASO");
+
+        Map<String, Object> result = controller.resolverIncumplimiento(9, Map.of("estado", "PERMITIDO"), authentication);
+
+        assertEquals(false, result.get("bloqueoGenerado"));
+        verify(incumplimientoDao).resolver(9, "PERMITIDO", EVALUADOR, null, null);
+        verify(incumplimientoDao, never()).contarRechazadosPorTipo(anyInt(), anyInt(), anyString());
+        verify(incumplimientoDao, never()).registrarBloqueo(anyInt(), anyInt(), anyString(), anyString());
+    }
+
+    @Test
+    void rechazarUnAtrasoNoPideFechasDeSuspensionYCuentaComoFalta() throws Exception {
+        filaPendiente("ATRASO");
+        when(incumplimientoDao.contarRechazadosPorTipo(ASIGNACION, PROFESOR, "ATRASO")).thenReturn(2L);
+
+        Map<String, Object> result = controller.resolverIncumplimiento(9, Map.of("estado", "RECHAZADO"), authentication);
+
+        assertEquals(false, result.get("bloqueoGenerado"));
+        verify(incumplimientoDao).resolver(9, "RECHAZADO", EVALUADOR, null, null);
+        verify(incumplimientoDao, never()).registrarBloqueo(anyInt(), anyInt(), anyString(), anyString());
+        verify(notificacionDao).crear(eq(PROFESOR), eq("profesor"), eq("INCUMPLIMIENTO_RESUELTO"), anyString(),
+                eq("El atraso #9 fue resuelto como rechazado"), eq("INCUMPLIMIENTO_REVISION"), eq(9L));
+    }
+
+    @Test
+    void alTercerAtrasoRechazadoCreaElBloqueoDeAtrasoYNotificaAlProfesor() throws Exception {
+        filaPendiente("ATRASO");
+        when(incumplimientoDao.contarRechazadosPorTipo(ASIGNACION, PROFESOR, "ATRASO")).thenReturn(3L);
+        when(incumplimientoDao.registrarBloqueo(eq(ASIGNACION), eq(PROFESOR), eq("BLOQUEO_ATRASO_TIEMPO_REAL"), anyString())).thenReturn(41);
+
+        Map<String, Object> result = controller.resolverIncumplimiento(9, Map.of("estado", "RECHAZADO"), authentication);
+
+        assertEquals(true, result.get("bloqueoGenerado"));
+        verify(incumplimientoDao).registrarBloqueo(ASIGNACION, PROFESOR, "BLOQUEO_ATRASO_TIEMPO_REAL",
+                "Se alcanzaron 3 faltas por atrasos justificados — Iniciar clase bloqueado hasta revisión de evaluación.");
+        verify(notificacionDao).crear(eq(PROFESOR), eq("profesor"), eq("INICIAR_CLASE_BLOQUEADO"), anyString(), anyString(),
+                eq("INCUMPLIMIENTO_REVISION"), eq(41L));
+    }
+
+    @Test
+    void elUmbralDeAtrasosSaleDeSuPropiaConfiguracion() throws Exception {
+        filaPendiente("ATRASO");
+        when(configuracionDao.getInt("umbral_atrasos_incumplimiento", 3)).thenReturn(5);
+        when(incumplimientoDao.contarRechazadosPorTipo(ASIGNACION, PROFESOR, "ATRASO")).thenReturn(4L);
+
+        controller.resolverIncumplimiento(9, Map.of("estado", "RECHAZADO"), authentication);
+
+        verify(incumplimientoDao, never()).registrarBloqueo(anyInt(), anyInt(), anyString(), anyString());
+        verify(configuracionDao, never()).getInt("umbral_faltas_incongruencia_retroactiva", 3);
+    }
+
+    @Test
+    void noDuplicaElBloqueoDeAtrasoSiYaHayUnoPendiente() throws Exception {
+        filaPendiente("ATRASO");
+        when(incumplimientoDao.contarRechazadosPorTipo(ASIGNACION, PROFESOR, "ATRASO")).thenReturn(4L);
+        when(incumplimientoDao.existePendientePorAsignacionYUsuario(ASIGNACION, PROFESOR, "BLOQUEO_ATRASO_TIEMPO_REAL")).thenReturn(true);
+
+        Map<String, Object> result = controller.resolverIncumplimiento(9, Map.of("estado", "RECHAZADO"), authentication);
+
+        assertEquals(false, result.get("bloqueoGenerado"));
+        verify(incumplimientoDao, never()).registrarBloqueo(anyInt(), anyInt(), anyString(), anyString());
+    }
+
+    @Test
+    void reactivarElBloqueoDeAtrasoGuardaLaNotaYNotificaAlProfesorConElTexto() throws Exception {
+        filaPendiente("BLOQUEO_ATRASO_TIEMPO_REAL");
+
+        Map<String, Object> result = controller.resolverIncumplimiento(9,
+                Map.of("estado", "PERMITIDO", "nota", "Regularizó las clases atrasadas"), authentication);
+
+        assertEquals("PERMITIDO", result.get("estado"));
+        verify(incumplimientoDao).resolver(9, "PERMITIDO", EVALUADOR, null, null, "Regularizó las clases atrasadas");
+        verify(notificacionDao).crear(eq(PROFESOR), eq("profesor"), eq("BLOQUEO_RETROACTIVO_LEVANTADO"), anyString(),
+                contains("Regularizó las clases atrasadas"), eq("INCUMPLIMIENTO_REVISION"), eq(9L));
+    }
+
+    @Test
+    void elBloqueoDeAtrasoNoSePuedeRechazar() throws Exception {
+        filaPendiente("BLOQUEO_ATRASO_TIEMPO_REAL");
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> controller.resolverIncumplimiento(9, Map.of("estado", "RECHAZADO", "nota", "x"), authentication));
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    }
+
+    @Test
+    void unTipoQueNoSeResuelveDesdeAcaResponde400() throws Exception {
+        when(incumplimientoDao.findById(9)).thenReturn(fila("RECHAZO", "PENDIENTE"));
 
         ResponseStatusException ex = assertThrows(ResponseStatusException.class,
                 () -> controller.resolverIncumplimiento(9, Map.of("estado", "RECHAZADO"), authentication));
 
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
-        assertTrue(ex.getReason().contains("suspensión"));
-        verify(incumplimientoDao, never()).contarRechazadosRetroactivos(anyInt(), anyInt());
-        verify(notificacionDao, never()).crear(anyInt(), anyString(), anyString(), anyString(), anyString(), anyString(), anyLong());
+        verify(incumplimientoDao, never()).resolver(anyInt(), anyString(), anyInt(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
     }
 }

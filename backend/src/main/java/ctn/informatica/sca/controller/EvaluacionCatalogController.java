@@ -21,7 +21,6 @@ import ctn.informatica.sca.util.ScaUiContext;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -328,49 +327,13 @@ public class EvaluacionCatalogController {
             }
 
             String tipo = incumplimiento.get("tipo") instanceof String t ? t : null;
-            if (IncumplimientoRevisionDao.TIPO_INCONGRUENCIA_RETROACTIVA.equals(tipo)) {
-                return resolverIncongruenciaRetroactiva(id, estado, evaluadorId, incumplimiento);
+            if (IncumplimientoRevisionDao.esBloqueo(tipo)) {
+                return levantarBloqueo(id, estado, evaluadorId, payload, incumplimiento);
             }
-            if (IncumplimientoRevisionDao.TIPO_BLOQUEO_INCONGRUENCIA_RETROACTIVA.equals(tipo)) {
-                return levantarBloqueoRetroactivo(id, estado, evaluadorId, payload, incumplimiento);
+            if (IncumplimientoRevisionDao.bloqueoDe(tipo) != null) {
+                return resolverConTolerancia(id, tipo, estado, evaluadorId, incumplimiento);
             }
-
-            LocalDateTime suspensionDesde = parseDateTime(payload.get("suspensionDesde"), "suspensionDesde");
-            LocalDateTime suspensionHasta = parseDateTime(payload.get("suspensionHasta"), "suspensionHasta");
-            if ("RECHAZADO".equals(estado)) {
-                if (suspensionDesde == null || suspensionHasta == null) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Para rechazar un incumplimiento debes indicar suspensión desde y hasta.");
-                }
-                if (!suspensionHasta.isAfter(suspensionDesde)) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La suspensión hasta debe ser posterior a la suspensión desde.");
-                }
-            }
-
-            boolean updated = incumplimientoRevisionDao.resolver(id, estado, evaluadorId, suspensionDesde, suspensionHasta);
-            if (!updated) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el incumplimiento a resolver.");
-            }
-
-            int usuarioId = ((Number) incumplimiento.get("usuarioId")).intValue();
-            String userType = NotificacionDao.resolveUserType(userDao, usuarioId);
-            String cuerpo = "El incumplimiento #" + id + " fue resuelto como " + estado.toLowerCase();
-            if ("RECHAZADO".equals(estado)) {
-                cuerpo += " con suspensión desde " + suspensionDesde + " hasta " + suspensionHasta;
-            }
-            try {
-                notificacionDao.crear(
-                        usuarioId,
-                        userType,
-                        "INCUMPLIMIENTO_RESUELTO",
-                        "Incumplimiento resuelto",
-                        cuerpo,
-                        "INCUMPLIMIENTO_REVISION",
-                        (long) id);
-            } catch (Exception ex) {
-                log.warn("No se pudo notificar la resolución del incumplimiento {}: {}", id, ex.getMessage());
-            }
-
-            return Map.of("ok", true, "id", id, "estado", estado);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Este tipo de incumplimiento no se resuelve desde acá.");
         } catch (ResponseStatusException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -379,11 +342,12 @@ public class EvaluacionCatalogController {
     }
 
     /**
-     * Incongruencia detectada al comparar retroactivamente una clase contra el plan aprobado. Sin fechas de
-     * suspensión: PERMITIDO no cuenta como falta; RECHAZADO sí, y al llegar al umbral bloquea "Iniciar clase"
-     * con una fila BLOQUEO_INCONGRUENCIA_RETROACTIVA hasta que evaluación la levante.
+     * Resolución individual de un ATRASO justificado o de una incongruencia retroactiva. Sin fechas de suspensión:
+     * PERMITIDO no cuenta como falta; RECHAZADO sí, y al llegar al umbral bloquea "Iniciar clase" con una fila
+     * BLOQUEO_* hasta que evaluación la levante. El umbral de atrasos es {@code umbral_atrasos_incumplimiento}; el de
+     * incongruencias, {@code umbral_faltas_incongruencia_retroactiva}.
      */
-    private Map<String, Object> resolverIncongruenciaRetroactiva(int id, String estado, int evaluadorId,
+    private Map<String, Object> resolverConTolerancia(int id, String tipo, String estado, int evaluadorId,
             Map<String, Object> incumplimiento) throws Exception {
         if (!"PERMITIDO".equals(estado) && !"RECHAZADO".equals(estado)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El estado debe ser PERMITIDO o RECHAZADO.");
@@ -393,24 +357,29 @@ public class EvaluacionCatalogController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró el incumplimiento a resolver.");
         }
 
+        boolean atraso = IncumplimientoRevisionDao.TIPO_ATRASO.equals(tipo);
+        String etiqueta = atraso ? "atrasos justificados" : "incongruencias retroactivas";
         int usuarioId = ((Number) incumplimiento.get("usuarioId")).intValue();
         int asignacionId = ((Number) incumplimiento.get("asignacionId")).intValue();
         String userType = NotificacionDao.resolveUserType(userDao, usuarioId);
-        notificarSinFallar(usuarioId, userType, "INCUMPLIMIENTO_RESUELTO", "Incongruencia resuelta",
-                "La incongruencia retroactiva #" + id + " fue resuelta como " + ("PERMITIDO".equals(estado) ? "permitida" : "rechazada"),
+        notificarSinFallar(usuarioId, userType, "INCUMPLIMIENTO_RESUELTO", atraso ? "Atraso resuelto" : "Incongruencia resuelta",
+                (atraso ? "El atraso #" : "La incongruencia retroactiva #") + id + " fue resuelto como "
+                        + ("PERMITIDO".equals(estado) ? "permitido" : "rechazado"),
                 "INCUMPLIMIENTO_REVISION", id);
 
         boolean bloqueoGenerado = false;
         if ("RECHAZADO".equals(estado)) {
-            int umbral = configuracionSistemaDao.getInt("umbral_faltas_incongruencia_retroactiva", 3);
-            long faltas = incumplimientoRevisionDao.contarRechazadosRetroactivos(asignacionId, usuarioId);
-            if (faltas >= umbral && !incumplimientoRevisionDao.existePendientePorAsignacionYUsuario(
-                    asignacionId, usuarioId, IncumplimientoRevisionDao.TIPO_BLOQUEO_INCONGRUENCIA_RETROACTIVA)) {
-                int bloqueoId = incumplimientoRevisionDao.registrarBloqueoIncongruenciaRetroactiva(asignacionId, usuarioId,
-                        "Se alcanzaron " + faltas + " faltas por incongruencias retroactivas — Iniciar clase bloqueado hasta revisión de evaluación.");
+            String tipoBloqueo = IncumplimientoRevisionDao.bloqueoDe(tipo);
+            int umbral = atraso
+                    ? configuracionSistemaDao.getInt("umbral_atrasos_incumplimiento", 3)
+                    : configuracionSistemaDao.getInt("umbral_faltas_incongruencia_retroactiva", 3);
+            long faltas = incumplimientoRevisionDao.contarRechazadosPorTipo(asignacionId, usuarioId, tipo);
+            if (faltas >= umbral && !incumplimientoRevisionDao.existePendientePorAsignacionYUsuario(asignacionId, usuarioId, tipoBloqueo)) {
+                int bloqueoId = incumplimientoRevisionDao.registrarBloqueo(asignacionId, usuarioId, tipoBloqueo,
+                        "Se alcanzaron " + faltas + " faltas por " + etiqueta + " — Iniciar clase bloqueado hasta revisión de evaluación.");
                 bloqueoGenerado = true;
                 notificarSinFallar(usuarioId, userType, "INICIAR_CLASE_BLOQUEADO", "Iniciar clase bloqueado",
-                        "Se alcanzaron " + faltas + " faltas por incongruencias retroactivas. No podés iniciar clases en esta asignación hasta que evaluación revise tu caso.",
+                        "Se alcanzaron " + faltas + " faltas por " + etiqueta + ". No podés iniciar clases en esta asignación hasta que evaluación revise tu caso.",
                         "INCUMPLIMIENTO_REVISION", bloqueoId);
             }
         }
@@ -418,7 +387,7 @@ public class EvaluacionCatalogController {
     }
 
     /** Reactivación: el evaluador resuelve la fila de bloqueo como PERMITIDO dejando una nota libre. */
-    private Map<String, Object> levantarBloqueoRetroactivo(int id, String estado, int evaluadorId,
+    private Map<String, Object> levantarBloqueo(int id, String estado, int evaluadorId,
             Map<String, Object> payload, Map<String, Object> incumplimiento) throws Exception {
         if (!"PERMITIDO".equals(estado)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Un bloqueo sólo se levanta con estado PERMITIDO.");
@@ -450,22 +419,6 @@ public class EvaluacionCatalogController {
             notificacionDao.crear(usuarioId, userType, tipo, titulo, cuerpo, entidadTipo, (long) entidadId);
         } catch (Exception ex) {
             log.warn("No se pudo crear la notificación {} para el usuario {}: {}", tipo, usuarioId, ex.getMessage());
-        }
-    }
-
-    private LocalDateTime parseDateTime(Object raw, String fieldName) {
-        if (raw == null || raw.toString().isBlank()) {
-            return null;
-        }
-        String text = raw.toString();
-        try {
-            return LocalDateTime.parse(text);
-        } catch (Exception ignored) {
-            try {
-                return java.time.OffsetDateTime.parse(text).toLocalDateTime();
-            } catch (Exception ex) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Formato inválido para " + fieldName + ".");
-            }
         }
     }
 

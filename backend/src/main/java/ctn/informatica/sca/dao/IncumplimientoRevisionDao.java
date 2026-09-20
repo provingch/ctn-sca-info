@@ -21,6 +21,25 @@ public class IncumplimientoRevisionDao extends conexion {
     public static final String TIPO_INCONGRUENCIA_RETROACTIVA = "INCONGRUENCIA_RETROACTIVA";
     /** Bloqueo de Iniciar clase por acumular rechazos de incongruencias retroactivas; sin vencimiento. */
     public static final String TIPO_BLOQUEO_INCONGRUENCIA_RETROACTIVA = "BLOQUEO_INCONGRUENCIA_RETROACTIVA";
+    /** Atraso en tiempo real justificado por el profesor; cada uno lo revisa evaluación por separado. */
+    public static final String TIPO_ATRASO = "ATRASO";
+    /** Bloqueo de Iniciar clase por acumular rechazos de atrasos justificados; sin vencimiento. */
+    public static final String TIPO_BLOQUEO_ATRASO_TIEMPO_REAL = "BLOQUEO_ATRASO_TIEMPO_REAL";
+
+    /** Fila de bloqueo que corresponde a los rechazos de {@code tipo}, o null si ese tipo no genera bloqueo. */
+    public static String bloqueoDe(String tipo) {
+        if (TIPO_ATRASO.equals(tipo)) {
+            return TIPO_BLOQUEO_ATRASO_TIEMPO_REAL;
+        }
+        if (TIPO_INCONGRUENCIA_RETROACTIVA.equals(tipo)) {
+            return TIPO_BLOQUEO_INCONGRUENCIA_RETROACTIVA;
+        }
+        return null;
+    }
+
+    public static boolean esBloqueo(String tipo) {
+        return TIPO_BLOQUEO_ATRASO_TIEMPO_REAL.equals(tipo) || TIPO_BLOQUEO_INCONGRUENCIA_RETROACTIVA.equals(tipo);
+    }
 
     public int registrar(int asignacionId, int usuarioId, Integer temaPlanCurricularId, String tipo, String descripcion,
             String estado, Integer evaluadorId, LocalDateTime suspensionDesde, LocalDateTime suspensionHasta) throws SQLException {
@@ -70,8 +89,25 @@ public class IncumplimientoRevisionDao extends conexion {
     /** Inserta una incongruencia retroactiva PENDIENTE ligada a la clase (planilla_rasgo) que la origina. */
     public int registrarIncongruenciaRetroactiva(int asignacionId, int usuarioId, Integer temaPlanCurricularId,
             int planillaRasgoId, String descripcion) throws SQLException {
-        String sql = "INSERT INTO incumplimiento_revision (asignacion_id, usuario_id, tema_plan_curricular_id, planilla_rasgo_id, tipo, descripcion, estado) "
-                + "VALUES (?, ?, ?, ?, '" + TIPO_INCONGRUENCIA_RETROACTIVA + "', ?, 'PENDIENTE')";
+        return insertarLigadoAClase(TIPO_INCONGRUENCIA_RETROACTIVA, asignacionId, usuarioId, temaPlanCurricularId,
+                planillaRasgoId, descripcion, null);
+    }
+
+    /**
+     * Inserta un atraso justificado PENDIENTE ligado a su clase: cada atraso es su propia fila para que evaluación
+     * lo apruebe o rechace individualmente. La justificación que escribió el profesor queda en
+     * {@code justificacion_profesor}, como en las incongruencias retroactivas.
+     */
+    public int registrarAtraso(int asignacionId, int usuarioId, Integer temaPlanCurricularId, int planillaRasgoId,
+            String justificacion) throws SQLException {
+        return insertarLigadoAClase(TIPO_ATRASO, asignacionId, usuarioId, temaPlanCurricularId, planillaRasgoId,
+                "Atraso justificado por el profesor: " + justificacion, justificacion);
+    }
+
+    private int insertarLigadoAClase(String tipo, int asignacionId, int usuarioId, Integer temaPlanCurricularId,
+            int planillaRasgoId, String descripcion, String justificacionProfesor) throws SQLException {
+        String sql = "INSERT INTO incumplimiento_revision (asignacion_id, usuario_id, tema_plan_curricular_id, planilla_rasgo_id, tipo, descripcion, justificacion_profesor, estado) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDIENTE')";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, asignacionId);
             ps.setInt(2, usuarioId);
@@ -81,7 +117,13 @@ public class IncumplimientoRevisionDao extends conexion {
                 ps.setInt(3, temaPlanCurricularId);
             }
             ps.setInt(4, planillaRasgoId);
-            ps.setString(5, descripcion == null ? "" : descripcion.trim());
+            ps.setString(5, tipo);
+            ps.setString(6, descripcion == null ? "" : descripcion.trim());
+            if (justificacionProfesor == null || justificacionProfesor.isBlank()) {
+                ps.setNull(7, java.sql.Types.VARCHAR);
+            } else {
+                ps.setString(7, justificacionProfesor.trim());
+            }
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if (keys.next()) {
@@ -92,14 +134,18 @@ public class IncumplimientoRevisionDao extends conexion {
         return 0;
     }
 
-    /** Inserta el bloqueo PENDIENTE de Iniciar clase por acumulación de rechazos retroactivos. */
-    public int registrarBloqueoIncongruenciaRetroactiva(int asignacionId, int usuarioId, String descripcion) throws SQLException {
+    /** Inserta el bloqueo PENDIENTE de Iniciar clase (uno de los tipos de {@link #bloqueoDe}) por acumulación de rechazos. */
+    public int registrarBloqueo(int asignacionId, int usuarioId, String tipoBloqueo, String descripcion) throws SQLException {
+        if (!esBloqueo(tipoBloqueo)) {
+            throw new IllegalArgumentException("No es un tipo de bloqueo: " + tipoBloqueo);
+        }
         String sql = "INSERT INTO incumplimiento_revision (asignacion_id, usuario_id, tipo, descripcion, estado) "
-                + "VALUES (?, ?, '" + TIPO_BLOQUEO_INCONGRUENCIA_RETROACTIVA + "', ?, 'PENDIENTE')";
+                + "VALUES (?, ?, ?, ?, 'PENDIENTE')";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, asignacionId);
             ps.setInt(2, usuarioId);
-            ps.setString(3, descripcion == null ? "" : descripcion.trim());
+            ps.setString(3, tipoBloqueo);
+            ps.setString(4, descripcion == null ? "" : descripcion.trim());
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 if (keys.next()) {
@@ -121,20 +167,26 @@ public class IncumplimientoRevisionDao extends conexion {
     }
 
     /**
-     * Rechazos de incongruencias retroactivas del profesor en la asignación desde el último bloqueo
-     * levantado: al reactivar, la tolerancia arranca de cero (si no, cualquier rechazo posterior
+     * Rechazos de {@code tipo} (ATRASO o INCONGRUENCIA_RETROACTIVA) del profesor en la asignación desde el último
+     * bloqueo levantado: al reactivar, la tolerancia arranca de cero (si no, cualquier rechazo posterior
      * volvería a bloquear al instante porque el acumulado ya superó el umbral).
      */
-    public long contarRechazadosRetroactivos(int asignacionId, int usuarioId) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM incumplimiento_revision WHERE tipo = '" + TIPO_INCONGRUENCIA_RETROACTIVA + "' AND estado = 'RECHAZADO' "
+    public long contarRechazadosPorTipo(int asignacionId, int usuarioId, String tipo) throws SQLException {
+        String tipoBloqueo = bloqueoDe(tipo);
+        if (tipoBloqueo == null) {
+            throw new IllegalArgumentException("El tipo no genera bloqueo: " + tipo);
+        }
+        String sql = "SELECT COUNT(*) FROM incumplimiento_revision WHERE tipo = ? AND estado = 'RECHAZADO' "
                 + "AND asignacion_id = ? AND usuario_id = ? "
                 + "AND fecha_resolucion > COALESCE((SELECT MAX(b.fecha_resolucion) FROM incumplimiento_revision b "
-                + "WHERE b.tipo = '" + TIPO_BLOQUEO_INCONGRUENCIA_RETROACTIVA + "' AND b.estado <> 'PENDIENTE' AND b.asignacion_id = ? AND b.usuario_id = ?), '1970-01-01')";
+                + "WHERE b.tipo = ? AND b.estado <> 'PENDIENTE' AND b.asignacion_id = ? AND b.usuario_id = ?), '1970-01-01')";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, asignacionId);
-            ps.setInt(2, usuarioId);
-            ps.setInt(3, asignacionId);
-            ps.setInt(4, usuarioId);
+            ps.setString(1, tipo);
+            ps.setInt(2, asignacionId);
+            ps.setInt(3, usuarioId);
+            ps.setString(4, tipoBloqueo);
+            ps.setInt(5, asignacionId);
+            ps.setInt(6, usuarioId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return rs.getLong(1);
@@ -272,14 +324,15 @@ public class IncumplimientoRevisionDao extends conexion {
     }
 
     /**
-     * Una incongruencia retroactiva pendiente NO bloquea por sí sola (recién bloquea al llegar al umbral
-     * de rechazos, vía la fila BLOQUEO_INCONGRUENCIA_RETROACTIVA, que dura hasta que evaluación la resuelva).
-     * El resto de los tipos conserva el comportamiento de siempre: pendiente, o rechazado dentro de su suspensión.
+     * Un ATRASO o una incongruencia retroactiva pendientes NO bloquean por sí solos: cada uno lo revisa evaluación y
+     * recién bloquea al llegar al umbral de rechazos, vía la fila BLOQUEO_* correspondiente, que dura hasta que
+     * evaluación la resuelva. El resto de los tipos conserva el comportamiento de siempre (pendiente, o rechazado
+     * dentro de su suspensión; esto último sólo puede quedar en filas ATRASO rechazadas con fechas antes de V030).
      */
     public boolean existeBloqueoActivo(int asignacionId) throws SQLException {
-        String sql = "SELECT EXISTS(SELECT 1 FROM incumplimiento_revision WHERE asignacion_id = ? AND estado = 'PENDIENTE' AND tipo NOT IN ('" + TIPO_INCONGRUENCIA_RETROACTIVA + "','" + TIPO_BLOQUEO_INCONGRUENCIA_RETROACTIVA + "')) "
+        String sql = "SELECT EXISTS(SELECT 1 FROM incumplimiento_revision WHERE asignacion_id = ? AND estado = 'PENDIENTE' AND tipo NOT IN ('" + TIPO_ATRASO + "','" + TIPO_INCONGRUENCIA_RETROACTIVA + "','" + TIPO_BLOQUEO_INCONGRUENCIA_RETROACTIVA + "','" + TIPO_BLOQUEO_ATRASO_TIEMPO_REAL + "')) "
                 + "OR EXISTS(SELECT 1 FROM incumplimiento_revision WHERE asignacion_id = ? AND estado = 'RECHAZADO' AND suspension_desde <= NOW() AND suspension_hasta >= NOW()) "
-                + "OR EXISTS(SELECT 1 FROM incumplimiento_revision WHERE asignacion_id = ? AND tipo = '" + TIPO_BLOQUEO_INCONGRUENCIA_RETROACTIVA + "' AND estado = 'PENDIENTE')";
+                + "OR EXISTS(SELECT 1 FROM incumplimiento_revision WHERE asignacion_id = ? AND tipo IN ('" + TIPO_BLOQUEO_INCONGRUENCIA_RETROACTIVA + "','" + TIPO_BLOQUEO_ATRASO_TIEMPO_REAL + "') AND estado = 'PENDIENTE')";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, asignacionId);
             ps.setInt(2, asignacionId);

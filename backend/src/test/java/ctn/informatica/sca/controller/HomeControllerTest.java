@@ -206,33 +206,28 @@ class HomeControllerTest {
     }
 
     @Test
-    void tercerAtrasoCreaUnSoloIncumplimientoPendienteYCuartoNoDuplica() throws Exception {
-        RasgoPlanillaDao rasgoPlanillaDao = mock(RasgoPlanillaDao.class);
-        ConfiguracionSistemaDao configuracionSistemaDao = mock(ConfiguracionSistemaDao.class);
+    void cadaAtrasoJustificadoCreaSuPropiaFilaPendienteDeRevision() throws Exception {
         IncumplimientoRevisionDao incumplimientoRevisionDao = mock(IncumplimientoRevisionDao.class);
         UserDao userDao = mock(UserDao.class);
 
-        when(configuracionSistemaDao.getInt("umbral_atrasos_incumplimiento", 3)).thenReturn(3);
-        when(rasgoPlanillaDao.contarAtrasosPorAsignacionYUsuario(41, 17)).thenReturn(3, 4);
-        when(incumplimientoRevisionDao.existePendientePorAsignacionYUsuario(41, 17, "ATRASO"))
-                .thenReturn(false, true);
+        when(incumplimientoRevisionDao.registrarAtraso(41, 17, 9, 100, "Atraso justificado 1")).thenReturn(61);
+        when(incumplimientoRevisionDao.registrarAtraso(41, 17, 10, 101, "Atraso justificado 2")).thenReturn(62);
         when(userDao.findAllByLevel(2)).thenReturn(List.of());
 
         HomeController controller = new HomeController(
                 mock(CursoDao.class), mock(CursoBaseDao.class), mock(AsignacionDao.class), mock(ProfesorDao.class), mock(PlanillaDao.class),
-                mock(MateriaDao.class), mock(AlumnoDao.class), rasgoPlanillaDao, mock(InstrumentoDao.class),
+                mock(MateriaDao.class), mock(AlumnoDao.class), mock(RasgoPlanillaDao.class), mock(InstrumentoDao.class),
                 userDao, mock(PlanCurricularDao.class), mock(TemaVerificacionService.class), mock(ActivityLogService.class),
-                configuracionSistemaDao, incumplimientoRevisionDao, mock(NotificacionDao.class), mock(QuejaDao.class));
+                mock(ConfiguracionSistemaDao.class), incumplimientoRevisionDao, mock(NotificacionDao.class), mock(QuejaDao.class));
 
-        controller.registrarIncumplimientoPorAtraso(41, 17, 9, "Atraso justificado 3");
-        controller.registrarIncumplimientoPorAtraso(41, 17, 10, "Atraso justificado 4");
+        // ya no hay umbral ni conteo previo: el primer atraso ya queda pendiente de revisión
+        controller.registrarIncumplimientoPorAtraso(41, 17, 9, 100, "Atraso justificado 1");
+        controller.registrarIncumplimientoPorAtraso(41, 17, 10, 101, "Atraso justificado 2");
 
-        verify(rasgoPlanillaDao, times(2)).contarAtrasosPorAsignacionYUsuario(41, 17);
-        verify(incumplimientoRevisionDao, times(2)).existePendientePorAsignacionYUsuario(41, 17, "ATRASO");
-        verify(incumplimientoRevisionDao, times(1)).registrar(
-                eq(41), eq(17), eq(9), eq("ATRASO"), any(String.class), eq("PENDIENTE"),
-                eq(null), eq(null), eq(null));
-        verify(userDao, times(1)).findAllByLevel(2);
+        verify(incumplimientoRevisionDao).registrarAtraso(41, 17, 9, 100, "Atraso justificado 1");
+        verify(incumplimientoRevisionDao).registrarAtraso(41, 17, 10, 101, "Atraso justificado 2");
+        verify(incumplimientoRevisionDao, never()).existePendientePorAsignacionYUsuario(anyInt(), anyInt(), any());
+        verify(userDao, times(2)).findAllByLevel(2);
     }
 
     @Test
@@ -311,33 +306,30 @@ class HomeControllerTest {
     }
 
     @Test
-    void atrasoAlcanzaUmbralTresGeneraBandejaYPush() throws Exception {
-        RasgoPlanillaDao rasgoPlanillaDao = mock(RasgoPlanillaDao.class);
-        ConfiguracionSistemaDao configuracionSistemaDao = mock(ConfiguracionSistemaDao.class);
+    void atrasoJustificadoAvisaDeInmediatoALosEvaluadoresPorBandejaYPush() throws Exception {
         IncumplimientoRevisionDao incumplimientoRevisionDao = mock(IncumplimientoRevisionDao.class);
         UserDao userDao = mock(UserDao.class);
         NotificacionDao notificacionDao = mock(NotificacionDao.class);
 
-        when(configuracionSistemaDao.getInt("umbral_atrasos_incumplimiento", 3)).thenReturn(3);
-        when(rasgoPlanillaDao.contarAtrasosPorAsignacionYUsuario(41, 17)).thenReturn(3);
-        when(incumplimientoRevisionDao.existePendientePorAsignacionYUsuario(41, 17, "ATRASO")).thenReturn(false);
+        when(incumplimientoRevisionDao.registrarAtraso(41, 17, 9, 100, "Atraso justificado")).thenReturn(61);
         when(userDao.findAllByLevel(2)).thenReturn(List.of(new User(21, "evaluador", "Eval A", 2), new User(22, "evaluador", "Eval B", 2)));
-        when(notificacionDao.crear(any(Integer.class), any(String.class), eq("INCUMPLIMIENTO"), any(String.class), any(String.class), eq("INCUMPLIMIENTO_REVISION"), eq((long) 41))).thenReturn(true);
+        when(notificacionDao.crear(any(Integer.class), any(String.class), eq("INCUMPLIMIENTO"), any(String.class), any(String.class), eq("INCUMPLIMIENTO_REVISION"), eq((long) 61))).thenReturn(true);
 
         HomeController controller = new HomeController(
                 mock(CursoDao.class), mock(CursoBaseDao.class), mock(AsignacionDao.class), mock(ProfesorDao.class), mock(PlanillaDao.class),
-                mock(MateriaDao.class), mock(AlumnoDao.class), rasgoPlanillaDao, mock(InstrumentoDao.class),
+                mock(MateriaDao.class), mock(AlumnoDao.class), mock(RasgoPlanillaDao.class), mock(InstrumentoDao.class),
                 userDao, mock(PlanCurricularDao.class), mock(TemaVerificacionService.class), mock(ActivityLogService.class),
-                configuracionSistemaDao, incumplimientoRevisionDao, notificacionDao, mock(QuejaDao.class));
+                mock(ConfiguracionSistemaDao.class), incumplimientoRevisionDao, notificacionDao, mock(QuejaDao.class));
 
         try (var mocked = mockStatic(PushNotificationService.class)) {
-            controller.registrarIncumplimientoPorAtraso(41, 17, 9, "Atraso justificado 3");
+            controller.registrarIncumplimientoPorAtraso(41, 17, 9, 100, "Atraso justificado");
 
-            mocked.verify(() -> PushNotificationService.sendToUser(eq(21), any(String.class), eq("Incumplimiento por atraso"), any(String.class), eq("/evaluacion")));
-            mocked.verify(() -> PushNotificationService.sendToUser(eq(22), any(String.class), eq("Incumplimiento por atraso"), any(String.class), eq("/evaluacion")));
+            mocked.verify(() -> PushNotificationService.sendToUser(eq(21), any(String.class), eq("Atraso pendiente de revisión"), any(String.class), eq("/evaluacion")));
+            mocked.verify(() -> PushNotificationService.sendToUser(eq(22), any(String.class), eq("Atraso pendiente de revisión"), any(String.class), eq("/evaluacion")));
         }
 
-        verify(notificacionDao, times(2)).crear(any(Integer.class), any(String.class), eq("INCUMPLIMIENTO"), any(String.class), any(String.class), eq("INCUMPLIMIENTO_REVISION"), eq((long) 41));
+        // la notificación apunta a la fila de revisión del atraso, no a la asignación
+        verify(notificacionDao, times(2)).crear(any(Integer.class), any(String.class), eq("INCUMPLIMIENTO"), any(String.class), any(String.class), eq("INCUMPLIMIENTO_REVISION"), eq((long) 61));
     }
 
     @Test

@@ -237,18 +237,6 @@ public class RasgoPlanillaDao extends conexion {
         }
     }
 
-    public int contarAtrasosPorAsignacionYUsuario(int asignacionId, int usuarioId) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM planilla_rasgo "
-                + "WHERE asignacion_id = ? AND usuario_id = ? AND justificacion_atraso IS NOT NULL";
-        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setInt(1, asignacionId);
-            ps.setInt(2, usuarioId);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? rs.getInt(1) : 0;
-            }
-        }
-    }
-
     public boolean existeClaseParaAsignacionYFecha(int asignacionId, LocalDate fecha) throws SQLException {
         String sql = "SELECT 1 FROM planilla_rasgo WHERE asignacion_id = ? AND fecha_clase = ? LIMIT 1";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {

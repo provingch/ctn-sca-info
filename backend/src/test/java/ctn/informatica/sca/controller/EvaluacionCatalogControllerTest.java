@@ -1,12 +1,13 @@
 package ctn.informatica.sca.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import ctn.informatica.sca.dao.ConfiguracionSistemaDao;
 import ctn.informatica.sca.dao.CursoDao;
 import ctn.informatica.sca.dao.EspecialidadDao;
 import ctn.informatica.sca.dao.IncumplimientoRevisionDao;
@@ -28,7 +29,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.web.server.ResponseStatusException;
 
 class EvaluacionCatalogControllerTest {
 
@@ -39,6 +39,7 @@ class EvaluacionCatalogControllerTest {
     private UserDao userDao;
     private AsignacionDao asignacionDao;
     private ProfesorDao profesorDao;
+    private ConfiguracionSistemaDao configuracionSistemaDao;
     private EvaluacionCatalogController controller;
     private final UsernamePasswordAuthenticationToken authentication =
             new UsernamePasswordAuthenticationToken(14L, null, List.of());
@@ -52,6 +53,8 @@ class EvaluacionCatalogControllerTest {
         userDao = mock(UserDao.class);
         asignacionDao = mock(AsignacionDao.class);
         profesorDao = mock(ProfesorDao.class);
+        configuracionSistemaDao = mock(ConfiguracionSistemaDao.class);
+        when(configuracionSistemaDao.getInt(anyString(), anyInt())).thenAnswer(invocation -> invocation.getArgument(1));
         controller = new EvaluacionCatalogController(
                 cursoDao,
                 especialidadDao,
@@ -61,7 +64,8 @@ class EvaluacionCatalogControllerTest {
                 asignacionDao,
                 notificacionDao,
                 userDao,
-                profesorDao);
+                profesorDao,
+                configuracionSistemaDao);
 
         Profesor teacher = new Profesor();
         teacher.setId(14);
@@ -145,40 +149,33 @@ class EvaluacionCatalogControllerTest {
     }
 
     @Test
-    void resolverIncumplimiento_rechazoSinFechas_deberiaResponder400() throws Exception {
-        when(incumplimientoRevisionDao.findById(9)).thenReturn(Map.of("usuarioId", 22, "asignacionId", 77, "estado", "PENDIENTE"));
+    void resolverIncumplimiento_atrasoRechazadoSinFechas_esValidoYCuentaComoFalta() throws Exception {
+        when(incumplimientoRevisionDao.findById(9)).thenReturn(Map.of("usuarioId", 22, "asignacionId", 77, "tipo", "ATRASO", "estado", "PENDIENTE"));
+        when(incumplimientoRevisionDao.resolver(9, "RECHAZADO", 14, null, null)).thenReturn(true);
+        when(incumplimientoRevisionDao.contarRechazadosPorTipo(77, 22, "ATRASO")).thenReturn(1L);
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
-                () -> controller.resolverIncumplimiento(9, Map.of("estado", "RECHAZADO"), authentication));
+        Map<String, Object> result = controller.resolverIncumplimiento(9, Map.of("estado", "RECHAZADO"), authentication);
 
-        assertEquals(400, ex.getStatusCode().value());
-        verify(incumplimientoRevisionDao).findById(9);
-        verifyNoInteractions(notificacionDao);
+        assertEquals(true, result.get("ok"));
+        assertEquals("RECHAZADO", result.get("estado"));
+        assertEquals(false, result.get("bloqueoGenerado"));
+        verify(incumplimientoRevisionDao).contarRechazadosPorTipo(77, 22, "ATRASO");
     }
 
     @Test
-    void resolverIncumplimiento_rechazoConFechas_validas_deberiaNotificarAlProfesor() throws Exception {
-        when(incumplimientoRevisionDao.findById(9)).thenReturn(Map.of("usuarioId", 22, "asignacionId", 77, "estado", "PENDIENTE"));
-        when(incumplimientoRevisionDao.resolver(9, "RECHAZADO", 14, java.time.LocalDateTime.parse("2026-08-28T10:00:00"), java.time.LocalDateTime.parse("2026-08-30T10:00:00")))
-                .thenReturn(true);
+    void resolverIncumplimiento_atrasoRechazado_notificaAlProfesorSinMencionarSuspension() throws Exception {
+        when(incumplimientoRevisionDao.findById(9)).thenReturn(Map.of("usuarioId", 22, "asignacionId", 77, "tipo", "ATRASO", "estado", "PENDIENTE"));
+        when(incumplimientoRevisionDao.resolver(9, "RECHAZADO", 14, null, null)).thenReturn(true);
         when(userDao.findById(22)).thenReturn(new User(22, "profe", "Profesor Uno", 1));
-        when(notificacionDao.crear(22, "profesor", "INCUMPLIMIENTO_RESUELTO", "Incumplimiento resuelto",
-                "El incumplimiento #9 fue resuelto como rechazado con suspensión desde 2026-08-28T10:00 hasta 2026-08-30T10:00",
-                "INCUMPLIMIENTO_REVISION", 9L)).thenReturn(true);
 
-        Map<String, Object> result = controller.resolverIncumplimiento(9, Map.of(
+        controller.resolverIncumplimiento(9, Map.of(
                 "estado", "RECHAZADO",
                 "suspensionDesde", "2026-08-28T10:00:00",
                 "suspensionHasta", "2026-08-30T10:00:00"), authentication);
 
-        assertEquals(true, result.get("ok"));
-        assertEquals(9, result.get("id"));
-        assertEquals("RECHAZADO", result.get("estado"));
-        verify(incumplimientoRevisionDao).resolver(9, "RECHAZADO", 14,
-                java.time.LocalDateTime.parse("2026-08-28T10:00:00"),
-                java.time.LocalDateTime.parse("2026-08-30T10:00:00"));
-        verify(notificacionDao).crear(22, "profesor", "INCUMPLIMIENTO_RESUELTO", "Incumplimiento resuelto",
-                "El incumplimiento #9 fue resuelto como rechazado con suspensión desde 2026-08-28T10:00 hasta 2026-08-30T10:00",
-                "INCUMPLIMIENTO_REVISION", 9L);
+        // las fechas del payload ya no significan nada: no se persisten
+        verify(incumplimientoRevisionDao).resolver(9, "RECHAZADO", 14, null, null);
+        verify(notificacionDao).crear(22, "profesor", "INCUMPLIMIENTO_RESUELTO", "Atraso resuelto",
+                "El atraso #9 fue resuelto como rechazado", "INCUMPLIMIENTO_REVISION", 9L);
     }
 }

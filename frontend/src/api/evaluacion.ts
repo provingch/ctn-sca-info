@@ -1,7 +1,9 @@
 import { api, apiRequest } from './client';
 
+export const TIPO_ATRASO = 'ATRASO';
 export const TIPO_INCONGRUENCIA_RETROACTIVA = 'INCONGRUENCIA_RETROACTIVA';
 export const TIPO_BLOQUEO_INCONGRUENCIA_RETROACTIVA = 'BLOQUEO_INCONGRUENCIA_RETROACTIVA';
+export const TIPO_BLOQUEO_ATRASO_TIEMPO_REAL = 'BLOQUEO_ATRASO_TIEMPO_REAL';
 
 export interface IncumplimientoPendiente {
   id: number;
@@ -14,7 +16,7 @@ export interface IncumplimientoPendiente {
   usuarioNombre?: string;
   usuarioApellido?: string;
   materiaNombre?: string | null;
-  /** Sólo en incongruencias retroactivas: la clase que originó el caso. */
+  /** En atrasos e incongruencias retroactivas: la clase que originó el caso. */
   planillaRasgoId?: number | null;
   fechaClase?: string | null;
   temaIngresado?: string | null;
@@ -24,9 +26,7 @@ export interface IncumplimientoPendiente {
 
 export interface ResolucionIncumplimiento {
   estado: 'PERMITIDO' | 'RECHAZADO';
-  suspensionDesde?: string;
-  suspensionHasta?: string;
-  /** Nota libre al reactivar un bloqueo retroactivo. */
+  /** Nota libre al reactivar un bloqueo de Iniciar clase. */
   nota?: string;
 }
 

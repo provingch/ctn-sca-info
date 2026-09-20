@@ -292,18 +292,62 @@ class RetroactivoDbIntegrationTest {
         exec("UPDATE incumplimiento_revision SET fecha_resolucion = NOW() - INTERVAL 1 HOUR WHERE id = " + bloqueoId);
         Map<String, Object> quinto = controller.resolverIncumplimiento(ids[5], Map.of("estado", "RECHAZADO"), comoEvaluador());
         assertEquals(false, quinto.get("bloqueoGenerado"));
-        assertEquals(1, incumplimientoDao.contarRechazadosRetroactivos(asignacionId, profesorId));
+        assertEquals(1, incumplimientoDao.contarRechazadosPorTipo(asignacionId, profesorId, "INCONGRUENCIA_RETROACTIVA"));
+        assertFalse(incumplimientoDao.existeBloqueoActivo(asignacionId));
+    }
+
+    // ---- Bloque 5 -------------------------------------------------------------------------------------
+
+    @Test
+    void cadaAtrasoSeRevisaPorSeparadoYSoloLaTerceraFaltaBloqueaHastaLaReactivacionConNota() throws Exception {
+        EvaluacionCatalogController controller = controller();
+        int[] ids = new int[6];
+        for (int i = 0; i < ids.length; i++) {
+            int clase = clase("Clase atrasada " + i, ANIO + "-06-1" + i);
+            ids[i] = incumplimientoDao.registrarAtraso(asignacionId, profesorId, null, clase, "Justificación " + i);
+        }
+        assertFalse(incumplimientoDao.existeBloqueoActivo(asignacionId), "seis atrasos pendientes solos no bloquean");
+        assertEquals("Justificación 0", scalar("SELECT justificacion_profesor FROM incumplimiento_revision WHERE id = " + ids[0]));
+        assertEquals(6, incumplimientoDao.listarPendientes().stream().filter(f -> "ATRASO".equals(f.get("tipo"))).count());
+
+        controller.resolverIncumplimiento(ids[0], Map.of("estado", "PERMITIDO"), comoEvaluador());
+        controller.resolverIncumplimiento(ids[1], Map.of("estado", "RECHAZADO"), comoEvaluador());
+        controller.resolverIncumplimiento(ids[2], Map.of("estado", "RECHAZADO"), comoEvaluador());
+        assertFalse(incumplimientoDao.existeBloqueoActivo(asignacionId), "dos rechazos + un permitido: sigue habilitado");
+
+        Map<String, Object> tercero = controller.resolverIncumplimiento(ids[3], Map.of("estado", "RECHAZADO"), comoEvaluador());
+        assertEquals(true, tercero.get("bloqueoGenerado"));
+        assertTrue(incumplimientoDao.existeBloqueoActivo(asignacionId), "tercer rechazo: bloqueado, sin fecha de vencimiento");
+        assertEquals("1", scalar("SELECT COUNT(*) FROM notificacion WHERE usuario_id = " + profesorId + " AND tipo = 'INICIAR_CLASE_BLOQUEADO'"));
+
+        // los rechazos de atraso no mezclan con los de incongruencias retroactivas: cada tipo cuenta el suyo
+        assertEquals(3, incumplimientoDao.contarRechazadosPorTipo(asignacionId, profesorId, "ATRASO"));
+        assertEquals(0, incumplimientoDao.contarRechazadosPorTipo(asignacionId, profesorId, "INCONGRUENCIA_RETROACTIVA"));
+
+        controller.resolverIncumplimiento(ids[4], Map.of("estado", "RECHAZADO"), comoEvaluador());
+        assertEquals("1", scalar("SELECT COUNT(*) FROM incumplimiento_revision WHERE tipo = 'BLOQUEO_ATRASO_TIEMPO_REAL' AND asignacion_id = " + asignacionId));
+
+        int bloqueoId = Integer.parseInt(scalar("SELECT id FROM incumplimiento_revision WHERE tipo = 'BLOQUEO_ATRASO_TIEMPO_REAL' AND asignacion_id = " + asignacionId));
+        controller.resolverIncumplimiento(bloqueoId, Map.of("estado", "PERMITIDO", "nota", "Regularizó las clases atrasadas"), comoEvaluador());
+        assertFalse(incumplimientoDao.existeBloqueoActivo(asignacionId), "reactivado: Iniciar clase vuelve a funcionar");
+        assertEquals("Regularizó las clases atrasadas", scalar("SELECT nota_resolucion FROM incumplimiento_revision WHERE id = " + bloqueoId));
+        assertEquals("1", scalar("SELECT COUNT(*) FROM notificacion WHERE usuario_id = " + profesorId
+                + " AND tipo = 'BLOQUEO_RETROACTIVO_LEVANTADO' AND cuerpo LIKE '%Regularizó las clases atrasadas%'"));
+
+        // tras la reactivación la tolerancia arranca de cero
+        exec("UPDATE incumplimiento_revision SET fecha_resolucion = NOW() - INTERVAL 2 HOUR WHERE tipo = 'ATRASO' AND estado = 'RECHAZADO' AND asignacion_id = " + asignacionId);
+        exec("UPDATE incumplimiento_revision SET fecha_resolucion = NOW() - INTERVAL 1 HOUR WHERE id = " + bloqueoId);
+        Map<String, Object> quinto = controller.resolverIncumplimiento(ids[5], Map.of("estado", "RECHAZADO"), comoEvaluador());
+        assertEquals(false, quinto.get("bloqueoGenerado"));
+        assertEquals(1, incumplimientoDao.contarRechazadosPorTipo(asignacionId, profesorId, "ATRASO"));
         assertFalse(incumplimientoDao.existeBloqueoActivo(asignacionId));
     }
 
     @Test
-    void elBloqueoDeAtrasoEnTiempoRealSigueComoAntes() throws Exception {
-        // PENDIENTE de tipo ATRASO bloquea; al rechazarlo con suspensión vigente sigue bloqueando.
-        int id = incumplimientoDao.registrar(asignacionId, profesorId, null, "ATRASO", "atraso", "PENDIENTE", null, null, null);
-        assertTrue(incumplimientoDao.existeBloqueoActivo(asignacionId));
-        controller().resolverIncumplimiento(id, Map.of("estado", "RECHAZADO",
-                "suspensionDesde", java.time.LocalDateTime.now().minusHours(1).toString(),
-                "suspensionHasta", java.time.LocalDateTime.now().plusDays(1).toString()), comoEvaluador());
+    void unAtrasoRechazadoConSuspensionDeAntesDeV030SigueBloqueandoHastaQueVence() throws Exception {
+        // Filas viejas: ATRASO rechazado con rango de fechas. Ya no se generan, pero las existentes se respetan.
+        int id = incumplimientoDao.registrar(asignacionId, profesorId, null, "ATRASO", "atraso viejo", "RECHAZADO", evaluadorId,
+                java.time.LocalDateTime.now().minusHours(1), java.time.LocalDateTime.now().plusDays(1));
         assertTrue(incumplimientoDao.existeBloqueoActivo(asignacionId));
         exec("UPDATE incumplimiento_revision SET suspension_hasta = NOW() - INTERVAL 1 MINUTE WHERE id = " + id);
         assertFalse(incumplimientoDao.existeBloqueoActivo(asignacionId));

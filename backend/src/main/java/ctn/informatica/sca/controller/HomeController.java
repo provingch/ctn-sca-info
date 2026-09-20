@@ -682,7 +682,7 @@ public class HomeController {
                         }
                     }
                     if (atrasado && request.justificacionAtraso() != null && !request.justificacionAtraso().isBlank()) {
-                        registrarIncumplimientoPorAtraso(request.asignacionId(), user.getId(), verificacion.temaPlanCurricularId(), request.justificacionAtraso());
+                        registrarIncumplimientoPorAtraso(request.asignacionId(), user.getId(), verificacion.temaPlanCurricularId(), planillaId, request.justificacionAtraso());
                     }
                 } catch (Exception ex) {
                     System.err.println("Error verificando tema contra plan curricular: " + ex.getMessage());
@@ -941,38 +941,39 @@ public class HomeController {
         return asistencia;
     }
 
-    void registrarIncumplimientoPorAtraso(int asignacionId, int usuarioId, Integer temaPlanCurricularId, String justificacionAtraso) {
+    /**
+     * Cada atraso justificado es una fila PENDIENTE propia para que evaluación la apruebe o rechace una por una; el
+     * bloqueo de "Iniciar clase" recién llega al umbral de rechazos (ver EvaluacionCatalogController).
+     */
+    void registrarIncumplimientoPorAtraso(int asignacionId, int usuarioId, Integer temaPlanCurricularId, int planillaRasgoId,
+            String justificacionAtraso) {
         try {
-            int umbral = configuracionSistemaDao.getInt("umbral_atrasos_incumplimiento", 3);
-            int count = rasgoPlanillaDao.contarAtrasosPorAsignacionYUsuario(asignacionId, usuarioId);
-            if (count >= umbral && !incumplimientoRevisionDao.existePendientePorAsignacionYUsuario(asignacionId, usuarioId, "ATRASO")) {
-                incumplimientoRevisionDao.registrar(asignacionId, usuarioId, temaPlanCurricularId, "ATRASO",
-                        "Se registró una justificación de atraso y se alcanzó el umbral de incumplimiento", "PENDIENTE", null, null, null);
-                List<User> evaluadores = userDao.findAllByLevel(2);
-                for (User evaluador : evaluadores) {
-                    if (evaluador == null) continue;
-                    String userType = NotificacionDao.resolveUserType(userDao, evaluador.getId());
-                    String titulo = "Incumplimiento por atraso";
-                    String cuerpo = "Asignación " + asignacionId + " alcanzó el umbral de atrasos justificados.";
-                    boolean created = notificacionDao.crear(
-                            evaluador.getId(),
-                            userType,
-                            "INCUMPLIMIENTO",
-                            titulo,
-                            cuerpo,
-                            "INCUMPLIMIENTO_REVISION",
-                            (long) asignacionId);
-                    if (created) {
-                        try {
-                            PushNotificationService.sendToUser(evaluador.getId(), userType, titulo, cuerpo, "/evaluacion");
-                        } catch (Exception ex) {
-                            log.warn("No se pudo enviar push a evaluador {} por incumplimiento de asignación {}: {}", evaluador.getId(), asignacionId, ex.getMessage());
-                        }
+            int incumplimientoId = incumplimientoRevisionDao.registrarAtraso(asignacionId, usuarioId, temaPlanCurricularId,
+                    planillaRasgoId, justificacionAtraso);
+            List<User> evaluadores = userDao.findAllByLevel(2);
+            for (User evaluador : evaluadores) {
+                if (evaluador == null) continue;
+                String userType = NotificacionDao.resolveUserType(userDao, evaluador.getId());
+                String titulo = "Atraso pendiente de revisión";
+                String cuerpo = "Un profesor justificó un atraso en la asignación " + asignacionId + ". Revisalo y aceptalo o rechazalo.";
+                boolean created = notificacionDao.crear(
+                        evaluador.getId(),
+                        userType,
+                        "INCUMPLIMIENTO",
+                        titulo,
+                        cuerpo,
+                        "INCUMPLIMIENTO_REVISION",
+                        (long) incumplimientoId);
+                if (created) {
+                    try {
+                        PushNotificationService.sendToUser(evaluador.getId(), userType, titulo, cuerpo, "/evaluacion");
+                    } catch (Exception ex) {
+                        log.warn("No se pudo enviar push a evaluador {} por atraso de asignación {}: {}", evaluador.getId(), asignacionId, ex.getMessage());
                     }
                 }
             }
         } catch (Exception ex) {
-            log.warn("No se pudo registrar incumplimiento por atraso para asignación {}: {}", asignacionId, ex.getMessage());
+            log.warn("No se pudo registrar el atraso justificado de la asignación {}: {}", asignacionId, ex.getMessage());
         }
     }
 
