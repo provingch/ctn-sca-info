@@ -266,7 +266,5 @@ describe('Inicio de clase', () => {
     const rasgosTrigger = screen.getByRole('button', { name: 'Rasgos conductuales de Pérez, Ana' });
     expect(rasgosTrigger).toBeDisabled();
     expect(rasgosTrigger).toHaveAttribute('title', 'Sin códigos cargados. Los carga el evaluador o el administrador.');
-    fireEvent.click(screen.getByRole('button', { name: '¿Qué significa cada código?' }));
-    expect(screen.getAllByText('Sin códigos cargados. Los carga el evaluador o el administrador.').length).toBe(2);
   });
 });

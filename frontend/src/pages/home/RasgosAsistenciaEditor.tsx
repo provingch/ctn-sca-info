@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import useAccessibleDialog from '../../hooks/useAccessibleDialog';
 import type { CodigoConducta } from '../../api/home';
 
 export interface RasgoEditorAlumno {
@@ -43,8 +42,6 @@ export default function RasgosAsistenciaEditor({
   titulo = 'Asistencia general y justificativos',
   descripcion = 'Tocá un alumno para marcarlo ausente. Tocá su zona de rasgos para asignarle un código.',
 }: RasgosAsistenciaEditorProps) {
-  const [showCodeHelp, setShowCodeHelp] = useState(false);
-  const codeHelpDialogRef = useAccessibleDialog(showCodeHelp, () => setShowCodeHelp(false));
   const [openRasgosAlumnoId, setOpenRasgosAlumnoId] = useState<number | null>(null);
   const openWrapRef = useRef<HTMLDivElement | null>(null);
   const lastRasgosTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -219,23 +216,7 @@ export default function RasgosAsistenciaEditor({
         </ul>
       )}
 
-      <button type="button" className="button secondary" onClick={() => setShowCodeHelp(true)}>¿Qué significa cada código?</button>
     </div>
 
-    {showCodeHelp && <div ref={codeHelpDialogRef} role="dialog" aria-modal="true" aria-labelledby="code-help-title" tabIndex={-1} style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'grid', placeItems: 'center', padding: 20, background: 'rgba(0, 0, 0, .55)' }} onClick={() => setShowCodeHelp(false)}>
-      <section className="panel" style={{ width: 'min(620px, 100%)', maxHeight: '80vh', overflow: 'auto' }} onClick={(event) => event.stopPropagation()}>
-        <div className="class-card-head"><h3 id="code-help-title">Significado de códigos</h3><button type="button" className="button secondary" data-dialog-initial-focus onClick={() => setShowCodeHelp(false)}>Cerrar</button></div>
-        {codigosConductaError ? (
-          <div className="notice error" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-            <p style={{ margin: 0, flex: 1 }}>No se pudieron cargar los rasgos conductuales. {codigosConductaError}</p>
-            {onRetryCodigosConducta && <button type="button" className="button secondary" onClick={onRetryCodigosConducta}>Reintentar</button>}
-          </div>
-        ) : sinCodigosCargados ? (
-          <p>{SIN_CODIGOS_TEXTO}</p>
-        ) : (
-          <table className="table table-striped"><caption className="visually-hidden">Códigos de rasgos conductuales</caption><thead><tr><th>Código</th><th>Significado</th></tr></thead><tbody>{codigosConducta.map((item) => <tr key={item.codigo}><td><strong>{item.codigo}</strong></td><td>{item.descripcion}</td></tr>)}</tbody></table>
-        )}
-      </section>
-    </div>}
   </>;
 }
