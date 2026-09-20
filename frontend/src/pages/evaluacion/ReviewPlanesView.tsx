@@ -4,6 +4,7 @@ import { useToast } from '../../context/toast';
 import * as planCurricularApi from '../../api/planCurricular';
 import { formatSqlDateTime } from '../../utils/date';
 import TemasPorMesAccordion from '../../components/TemasPorMesAccordion';
+import PlanesPorEspecialidad from './PlanesPorEspecialidad';
 
 // StatusTone removed; toasts replace local status state
 
@@ -123,8 +124,8 @@ export default function ReviewPlanesView() {
         ) : planes.length === 0 ? (
           <p style={{ color: 'var(--muted)' }}>No hay planes pendientes de revisión.</p>
         ) : (
-          <div style={{ display: 'grid', gap: 8 }}>
-            {planes.map((plan) => (
+          <PlanesPorEspecialidad planes={planes}>{(groupPlanes) => <div style={{ display: 'grid', gap: 8 }}>
+            {groupPlanes.map((plan) => (
               <button
                 key={plan.id}
                 type="button"
@@ -145,7 +146,7 @@ export default function ReviewPlanesView() {
                 <div style={{ fontSize: '0.85rem', color: 'var(--muted)', marginTop: 2 }}>{plan.cursoDescripcion}<br />{plan.especialidad && (<><span style={{ color: 'var(--accent-deep)', fontWeight: 750 }}>{plan.especialidad}</span><br /></>)}{formatSqlDateTime(plan.fechaSubida, { dateStyle: 'short' })}</div>
               </button>
             ))}
-          </div>
+          </div>}</PlanesPorEspecialidad>
         )}
       </div>
 
