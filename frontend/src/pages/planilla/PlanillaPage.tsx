@@ -12,6 +12,7 @@ import { ApiError, apiDownload } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/toast';
 import { normalizeGradeInput } from './gradeValidation';
+import { isDateReached } from '../../utils/dateInput';
 
 // Etiquetas de nota en orden descendente (5 -> 1), igual que el JSP legacy
 // (Planilla.jsp: chips grade-chip--five..one). "1" no tiene rango propio en
@@ -286,6 +287,10 @@ export default function PlanillaPage() {
       setStatus('Debe indicar la fecha de cierre de Etapa 1 antes de confirmar');
       return;
     }
+    if (!isDateReached(etapa1Date)) {
+      setStatus(`Todavía no llegó la fecha de cierre de Etapa 1 (${formatShortDate(etapa1Date)})`);
+      return;
+    }
 
     const ok = window.confirm(`¿Confirmar el cierre de la Etapa 1 con fecha ${etapa1Date}? No se podrá editar después.`);
     if (!ok) return;
@@ -315,6 +320,10 @@ export default function PlanillaPage() {
     }
     if (!etapa2Date) {
       setStatus('Debe indicar la fecha de cierre de Etapa 2 antes de confirmar');
+      return;
+    }
+    if (!isDateReached(etapa2Date)) {
+      setStatus(`Todavía no llegó la fecha de cierre de Etapa 2 (${formatShortDate(etapa2Date)})`);
       return;
     }
 
@@ -370,6 +379,9 @@ export default function PlanillaPage() {
   const localTaskCount = data.tareas.length - classroomTaskCount;
   const isEtapa1Locked = data.planilla.etapaIndex === 1 && Boolean(data.planilla.etapa1Confirmada);
   const isEtapa2Locked = data.planilla.etapaIndex === 2 && Boolean(data.planilla.etapa2Confirmada);
+  // La fecha de cierre se puede programar a futuro; cerrar la etapa recién se puede cuando llega.
+  const etapa1DateReached = isDateReached(etapa1Date);
+  const etapa2DateReached = isDateReached(etapa2Date);
   // La etapa que se está mostrando está cerrada (bloquea edición de notas/tareas).
   const isStageLocked = isEtapa1Locked || isEtapa2Locked;
   // Sin RSA activo en la planilla la columna no se muestra.
@@ -428,10 +440,16 @@ export default function PlanillaPage() {
           {(data.planilla.etapaIndex === 1 || data.planilla.etapaIndex === 2) && (
             <div className="planilla-toolbar-actions">
               {data.planilla.etapaIndex === 1 && !isEtapa1Locked && (
-                <button className="button secondary" type="button" disabled={!etapa1Date || confirmingEtapa1} onClick={() => void confirmarEtapa1Accion()}>{confirmingEtapa1 ? 'Confirmando…' : 'Confirmar Etapa 1'}</button>
+                <>
+                  <button className="button secondary" type="button" disabled={!etapa1DateReached || confirmingEtapa1} title={etapa1Date && !etapa1DateReached ? `Se habilita al llegar el ${formatShortDate(etapa1Date)}` : undefined} onClick={() => void confirmarEtapa1Accion()}>{confirmingEtapa1 ? 'Confirmando…' : 'Confirmar Etapa 1'}</button>
+                  {etapa1Date && !etapa1DateReached && <span className="planilla-stage-hint">Se habilita al llegar el {formatShortDate(etapa1Date)}</span>}
+                </>
               )}
               {data.planilla.etapaIndex === 2 && !isEtapa2Locked && (
-                <button className="button secondary" type="button" disabled={!etapa2Date || confirmingEtapa2} onClick={() => void confirmarEtapa2Accion()}>{confirmingEtapa2 ? 'Confirmando…' : 'Confirmar Etapa 2'}</button>
+                <>
+                  <button className="button secondary" type="button" disabled={!etapa2DateReached || confirmingEtapa2} title={etapa2Date && !etapa2DateReached ? `Se habilita al llegar el ${formatShortDate(etapa2Date)}` : undefined} onClick={() => void confirmarEtapa2Accion()}>{confirmingEtapa2 ? 'Confirmando…' : 'Confirmar Etapa 2'}</button>
+                  {etapa2Date && !etapa2DateReached && <span className="planilla-stage-hint">Se habilita al llegar el {formatShortDate(etapa2Date)}</span>}
+                </>
               )}
               {isGlobalAdmin && data.planilla.etapaIndex === 1 && <button className="button secondary" type="button" disabled={reformattingEtapa1 || !data.planilla.fechaCierreEtapa1} onClick={() => void reformatearEtapa1Accion()}>{reformattingEtapa1 ? 'Reformateando…' : 'Reformatear etapa'}</button>}
               <button className="button secondary" type="button" disabled={syncingClassroom} onClick={() => void performClassroomSync(id)}>{syncingClassroom ? 'Sincronizando…' : 'Sincronizar Classroom'}</button>

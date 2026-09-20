@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -447,9 +448,7 @@ public class PlanillaController {
             if (planilla.getEtapa1Confirmada()) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Etapa 1 cerrada, no se pueden modificar sus datos");
             }
-            if (planilla.getFechaCierreEtapa1() == null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe indicar la fecha de cierre de Etapa 1 antes de confirmar");
-            }
+            exigirFechaCierreLlegada(1, planilla.getFechaCierreEtapa1());
             boolean updated = planillaDao.updateEtapa1Confirmada(planillaId, true);
             if (!updated) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Planilla no encontrada");
@@ -495,9 +494,7 @@ public class PlanillaController {
             if (planilla.getEtapa2Confirmada()) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Etapa 2 cerrada, no se pueden modificar sus datos");
             }
-            if (planilla.getFechaCierreEtapa2() == null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe indicar la fecha de cierre de Etapa 2 antes de confirmar");
-            }
+            exigirFechaCierreLlegada(2, planilla.getFechaCierreEtapa2());
             boolean updated = planillaDao.updateEtapa2Confirmada(planillaId, true);
             if (!updated) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Planilla no encontrada");
@@ -530,6 +527,7 @@ public class PlanillaController {
     // 600 KB, no 1.5 MB como la foto de perfil: es una imagen decorativa y
     // van varias por pantalla en una grilla.
     private static final int PORTADA_MAX_BYTES = 600_000;
+    private static final ZoneId ZONA_PARAGUAY = ZoneId.of("America/Asuncion");
     private static final List<String> PORTADA_PREFIJOS_PERMITIDOS = List.of(
             "data:image/png;base64,", "data:image/jpeg;base64,", "data:image/webp;base64,");
 
@@ -629,6 +627,21 @@ public class PlanillaController {
     }
 
     public record PortadaInput(String portada) {}
+
+    /**
+     * Cargar la fecha de cierre sólo la programa (cualquier fecha es válida); cerrar la etapa recién se puede
+     * cuando esa fecha llegó. "Hoy" se mide en Paraguay, no en la zona del servidor, para que el día no cambie
+     * unas horas antes o después de lo que ve el profesor.
+     */
+    private static void exigirFechaCierreLlegada(int etapa, LocalDate fechaCierre) {
+        if (fechaCierre == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Debe indicar la fecha de cierre de Etapa " + etapa + " antes de confirmar");
+        }
+        if (LocalDate.now(ZONA_PARAGUAY).isBefore(fechaCierre)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Todavía no llegó la fecha de cierre de Etapa " + etapa + " (" + fechaCierre + ")");
+        }
+    }
 
     private Planilla requireOwnedPlanillaById(int planillaId, int userId) throws SQLException {
         Planilla planilla = planillaDao.findById(planillaId);

@@ -972,6 +972,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .planilla-date-range { margin: 0; color: var(--muted); font-size: .82rem; }
 .planilla-date-range strong { color: var(--ink); }
 .planilla-stage-closed-date { align-self: center; color: var(--ink); font-size: .88rem; font-weight: 700; white-space: nowrap; }
+.planilla-stage-hint { align-self: center; color: var(--muted); font-size: .82rem; }
 .planilla-toolbar-actions { margin-left: auto; }
 .planilla-page .inline-filter { position: relative; }
 .planilla-page .inline-filter > span { color: var(--ink); font-size: .88rem; font-weight: 700; }
@@ -1061,6 +1062,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
   .planilla-hero-header, .planilla-legacy-toolbar { align-items: stretch; flex-direction: column; }
   .planilla-hero-actions, .planilla-toolbar-actions { display: grid; grid-template-columns: 1fr 1fr; margin-left: 0; }
   .planilla-hero-actions .button, .planilla-toolbar-actions .button { width: 100%; }
+  .planilla-toolbar-actions .planilla-stage-hint { grid-column: 1 / -1; order: 1; }
   .planilla-page .inline-filter { width: 100%; min-width: 0; }
   .stage-combobox { width: 100%; min-width: 0; }
   .stage-combobox-options { position: absolute; margin-top: 0; }

@@ -11,6 +11,11 @@ export function isValidDateValue(value: string): boolean {
   return localDateValue(date) === value;
 }
 
+/** True si el día `value` (YYYY-MM-DD) ya llegó: hoy o antes. Las fechas ISO ordenan igual que los días. */
+export function isDateReached(value: string, today = localDateValue()): boolean {
+  return isValidDateValue(value) && value <= today;
+}
+
 export function isValidDateTimeValue(value: string): boolean {
   const [date, time] = value.split('T');
   return isValidDateValue(date ?? '') && /^([01]\d|2[0-3]):[0-5]\d$/.test(time ?? '');
