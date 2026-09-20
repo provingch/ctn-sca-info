@@ -18,6 +18,9 @@ public record ClaseDadaDto(
         String especialidadNombre,
         int totalAlumnos,
         int totalAusentes,
-        int totalJustificados
+        int totalJustificados,
+        String createdAt,
+        int totalPresentes,
+        int totalPendientes
 ) {
 }

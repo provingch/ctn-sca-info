@@ -349,14 +349,16 @@ public class RasgoPlanillaDao extends conexion {
 
     private List<ctn.informatica.sca.dto.ClaseDadaDto> listarClasesDadas(String whereClause, PsBinder binder) throws SQLException {
         StringBuilder sql = new StringBuilder(
-                "SELECT pr.id, pr.fecha_clase, pr.tema, pr.curso_id, pr.asignacion_id, pr.usuario_id AS profesor_id, "
+                "SELECT pr.id, pr.fecha_clase, pr.created_at, pr.tema, pr.curso_id, pr.asignacion_id, pr.usuario_id AS profesor_id, "
                 + "c.promocion AS curso_promocion, c.seccion AS curso_seccion, "
                 + "e.id AS especialidad_id, e.nombre AS especialidad_nombre, "
                 + "m.nombre AS materia_nombre, "
                 + "u.nombre AS profesor_nombre, u.apellido AS profesor_apellido, "
                 + "(SELECT COUNT(*) FROM rasgo_asistencia ra WHERE ra.planilla_rasgo_id = pr.id) AS total_alumnos, "
                 + "(SELECT COUNT(*) FROM rasgo_asistencia ra WHERE ra.planilla_rasgo_id = pr.id AND ra.estado = 'ausente') AS total_ausentes, "
-                + "(SELECT COUNT(*) FROM rasgo_asistencia ra WHERE ra.planilla_rasgo_id = pr.id AND ra.estado = 'ausente_justificado') AS total_justificados "
+                + "(SELECT COUNT(*) FROM rasgo_asistencia ra WHERE ra.planilla_rasgo_id = pr.id AND ra.estado = 'ausente_justificado') AS total_justificados, "
+                + "(SELECT COUNT(*) FROM rasgo_asistencia ra WHERE ra.planilla_rasgo_id = pr.id AND ra.estado = 'presente') AS total_presentes, "
+                + "(SELECT COUNT(*) FROM rasgo_asistencia ra WHERE ra.planilla_rasgo_id = pr.id AND ra.estado = 'pendiente') AS total_pendientes "
                 + "FROM planilla_rasgo pr "
                 + "JOIN curso c ON c.id = pr.curso_id "
                 + "LEFT JOIN especialidad e ON e.id = c.especialidad_id "
@@ -366,7 +368,7 @@ public class RasgoPlanillaDao extends conexion {
         if (whereClause != null && !whereClause.isBlank()) {
             sql.append("WHERE ").append(whereClause).append(' ');
         }
-        sql.append("ORDER BY pr.fecha_clase DESC, pr.id DESC");
+        sql.append("ORDER BY pr.fecha_clase DESC, pr.created_at DESC, pr.id DESC");
 
         List<ctn.informatica.sca.dto.ClaseDadaDto> out = new ArrayList<>();
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql.toString())) {
@@ -396,7 +398,10 @@ public class RasgoPlanillaDao extends conexion {
                             especialidadNombre,
                             rs.getInt("total_alumnos"),
                             rs.getInt("total_ausentes"),
-                            rs.getInt("total_justificados")));
+                            rs.getInt("total_justificados"),
+                            rs.getTimestamp("created_at") == null ? null : rs.getTimestamp("created_at").toLocalDateTime().toString(),
+                            rs.getInt("total_presentes"),
+                            rs.getInt("total_pendientes")));
                 }
             }
         }
@@ -570,7 +575,7 @@ public class RasgoPlanillaDao extends conexion {
     public void actualizarPlanillaRasgo(int planillaId, String tema, List<UpdateRasgoAsistenciaRequest> asistencias) throws SQLException {
         try (Connection con = getCon()) {
             boolean[] supportsRespuestaColumns = supportsColumns(con, "rasgo_asistencia", "falta_codigo", "falta_observacion", "responded_at");
-            String respuestaSql = buildRespuestaUpdateSql(supportsRespuestaColumns[0], supportsRespuestaColumns[1], supportsRespuestaColumns[2]);
+            String respuestaSql = buildEdicionUpdateSql(supportsRespuestaColumns[0], supportsRespuestaColumns[1], supportsRespuestaColumns[2]);
             boolean originalAutoCommit = con.getAutoCommit();
             con.setAutoCommit(false);
             try {
@@ -594,9 +599,10 @@ public class RasgoPlanillaDao extends conexion {
                             }
                             validarCodigos(con, request.codigos());
                             int index = 1;
+                            if (supportsRespuestaColumns[0]) asistencia.setString(index++, estado);
+                            if (supportsRespuestaColumns[1]) asistencia.setString(index++, estado);
+                            if (supportsRespuestaColumns[2]) asistencia.setString(index++, estado);
                             asistencia.setString(index++, estado);
-                            if (supportsRespuestaColumns[0]) asistencia.setNull(index++, java.sql.Types.VARCHAR);
-                            if (supportsRespuestaColumns[1]) asistencia.setNull(index++, java.sql.Types.VARCHAR);
                             asistencia.setInt(index, request.asistenciaId());
                             asistencia.addBatch();
                         }
@@ -616,10 +622,21 @@ public class RasgoPlanillaDao extends conexion {
         }
     }
 
-    private String normalizarEstadoEditable(String estado) {
+    static String normalizarEstadoEditable(String estado) {
         if ("presente".equalsIgnoreCase(estado)) return "presente";
         if ("ausente".equalsIgnoreCase(estado)) return "ausente";
-        throw new IllegalArgumentException("El estado de asistencia debe ser presente o ausente.");
+        if ("ausente_justificado".equalsIgnoreCase(estado)) return "ausente_justificado";
+        if ("pendiente".equalsIgnoreCase(estado)) return "pendiente";
+        throw new IllegalArgumentException("El estado de asistencia no es válido.");
+    }
+
+    // Evaluate preservation before assigning estado (MySQL evaluates SET left to right).
+    static String buildEdicionUpdateSql(boolean codigo, boolean observacion, boolean respondedAt) {
+        StringBuilder sql = new StringBuilder("UPDATE rasgo_asistencia SET ");
+        if (codigo) sql.append("falta_codigo = CASE WHEN estado = ? THEN falta_codigo ELSE NULL END, ");
+        if (observacion) sql.append("falta_observacion = CASE WHEN estado = ? THEN falta_observacion ELSE NULL END, ");
+        if (respondedAt) sql.append("responded_at = CASE WHEN estado = ? THEN responded_at ELSE CURRENT_TIMESTAMP END, ");
+        return sql.append("estado = ? WHERE id = ?").toString();
     }
 
     private boolean perteneceAPlanilla(Connection con, int asistenciaId, int planillaId) throws SQLException {

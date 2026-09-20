@@ -1012,7 +1012,7 @@ public class HomeController {
     }
 
     private RasgoAsistenciaDto toRasgoAsistenciaDto(RasgoAsistencia asistencia) {
-        return new RasgoAsistenciaDto(asistencia.getId(), asistencia.getAlumnoId(), asistencia.getAlumnoNombreCompleto(), asistencia.getEstado(), asistencia.getFaltaCodigo(), asistencia.getFaltaObservacion(), asistencia.getCodigos());
+        return new RasgoAsistenciaDto(asistencia.getId(), asistencia.getAlumnoId(), asistencia.getAlumnoNombreCompleto(), asistencia.getEstado(), asistencia.getFaltaCodigo(), asistencia.getFaltaObservacion(), asistencia.getCodigos(), asistencia.getAlumnoNombre(), asistencia.getAlumnoApellido());
     }
 
     private AlumnoDto toAlumnoDto(Alumno alumno) {

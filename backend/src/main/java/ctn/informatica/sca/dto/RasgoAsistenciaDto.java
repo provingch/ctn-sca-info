@@ -9,6 +9,8 @@ public record RasgoAsistenciaDto(
         String estado,
         String faltaCodigo,
         String faltaObservacion,
-        List<String> codigos
+        List<String> codigos,
+        String alumnoNombre,
+        String alumnoApellido
 ) {
 }

@@ -84,7 +84,7 @@ export function updateRasgoCodigos(asistenciaId: number, codigos: string[]) {
 
 export interface UpdateClaseRequest {
   tema: string;
-  asistencias: Array<{ asistenciaId: number; estado: 'presente' | 'ausente'; codigos: string[] }>;
+  asistencias: Array<{ asistenciaId: number; estado: 'presente' | 'ausente' | 'ausente_justificado' | 'pendiente'; codigos: string[] }>;
 }
 
 export function updateClase(planillaId: number, payload: UpdateClaseRequest) {
@@ -126,7 +126,10 @@ export function getMiHorarioHoy(): Promise<HorarioBloqueHoyDto[]> {
 }
 
 export interface ClaseDadaDto {
+  totalPresentes?: number;
+  totalPendientes?: number;
   id: number;
+  createdAt?: string | null;
   fechaClase: string | null;
   tema: string;
   cursoId: number;
@@ -151,6 +154,8 @@ export interface ClaseDetalleDto {
     id: number;
     alumnoId: number;
     alumnoNombreCompleto: string;
+    alumnoNombre?: string | null;
+    alumnoApellido?: string | null;
     estado: string;
     faltaCodigo: string | null;
     faltaObservacion: string | null;
