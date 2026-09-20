@@ -1040,6 +1040,33 @@ backup_database_if_possible() {
   rm -f "$temporary_backup"
 }
 
+# El esquema consolidado (db-tables-properties.sql) ya trae el efecto de todas las migraciones de
+# database/migrations/. Se registran como aplicadas: si no, al arrancar el backend las reaplica desde cero
+# y la primera (V016) falla con "Duplicate column name". La tabla y su definición son las de
+# SchemaMigrationDao.ensureSchema().
+# OJO: esto asume que cada migración nueva también se refleja en db-tables-properties.sql; si no, esta
+# carga la marcaría como aplicada sin haberla corrido.
+mark_bundled_migrations_applied() {
+  local client="$1"
+  local client_config="$2"
+  local migrations_dir="$REPO_DIR/database/migrations"
+  local migration_sql
+  migration_sql="$(mktemp)"
+  {
+    echo "CREATE TABLE IF NOT EXISTS schema_migrations (version VARCHAR(255) PRIMARY KEY, applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;"
+    local f name
+    for f in "$migrations_dir"/*.sql; do
+      [[ -e "$f" ]] || continue
+      name="$(basename "$f")"
+      printf "INSERT IGNORE INTO schema_migrations (version) VALUES ('%s');\n" "${name//\'/\'\'}"
+    done
+  } > "$migration_sql"
+  local status=0
+  "$client" --defaults-extra-file="$client_config" --default-character-set=utf8mb4 "$DB_NAME" < "$migration_sql" || status=$?
+  rm -f "$migration_sql"
+  return "$status"
+}
+
 load_default_database() {
   normalize_db_type
   require_command sudo
@@ -1113,6 +1140,12 @@ load_default_database() {
   fi
   echo "==> Loading official CTN seed"
   if ! "$client" --defaults-extra-file="$client_config" --default-character-set=utf8mb4 "$DB_NAME" < "$seed_file"; then
+    rm -f "$client_config" "$transformed_schema"
+    if [[ "$restart_service" == true ]]; then sudo systemctl start "$SERVICE_NAME"; fi
+    return 1
+  fi
+  echo "==> Marking bundled migrations as already applied"
+  if ! mark_bundled_migrations_applied "$client" "$client_config"; then
     rm -f "$client_config" "$transformed_schema"
     if [[ "$restart_service" == true ]]; then sudo systemctl start "$SERVICE_NAME"; fi
     return 1
