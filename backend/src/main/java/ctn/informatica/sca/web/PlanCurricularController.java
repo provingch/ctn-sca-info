@@ -4,6 +4,7 @@ import ctn.informatica.sca.dao.AsignacionDao;
 import ctn.informatica.sca.dao.CursoBaseDao;
 import ctn.informatica.sca.dao.NotificacionDao;
 import ctn.informatica.sca.dao.PlanCurricularDao;
+import ctn.informatica.sca.dao.PlanillaDao;
 import ctn.informatica.sca.dao.RasgoPlanillaDao;
 import ctn.informatica.sca.dao.UserDao;
 import ctn.informatica.sca.dto.PlanCurricularDto;
@@ -50,6 +51,9 @@ public class PlanCurricularController {
 
     @Autowired
     private AsignacionDao asignacionDao;
+
+    @Autowired
+    private PlanillaDao planillaDao;
 
     @Autowired
     private CursoBaseDao cursoBaseDao;
@@ -232,6 +236,7 @@ public class PlanCurricularController {
         if (plan == null) {
             return ResponseEntity.noContent().build();
         }
+        marcarEtapaCerrada(plan, asignacionId);
         return ResponseEntity.ok(plan);
     }
 
@@ -329,7 +334,13 @@ public class PlanCurricularController {
         
         var plan = dao.findById(id);
         if (plan == null) return ResponseEntity.notFound().build();
+        if (plan.asignacionId != null) marcarEtapaCerrada(plan, plan.asignacionId);
         return ResponseEntity.ok(plan);
+    }
+
+    private void marcarEtapaCerrada(PlanCurricularDto plan, int asignacionId) throws Exception {
+        int etapa = "2".equals(plan.etapa) || "segunda".equalsIgnoreCase(plan.etapa) ? 2 : 1;
+        plan.etapaCerrada = planillaDao.existeAlgunaCerrada(asignacionId, etapa, plan.anio);
     }
 
     @GetMapping("/{id}/documento")

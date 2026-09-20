@@ -573,6 +573,7 @@ public class HomeController {
         }
 
         validateOwnedAssignment(user, cursoId, request.asignacionId());
+        exigirDatosDeLaClase(request);
 
         List<Alumno> alumnos;
         try {
@@ -674,7 +675,8 @@ public class HomeController {
                         atrasado = verificacion.atrasado();
                     }
                     rasgoPlanillaDao.actualizarVerificacionPlanilla(planillaId, verificacion.estado(), verificacion.temaPlanCurricularId());
-                    if ("OK".equalsIgnoreCase(verificacion.estado()) && verificacion.temaPlanCurricularId() != null) {
+                    // Un tema retomado de la etapa anterior sale como ATRASADO pero igual se da por cumplido en ese plan.
+                    if (("OK".equalsIgnoreCase(verificacion.estado()) || verificacion.temaDeEtapaAnterior()) && verificacion.temaPlanCurricularId() != null) {
                         try {
                             planCurricularDao.marcarCubierto(verificacion.temaPlanCurricularId(), planillaId);
                         } catch (SQLException ex) {
@@ -1045,6 +1047,26 @@ public class HomeController {
      * turno (misma etiqueta 'M'/'T' en todos los bloques, numeración consecutiva).
      * Ambos campos son opcionales: si no viene horaInicio, no se registra horario.
      */
+    /**
+     * "Iniciar clase" exige horario, horas cátedra, modalidad e instrumento: son los datos con los que evaluación
+     * revisa la clase después. Sólo son opcionales las observaciones y los ausentes/códigos por alumno, que no toda
+     * clase tiene. Los valores concretos (rango de horas, Presencial/Virtual) se validan más abajo.
+     */
+    private void exigirDatosDeLaClase(CreateRasgoPlanillaRequest request) {
+        if (safeTrim(request.horaInicio()).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La hora de inicio es requerida.");
+        }
+        if (request.horasCatedra() == null || request.horasCatedra() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La cantidad de horas cátedra es requerida.");
+        }
+        if (safeTrim(request.modalidad()).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La modalidad es requerida.");
+        }
+        if (request.instrumentoId() == null || request.instrumentoId() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El instrumento de evaluación es requerido.");
+        }
+    }
+
     private HorarioClase resolverHorarioClase(String horaInicioTexto, Integer horasCatedra) {
         String horaInicioTrim = safeTrim(horaInicioTexto);
         if (horaInicioTrim.isEmpty()) {

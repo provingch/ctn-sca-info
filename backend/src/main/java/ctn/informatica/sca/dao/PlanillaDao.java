@@ -383,6 +383,30 @@ public class PlanillaDao extends conexion {
         }
     }
 
+    /**
+     * Si la etapa de un plan curricular ya cerró: hay al menos una planilla de esa asignación (materia y curso del
+     * año lectivo) con la etapa confirmada. Se cruza asignacion -> curso_base -> curso con la misma regla de
+     * "promoción vigente" que AsignacionDao ({@code promocion = anio - nivel + 3}); una asignación es de una sola
+     * sección, así que en la práctica es una planilla, pero "alguna" no depende de eso. La confirmación se mira en
+     * cualquier planilla de la asignación y año, no sólo en la fila de esa etapa.
+     */
+    public boolean existeAlgunaCerrada(int asignacionId, int etapa, int anio) throws SQLException {
+        String columna = etapa == 2 ? "etapa2_confirmada" : "etapa1_confirmada";
+        String sql = "SELECT EXISTS(SELECT 1 FROM asignacion a "
+                + "JOIN curso_base cb ON cb.id = a.curso_base_id "
+                + "JOIN curso c ON c.especialidad_id = cb.especialidad_id AND c.seccion = cb.seccion AND c.promocion = (? - cb.nivel + 3) "
+                + "JOIN planilla p ON p.curso_id = c.id AND p.materia_id = a.materia_id AND p.periodo = ? "
+                + "WHERE a.id = ? AND p." + columna + " = TRUE)";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, anio);
+            ps.setInt(2, anio);
+            ps.setInt(3, asignacionId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getBoolean(1);
+            }
+        }
+    }
+
     public boolean updateEtapa2Confirmada(int planillaId, boolean confirmed) throws SQLException {
         String sql = "UPDATE planilla SET etapa2_confirmada = ? WHERE id = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {

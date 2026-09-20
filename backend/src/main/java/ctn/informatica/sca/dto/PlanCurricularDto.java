@@ -20,6 +20,8 @@ public class PlanCurricularDto {
     public String fechaSubida;
     public String fechaRevision;
     public String observacionesEvaluador;
+    /** La etapa de este plan ya cerró (una planilla de la asignación tiene la etapa confirmada): un tema PENDIENTE pasa a "No cumplido". */
+    public boolean etapaCerrada;
     
     // Campos adicionales para findPendientes
     public String materiaNombre;

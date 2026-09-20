@@ -81,8 +81,11 @@ public class TemaVerificacionService extends conexion {
     }
 
     protected Integer buscarPlanCurricularId(int asignacionId) throws SQLException {
-        int anio = anioActual();
-        int etapa = etapaActual();
+        return buscarPlanCurricularId(asignacionId, etapaActual(), anioActual());
+    }
+
+    /** Plan aprobado de una etapa y año lectivo dados (la etapa actual, o la anterior para retomar temas atrasados). */
+    protected Integer buscarPlanCurricularId(int asignacionId, int etapa, int anio) throws SQLException {
         Integer planId = null;
         try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("SELECT id FROM plan_curricular WHERE asignacion_id = ? AND etapa = ? AND estado = 'APROBADO' AND anio_lectivo = ? ORDER BY fecha_revision DESC LIMIT 1")) {
             ps.setInt(1, asignacionId);
@@ -112,6 +115,42 @@ public class TemaVerificacionService extends conexion {
         return null;
     }
 
+    /**
+     * A diferencia de {@link #buscarTemaPendiente}, que trae sólo "el próximo" por orden, recorre TODOS los pendientes
+     * del plan: en un plan de una etapa ya cerrada no hay un cursor secuencial que respetar, cualquier tema que
+     * quedó sin cubrir se puede retomar. Devuelve el primero (por mes y bloque) que coincide con el texto.
+     */
+    protected TemaPendiente buscarPrimerTemaPendienteQueCoincida(int planId, String temaIngresado) throws SQLException {
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement("SELECT id, temas_contenidos, orden_mes FROM tema_plan_curricular WHERE plan_curricular_id = ? AND estado_cobertura = 'PENDIENTE' ORDER BY orden_mes, bloque")) {
+            ps.setInt(1, planId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String contenido = rs.getString("temas_contenidos");
+                    if (coincidenTemas(temaIngresado, contenido)) {
+                        return new TemaPendiente(rs.getInt("id"), contenido, rs.getObject("orden_mes") == null ? null : rs.getInt("orden_mes"));
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * En Etapa 2, un tema que quedó sin cubrir en Etapa 1 se puede retomar: se reconoce como tal (no como un tema
+     * desconocido) y cuenta siempre como atraso, porque viene de una etapa ya pasada. Etapa 1 no tiene anterior.
+     */
+    private VerificacionResultado reconocerTemaDeEtapaAnterior(int asignacionId, String temaIngresado) throws SQLException {
+        if (etapaActual() != 2) {
+            return null;
+        }
+        Integer planAnterior = buscarPlanCurricularId(asignacionId, 1, anioActual());
+        if (planAnterior == null) {
+            return null;
+        }
+        TemaPendiente pendiente = buscarPrimerTemaPendienteQueCoincida(planAnterior, temaIngresado);
+        return pendiente == null ? null : new VerificacionResultado("ATRASADO", pendiente.temaId(), true, true);
+    }
+
     protected int ordenEsperadoActual(int mes, int etapa) {
         int base = etapa == 2 ? mes - 6 : mes - 2;
         int minimo = 1;
@@ -122,18 +161,26 @@ public class TemaVerificacionService extends conexion {
     public VerificacionResultado verificar(int asignacionId, String temaIngresado) throws SQLException {
         Integer planId = buscarPlanCurricularId(asignacionId);
         if (planId == null) {
-            return new VerificacionResultado("SIN_PLAN", null, false);
+            VerificacionResultado deEtapaAnterior = reconocerTemaDeEtapaAnterior(asignacionId, temaIngresado);
+            return deEtapaAnterior != null ? deEtapaAnterior : new VerificacionResultado("SIN_PLAN", null, false);
         }
 
         TemaPendiente temaPendiente = buscarTemaPendiente(planId);
         if (temaPendiente == null) {
-            return new VerificacionResultado("OK", null, false);
+            VerificacionResultado deEtapaAnterior = reconocerTemaDeEtapaAnterior(asignacionId, temaIngresado);
+            return deEtapaAnterior != null ? deEtapaAnterior : new VerificacionResultado("OK", null, false);
         }
 
         boolean atrasado = temaPendiente.ordenMes() != null && temaPendiente.ordenMes() < ordenEsperadoActual();
 
         if (coincidenTemas(temaIngresado, temaPendiente.temasContenidos())) {
             return new VerificacionResultado("OK", temaPendiente.temaId(), atrasado);
+        }
+
+        // No es el próximo tema de esta etapa: antes de darlo por atrasado o dudoso, ver si retoma uno de la anterior.
+        VerificacionResultado deEtapaAnterior = reconocerTemaDeEtapaAnterior(asignacionId, temaIngresado);
+        if (deEtapaAnterior != null) {
+            return deEtapaAnterior;
         }
 
         if (atrasado) {

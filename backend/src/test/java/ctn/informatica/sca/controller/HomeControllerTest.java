@@ -94,7 +94,7 @@ class HomeControllerTest {
         when(asignacionDao.findById(30)).thenReturn(ajena);
         when(cursoDao.findById(10)).thenReturn(new Curso(10, "Informática", 2026, "A"));
         CreateRasgoPlanillaRequest request = new CreateRasgoPlanillaRequest(
-                10, 30, 1, null, null, null, null, null, "Tema", null, List.of(), Collections.emptyMap());
+                10, 30, null, null, null, null, null, "Tema", null, List.of(), Collections.emptyMap());
 
         ResponseStatusException error = assertThrows(ResponseStatusException.class,
                 () -> controller.createRasgoPlanilla(request, authentication(7)));
@@ -149,7 +149,7 @@ class HomeControllerTest {
                 .thenReturn(99);
 
         CreateRasgoPlanillaRequest request = new CreateRasgoPlanillaRequest(
-                10, 30, 1, 5, "8:45", 2, "Presencial", "Todo bien",
+                10, 30, 5, "8:45", 2, "Presencial", "Todo bien",
                 "Clase de prueba", null, List.of(), Collections.emptyMap());
 
         controller.createRasgoPlanilla(request, authentication(7));
@@ -194,7 +194,7 @@ class HomeControllerTest {
                 .thenReturn(new VerificacionResultado("SIN_PLAN", null, false));
 
         CreateRasgoPlanillaRequest request = new CreateRasgoPlanillaRequest(
-                10, 30, 1, null, "8:45", 9, null, null,
+                10, 30, 5, "8:45", 9, "Presencial", null,
                 "Clase de prueba", null, List.of(), Collections.emptyMap());
 
         ResponseStatusException error = assertThrows(ResponseStatusException.class,
@@ -228,6 +228,149 @@ class HomeControllerTest {
         verify(incumplimientoRevisionDao).registrarAtraso(41, 17, 10, 101, "Atraso justificado 2");
         verify(incumplimientoRevisionDao, never()).existePendientePorAsignacionYUsuario(anyInt(), anyInt(), any());
         verify(userDao, times(2)).findAllByLevel(2);
+    }
+
+    // ---- "Iniciar clase" exige horario, horas, modalidad e instrumento -------------------------------------
+
+    /** Todo lo necesario para llegar hasta la validación de los datos de la clase con una asignación propia. */
+    private final class ClaseListaParaCrear {
+        final RasgoPlanillaDao rasgoPlanillaDao = mock(RasgoPlanillaDao.class);
+        final TemaVerificacionService temaVerificacionService = mock(TemaVerificacionService.class);
+        final PlanCurricularDao planCurricularDao = mock(PlanCurricularDao.class);
+        final IncumplimientoRevisionDao incumplimientoRevisionDao = mock(IncumplimientoRevisionDao.class);
+        final HomeController controller;
+
+        ClaseListaParaCrear() throws Exception {
+            UserDao userDao = mock(UserDao.class);
+            AsignacionDao asignacionDao = mock(AsignacionDao.class);
+            CursoDao cursoDao = mock(CursoDao.class);
+            CursoBaseDao cursoBaseDao = mock(CursoBaseDao.class);
+            AlumnoDao alumnoDao = mock(AlumnoDao.class);
+            HoraCatedraDao horaCatedraDao = mock(HoraCatedraDao.class);
+            controller = new HomeController(
+                    cursoDao, cursoBaseDao, asignacionDao, mock(ProfesorDao.class), mock(PlanillaDao.class),
+                    mock(MateriaDao.class), alumnoDao, rasgoPlanillaDao, mock(InstrumentoDao.class),
+                    userDao, planCurricularDao, temaVerificacionService, mock(ActivityLogService.class),
+                    mock(ConfiguracionSistemaDao.class), incumplimientoRevisionDao, mock(NotificacionDao.class),
+                    mock(QuejaDao.class), null, horaCatedraDao);
+            when(userDao.findById(7)).thenReturn(new User(7, "profesor", "Profesor", 1));
+            when(asignacionDao.findById(30)).thenReturn(new Asignacion(30, 7, 2, 5));
+            when(cursoDao.findById(10)).thenReturn(new Curso(10, "Informática", 2026, "A"));
+            when(cursoDao.findEspecialidadId(10)).thenReturn(1);
+            when(cursoBaseDao.findId(eq(1), any(Integer.class), eq("A"))).thenReturn(5);
+            Alumno alumno = new Alumno();
+            alumno.setId(1);
+            alumno.setNombre("Ana");
+            alumno.setApellido("Gómez");
+            when(alumnoDao.findByCursoId(10)).thenReturn(List.of(alumno));
+            when(incumplimientoRevisionDao.existeBloqueoActivo(30)).thenReturn(false);
+            when(horaCatedraDao.findAll()).thenReturn(List.of(
+                    new HoraCatedra(4, 4, "M", LocalTime.of(8, 45), LocalTime.of(9, 20)),
+                    new HoraCatedra(5, 5, "M", LocalTime.of(9, 40), LocalTime.of(10, 15))));
+            when(rasgoPlanillaDao.crearPlanillaRasgo(
+                    anyInt(), anyInt(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()))
+                    .thenReturn(99);
+        }
+
+        ResponseStatusException rechazada(CreateRasgoPlanillaRequest request) {
+            return assertThrows(ResponseStatusException.class, () -> controller.createRasgoPlanilla(request, authentication(7)));
+        }
+    }
+
+    private static CreateRasgoPlanillaRequest clase(Integer instrumentoId, String horaInicio, Integer horasCatedra, String modalidad, String justificacion) {
+        return new CreateRasgoPlanillaRequest(10, 30, instrumentoId, horaInicio, horasCatedra, modalidad, null,
+                "Clase de prueba", justificacion, List.of(), Collections.emptyMap());
+    }
+
+    @Test
+    void exigeLaHoraDeInicio() throws Exception {
+        ClaseListaParaCrear c = new ClaseListaParaCrear();
+        for (String vacia : new String[] { null, "", "   " }) {
+            ResponseStatusException error = c.rechazada(clase(5, vacia, 2, "Presencial", null));
+            assertEquals(400, error.getStatusCode().value());
+            assertEquals("La hora de inicio es requerida.", error.getReason());
+        }
+        verify(c.rasgoPlanillaDao, never()).crearPlanillaRasgo(
+                anyInt(), anyInt(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void exigeLaCantidadDeHorasCatedra() throws Exception {
+        ClaseListaParaCrear c = new ClaseListaParaCrear();
+        for (Integer sinHoras : new Integer[] { null, 0, -1 }) {
+            ResponseStatusException error = c.rechazada(clase(5, "8:45", sinHoras, "Presencial", null));
+            assertEquals(400, error.getStatusCode().value());
+            assertEquals("La cantidad de horas cátedra es requerida.", error.getReason());
+        }
+    }
+
+    @Test
+    void exigeLaModalidad() throws Exception {
+        ClaseListaParaCrear c = new ClaseListaParaCrear();
+        for (String vacia : new String[] { null, "", "  " }) {
+            ResponseStatusException error = c.rechazada(clase(5, "8:45", 2, vacia, null));
+            assertEquals(400, error.getStatusCode().value());
+            assertEquals("La modalidad es requerida.", error.getReason());
+        }
+    }
+
+    @Test
+    void exigeElInstrumentoDeEvaluacion() throws Exception {
+        ClaseListaParaCrear c = new ClaseListaParaCrear();
+        for (Integer sinInstrumento : new Integer[] { null, 0, -3 }) {
+            ResponseStatusException error = c.rechazada(clase(sinInstrumento, "8:45", 2, "Presencial", null));
+            assertEquals(400, error.getStatusCode().value());
+            assertEquals("El instrumento de evaluación es requerido.", error.getReason());
+        }
+    }
+
+    @Test
+    void lasObservacionesYLosAusentesSiguenSiendoOpcionales() throws Exception {
+        ClaseListaParaCrear c = new ClaseListaParaCrear();
+        when(c.temaVerificacionService.verificar(30, "Clase de prueba")).thenReturn(new VerificacionResultado("SIN_PLAN", null, false));
+
+        c.controller.createRasgoPlanilla(new CreateRasgoPlanillaRequest(10, 30, 5, "8:45", 2, "Presencial", null,
+                "Clase de prueba", null, null, null), authentication(7));
+
+        verify(c.rasgoPlanillaDao).crearPlanillaRasgo(
+                eq(10), eq(7), eq("Clase de prueba"), isNull(), any(), any(), any(), eq(30),
+                eq(LocalTime.of(8, 45)), eq(2), eq(LocalTime.of(10, 15)), eq("Presencial"), isNull(), eq(5));
+    }
+
+    // ---- Retomar un tema de la etapa anterior --------------------------------------------------------------
+
+    @Test
+    void retomarUnTemaDeLaEtapaAnteriorPideJustificacionDeAtraso() throws Exception {
+        ClaseListaParaCrear c = new ClaseListaParaCrear();
+        when(c.temaVerificacionService.verificar(30, "Clase de prueba")).thenReturn(new VerificacionResultado("ATRASADO", 55, true, true));
+
+        ResponseStatusException error = c.rechazada(clase(5, "8:45", 2, "Presencial", null));
+
+        assertEquals(400, error.getStatusCode().value());
+        assertEquals("Se requiere justificar el atraso para este tema.", error.getReason());
+        verify(c.planCurricularDao, never()).marcarCubierto(anyInt(), anyInt());
+    }
+
+    @Test
+    void retomarUnTemaDeLaEtapaAnteriorLoMarcaCubiertoEnEsePlanYRegistraElAtraso() throws Exception {
+        ClaseListaParaCrear c = new ClaseListaParaCrear();
+        when(c.temaVerificacionService.verificar(30, "Clase de prueba")).thenReturn(new VerificacionResultado("ATRASADO", 55, true, true));
+
+        c.controller.createRasgoPlanilla(clase(5, "8:45", 2, "Presencial", "Me enfermé en abril"), authentication(7));
+
+        verify(c.rasgoPlanillaDao).actualizarVerificacionPlanilla(99, "ATRASADO", 55);
+        verify(c.planCurricularDao).marcarCubierto(55, 99);
+        verify(c.incumplimientoRevisionDao).registrarAtraso(30, 7, 55, 99, "Me enfermé en abril");
+    }
+
+    @Test
+    void unAtrasoComunDeLaEtapaActualNoMarcaCubiertoNingunTema() throws Exception {
+        ClaseListaParaCrear c = new ClaseListaParaCrear();
+        when(c.temaVerificacionService.verificar(30, "Clase de prueba")).thenReturn(new VerificacionResultado("ATRASADO", 55, true));
+
+        c.controller.createRasgoPlanilla(clase(5, "8:45", 2, "Presencial", "Motivo"), authentication(7));
+
+        verify(c.planCurricularDao, never()).marcarCubierto(anyInt(), anyInt());
     }
 
     @Test
