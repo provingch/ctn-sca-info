@@ -57,6 +57,7 @@ import com.google.api.services.classroom.model.Course;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.DayOfWeek;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -110,6 +111,7 @@ public class HomeController {
     private final QuejaDao quejaDao;
     private final HorarioSlotDao horarioSlotDao;
     private final HoraCatedraDao horaCatedraDao;
+    private final Clock clock;
 
     public HomeController() {
         this(new CursoDao(), new CursoBaseDao(), new AsignacionDao(), new ProfesorDao(), new PlanillaDao(), new MateriaDao(), new AlumnoDao(), new RasgoPlanillaDao(), new InstrumentoDao(), new UserDao(), new PlanCurricularDao(), new TemaVerificacionService(), new ActivityLogService(), new ConfiguracionSistemaDao(), new IncumplimientoRevisionDao(), new NotificacionDao(), new QuejaDao(), new HorarioSlotDao(), new HoraCatedraDao());
@@ -158,6 +160,31 @@ public class HomeController {
             QuejaDao quejaDao,
             HorarioSlotDao horarioSlotDao,
             HoraCatedraDao horaCatedraDao) {
+        this(cursoDao, cursoBaseDao, asignacionDao, profesorDao, planillaDao, materiaDao, alumnoDao, rasgoPlanillaDao, instrumentoDao, userDao, planCurricularDao, temaVerificacionService, activityLogService, configuracionSistemaDao, incumplimientoRevisionDao, notificacionDao, quejaDao, horarioSlotDao, horaCatedraDao, Clock.systemDefaultZone());
+    }
+
+    /** Igual que el {@code @Autowired}, con el reloj inyectable para tests que dependen del día de la semana. */
+    public HomeController(
+            CursoDao cursoDao,
+            CursoBaseDao cursoBaseDao,
+            AsignacionDao asignacionDao,
+            ProfesorDao profesorDao,
+            PlanillaDao planillaDao,
+            MateriaDao materiaDao,
+            AlumnoDao alumnoDao,
+            RasgoPlanillaDao rasgoPlanillaDao,
+            InstrumentoDao instrumentoDao,
+            UserDao userDao,
+            PlanCurricularDao planCurricularDao,
+            TemaVerificacionService temaVerificacionService,
+            ActivityLogService activityLogService,
+            ConfiguracionSistemaDao configuracionSistemaDao,
+            IncumplimientoRevisionDao incumplimientoRevisionDao,
+            NotificacionDao notificacionDao,
+            QuejaDao quejaDao,
+            HorarioSlotDao horarioSlotDao,
+            HoraCatedraDao horaCatedraDao,
+            Clock clock) {
         this.cursoDao = cursoDao;
         this.cursoBaseDao = cursoBaseDao;
         this.asignacionDao = asignacionDao;
@@ -177,6 +204,7 @@ public class HomeController {
         this.quejaDao = quejaDao;
         this.horarioSlotDao = horarioSlotDao;
         this.horaCatedraDao = horaCatedraDao;
+        this.clock = clock;
     }
 
     @GetMapping
@@ -410,7 +438,7 @@ public class HomeController {
     @PreAuthorize("hasRole('LEVEL_1')")
     public List<HorarioBloqueHoyDto> miHorarioHoy(Authentication authentication) throws SQLException {
         int usuarioId = ApiAuth.requireUserId(authentication);
-        LocalDate hoy = LocalDate.now();
+        LocalDate hoy = LocalDate.now(clock);
         int diaSemana = hoy.getDayOfWeek().getValue(); // Lunes=1 … Domingo=7
         if (diaSemana == 7) {
             return List.of();

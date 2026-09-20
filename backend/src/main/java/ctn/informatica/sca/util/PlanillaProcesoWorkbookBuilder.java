@@ -925,8 +925,48 @@ public class PlanillaProcesoWorkbookBuilder {
             for (int c = afterLastSubtotal; c <= lastRealColumn; c++) {
                 xssf.setColumnWidth(c, (int) Math.round(DEFAULT_COLUMN_WIDTH_CHARS * 256));
             }
+
+            // Último paso, después de todo lo que recalcula anchos/bordes: garantiza que nada visible
+            // quede a la derecha del bloque final aunque los cálculos previos se queden cortos.
+            hideColumnsAfterLastFinalHeader(xssf);
         }
         }
+
+    /**
+     * Oculta las columnas a la derecha de la última etiqueta del encabezado que sigue a "Total General".
+     * Rango generoso a propósito: un rango fijo de pocas columnas dejaba una fantasma visible cuando el
+     * bloque final se corre por tener más de 5 tareas en un mes.
+     */
+    private void hideColumnsAfterLastFinalHeader(XSSFSheet sheet) {
+        Row header = sheet.getRow(MONTH_HEADER_ROW);
+        if (header == null) {
+            return;
+        }
+        int totalGeneralColumn = -1;
+        int lastFinalHeaderColumn = -1;
+        for (int c = 0; c < 400; c++) {
+            Cell cell = header.getCell(c);
+            if (cell == null || cell.getCellType() != CellType.STRING) {
+                continue;
+            }
+            String value = cell.getStringCellValue();
+            if (value == null || value.isBlank()) {
+                continue;
+            }
+            if (value.trim().equalsIgnoreCase("Total General")) {
+                totalGeneralColumn = c;
+            }
+            if (totalGeneralColumn >= 0) {
+                lastFinalHeaderColumn = c;
+            }
+        }
+        if (lastFinalHeaderColumn < 0) {
+            return;
+        }
+        for (int c = lastFinalHeaderColumn + 1; c <= lastFinalHeaderColumn + 50; c++) {
+            sheet.setColumnHidden(c, true);
+        }
+    }
 
     /**
      * Resize and re-merge the header banner and info blocks so they fit the

@@ -47,7 +47,10 @@ import ctn.informatica.sca.model.User;
 import ctn.informatica.sca.service.ActivityLogService;
 import ctn.informatica.sca.service.TemaVerificacionService;
 import ctn.informatica.sca.service.VerificacionResultado;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Collections;
 import org.junit.jupiter.api.Test;
@@ -475,6 +478,9 @@ class HomeControllerTest {
         verify(notificacionDao, times(2)).crear(any(Integer.class), any(String.class), eq("INCUMPLIMIENTO"), any(String.class), any(String.class), eq("INCUMPLIMIENTO_REVISION"), eq((long) 61));
     }
 
+    /** miHorarioHoy devuelve vacío los domingos: fijamos un lunes para que el test no dependa del día en que corre. */
+    private static final Clock UN_LUNES = Clock.fixed(Instant.parse("2026-09-21T12:00:00Z"), ZoneId.of("America/Asuncion"));
+
     @Test
     void agrupaHorasCatedraConsecutivasDeLaMismaAsignacionEnUnBloqueYResuelveElCursoReal() throws Exception {
         HorarioSlotDao horarioSlotDao = mock(HorarioSlotDao.class);
@@ -504,7 +510,7 @@ class HomeControllerTest {
                 mock(InstrumentoDao.class), mock(UserDao.class), mock(PlanCurricularDao.class),
                 mock(TemaVerificacionService.class), mock(ActivityLogService.class), mock(ConfiguracionSistemaDao.class),
                 mock(IncumplimientoRevisionDao.class), mock(NotificacionDao.class), mock(QuejaDao.class),
-                horarioSlotDao, mock(HoraCatedraDao.class));
+                horarioSlotDao, mock(HoraCatedraDao.class), UN_LUNES);
 
         List<HorarioBloqueHoyDto> bloques = controller.miHorarioHoy(authentication(7));
 
@@ -538,7 +544,7 @@ class HomeControllerTest {
                 mock(InstrumentoDao.class), mock(UserDao.class), mock(PlanCurricularDao.class),
                 mock(TemaVerificacionService.class), mock(ActivityLogService.class), mock(ConfiguracionSistemaDao.class),
                 mock(IncumplimientoRevisionDao.class), mock(NotificacionDao.class), mock(QuejaDao.class),
-                horarioSlotDao, mock(HoraCatedraDao.class));
+                horarioSlotDao, mock(HoraCatedraDao.class), UN_LUNES);
 
         assertEquals(List.of(), controller.miHorarioHoy(authentication(7)));
     }
