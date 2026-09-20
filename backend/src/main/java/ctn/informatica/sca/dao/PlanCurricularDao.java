@@ -186,7 +186,7 @@ public class PlanCurricularDao extends conexion {
     private List<PlanCurricularDto> findByEstado(String estado) throws SQLException {
         String sql = "SELECT p.id, p.estado, p.archivo_nombre, p.fecha_subida, p.fecha_revision, p.observaciones_evaluador, " +
                 "p.etapa, p.anio_lectivo, " +
-                "a.id AS asignacion_id, m.nombre AS materia_nombre, u.apellido AS profesor_apellido, u.nombre AS profesor_nombre, " +
+                "a.id AS asignacion_id, u.id AS profesor_id, m.nombre AS materia_nombre, u.apellido AS profesor_apellido, u.nombre AS profesor_nombre, " +
                 "cb.nivel, cb.seccion, e.nombre AS especialidad " +
                 "FROM plan_curricular p " +
                 "JOIN asignacion a ON a.id = p.asignacion_id " +
@@ -213,6 +213,7 @@ public class PlanCurricularDao extends conexion {
                     String profApellido = rs.getString("profesor_apellido");
                     String profNombre = rs.getString("profesor_nombre");
                     dto.profesorNombre = NombreUtil.completo(profNombre, profApellido);
+                    dto.profesorId = rs.getInt("profesor_id");
                     dto.profesorNombreCorto = NombreUtil.corto(profNombre, profApellido);
                     String especialidad = rs.getString("especialidad");
                     String seccion = rs.getString("seccion");

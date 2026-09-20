@@ -52,6 +52,7 @@ export interface PlanCurricularEstado {
 }
 
 export interface PlanPendienteResumen {
+  profesorId?: number;
   id: number;
   estado: string;
   archivoNombre: string;

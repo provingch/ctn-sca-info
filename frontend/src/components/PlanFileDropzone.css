@@ -1,0 +1,10 @@
+.plan-file-picker { display: grid; gap: 10px; min-width: 0; }
+.plan-file-dropzone { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 190px; padding: 24px; border: 2px dashed var(--line-strong); border-radius: var(--radius); background: var(--bg-soft); color: var(--ink); cursor: pointer; text-align: center; transition: border-color .18s, background .18s; }
+.plan-file-dropzone strong { max-width: 100%; overflow-wrap: anywhere; }
+.plan-file-dropzone svg { color: var(--accent-deep); flex-shrink: 0; }
+.plan-file-dropzone span, .plan-file-dropzone small { color: var(--muted); font-size: .85rem; font-weight: 400; }
+.plan-file-dropzone:hover:not(:disabled), .plan-file-dropzone.dragging { background: var(--accent-soft); border-color: var(--accent); }
+.plan-file-dropzone:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.plan-file-dropzone:disabled { opacity: .6; cursor: wait; }
+.plan-file-selection { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; color: var(--muted); font-size: .85rem; }
+@media (prefers-reduced-motion: reduce) { .plan-file-dropzone { transition: none; } }

@@ -1,3 +1,4 @@
+import PlanOriginalDownload from '../../components/PlanOriginalDownload';
 import { useEffect, useState } from 'react';
 import { ApiError } from '../../api/client';
 import { useToast } from '../../context/toast';
@@ -64,16 +65,6 @@ export default function ReviewPlanesView() {
     })();
     return () => { active = false; };
   }, [selectedPlanId, showToast]);
-
-  async function handleDescargarDocumento() {
-    if (!selectedPlanId) return;
-    try {
-      await planCurricularApi.descargarDocumentoOriginal(selectedPlanId);
-    } catch (err) {
-      const msg = err instanceof ApiError ? err.message : 'No se pudo descargar el documento.';
-      showToast(msg, { tone: 'error' });
-    }
-  }
 
   async function handleAprobar() {
     if (!selectedPlanId) return;
@@ -161,7 +152,7 @@ export default function ReviewPlanesView() {
         ) : (
           <>
             <h3>Detalle del plan curricular</h3>
-            <button type="button" className="button secondary" onClick={handleDescargarDocumento} style={{ marginBottom: 12 }}>Descargar documento original</button>
+            <div style={{ marginBottom: 12 }}><PlanOriginalDownload key={selectedPlanId} id={selectedPlanId} /></div>
             {selectedPlan.temas && selectedPlan.temas.length > 0 && (
               <div style={{ marginBottom: 16, maxHeight: 360, overflow: 'auto' }}>
                 <h4 style={{ marginTop: 0 }}>Temas por mes</h4>

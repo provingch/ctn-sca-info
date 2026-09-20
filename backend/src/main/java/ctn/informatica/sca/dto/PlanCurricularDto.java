@@ -27,6 +27,7 @@ public class PlanCurricularDto {
     public String materiaNombre;
     public String profesorNombre;
     public String profesorNombreCorto;
+    public Integer profesorId;
     public String cursoDescripcion;
 
     // Campos de historial de planes

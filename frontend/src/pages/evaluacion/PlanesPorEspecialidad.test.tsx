@@ -7,9 +7,26 @@ const plan = (id: number, especialidad?: string): PlanPendienteResumen => ({ id,
 const list = (planes: PlanPendienteResumen[]) => <div>{planes.map((item) => <button key={item.id}>{item.materiaNombre}</button>)}</div>;
 
 describe('Planes por especialidad', () => {
+  it('agrupa por identidad entre especialidades sin mezclar homónimos', () => {
+    render(<PlanesPorEspecialidad planes={[
+      { ...plan(1, 'Informática'), profesorId: 10 },
+      { ...plan(2, 'Electricidad'), profesorId: 10 },
+      { ...plan(3, 'Informática'), profesorId: 20 },
+    ]}>{list}</PlanesPorEspecialidad>);
+    fireEvent.click(screen.getByRole('button', { name: 'Profesor' }));
+    const groups = screen.getAllByRole('button', { expanded: false });
+    expect(groups).toHaveLength(2);
+    expect(groups[0]).toHaveTextContent('2 planes');
+    fireEvent.click(groups[0]);
+    expect(screen.getByRole('button', { name: 'Materia 1' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Materia 2' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Materia 3' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Especialidad' }));
+    expect(screen.getByRole('button', { name: /Informática/ })).toHaveTextContent('2 planes');
+  });
   it('agrupa variantes del nombre, ordena especialidades y conserva el orden de los planes', () => {
     render(<PlanesPorEspecialidad planes={[plan(3, 'Informática'), plan(1, 'Electricidad'), plan(2, ' informatica ')]}>{list}</PlanesPorEspecialidad>);
-    const headers = screen.getAllByRole('button');
+    const headers = screen.getAllByRole('button', { expanded: false });
     expect(headers[0]).toHaveTextContent('Electricidad');
     expect(headers[1]).toHaveTextContent('2 planes');
     expect(screen.queryByRole('button', { name: 'Materia 3' })).not.toBeInTheDocument();

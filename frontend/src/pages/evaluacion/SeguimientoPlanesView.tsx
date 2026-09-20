@@ -1,3 +1,4 @@
+import PlanOriginalDownload from '../../components/PlanOriginalDownload';
 import { useEffect, useState } from 'react';
 import { ApiError } from '../../api/client';
 import { useToast } from '../../context/toast';
@@ -141,6 +142,7 @@ export default function SeguimientoPlanesView({ initialTab = 'planes' }: { initi
       <div className="panel">
         {!selectedPlanId ? <ContentState compact title="Seleccioná un plan" detail="Elegí uno de la lista para consultar su cumplimiento." /> : loadingDetail ? <ContentState tone="loading" compact title="Cargando detalle…" /> : !selectedPlan ? <ContentState tone="error" compact title="No se pudo cargar el plan" detail="Volvé a seleccionarlo o recargá la página." /> : <>
           <h3>Temas y cumplimiento</h3>
+          <PlanOriginalDownload key={selectedPlanId} id={selectedPlanId} />
           <p className="lead">{selectedPlan.profesorNombreCorto ?? selectedPlan.profesorNombre} · {selectedPlan.materiaNombre}</p>
           <div className="table-responsive">
             <table className="table table-striped" style={{ fontSize: '0.85rem' }}>
