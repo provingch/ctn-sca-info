@@ -68,7 +68,7 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        // Nota: PasswordUtil.java (legacy) ya maneja BCrypt directo con jbcrypt.
+        // Nota: PasswordUtil.java (legacy) ya maneja BCrypt con el mismo BCryptPasswordEncoder.
         // Este bean queda disponible si en el futuro quieren usar el PasswordEncoder
         // estándar de Spring Security en vez de PasswordUtil. Por ahora, AuthController
         // sigue usando PasswordUtil tal cual, este bean no se usa todavía.

@@ -18,6 +18,7 @@ import ctn.informatica.sca.model.Planilla;
 import ctn.informatica.sca.model.StudentRow;
 import ctn.informatica.sca.model.Tarea;
 import ctn.informatica.sca.util.AcademicPeriod;
+import ctn.informatica.sca.util.PlanillaProcesoWorkbookBuilder;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -52,7 +53,7 @@ final class PlanillaDetailAssembler {
             new RegistroDao().ensureRegistroRowsForPlanilla(planilla.getId(), planilla.getCursoId());
         }
 
-        List<Tarea> tareas = filterTasksByEtapa(new TareaDao().consultarTarea(planilla.getId()), planilla);
+        List<Tarea> tareas = PlanillaProcesoWorkbookBuilder.filterTasksByEtapa(new TareaDao().consultarTarea(planilla.getId()), planilla);
         Map<Integer, Integer> tareaMax = new LinkedHashMap<>();
         int totalPossiblePoints = 0;
         LocalDate maxEnd = null;
@@ -154,20 +155,5 @@ final class PlanillaDetailAssembler {
                 rowsDto,
                 ranges,
                 Collections.emptyList());
-    }
-
-    static List<Tarea> filterTasksByEtapa(List<Tarea> tareas, Planilla planilla) {
-        if (tareas == null || tareas.isEmpty()) {
-            return tareas;
-        }
-
-        int planillaEtapaIndex = planilla.getEtapaIndex();
-        List<Tarea> filtered = new ArrayList<>();
-        for (Tarea tarea : tareas) {
-            if (planilla.sugerirEtapaParaTarea(tarea.getFecha()) == planillaEtapaIndex) {
-                filtered.add(tarea);
-            }
-        }
-        return filtered;
     }
 }

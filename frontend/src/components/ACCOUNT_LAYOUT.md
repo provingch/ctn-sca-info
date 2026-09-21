@@ -11,4 +11,4 @@
 - Tablas, listas de registros, estados semánticos, permisos y lógica de cada módulo quedan en sus componentes. Las reglas comunes solo se aplican a pantalla para respetar la impresión.
 - En móvil, los accesos se apilan y las barras y pestañas permiten varias filas.
 
-Para nuevas pantallas, usar `AppShell` y estos componentes en lugar de copiar estilos locales. El adaptador antiguo `design-system/ApplicationDesign` no se activa: altera tablas y paletas que esta integración debe conservar.
+Para nuevas pantallas, usar `AppShell` y estos componentes en lugar de copiar estilos locales.

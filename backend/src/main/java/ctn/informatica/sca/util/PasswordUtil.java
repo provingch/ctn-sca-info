@@ -1,9 +1,10 @@
 package ctn.informatica.sca.util;
 
-import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 public final class PasswordUtil {
+    private static final BCryptPasswordEncoder ENCODER = new BCryptPasswordEncoder(12);
+
     private PasswordUtil() {
     }
 
@@ -14,7 +15,7 @@ public final class PasswordUtil {
         if (plainText == null) {
             plainText = "password";
         }
-        return BCrypt.hashpw(plainText, BCrypt.gensalt(12));
+        return ENCODER.encode(plainText);
     }
 
     /**
@@ -24,18 +25,7 @@ public final class PasswordUtil {
         if (stored == null || plainText == null) {
             return false;
         }
-        if (isBcryptHash(stored)) {
-            try {
-                return BCrypt.checkpw(plainText, stored);
-            } catch (IllegalArgumentException ex) {
-                try {
-                    return new BCryptPasswordEncoder().matches(plainText, stored);
-                } catch (Exception ex2) {
-                    return false;
-                }
-            }
-        }
-        return false;
+        return isBcryptHash(stored) && ENCODER.matches(plainText, stored);
     }
 
     /**

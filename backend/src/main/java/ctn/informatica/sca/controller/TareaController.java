@@ -5,6 +5,7 @@ import ctn.informatica.sca.dao.TareaDao;
 import ctn.informatica.sca.model.Planilla;
 import ctn.informatica.sca.model.Tarea;
 import ctn.informatica.sca.service.ParentPushService;
+import ctn.informatica.sca.util.PlanillaProcesoWorkbookBuilder;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -43,7 +44,7 @@ public class TareaController {
         int userId = ApiAuth.requireUserId(authentication);
         try {
             Planilla planilla = requireOwnedPlanilla(planillaId, userId);
-            List<Tarea> tareas = filterTasksByEtapa(new TareaDao().consultarTarea(planillaId), planilla);
+            List<Tarea> tareas = PlanillaProcesoWorkbookBuilder.filterTasksByEtapa(new TareaDao().consultarTarea(planillaId), planilla);
             List<TareaResponse> response = new ArrayList<>();
             for (Tarea tarea : tareas) {
                 response.add(toResponse(tarea, false, null));
@@ -174,22 +175,6 @@ public class TareaController {
         }
         return planilla;
     }
-
-    private List<Tarea> filterTasksByEtapa(List<Tarea> tareas, Planilla planilla) {
-        if (tareas == null || tareas.isEmpty()) {
-            return tareas;
-        }
-
-        int planillaEtapaIndex = planilla.getEtapaIndex();
-        List<Tarea> filtered = new ArrayList<>();
-        for (Tarea tarea : tareas) {
-            if (planilla.sugerirEtapaParaTarea(tarea.getFecha()) == planillaEtapaIndex) {
-                filtered.add(tarea);
-            }
-        }
-        return filtered;
-    }
-
     private TareaResponse toResponse(Tarea tarea, boolean gradesCleared, String warning) {
         return new TareaResponse(
                 tarea.getId(),

@@ -172,7 +172,7 @@ public class PlanillaController {
 
         try {
             Planilla planilla = requireOwnedPlanillaById(planillaId, userId);
-            List<Tarea> tareas = PlanillaDetailAssembler.filterTasksByEtapa(new TareaDao().consultarTarea(planilla.getId()), planilla);
+            List<Tarea> tareas = PlanillaProcesoWorkbookBuilder.filterTasksByEtapa(new TareaDao().consultarTarea(planilla.getId()), planilla);
             Map<Integer, Integer> tareaMax = new HashMap<>();
             for (Tarea tarea : tareas) {
                 tareaMax.put(tarea.getId(), tarea.getTotal());
@@ -300,7 +300,7 @@ public class PlanillaController {
                 }
             }
 
-            List<Tarea> tareas = PlanillaDetailAssembler.filterTasksByEtapa(new TareaDao().consultarTarea(planilla.getId()), planilla);
+            List<Tarea> tareas = PlanillaProcesoWorkbookBuilder.filterTasksByEtapa(new TareaDao().consultarTarea(planilla.getId()), planilla);
             Map<Integer, Integer> maxima = new LinkedHashMap<>();
             int total = 0;
             for (Tarea tarea : tareas) { maxima.put(tarea.getId(), tarea.getTotal()); total += tarea.getTotal(); }
@@ -311,7 +311,7 @@ public class PlanillaController {
             if (planilla.getEtapaIndex() == 2) {
                 Planilla first = new PlanillaDao().findByCompositeKey(planilla.getCursoId(), planilla.getMateriaId(), 1);
                 if (first != null) {
-                    List<Tarea> tareasPrimera = PlanillaDetailAssembler.filterTasksByEtapa(new TareaDao().consultarTarea(first.getId()), first);
+                    List<Tarea> tareasPrimera = PlanillaProcesoWorkbookBuilder.filterTasksByEtapa(new TareaDao().consultarTarea(first.getId()), first);
                     Map<Integer, Integer> maximaPrim = new LinkedHashMap<>(); int totalPrim = 0;
                     for (Tarea t : tareasPrimera) { maximaPrim.put(t.getId(), t.getTotal()); totalPrim += t.getTotal(); }
                     first.computeGradeRanges(totalPrim);
