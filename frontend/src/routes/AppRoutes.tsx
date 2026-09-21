@@ -14,6 +14,7 @@ import TareaPage from '../pages/planilla/TareaPage';
 import EvaluacionPage from '../pages/evaluacion/EvaluacionPage';
 import CoordinacionPage from '../pages/coordinacion/CoordinacionPage';
 import LegalPage from '../pages/legal/LegalPage';
+import AboutPage from '../pages/about/AboutPage';
 import AdminPage from '../pages/admin/AdminPage';
 import ParentPage from '../pages/parent/ParentPage';
 import StyleguidePage from '../pages/styleguide/StyleguidePage';
@@ -26,6 +27,7 @@ export default function AppRoutes() {
     <Route path="/login" element={<LoginPage />} />
     <Route path="/privacidad" element={<LegalPage />} />
     <Route path="/terminos" element={<LegalPage />} />
+    <Route path="/acerca-de" element={<AboutPage />} />
     <Route path="/" element={<RoleLanding />} />
     <Route path="/home" element={protect(<HomePage />, [1])} />
     <Route path="/inicio" element={protect(<HomePage />, [1])} />

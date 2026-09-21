@@ -213,6 +213,7 @@ export default function AppNavbar() {
           <div className={`navbar-user-dropdown${userMenuOpen ? ' open' : ''}`} role="menu" aria-hidden={!userMenuOpen}>
             <NavLink to="/profile" role="menuitem">Mi perfil</NavLink>
             <a href={config.manualPath} target="_blank" rel="noopener noreferrer" role="menuitem" aria-label="Abrir manual en una pestaña nueva">Manual</a>
+            <NavLink to="/acerca-de" role="menuitem">Acerca de</NavLink>
             <span className="navbar-menu-divider" />
             <button className="navbar-logout" type="button" role="menuitem" onClick={() => void signOut()}>Cerrar sesión</button>
           </div>
@@ -234,6 +235,7 @@ export default function AppNavbar() {
         <div className="navbar-mobile-account">
           <span>Cuenta</span>
           <a href={config.manualPath} target="_blank" rel="noopener noreferrer" aria-label="Abrir manual en una pestaña nueva">Manual</a>
+          <NavLink to="/acerca-de">Acerca de</NavLink>
           <ThemeToggle />
           <button className="navbar-logout" type="button" onClick={() => void signOut()}>Cerrar sesión</button>
         </div>
