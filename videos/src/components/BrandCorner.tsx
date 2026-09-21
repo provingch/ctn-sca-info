@@ -50,7 +50,7 @@ export const BrandCorner: React.FC = () => {
           color: theme.textMuted,
         }}
       >
-        Colegio Técnico Nacional
+        Colegio Técnico Nacional de Asunción
       </div>
     </div>
   );
