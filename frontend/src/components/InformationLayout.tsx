@@ -32,7 +32,7 @@ export default function InformationLayout({ title, lead, introduction, children,
       <Link to="/" className="about-brand"><ScaLogo /><span>Sistema de Carpeta Académica<small>Colegio Técnico Nacional de Asunción</small></span></Link>
       <ThemeToggle compact />
     </header>
-    <main className="about-page"><Link className="about-back" to="/">← Volver al inicio</Link>{content}</main>
+    <main className="about-page">{content}</main>
     <AppFooter />
   </div>;
 }

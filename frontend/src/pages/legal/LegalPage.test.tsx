@@ -29,6 +29,8 @@ it.each([{ path: '/privacidad', title: 'Privacidad', sections: privacy }, { path
   links.forEach(link => expect(container.querySelector(link.getAttribute('href')!)).not.toBeNull());
   expect(screen.getByText('10 de agosto de 2026')).toHaveAttribute('datetime', '2026-08-10');
   expect(screen.queryByLabelText('Navegación de la cuenta')).not.toBeInTheDocument();
+  expect(screen.queryByRole('link', { name: /volver al inicio/i })).not.toBeInTheDocument();
+  expect(screen.getByRole('banner')).toHaveTextContent('Sistema de Carpeta Académica');
   ['Privacidad', 'Términos', 'Acerca de'].forEach(name => expect(screen.getAllByRole('link', { name })).toHaveLength(1));
 });
 it('con sesión conserva el encabezado de la cuenta y un solo footer global', () => {

@@ -1,12 +1,11 @@
 /* Shared information pages. Values extracted unchanged from the About reference. */
 @import './information-tokens.css';
-.about-public { min-height: 100dvh; background: var(--bg); color: var(--ink); padding-bottom: 32px; }
-.about-public-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; width: min(1180px, calc(100% - 40px)); margin: auto; padding: 20px 0; border-bottom: 1px solid var(--line); }
+.about-public { min-height: 100dvh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; background: var(--bg); color: var(--ink); }
+.about-public-header { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between; gap: 20px; width: min(1180px, calc(100% - 40px)); margin: auto; padding: 20px 0; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--bg) 96%, transparent); backdrop-filter: blur(18px); }
 .about-brand { display: flex; align-items: center; gap: 12px; color: var(--ink); text-decoration: none; font-weight: 750; line-height: 1.4; }
 .about-brand .sca-logo { width: 42px; height: 32px; flex-shrink: 0; }
 .about-brand small { display: block; font-size: .8rem; font-weight: 500; }
 .about-public .about-page { width: min(1180px, calc(100% - 40px)); margin: 24px auto 0; }
-.about-back { display: inline-block; margin-bottom: 20px; color: var(--ink); padding-block: 8px; font-weight: 650; }
 .about-card { padding: var(--information-card-padding); border: 1px solid var(--line); border-top: var(--information-accent-width) solid var(--accent); border-radius: var(--radius-lg); background: var(--paper); color: var(--ink); }
 .about-card p { line-height: var(--information-body-leading); color: var(--ink); }
 .about-card h1 { font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -.015em; line-height: 1.18; margin: 12px 0 20px; }
@@ -41,7 +40,7 @@
 .about-footer p { margin: 16px 0 0; font-size: .85rem; }
 .about-public :is(a,button):focus-visible, .about-page a:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 4px; }
 .about-public.account-ui { padding-bottom: 0; }
-.about-public > main.about-page { flex: 1; padding-bottom: var(--information-page-gap); }
+.about-public > main.about-page { padding-bottom: calc(var(--app-footer-h) + var(--information-page-gap)); }
 .information-reading > :is(header,section,footer) { max-width: var(--information-reading-width); margin-inline: auto; }
 .information-reading section { scroll-margin-top: calc(var(--app-header-h) + var(--information-page-gap)); }
 .information-reading section :is(ul,ol) { padding-inline-start: var(--information-section-gap); line-height: var(--information-body-leading); }
