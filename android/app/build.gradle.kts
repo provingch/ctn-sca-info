@@ -28,7 +28,7 @@ val scaBaseUrl: String = (project.findProperty("scaBaseUrl") as String?)
 
 android {
     namespace = "py.edu.ctn.sca.padres"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "py.edu.ctn.sca.padres"
