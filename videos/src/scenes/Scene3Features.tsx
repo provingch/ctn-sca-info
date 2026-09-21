@@ -11,6 +11,7 @@ import { BrandCorner } from "../components/BrandCorner";
 import { ScreenMockup } from "../components/ScreenMockup";
 import {
   AdministracionMock,
+  CoordinacionMock,
   EvaluacionMock,
   ExcelMock,
   FamiliasMock,
@@ -21,7 +22,7 @@ import { fontFamily, theme } from "../theme";
 const userViews = [
   {
     role: "Profesores",
-    body: "Cargan el plan curricular y verifican el tema visto en cada clase desde el Libro de Cátedra, suben tareas y calificaciones por curso y período, y llevan el horario siempre al día — todo sincronizado con Google Classroom.",
+    body: "Suben tareas y calificaciones sincronizadas con Google Classroom, cargan el plan curricular y verifican el tema de cada clase desde el Libro de Cátedra, y llevan el horario por hora cátedra siempre al día.",
     screenStack: [
       { title: "planilla-ejemplo.xlsx", content: <ExcelMock /> },
       { title: "SCA · Planilla", content: <PlanillaMock /> },
@@ -30,22 +31,29 @@ const userViews = [
     duration: 210,
   },
   {
-    role: "Evaluación y Coordinación",
-    body: "Aprueban o rechazan las planillas cargadas por cada docente, hacen seguimiento del cumplimiento y desempeño del profesorado, y detectan atrasos e incumplimientos antes de que se acumulen.",
+    role: "Evaluación",
+    body: "Aprueban o rechazan el plan curricular de cada profesor, hacen seguimiento de cumplimiento y atrasos, reabren una etapa cerrada cuando hace falta corregir una nota, y descargan las planillas completas de cada curso.",
     screenStack: null,
     screen: { title: "SCA · Panel de Evaluación", content: <EvaluacionMock /> },
     duration: 210,
   },
   {
+    role: "Coordinación Pedagógica",
+    body: "Reciben y gestionan las quejas cargadas sobre cada profesor con todo su ciclo — aceptación, revisión y solución documentada — y administran el catálogo de códigos de conducta que se registra en cada clase.",
+    screenStack: null,
+    screen: { title: "SCA · Coordinación Pedagógica", content: <CoordinacionMock /> },
+    duration: 210,
+  },
+  {
     role: "Administración",
-    body: "Gestionan especialidades, usuarios, horarios y salas desde un panel central, dan de alta cursos y secciones, y mantienen el control académico de todo el colegio en un solo lugar.",
+    body: "Gestionan especialidades, usuarios, asignaciones, horarios y salas desde un panel central, dan de alta cursos y secciones, y mantienen el control académico de todo el colegio en un solo lugar.",
     screenStack: null,
     screen: { title: "SCA · Panel de Administración", content: <AdministracionMock /> },
     duration: 210,
   },
   {
     role: "Familias",
-    body: "Consultan notas, promedios y tareas de sus hijos en tiempo real, reciben notificaciones ante nuevas calificaciones o incumplimientos, y acceden al resumen académico completo desde el celular.",
+    body: "Consultan notas, promedios y tareas de sus hijos por etapa, reciben notificaciones push ante cada nueva calificación, y descargan el reporte mensual o la libreta final — todo desde el celular.",
     screenStack: null,
     screen: { title: "SCA · Panel de Familias", content: <FamiliasMock /> },
     duration: 210,

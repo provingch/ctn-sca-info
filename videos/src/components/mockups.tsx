@@ -259,6 +259,107 @@ export const EvaluacionMock: React.FC = () => {
   );
 };
 
+const QUEJA_ESTADOS = ["Pendiente", "Aceptada", "Revisada", "Resuelta"];
+
+const CONDUCT_CODES = [
+  { code: "N1", desc: "Falta de material" },
+  { code: "N2", desc: "Interrumpe la clase" },
+];
+
+export const CoordinacionMock: React.FC = () => {
+  const activeStep = 2; // "Revisada" resaltado, para mostrar el flujo en progreso
+
+  return (
+    <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 18 }}>
+      <div
+        style={{
+          fontSize: 12,
+          fontWeight: 700,
+          letterSpacing: "0.1em",
+          color: theme.accentLight,
+          textTransform: "uppercase",
+        }}
+      >
+        Coordinación Pedagógica
+      </div>
+      <div style={{ fontSize: 24, fontWeight: 800, color: theme.text }}>
+        Queja · Prof. Ejemplo
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        {QUEJA_ESTADOS.map((estado, i) => (
+          <Fragment key={estado}>
+            <div
+              style={{
+                padding: "8px 14px",
+                borderRadius: 999,
+                fontSize: 12,
+                fontWeight: 700,
+                background: i <= activeStep ? theme.accent : "rgba(145,160,255,0.08)",
+                color: i <= activeStep ? "#fff" : theme.textMuted,
+              }}
+            >
+              {estado}
+            </div>
+            {i < QUEJA_ESTADOS.length - 1 && (
+              <div
+                style={{
+                  width: 18,
+                  height: 2,
+                  background: i < activeStep ? theme.accent : theme.border,
+                }}
+              />
+            )}
+          </Fragment>
+        ))}
+      </div>
+      <div
+        style={{
+          background: "rgba(145,160,255,0.06)",
+          border: `1px solid ${theme.border}`,
+          borderRadius: 14,
+          padding: 16,
+          display: "flex",
+          flexDirection: "column",
+          gap: 10,
+        }}
+      >
+        <div
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            color: theme.textMuted,
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+          }}
+        >
+          Catálogo de conducta
+        </div>
+        {CONDUCT_CODES.map((c) => (
+          <div key={c.code} style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <div
+              style={{
+                width: 34,
+                height: 24,
+                borderRadius: 6,
+                background: theme.accentDeep,
+                color: "#fff",
+                fontSize: 12,
+                fontWeight: 800,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {c.code}
+            </div>
+            <div style={{ fontSize: 13, color: theme.text, fontWeight: 500 }}>{c.desc}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const ADMIN_STATS = [
   { label: "Especialidades", value: "5" },
   { label: "Usuarios activos", value: "312" },
@@ -327,6 +428,24 @@ export const FamiliasMock: React.FC = () => {
 
   return (
     <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 14 }}>
+      <div style={{ display: "flex", gap: 8 }}>
+        {["Primera etapa", "Segunda etapa"].map((label, i) => (
+          <div
+            key={label}
+            style={{
+              padding: "6px 12px",
+              borderRadius: 999,
+              fontSize: 11,
+              fontWeight: 700,
+              background: i === 0 ? theme.accent : "transparent",
+              border: i === 0 ? "none" : `1px solid ${theme.border}`,
+              color: i === 0 ? "#fff" : theme.textMuted,
+            }}
+          >
+            {label}
+          </div>
+        ))}
+      </div>
       <div style={{ fontSize: 13, fontWeight: 700, color: theme.text }}>
         Resumen académico
       </div>

@@ -19,7 +19,7 @@ const NARRATION_WINDOWS: [number, number][] = [
   [12, 214], // Scene1Intro: 01-problema.wav
   [235, 397], // SceneSolutionReveal: 02-solucion.wav
   [420, 557], // Scene2Problem: 03-gestion.wav
-  [1409, 1491], // Scene5Outro: 04-outro.wav
+  [1619, 1701], // Scene5Outro: 04-outro.wav
 ];
 
 const MUSIC_VOLUME = 0.75;

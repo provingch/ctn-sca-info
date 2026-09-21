@@ -115,7 +115,7 @@ export const SceneSolutionReveal: React.FC = () => {
             opacity: subtitleOpacity,
           }}
         >
-          Sistema de Carpetas Académicas
+          Sistema de Carpeta Académica
         </Interactive.Div>
       </AbsoluteFill>
     </AbsoluteFill>

@@ -14,7 +14,7 @@ import { BrandCorner } from "../components/BrandCorner";
 import { Logo } from "../components/Logo";
 import { fontFamily, theme } from "../theme";
 
-const tags = ["PWA instalable", "Notificaciones push", "Multiplataforma"];
+const tags = ["PWA instalable", "Notificaciones push", "Google Classroom", "Verificación en 2 pasos"];
 const NARRATION_START = 9;
 
 export const Scene5Outro: React.FC = () => {
@@ -93,11 +93,11 @@ export const Scene5Outro: React.FC = () => {
                 name={`Tag ${tag}`}
                 style={{
                   opacity,
-                  padding: "16px 30px",
+                  padding: "14px 24px",
                   borderRadius: 999,
                   border: `1px solid ${theme.border}`,
                   color: theme.accentLight,
-                  fontSize: 28,
+                  fontSize: 24,
                   fontWeight: 600,
                 }}
               >
@@ -121,7 +121,7 @@ export const Scene5Outro: React.FC = () => {
             }),
           }}
         >
-          Colegio Técnico Nacional
+          Colegio Técnico Nacional de Asunción
         </Interactive.Div>
       </AbsoluteFill>
     </AbsoluteFill>
