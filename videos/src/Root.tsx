@@ -18,7 +18,7 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="Scene1Intro"
           component={Scene1Intro}
-          durationInFrames={320}
+          durationInFrames={240}
           fps={FPS}
           width={WIDTH}
           height={HEIGHT}
@@ -26,7 +26,7 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="SceneSolutionReveal"
           component={SceneSolutionReveal}
-          durationInFrames={250}
+          durationInFrames={200}
           fps={FPS}
           width={WIDTH}
           height={HEIGHT}
@@ -34,7 +34,7 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="Scene2Problem"
           component={Scene2Problem}
-          durationInFrames={270}
+          durationInFrames={180}
           fps={FPS}
           width={WIDTH}
           height={HEIGHT}
@@ -50,7 +50,7 @@ export const RemotionRoot: React.FC = () => {
         <Composition
           id="Scene5Outro"
           component={Scene5Outro}
-          durationInFrames={220}
+          durationInFrames={150}
           fps={FPS}
           width={WIDTH}
           height={HEIGHT}

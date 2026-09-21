@@ -9,24 +9,24 @@ import { Scene3Features, SCENE3_FEATURES_DURATION } from "./scenes/Scene3Feature
 import { Scene5Outro } from "./scenes/Scene5Outro";
 
 const TRANSITION = 15;
-const SCENE_DURATIONS = [320, 250, 270, SCENE3_FEATURES_DURATION, 220];
+const SCENE_DURATIONS = [240, 200, 180, SCENE3_FEATURES_DURATION, 150];
 
 // Absolute frame windows (in the top-level composition timeline) where a
 // narration Audio is playing in one of the scenes above, so the background
 // music can duck under it. Kept in sync with each scene's own
 // NARRATION_START constant + its narration file's real duration.
 const NARRATION_WINDOWS: [number, number][] = [
-  [12, 290], // Scene1Intro: 01-problema.wav
-  [315, 529], // SceneSolutionReveal: 02-solucion.wav
-  [550, 784], // Scene2Problem: 03-gestion.wav
-  [1839, 2010], // Scene5Outro: 04-outro.wav
+  [12, 197], // Scene1Intro: 01-problema.wav
+  [235, 384], // SceneSolutionReveal: 02-solucion.wav
+  [420, 536], // Scene2Problem: 03-gestion.wav
+  [1619, 1720], // Scene5Outro: 04-outro.wav
 ];
 
 const MUSIC_VOLUME = 0.75;
 const DUCKED_VOLUME = 0.22;
 const DUCK_FADE = 20;
 
-const musicVolume = (frame: number) => {
+const duckedVolume = (frame: number) => {
   for (const [start, end] of NARRATION_WINDOWS) {
     if (frame < start - DUCK_FADE || frame > end + DUCK_FADE) continue;
     if (frame < start) {
@@ -45,6 +45,15 @@ const musicVolume = (frame: number) => {
   }
   return MUSIC_VOLUME;
 };
+
+// Fundido de salida: la música nunca termina en seco, aunque la pista sea justo del largo del video.
+const END_FADE = 45;
+const musicVolume = (frame: number) =>
+  duckedVolume(frame) *
+  interpolate(frame, [TRAILER_TOTAL_DURATION - END_FADE, TRAILER_TOTAL_DURATION], [1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
 export const TrailerVideo: React.FC = () => {
   return (

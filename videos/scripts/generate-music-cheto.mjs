@@ -5,7 +5,9 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 const SAMPLE_RATE = 44100;
-const TOTAL_SECONDS = 51.2;
+// Tiene que cubrir todo el trailer (TRAILER_TOTAL_DURATION / 30 en src/TrailerVideo.tsx): si es más corta, la música
+// se corta en seco. Uso: TOTAL_SECONDS=58.7 node scripts/generate-music-cheto.mjs
+const TOTAL_SECONDS = Number(process.env.TOTAL_SECONDS ?? 58.7);
 const TOTAL_SAMPLES = Math.ceil(TOTAL_SECONDS * SAMPLE_RATE);
 
 // Extended 8-chord lounge/jazz progression in C major at ~84bpm, so a
