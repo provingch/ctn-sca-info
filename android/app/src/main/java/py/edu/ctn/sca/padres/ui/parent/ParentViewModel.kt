@@ -42,9 +42,20 @@ data class ParentUiState(
     val conducta: List<RasgoConductaDto> = emptyList(),
     val conductaError: String? = null,
     val conductaLoading: Boolean = false,
+    val materiaSearch: String = "",
+    val taskMonthFilter: String = "",
+    val conductaFiltro: FiltroConducta = FiltroConducta(),
 ) {
     val subjectsForStage: List<SubjectDto>
         get() = data?.materias?.filter { Stage.from(it.etapa) == stage } ?: emptyList()
+
+    /** Lo que se muestra en la grilla de materias: `subjectsForStage` filtrado por el buscador. */
+    val subjectsVisible: List<SubjectDto>
+        get() = filtrarMaterias(subjectsForStage, materiaSearch)
+
+    /** Con pocas materias el buscador sobra (igual que `MATERIAS_PARA_BUSCADOR` en la web). */
+    val mostrarBuscadorMateria: Boolean
+        get() = subjectsForStage.size >= MATERIAS_PARA_BUSCADOR
 
     val selectedSubject: SubjectDto?
         get() = subjectsForStage.firstOrNull { it.planillaId == selectedPlanillaId }
@@ -62,6 +73,12 @@ data class ParentUiState(
 
     val missingTasks: Int
         get() = subjectsForStage.flatMap { it.tareas }.count { it.estado == "NO_ENTREGADA" }
+
+    val conductaVisible: List<RasgoConductaDto>
+        get() = filtrarConducta(conducta, conductaFiltro)
+
+    val conductaMateriasDisponibles: List<String>
+        get() = materiasDeConducta(conducta)
 }
 
 class ParentViewModel(
@@ -102,6 +119,11 @@ class ParentViewModel(
                             selectedPlanillaId = null,
                             conducta = emptyList(),
                             conductaError = null,
+                            // El mes va atado a la materia elegida (que se reinicia siempre). Buscador y filtros de
+                            // conducta sólo se limpian al cambiar de hijo, no al refrescar con el gesto de arrastre.
+                            taskMonthFilter = "",
+                            materiaSearch = if (isRefresh) prev.materiaSearch else "",
+                            conductaFiltro = if (isRefresh) prev.conductaFiltro else FiltroConducta(),
                         )
                     }
                     result.data.selectedAlumnoId?.takeIf { it > 0 }?.let { loadConducta(it) }
@@ -118,9 +140,18 @@ class ParentViewModel(
         load(alumnoId = alumnoId)
     }
 
-    fun selectStage(stage: Stage) = _ui.update { it.copy(stage = stage, selectedPlanillaId = null) }
+    fun selectStage(stage: Stage) = _ui.update { it.copy(stage = stage, selectedPlanillaId = null, taskMonthFilter = "") }
 
-    fun selectSubject(planillaId: Int) = _ui.update { it.copy(selectedPlanillaId = planillaId) }
+    fun selectSubject(planillaId: Int) = _ui.update { it.copy(selectedPlanillaId = planillaId, taskMonthFilter = "") }
+
+    fun setMateriaSearch(value: String) = _ui.update { it.copy(materiaSearch = value) }
+
+    fun setTaskMonthFilter(value: String) = _ui.update { it.copy(taskMonthFilter = value) }
+
+    fun setConductaFiltro(update: (FiltroConducta) -> FiltroConducta) =
+        _ui.update { it.copy(conductaFiltro = update(it.conductaFiltro)) }
+
+    fun clearConductaFiltro() = _ui.update { it.copy(conductaFiltro = FiltroConducta()) }
 
     fun refresh() = load(alumnoId = _ui.value.data?.selectedAlumnoId, isRefresh = true)
 

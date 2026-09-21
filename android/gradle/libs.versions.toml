@@ -15,8 +15,10 @@ securityCrypto = "1.1.0-alpha06"
 coroutines = "1.9.0"
 firebaseBom = "33.7.0"
 googleServices = "4.4.2"
+junit = "4.13.2"
 
 [libraries]
+junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
 androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycle" }

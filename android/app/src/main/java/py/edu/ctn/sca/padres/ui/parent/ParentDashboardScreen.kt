@@ -33,6 +33,8 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,12 +43,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -72,6 +77,7 @@ import py.edu.ctn.sca.padres.Graph
 import py.edu.ctn.sca.padres.R
 import py.edu.ctn.sca.padres.data.ChildDto
 import py.edu.ctn.sca.padres.data.ReportRepository
+import py.edu.ctn.sca.padres.data.RasgoConductaDto
 import py.edu.ctn.sca.padres.data.ReportResult
 import py.edu.ctn.sca.padres.data.SubjectDto
 import py.edu.ctn.sca.padres.data.TaskDto
@@ -85,12 +91,11 @@ import py.edu.ctn.sca.padres.ui.components.StatusPill
 import py.edu.ctn.sca.padres.ui.graphViewModel
 import py.edu.ctn.sca.padres.ui.theme.scaColors
 import java.io.File
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneOffset
 
-private val MESES = arrayOf(
-    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
-)
+private val MESES = NOMBRES_MESES_LARGOS
 
 /**
  * Parent dashboard, mirroring the web `frontend/src/pages/parent/ParentPage.tsx`:
@@ -234,21 +239,51 @@ private fun DashboardContent(ui: ParentUiState, vm: ParentViewModel, reports: Re
                         )
                     }
                 }
-                items(subjects, key = { it.planillaId }) { subject ->
-                    SubjectCard(
-                        subject = subject,
-                        selected = subject.planillaId == selectedSubject?.planillaId,
-                        onClick = { vm.selectSubject(subject.planillaId) },
-                    )
+                if (ui.mostrarBuscadorMateria) {
+                    item {
+                        OutlinedTextField(
+                            value = ui.materiaSearch,
+                            onValueChange = vm::setMateriaSearch,
+                            label = { Text("Buscar materia") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+                val visibleSubjects = ui.subjectsVisible
+                if (visibleSubjects.isEmpty()) {
+                    item {
+                        Panel {
+                            Text("Ninguna materia coincide", style = MaterialTheme.typography.titleSmall)
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                "No hay materias que coincidan con \"${ui.materiaSearch.trim()}\".",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            TextButton(onClick = { vm.setMateriaSearch("") }) { Text("Limpiar búsqueda") }
+                        }
+                    }
+                } else {
+                    items(visibleSubjects, key = { it.planillaId }) { subject ->
+                        SubjectCard(
+                            subject = subject,
+                            selected = subject.planillaId == selectedSubject?.planillaId,
+                            onClick = { vm.selectSubject(subject.planillaId) },
+                        )
+                    }
                 }
                 selectedSubject?.let { subject ->
-                    item { SubjectDetailPanel(subject) }
+                    item {
+                        SubjectDetailPanel(subject, monthFilter = ui.taskMonthFilter, onMonthChange = vm::setTaskMonthFilter)
+                    }
                 }
                 item { CalculationNote() }
             }
 
             if (selectedChild != null) {
-                item { ConductaPanel(ui) }
+                item { ConductaPanel(ui, vm) }
             }
         }
     }
@@ -496,7 +531,7 @@ private fun SubjectCard(subject: SubjectDto, selected: Boolean, onClick: () -> U
 
 /** Web `.parent-subject-detail` panel. */
 @Composable
-private fun SubjectDetailPanel(subject: SubjectDto) {
+private fun SubjectDetailPanel(subject: SubjectDto, monthFilter: String, onMonthChange: (String) -> Unit) {
     Panel {
         Row(verticalAlignment = Alignment.Top) {
             Column(Modifier.weight(1f)) {
@@ -520,13 +555,46 @@ private fun SubjectDetailPanel(subject: SubjectDto) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         } else {
-            subject.tareas.forEachIndexed { index, task ->
-                if (index > 0) {
-                    Spacer(Modifier.height(8.dp))
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    Spacer(Modifier.height(8.dp))
+            val meses = remember(subject.tareas) { mesesConTareas(subject.tareas) }
+            val grupos = remember(subject.tareas, monthFilter) { agruparTareasPorMes(subject.tareas, monthFilter) }
+            if (meses.size > 1) {
+                MonthFilterField(meses = meses, selected = monthFilter, onSelect = onMonthChange)
+                Spacer(Modifier.height(14.dp))
+            }
+            grupos.forEachIndexed { grupoIndex, grupo ->
+                if (grupoIndex > 0) Spacer(Modifier.height(16.dp))
+                Text(
+                    "${grupo.label} · ${grupo.tareas.size} " + if (grupo.tareas.size == 1) "tarea" else "tareas",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(8.dp))
+                grupo.tareas.forEachIndexed { index, numerada ->
+                    if (index > 0) {
+                        Spacer(Modifier.height(8.dp))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        Spacer(Modifier.height(8.dp))
+                    }
+                    // numerada.numero es la posición en la lista completa: no cambia al filtrar por mes.
+                    TaskRow(numerada.numero, numerada.tarea)
                 }
-                TaskRow(index + 1, task)
+            }
+        }
+    }
+}
+
+/** Selector de mes del detalle de tareas (mismo patrón de menú que el selector de mes de `ReportsPanel`). */
+@Composable
+private fun MonthFilterField(meses: List<OpcionMes>, selected: String, onSelect: (String) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        OutlinedButton(onClick = { open = true }) {
+            Text(if (selected.isEmpty()) "Todos los meses" else etiquetaMes(selected))
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            DropdownMenuItem(text = { Text("Todos los meses") }, onClick = { onSelect(""); open = false })
+            meses.forEach { opcion ->
+                DropdownMenuItem(text = { Text(opcion.label) }, onClick = { onSelect(opcion.value); open = false })
             }
         }
     }
@@ -617,9 +685,9 @@ private fun TaskResult(task: TaskDto) {
     }
 }
 
-/** Web `.parent-calculation-note` <details>. */
+/** Notas de conducta del hijo, con filtros por materia y rango de fechas (web: `filtroConducta`). */
 @Composable
-private fun ConductaPanel(ui: ParentUiState) {
+private fun ConductaPanel(ui: ParentUiState, vm: ParentViewModel) {
     Panel {
         Eyebrow("Notas de conducta")
         Text(
@@ -644,56 +712,22 @@ private fun ConductaPanel(ui: ParentUiState) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            else -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                ui.conducta.forEach { row ->
-                    Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(9.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
-                            .padding(12.dp),
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                row.codigo,
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                            Spacer(Modifier.width(10.dp))
-                            Text(
-                                formatDate(row.fechaClase),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        row.descripcion?.takeIf { it.isNotBlank() }?.let {
-                            Text(
-                                it,
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.padding(top = 4.dp),
-                            )
-                        }
-                        val meta = listOfNotNull(
-                            row.materia?.takeIf { it.isNotBlank() },
-                            row.profesorNombre?.takeIf { it.isNotBlank() },
-                        ).joinToString(" · ")
-                        if (meta.isNotEmpty()) {
-                            Text(
-                                meta,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(top = 2.dp),
-                            )
-                        }
-                        row.observacion?.takeIf { it.isNotBlank() }?.let {
-                            Text(
-                                "Obs: $it",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.padding(top = 4.dp),
-                            )
-                        }
+            else -> Column {
+                ConductaFilters(ui = ui, vm = vm)
+                Spacer(Modifier.height(12.dp))
+                when {
+                    rangoInvalido(ui.conductaFiltro) -> Text(
+                        "La fecha \"Desde\" es posterior a \"Hasta\": no hay notas en ese rango.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                    ui.conductaVisible.isEmpty() -> Text(
+                        "Ninguna nota de conducta coincide con los filtros elegidos.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    else -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        ui.conductaVisible.forEach { row -> ConductaNoteCard(row) }
                     }
                 }
             }
@@ -701,6 +735,137 @@ private fun ConductaPanel(ui: ParentUiState) {
     }
 }
 
+@Composable
+private fun ConductaNoteCard(row: RasgoConductaDto) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(9.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
+            .padding(12.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                row.codigo,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Spacer(Modifier.width(10.dp))
+            Text(
+                formatDate(row.fechaClase),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        row.descripcion?.takeIf { it.isNotBlank() }?.let {
+            Text(
+                it,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+        val meta = listOfNotNull(
+            row.materia?.takeIf { it.isNotBlank() },
+            row.profesorNombre?.takeIf { it.isNotBlank() },
+        ).joinToString(" · ")
+        if (meta.isNotEmpty()) {
+            Text(
+                meta,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
+        row.observacion?.takeIf { it.isNotBlank() }?.let {
+            Text(
+                "Obs: $it",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+    }
+}
+
+/** Materia (menú) + rango de fechas (Desde/Hasta) para las notas de conducta. */
+@Composable
+private fun ConductaFilters(ui: ParentUiState, vm: ParentViewModel) {
+    var materiaMenuOpen by remember { mutableStateOf(false) }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Box {
+            OutlinedButton(onClick = { materiaMenuOpen = true }) {
+                Text(ui.conductaFiltro.materia.ifEmpty { "Todas las materias" })
+            }
+            DropdownMenu(expanded = materiaMenuOpen, onDismissRequest = { materiaMenuOpen = false }) {
+                DropdownMenuItem(
+                    text = { Text("Todas las materias") },
+                    onClick = { vm.setConductaFiltro { it.copy(materia = "") }; materiaMenuOpen = false },
+                )
+                ui.conductaMateriasDisponibles.forEach { materia ->
+                    DropdownMenuItem(
+                        text = { Text(materia) },
+                        onClick = { vm.setConductaFiltro { it.copy(materia = materia) }; materiaMenuOpen = false },
+                    )
+                }
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            DateFilterField(
+                label = "Desde",
+                value = ui.conductaFiltro.desde,
+                onChange = { desde -> vm.setConductaFiltro { it.copy(desde = desde) } },
+                modifier = Modifier.weight(1f),
+            )
+            DateFilterField(
+                label = "Hasta",
+                value = ui.conductaFiltro.hasta,
+                onChange = { hasta -> vm.setConductaFiltro { it.copy(hasta = hasta) } },
+                modifier = Modifier.weight(1f),
+            )
+        }
+        if (hayFiltroConducta(ui.conductaFiltro)) {
+            TextButton(onClick = vm::clearConductaFiltro) { Text("Limpiar filtros") }
+        }
+    }
+}
+
+/** Botón que abre un `DatePickerDialog` de Material3 y guarda la fecha elegida como "yyyy-MM-dd". */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DateFilterField(label: String, value: String, onChange: (String) -> Unit, modifier: Modifier = Modifier) {
+    var showPicker by remember { mutableStateOf(false) }
+    OutlinedButton(onClick = { showPicker = true }, modifier = modifier) {
+        Text(if (value.isEmpty()) label else "$label: ${formatDate(value)}", maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+    if (showPicker) {
+        val state = rememberDatePickerState(
+            initialSelectedDateMillis = value.takeIf { it.isNotEmpty() }
+                ?.let { runCatching { LocalDate.parse(it).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli() }.getOrNull() },
+        )
+        DatePickerDialog(
+            onDismissRequest = { showPicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    state.selectedDateMillis?.let { millis ->
+                        onChange(Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate().toString())
+                    }
+                    showPicker = false
+                }) { Text("Aceptar") }
+            },
+            dismissButton = {
+                Row {
+                    if (value.isNotEmpty()) {
+                        TextButton(onClick = { onChange(""); showPicker = false }) { Text("Quitar") }
+                    }
+                    TextButton(onClick = { showPicker = false }) { Text("Cancelar") }
+                }
+            },
+        ) { DatePicker(state = state) }
+    }
+}
+
+/** Web `.parent-calculation-note` <details>. */
 @Composable
 private fun CalculationNote() {
     var open by remember { mutableStateOf(false) }
