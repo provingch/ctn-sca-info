@@ -20,8 +20,9 @@ export default function PageBanner({ title, context, specialty, selector, onBack
         {context && <span>{context}</span>}
       </div>
       {selector}
-      <div className="page-banner-emblem" title={specialty ? `Especialidad: ${specialty}` : 'Sistema de Carpeta Académica'}>
-        <SpecialtyIcon name={specialty ?? ''} />
+      <div className="page-banner-identity" title={specialty ? `Especialidad: ${specialty}` : 'Sistema de Carpeta Académica'}>
+        <div className="page-banner-emblem"><SpecialtyIcon name={specialty ?? ''} /></div>
+        <span>{specialty || 'SCA · CTN'}</span>
       </div>
     </div>
   );

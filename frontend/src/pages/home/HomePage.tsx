@@ -435,7 +435,7 @@ function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChan
         </label>
       )}
     />
-    <div className="launcher-body">
+    <div className={`launcher-body${recentActivity.length || rechazados || noCargados ? "" : " launcher-body--wide"}`}>
       <LauncherCards options={[
         {
           key: 'catedra',
@@ -461,12 +461,14 @@ function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChan
           </>,
         },
       ]} />
-      <aside className="launcher-activity">
-        <h3>Actividad reciente</h3>
-        {activity === null ? (
-          <p className="launcher-activity-empty">Cargando actividad…</p>
-        ) : recentActivity.length === 0 ? (
-          <p className="launcher-activity-empty">Todavía no hay actividad registrada.</p>
+      {(recentActivity.length > 0 || rechazados > 0 || noCargados > 0) && <aside className="launcher-activity">
+        <h3>{recentActivity.length ? "Actividad reciente" : "Pendientes por atender"}</h3>
+        {recentActivity.length === 0 ? (
+          <div className="launcher-pending">
+            {noCargados > 0 && <p><strong>{noCargados}</strong> planes curriculares sin cargar.</p>}
+            {rechazados > 0 && <p><strong>{rechazados}</strong> planes rechazados para corregir.</p>}
+            <button type="button" className="btn" aria-label="Ver planes curriculares pendientes" onClick={() => onSelect("catedra", { subview: "plan-curricular" })}>Revisar planes <span aria-hidden="true">→</span></button>
+          </div>
         ) : (
           <div className="launcher-activity-list">
             {recentActivity.map((line, idx) => {
@@ -480,7 +482,7 @@ function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChan
             })}
           </div>
         )}
-      </aside>
+      </aside>}
     </div>
     {asignaciones && asignaciones.length > 0 && (
       <div className="launcher-materias">
@@ -491,7 +493,10 @@ function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChan
               ? { tone: 'tone-danger', label: 'Plan rechazado' }
               : asignacion.estadoPlan === 'NO_CARGADO'
                 ? { tone: 'tone-warning', label: 'Plan sin cargar' }
-                : null;
+                : asignacion.estadoPlan === 'PENDIENTE'
+                  ? { tone: 'tone-warning', label: 'Plan en revisión' }
+                  : { tone: 'tone-success', label: 'Plan aprobado' };
+            const planillas = asignacion.cursoRealId == null ? [] : data?.planillasResumen.filter((p) => p.materiaId === asignacion.materiaId && p.cursoId === asignacion.cursoRealId) ?? [];
             return (
               <button type="button" key={asignacion.id} className="launcher-materia-row" onClick={() => {
                 recordMateriaReciente(asignacion.id);
@@ -509,10 +514,11 @@ function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChan
                 });
               }}>
                 <span className="launcher-materia-info">
-                  <strong>{asignacion.materiaNombre}</strong>
-                  <span>{asignacion.cursoOrdinal}° {asignacion.seccion}</span>
+                  <span className="launcher-materia-heading"><strong>{asignacion.materiaNombre}</strong><span className={`launcher-badge ${estado.tone}`}>{estado.label}</span></span>
+                  <span>{asignacion.cursoOrdinal.replace(/[.°º\s]+$/u, "")}° {asignacion.seccion} · {asignacion.especialidadNombre}</span>
+                  {data && <span>{planillas.length ? `${planillas.length} planilla${planillas.length === 1 ? " disponible" : "s disponibles"}` : "Sin planillas"}</span>}
                 </span>
-                {estado && <span className={`launcher-materia-status ${estado.tone}`} role="img" aria-label={estado.label} title={estado.label} />}
+                <span className="launcher-materia-chevron" aria-hidden="true">›</span>
               </button>
             );
           })}

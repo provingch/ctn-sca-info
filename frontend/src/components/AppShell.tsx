@@ -5,6 +5,7 @@ import { useSpecialty } from '../context/SpecialtyContext';
 import AppNavbar from './AppNavbar';
 import PageBanner from './PageBanner';
 import DashboardWelcome from './DashboardWelcome';
+import DashboardActivity from './DashboardActivity';
 import './account-layout.css';
 
 export default function AppShell({ children, title, subtitle, specialty, hero = true, onBack, backLabel, welcome = false, navigation }: {
@@ -35,6 +36,7 @@ export default function AppShell({ children, title, subtitle, specialty, hero = 
         {hero && title && (welcome ? <DashboardWelcome title={title} subtitle={subtitle} specialty={effectiveSpecialty} /> : <PageBanner title={title} context={subtitle} specialty={effectiveSpecialty} onBack={onBack} backLabel={backLabel} />)}
         {navigation}
         {children}
+        {welcome && <DashboardActivity />}
       </main>
       <footer className="app-footer">
         <div className="app-footer-inner">

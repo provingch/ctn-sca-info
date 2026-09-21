@@ -1,8 +1,29 @@
 /* Shared account presentation, based on the professor's class cards and launchers.
    Keep specialty tokens, tables, record lists and print layouts in their owners. */
 @media screen {
-  .account-ui { --account-section-gap: 24px; --account-panel-padding: 24px; }
-  .account-ui .app-main { width: min(1180px, calc(100% - 40px)); }
+  .account-ui { --account-section-gap: 24px; --account-panel-padding: 24px; --account-content-width: min(1180px, calc(100% - 40px)); display: flex; flex-direction: column; min-height: 100dvh; }
+  .account-ui .app-main { width: var(--account-content-width); flex: 1; padding-bottom: 32px; }
+  .account-ui .app-header .app-header-inner { width: var(--account-content-width); padding-inline: 0; }
+  .account-ui .app-footer { position: static; height: auto; min-height: var(--app-footer-h); flex-shrink: 0; }
+  .account-ui .app-footer .app-footer-inner { width: var(--account-content-width); padding: 16px 0; flex-wrap: wrap; }
+  .account-ui :is(.brand-copy,.navbar-user-copy) small { font-size: .78rem; line-height: 1.4; color: var(--ink); opacity: .85; }
+  .account-ui .page-banner-identity { display: grid; justify-items: center; gap: 6px; max-width: 180px; flex-shrink: 0; text-align: center; }
+  .account-ui .page-banner-identity > span { font-size: .8rem; font-weight: 600; color: var(--ink); }
+  .account-ui .page-banner-identity .page-banner-emblem { box-shadow: none; }
+  .account-ui .launcher-card-arrow { display: grid; place-items: center; flex-shrink: 0; width: 36px; height: 36px; font-size: 1.5rem; color: var(--accent-deep); border-radius: 50%; background: var(--accent-soft); }
+  .account-ui .launcher-card:hover { border-color: var(--accent); box-shadow: 0 8px 24px color-mix(in srgb, var(--accent) 15%, transparent); }
+  .account-ui .launcher-body--wide { grid-template-columns: minmax(0,1fr); }
+  .account-ui .launcher-body--wide .launcher-cards { grid-template-columns: repeat(2,minmax(0,1fr)); grid-template-rows: auto; }
+  .account-ui .launcher-pending { display: grid; gap: 14px; }
+  .account-ui .launcher-pending p { margin: 0; color: var(--ink); line-height: 1.6; }
+  .account-ui .launcher-materia-row { padding: 16px 12px; border-radius: 8px; }
+  .account-ui .launcher-materia-row:hover { background: var(--paper-raised); }
+  .account-ui .launcher-materia-info > span { font-size: .85rem; color: var(--muted); line-height: 1.5; }
+  .account-ui .launcher-materia-info .launcher-materia-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+  .account-ui .launcher-materia-heading strong { font-size: 1rem; }
+  .account-ui .launcher-materia-chevron { font-size: 1.75rem; color: var(--accent-deep); padding-inline: 8px; }
+  .account-ui .dashboard-activity { margin-top: var(--account-section-gap); }
+  .account-ui .dashboard-activity .launcher-activity-list { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,240px),1fr)); gap: 16px; }
   .account-ui .page-banner { margin-bottom: var(--account-section-gap); }
   .account-ui .page-banner-title-row { flex-wrap: wrap; row-gap: 12px; }
   .account-ui .page-banner-text { min-width: 0; }
@@ -33,8 +54,9 @@
   .account-ui :where(a,button,input,select,textarea,summary,[tabindex]):focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 3px; }
   .account-ui .content-state { border-radius: var(--radius-lg); }
   @media (max-width: 640px) {
-    .account-ui { --account-section-gap: 16px; --account-panel-padding: 18px; }
-    .account-ui .app-main { width: calc(100% - 24px); }
+    .account-ui { --account-section-gap: 16px; --account-panel-padding: 18px; --account-content-width: calc(100% - 24px); }
+    .account-ui .launcher-body--wide .launcher-cards { grid-template-columns: minmax(0,1fr); }
+    .account-ui .page-banner-identity { max-width: 100px; }
     .account-ui .page-banner-title-row { align-items: flex-start; }
     .account-ui .launcher-cards-grid { grid-template-columns: minmax(0,1fr); gap: 14px; }
     .account-ui .toolbar.filters { padding: 14px; }
