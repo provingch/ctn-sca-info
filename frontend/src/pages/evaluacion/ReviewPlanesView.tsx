@@ -160,7 +160,7 @@ export default function ReviewPlanesView() {
               </div>
             )}
 
-            <form onSubmit={(e) => e.preventDefault()} style={{ display: 'grid', gap: 12 }}>
+            <form className="form-grid" onSubmit={(e) => e.preventDefault()} style={{ display: 'grid', gap: 12 }}>
               <div>
                 <label htmlFor="observaciones" style={{ display: 'block', marginBottom: 4 }}>Observaciones</label>
                 <textarea id="observaciones" value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Ingresá observaciones (requerido para rechazar)" rows={4} style={{ width: '100%', resize: 'none' }} />

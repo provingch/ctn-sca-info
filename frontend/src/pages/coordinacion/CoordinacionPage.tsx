@@ -1,3 +1,4 @@
+import SectionNavigation from '../../components/SectionNavigation';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import AppShell from '../../components/AppShell';
 import ContentState from '../../components/ui/ContentState';
@@ -129,8 +130,13 @@ export default function CoordinacionPage() {
 
   const detalleQuejas = selectedProfesorId ? agrupadas.find((g) => g.profesorId === selectedProfesorId)?.quejas ?? [] : [];
 
+  const navigation = <SectionNavigation label="Apartados de coordinación" active={view === 'detalle' ? 'quejas' : view} sections={[
+    { key: 'quejas', label: 'Quejas por profesor', onSelect: () => changeView('quejas') },
+    { key: 'conducta', label: 'Reportes conductuales', onSelect: () => changeView('conducta') },
+  ]} />;
+
   if (view === 'menu') {
-    return <AppShell title="Coordinación Pedagógica">
+    return <AppShell title="Coordinación Pedagógica" subtitle="Quejas y acompañamiento socioacadémico" welcome>
       <LauncherCards className="launcher-cards-grid" options={[
         { key: 'quejas', icon: launcherIcons.quejas, title: 'Quejas por profesor', description: 'Ver y revisar quejas cargadas por la administración.', onSelect: () => changeView('quejas') },
         { key: 'conducta', icon: launcherIcons.conducta, title: 'Reportes conductuales', description: 'Crear y administrar los códigos N usados para registrar el comportamiento de los alumnos.', onSelect: () => changeView('conducta') },
@@ -139,7 +145,7 @@ export default function CoordinacionPage() {
   }
 
   if (view === 'quejas') {
-    return <AppShell title="Quejas por Profesor" onBack={() => changeView('menu')} backLabel="Coordinación">
+    return <AppShell title="Quejas por Profesor" onBack={() => changeView('menu')} backLabel="Coordinación" navigation={navigation}>
       {status && <div className="notice error" role="alert">{status}</div>}
       {quejas.length === 0 ? (
         <ContentState title="No hay quejas" detail="No se registraron quejas en este alcance." tone="empty" />
@@ -170,12 +176,12 @@ export default function CoordinacionPage() {
   }
 
   if (view === 'conducta') {
-    return <AppShell title="Reportes conductuales" onBack={() => changeView('menu')} backLabel="Coordinación">
+    return <AppShell title="Reportes conductuales" onBack={() => changeView('menu')} backLabel="Coordinación" navigation={navigation}>
       <CatalogoConductaPanel />
     </AppShell>;
   }
 
-  return <AppShell title="Detalle de Quejas" onBack={() => changeView('quejas')} backLabel="Quejas">
+  return <AppShell title="Detalle de Quejas" onBack={() => changeView('quejas')} backLabel="Quejas" navigation={navigation}>
     <section className="panel">
       <header className="planilla-table-heading">
         <div>

@@ -1,3 +1,4 @@
+import SectionNavigation from '../../components/SectionNavigation';
 import { useEffect, useState } from 'react';
 import AppShell from '../../components/AppShell';
 import { descargarPlanillas } from '../../api/evaluacion';
@@ -47,8 +48,15 @@ export default function EvaluacionPage() {
     }
   }
 
+  const navigation = <SectionNavigation label="Apartados de evaluación" active={view} sections={[
+    { key: 'ver-planillas', label: 'Ver planillas', onSelect: () => changeView('ver-planillas') },
+    { key: 'planillas', label: 'Descargar planillas', onSelect: () => changeView('planillas') },
+    { key: 'planes', label: 'Planes curriculares', onSelect: () => changeView('planes') },
+    { key: 'seguimiento', label: 'Seguimiento', onSelect: () => changeView('seguimiento') },
+  ]} />;
+
   if (view === 'menu') {
-    return <AppShell title="Panel de Evaluación">
+    return <AppShell title="Panel de Evaluación" subtitle="Revisión y seguimiento académico" welcome>
       <LauncherCards className="launcher-cards-grid" options={[
         { key: 'ver-planillas', icon: launcherIcons.verPlanillas, title: 'Ver planillas', description: 'Consultá las notas de una planilla en pantalla, descargala o reabrí una etapa cerrada.', onSelect: () => changeView('ver-planillas') },
         { key: 'planillas', icon: launcherIcons.descargarPlanillas, title: 'Descargar planillas', description: 'Exportá planillas completadas de los cursos.', onSelect: () => changeView('planillas') },
@@ -59,24 +67,24 @@ export default function EvaluacionPage() {
   }
 
   if (view === 'ver-planillas') {
-    return <AppShell title="Ver planillas" onBack={() => changeView('menu')} backLabel="Panel de Evaluación">
+    return <AppShell title="Ver planillas" onBack={() => changeView('menu')} backLabel="Panel de Evaluación" navigation={navigation}>
       <PlanillaDetalleView filtros={filtros} />
     </AppShell>;
   }
 
   if (view === 'planes') {
-    return <AppShell title="Revisar Planes Curriculares" onBack={() => changeView('menu')} backLabel="Panel de Evaluación">
+    return <AppShell title="Revisar Planes Curriculares" onBack={() => changeView('menu')} backLabel="Panel de Evaluación" navigation={navigation}>
       <ReviewPlanesView />
     </AppShell>;
   }
 
   if (view === 'seguimiento') {
-    return <AppShell title="Seguimiento de Profesores" onBack={() => changeView('menu')} backLabel="Panel de Evaluación">
+    return <AppShell title="Seguimiento de Profesores" onBack={() => changeView('menu')} backLabel="Panel de Evaluación" navigation={navigation}>
       <SeguimientoPlanesView initialTab={searchParams.get('tab') === 'incumplimientos' ? 'incumplimientos' : 'planes'} />
     </AppShell>;
   }
 
-  return <AppShell title="Descargar planillas" onBack={() => changeView('menu')} backLabel="Panel de Evaluación">
+  return <AppShell title="Descargar planillas" onBack={() => changeView('menu')} backLabel="Panel de Evaluación" navigation={navigation}>
     <section className="panel form-grid evaluation-filters">
       <p className="lead">Elegí la especialidad, el curso, la sección y el período académico para generar sus planillas.</p>
       <EvaluacionFiltrosCampos filtros={filtros} />

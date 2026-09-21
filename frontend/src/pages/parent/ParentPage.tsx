@@ -117,7 +117,7 @@ export default function ParentPage() {
   });
 
   return (
-    <AppShell title="Notas de mis hijos" specialty={selectedChild?.especialidad}>
+    <AppShell title="Notas de mis hijos" subtitle="Calificaciones y seguimiento académico" specialty={selectedChild?.especialidad} welcome>
       <div className="parent-page">
         <div className="card-grid child-grid" aria-label="Hijos vinculados">
           {data.hijos.map((child) => (

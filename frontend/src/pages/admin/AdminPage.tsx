@@ -17,6 +17,9 @@ import SalasPanel from './SalasPanel';
 import AdminQuejasPanel from './AdminQuejasPanel';
 import ClasesEspecialidadPanel from './ClasesEspecialidadPanel';
 import { useToast } from '../../context/toast';
+import LauncherCards from '../../components/LauncherCards';
+import { launcherIcons } from '../../components/launcherIcons';
+import SectionNavigation from '../../components/SectionNavigation';
 
 const modules = [
   { path: '/admin/materias', key: 'materias', title: 'Materias', detail: 'Catálogo, categorías y especialidades', globalOnly: true },
@@ -66,7 +69,8 @@ export default function AdminPage() {
   const selectedIsRestricted = Boolean(selected && isScopedAdmin && 'globalOnly' in selected && selected.globalOnly);
   const scopeName = user.especialidadNombre ?? data.especialidades.find((item) => item.id === user.especialidadId)?.nombre ?? (user.especialidadId === null ? null : `Especialidad #${user.especialidadId}`);
 
-  return <AppShell title={selected?.title || 'Panel general'} subtitle={scopeName ? `Administración de ${scopeName}` : 'Administración global del sistema'} specialty={scopeName} onBack={selected ? () => navigate('/admin') : undefined} backLabel="Panel general">
+  return <AppShell title={selected?.title || 'Panel general'} subtitle={scopeName ? `Administración de ${scopeName}` : 'Administración global del sistema'} specialty={scopeName} onBack={selected ? () => navigate('/admin') : undefined} backLabel="Panel general" welcome={!selected}
+    navigation={selected && <SectionNavigation label="Apartados de administración" active={selected.key} sections={visibleModules.map(module => ({ key: module.key, label: module.title, href: module.path }))} />}>
     <AdminToolbar scopeName={scopeName} />
     {/* toasts shown globally via ToastProvider */}
     {selectedIsRestricted ? (
@@ -75,11 +79,11 @@ export default function AdminPage() {
       <div className="admin-dashboard-sections">
         <section aria-labelledby="admin-management-title">
           <header className="admin-dashboard-heading"><span>Administración</span><h2 id="admin-management-title">Gestión del sistema</h2></header>
-          <div className="card-grid">{visibleModules.map((module) => <Link className="nav-card" to={module.path} key={module.path}><span>Gestionar</span><h2>{module.title}</h2><p>{module.detail}</p><strong>Abrir →</strong></Link>)}</div>
+          <LauncherCards className="launcher-cards-grid" options={visibleModules.map(module => ({ key: module.key, href: module.path, title: module.title, description: module.detail, icon: module.key === 'clases' ? launcherIcons.clasesDadas : launcherIcons[module.key as keyof typeof launcherIcons] }))} />
         </section>
         {!isScopedAdmin && <section className="admin-reference-section" aria-labelledby="admin-reference-title">
           <header className="admin-dashboard-heading"><span>Referencia</span><h2 id="admin-reference-title">Herramientas internas</h2></header>
-          <div className="card-grid"><Link className="nav-card" to="/styleguide"><span>Referencia interna</span><h2>Sistema de diseño</h2><p>Componentes, estados y reglas visuales compartidas.</p><strong>Consultar →</strong></Link></div>
+          <LauncherCards className="launcher-cards-grid" options={[{ key: 'styleguide', href: '/styleguide', title: 'Sistema de diseño', description: 'Componentes, estados y reglas visuales compartidas.', icon: launcherIcons.verPlanillas }]} />
         </section>}
       </div>
     ) : (
