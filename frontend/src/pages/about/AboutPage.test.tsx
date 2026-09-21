@@ -2,6 +2,8 @@ import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import AboutPage from './AboutPage';
+vi.mock('../../context/AuthContext', () => ({ useAuth: () => ({ user: null }) }));
+vi.mock('../../context/SpecialtyContext', () => ({ useSpecialty: () => ({ name: null }) }));
 
 function renderPage() {
   return render(<MemoryRouter><AboutPage /></MemoryRouter>);
@@ -12,7 +14,7 @@ describe('AboutPage', () => {
 
   it('lista a cada integrante con su nombre y un link a su GitHub que abre en pestaña nueva', () => {
     renderPage();
-    const equipo = screen.getByRole('heading', { name: '1. Equipo' }).closest('section')!;
+    const equipo = screen.getByRole('heading', { name: 'Equipo' }).closest('section')!;
     const links = within(equipo).getAllByRole('link');
 
     expect(links.map((link) => link.getAttribute('href'))).toEqual([
@@ -32,9 +34,10 @@ describe('AboutPage', () => {
 
   it('muestra la cronología del CHANGELOG', () => {
     renderPage();
-    expect(screen.getByText('Inicio del desarrollo: 18 de junio de 2026.')).toBeInTheDocument();
-    expect(screen.getByText('Propuesta aceptada: 29 de junio de 2026.')).toBeInTheDocument();
-    expect(screen.getByText('Fusión desarrollada: 28 de julio de 2026.')).toBeInTheDocument();
+    expect(screen.getByText('Inicio del desarrollo')).toBeInTheDocument();
+    expect(screen.getByText('18 de junio de 2026')).toHaveAttribute('datetime', '2026-06-18');
+    expect(screen.getByText('Propuesta aceptada')).toBeInTheDocument();
+    expect(screen.getByText('Fusión de dos proyectos en uno')).toBeInTheDocument();
   });
 
   it('calcula el año del copyright con la fecha actual en vez de dejarlo fijo', () => {

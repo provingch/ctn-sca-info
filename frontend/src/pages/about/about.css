@@ -1,0 +1,49 @@
+/* Scoped to About: shared specialty tokens, no changes to legal pages or tables. */
+.about-public { min-height: 100dvh; background: var(--bg); color: var(--ink); padding-bottom: 32px; }
+.about-public-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; width: min(1180px, calc(100% - 40px)); margin: auto; padding: 20px 0; border-bottom: 1px solid var(--line); }
+.about-brand { display: flex; align-items: center; gap: 12px; color: var(--ink); text-decoration: none; font-weight: 750; line-height: 1.4; }
+.about-brand .sca-logo { width: 42px; height: 32px; flex-shrink: 0; }
+.about-brand small { display: block; font-size: .8rem; font-weight: 500; }
+.about-public .about-page { width: min(1180px, calc(100% - 40px)); margin: 24px auto 0; }
+.about-back { display: inline-block; margin-bottom: 20px; color: var(--ink); padding-block: 8px; font-weight: 650; }
+.about-card { padding: clamp(24px, 4vw, 48px); border: 1px solid var(--line); border-top: 4px solid var(--accent); border-radius: var(--radius-lg); background: var(--paper); color: var(--ink); }
+.about-card p { line-height: 1.7; color: var(--ink); }
+.about-card h1 { font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -.015em; line-height: 1.18; margin: 12px 0 20px; }
+.about-card h2 { font-size: 1.3rem; margin: 0 0 12px; line-height: 1.4; }
+.about-card h3 { font-size: 1rem; margin: 0; line-height: 1.5; }
+.about-card .about-eyebrow { font-size: .8rem; font-weight: 700; letter-spacing: .06em; margin: 0; }
+.about-card .about-lead { font-size: 1.15rem; margin-bottom: 8px; }
+.about-card section { margin-top: 36px; }
+.about-modules { list-style: none; padding: 0; margin: 24px 0 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.about-modules li { border: 1px solid var(--line); border-radius: 99px; padding: 6px 12px; background: var(--accent-soft); color: var(--ink); font-size: .85rem; line-height: 1.5; }
+.about-team { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); list-style: none; padding: 0; gap: 16px; margin: 20px 0 0; }
+.about-team > li { display: flex; align-items: center; gap: 16px; padding: 20px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper-raised); min-width: 0; }
+.about-team > li > div:last-child { min-width: 0; overflow-wrap: anywhere; }
+.about-team p { font-size: .85rem; margin: 4px 0; }
+.about-avatar { position: relative; display: grid; place-items: center; width: 56px; height: 56px; flex-shrink: 0; border-radius: 50%; background: var(--accent-soft); color: var(--ink); overflow: hidden; font-weight: 750; }
+.about-avatar img { position: absolute; inset: 0; object-fit: cover; }
+.about-card a { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; line-height: 1.6; }
+.about-card a:hover { text-decoration-thickness: 2px; }
+.about-details { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+.about-timeline { list-style: none; padding: 0 0 0 10px; margin: 24px 0 0; }
+.about-timeline li { position: relative; border-left: 2px solid var(--line-strong); padding: 0 0 28px 24px; }
+.about-timeline li:last-child { padding-bottom: 4px; border-left-color: transparent; }
+.about-timeline li::before { content: ''; position: absolute; width: 10px; height: 10px; left: -6px; top: 5px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.about-timeline time { display: block; font-size: .85rem; line-height: 1.6; margin-bottom: 6px; }
+.about-project dl { margin: 20px 0 0; }
+.about-project dl > div { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.about-project dd { margin: 0; padding: 4px 10px; border-radius: 8px; background: var(--accent-soft); font-weight: 750; }
+.about-project > p { font-size: .9rem; }
+.about-project > h3 { margin-top: 24px; }
+.about-footer { margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--line); }
+.about-footer nav { display: flex; gap: 24px; flex-wrap: wrap; }
+.about-footer p { margin: 16px 0 0; font-size: .85rem; }
+.about-public :is(a,button):focus-visible, .about-page a:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 4px; }
+@media (max-width: 640px) {
+  .about-public-header, .about-public .about-page { width: calc(100% - 24px); }
+  .about-team, .about-details { grid-template-columns: minmax(0,1fr); }
+  .about-details { gap: 0; }
+  .about-team > li { padding: 16px; gap: 12px; }
+  .about-card { padding: 24px 18px; }
+  .about-brand { font-size: .85rem; }
+}
