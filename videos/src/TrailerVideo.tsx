@@ -9,17 +9,17 @@ import { Scene3Features, SCENE3_FEATURES_DURATION } from "./scenes/Scene3Feature
 import { Scene5Outro } from "./scenes/Scene5Outro";
 
 const TRANSITION = 15;
-const SCENE_DURATIONS = [240, 200, 180, SCENE3_FEATURES_DURATION, 130];
+const SCENE_DURATIONS = [320, 250, 270, SCENE3_FEATURES_DURATION, 220];
 
 // Absolute frame windows (in the top-level composition timeline) where a
 // narration Audio is playing in one of the scenes above, so the background
 // music can duck under it. Kept in sync with each scene's own
 // NARRATION_START constant + its narration file's real duration.
 const NARRATION_WINDOWS: [number, number][] = [
-  [12, 214], // Scene1Intro: 01-problema.wav
-  [235, 397], // SceneSolutionReveal: 02-solucion.wav
-  [420, 557], // Scene2Problem: 03-gestion.wav
-  [1619, 1701], // Scene5Outro: 04-outro.wav
+  [12, 290], // Scene1Intro: 01-problema.wav
+  [315, 529], // SceneSolutionReveal: 02-solucion.wav
+  [550, 784], // Scene2Problem: 03-gestion.wav
+  [1839, 2010], // Scene5Outro: 04-outro.wav
 ];
 
 const MUSIC_VOLUME = 0.75;

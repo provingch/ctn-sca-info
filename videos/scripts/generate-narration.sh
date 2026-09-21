@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.."
 
 OUT=public/audio/narration
 VOICE="${VOICE:-Kore}"
-STYLE="Di con tono cálido, seguro y publicitario, a ritmo pausado:"
+STYLE="Di con tono cálido, seguro y publicitario, a ritmo ágil y natural, sin pausas largas:"
 
 tts() { python3 scripts/gemini_tts.py --voice "$VOICE" --style "$STYLE" --text "$2" --output "$OUT/$1"; }
 
@@ -22,7 +22,7 @@ tts 04-outro.wav "Instalalo como app, activá las notificaciones, y llevá el CT
 # Límite = frames que le quedan a la voz dentro de su escena (descontando la transición de salida, salvo el outro).
 echo
 echo "// NARRATION_WINDOWS (pegar en src/TrailerVideo.tsx):"
-for spec in "01-problema 0 12 213" "02-solucion 225 10 175" "03-gestion 410 10 155" "04-outro 1610 9 121"; do
+for spec in "01-problema 0 12 293" "02-solucion 305 10 225" "03-gestion 540 10 245" "04-outro 1830 9 211"; do
   read -r name start offset limit <<<"$spec"
   secs=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$OUT/$name.wav")
   frames=$(python3 -c "print(round($secs * 30))")
