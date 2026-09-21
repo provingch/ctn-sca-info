@@ -1,5 +1,5 @@
-import { Link, useLocation } from 'react-router-dom';
-import ThemeToggle from '../../components/ThemeToggle';
+import { useLocation } from 'react-router-dom';
+import InformationLayout from '../../components/InformationLayout';
 
 const privacy = [
   ['Datos que recopilamos', 'El sistema almacena datos de identificación, contacto y trayectoria académica necesarios para prestar el servicio.'],
@@ -15,6 +15,17 @@ const terms = [
   ['Modificaciones', 'Estas condiciones pueden actualizarse para reflejar cambios funcionales, normativos o de seguridad.'],
 ];
 export default function LegalPage() {
-  const isPrivacy = useLocation().pathname.includes('privacidad'); const sections = isPrivacy ? privacy : terms;
-  return <main className="legal-page"><div className="legal-toolbar"><Link to="/">← Volver al inicio</Link><ThemeToggle /></div><article><p className="eyebrow">SCA · Colegio Técnico Nacional</p><h1>{isPrivacy ? 'Política de Privacidad' : 'Condiciones del Servicio'}</h1><p className="lead">Última actualización: 10 de agosto de 2026</p>{sections.map(([title, copy], i) => <section key={title}><h2>{i + 1}. {title}</h2><p>{copy}</p></section>)}<hr/><Link to={isPrivacy ? '/terminos' : '/privacidad'}>{isPrivacy ? 'Ver Condiciones del Servicio' : 'Ver Política de Privacidad'}</Link></article></main>;
+  const isPrivacy = useLocation().pathname.includes('privacidad');
+  const sections = isPrivacy ? privacy : terms;
+  const anchor = (index: number) => `${isPrivacy ? 'privacidad' : 'terminos'}-seccion-${index + 1}`;
+  return <InformationLayout title={isPrivacy ? 'Privacidad' : 'Términos'} lead={isPrivacy ? 'Política de Privacidad' : 'Condiciones del Servicio'} reading introduction={<>
+    <p>Última actualización: <time dateTime="2026-08-10">10 de agosto de 2026</time></p>
+    {sections.length >= 4 && <nav aria-label="Índice de contenidos"><ul className="about-modules information-index">
+      {sections.map(([title], index) => <li key={title}><a href={`#${anchor(index)}`}>{title}</a></li>)}
+    </ul></nav>}
+  </>}>
+    {sections.map(([title, copy], index) => <section id={anchor(index)} className={title === 'Contacto' ? 'about-project' : undefined} aria-labelledby={`${anchor(index)}-title`} key={title}>
+      <h2 id={`${anchor(index)}-title`}>{title}</h2><p>{copy}</p>
+    </section>)}
+  </InformationLayout>;
 }

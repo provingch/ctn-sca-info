@@ -1,0 +1,13 @@
+/* Dimensions shared by About, Privacy and Terms. Theme colors/fonts are inherited
+   from index.css and the active specialty, rather than duplicated here. */
+:root {
+  --information-card-padding: clamp(24px, 4vw, 48px);
+  --information-card-padding-mobile: 24px 18px;
+  --information-accent-width: 4px;
+  --information-section-gap: 36px;
+  --information-page-gap: 32px;
+  --information-item-gap: 8px;
+  --information-chip-padding: 6px 12px;
+  --information-body-leading: 1.7;
+  --information-reading-width: 70ch;
+}

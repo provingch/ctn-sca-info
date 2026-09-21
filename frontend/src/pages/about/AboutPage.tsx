@@ -1,12 +1,4 @@
-import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import ThemeToggle from '../../components/ThemeToggle';
-import ScaLogo from '../../components/ScaLogo';
-import AppShell from '../../components/AppShell';
-import { useAuth } from '../../context/AuthContext';
-import { useSpecialty } from '../../context/SpecialtyContext';
-import { normalizeSpecialty } from '../../theme/theme';
-import './about.css';
+import InformationLayout from '../../components/InformationLayout';
 
 const team = [
   { user: '@provingch', name: 'Thiago Estigarribia', github: 'provingch' },
@@ -26,17 +18,10 @@ const repository = 'https://github.com/provingch/ctn-sca-info';
 
 /** Public credits, with the regular account navigation for signed-in users. */
 export default function AboutPage() {
-  const { user } = useAuth();
-  const { name } = useSpecialty();
-  useEffect(() => { document.title = 'Acerca de SCA | CTN'; }, []);
-  const content = <article className="about-card">
-    <header className="about-intro">
-      <p className="about-eyebrow">Colegio Técnico Nacional de Asunción</p>
-      <h1>Acerca de SCA</h1>
-      <p className="about-lead">Una plataforma para gestionar la vida académica del CTN.</p>
+  return <InformationLayout title="Acerca de SCA" lead="Una plataforma para gestionar la vida académica del CTN." introduction={<>
       <p>El Sistema de Carpeta Académica conecta a docentes, equipos de gestión y familias.</p>
       <ul className="about-modules" aria-label="Módulos del sistema">{modules.map((module) => <li key={module}>{module}</li>)}</ul>
-    </header>
+    </>}>
     <section aria-labelledby="about-team-title">
       <h2 id="about-team-title">Equipo</h2>
       <p>Las personas detrás del proyecto.</p>
@@ -64,17 +49,5 @@ export default function AboutPage() {
         <p>Encontrá al equipo en los perfiles de GitHub de esta página y consultá el código en el repositorio público.</p>
       </section>
     </div>
-    <footer className="about-footer">
-      <nav aria-label="Información legal"><Link to="/privacidad">Privacidad</Link><Link to="/terminos">Términos</Link></nav>
-      <p>© {new Date().getFullYear()} Colegio Técnico Nacional de Asunción.</p>
-    </footer>
-  </article>;
-  if (user) return <AppShell title="Acerca de SCA" hero={false}><div className="about-page">{content}</div></AppShell>;
-  return <div className="about-public" data-specialty={normalizeSpecialty(name || 'Informática')}>
-    <header className="about-public-header">
-      <Link to="/" className="about-brand"><ScaLogo /><span>Sistema de Carpeta Académica<small>Colegio Técnico Nacional de Asunción</small></span></Link>
-      <ThemeToggle compact />
-    </header>
-    <main className="about-page"><Link className="about-back" to="/">← Volver al inicio</Link>{content}</main>
-  </div>;
+  </InformationLayout>;
 }
