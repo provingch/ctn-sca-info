@@ -52,7 +52,7 @@ final class PlanillaDetailAssembler {
             new RegistroDao().ensureRegistroRowsForPlanilla(planilla.getId(), planilla.getCursoId());
         }
 
-        List<Tarea> tareas = filterTasksByEtapa(new TareaDao().consultarTarea(planilla.getId()), planilla.getEtapaIndex());
+        List<Tarea> tareas = filterTasksByEtapa(new TareaDao().consultarTarea(planilla.getId()), planilla);
         Map<Integer, Integer> tareaMax = new LinkedHashMap<>();
         int totalPossiblePoints = 0;
         LocalDate maxEnd = null;
@@ -156,14 +156,15 @@ final class PlanillaDetailAssembler {
                 Collections.emptyList());
     }
 
-    static List<Tarea> filterTasksByEtapa(List<Tarea> tareas, int planillaEtapaIndex) {
-        if (tareas == null || tareas.isEmpty() || (planillaEtapaIndex != 1 && planillaEtapaIndex != 2)) {
+    static List<Tarea> filterTasksByEtapa(List<Tarea> tareas, Planilla planilla) {
+        if (tareas == null || tareas.isEmpty()) {
             return tareas;
         }
 
+        int planillaEtapaIndex = planilla.getEtapaIndex();
         List<Tarea> filtered = new ArrayList<>();
         for (Tarea tarea : tareas) {
-            if (Tarea.resolveEtapaIndexByPublicationDate(tarea.getFecha()) == planillaEtapaIndex) {
+            if (planilla.sugerirEtapaParaTarea(tarea.getFecha()) == planillaEtapaIndex) {
                 filtered.add(tarea);
             }
         }

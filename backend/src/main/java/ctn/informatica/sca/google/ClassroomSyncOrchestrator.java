@@ -12,7 +12,6 @@ import ctn.informatica.sca.model.Curso;
 import ctn.informatica.sca.model.Planilla;
 import ctn.informatica.sca.model.Profesor;
 import ctn.informatica.sca.model.Tarea;
-import ctn.informatica.sca.util.AcademicPeriod;
 import com.google.api.services.classroom.model.Course;
 import com.google.api.services.classroom.model.CourseWork;
 import org.springframework.stereotype.Component;
@@ -227,7 +226,7 @@ public class ClassroomSyncOrchestrator {
                 LocalDate cwFecha = resolveCourseWorkDate(courseWork);
                 // Cada planilla es de una sola etapa: el courseWork de otra etapa no se importa ni se conserva.
                 // Al no entrar en seenGoogleIds, si ya estaba importado lo borra el bloque de huérfanas más abajo.
-                if (AcademicPeriod.etapaAt(cwFecha) != planilla.getEtapaIndex()) {
+                if (planilla.sugerirEtapaParaTarea(cwFecha) != planilla.getEtapaIndex()) {
                     continue;
                 }
                 seenGoogleIds.add(cwId);

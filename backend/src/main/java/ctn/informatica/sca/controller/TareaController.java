@@ -43,7 +43,7 @@ public class TareaController {
         int userId = ApiAuth.requireUserId(authentication);
         try {
             Planilla planilla = requireOwnedPlanilla(planillaId, userId);
-            List<Tarea> tareas = filterTasksByEtapa(new TareaDao().consultarTarea(planillaId), planilla.getEtapaIndex());
+            List<Tarea> tareas = filterTasksByEtapa(new TareaDao().consultarTarea(planillaId), planilla);
             List<TareaResponse> response = new ArrayList<>();
             for (Tarea tarea : tareas) {
                 response.add(toResponse(tarea, false, null));
@@ -175,14 +175,15 @@ public class TareaController {
         return planilla;
     }
 
-    private List<Tarea> filterTasksByEtapa(List<Tarea> tareas, int planillaEtapaIndex) {
-        if (tareas == null || tareas.isEmpty() || (planillaEtapaIndex != 1 && planillaEtapaIndex != 2)) {
+    private List<Tarea> filterTasksByEtapa(List<Tarea> tareas, Planilla planilla) {
+        if (tareas == null || tareas.isEmpty()) {
             return tareas;
         }
 
+        int planillaEtapaIndex = planilla.getEtapaIndex();
         List<Tarea> filtered = new ArrayList<>();
         for (Tarea tarea : tareas) {
-            if (Tarea.resolveEtapaIndexByPublicationDate(tarea.getFecha()) == planillaEtapaIndex) {
+            if (planilla.sugerirEtapaParaTarea(tarea.getFecha()) == planillaEtapaIndex) {
                 filtered.add(tarea);
             }
         }

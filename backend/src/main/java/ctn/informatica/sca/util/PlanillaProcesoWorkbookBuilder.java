@@ -494,7 +494,7 @@ public class PlanillaProcesoWorkbookBuilder {
                 if (signatureTemplateCell != null) break;
             }
         }
-        List<Tarea> tareasEtapa = filterTasksByEtapa(data.tareas(), data.planilla().getEtapaIndex());
+        List<Tarea> tareasEtapa = filterTasksByEtapa(data.tareas(), data.planilla());
         int currentTotalPossiblePoints = totalPossiblePoints(tareasEtapa);
         data.planilla().computeGradeRanges(currentTotalPossiblePoints);
 
@@ -1244,17 +1244,18 @@ public class PlanillaProcesoWorkbookBuilder {
         return grouped;
     }
 
-    public static List<Tarea> filterTasksByEtapa(List<Tarea> tareas, int planillaEtapaIndex) {
-        if (tareas == null || tareas.isEmpty() || (planillaEtapaIndex != 1 && planillaEtapaIndex != 2)) {
+    public static List<Tarea> filterTasksByEtapa(List<Tarea> tareas, Planilla planilla) {
+        if (tareas == null || tareas.isEmpty()) {
             return tareas == null ? List.of() : tareas;
         }
 
+        int planillaEtapaIndex = planilla.getEtapaIndex();
         List<Tarea> filtered = new ArrayList<>();
         for (Tarea tarea : tareas) {
             if (tarea == null || tarea.getFecha() == null) {
                 continue;
             }
-            if (Tarea.resolveEtapaIndexByPublicationDate(tarea.getFecha()) == planillaEtapaIndex) {
+            if (planilla.sugerirEtapaParaTarea(tarea.getFecha()) == planillaEtapaIndex) {
                 filtered.add(tarea);
             }
         }

@@ -975,6 +975,7 @@ class PlanillaProcesoWorkbookBuilderTest {
     @Test
     void monthSubtotalHeadersRemainInHeaderRow_whenMultipleMonthsExist() throws IOException {
         Planilla planilla = new Planilla(701, 1, 1, "comun", "Meses", 2026, "segunda", 7);
+        planilla.setFechaCierreEtapa1(LocalDate.of(2026, 6, 21));
         Tarea jul = new Tarea(); jul.setId(9001); jul.setFecha(LocalDate.of(2026, 7, 5)); jul.setTitulo("Jul"); jul.setTotal(10);
         Tarea ago = new Tarea(); ago.setId(9002); ago.setFecha(LocalDate.of(2026, 8, 5)); ago.setTitulo("Ago"); ago.setTotal(12);
         StudentRow s1 = new StudentRow(); s1.setAlumnoId(1); s1.setAlumnoNombre("A"); s1.setGrades(Map.of(9001,8,9002,9)); s1.setTotal(17);
@@ -1680,5 +1681,42 @@ class PlanillaProcesoWorkbookBuilderTest {
             String totalFormula = totalTp.getCellFormula();
             assertTrue(totalFormula.toUpperCase().contains("SUM("), "Total General TP debe usar SUM: " + totalFormula);
         }
+    }
+
+    private static Tarea tareaEn(LocalDate fecha) {
+        Tarea t = new Tarea();
+        t.setFecha(fecha);
+        return t;
+    }
+
+    @Test
+    void filterTasksByEtapa_sinCierreEtapa1_incluyeTareasPosterioresAl22deJunio() {
+        Planilla etapa1 = new Planilla();
+        etapa1.setEtapa("primera");
+        List<Tarea> tareas = List.of(tareaEn(LocalDate.of(2026, 3, 1)), tareaEn(LocalDate.of(2026, 9, 21)));
+
+        assertEquals(2, PlanillaProcesoWorkbookBuilder.filterTasksByEtapa(tareas, etapa1).size());
+
+        Planilla etapa2 = new Planilla();
+        etapa2.setEtapa("segunda");
+        assertTrue(PlanillaProcesoWorkbookBuilder.filterTasksByEtapa(tareas, etapa2).isEmpty());
+    }
+
+    @Test
+    void filterTasksByEtapa_conCierreEtapa1_separaPorFechaDeCierre() {
+        LocalDate cierre = LocalDate.of(2026, 6, 10);
+        Tarea antes = tareaEn(cierre);
+        Tarea despues = tareaEn(cierre.plusDays(1));
+        List<Tarea> tareas = List.of(antes, despues);
+
+        Planilla etapa1 = new Planilla();
+        etapa1.setEtapa("primera");
+        etapa1.setFechaCierreEtapa1(cierre);
+        Planilla etapa2 = new Planilla();
+        etapa2.setEtapa("segunda");
+        etapa2.setFechaCierreEtapa1(cierre);
+
+        assertEquals(List.of(antes), PlanillaProcesoWorkbookBuilder.filterTasksByEtapa(tareas, etapa1));
+        assertEquals(List.of(despues), PlanillaProcesoWorkbookBuilder.filterTasksByEtapa(tareas, etapa2));
     }
 }

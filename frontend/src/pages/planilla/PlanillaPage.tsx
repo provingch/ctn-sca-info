@@ -547,6 +547,13 @@ export default function PlanillaPage() {
             )}
           </div>
           <small>{data.tareas.length} {data.tareas.length === 1 ? 'tarea' : 'tareas'} en esta etapa</small>
+          {!data.planilla.fechaCierreEtapa1 && (
+            <p className="muted-copy" role="status">
+              {data.planilla.etapaIndex === 1
+                ? 'Todavía no se definió la fecha de cierre de Etapa 1: todas las tareas se muestran acá hasta entonces.'
+                : 'Etapa 2 todavía no tiene tareas propias: mientras Etapa 1 no tenga fecha de cierre, todo se muestra ahí.'}
+            </p>
+          )}
         </header>
       <div className={`table-wrap planilla-grade-table-wrap${freezeStudents ? ' freeze-students' : ''}`}>
         <table className="grade-table planilla-grade-table">

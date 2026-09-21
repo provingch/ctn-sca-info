@@ -188,4 +188,19 @@ public class PlanillaTest {
         assertEquals(10, p.computeRsaScore(0, 0));
         assertEquals(9, p.computeRsaScore(1, 0));
     }
+
+    @Test
+    public void sugerirEtapaParaTarea_sinCierre_siempreEtapa1() {
+        Planilla p = new Planilla();
+        assertEquals(1, p.sugerirEtapaParaTarea(java.time.LocalDate.of(2026, 9, 21)));
+    }
+
+    @Test
+    public void sugerirEtapaParaTarea_conCierre_separaPorFecha() {
+        Planilla p = new Planilla();
+        p.setFechaCierreEtapa1(java.time.LocalDate.of(2026, 6, 10));
+        assertEquals(1, p.sugerirEtapaParaTarea(java.time.LocalDate.of(2026, 6, 10)));
+        assertEquals(1, p.sugerirEtapaParaTarea(java.time.LocalDate.of(2026, 4, 1)));
+        assertEquals(2, p.sugerirEtapaParaTarea(java.time.LocalDate.of(2026, 6, 11)));
+    }
 }

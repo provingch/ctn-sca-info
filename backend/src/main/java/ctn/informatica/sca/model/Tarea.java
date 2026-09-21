@@ -4,7 +4,6 @@
  */
 package ctn.informatica.sca.model;
 
-import ctn.informatica.sca.util.AcademicPeriod;
 import java.time.LocalDate;
 
 /**
@@ -90,10 +89,6 @@ public class Tarea {
             sb.append("\nAbrir: ").append(googleCourseworkUrl);
         }
         return sb.toString();
-    }
-
-    public static int resolveEtapaIndexByPublicationDate(LocalDate publicationDate) {
-        return AcademicPeriod.etapaAt(publicationDate);
     }
 
     public void setId(int id) {

@@ -34,7 +34,7 @@ import org.mockito.ArgumentCaptor;
 
 /**
  * Cada planilla es de una sola etapa: el sync sólo importa/conserva los courseWork cuya fecha cae en esa etapa
- * (corte 22/06) y borra —por el camino de huérfanas— los que ya estaban importados de la otra.
+ * (según el cierre de Etapa 1 de la planilla; acá el 21/06, así el corte es el 22/06) y borra —por el camino de huérfanas— los que ya estaban importados de la otra.
  */
 class ClassroomSyncOrchestratorEtapaFilterTest {
 
@@ -67,6 +67,7 @@ class ClassroomSyncOrchestratorEtapaFilterTest {
         p.setId(id);
         p.setCursoId(7);
         p.setEtapa(etapa);
+        p.setFechaCierreEtapa1(LocalDate.of(2026, 6, 21));
         return p;
     }
 
@@ -175,5 +176,17 @@ class ClassroomSyncOrchestratorEtapaFilterTest {
 
         verify(tareaDao).delete(905);
         verify(tareaDao, never()).insertarTarea(any());
+    }
+
+    @Test
+    void sinCierreDeEtapa1TodoSeImportaEnLaPrimera() throws Exception {
+        classroomTiene(courseWork("cw-marzo", 2026, 3, 10), courseWork("cw-agosto", 2026, 8, 5));
+        when(tareaDao.consultarTarea(10)).thenReturn(new ArrayList<>());
+        Planilla sinCierre = planilla(10, "primera");
+        sinCierre.setFechaCierreEtapa1(null);
+
+        orchestrator.syncPlanillaWithClassroom(profesor, sinCierre);
+
+        assertEquals(List.of("cw-marzo", "cw-agosto"), titulosInsertados(2));
     }
 }

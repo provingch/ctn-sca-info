@@ -47,11 +47,10 @@ public class EvaluacionExportController {
             EvaluacionPlanillaSelector.Selection selection = EvaluacionPlanillaSelector.select(
                     planillaDao, new CursoDao(), new EspecialidadDao(), cursoId, etapa, periodo, materiaId);
             Curso curso = selection.curso();
-            int etapaIndex = EvaluacionPlanillaSelector.etapaIndex(etapa);
             List<PlanillaProcesoWorkbookBuilder.PlanillaSheetData> sheets = new ArrayList<>();
             for (EvaluacionPlanillaSelector.Match match : selection.matches()) {
                 Planilla planilla = match.planilla();
-                List<Tarea> tareas = PlanillaProcesoWorkbookBuilder.filterTasksByEtapa(new TareaDao().consultarTarea(planilla.getId()), etapaIndex);
+                List<Tarea> tareas = PlanillaProcesoWorkbookBuilder.filterTasksByEtapa(new TareaDao().consultarTarea(planilla.getId()), planilla);
                 Map<Integer, Integer> maxima = new HashMap<>(); int total = 0;
                 for (Tarea tarea : tareas) { maxima.put(tarea.getId(), tarea.getTotal()); total += tarea.getTotal(); }
                 planilla.computeGradeRanges(total);
@@ -88,7 +87,7 @@ public class EvaluacionExportController {
         if (current.getEtapaIndex() != 2) return Map.of();
         Planilla first = dao.findByCompositeKey(current.getCursoId(), current.getMateriaId(), 1);
         if (first == null) return Map.of();
-        List<Tarea> tareas = PlanillaProcesoWorkbookBuilder.filterTasksByEtapa(new TareaDao().consultarTarea(first.getId()), 1);
+        List<Tarea> tareas = PlanillaProcesoWorkbookBuilder.filterTasksByEtapa(new TareaDao().consultarTarea(first.getId()), first);
         Map<Integer, Integer> maxima = new HashMap<>(); int total = 0;
         for (Tarea tarea : tareas) { maxima.put(tarea.getId(), tarea.getTotal()); total += tarea.getTotal(); }
         first.computeGradeRanges(total);
