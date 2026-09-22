@@ -5,7 +5,7 @@ import SpecialtyIcon from '../../components/SpecialtyIcon';
 import { normalizeSpecialty } from '../../theme/theme';
 import { ApiError } from '../../api/client';
 import type { AdminCatalog } from '../../api/admin';
-import { createQueja, getAdminQuejas, quejaEstado, type QuejaItem } from '../../api/quejas';
+import { createQuejaContraProfesor, getAdminQuejas, quejaEstado, type QuejaItem } from '../../api/quejas';
 import { formatSqlDateTime } from '../../utils/date';
 import { nombreCorto } from '../../utils/nombre';
 import { normalizarTexto as normalize } from '../../utils/texto';
@@ -66,7 +66,7 @@ export default function AdminQuejasPanel({ data, status, isGlobalAdmin }: { data
     submitting.current = true;
     setSaving(true);
     try {
-      await createQueja({ cursoId: Number(cursoId), profesorId: Number(profesorId), motivo: motivo.trim() });
+      await createQuejaContraProfesor({ cursoId: Number(cursoId), profesorId: Number(profesorId), motivo: motivo.trim() });
     } catch (err) {
       setFormError(err instanceof ApiError ? err.message : 'No se pudo registrar la queja. Los datos se conservaron para reintentar.');
       submitting.current = false;
@@ -152,6 +152,7 @@ export default function AdminQuejasPanel({ data, status, isGlobalAdmin }: { data
       {lista !== null && lista.length > 0 && <FiltersToolbar ariaLabel="Filtros del historial de quejas" mostrando={filtered.length} total={lista.length} unidad="registros" activo={hayFiltroQuejas(filtro)} onLimpiar={() => cambiarFiltro(SIN_FILTRO_QUEJAS)}>
         <FilterField label="Buscar en las quejas"><input type="search" placeholder="Profesor, curso, especialidad o motivo" value={filtro.busqueda} onChange={(e) => cambiarFiltro({ busqueda: e.target.value })} /></FilterField>
         <FilterField label="Estado" narrow><AnimatedSelect ariaLabel="Estado de la queja" value={filtro.estado} onChange={(estado) => cambiarFiltro({ estado: estado as FiltroQuejas['estado'] })} options={[{ value: '', label: 'Todos los estados' }, ...Object.entries(estadoLabel).map(([value, label]) => ({ value, label }))]} /></FilterField>
+        <FilterField label="Tipo" narrow><AnimatedSelect ariaLabel="Tipo de queja" value={filtro.tipo} onChange={(tipo) => cambiarFiltro({ tipo: tipo as FiltroQuejas['tipo'] })} options={[{ value: '', label: 'Todos los tipos' }, { value: 'CONTRA_PROFESOR', label: 'Contra un profesor' }, { value: 'CONTRA_CURSO', label: 'De un profesor sobre un curso' }]} /></FilterField>
         <FilterField label="Desde" narrow><DatePicker ariaLabel="Quejas desde" value={filtro.desde} invalid={rangoDeFechasInvalido(filtro.desde, filtro.hasta)} onChange={(desde) => cambiarFiltro({ desde })} /></FilterField>
         <FilterField label="Hasta" narrow><DatePicker ariaLabel="Quejas hasta" value={filtro.hasta} invalid={rangoDeFechasInvalido(filtro.desde, filtro.hasta)} onChange={(hasta) => cambiarFiltro({ hasta })} /></FilterField>
         {rangoDeFechasInvalido(filtro.desde, filtro.hasta) && <p className="filters-error" role="alert">La fecha “Desde” es posterior a “Hasta”: no hay quejas en ese rango.</p>}
@@ -174,7 +175,9 @@ export default function AdminQuejasPanel({ data, status, isGlobalAdmin }: { data
           <div id={panelId} role="region" aria-labelledby={`${panelId}-heading`} hidden={!expanded}>
       <ul className="complaints-list">{group.items.map((q) => <li key={q.id}>
         <article className="complaint-record">
-          <div className="complaint-record-heading"><h4>{nombreCorto(q.profesorNombre, q.profesorApellido) || ('Profesor #' + q.profesorId)}</h4><span className="complaint-reference">Registro #{q.id}</span></div>
+          <div className="complaint-record-heading"><h4>{q.tipo === 'CONTRA_CURSO'
+            ? `Reporte de ${nombreCorto(q.profesorNombre, q.profesorApellido) || ('Profesor #' + q.profesorId)} sobre su curso`
+            : (nombreCorto(q.profesorNombre, q.profesorApellido) || ('Profesor #' + q.profesorId))}</h4><span className="complaint-reference">Registro #{q.id}</span></div>
           <span className={`complaint-status ${quejaEstado(q)}`}>{estadoLabel[quejaEstado(q)]}</span>
           <p className="complaint-course">{[q.cursoEspecialidad, q.cursoNivel ? q.cursoNivel + '°' : null, q.cursoSeccion ? 'Sección ' + q.cursoSeccion : null].filter(Boolean).join(' · ') || ('Curso #' + q.cursoId)}</p>
           <p className="complaint-reason">{q.motivo}</p>

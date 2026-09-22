@@ -3,7 +3,7 @@ import { expect, it } from 'vitest';
 import ComplaintGroups from './ComplaintGroups';
 import type { QuejaItem } from '../../api/quejas';
 
-const item = (id: number, estado: QuejaItem['estado'], especialidadId = 1): QuejaItem => ({ id, estado, especialidadId, profesorId: 8, cursoId: 4, motivo: `Queja ${id}`, creadaPor: 1, creadaEn: `2026-09-${id < 10 ? '0' : ''}${id}T10:00:00` });
+const item = (id: number, estado: QuejaItem['estado'], especialidadId = 1): QuejaItem => ({ id, estado, especialidadId, tipo: 'CONTRA_PROFESOR', profesorId: 8, cursoId: 4, motivo: `Queja ${id}`, creadaPor: 1, creadaEn: `2026-09-${id < 10 ? '0' : ''}${id}T10:00:00` });
 const specialtyName = (q: QuejaItem) => q.especialidadId === 1 ? 'Informática' : 'Electricidad';
 const list = (items: QuejaItem[]) => <ul>{items.map(q => <li key={q.id}><button>{q.motivo}</button></li>)}</ul>;
 

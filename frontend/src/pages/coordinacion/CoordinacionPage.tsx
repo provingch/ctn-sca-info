@@ -80,6 +80,8 @@ export default function CoordinacionPage() {
   const [usuariosPorId, setUsuariosPorId] = useState<Map<number, string>>(new Map());
   const [especialidadesPorId, setEspecialidadesPorId] = useState<Map<number, string>>(new Map());
   const [selectedProfesorId, setSelectedProfesorId] = useState<number | null>(null);
+  const [selectedCursoId, setSelectedCursoId] = useState<number | null>(null);
+  const [direccion, setDireccion] = useState<'contra_profesor' | 'sobre_curso'>('contra_profesor');
   const UMBRAL = 5; // valor visual por defecto si backend no expone el umbral
 
   useEffect(() => {
@@ -111,24 +113,46 @@ export default function CoordinacionPage() {
     setQuejas((current) => current.map((item) => item.id === id ? { ...item, ...changes } : item));
   }
 
+  const quejasFiltradas = useMemo(
+    () => quejas.filter((q) => (direccion === 'contra_profesor' ? q.tipo !== 'CONTRA_CURSO' : q.tipo === 'CONTRA_CURSO')),
+    [quejas, direccion],
+  );
+
   const agrupadas = useMemo(() => {
-    const map = new Map<number, { profesorNombre: string; profesorApellido?: string | null; nombreVisible: string; count: number; quejas: QuejaItem[] }>();
-    quejas.forEach((q) => {
-      const pid = q.profesorId;
-      const cur = map.get(pid) ?? { profesorNombre: q.profesorNombre ?? `Profesor #${pid}`, profesorApellido: q.profesorApellido ?? '', nombreVisible: nombreCorto(q.profesorNombre, q.profesorApellido) || `Profesor #${pid}`, count: 0, quejas: [] };
+    if (direccion === 'contra_profesor') {
+      const map = new Map<number, { profesorNombre: string; profesorApellido?: string | null; nombreVisible: string; count: number; quejas: QuejaItem[] }>();
+      quejasFiltradas.forEach((q) => {
+        const pid = q.profesorId;
+        const cur = map.get(pid) ?? { profesorNombre: q.profesorNombre ?? `Profesor #${pid}`, profesorApellido: q.profesorApellido ?? '', nombreVisible: nombreCorto(q.profesorNombre, q.profesorApellido) || `Profesor #${pid}`, count: 0, quejas: [] };
+        cur.count += 1;
+        cur.quejas.push(q);
+        map.set(pid, cur);
+      });
+      return Array.from(map.entries()).map(([profesorId, data]) => ({ key: profesorId, profesorId, ...data })).sort((a, b) => b.count - a.count);
+    }
+    // Sobre curso: agrupar por curso_id (el objetivo del reporte), mostrando quién lo cargó en cada item.
+    const map = new Map<number, { nombreVisible: string; count: number; quejas: QuejaItem[] }>();
+    quejasFiltradas.forEach((q) => {
+      const cid = q.cursoId;
+      const nombre = [q.cursoEspecialidad, q.cursoNivel ? q.cursoNivel + '°' : null, q.cursoSeccion].filter(Boolean).join(' · ') || `Curso #${cid}`;
+      const cur = map.get(cid) ?? { nombreVisible: nombre, count: 0, quejas: [] };
       cur.count += 1;
       cur.quejas.push(q);
-      map.set(pid, cur);
+      map.set(cid, cur);
     });
-    return Array.from(map.entries()).map(([profesorId, data]) => ({ profesorId, ...data })).sort((a, b) => b.count - a.count);
-  }, [quejas]);
+    return Array.from(map.entries()).map(([cursoId, data]) => ({ key: cursoId, cursoId, ...data })).sort((a, b) => b.count - a.count);
+  }, [quejasFiltradas, direccion]);
 
-  function openDetalle(profesorId: number) {
-    setSelectedProfesorId(profesorId);
+  function openDetalle(key: number) {
+    if (direccion === 'contra_profesor') setSelectedProfesorId(key);
+    else setSelectedCursoId(key);
     setView('detalle');
   }
 
-  const detalleQuejas = selectedProfesorId ? agrupadas.find((g) => g.profesorId === selectedProfesorId)?.quejas ?? [] : [];
+  const grupoSeleccionado = direccion === 'contra_profesor'
+    ? agrupadas.find((g) => 'profesorId' in g && g.profesorId === selectedProfesorId)
+    : agrupadas.find((g) => 'cursoId' in g && g.cursoId === selectedCursoId);
+  const detalleQuejas = grupoSeleccionado?.quejas ?? [];
 
   const navigation = <SectionNavigation label="Apartados de coordinación" active={view === 'detalle' ? 'quejas' : view} sections={[
     { key: 'quejas', label: 'Quejas por profesor', onSelect: () => changeView('quejas') },
@@ -145,22 +169,26 @@ export default function CoordinacionPage() {
   }
 
   if (view === 'quejas') {
-    return <AppShell title="Quejas por Profesor" onBack={() => changeView('menu')} backLabel="Coordinación" navigation={navigation}>
+    return <AppShell title="Quejas" onBack={() => changeView('menu')} backLabel="Coordinación" navigation={navigation}>
       {status && <div className="notice error" role="alert">{status}</div>}
-      {quejas.length === 0 ? (
+      <div className="complaint-state-filters" role="group" aria-label="Dirección de las quejas">
+        <button type="button" className={`button ${direccion === 'contra_profesor' ? '' : 'secondary'}`} aria-pressed={direccion === 'contra_profesor'} onClick={() => setDireccion('contra_profesor')}>Contra profesores</button>
+        <button type="button" className={`button ${direccion === 'sobre_curso' ? '' : 'secondary'}`} aria-pressed={direccion === 'sobre_curso'} onClick={() => setDireccion('sobre_curso')}>Sobre cursos</button>
+      </div>
+      {agrupadas.length === 0 ? (
         <ContentState title="No hay quejas" detail="No se registraron quejas en este alcance." tone="empty" />
       ) : (
         <section>
           <div className="card-grid">
             {agrupadas.map((g) => (
               <button
-                key={g.profesorId}
+                key={g.key}
                 type="button"
                 className={`nav-card${g.count > UMBRAL ? ' flagged' : ''}`}
-                onClick={() => openDetalle(g.profesorId)}
+                onClick={() => openDetalle(g.key)}
               >
                 <div className="activity-row activity-row--card">
-                  <div className="avatar">{(g.profesorNombre || 'P').slice(0, 1)}</div>
+                  <div className="avatar">{g.nombreVisible.slice(0, 1)}</div>
                   <div className="activity-row-body">
                     <h2>{g.nombreVisible}</h2>
                     <p className="activity-row-summary">Última: {g.quejas[0]?.motivo ?? '-'}</p>
@@ -186,14 +214,14 @@ export default function CoordinacionPage() {
       <header className="planilla-table-heading">
         <div>
           <span>Detalle</span>
-          <h2>Quejas de {agrupadas.find(g => g.profesorId === selectedProfesorId)?.nombreVisible ?? 'este profesor'}</h2>
+          <h2>Quejas de {grupoSeleccionado?.nombreVisible ?? (direccion === 'contra_profesor' ? 'este profesor' : 'este curso')}</h2>
         </div>
         <small className="muted-copy">{detalleQuejas.length} queja(s) registrada(s)</small>
       </header>
       {detalleQuejas.length === 0 ? (
-        <ContentState title="Sin quejas" detail="No se encontraron quejas para este profesor." tone="empty" />
+        <ContentState title="Sin quejas" detail="No se encontraron quejas para este alcance." tone="empty" />
       ) : (
-        <ComplaintGroups key={selectedProfesorId} quejas={detalleQuejas} specialtyName={q => especialidadesPorId.get(q.especialidadId) || q.cursoEspecialidad?.trim() || 'Especialidad no disponible'}>{items => <ul className="activity-list">
+        <ComplaintGroups key={grupoSeleccionado?.key} quejas={detalleQuejas} specialtyName={q => especialidadesPorId.get(q.especialidadId) || q.cursoEspecialidad?.trim() || 'Especialidad no disponible'}>{items => <ul className="activity-list">
           {items.map((q) => {
             const estado = quejaEstado(q);
             return <li key={q.id} className="activity-row">

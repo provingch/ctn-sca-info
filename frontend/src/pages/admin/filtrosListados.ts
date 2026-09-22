@@ -8,15 +8,17 @@ export interface FiltroQuejas {
   busqueda: string;
   /** '' = todos */
   estado: '' | EstadoQueja;
+  /** '' = todos */
+  tipo: '' | 'CONTRA_PROFESOR' | 'CONTRA_CURSO';
   /** Fecha de registro de la queja, YYYY-MM-DD; vacío = sin límite */
   desde: string;
   hasta: string;
 }
 
-export const SIN_FILTRO_QUEJAS: FiltroQuejas = { busqueda: '', estado: '', desde: '', hasta: '' };
+export const SIN_FILTRO_QUEJAS: FiltroQuejas = { busqueda: '', estado: '', tipo: '', desde: '', hasta: '' };
 
 export function hayFiltroQuejas(filtro: FiltroQuejas): boolean {
-  return Boolean(filtro.busqueda.trim() || filtro.estado || filtro.desde || filtro.hasta);
+  return Boolean(filtro.busqueda.trim() || filtro.estado || filtro.tipo || filtro.desde || filtro.hasta);
 }
 
 export function rangoDeFechasInvalido(desde: string, hasta: string): boolean {
@@ -28,6 +30,7 @@ export function filtrarQuejas(quejas: QuejaItem[], filtro: FiltroQuejas, textoDe
   if (rangoDeFechasInvalido(filtro.desde, filtro.hasta)) return [];
   return quejas.filter((queja) => {
     if (filtro.estado && quejaEstado(queja) !== filtro.estado) return false;
+    if (filtro.tipo && queja.tipo !== filtro.tipo) return false;
     if (filtro.desde || filtro.hasta) {
       const fecha = queja.creadaEn?.slice(0, 10);
       if (!fecha) return false;

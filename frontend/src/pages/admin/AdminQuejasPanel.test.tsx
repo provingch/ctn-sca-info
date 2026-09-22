@@ -1,10 +1,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AdminCatalog } from '../../api/admin';
-import { createQueja, getAdminQuejas } from '../../api/quejas';
+import { createQuejaContraProfesor, getAdminQuejas } from '../../api/quejas';
 import AdminQuejasPanel from './AdminQuejasPanel';
 
-vi.mock('../../api/quejas', async (importOriginal) => ({ ...await importOriginal<typeof import('../../api/quejas')>(), createQueja: vi.fn(), getAdminQuejas: vi.fn() }));
+vi.mock('../../api/quejas', async (importOriginal) => ({ ...await importOriginal<typeof import('../../api/quejas')>(), createQuejaContraProfesor: vi.fn(), getAdminQuejas: vi.fn() }));
 const data: AdminCatalog = {
   materias: [], alumnos: [], cursosAlumnos: [], egresados: [],
   usuarios: [{ id: 9, nombre: 'Admin', apellido: 'Global', usuario: 'admin', nivel: 3, correo: null }, { id: 11, nombre: 'Coordinadora', apellido: 'Pedagógica', usuario: 'coord', nivel: 5, correo: null }],
@@ -15,7 +15,7 @@ const data: AdminCatalog = {
     { id: 2, profesorId: 7, cursoId: 13, profesor: 'Ana Pérez', materiaId: 2, materia: 'Taller', curso: '2 A' },
   ],
 };
-const item = { id: 42, profesorId: 7, profesorNombre: 'Ana', profesorApellido: 'Pérez', cursoId: 13, especialidadId: 21, cursoEspecialidad: 'Informática', cursoNivel: 2, cursoSeccion: 'A', motivo: 'No responde a las consultas sobre las actividades.', creadaPor: 9, creadaEn: '2026-09-08T10:00:00' };
+const item = { id: 42, profesorId: 7, profesorNombre: 'Ana', profesorApellido: 'Pérez', cursoId: 13, especialidadId: 21, tipo: 'CONTRA_PROFESOR' as const, cursoEspecialidad: 'Informática', cursoNivel: 2, cursoSeccion: 'A', motivo: 'No responde a las consultas sobre las actividades.', creadaPor: 9, creadaEn: '2026-09-08T10:00:00' };
 function choose(name: string, option: string) {
   fireEvent.click(screen.getByRole('button', { name }));
   fireEvent.click(screen.getByRole('option', { name: option }));
@@ -28,7 +28,7 @@ function fill() {
 beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(getAdminQuejas).mockResolvedValue([]);
-  vi.mocked(createQueja).mockResolvedValue(undefined);
+  vi.mocked(createQuejaContraProfesor).mockResolvedValue(undefined);
 });
 
 describe('AdminQuejasPanel', () => {
@@ -153,15 +153,15 @@ describe('AdminQuejasPanel', () => {
     const status = vi.fn();
     vi.mocked(getAdminQuejas).mockResolvedValueOnce([]).mockRejectedValueOnce(new Error('Sin conexión'));
     let resolve!: () => void;
-    vi.mocked(createQueja).mockReturnValue(new Promise<void>((done) => { resolve = done; }));
+    vi.mocked(createQuejaContraProfesor).mockReturnValue(new Promise<void>((done) => { resolve = done; }));
     render(<AdminQuejasPanel data={data} status={status} isGlobalAdmin />);
     await screen.findByText('Todavía no hay quejas registradas');
     fill();
     const button = screen.getByRole('button', { name: 'Registrar queja' });
     fireEvent.click(button);
     fireEvent.click(button);
-    expect(createQueja).toHaveBeenCalledTimes(1);
-    expect(createQueja).toHaveBeenCalledWith({ cursoId: 13, profesorId: 7, motivo: 'Motivo válido' });
+    expect(createQuejaContraProfesor).toHaveBeenCalledTimes(1);
+    expect(createQuejaContraProfesor).toHaveBeenCalledWith({ cursoId: 13, profesorId: 7, motivo: 'Motivo válido' });
     resolve();
     await waitFor(() => expect(status).toHaveBeenCalledWith('Queja registrada.'));
     expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo actualizar el historial');
@@ -169,7 +169,7 @@ describe('AdminQuejasPanel', () => {
   });
 
   it('conserva los datos si falla el registro', async () => {
-    vi.mocked(createQueja).mockRejectedValue(new Error('Error'));
+    vi.mocked(createQuejaContraProfesor).mockRejectedValue(new Error('Error'));
     render(<AdminQuejasPanel data={data} status={vi.fn()} isGlobalAdmin={false} />);
     await screen.findByText('Todavía no hay quejas registradas');
     fill();

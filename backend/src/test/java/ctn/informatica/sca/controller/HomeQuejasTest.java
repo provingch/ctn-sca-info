@@ -35,19 +35,19 @@ class HomeQuejasTest {
         when(profesores.findById(9)).thenReturn(admin);
         when(cursos.findEspecialidadId(13)).thenReturn(21);
         when(asignaciones.findByProfesorAndCurso(7, 13)).thenReturn(List.of(new Asignacion(1, 7, 2, 13)));
-        when(quejas.crear(7, 13, 21, "Motivo", 9)).thenReturn(42);
+        when(quejas.crear(7, 13, 21, "CONTRA_PROFESOR", "Motivo", 9)).thenReturn(42);
     }
 
     @Test
     void derivaEspecialidadDelCursoAunqueElClienteEnvieOtra() throws Exception {
         controller.registrarQueja(Map.of("cursoId", 13, "profesorId", 7, "especialidadId", 999, "motivo", "  Motivo  "), auth);
-        verify(quejas).crear(7, 13, 21, "Motivo", 9);
+        verify(quejas).crear(7, 13, 21, "CONTRA_PROFESOR", "Motivo", 9);
     }
 
     @Test
     void permiteRegistrarSinEspecialidadEnElPayload() throws Exception {
         controller.registrarQueja(payload("Motivo"), auth);
-        verify(quejas).crear(7, 13, 21, "Motivo", 9);
+        verify(quejas).crear(7, 13, 21, "CONTRA_PROFESOR", "Motivo", 9);
     }
 
     @Test
@@ -80,7 +80,42 @@ class HomeQuejasTest {
     void falloDeNotificacionNoInformaFalloDeRegistro() throws Exception {
         when(quejas.contarPorProfesor(7)).thenThrow(new SQLException("Notificación no disponible"));
         assertDoesNotThrow(() -> controller.registrarQueja(payload("Motivo"), auth));
-        verify(quejas, times(1)).crear(7, 13, 21, "Motivo", 9);
+        verify(quejas, times(1)).crear(7, 13, 21, "CONTRA_PROFESOR", "Motivo", 9);
+    }
+
+    @Test
+    void profesorPuedeRegistrarQuejaContraCursoPropio() throws Exception {
+        Authentication authProfesor = new UsernamePasswordAuthenticationToken(7, null);
+        when(usuarios.findById(7)).thenReturn(new User(7, "profe", "Profe", 1));
+        when(quejas.crear(7, 13, 21, "CONTRA_CURSO", "Motivo", 7)).thenReturn(44);
+
+        controller.registrarQueja(Map.of("cursoId", 13, "motivo", "Motivo"), authProfesor);
+
+        verify(quejas).crear(7, 13, 21, "CONTRA_CURSO", "Motivo", 7);
+    }
+
+    @Test
+    void profesorNoPuedeSuplantarOtroProfesorAlRegistrarContraCurso() throws Exception {
+        Authentication authProfesor = new UsernamePasswordAuthenticationToken(7, null);
+        when(usuarios.findById(7)).thenReturn(new User(7, "profe", "Profe", 1));
+        when(quejas.crear(7, 13, 21, "CONTRA_CURSO", "Motivo", 7)).thenReturn(44);
+
+        // El payload intenta suplantar a otro profesor (99): el controlador lo ignora y usa el propio id (7).
+        controller.registrarQueja(Map.of("cursoId", 13, "profesorId", 99, "motivo", "Motivo"), authProfesor);
+
+        verify(quejas).crear(7, 13, 21, "CONTRA_CURSO", "Motivo", 7);
+        verify(quejas, never()).crear(eq(99), anyInt(), anyInt(), anyString(), anyString(), anyInt());
+    }
+
+    @Test
+    void profesorNoPuedeRegistrarQuejaSobreCursoAlQueNoEstaAsignado() throws Exception {
+        Authentication authProfesor = new UsernamePasswordAuthenticationToken(7, null);
+        when(usuarios.findById(7)).thenReturn(new User(7, "profe", "Profe", 1));
+        when(asignaciones.findByProfesorAndCurso(7, 13)).thenReturn(List.of());
+
+        var error = assertThrows(ResponseStatusException.class,
+                () -> controller.registrarQueja(Map.of("cursoId", 13, "motivo", "Motivo"), authProfesor));
+        assertEquals(400, error.getStatusCode().value());
     }
 
     private Map<String, Object> payload(String motivo) {

@@ -17,6 +17,7 @@ import { useSpecialty } from '../../context/SpecialtyContext';
 import PlanCurricularView from './PlanCurricularView';
 import MisClasesView from './MisClasesView';
 import RsaView from './RsaView';
+import QuejaCursoView from './QuejaCursoView';
 import { useAuth } from '../../context/AuthContext';
 import { classEndTime, HORARIOS_CATEDRA } from './classFormUtils';
 import { resizeImageToDataUri } from '../../utils/imageResize';
@@ -306,6 +307,8 @@ export default function HomePage() {
             <MisClasesView />
           ) : subview === 'rsa' ? (
             <RsaView />
+          ) : subview === 'quejas' ? (
+            <QuejaCursoView />
           ) : selectionLoading ? (
             <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Cargando…</h2><p>Esperá un momento mientras preparamos la clase.</p></section>
           ) : showSelectionWait ? (
@@ -533,6 +536,7 @@ const CATEDRA_TABS = [
   { key: 'plan-curricular', label: 'Plan curricular' },
   { key: 'mis-clases', label: 'Clases dadas' },
   { key: 'rsa', label: 'RSA' },
+  { key: 'quejas', label: 'Quejas' },
 ] as const;
 
 function CatedraTabs({ subview, params }: { subview: string; params: (next: Record<string, string>) => void }) {

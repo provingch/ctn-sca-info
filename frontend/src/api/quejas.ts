@@ -10,6 +10,7 @@ export interface QuejaItem {
   cursoSeccion?: string | null;
   cursoNivel?: number | null;
   especialidadId: number;
+  tipo: 'CONTRA_PROFESOR' | 'CONTRA_CURSO';
   motivo: string;
   creadaPor: number;
   creadaEn: string;
@@ -59,7 +60,11 @@ export const quejaEstado = (queja: QuejaItem): 'pendiente' | 'aceptada' | 'revis
 export const isQuejaReviewed = (queja: QuejaItem) => quejaEstado(queja) === 'revisada' || quejaEstado(queja) === 'resuelta';
 
 export const getAdminQuejas = () => api.get<QuejaItem[]>('/api/admin/quejas');
-export const createQueja = (payload: { profesorId: number; cursoId: number; motivo: string }) => api.post<void>('/api/home/quejas', payload);
+export const getMisQuejas = () => api.get<QuejaItem[]>('/api/home/quejas');
+export const createQuejaContraProfesor = (payload: { profesorId: number; cursoId: number; motivo: string }) =>
+  api.post<void>('/api/home/quejas', payload);
+export const createQuejaSobreCurso = (payload: { cursoId: number; motivo: string }) =>
+  api.post<void>('/api/home/quejas', payload);
 export const acceptQueja = (id: number) => api.put<QuejaAceptacion>(`/api/admin/quejas/${id}/aceptacion`);
 export const rejectQueja = (id: number, motivoRechazo: string) => api.put<QuejaRechazo>(`/api/admin/quejas/${id}/rechazo`, { motivoRechazo });
 export const reviewQueja = (id: number, conclusion: string) => api.put<QuejaRevision>(`/api/admin/quejas/${id}/revision`, { conclusion });
