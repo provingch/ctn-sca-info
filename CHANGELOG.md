@@ -1,10 +1,63 @@
-
 # Registro de Cambios
 
 Todos los cambios notables de este proyecto serán documentados en este archivo.
 
 El formato se basa en [Mantener un Registro de Cambios](https://keepachangelog.com/es/1.0.0/),
 y este proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.0.0.html).
+
+## [3.0.0] - 2026-09-21
+
+### Añadido
+
+- **App nativa de Android para padres/encargados** (Kotlin + Jetpack Compose): login con 2FA, resumen académico, tareas agrupadas por mes, notas de conducta, reportes PDF mensual y libreta final, notificaciones push (Firebase Cloud Messaging) y los mismos filtros de búsqueda, mes y conducta que la versión web.
+- **Nueva identidad visual de SCA**: logo con gorro de graduación, aplicado de forma consistente en la web, la app Android y el favicon.
+- **Página pública "Acerca de"**: créditos del proyecto y fecha de inicio, accesible desde el menú de perfil y el pie de página, con el año actualizado de forma automática.
+- **Video institucional del proyecto**: trailer producido con Remotion, con mockups animados de cada vista del sistema, narración por voz sintética y banda sonora propia.
+- **Ciclo completo de revisión de quejas por Coordinación Pedagógica**: aceptar o rechazar una queja y resolverla con una conclusión documentada (antes solo se visualizaban), además de agrupación de quejas por especialidad en secciones desplegables.
+- **Catálogo de códigos de conducta**: alta y edición administrada por Coordinación Pedagógica (con validación para evitar duplicados), asignados a cada alumno como una grilla de chips desde la propia clase.
+- **RSA (Rasgos Socioacadémicos)**: puntaje opcional por planilla que amplía su total de puntos y descuenta según la tolerancia configurada y las faltas de conducta registradas en la etapa.
+- **Reapertura de una etapa de planilla ya cerrada**, con motivo obligatorio, disponible para evaluación y administración.
+- **Vista "Ver planillas" de evaluación en modo solo lectura**, con descarga autenticada de los archivos originales.
+- **Revisión individual de cada atraso justificado** por parte de evaluación, en lugar del conteo automático hacia el incumplimiento.
+- **Plan curricular**: modal de configuración previa a la descarga de la plantilla, firma del profesor y del evaluador al aprobar, acordeón de temas por mes en el detalle del plan, y generación del Excel de calificaciones desde la plantilla real del colegio.
+- **Iniciar clase**: auto-completado a partir del horario y el plan curricular aprobado, inicio directo desde el horario del día, validación obligatoria de datos antes de enviar, manejo explícito de temas "no cumplido" y posibilidad de retomar temas pendientes de la etapa anterior.
+- **Historial de clases dadas** y justificación de ausencias.
+- **Notas de conducta visibles para los padres** en el resumen de su hijo/a.
+- Nuevo endpoint de horario del día para que el profesor lo consuma desde el home.
+- **Perfil**: foto habilitada para todos los roles salvo administrador, firma habilitada también para Coordinación Pedagógica, y panel de actividad reciente como componente propio.
+- **Panel de Administración**: gestión de salas con asignación por pabellón y validación de conflictos, panel de Usuarios unificado en una sola tabla filtrada y paginada, vinculación de alumnos al crear o editar un usuario Padre, filtros/orden/paginación en Asignaciones, y un selector de paleta de colores del sistema.
+- **Registro de actividad**: se guarda también la IP real del cliente en cada entrada.
+- **Manuales en PDF actualizados** con las vistas vigentes, incluyendo uno nuevo para Coordinación Pedagógica.
+- Reparación de textos con codificación UTF-8 dañada mediante una migración de datos dedicada.
+
+### Cambiado
+
+- Se unificó el lenguaje visual de la aplicación: layout de cuenta compartido (banner de bienvenida + navegación) entre Home, Administración, Evaluación, Coordinación Pedagógica y Perfil, con selectores, tablas, estados y listados reescritos sobre el mismo sistema de diseño.
+- La clasificación de tareas por etapa pasa a usar la fecha real de cierre de Etapa 1 en vez de una fecha de calendario fija.
+- La sincronización con Google Classroom ahora importa y conserva, en cada planilla, únicamente las tareas (courseWork) correspondientes a su propia etapa.
+- El nombre del profesor se muestra en orden nombre-apellido, con una versión corta para pantallas angostas.
+- Se rediseñaron la pantalla de elección del home del profesor y la de "Gestionar planillas", unificando la banda de página en todo el Libro de Cátedra.
+
+### Eliminado
+
+- La dependencia de Jackson para el parseo del plan curricular, reemplazada por lectura directa de metadatos clave/valor de la propia planilla.
+- Código y dependencias sin uso, retirados en una auditoría general del proyecto.
+
+### Corregido
+
+- `ERROR 1064` al cargar el seed oficial por una coma colgante en el `INSERT INTO usuario`.
+- Backend caído al iniciar por una migración con sintaxis no válida para MariaDB, y por columnas duplicadas al recargar la base por defecto sin registrar como aplicadas las migraciones ya incluidas en el esquema.
+- Alumnos egresados que quedaban huérfanos e invisibles en el panel de administración.
+- Creación de un usuario Padre que fallaba con "No se pudo asignar el nivel del padre".
+- Resumen académico de un padre que rompía con "Unknown column 'p.categoria'".
+- Varios errores de datos del seed oficial: `usuario_id` erróneos en asignaciones de Informática, usernames rotos en el horario, teléfonos con guiones/puntos, y usuarios duplicados en vez de reutilizar los ya existentes.
+- Cierre de una etapa de planilla antes de su fecha de cierre real.
+- Rechazo de un plan curricular que devolvía 500, agotamiento del pool de conexiones, avisos de plan pendiente y comparación retroactiva de temas.
+- Respuesta 401 real ante tokens inválidos, en lugar de un error genérico.
+- Dos pruebas de integración que fallaban de forma intermitente por depender del día de ejecución o de un rango fijo de columnas; lint del frontend llevado a cero advertencias.
+- Splash infinito en Android cuando fallaba la restauración de sesión, y excepciones de red sin capturar en el login y la verificación de 2FA que cerraban la app de forma inesperada.
+
+---
 
 ## [2.0.0] - 2026-09-01
 
