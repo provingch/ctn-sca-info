@@ -1035,7 +1035,17 @@ backup_database_if_possible() {
     sudo install -m 600 "$temporary_backup" "$backup_dir/$backup_name"
     echo "==> Backup saved to $backup_dir/$backup_name"
   else
-    echo "==> Existing database could not be backed up (it may not exist yet)"
+    rm -f "$temporary_backup"
+    # Sin backup solo se sigue si la base de verdad no existe; si existe (o no se pudo saber) se aborta
+    # antes del DROP DATABASE.
+    local exists_rc=0
+    database_exists || exists_rc=$?
+    if [[ "$exists_rc" -ne 1 ]]; then
+      echo "ERROR: no se pudo respaldar '$DB_NAME'; se cancela la carga para no perder datos." >&2
+      return 1
+    fi
+    echo "==> Database '$DB_NAME' does not exist yet; nothing to back up"
+    return 0
   fi
   rm -f "$temporary_backup"
 }
@@ -1124,7 +1134,10 @@ load_default_database() {
     { print }
   ' "$schema_file" > "$transformed_schema"
 
-  backup_database_if_possible "$client_config"
+  if ! backup_database_if_possible "$client_config"; then
+    rm -f "$client_config" "$transformed_schema"
+    return 1
+  fi
   local restart_service=false
   if service_exists && sudo systemctl is-active --quiet "$SERVICE_NAME"; then
     restart_service=true
@@ -1269,12 +1282,16 @@ database_exists() {
 
   config="$(mktemp)"
   create_database_client_config "$config" "$password"
-  "$client" --defaults-extra-file="$config" -N -e \
-    "SELECT 1 FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='${DB_NAME}';" 2>/dev/null \
-    | grep -q '^1$'
-  rc=$?
+  local out
+  rc=0
+  out="$("$client" --defaults-extra-file="$config" -N -e \
+    "SELECT COUNT(*) FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='${DB_NAME}';" 2>&1)" || rc=$?
   rm -f "$config"
-  return $rc
+  if [[ "$rc" -ne 0 ]]; then
+    log_err "No se pudo consultar MariaDB como '${DB_USER}': ${out}"
+    return 2
+  fi
+  [[ "$out" == "1" ]]
 }
 
 ensure_database_initialized() {
@@ -1291,9 +1308,22 @@ ensure_database_initialized() {
     return 0
   fi
 
-  if database_exists; then
+  local exists_rc=0
+  database_exists || exists_rc=$?
+  if [[ "$exists_rc" -eq 0 ]]; then
     log_ok "La base de datos '${DB_NAME}' ya existe"
     return 0
+  fi
+  if [[ "$exists_rc" -ne 1 ]]; then
+    log_err "No se pudo verificar si '${DB_NAME}' existe; no se toca la base"
+    return 1
+  fi
+  # Con credenciales ya configuradas esto no es una primera instalación: una base "inexistente" acá es
+  # un problema de permisos/conexión, no una invitación a cargar el seed encima.
+  if sudo test -f "$DB_ENV_FILE"; then
+    log_err "El usuario '${DB_USER}' no ve la base '${DB_NAME}', pero ${DB_ENV_FILE} ya existe (no es una primera instalación)."
+    log_err "Revisá permisos/credenciales. Para recargar la base a propósito: deploy --load-default-db"
+    return 1
   fi
 
   log_warn "No se encontró la base de datos '${DB_NAME}' — primera instalación detectada"
