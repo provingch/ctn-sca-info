@@ -4,7 +4,7 @@ import type { QuejaItem } from '../../api/quejas';
 import { filtrarAlumnos, filtrarEgresados, filtrarQuejas, hayFiltroEgresados, hayFiltroQuejas, SIN_FILTRO_EGRESADOS, SIN_FILTRO_QUEJAS } from './filtrosListados';
 
 const queja = (id: number, motivo: string, creadaEn: string, extra: Partial<QuejaItem> = {}): QuejaItem =>
-  ({ id, profesorId: 1, cursoId: 1, especialidadId: 1, motivo, creadaPor: 9, creadaEn, ...extra });
+  ({ id, tipo: 'CONTRA_PROFESOR', profesorId: 1, cursoId: 1, especialidadId: 1, motivo, creadaPor: 9, creadaEn, ...extra });
 const quejas = [
   queja(1, 'No entregó las notas', '2026-03-10 10:00:00'),
   queja(2, 'Faltas reiteradas', '2026-04-15 09:00:00', { aceptadaEn: '2026-04-16 08:00:00' }),
@@ -34,8 +34,8 @@ describe('filtrarQuejas', () => {
   });
 
   it('combina todos los filtros', () => {
-    expect(filtrarQuejas(quejas, { busqueda: 'trato', estado: 'rechazada', desde: '2026-05-01', hasta: '' }, texto).map((q) => q.id)).toEqual([3]);
-    expect(filtrarQuejas(quejas, { busqueda: 'trato', estado: 'pendiente', desde: '', hasta: '' }, texto)).toEqual([]);
+    expect(filtrarQuejas(quejas, { ...SIN_FILTRO_QUEJAS, busqueda: 'trato', estado: 'rechazada', desde: '2026-05-01', hasta: '' }, texto).map((q) => q.id)).toEqual([3]);
+    expect(filtrarQuejas(quejas, { ...SIN_FILTRO_QUEJAS, busqueda: 'trato', estado: 'pendiente', desde: '', hasta: '' }, texto)).toEqual([]);
   });
 
   it('un rango invertido no devuelve nada', () => {
