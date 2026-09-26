@@ -4,7 +4,8 @@
 
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SOURCE="$ROOT/backend/src/main/resources/logos-source"
+SOURCE="$ROOT/scripts/logos-source"
+SOURCE_SPECIALTY="$ROOT/frontend/src/assets/logos-especialidad"
 OUT_SPECIALTY="$ROOT/backend/src/main/resources/static/assets/png"
 OUT_INSTITUTIONAL="$ROOT/backend/src/main/resources/static/logo-institucional.png"
 OUT_SCA_COLOR="$ROOT/backend/src/main/resources/static/logo-sca-color.png"
@@ -60,7 +61,7 @@ fi
 convert_svg_keep_aspect "$sca_color_svg" "$OUT_SCA_COLOR" 480
 echo "Converted $sca_color_svg -> $OUT_SCA_COLOR"
 
-for svg in "$SOURCE"/logos-especialidad/*.svg; do
+for svg in "$SOURCE_SPECIALTY"/*.svg; do
   [ -e "$svg" ] || continue
   name=$(basename "$svg" .svg)
   case "$name" in

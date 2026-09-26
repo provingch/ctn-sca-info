@@ -80,7 +80,7 @@ Cada una de las 8 especialidades del CTN tiene su propio ícono y color, usados 
 
 Informática · Electrónica · Electricidad · Electromecánica · Mecánica Automotriz · Mecánica Industrial · Construcciones Civiles · Química Industrial
 
-Los SVG fuente viven en `backend/src/main/resources/logos-source/` (logos institucional, SCA y por especialidad); `scripts/convert-logos.sh` los convierte a los PNG que usa el backend para las exportaciones.
+Los SVG fuente viven en `scripts/logos-source/` (logos institucional y SCA) y `frontend/src/assets/logos-especialidad/` (por especialidad); `scripts/convert-logos.sh` los convierte a los PNG que usa el backend para las exportaciones.
 
 ## Capturas
 

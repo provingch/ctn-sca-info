@@ -21,6 +21,14 @@ nginx/*.local
 /backend/src/main/resources/static/assets/
 /backend/src/main/resources/static/index-*.js
 /backend/src/main/resources/static/index-*.css
+/backend/src/main/resources/static/index.html
+/backend/src/main/resources/static/favicon.svg
+/backend/src/main/resources/static/icons.svg
+/backend/src/main/resources/static/manifest.webmanifest
+/backend/src/main/resources/static/offline.html
+/backend/src/main/resources/static/sw.js
+/backend/src/main/resources/static/icons/pwa/
+/backend/src/main/resources/static/pdfs/
 
 # Generated frontend static copied into backend resources: avoid tracking whole plantillas dir
 /backend/src/main/resources/static/plantillas/

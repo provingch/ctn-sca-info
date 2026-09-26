@@ -16,7 +16,7 @@ npm run build
 
 ### Generación manual de PNG de logos
 
-Los PNG que usa el PDF de horario se generan desde los SVG fuente de `backend/src/main/resources/logos-source/` y se escriben en `backend/src/main/resources/static/` y `backend/src/main/resources/static/assets/png/`.
+Los PNG que usa el PDF de horario se generan desde los SVG fuente de `scripts/logos-source/` y `frontend/src/assets/logos-especialidad/`, y se escriben en `backend/src/main/resources/static/` y `backend/src/main/resources/static/assets/png/`.
 
 Ese paso es manual y no forma parte del build automatizado de Vite porque `emptyOutDir` queda desactivado para evitar borrar esos assets del backend.
 
