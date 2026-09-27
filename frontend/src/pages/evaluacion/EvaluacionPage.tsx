@@ -11,6 +11,7 @@ import { useEvaluacionFiltros } from './useEvaluacionFiltros';
 import { useSearchParams } from 'react-router-dom';
 import LauncherCards from '../../components/LauncherCards';
 import { launcherIcons } from '../../components/launcherIcons';
+import DashboardActivity from '../../components/DashboardActivity';
 
 type EvaluationView = 'menu' | 'planillas' | 'ver-planillas' | 'planes' | 'seguimiento';
 
@@ -57,12 +58,15 @@ export default function EvaluacionPage() {
 
   if (view === 'menu') {
     return <AppShell title="Panel de Evaluación" subtitle="Revisión y seguimiento académico" welcome>
-      <LauncherCards className="launcher-cards-grid" options={[
-        { key: 'ver-planillas', icon: launcherIcons.verPlanillas, title: 'Ver planillas', description: 'Consultá las notas de una planilla en pantalla, descargala o reabrí una etapa cerrada.', onSelect: () => changeView('ver-planillas') },
-        { key: 'planillas', icon: launcherIcons.descargarPlanillas, title: 'Descargar planillas', description: 'Exportá planillas completadas de los cursos.', onSelect: () => changeView('planillas') },
-        { key: 'planes', icon: launcherIcons.revisarPlanes, title: 'Revisar plan curricular', description: 'Aprobá o rechazá planes de profesores.', onSelect: () => changeView('planes') },
-        { key: 'seguimiento', icon: launcherIcons.seguimiento, title: 'Seguimiento de profesores', description: 'Consultá cumplimiento de planes y resolvé incumplimientos.', onSelect: () => changeView('seguimiento') },
-      ]} />
+      <div className="launcher-body">
+        <LauncherCards className="launcher-cards-grid" options={[
+          { key: 'ver-planillas', icon: launcherIcons.verPlanillas, title: 'Ver planillas', description: 'Consultá las notas de una planilla en pantalla, descargala o reabrí una etapa cerrada.', onSelect: () => changeView('ver-planillas') },
+          { key: 'planillas', icon: launcherIcons.descargarPlanillas, title: 'Descargar planillas', description: 'Exportá planillas completadas de los cursos.', onSelect: () => changeView('planillas') },
+          { key: 'planes', icon: launcherIcons.revisarPlanes, title: 'Revisar plan curricular', description: 'Aprobá o rechazá planes de profesores.', onSelect: () => changeView('planes') },
+          { key: 'seguimiento', icon: launcherIcons.seguimiento, title: 'Seguimiento de profesores', description: 'Consultá cumplimiento de planes y resolvé incumplimientos.', onSelect: () => changeView('seguimiento') },
+        ]} />
+        <DashboardActivity />
+      </div>
     </AppShell>;
   }
 

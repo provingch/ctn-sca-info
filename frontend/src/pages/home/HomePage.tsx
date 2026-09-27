@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { useToast } from '../../context/toast';
 import { getAsignacionesDisponibles, getMisAsignaciones, type AsignacionOption, type AsignacionCompleta } from '../../api/planCurricular';
-import { getProfile } from '../../api/profile';
 import { Link, useSearchParams } from 'react-router-dom';
 import { createClass, getHome, getMiHorarioHoy, listarCodigosConducta, type CodigoConducta, type HomeResponse, type HorarioBloqueHoyDto, type PlanillaResumenDto } from '../../api/home';
 import { ApiError } from '../../api/client';
@@ -24,7 +23,7 @@ import { resizeImageToDataUri } from '../../utils/imageResize';
 import RasgosAsistenciaEditor from './RasgosAsistenciaEditor';
 import AlumnosRiesgoView from './AlumnosRiesgoView';
 import { datosFaltantesDeLaClase, mensajeDatosFaltantes } from './claseRequerida';
-import { splitActivityLine } from './activityLine';
+import DashboardActivity from '../../components/DashboardActivity';
 
 const normalizeSpecialtyName = (value: string) => value
   .trim()
@@ -346,21 +345,6 @@ export default function HomePage() {
   </>;
 }
 
-// ActivityLogService escribe fechas con LINE_FORMATTER = "yyyy-MM-dd HH:mm:ss".
-function humanizeActivityDate(raw: string): string {
-  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):\d{2}$/);
-  if (!match) return raw;
-  const [, y, mo, d, h, mi] = match;
-  const date = new Date(Number(y), Number(mo) - 1, Number(d));
-  if (Number.isNaN(date.getTime())) return raw;
-  const startOfDay = (dt: Date) => new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()).getTime();
-  const diffDays = Math.round((startOfDay(new Date()) - startOfDay(date)) / 86400000);
-  const time = `${h}:${mi}`;
-  if (diffDays === 0) return `hoy ${time}`;
-  if (diffDays === 1) return `ayer ${time}`;
-  return `${d}/${mo} ${time}`;
-}
-
 const RECENT_MATERIAS_KEY = 'sca:materias-recientes:v1';
 const RECENT_MATERIAS_LIMIT = 10;
 
@@ -405,21 +389,12 @@ function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChan
   const { user } = useAuth();
   const navigate = useNavigate();
   const [asignaciones, setAsignaciones] = useState<AsignacionCompleta[] | null>(null);
-  const [activity, setActivity] = useState<string[] | null>(null);
 
   useEffect(() => {
     let active = true;
     void getMisAsignaciones()
       .then((list) => { if (active) setAsignaciones(list); })
       .catch(() => { /* sin datos: no se muestra badge de plan curricular */ });
-    return () => { active = false; };
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    void getProfile()
-      .then((profile) => { if (active) setActivity(profile.activityLog ?? []); })
-      .catch(() => { if (active) setActivity([]); });
     return () => { active = false; };
   }, []);
 
@@ -431,11 +406,6 @@ function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChan
 
   const rechazados = asignaciones?.filter((a) => a.estadoPlan === 'RECHAZADO').length ?? 0;
   const noCargados = asignaciones?.filter((a) => a.estadoPlan === 'NO_CARGADO').length ?? 0;
-
-  const recentActivity = (activity ?? [])
-    .filter((line) => splitActivityLine(line)?.message !== 'Inició sesión')
-    .slice(-5)
-    .reverse();
 
   const selectedEspecialidad = especialidades.find((item) => item.id === especialidadId);
 
@@ -476,24 +446,7 @@ function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChan
           </>,
         },
       ]} />
-      <aside className="launcher-activity">
-        <h3>Actividad reciente</h3>
-        {recentActivity.length > 0 ? (
-          <div className="launcher-activity-list">
-            {recentActivity.map((line, idx) => {
-              const parsed = splitActivityLine(line);
-              return <div className="launcher-activity-item" key={idx}>
-                {parsed ? <>
-                  <span className="launcher-activity-message">{parsed.message}</span>
-                  <span className="launcher-activity-date">{humanizeActivityDate(parsed.date)}</span>
-                </> : <span className="launcher-activity-raw">{line}</span>}
-              </div>;
-            })}
-          </div>
-        ) : (
-          <p className="launcher-activity-empty">Sin actividad reciente todavía.</p>
-        )}
-      </aside>
+      <DashboardActivity />
     </div>
     {asignaciones && asignaciones.length > 0 && (
       <div className="launcher-materias">

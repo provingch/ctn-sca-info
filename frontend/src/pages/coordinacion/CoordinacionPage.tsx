@@ -13,6 +13,7 @@ import ComplaintDocuments from '../../components/quejas/ComplaintDocuments';
 import ComplaintGroups from '../../components/quejas/ComplaintGroups';
 import LauncherCards from '../../components/LauncherCards';
 import { launcherIcons } from '../../components/launcherIcons';
+import DashboardActivity from '../../components/DashboardActivity';
 import { nombreCorto } from '../../utils/nombre';
 
 const ESTADO_LABEL: Record<ReturnType<typeof quejaEstado>, string> = {
@@ -161,10 +162,13 @@ export default function CoordinacionPage() {
 
   if (view === 'menu') {
     return <AppShell title="Coordinación Pedagógica" subtitle="Quejas y acompañamiento socioacadémico" welcome>
-      <LauncherCards className="launcher-cards-grid" options={[
-        { key: 'quejas', icon: launcherIcons.quejas, title: 'Quejas por profesor', description: 'Ver y revisar quejas cargadas por la administración.', onSelect: () => changeView('quejas') },
-        { key: 'conducta', icon: launcherIcons.conducta, title: 'Reportes conductuales', description: 'Crear y administrar los códigos N usados para registrar el comportamiento de los alumnos.', onSelect: () => changeView('conducta') },
-      ]} />
+      <div className="launcher-body">
+        <LauncherCards className="launcher-cards-grid" options={[
+          { key: 'quejas', icon: launcherIcons.quejas, title: 'Quejas por profesor', description: 'Ver y revisar quejas cargadas por la administración.', onSelect: () => changeView('quejas') },
+          { key: 'conducta', icon: launcherIcons.conducta, title: 'Reportes conductuales', description: 'Crear y administrar los códigos N usados para registrar el comportamiento de los alumnos.', onSelect: () => changeView('conducta') },
+        ]} />
+        <DashboardActivity />
+      </div>
     </AppShell>;
   }
 

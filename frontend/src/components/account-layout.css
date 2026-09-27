@@ -22,8 +22,7 @@
   .account-ui .launcher-materia-info .launcher-materia-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
   .account-ui .launcher-materia-heading strong { font-size: 1rem; }
   .account-ui .launcher-materia-chevron { font-size: 1.75rem; color: var(--accent-deep); padding-inline: 8px; }
-  .account-ui .dashboard-activity { margin-top: var(--account-section-gap); }
-  .account-ui .dashboard-activity .launcher-activity-list { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,240px),1fr)); gap: 16px; }
+  .account-ui .parent-page ~ .dashboard-activity { margin-top: var(--account-section-gap); }
   .account-ui .page-banner { margin-bottom: var(--account-section-gap); }
   .account-ui .page-banner-title-row { flex-wrap: wrap; row-gap: 12px; }
   .account-ui .page-banner-text { min-width: 0; }

@@ -11,6 +11,7 @@ import { getParentSummary, downloadReporteMensual, downloadLibreta, getRasgosCon
 import { ApiError } from '../../api/client';
 import { normalizeSpecialty } from '../../theme/theme';
 import { NOTIFICATIONS_CHANGED_EVENT } from '../../components/notificationUtils';
+import DashboardActivity from '../../components/DashboardActivity';
 
 const STAGES: Array<{ value: ParentStage; label: string }> = [
   { value: 'primera', label: 'Primera etapa' },
@@ -242,6 +243,7 @@ export default function ParentPage() {
           </section>
         )}
       </div>
+      <DashboardActivity />
     </AppShell>
   );
 }

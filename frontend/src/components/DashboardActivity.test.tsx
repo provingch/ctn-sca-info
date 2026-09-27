@@ -6,11 +6,17 @@ import DashboardActivity from './DashboardActivity';
 vi.mock('../api/profile', () => ({ getProfile: vi.fn() }));
 const profile = (allowed: boolean, activityLog: string[]) => ({ showActivityPanel: allowed, activityLog } as Awaited<ReturnType<typeof getProfile>>);
 
-it.each([{ entries: [] }, { entries: ['[2026-09-20 10:00:00] Inició sesión'] }])('no reserva un panel para actividad vacía o solo accesos', async ({ entries }) => {
-  vi.mocked(getProfile).mockResolvedValue(profile(true, entries));
-  const { container } = render(<DashboardActivity />);
+it('muestra un estado vacío en vez de ocultar el panel cuando no hay actividad', async () => {
+  vi.mocked(getProfile).mockResolvedValue(profile(true, []));
+  render(<DashboardActivity />);
   await waitFor(() => expect(getProfile).toHaveBeenCalled());
-  expect(container).toBeEmptyDOMElement();
+  expect(await screen.findByText('Sin actividad reciente todavía.')).toBeInTheDocument();
+});
+
+it('ya no filtra los inicios de sesión', async () => {
+  vi.mocked(getProfile).mockResolvedValue(profile(true, ['[2026-09-20 10:00:00] Inició sesión']));
+  render(<DashboardActivity />);
+  expect(await screen.findByText('Inició sesión')).toBeInTheDocument();
 });
 
 it('muestra acciones reales sin divulgar la IP del registro', async () => {
@@ -21,9 +27,10 @@ it('muestra acciones reales sin divulgar la IP del registro', async () => {
   expect(screen.queryByText(/127\.0\.0\.1/)).not.toBeInTheDocument();
 });
 
-it('respeta la visibilidad del perfil aunque existan registros', async () => {
+it('respeta la visibilidad del perfil: sin acceso, no se filtran datos aunque existan registros', async () => {
   vi.mocked(getProfile).mockResolvedValue(profile(false, ['[2026-09-20 10:00:00] Revisó un plan curricular']));
-  const { container } = render(<DashboardActivity />);
+  render(<DashboardActivity />);
   await waitFor(() => expect(getProfile).toHaveBeenCalled());
-  expect(container).toBeEmptyDOMElement();
+  expect(await screen.findByText('Sin actividad reciente todavía.')).toBeInTheDocument();
+  expect(screen.queryByText('Revisó un plan curricular')).not.toBeInTheDocument();
 });
