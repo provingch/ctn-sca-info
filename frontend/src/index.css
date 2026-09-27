@@ -573,6 +573,10 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .parent-report-actions { flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
 .parent-report-month { min-width: 150px; }
 .parent-report-actions .button:disabled { opacity: .55; cursor: not-allowed; }
+@media (max-width: 1100px) {
+  .parent-overview-header { flex-direction: column; align-items: stretch; }
+  .parent-report-actions { flex: 1 1 auto; width: 100%; justify-content: flex-start; }
+}
 .parent-overview-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .parent-overview-metrics article { min-width: 0; padding: 17px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-soft); }
 .parent-overview-metrics span, .parent-overview-metrics small { display: block; color: var(--muted); }
@@ -867,6 +871,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
   .parent-print-button { width: 100%; }
   .parent-report-actions { justify-content: stretch; }
   .parent-report-actions .button, .parent-report-month { width: 100%; }
+  .parent-report-month { min-width: 0; }
   .parent-stage-comparison { display: grid; grid-template-columns: 1fr 1fr; }
   .parent-stage-comparison > div { justify-content: space-between; border-radius: 10px; }
   .parent-stage-tabs { width: 100%; }
