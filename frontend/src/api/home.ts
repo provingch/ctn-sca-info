@@ -179,3 +179,43 @@ export function getHome(params: GetHomeParams = {}): Promise<HomeResponse> {
   const qs = query.toString();
   return apiRequest<HomeResponse>(`/api/home${qs ? `?${qs}` : ''}`, { method: 'GET' });
 }
+
+export interface AlumnoRiesgoMateriaDto {
+  materiaId: number;
+  materiaNombre: string;
+  tareasNoEntregadas: number;
+  notasConductuales: number;
+}
+
+export interface AlumnoRiesgoDto {
+  alumnoId: number;
+  nombreCompleto: string;
+  cursoId: number;
+  cursoNombre: string;
+  especialidadId: number;
+  especialidadNombre: string;
+  seccion: string;
+  tareasNoEntregadas: number;
+  notasConductuales: number;
+  motivos: string[];
+  desglose: AlumnoRiesgoMateriaDto[];
+}
+
+export interface AlumnosRiesgoResponse {
+  umbralTareas: number;
+  umbralConducta: number;
+  alumnos: AlumnoRiesgoDto[];
+}
+
+export interface GetAlumnosRiesgoParams {
+  cursoId?: number;
+  especialidadId?: number;
+}
+
+export function getAlumnosRiesgo(params: GetAlumnosRiesgoParams = {}): Promise<AlumnosRiesgoResponse> {
+  const query = new URLSearchParams();
+  if (params.cursoId !== undefined) query.set('cursoId', String(params.cursoId));
+  if (params.especialidadId !== undefined) query.set('especialidadId', String(params.especialidadId));
+  const qs = query.toString();
+  return apiRequest<AlumnosRiesgoResponse>(`/api/home/alumnos-riesgo${qs ? `?${qs}` : ''}`, { method: 'GET' });
+}

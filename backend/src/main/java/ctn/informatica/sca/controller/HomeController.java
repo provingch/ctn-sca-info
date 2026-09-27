@@ -1,6 +1,7 @@
 package ctn.informatica.sca.controller;
 
 import ctn.informatica.sca.dao.AlumnoDao;
+import ctn.informatica.sca.dao.AlumnoRiesgoDao;
 import ctn.informatica.sca.dao.AsignacionDao;
 import ctn.informatica.sca.dao.ConfiguracionSistemaDao;
 import ctn.informatica.sca.dao.CursoBaseDao;
@@ -20,6 +21,8 @@ import ctn.informatica.sca.dao.PlanCurricularDao;
 import ctn.informatica.sca.dao.UserDao;
 import ctn.informatica.sca.dto.AssignFaltaCodigoRequest;
 import ctn.informatica.sca.dto.AlumnoDto;
+import ctn.informatica.sca.dto.AlumnoRiesgoDto;
+import ctn.informatica.sca.dto.AlumnosRiesgoResponse;
 import ctn.informatica.sca.dto.CursoDto;
 import ctn.informatica.sca.dto.ClaseDadaDto;
 import ctn.informatica.sca.dto.CreateRasgoPlanillaRequest;
@@ -91,6 +94,14 @@ public class HomeController {
 
     private static final String VIEW_CLASE = "clase";
     private static final String VIEW_PLANILLAS = "planillas";
+    private static final String CLAVE_UMBRAL_TAREAS = "riesgo.umbral_tareas";
+    private static final String CLAVE_UMBRAL_CONDUCTA = "riesgo.umbral_conducta";
+    private static final int DEFAULT_UMBRAL_RIESGO = 5;
+
+    // Sin dependencias propias más allá de conexion, como el resto de los DAO que este
+    // controller instancia ad hoc (ver EspecialidadDao en registrarQueja): no vale la pena
+    // agregarlo a las cuatro sobrecargas del constructor solo para este endpoint.
+    private final AlumnoRiesgoDao alumnoRiesgoDao = new AlumnoRiesgoDao();
 
     private final CursoDao cursoDao;
     private final CursoBaseDao cursoBaseDao;
@@ -942,6 +953,35 @@ public class HomeController {
             return quejaDao.listarCreadasPor(current.getId());
         } catch (SQLException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo cargar el historial de quejas", ex);
+        }
+    }
+
+    /**
+     * Alumnos que superan el umbral de tareas no entregadas y/o de notas conductuales, entre
+     * los cursos donde el profesor autenticado tiene planillas o clases dictadas. {@code cursoId}
+     * y {@code especialidadId} son filtros opcionales sobre la lista ya calculada.
+     */
+    @GetMapping("/alumnos-riesgo")
+    @PreAuthorize("hasRole('LEVEL_1')")
+    public AlumnosRiesgoResponse alumnosRiesgo(
+            @RequestParam(required = false) Integer cursoId,
+            @RequestParam(required = false) Integer especialidadId,
+            Authentication authentication) {
+        User user = requireUser(authentication);
+        try {
+            int umbralTareas = configuracionSistemaDao.getInt(CLAVE_UMBRAL_TAREAS, DEFAULT_UMBRAL_RIESGO);
+            int umbralConducta = configuracionSistemaDao.getInt(CLAVE_UMBRAL_CONDUCTA, DEFAULT_UMBRAL_RIESGO);
+            List<AlumnoRiesgoDto> alumnos = alumnoRiesgoDao.listarPorProfesor(
+                    user.getId(), ctn.informatica.sca.util.AcademicPeriod.current(), umbralTareas, umbralConducta);
+            if (cursoId != null && cursoId > 0) {
+                alumnos = alumnos.stream().filter(a -> a.cursoId() == cursoId).collect(Collectors.toList());
+            }
+            if (especialidadId != null && especialidadId > 0) {
+                alumnos = alumnos.stream().filter(a -> a.especialidadId() == especialidadId).collect(Collectors.toList());
+            }
+            return new AlumnosRiesgoResponse(umbralTareas, umbralConducta, alumnos);
+        } catch (SQLException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo cargar la lista de alumnos en riesgo", ex);
         }
     }
 

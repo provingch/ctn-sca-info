@@ -22,6 +22,7 @@ import { useAuth } from '../../context/AuthContext';
 import { classEndTime, HORARIOS_CATEDRA } from './classFormUtils';
 import { resizeImageToDataUri } from '../../utils/imageResize';
 import RasgosAsistenciaEditor from './RasgosAsistenciaEditor';
+import AlumnosRiesgoView from './AlumnosRiesgoView';
 import { datosFaltantesDeLaClase, mensajeDatosFaltantes } from './claseRequerida';
 import { splitActivityLine } from './activityLine';
 
@@ -267,6 +268,7 @@ export default function HomePage() {
         onBack={() => setSearch({})}
       />
       {view === 'catedra' && <CatedraTabs subview={subview} params={params} />}
+      {view === 'planillas' && <PlanillasTabs subview={subview} params={params} />}
       {showSelector && <div className="toolbar filters">
         <label className="inline-filter">Especialidad
           <AnimatedSelect ariaLabel="Especialidad" value={especialidadId || ''} onChange={(value) => {
@@ -317,18 +319,28 @@ export default function HomePage() {
             <ClassView key={data.selCurso?.id} data={data} reload={load} onModoChange={setClaseModo} />
           )}
         </div>
+      ) : subview === 'riesgo' ? (
+        <div role="tabpanel" id="planillas-panel-riesgo" aria-labelledby="planillas-tab-riesgo" tabIndex={-1}>
+          <AlumnosRiesgoView
+            especialidadNombre={selectedEspecialidad?.nombre ?? null}
+            nivel={selectedNivel}
+            seccion={selectedSeccion}
+          />
+        </div>
       ) : (
-        <PlanillasView
-          data={data}
-          syncingProp={syncingAll}
-          setSyncingProp={setSyncingAll}
-          especialidadNombre={selectedEspecialidad?.nombre ?? null}
-          nivel={selectedNivel}
-          seccion={selectedSeccion}
-          materiaId={materiaIdFiltro || null}
-          hasActiveFilter={hasActiveFilter}
-          onClearFilter={clearFilter}
-        />
+        <div role="tabpanel" id="planillas-panel-planillas" aria-labelledby="planillas-tab-planillas" tabIndex={-1}>
+          <PlanillasView
+            data={data}
+            syncingProp={syncingAll}
+            setSyncingProp={setSyncingAll}
+            especialidadNombre={selectedEspecialidad?.nombre ?? null}
+            nivel={selectedNivel}
+            seccion={selectedSeccion}
+            materiaId={materiaIdFiltro || null}
+            hasActiveFilter={hasActiveFilter}
+            onClearFilter={clearFilter}
+          />
+        </div>
       )}
     </AppShell>
   </>;
@@ -589,6 +601,52 @@ function CatedraTabs({ subview, params }: { subview: string; params: (next: Reco
               <span className={`catedra-tab-dot tone-${estadoPlanTono}`} aria-hidden="true" />
               <span className="catedra-tab-status">{hayRechazados ? 'Rechazados' : 'Sin cargar'}</span>
             </>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+const PLANILLAS_TABS = [
+  { key: 'planillas', label: 'Planillas' },
+  { key: 'riesgo', label: 'Alumnos en riesgo' },
+] as const;
+
+function PlanillasTabs({ subview, params }: { subview: string; params: (next: Record<string, string>) => void }) {
+  const activeKey = subview === 'riesgo' ? 'riesgo' : 'planillas';
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  const moveFocus = (index: number, delta: number) => {
+    const nextIndex = (index + delta + PLANILLAS_TABS.length) % PLANILLAS_TABS.length;
+    params({ subview: PLANILLAS_TABS[nextIndex].key });
+    tabRefs.current[nextIndex]?.focus();
+  };
+
+  const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    if (event.key === 'ArrowRight') { event.preventDefault(); moveFocus(index, 1); }
+    else if (event.key === 'ArrowLeft') { event.preventDefault(); moveFocus(index, -1); }
+  };
+
+  return (
+    <div className="catedra-tablist" role="tablist" aria-label="Secciones de gestionar planillas">
+      {PLANILLAS_TABS.map((tab, index) => {
+        const active = tab.key === activeKey;
+        return (
+          <button
+            key={tab.key}
+            ref={(el) => { tabRefs.current[index] = el; }}
+            type="button"
+            role="tab"
+            id={`planillas-tab-${tab.key}`}
+            aria-selected={active}
+            aria-controls={`planillas-panel-${tab.key}`}
+            tabIndex={active ? 0 : -1}
+            className={`catedra-tab${active ? ' active' : ''}`}
+            onClick={() => params({ subview: tab.key })}
+            onKeyDown={(event) => onKeyDown(event, index)}
+          >
+            {tab.label}
           </button>
         );
       })}

@@ -34,6 +34,17 @@ public class ParentTaskGrade {
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
 
+    /**
+     * Fragmento SQL que reproduce {@link #resolveEstado} == NO_ENTREGADA, para agregaciones
+     * (contar tareas no entregadas por alumno) sin traer cada tarea a Java. Requiere alias
+     * {@code t} para tarea y un LEFT JOIN a puntaje aliased {@code pu} (pu.tarea_id = t.id AND
+     * pu.registro_id = &lt;registro del alumno en esa planilla&gt;).
+     */
+    public static final String SQL_CONDICION_NO_ENTREGADA =
+            "t.fecha_limite IS NOT NULL AND t.fecha_limite < CURDATE() "
+            + "AND pu.puntos IS NULL "
+            + "AND NOT (pu.tarea_id IS NOT NULL AND t.google_coursework_id IS NOT NULL)";
+
     public static String resolveEstado(boolean tienePuntaje, Integer puntos, boolean tareaClassroom, LocalDate fechaLimite, LocalDate hoy) {
         if (tienePuntaje && puntos != null) {
             return CALIFICADA;
