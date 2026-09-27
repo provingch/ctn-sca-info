@@ -450,7 +450,7 @@ function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChan
         </label>
       )}
     />
-    <div className={`launcher-body${recentActivity.length || rechazados || noCargados ? "" : " launcher-body--wide"}`}>
+    <div className="launcher-body">
       <LauncherCards options={[
         {
           key: 'catedra',
@@ -476,20 +476,24 @@ function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChan
           </>,
         },
       ]} />
-      {recentActivity.length > 0 && <aside className="launcher-activity">
+      <aside className="launcher-activity">
         <h3>Actividad reciente</h3>
-        <div className="launcher-activity-list">
-          {recentActivity.map((line, idx) => {
-            const parsed = splitActivityLine(line);
-            return <div className="launcher-activity-item" key={idx}>
-              {parsed ? <>
-                <span className="launcher-activity-message">{parsed.message}</span>
-                <span className="launcher-activity-date">{humanizeActivityDate(parsed.date)}</span>
-              </> : <span className="launcher-activity-raw">{line}</span>}
-            </div>;
-          })}
-        </div>
-      </aside>}
+        {recentActivity.length > 0 ? (
+          <div className="launcher-activity-list">
+            {recentActivity.map((line, idx) => {
+              const parsed = splitActivityLine(line);
+              return <div className="launcher-activity-item" key={idx}>
+                {parsed ? <>
+                  <span className="launcher-activity-message">{parsed.message}</span>
+                  <span className="launcher-activity-date">{humanizeActivityDate(parsed.date)}</span>
+                </> : <span className="launcher-activity-raw">{line}</span>}
+              </div>;
+            })}
+          </div>
+        ) : (
+          <p className="launcher-activity-empty">Sin actividad reciente todavía.</p>
+        )}
+      </aside>
     </div>
     {asignaciones && asignaciones.length > 0 && (
       <div className="launcher-materias">
