@@ -20,7 +20,7 @@ import { useToast } from '../../context/toast';
 import LauncherCards from '../../components/LauncherCards';
 import { launcherIcons } from '../../components/launcherIcons';
 import SectionNavigation from '../../components/SectionNavigation';
-import DashboardActivity from '../../components/DashboardActivity';
+import CardsWithActivity from '../../components/CardsWithActivity';
 
 const modules = [
   { path: '/admin/materias', key: 'materias', title: 'Materias', detail: 'Catálogo, categorías y especialidades', globalOnly: true },
@@ -77,7 +77,7 @@ export default function AdminPage() {
     {selectedIsRestricted ? (
       <ContentState tone="error" title="Módulo reservado al administrador global" detail="Tu cuenta administra una especialidad y no tiene acceso a esta herramienta del sistema." actions={<Link className="button" to="/admin">Volver al panel</Link>} />
     ) : !selected ? (
-      <div className="launcher-body">
+      <CardsWithActivity>
         <div className="admin-dashboard-sections">
           <section aria-labelledby="admin-management-title">
             <header className="admin-dashboard-heading"><span>Administración</span><h2 id="admin-management-title">Gestión del sistema</h2></header>
@@ -88,8 +88,7 @@ export default function AdminPage() {
             <LauncherCards options={[{ key: 'styleguide', href: '/styleguide', title: 'Sistema de diseño', description: 'Componentes, estados y reglas visuales compartidas.', icon: launcherIcons.verPlanillas }]} />
           </section>}
         </div>
-        <DashboardActivity />
-      </div>
+      </CardsWithActivity>
     ) : (
       <div style={{ position: 'relative' }}>
         {isScopedAdmin && <div className="admin-panel-decorative-left"><SpecialtyDecorative name={scopeName ?? undefined} /></div>}

@@ -23,7 +23,7 @@ import { resizeImageToDataUri } from '../../utils/imageResize';
 import RasgosAsistenciaEditor from './RasgosAsistenciaEditor';
 import AlumnosRiesgoView from './AlumnosRiesgoView';
 import { datosFaltantesDeLaClase, mensajeDatosFaltantes } from './claseRequerida';
-import DashboardActivity from '../../components/DashboardActivity';
+import CardsWithActivity from '../../components/CardsWithActivity';
 
 const normalizeSpecialtyName = (value: string) => value
   .trim()
@@ -420,7 +420,7 @@ function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChan
         </label>
       )}
     />
-    <div className="launcher-body">
+    <CardsWithActivity>
       <LauncherCards options={[
         {
           key: 'catedra',
@@ -446,8 +446,7 @@ function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChan
           </>,
         },
       ]} />
-      <DashboardActivity />
-    </div>
+    </CardsWithActivity>
     {asignaciones && asignaciones.length > 0 && (
       <div className="launcher-materias">
         <h3>Tus materias</h3>

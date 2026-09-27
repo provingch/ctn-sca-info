@@ -298,9 +298,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .page-banner-text span { color: var(--accent-deep); opacity: .82; font-size: .82rem; }
 .page-banner-emblem { flex: 0 0 auto; width: 60px; height: 60px; display: grid; place-items: center; border-radius: 14px; background: color-mix(in srgb, var(--paper) 55%, transparent); border: 1px solid color-mix(in srgb, var(--paper) 40%, transparent); box-shadow: inset 0 1px color-mix(in srgb, var(--paper) 55%, transparent), 0 4px 10px color-mix(in srgb, var(--accent-deep) 22%, transparent); backdrop-filter: blur(6px); }
 .page-banner-emblem .specialty-icon { width: 28px; height: 28px; }
-.launcher-body { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 20px; align-items: stretch; }
-.launcher-body .dashboard-activity { display: flex; flex-direction: column; min-height: 0; overflow: hidden; margin-bottom: 0; }
-.launcher-body .dashboard-activity .launcher-activity-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 6px; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+.launcher-body { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 20px; align-items: start; }
 .launcher-cards { display: grid; grid-template-columns: 1fr; gap: 20px; }
 .launcher-card { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 8px; height: 168px; padding: 20px 22px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); box-shadow: var(--shadow-sm); color: var(--ink); text-align: left; transition: transform .18s, box-shadow .18s, border-color .18s; }
 .launcher-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--accent); }
@@ -317,6 +315,8 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .launcher-badge.tone-warning { background: color-mix(in srgb, var(--warning) 12%, var(--paper)); color: var(--warning); }
 .launcher-badge.tone-success { background: color-mix(in srgb, var(--success) 12%, var(--paper)); color: var(--success); }
 .launcher-badge.tone-accent { background: var(--accent-soft); color: var(--accent-deep); }
+.dashboard-activity { display: flex; flex-direction: column; min-height: 0; overflow: hidden; margin-bottom: 0; max-height: min(420px, 55vh); }
+.dashboard-activity .launcher-activity-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 6px; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
 .launcher-activity-list { display: grid; gap: 10px; }
 .launcher-activity-item { display: grid; gap: 2px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
 .launcher-activity-item:last-child { border-bottom: 0; padding-bottom: 0; }

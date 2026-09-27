@@ -3,7 +3,7 @@ import { getProfile } from '../api/profile';
 import { splitActivityLine } from '../pages/home/activityLine';
 
 /** Siempre visible, con un estado vacío en vez de desaparecer (ver HomeLauncher/AppShell). */
-export default function DashboardActivity() {
+export default function DashboardActivity({ maxHeight }: { maxHeight?: number } = {}) {
   const [activity, setActivity] = useState<string[]>([]);
   useEffect(() => {
     let active = true;
@@ -13,7 +13,7 @@ export default function DashboardActivity() {
     return () => { active = false; };
   }, []);
   const entries = activity.map(splitActivityLine).filter((entry) => entry).reverse();
-  return <section className="panel dashboard-activity" aria-label="Actividad reciente">
+  return <section className="panel dashboard-activity" aria-label="Actividad reciente" style={maxHeight ? { maxHeight } : undefined}>
     <h2>Actividad reciente</h2>
     {entries.length > 0 ? (
       <div className="launcher-activity-list">{entries.map((entry, index) => entry && (
