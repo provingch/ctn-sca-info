@@ -19,12 +19,19 @@ it('ya no filtra los inicios de sesión', async () => {
   expect(await screen.findByText('Inició sesión')).toBeInTheDocument();
 });
 
-it('muestra acciones reales sin divulgar la IP del registro', async () => {
+it('muestra la IP del registro cuando está disponible', async () => {
   vi.mocked(getProfile).mockResolvedValue(profile(true, ['[2026-09-20 10:00:00] (ip: 127.0.0.1) Revisó un plan curricular']));
   render(<DashboardActivity />);
   expect(await screen.findByText('Revisó un plan curricular')).toBeInTheDocument();
+  expect(screen.getByText('20/09/2026 · 10:00 · IP: 127.0.0.1')).toBeInTheDocument();
+});
+
+it('no agrega "IP:" suelto en registros viejos sin IP', async () => {
+  vi.mocked(getProfile).mockResolvedValue(profile(true, ['[2026-09-20 10:00:00] Revisó un plan curricular']));
+  render(<DashboardActivity />);
+  expect(await screen.findByText('Revisó un plan curricular')).toBeInTheDocument();
   expect(screen.getByText('20/09/2026 · 10:00')).toBeInTheDocument();
-  expect(screen.queryByText(/127\.0\.0\.1/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/IP:/)).not.toBeInTheDocument();
 });
 
 it('respeta la visibilidad del perfil: sin acceso, no se filtran datos aunque existan registros', async () => {

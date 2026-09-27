@@ -163,7 +163,7 @@ export default function CoordinacionPage() {
   if (view === 'menu') {
     return <AppShell title="Coordinación Pedagógica" subtitle="Quejas y acompañamiento socioacadémico" welcome>
       <div className="launcher-body">
-        <LauncherCards className="launcher-cards-grid" options={[
+        <LauncherCards options={[
           { key: 'quejas', icon: launcherIcons.quejas, title: 'Quejas por profesor', description: 'Ver y revisar quejas cargadas por la administración.', onSelect: () => changeView('quejas') },
           { key: 'conducta', icon: launcherIcons.conducta, title: 'Reportes conductuales', description: 'Crear y administrar los códigos N usados para registrar el comportamiento de los alumnos.', onSelect: () => changeView('conducta') },
         ]} />

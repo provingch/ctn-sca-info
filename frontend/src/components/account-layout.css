@@ -12,8 +12,6 @@
   .account-ui .page-banner-identity .page-banner-emblem { box-shadow: none; }
   .account-ui .launcher-card-arrow { display: grid; place-items: center; flex-shrink: 0; width: 36px; height: 36px; font-size: 1.5rem; color: var(--accent-deep); border-radius: 50%; background: var(--accent-soft); }
   .account-ui .launcher-card:hover { border-color: var(--accent); box-shadow: 0 8px 24px color-mix(in srgb, var(--accent) 15%, transparent); }
-  .account-ui .launcher-body--wide { grid-template-columns: minmax(0,1fr); }
-  .account-ui .launcher-body--wide .launcher-cards { grid-template-columns: repeat(2,minmax(0,1fr)); grid-template-rows: auto; }
   .account-ui .launcher-pending { display: grid; gap: 14px; }
   .account-ui .launcher-pending p { margin: 0; color: var(--ink); line-height: 1.6; }
   .account-ui .launcher-materia-row { padding: 16px 12px; border-radius: 8px; }
@@ -38,7 +36,6 @@
   .account-ui .launcher-card-head h2 { font-size: 1.12rem; line-height: 1.4; overflow-wrap: anywhere; }
   .account-ui .launcher-card p { line-height: 1.6; font-size: .9rem; }
   .account-ui .launcher-card-icon { width: 40px; height: 40px; border-radius: 12px; }
-  .account-ui .launcher-cards-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 20px; }
   .account-ui .admin-dashboard-sections { gap: var(--account-section-gap); }
   .account-ui :is(.two-column,.evaluation-split-layout,.profile-card-grid) { gap: var(--account-section-gap); align-items: start; }
   .account-ui .toolbar.filters { padding: 16px; gap: 12px; border-radius: var(--radius-lg); background: var(--paper-raised); box-shadow: none; }
@@ -54,10 +51,8 @@
   .account-ui .content-state { border-radius: var(--radius-lg); }
   @media (max-width: 640px) {
     .account-ui { --account-section-gap: 16px; --account-panel-padding: 18px; --account-content-width: calc(100% - 24px); }
-    .account-ui .launcher-body--wide .launcher-cards { grid-template-columns: minmax(0,1fr); }
     .account-ui .page-banner-identity { max-width: 100px; }
     .account-ui .page-banner-title-row { align-items: flex-start; }
-    .account-ui .launcher-cards-grid { grid-template-columns: minmax(0,1fr); gap: 14px; }
     .account-ui .toolbar.filters { padding: 14px; }
   }
   @media (prefers-reduced-motion: reduce) { .account-ui .launcher-card { transition: none; } }

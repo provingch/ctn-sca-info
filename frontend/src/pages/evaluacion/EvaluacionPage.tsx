@@ -59,7 +59,7 @@ export default function EvaluacionPage() {
   if (view === 'menu') {
     return <AppShell title="Panel de Evaluación" subtitle="Revisión y seguimiento académico" welcome>
       <div className="launcher-body">
-        <LauncherCards className="launcher-cards-grid" options={[
+        <LauncherCards options={[
           { key: 'ver-planillas', icon: launcherIcons.verPlanillas, title: 'Ver planillas', description: 'Consultá las notas de una planilla en pantalla, descargala o reabrí una etapa cerrada.', onSelect: () => changeView('ver-planillas') },
           { key: 'planillas', icon: launcherIcons.descargarPlanillas, title: 'Descargar planillas', description: 'Exportá planillas completadas de los cursos.', onSelect: () => changeView('planillas') },
           { key: 'planes', icon: launcherIcons.revisarPlanes, title: 'Revisar plan curricular', description: 'Aprobá o rechazá planes de profesores.', onSelect: () => changeView('planes') },

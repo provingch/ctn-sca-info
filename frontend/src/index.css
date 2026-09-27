@@ -301,9 +301,8 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .launcher-body { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 20px; align-items: stretch; }
 .launcher-body .dashboard-activity { display: flex; flex-direction: column; min-height: 0; overflow: hidden; margin-bottom: 0; }
 .launcher-body .dashboard-activity .launcher-activity-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 6px; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
-.launcher-cards { display: grid; grid-template-rows: repeat(2, 1fr); gap: 20px; }
-.launcher-cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
-.launcher-card { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 8px; min-height: 160px; padding: 20px 22px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); box-shadow: var(--shadow-sm); color: var(--ink); text-align: left; transition: transform .18s, box-shadow .18s, border-color .18s; }
+.launcher-cards { display: grid; grid-template-columns: 1fr; gap: 20px; }
+.launcher-card { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 8px; height: 168px; padding: 20px 22px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); box-shadow: var(--shadow-sm); color: var(--ink); text-align: left; transition: transform .18s, box-shadow .18s, border-color .18s; }
 .launcher-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--accent); }
 .launcher-card:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); box-shadow: var(--shadow-md); }
 .launcher-card-head { display: flex; align-items: center; gap: 10px; }
@@ -311,7 +310,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .launcher-card-head h2 { flex: 1; margin: 0; }
 .launcher-card-arrow { color: var(--muted); font-weight: 700; transition: color .18s ease; }
 .launcher-card:hover .launcher-card-arrow { color: var(--accent); }
-.launcher-card p { margin: 0; color: var(--muted); }
+.launcher-card p { margin: 0; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .launcher-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 6px; }
 .launcher-badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; font-size: .72rem; font-weight: 700; }
 .launcher-badge.tone-danger { background: color-mix(in srgb, var(--danger) 12%, var(--paper)); color: var(--danger); }
@@ -347,7 +346,6 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 @media (max-width: 900px) {
   .launcher-body { grid-template-columns: 1fr; }
   .launcher-body, .launcher-cards { gap: 14px; }
-  .launcher-card { min-height: auto; }
 }
 @media (max-width: 640px) {
   .page-banner { flex-direction: column; align-items: flex-start; gap: 10px; }

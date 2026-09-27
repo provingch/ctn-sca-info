@@ -81,11 +81,11 @@ export default function AdminPage() {
         <div className="admin-dashboard-sections">
           <section aria-labelledby="admin-management-title">
             <header className="admin-dashboard-heading"><span>Administración</span><h2 id="admin-management-title">Gestión del sistema</h2></header>
-            <LauncherCards className="launcher-cards-grid" options={visibleModules.map(module => ({ key: module.key, href: module.path, title: module.title, description: module.detail, icon: module.key === 'clases' ? launcherIcons.clasesDadas : launcherIcons[module.key as keyof typeof launcherIcons] }))} />
+            <LauncherCards options={visibleModules.map(module => ({ key: module.key, href: module.path, title: module.title, description: module.detail, icon: module.key === 'clases' ? launcherIcons.clasesDadas : launcherIcons[module.key as keyof typeof launcherIcons] }))} />
           </section>
           {!isScopedAdmin && <section className="admin-reference-section" aria-labelledby="admin-reference-title">
             <header className="admin-dashboard-heading"><span>Referencia</span><h2 id="admin-reference-title">Herramientas internas</h2></header>
-            <LauncherCards className="launcher-cards-grid" options={[{ key: 'styleguide', href: '/styleguide', title: 'Sistema de diseño', description: 'Componentes, estados y reglas visuales compartidas.', icon: launcherIcons.verPlanillas }]} />
+            <LauncherCards options={[{ key: 'styleguide', href: '/styleguide', title: 'Sistema de diseño', description: 'Componentes, estados y reglas visuales compartidas.', icon: launcherIcons.verPlanillas }]} />
           </section>}
         </div>
         <DashboardActivity />

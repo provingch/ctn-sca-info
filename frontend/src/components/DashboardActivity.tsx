@@ -19,7 +19,10 @@ export default function DashboardActivity() {
       <div className="launcher-activity-list">{entries.map((entry, index) => entry && (
         <div className="launcher-activity-item" key={`${entry.date}-${index}`}>
           <span className="launcher-activity-message">{entry.message}</span>
-          <span className="launcher-activity-date">{entry.date.replace(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}:\d{2}):\d{2}$/, '$3/$2/$1 · $4')}</span>
+          <span className="launcher-activity-date">
+            {entry.date.replace(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}:\d{2}):\d{2}$/, '$3/$2/$1 · $4')}
+            {entry.ip ? ` · IP: ${entry.ip}` : ''}
+          </span>
         </div>
       ))}</div>
     ) : (
