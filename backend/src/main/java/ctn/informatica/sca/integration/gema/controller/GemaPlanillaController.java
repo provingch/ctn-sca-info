@@ -1,11 +1,15 @@
 package ctn.informatica.sca.integration.gema.controller;
 
+import ctn.informatica.sca.integration.gema.dto.CalificacionDto;
 import ctn.informatica.sca.integration.gema.dto.CreateTareaRequest;
 import ctn.informatica.sca.integration.gema.dto.CreateTareaResult;
 import ctn.informatica.sca.integration.gema.dto.PageResponse;
 import ctn.informatica.sca.integration.gema.dto.PlanillaDto;
+import ctn.informatica.sca.integration.gema.dto.SaveNotasRequest;
+import ctn.informatica.sca.integration.gema.dto.SaveNotasResponse;
 import ctn.informatica.sca.integration.gema.dto.TareaDto;
 import ctn.informatica.sca.integration.gema.dto.UpdateTareaRequest;
+import ctn.informatica.sca.integration.gema.service.GemaCalificacionService;
 import ctn.informatica.sca.integration.gema.service.GemaPlanillaService;
 import ctn.informatica.sca.integration.gema.service.GemaTareaService;
 import java.time.LocalDate;
@@ -26,10 +30,13 @@ public class GemaPlanillaController {
 
     private final GemaPlanillaService planillaService;
     private final GemaTareaService tareaService;
+    private final GemaCalificacionService calificacionService;
 
-    public GemaPlanillaController(GemaPlanillaService planillaService, GemaTareaService tareaService) {
+    public GemaPlanillaController(GemaPlanillaService planillaService, GemaTareaService tareaService,
+            GemaCalificacionService calificacionService) {
         this.planillaService = planillaService;
         this.tareaService = tareaService;
+        this.calificacionService = calificacionService;
     }
 
     @GetMapping("/planillas")
@@ -64,5 +71,22 @@ public class GemaPlanillaController {
             @PathVariable String gemaTareaId,
             @RequestBody UpdateTareaRequest request) {
         return tareaService.updateTarea(planillaId, gemaTareaId, request);
+    }
+
+    @GetMapping("/planillas/{planillaId}/calificaciones")
+    public PageResponse<CalificacionDto> calificaciones(
+            @PathVariable int planillaId,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        return PageResponse.of(calificacionService.listCalificaciones(planillaId), page, size);
+    }
+
+    @PutMapping("/planillas/{planillaId}/calificaciones")
+    public ResponseEntity<SaveNotasResponse> guardarCalificaciones(
+            @PathVariable int planillaId,
+            @RequestBody SaveNotasRequest request) {
+        SaveNotasResponse result = calificacionService.saveNotas(planillaId, request);
+        HttpStatus status = result.rechazadas().isEmpty() ? HttpStatus.OK : HttpStatus.BAD_REQUEST;
+        return ResponseEntity.status(status).body(result);
     }
 }

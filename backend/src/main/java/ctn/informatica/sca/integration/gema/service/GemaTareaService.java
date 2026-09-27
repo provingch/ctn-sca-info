@@ -64,8 +64,8 @@ public class GemaTareaService {
     public CreateTareaResult createTarea(int planillaId, CreateTareaRequest request) {
         validate(request);
         Planilla planilla = requirePlanilla(planillaId);
-        requireEtapaAbierta(planilla);
-        requireFechaEnEtapa(planilla, request.fechaLimite() != null ? request.fechaLimite() : request.fecha());
+        GemaEtapaValidation.requireEtapaAbierta(planilla);
+        GemaEtapaValidation.requireFechaEnEtapa(planilla, request.fechaLimite() != null ? request.fechaLimite() : request.fecha());
 
         try {
             GemaTareaDao.TareaRef existing = gemaTareaDao.findByGemaTareaId(request.gemaTareaId());
@@ -99,8 +99,8 @@ public class GemaTareaService {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No hay una tarea de GEMA con ese id en esa planilla");
             }
             Planilla planilla = requirePlanilla(planillaId);
-            requireEtapaAbierta(planilla);
-            requireFechaEnEtapa(planilla, request.fechaLimite() != null ? request.fechaLimite() : request.fecha());
+            GemaEtapaValidation.requireEtapaAbierta(planilla);
+            GemaEtapaValidation.requireFechaEnEtapa(planilla, request.fechaLimite() != null ? request.fechaLimite() : request.fecha());
 
             Tarea tarea = tareaDao.findById(existing.id());
             applyRequest(tarea, request.titulo(), request.fecha(), request.fechaInicio(), request.fechaLimite(),
@@ -121,21 +121,6 @@ public class GemaTareaService {
             return planilla;
         } catch (SQLException ex) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "No se pudo consultar la planilla", ex);
-        }
-    }
-
-    private static void requireEtapaAbierta(Planilla planilla) {
-        boolean confirmada = planilla.getEtapaIndex() == 2 ? planilla.isEtapa2Confirmada() : planilla.isEtapa1Confirmada();
-        if (confirmada) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "La etapa de esta planilla ya está confirmada");
-        }
-    }
-
-    /** Misma regla que {@code PlanillaProcesoWorkbookBuilder#filterTasksByEtapa}: no se copia una nueva. */
-    private static void requireFechaEnEtapa(Planilla planilla, LocalDate fecha) {
-        if (fecha != null && planilla.sugerirEtapaParaTarea(fecha) != planilla.getEtapaIndex()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "La fecha límite de la tarea no pertenece a una etapa activa de la planilla");
         }
     }
 
