@@ -41,6 +41,8 @@ export default function PlanillaDetalleView({ filtros }: { filtros: EvaluacionFi
   const [detalleError, setDetalleError] = useState('');
   const [reabriendo, setReabriendo] = useState(false);
   const [descargando, setDescargando] = useState(false);
+  const [descargandoLista, setDescargandoLista] = useState(false);
+  const [descargaListaError, setDescargaListaError] = useState('');
   const cursoId = selected?.id;
 
   const cargarLista = useCallback(async () => {
@@ -94,6 +96,19 @@ export default function PlanillaDetalleView({ filtros }: { filtros: EvaluacionFi
     }
   }
 
+  async function descargarListaActual() {
+    if (!cursoId || descargandoLista) return;
+    setDescargandoLista(true);
+    setDescargaListaError('');
+    try {
+      await evaluacionApi.descargarPlanillas(cursoId, etapa, periodo, materiaId);
+    } catch (error) {
+      setDescargaListaError(messageFor(error, 'No se pudo descargar el archivo.'));
+    } finally {
+      setDescargandoLista(false);
+    }
+  }
+
   async function confirmarReapertura(planilla: evaluacionApi.PlanillaResumen, motivo: string) {
     const etapaReabierta = planilla.etapaIndex === 2 ? 2 : 1;
     await evaluacionApi.reabrirEtapaEvaluacion(planilla.id, etapaReabierta, motivo);
@@ -140,8 +155,10 @@ export default function PlanillaDetalleView({ filtros }: { filtros: EvaluacionFi
 
   return <>
     <section className="panel form-grid evaluation-filters">
-      <p className="lead">Elegí el curso, la sección, la etapa y el período para ver las planillas correspondientes.</p>
+      <p className="lead">Elegí el curso, la sección, la etapa y el período para ver las planillas correspondientes — desde acá también podés descargarlas.</p>
       <EvaluacionFiltrosCampos filtros={filtros} />
+      {descargaListaError && <div className="notice error" role="alert">{descargaListaError}</div>}
+      <button type="button" className="button secondary" disabled={!cursoId || descargandoLista} onClick={() => void descargarListaActual()}>{descargandoLista ? 'Generando…' : 'Descargar planillas'}</button>
     </section>
     {!selected ? <ContentState compact title="Elegí un curso y una sección" detail="Cuando los elijas, acá aparecen sus planillas." />
       : loading ? <ContentState tone="loading" title="Cargando planillas…" />

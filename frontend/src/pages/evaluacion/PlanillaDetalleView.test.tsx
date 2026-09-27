@@ -93,6 +93,14 @@ describe('PlanillaDetalleView', () => {
     await waitFor(() => expect(evaluacionApi.descargarPlanillas).toHaveBeenCalledWith(5, 'primera', 2026, 10));
   });
 
+  it('descarga el lote completo del listado sin abrir ninguna planilla', async () => {
+    render(<PlanillaDetalleView filtros={filtros} />);
+    await screen.findByRole('rowheader', { name: 'Programación' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Descargar planillas' }));
+    await waitFor(() => expect(evaluacionApi.descargarPlanillas).toHaveBeenCalledWith(5, 'primera', 2026, 0));
+  });
+
   it('sólo ofrece reabrir una etapa que está cerrada', async () => {
     await abrirPlanilla('Matemática');
 

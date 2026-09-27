@@ -5,8 +5,9 @@ import { useSpecialty } from '../../context/SpecialtyContext';
 import { normalizeSpecialty } from '../../theme/theme';
 
 /**
- * Filtros de especialidad, curso, sección, etapa, materia y período que comparten "Descargar planillas" y
- * "Ver planillas". El estado vive en EvaluacionPage, así que no se pierde al pasar de una vista a otra.
+ * Filtros de especialidad, curso, sección, etapa, materia y período de "Ver planillas" — desde ahí también
+ * se descarga, individualmente o en lote, sin salir de la vista. El estado vive en EvaluacionPage, así que
+ * no se pierde al abrir y cerrar una planilla puntual del listado.
  */
 export function useEvaluacionFiltros() {
   const specialty = useSpecialty();
