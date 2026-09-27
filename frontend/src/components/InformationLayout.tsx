@@ -10,19 +10,19 @@ import ThemeToggle from './ThemeToggle';
 import './information-page.css';
 
 /** Shared public/account presentation; page content and its order belong to the caller. */
-export default function InformationLayout({ title, lead, introduction, children, reading = false }: {
-  title: string; lead: string; introduction?: ReactNode; children: ReactNode; reading?: boolean;
+export default function InformationLayout({ title, lead, introduction, children, reading = false, showBackLink = false }: {
+  title: string; lead: string; introduction?: ReactNode; children: ReactNode; reading?: boolean; showBackLink?: boolean;
 }) {
   const { user } = useAuth();
   const { name } = useSpecialty();
   useEffect(() => { document.title = `${title} | CTN`; }, [title]);
   const content = <article className={`about-card${reading ? ' information-reading' : ''}`}>
-    <header className="about-intro">
+    <div className="about-intro">
       <p className="about-eyebrow">Colegio Técnico Nacional de Asunción</p>
       <h1>{title}</h1>
       <p className="about-lead">{lead}</p>
       {introduction}
-    </header>
+    </div>
     {children}
     <footer className="about-footer"><p>© {new Date().getFullYear()} Colegio Técnico Nacional de Asunción.</p></footer>
   </article>;
@@ -32,6 +32,7 @@ export default function InformationLayout({ title, lead, introduction, children,
       <Link to="/" className="about-brand"><ScaLogo /><span>Sistema de Carpeta Académica<small>Colegio Técnico Nacional de Asunción</small></span></Link>
       <ThemeToggle compact />
     </header>
+    {showBackLink && <Link to="/" className="about-public-back">← Volver al inicio</Link>}
     <main className="about-page">{content}</main>
     <AppFooter />
   </div>;

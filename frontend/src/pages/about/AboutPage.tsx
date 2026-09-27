@@ -18,7 +18,7 @@ const repository = 'https://github.com/provingch/ctn-sca-info';
 
 /** Public credits, with the regular account navigation for signed-in users. */
 export default function AboutPage() {
-  return <InformationLayout title="Acerca de SCA" lead="Una plataforma para gestionar la vida académica del CTN." introduction={<>
+  return <InformationLayout title="Acerca de SCA" lead="Una plataforma para gestionar la vida académica del CTN." showBackLink introduction={<>
       <p>El Sistema de Carpeta Académica conecta a docentes, equipos de gestión y familias.</p>
       <ul className="about-modules" aria-label="Módulos del sistema">{modules.map((module) => <li key={module}>{module}</li>)}</ul>
     </>}>
