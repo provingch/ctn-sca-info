@@ -2,9 +2,9 @@
    Keep specialty tokens, tables, record lists and print layouts in their owners. */
 @media screen {
   .account-ui { --account-section-gap: 24px; --account-panel-padding: 24px; --account-content-width: min(1180px, calc(100% - 40px)); display: flex; flex-direction: column; min-height: 100dvh; }
-  .account-ui .app-main { width: var(--account-content-width); flex: 1; padding-bottom: 32px; }
+  .account-ui .app-main { width: var(--account-content-width); flex: 1; padding-bottom: calc(var(--app-footer-h) + 28px); }
   .account-ui .app-header .app-header-inner { width: var(--account-content-width); padding-inline: 0; }
-  .account-ui .app-footer { position: static; height: auto; min-height: var(--app-footer-h); flex-shrink: 0; }
+  .account-ui .app-footer { flex-shrink: 0; }
   .account-ui .app-footer .app-footer-inner { width: var(--account-content-width); padding: 16px 0; flex-wrap: wrap; }
   .account-ui :is(.brand-copy,.navbar-user-copy) small { font-size: .78rem; line-height: 1.4; color: var(--ink); opacity: .85; }
   .account-ui .page-banner-identity { display: grid; justify-items: center; gap: 6px; max-width: 180px; flex-shrink: 0; text-align: center; }

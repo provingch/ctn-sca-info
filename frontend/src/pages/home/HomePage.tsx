@@ -476,27 +476,19 @@ function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChan
           </>,
         },
       ]} />
-      {(recentActivity.length > 0 || rechazados > 0 || noCargados > 0) && <aside className="launcher-activity">
-        <h3>{recentActivity.length ? "Actividad reciente" : "Pendientes por atender"}</h3>
-        {recentActivity.length === 0 ? (
-          <div className="launcher-pending">
-            {noCargados > 0 && <p><strong>{noCargados}</strong> planes curriculares sin cargar.</p>}
-            {rechazados > 0 && <p><strong>{rechazados}</strong> planes rechazados para corregir.</p>}
-            <button type="button" className="btn" aria-label="Ver planes curriculares pendientes" onClick={() => onSelect("catedra", { subview: "plan-curricular" })}>Revisar planes <span aria-hidden="true">→</span></button>
-          </div>
-        ) : (
-          <div className="launcher-activity-list">
-            {recentActivity.map((line, idx) => {
-              const parsed = splitActivityLine(line);
-              return <div className="launcher-activity-item" key={idx}>
-                {parsed ? <>
-                  <span className="launcher-activity-message">{parsed.message}</span>
-                  <span className="launcher-activity-date">{humanizeActivityDate(parsed.date)}</span>
-                </> : <span className="launcher-activity-raw">{line}</span>}
-              </div>;
-            })}
-          </div>
-        )}
+      {recentActivity.length > 0 && <aside className="launcher-activity">
+        <h3>Actividad reciente</h3>
+        <div className="launcher-activity-list">
+          {recentActivity.map((line, idx) => {
+            const parsed = splitActivityLine(line);
+            return <div className="launcher-activity-item" key={idx}>
+              {parsed ? <>
+                <span className="launcher-activity-message">{parsed.message}</span>
+                <span className="launcher-activity-date">{humanizeActivityDate(parsed.date)}</span>
+              </> : <span className="launcher-activity-raw">{line}</span>}
+            </div>;
+          })}
+        </div>
       </aside>}
     </div>
     {asignaciones && asignaciones.length > 0 && (
