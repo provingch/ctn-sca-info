@@ -31,3 +31,9 @@ sca:
     enabled: ${SCA_LOAD_DEMO_DATA:false}
   activity-logs:
     dir: ${SCA_ACTIVITY_LOGS_DIR:/var/lib/ctn/activity-logs}
+
+gema:
+  integration:
+    client-id: gema
+    api-key: ${GEMA_API_KEY:}          # vacío = integración deshabilitada (todos los /api/integracion/** dan 503)
+    allowed-ips: ${GEMA_ALLOWED_IPS:}  # opcional, lista separada por comas; vacío = sin restricción de origen

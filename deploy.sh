@@ -498,6 +498,8 @@ write_db_env_file() {
   local persisted_google_client_id=""
   local persisted_google_client_secret=""
   local persisted_google_redirect_uri=""
+  local persisted_gema_api_key=""
+  local persisted_gema_allowed_ips=""
   if [[ -f "$DB_ENV_FILE" ]]; then
     persisted_jwt_secret="$(read_env_file_value 'JWT_SECRET')"
     persisted_demo_data="$(read_env_file_value 'SCA_LOAD_DEMO_DATA')"
@@ -506,6 +508,10 @@ write_db_env_file() {
     persisted_google_client_id="$(read_env_file_value 'GOOGLE_CLIENT_ID')"
     persisted_google_client_secret="$(read_env_file_value 'GOOGLE_CLIENT_SECRET')"
     persisted_google_redirect_uri="$(read_env_file_value 'GOOGLE_REDIRECT_URI')"
+    # Sin esto, la integración con GEMA se apaga sola (503 en todo /api/integracion/**) en el
+    # próximo deploy: write_db_env_file regenera el .env desde cero cada vez.
+    persisted_gema_api_key="$(read_env_file_value 'GEMA_API_KEY')"
+    persisted_gema_allowed_ips="$(read_env_file_value 'GEMA_ALLOWED_IPS')"
     if [[ -z "$password" ]]; then
       password="$(read_env_file_value 'SCA_DB_PASSWORD')"
       [[ -z "$password" ]] && password="$(read_env_file_value 'CTN_DB_PASSWORD')"
@@ -532,6 +538,8 @@ write_db_env_file() {
   local google_client_id="${GOOGLE_CLIENT_ID:-$persisted_google_client_id}"
   local google_client_secret="${GOOGLE_CLIENT_SECRET:-$persisted_google_client_secret}"
   local google_redirect_uri="${GOOGLE_REDIRECT_URI:-$persisted_google_redirect_uri}"
+  local gema_api_key="${GEMA_API_KEY:-$persisted_gema_api_key}"
+  local gema_allowed_ips="${GEMA_ALLOWED_IPS:-$persisted_gema_allowed_ips}"
 
   echo "==> Writing runtime config to $DB_ENV_FILE"
   local tmp_env
@@ -559,6 +567,8 @@ write_db_env_file() {
     [[ -n "$google_redirect_uri" ]] && printf 'GOOGLE_REDIRECT_URI=%q\n' "$google_redirect_uri"
     [[ -n "$vapid_public_key" ]] && printf 'CTN_VAPID_PUBLIC_KEY=%q\n' "$vapid_public_key"
     [[ -n "$vapid_private_key" ]] && printf 'CTN_VAPID_PRIVATE_KEY=%q\n' "$vapid_private_key"
+    [[ -n "$gema_api_key" ]] && printf 'GEMA_API_KEY=%q\n' "$gema_api_key"
+    [[ -n "$gema_allowed_ips" ]] && printf 'GEMA_ALLOWED_IPS=%q\n' "$gema_allowed_ips"
     if [[ -n "$jwt_secret" ]]; then
       printf 'JWT_SECRET=%q\n' "$jwt_secret"
       printf 'SCA_JWT_SECRET=%q\n' "$jwt_secret"
