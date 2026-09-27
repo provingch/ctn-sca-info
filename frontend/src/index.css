@@ -480,7 +480,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .data-modal:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 38%, transparent); outline-offset: 3px; }
 @keyframes data-modal-enter { from { opacity: 0; transform: translate(-50%, -47%) scale(.985); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
 @media (prefers-reduced-motion: reduce) { .data-modal { animation: none; } .data-modal .signature-modal-close { transition: none; } }
-@media (max-width: 680px) {
+@media (max-width: 640px) {
   .data-modal { width: calc(100vw - 20px); max-height: calc(100dvh - 20px); border-radius: 16px; scrollbar-gutter: auto; }
   .data-modal .signature-modal-header { padding: 17px 18px 15px; }
   .data-modal > .form-grid { grid-template-columns: 1fr; padding: 18px; }
@@ -488,10 +488,6 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
   .data-modal .signature-modal-actions { position: sticky; bottom: -18px; z-index: 4; margin: 4px -18px -18px; padding: 14px 18px max(14px, env(safe-area-inset-bottom)); background: color-mix(in srgb, var(--paper) 96%, transparent); backdrop-filter: blur(14px); }
   .data-modal .signature-modal-actions .button { flex: 1 1 0; min-width: 0; }
   .data-modal-section { padding: 0 18px 18px; }
-}
-
-@media (min-width: 901px) {
-  /* Old sticky layout removed: replaced by fixed flex layout further below. */
 }
 
 .auth-page { min-height: 100vh; position: relative; display: grid; grid-template-columns: minmax(320px, 1fr) minmax(360px, 480px) minmax(96px, .25fr); align-items: center; justify-items: center; padding: 28px; gap: 28px; background: radial-gradient(circle at 10% 14%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 32rem), radial-gradient(circle at 88% 84%, rgba(117, 139, 180, .16), transparent 28rem), linear-gradient(145deg, #e5edf6, #f8fafc 54%, #dbe5f2); overflow-x: hidden; overflow-y: auto; }
@@ -509,7 +505,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
   .auth-brand-panel h2 { font-size: clamp(2.2rem, 8vw, 3.6rem); }
   .auth-form { margin-bottom: 40px; }
 }
-@media (max-width: 680px) {
+@media (max-width: 640px) {
   .auth-page { padding: 14px; }
   .auth-brand-panel { padding: 70px 12px 8px; }
   .auth-brand-panel h2 { font-size: 2.45rem; }
@@ -557,7 +553,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
   .design-token-grid { grid-template-columns: repeat(3, minmax(120px, 1fr)); }
   .styleguide-form-grid, .styleguide-content-states { grid-template-columns: 1fr; }
 }
-@media (max-width: 680px) {
+@media (max-width: 640px) {
   .design-token-grid, .styleguide-status-grid { grid-template-columns: 1fr 1fr; }
   .styleguide-row .button { flex: 1 1 145px; }
 }
@@ -581,6 +577,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .parent-overview-metrics article { min-width: 0; padding: 17px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-soft); }
 .parent-overview-metrics span, .parent-overview-metrics small { display: block; color: var(--muted); }
 .parent-overview-metrics span { font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+@media (max-width: 900px) { .parent-overview-metrics { grid-template-columns: 1fr 1fr; } .parent-overview-metrics article:last-child { grid-column: 1 / -1; } }
 .parent-overview-metrics strong { display: block; margin: 6px 0 3px; color: var(--ink); font-size: 1.65rem; font-variant-numeric: tabular-nums; }
 .parent-overview-metrics small { font-size: .72rem; font-weight: 650; }
 .parent-stage-comparison { display: flex; flex-wrap: wrap; gap: 9px; padding-top: 2px; }
@@ -654,14 +651,13 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 
 @media (max-width: 900px) {
   .app-nav { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-inline: contain; }.brand-copy small { display: none; }
-  .summary-grid { grid-template-columns: 1fr 1fr; }.auth-page { grid-template-columns: 1fr; padding: 22px; }.auth-brand-panel { padding: 60px 30px 10px; }.auth-brand-panel h2 { font-size: clamp(2.2rem, 8vw, 3.6rem); }.auth-form { margin-bottom: 40px; }
+  .summary-grid { grid-template-columns: 1fr 1fr; }
 }
-@media (max-width: 680px) {
+@media (max-width: 640px) {
   .brand-copy { display: none; }.app-nav { gap: 2px; }.app-nav a { padding-inline: 8px; font-size: .74rem; }.nav-button { width: 38px; padding: 0; overflow: hidden; text-indent: -999px; }.nav-button::after { content: "↗"; text-indent: 0; font-size: 1rem; }
   .app-main { width: min(100% - 24px, 1180px); }
   .two-column { grid-template-columns: 1fr; }.summary-grid { grid-template-columns: 1fr 1fr; }.app-footer { height: auto; padding: 10px 0; }.app-footer .app-footer-inner { flex-direction: column; gap: 2px; padding-block: 4px; }.toolbar.filters select { flex: 1 1 140px; }.panel { padding: 21px; }
   .admin-toolbar { align-items: stretch; }.admin-toolbar .button { width: 100%; }.inline-filter { width: 100%; margin-left: 0; flex-direction: column; align-items: flex-start; }.inline-filter select { min-width: 0; }
-  .auth-page { padding: 14px; }.auth-brand-panel { padding: 70px 12px 8px; }.auth-brand-panel h2 { font-size: 2.45rem; }.auth-form { padding: 28px 22px; }.public-theme-toggle { top: 16px; right: 16px; }
   .public-theme-toggle .theme-toggle { width: 42px; padding: 0; }.public-theme-toggle .theme-toggle span { display: none; }
   .profile-identity { align-items: flex-start; flex-wrap: wrap; }.profile-completion { width: 100%; margin-left: 96px; }.profile-workspace { grid-template-columns: 1fr; }.profile-menu { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); }.profile-card-grid { grid-template-columns: 1fr; }.profile-list > div { grid-template-columns: 1fr; gap: 5px; }
 }
@@ -675,7 +671,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .app-footer-brand small { color: var(--muted); font-size: .64rem; }
 .app-footer-logo { width: 42px; height: 42px; flex: 0 0 42px; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .14)); }
 .app-footer-brand:focus-visible { border-radius: 8px; outline: 3px solid color-mix(in srgb, var(--accent) 35%, transparent); outline-offset: 4px; }
-@media (max-width: 680px) {
+@media (max-width: 640px) {
   :root { --app-footer-h: 92px; }
   .app-footer .app-footer-inner { justify-content: center; gap: 5px; }
   .app-footer-logo { width: 36px; height: 36px; flex-basis: 36px; }
@@ -701,9 +697,15 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
   .profile-card-grid { grid-template-columns: 1fr 1fr; }
   .profile-form-actions { grid-column: 1 / -1; }
   .auth-brand-panel { max-width: none; align-items: center; text-align: center; }
+  .profile-page { overflow: visible; }
+  .profile-preview { order: -1; position: static; flex-direction: row; align-items: center; padding: 18px 20px; text-align: left; }
+  .profile-preview-kicker { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .profile-preview .avatar { width: 76px !important; height: 76px !important; flex-basis: 76px !important; border-radius: 22px !important; }
+  .profile-preview .profile-identity-copy h2 { margin-top: 7px; }
+  .profile-content { height: auto; overflow: visible; }
 }
 
-@media (max-width: 680px) {
+@media (max-width: 640px) {
   :root { --app-header-h: 58px; }
   .app-header .app-header-inner { width: calc(100% - 16px); grid-template-columns: 1fr auto; gap: 10px; padding-inline: 4px; }
   .brand { width: fit-content; }
@@ -845,16 +847,6 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
   }
 }
 
-@media (max-width: 900px) {
-  .profile-page { overflow: visible; }
-  .profile-workspace { grid-template-columns: 1fr; }
-  .profile-preview { order: -1; position: static; flex-direction: row; align-items: center; padding: 18px 20px; text-align: left; }
-  .profile-preview-kicker { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .profile-preview .avatar { width: 76px !important; height: 76px !important; flex-basis: 76px !important; border-radius: 22px !important; }
-  .profile-preview .profile-identity-copy h2 { margin-top: 7px; }
-  .profile-content { height: auto; overflow: visible; }
-}
-
 @media (max-width: 480px) {
   .profile-preview { gap: 14px; padding: 16px; }
   .profile-preview .avatar { width: 62px !important; height: 62px !important; flex-basis: 62px !important; border-radius: 18px !important; }
@@ -868,15 +860,13 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
   .schedule-course-form { grid-template-columns: 1fr; }
 }
 
-@media (max-width: 680px) {
+@media (max-width: 640px) {
   .parent-page { gap: 16px; }
   .parent-overview-header,
   .parent-section-heading,
   .parent-print-button { width: 100%; }
   .parent-report-actions { justify-content: stretch; }
   .parent-report-actions .button, .parent-report-month { width: 100%; }
-  .parent-overview-metrics { grid-template-columns: 1fr 1fr; }
-  .parent-overview-metrics article:last-child { grid-column: 1 / -1; }
   .parent-stage-comparison { display: grid; grid-template-columns: 1fr 1fr; }
   .parent-stage-comparison > div { justify-content: space-between; border-radius: 10px; }
   .parent-stage-tabs { width: 100%; }
@@ -947,6 +937,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .system-status-grid .panel { display: grid; align-content: start; gap: 10px; margin: 0; padding: 20px; }
 .system-status-grid article > strong { font-size: 1.35rem; }
 .system-status-grid article > small { color: var(--muted); }
+@media (max-width: 900px) { .system-status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .system-db-card.is-disconnected .connection-state { color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, var(--paper)); }
 .system-db-card.is-disconnected .connection-state i { background: var(--danger); }
 .system-migrations-panel { margin: 0; }
@@ -1054,7 +1045,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .grade-chip.student-grade-pill { min-width: 36px; min-height: 28px; display: inline-flex; align-items: center; justify-content: center; margin: 0; padding: 5px 10px; border-radius: 999px; font-size: .82rem; line-height: 1; box-shadow: none; }
 .planilla-grade-table .planilla-student-empty { padding: 36px 20px; color: var(--muted); font-weight: 700; text-align: center; }
 
-@media (max-width: 680px) {
+@media (max-width: 640px) {
   .system-status-grid { grid-template-columns: 1fr; }
   .system-status-toolbar, .admin-summary-heading { align-items: stretch; flex-direction: column; }
   .admin-summary-section { padding: 17px; }
@@ -1154,6 +1145,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .complaints-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
 .complaints-groups { display: grid; gap: 14px; }
 .complaints-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 0 0 22px; }
+@media (max-width: 900px) { .complaints-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .complaints-summary > div { padding: 16px 18px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--paper-raised); border-top: 3px solid var(--accent); }
 .complaints-summary dt { color: var(--muted); font-size: .82rem; }
 .complaints-summary dd { margin: 6px 0 0; color: var(--ink); font-size: 1.8rem; font-weight: 800; font-variant-numeric: tabular-nums; }
@@ -1244,7 +1236,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .planilla-task-origin .planilla-task-origin-icon svg { display: block; width: 20px; height: 20px; flex-shrink: 0; }
 .planilla-task-origin .origin-badge svg { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .planilla-legacy-toolbar .planilla-date-filter { display: grid; }
-@media (max-width: 680px) { .planilla-legacy-toolbar .planilla-date-filter { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .planilla-legacy-toolbar .planilla-date-filter { grid-template-columns: 1fr; } }
 .form-field { display: grid; gap: 7px; min-width: 0; }
 .field-label { color: var(--ink); font-weight: 700; font-size: .88rem; }
 .task-form .field-hint { color: var(--muted); font-size: .78rem; font-weight: 500; line-height: 1.5; }

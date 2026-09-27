@@ -34,7 +34,7 @@
 @keyframes animated-select-popover-in { from { opacity: 0; transform: translateY(-5px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes animated-select-option-in { to { opacity: 1; transform: scale(1) translateY(0); } }
 
-@media (max-width: 680px) {
+@media (max-width: 640px) {
   .animated-select-popover { position: fixed; top: auto; right: 10px; bottom: 12px; left: 10px; padding: 10px; border-radius: 17px; }
   .animated-select.open-upward .animated-select-popover { bottom: 12px; }
   .animated-select-list { max-height: min(420px, 62vh); }

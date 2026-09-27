@@ -39,7 +39,7 @@
 .assignment-pagination .button:disabled { opacity: .5; cursor: not-allowed; }
 .assignment-empty { padding: 36px 22px !important; text-align: center; }
 .assignment-empty p { color: var(--muted); }
-@media (max-width: 680px) {
+@media (max-width: 640px) {
   .assignment-overview { gap: 8px; }
   .assignment-overview > div { padding: 14px 10px; }
   .assignment-overview span { font-size: .75rem; }
