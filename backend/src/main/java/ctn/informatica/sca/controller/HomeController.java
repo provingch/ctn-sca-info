@@ -36,6 +36,7 @@ import ctn.informatica.sca.dto.PlanillaResumenDto;
 import ctn.informatica.sca.dto.RasgoAsistenciaDto;
 import ctn.informatica.sca.dto.RasgoPlanillaDto;
 import ctn.informatica.sca.dto.SubmitRasgoAsistenciaRequest;
+import ctn.informatica.sca.dto.UpdateRasgoAsistenciaRequest;
 import ctn.informatica.sca.dto.UpdateRasgoCodigosRequest;
 import ctn.informatica.sca.dto.UpdateRasgoPlanillaRequest;
 import ctn.informatica.sca.google.GoogleClassroomService;
@@ -54,6 +55,7 @@ import ctn.informatica.sca.model.User;
 import ctn.informatica.sca.util.PushNotificationService;
 import ctn.informatica.sca.util.ScaUiContext;
 import ctn.informatica.sca.service.ActivityLogService;
+import ctn.informatica.sca.service.ParentPushService;
 import ctn.informatica.sca.service.TemaVerificacionService;
 import ctn.informatica.sca.service.VerificacionResultado;
 import com.google.api.services.classroom.model.Course;
@@ -123,6 +125,7 @@ public class HomeController {
     private final HorarioSlotDao horarioSlotDao;
     private final HoraCatedraDao horaCatedraDao;
     private final Clock clock;
+    private final ParentPushService parentPushService;
 
     public HomeController() {
         this(new CursoDao(), new CursoBaseDao(), new AsignacionDao(), new ProfesorDao(), new PlanillaDao(), new MateriaDao(), new AlumnoDao(), new RasgoPlanillaDao(), new InstrumentoDao(), new UserDao(), new PlanCurricularDao(), new TemaVerificacionService(), new ActivityLogService(), new ConfiguracionSistemaDao(), new IncumplimientoRevisionDao(), new NotificacionDao(), new QuejaDao(), new HorarioSlotDao(), new HoraCatedraDao());
@@ -150,7 +153,7 @@ public class HomeController {
         this(cursoDao, cursoBaseDao, asignacionDao, profesorDao, planillaDao, materiaDao, alumnoDao, rasgoPlanillaDao, instrumentoDao, userDao, planCurricularDao, temaVerificacionService, activityLogService, configuracionSistemaDao, incumplimientoRevisionDao, notificacionDao, quejaDao, null, null);
     }
 
-    @Autowired
+    /** Compat constructor for tests written before ParentPushService was injected. */
     public HomeController(
             CursoDao cursoDao,
             CursoBaseDao cursoBaseDao,
@@ -174,7 +177,32 @@ public class HomeController {
         this(cursoDao, cursoBaseDao, asignacionDao, profesorDao, planillaDao, materiaDao, alumnoDao, rasgoPlanillaDao, instrumentoDao, userDao, planCurricularDao, temaVerificacionService, activityLogService, configuracionSistemaDao, incumplimientoRevisionDao, notificacionDao, quejaDao, horarioSlotDao, horaCatedraDao, Clock.systemDefaultZone());
     }
 
-    /** Igual que el {@code @Autowired}, con el reloj inyectable para tests que dependen del día de la semana. */
+    @Autowired
+    public HomeController(
+            CursoDao cursoDao,
+            CursoBaseDao cursoBaseDao,
+            AsignacionDao asignacionDao,
+            ProfesorDao profesorDao,
+            PlanillaDao planillaDao,
+            MateriaDao materiaDao,
+            AlumnoDao alumnoDao,
+            RasgoPlanillaDao rasgoPlanillaDao,
+            InstrumentoDao instrumentoDao,
+            UserDao userDao,
+            PlanCurricularDao planCurricularDao,
+            TemaVerificacionService temaVerificacionService,
+            ActivityLogService activityLogService,
+            ConfiguracionSistemaDao configuracionSistemaDao,
+            IncumplimientoRevisionDao incumplimientoRevisionDao,
+            NotificacionDao notificacionDao,
+            QuejaDao quejaDao,
+            HorarioSlotDao horarioSlotDao,
+            HoraCatedraDao horaCatedraDao,
+            ParentPushService parentPushService) {
+        this(cursoDao, cursoBaseDao, asignacionDao, profesorDao, planillaDao, materiaDao, alumnoDao, rasgoPlanillaDao, instrumentoDao, userDao, planCurricularDao, temaVerificacionService, activityLogService, configuracionSistemaDao, incumplimientoRevisionDao, notificacionDao, quejaDao, horarioSlotDao, horaCatedraDao, Clock.systemDefaultZone(), parentPushService);
+    }
+
+    /** Igual que el {@code @Autowired}, con el reloj inyectable para tests que dependen del día de la semana (sin ParentPushService). */
     public HomeController(
             CursoDao cursoDao,
             CursoBaseDao cursoBaseDao,
@@ -196,6 +224,32 @@ public class HomeController {
             HorarioSlotDao horarioSlotDao,
             HoraCatedraDao horaCatedraDao,
             Clock clock) {
+        this(cursoDao, cursoBaseDao, asignacionDao, profesorDao, planillaDao, materiaDao, alumnoDao, rasgoPlanillaDao, instrumentoDao, userDao, planCurricularDao, temaVerificacionService, activityLogService, configuracionSistemaDao, incumplimientoRevisionDao, notificacionDao, quejaDao, horarioSlotDao, horaCatedraDao, clock, null);
+    }
+
+    /** Terminal: reloj inyectable + ParentPushService (para las novedades de alumnos). */
+    public HomeController(
+            CursoDao cursoDao,
+            CursoBaseDao cursoBaseDao,
+            AsignacionDao asignacionDao,
+            ProfesorDao profesorDao,
+            PlanillaDao planillaDao,
+            MateriaDao materiaDao,
+            AlumnoDao alumnoDao,
+            RasgoPlanillaDao rasgoPlanillaDao,
+            InstrumentoDao instrumentoDao,
+            UserDao userDao,
+            PlanCurricularDao planCurricularDao,
+            TemaVerificacionService temaVerificacionService,
+            ActivityLogService activityLogService,
+            ConfiguracionSistemaDao configuracionSistemaDao,
+            IncumplimientoRevisionDao incumplimientoRevisionDao,
+            NotificacionDao notificacionDao,
+            QuejaDao quejaDao,
+            HorarioSlotDao horarioSlotDao,
+            HoraCatedraDao horaCatedraDao,
+            Clock clock,
+            ParentPushService parentPushService) {
         this.cursoDao = cursoDao;
         this.cursoBaseDao = cursoBaseDao;
         this.asignacionDao = asignacionDao;
@@ -216,6 +270,7 @@ public class HomeController {
         this.horarioSlotDao = horarioSlotDao;
         this.horaCatedraDao = horaCatedraDao;
         this.clock = clock;
+        this.parentPushService = parentPushService;
     }
 
     @GetMapping
@@ -582,12 +637,44 @@ public class HomeController {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "El plazo de edición de esta clase ya venció.");
             }
             rasgoPlanillaDao.actualizarPlanillaRasgo(planillaId, tema, request.asistencias());
+            notificarCodigosDeClaseActualizada(planillaId, request.asistencias());
         } catch (ResponseStatusException ex) {
             throw ex;
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         } catch (SQLException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo actualizar la clase", ex);
+        }
+    }
+
+    /** Edición de una clase pasada: si algún alumno queda con códigos de conducta, avisa a sus padres. */
+    private void notificarCodigosDeClaseActualizada(int planillaId, List<UpdateRasgoAsistenciaRequest> asistencias) {
+        if (parentPushService == null || asistencias == null || asistencias.isEmpty()) {
+            return;
+        }
+        try {
+            Map<Integer, Integer> alumnoPorAsistencia = new HashMap<>();
+            for (RasgoAsistencia asistencia : rasgoPlanillaDao.listarAsistencias(planillaId)) {
+                alumnoPorAsistencia.put(asistencia.getId(), asistencia.getAlumnoId());
+            }
+            Set<Integer> alumnosConNovedad = new HashSet<>();
+            for (UpdateRasgoAsistenciaRequest asistenciaRequest : asistencias) {
+                if (asistenciaRequest == null || asistenciaRequest.asistenciaId() == null) {
+                    continue;
+                }
+                if (asistenciaRequest.codigos() == null || asistenciaRequest.codigos().isEmpty()) {
+                    continue;
+                }
+                Integer alumnoId = alumnoPorAsistencia.get(asistenciaRequest.asistenciaId());
+                if (alumnoId != null) {
+                    alumnosConNovedad.add(alumnoId);
+                }
+            }
+            if (!alumnosConNovedad.isEmpty()) {
+                parentPushService.notifyNovedadAlumnos(alumnosConNovedad);
+            }
+        } catch (Exception ex) {
+            log.warn("No se pudo avisar a los padres por códigos actualizados en la clase {}: {}", planillaId, ex.getMessage());
         }
     }
 
@@ -706,6 +793,18 @@ public class HomeController {
                 log.warn("No se pudo registrar actividad para usuario {}: {}", user.getId(), ex.getMessage());
             }
 
+            if (parentPushService != null && request.codigosPorAlumno() != null) {
+                Set<Integer> alumnosConNovedad = new HashSet<>();
+                for (Map.Entry<Integer, List<String>> entry : request.codigosPorAlumno().entrySet()) {
+                    if (entry.getValue() != null && !entry.getValue().isEmpty()) {
+                        alumnosConNovedad.add(entry.getKey());
+                    }
+                }
+                if (!alumnosConNovedad.isEmpty()) {
+                    parentPushService.notifyNovedadAlumnos(alumnosConNovedad);
+                }
+            }
+
             // Si se indicó asignacionId, intentamos verificar el tema contra el plan curricular.
             if (request.asignacionId() != null) {
                 try {
@@ -775,8 +874,11 @@ public class HomeController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El id de asistencia es requerido.");
         }
         try {
-            requireOwnedAttendance(request.asistenciaId(), user);
+            RasgoAsistencia asistencia = requireOwnedAttendance(request.asistenciaId(), user);
             rasgoPlanillaDao.reemplazarCodigos(request.asistenciaId(), request.codigos());
+            if (parentPushService != null && request.codigos() != null && !request.codigos().isEmpty()) {
+                parentPushService.notifyNovedadAlumnos(Set.of(asistencia.getAlumnoId()));
+            }
         } catch (ResponseStatusException ex) {
             throw ex;
         } catch (IllegalArgumentException ex) {
@@ -807,6 +909,9 @@ public class HomeController {
                 rasgoPlanillaDao.registrarRespuesta(request.asistenciaId(), estado);
             } else {
                 rasgoPlanillaDao.registrarRespuesta(request.asistenciaId(), estado, request.faltaCodigo(), request.faltaObservacion());
+                if (parentPushService != null) {
+                    parentPushService.notifyNovedadAlumnos(Set.of(asistencia.getAlumnoId()));
+                }
             }
         } catch (ResponseStatusException ex) {
             throw ex;

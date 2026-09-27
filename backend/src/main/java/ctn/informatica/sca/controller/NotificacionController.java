@@ -68,9 +68,9 @@ public class NotificacionController {
         int userId = ApiAuth.requireUserId(authentication);
         try {
             String userType = NotificacionDao.resolveUserType(userDao, userId);
-            // El recordatorio de plan pendiente no se descarta a mano: se cierra solo al subir el plan.
-            if (notificacionDao.findTipo(id, userId, userType).filter(NotificacionDao.TIPO_PLAN_PENDIENTE::equals).isPresent()) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No podés marcar como leída esta notificación hasta subir tu plan curricular");
+            // Los recordatorios (plan pendiente, novedades de un hijo) no se descartan a mano: se cierran solos.
+            if (notificacionDao.findTipo(id, userId, userType).filter(NotificacionDao.TIPOS_NO_DESCARTABLES::contains).isPresent()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Esta notificación se resuelve sola, no se puede marcar como leída a mano");
             }
             boolean ok = notificacionDao.marcarLeida(id, userId, userType);
             if (!ok) {

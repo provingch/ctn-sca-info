@@ -23,3 +23,5 @@ export const downloadReporteMensual = (alumnoId: number, mes: number, anio: numb
   apiDownload(`/api/padre/alumnos/${alumnoId}/reporte-mensual?mes=${mes}&anio=${anio}`, `reporte-mensual-${alumnoId}-${anio}-${String(mes).padStart(2, '0')}.pdf`);
 export const downloadLibreta = (alumnoId: number) =>
   apiDownload(`/api/padre/alumnos/${alumnoId}/libreta`, `libreta-${alumnoId}.pdf`);
+export const marcarAlumnoVisto = (alumnoId: number) =>
+  api.post<{ ok: boolean; actualizadas: number }>(`/api/padre/alumnos/${alumnoId}/visto`);

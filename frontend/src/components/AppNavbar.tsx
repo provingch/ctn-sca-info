@@ -6,7 +6,7 @@ import { getRoleNavigation, type NavigationItem } from '../config/navigation';
 import ScaLogo from './ScaLogo';
 import ThemeToggle from './ThemeToggle';
 import AvatarEspecialidad from './AvatarEspecialidad';
-import { formatNotificationDate, isResolvedAutomatically, notificationDestination } from './notificationUtils';
+import { formatNotificationDate, isResolvedAutomatically, notificationDestination, NOTIFICATIONS_CHANGED_EVENT } from './notificationUtils';
 
 type NotificationStatus = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -113,10 +113,12 @@ export default function AppNavbar() {
     const refreshWhenVisible = () => { if (document.visibilityState === 'visible') void refreshNotificationCount(); };
     window.addEventListener('focus', refreshOnFocus);
     document.addEventListener('visibilitychange', refreshWhenVisible);
+    window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, refreshOnFocus);
     return () => {
       window.clearInterval(interval);
       window.removeEventListener('focus', refreshOnFocus);
       document.removeEventListener('visibilitychange', refreshWhenVisible);
+      window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, refreshOnFocus);
     };
   }, [refreshNotificationCount, user]);
 

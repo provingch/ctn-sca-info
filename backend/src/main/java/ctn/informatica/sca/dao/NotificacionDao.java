@@ -19,6 +19,18 @@ public class NotificacionDao extends conexion {
     /** Recordatorio de plan curricular sin subir: no se marca leído a mano, se cierra al subir el plan. */
     public static final String TIPO_PLAN_PENDIENTE = "PLAN_PENDIENTE";
 
+    /**
+     * Novedad pendiente de un padre sobre un hijo (nota cargada, tarea nueva o código de
+     * conducta). Una fila por (padre, alumno) con {@code entidad_tipo = ENTIDAD_ALUMNO} y
+     * {@code entidad_id = alumnoId}; no se marca leída a mano, se cierra al visitar la pantalla
+     * del hijo (ver {@code ParentController#marcarVisto}).
+     */
+    public static final String TIPO_NOVEDAD_ALUMNO = "NOVEDAD_ALUMNO";
+    public static final String ENTIDAD_ALUMNO = "ALUMNO";
+
+    /** Tipos que no se descartan a mano desde la campana: se resuelven solos por un evento externo. */
+    public static final java.util.Set<String> TIPOS_NO_DESCARTABLES = java.util.Set.of(TIPO_PLAN_PENDIENTE, TIPO_NOVEDAD_ALUMNO);
+
     public static String resolveUserType(UserDao userDao, int userId) {
         try {
             User user = userDao == null ? null : userDao.findById(userId);
@@ -115,7 +127,8 @@ public class NotificacionDao extends conexion {
     }
 
     public int marcarTodasLeidas(int usuarioId, String userType) throws SQLException {
-        String sql = "UPDATE notificacion SET leida = 1 WHERE usuario_id = ? AND user_type = ? AND leida = 0 AND tipo <> '" + TIPO_PLAN_PENDIENTE + "'";
+        String sql = "UPDATE notificacion SET leida = 1 WHERE usuario_id = ? AND user_type = ? AND leida = 0 AND tipo NOT IN ('"
+                + TIPO_PLAN_PENDIENTE + "', '" + TIPO_NOVEDAD_ALUMNO + "')";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, usuarioId);
             ps.setString(2, userType == null || userType.isBlank() ? "profesor" : userType.trim());
@@ -135,6 +148,53 @@ public class NotificacionDao extends conexion {
             }
         }
         return 0L;
+    }
+
+    /** true si ya hay una novedad sin leer para ese (usuario, entidad): evita duplicar la fila. */
+    public boolean existePendienteParaUsuario(int usuarioId, String userType, String tipo, String entidadTipo, long entidadId) throws SQLException {
+        String sql = "SELECT EXISTS(SELECT 1 FROM notificacion WHERE usuario_id = ? AND user_type = ? AND tipo = ? "
+                + "AND entidad_tipo = ? AND entidad_id = ? AND leida = 0)";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, usuarioId);
+            ps.setString(2, userType == null || userType.isBlank() ? "profesor" : userType.trim());
+            ps.setString(3, tipo);
+            ps.setString(4, entidadTipo);
+            ps.setLong(5, entidadId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getBoolean(1);
+            }
+        }
+    }
+
+    /** Cierra las novedades sin leer de un usuario puntual sobre una entidad (p. ej. el padre vio a su hijo). */
+    public int marcarLeidasPorUsuarioTipoEntidad(int usuarioId, String userType, String tipo, String entidadTipo, long entidadId) throws SQLException {
+        String sql = "UPDATE notificacion SET leida = 1 WHERE usuario_id = ? AND user_type = ? AND tipo = ? "
+                + "AND entidad_tipo = ? AND entidad_id = ? AND leida = 0";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, usuarioId);
+            ps.setString(2, userType == null || userType.isBlank() ? "profesor" : userType.trim());
+            ps.setString(3, tipo);
+            ps.setString(4, entidadTipo);
+            ps.setLong(5, entidadId);
+            return ps.executeUpdate();
+        }
+    }
+
+    /** Padres con novedades de hijos sin ver, agrupados: padre_id -> lista de alumno_id. Para el recordatorio diario. */
+    public Map<Integer, List<Integer>> listarAlumnosPendientesPorPadre() throws SQLException {
+        String sql = "SELECT usuario_id, entidad_id FROM notificacion "
+                + "WHERE tipo = ? AND entidad_tipo = ? AND leida = 0 ORDER BY usuario_id";
+        Map<Integer, List<Integer>> out = new java.util.LinkedHashMap<>();
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, TIPO_NOVEDAD_ALUMNO);
+            ps.setString(2, ENTIDAD_ALUMNO);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    out.computeIfAbsent(rs.getInt("usuario_id"), id -> new ArrayList<>()).add(rs.getInt("entidad_id"));
+                }
+            }
+        }
+        return out;
     }
 
     public boolean existePendientePorTipoEntidad(int entidadId, String entidadTipo, String tipo) throws SQLException {

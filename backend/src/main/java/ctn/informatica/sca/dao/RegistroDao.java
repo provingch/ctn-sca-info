@@ -10,8 +10,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -37,6 +39,21 @@ public class RegistroDao extends conexion {
             stm.setInt(3, planillaId);
             return stm.executeUpdate();
         }
+    }
+
+    /** Alumnos ya registrados en la planilla (uno por cada fila de {@code registro}). */
+    public List<Integer> findAlumnoIdsByPlanilla(int planillaId) throws SQLException {
+        String sql = "SELECT alumno_id FROM registro WHERE planilla_id = ?";
+        List<Integer> alumnoIds = new ArrayList<>();
+        try (Connection con = getCon(); PreparedStatement stm = con.prepareStatement(sql)) {
+            stm.setInt(1, planillaId);
+            try (ResultSet rs = stm.executeQuery()) {
+                while (rs.next()) {
+                    alumnoIds.add(rs.getInt("alumno_id"));
+                }
+            }
+        }
+        return alumnoIds;
     }
 
     public Map<Integer,Integer> getRegistroIdsForPlanilla(int planillaId, Set<Integer> alumnoIds) throws SQLException {

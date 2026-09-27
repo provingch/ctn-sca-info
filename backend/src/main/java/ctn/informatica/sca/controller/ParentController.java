@@ -1,5 +1,6 @@
 package ctn.informatica.sca.controller;
 
+import ctn.informatica.sca.dao.NotificacionDao;
 import ctn.informatica.sca.dao.PadreDao;
 import ctn.informatica.sca.model.Alumno;
 import ctn.informatica.sca.model.ParentSummaryItem;
@@ -20,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,6 +31,7 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api/padre")
 public class ParentController {
     private final PadreDao padreDao = new PadreDao();
+    private final NotificacionDao notificacionDao = new NotificacionDao();
 
     @GetMapping
     public ParentResponse getSummary(@RequestParam(required = false) Integer alumnoId, Authentication authentication) {
@@ -82,6 +85,23 @@ public class ParentController {
             return padreDao.findRasgosConductaByAlumno(alumnoId);
         } catch (SQLException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudieron cargar las notas de conducta", ex);
+        }
+    }
+
+    /**
+     * El padre abrió la pantalla de este hijo: cierra sus novedades pendientes (notas, tareas,
+     * conducta) para que el recordatorio diario deje de avisarle por ellas.
+     */
+    @PostMapping("/alumnos/{alumnoId}/visto")
+    public java.util.Map<String, Object> marcarVisto(@PathVariable int alumnoId, Authentication authentication) {
+        int userId = ApiAuth.requireUserId(authentication);
+        try {
+            requireOwnChild(userId, alumnoId);
+            int actualizadas = notificacionDao.marcarLeidasPorUsuarioTipoEntidad(userId, "padre",
+                    NotificacionDao.TIPO_NOVEDAD_ALUMNO, NotificacionDao.ENTIDAD_ALUMNO, alumnoId);
+            return java.util.Map.of("ok", true, "actualizadas", actualizadas);
+        } catch (SQLException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo actualizar el estado de novedades", ex);
         }
     }
 

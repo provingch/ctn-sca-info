@@ -40,6 +40,11 @@ describe('notificationDestination', () => {
   it('devuelve null para avisos informativos sin un destino conocido', () => {
     expect(notificationDestination({ ...base, tipo: 'GENERAL' }, 1)).toBeNull();
   });
+
+  it('lleva al padre a la pantalla del hijo con novedades', () => {
+    expect(notificationDestination({ ...base, tipo: 'NOVEDAD_ALUMNO', entidadTipo: 'ALUMNO', entidadId: 7 }, 4))
+      .toBe('/padre?alumnoId=7');
+  });
 });
 
 describe('formatNotificationDate', () => {
@@ -50,10 +55,14 @@ describe('formatNotificationDate', () => {
 });
 
 describe('isResolvedAutomatically', () => {
-  it('sólo el recordatorio de plan pendiente se resuelve solo al subir el plan', () => {
+  it('el recordatorio de plan pendiente se resuelve solo al subir el plan', () => {
     expect(isResolvedAutomatically({ ...base, tipo: 'PLAN_PENDIENTE' })).toBe(true);
     expect(isResolvedAutomatically({ ...base, tipo: 'plan_pendiente' })).toBe(true);
     expect(isResolvedAutomatically({ ...base, tipo: 'PLAN_ACEPTADO' })).toBe(false);
     expect(isResolvedAutomatically({ ...base })).toBe(false);
+  });
+
+  it('la novedad de un hijo se resuelve sola al visitar su pantalla', () => {
+    expect(isResolvedAutomatically({ ...base, tipo: 'NOVEDAD_ALUMNO' })).toBe(true);
   });
 });

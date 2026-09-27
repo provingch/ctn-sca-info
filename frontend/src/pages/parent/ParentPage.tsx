@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import AppShell from '../../components/AppShell';
 import GradeChip from '../../components/ui/GradeChip';
 import ContentState from '../../components/ui/ContentState';
@@ -6,9 +7,10 @@ import AnimatedSelect from '../../components/AnimatedSelect';
 import DatePicker from '../../components/DatePicker';
 import FiltersToolbar, { FilterField } from '../../components/ui/FiltersToolbar';
 import { agruparTareasPorMes, filtrarConducta, filtrarMaterias, hayFiltroConducta, MATERIAS_PARA_BUSCADOR, materiasDeConducta, mesesConTareas, NOMBRES_MESES, rangoInvalido, SIN_FILTRO_CONDUCTA, type FiltroConducta } from './parentFilters';
-import { getParentSummary, downloadReporteMensual, downloadLibreta, getRasgosConducta, type ParentResponse, type ParentStage, type ParentSubject, type ParentTaskStatus, type RasgoConducta } from '../../api/parent';
+import { getParentSummary, downloadReporteMensual, downloadLibreta, getRasgosConducta, marcarAlumnoVisto, type ParentResponse, type ParentStage, type ParentSubject, type ParentTaskStatus, type RasgoConducta } from '../../api/parent';
 import { ApiError } from '../../api/client';
 import { normalizeSpecialty } from '../../theme/theme';
+import { NOTIFICATIONS_CHANGED_EVENT } from '../../components/notificationUtils';
 
 const STAGES: Array<{ value: ParentStage; label: string }> = [
   { value: 'primera', label: 'Primera etapa' },
@@ -30,6 +32,7 @@ function stageLabel(stage: ParentStage) {
 }
 
 export default function ParentPage() {
+  const [search] = useSearchParams();
   const [data, setData] = useState<ParentResponse | null>(null);
   const [error, setError] = useState('');
   const [stage, setStage] = useState<ParentStage>(currentStage);
@@ -72,7 +75,17 @@ export default function ParentPage() {
       .catch((e) => setError(e instanceof ApiError ? e.message : 'No se pudo cargar el resumen.'));
   }
 
-  useEffect(() => load(), []);
+  useEffect(() => load(Number(search.get('alumnoId')) || undefined), []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // El padre está viendo a este hijo: cierra sus novedades pendientes (notas, tareas, conducta)
+  // sin bloquear la UI, y avisa a la campana para que refresque el contador.
+  useEffect(() => {
+    const alumnoId = data?.selectedAlumnoId;
+    if (!alumnoId) return;
+    marcarAlumnoVisto(alumnoId)
+      .then(() => window.dispatchEvent(new Event(NOTIFICATIONS_CHANGED_EVENT)))
+      .catch(() => { /* best-effort: si falla, la novedad sigue pendiente y se reintenta en la próxima visita */ });
+  }, [data?.selectedAlumnoId]);
 
   useEffect(() => {
     if (!data || !data.selectedAlumnoId) { setConducta(null); return; }

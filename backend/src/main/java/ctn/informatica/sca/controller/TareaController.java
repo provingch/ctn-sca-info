@@ -1,6 +1,7 @@
 package ctn.informatica.sca.controller;
 
 import ctn.informatica.sca.dao.PlanillaDao;
+import ctn.informatica.sca.dao.RegistroDao;
 import ctn.informatica.sca.dao.TareaDao;
 import ctn.informatica.sca.model.Planilla;
 import ctn.informatica.sca.model.Tarea;
@@ -86,6 +87,8 @@ public class TareaController {
             new TareaDao().insertarTarea(tarea);
             if (parentPushService != null) {
                 parentPushService.notifyNewTask(planillaId, tarea.getTitulo());
+                List<Integer> alumnoIds = new RegistroDao().findAlumnoIdsByPlanilla(planillaId);
+                parentPushService.notifyNovedadAlumnos(new java.util.HashSet<>(alumnoIds));
             }
             return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(tarea, false, null));
         } catch (SQLException ex) {

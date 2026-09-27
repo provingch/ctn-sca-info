@@ -1,10 +1,18 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getParentSummary, getRasgosConducta, type ParentResponse, type ParentSubject, type ParentTask, type RasgoConducta } from '../../api/parent';
+import { getParentSummary, getRasgosConducta, marcarAlumnoVisto, type ParentResponse, type ParentSubject, type ParentTask, type RasgoConducta } from '../../api/parent';
 import ParentPage from './ParentPage';
 
 vi.mock('../../components/AppShell', () => ({ default: ({ children }: { children: React.ReactNode }) => <div>{children}</div> }));
-vi.mock('../../api/parent', () => ({ getParentSummary: vi.fn(), getRasgosConducta: vi.fn(), downloadReporteMensual: vi.fn(), downloadLibreta: vi.fn() }));
+vi.mock('../../api/parent', () => ({
+  getParentSummary: vi.fn(), getRasgosConducta: vi.fn(), downloadReporteMensual: vi.fn(), downloadLibreta: vi.fn(),
+  marcarAlumnoVisto: vi.fn(),
+}));
+
+function renderPage(initialEntry = '/padre') {
+  return render(<MemoryRouter initialEntries={[initialEntry]}><ParentPage /></MemoryRouter>);
+}
 
 const materia = (planillaId: number, nombre: string): ParentSubject =>
   ({ planillaId, materiaId: planillaId, materia: nombre, etapa: 'primera', puntos: 80, total: 100, porcentaje: 80, nota: 4, tareas: [] });
@@ -21,12 +29,39 @@ const notas = [nota('Matemática', '2026-03-10', 'N1'), nota('Física', '2026-04
 async function mostrar(cantidadMaterias: number) {
   vi.mocked(getParentSummary).mockResolvedValue(resumen(cantidadMaterias));
   vi.mocked(getRasgosConducta).mockResolvedValue(notas);
-  render(<ParentPage />);
+  renderPage();
   await screen.findByRole('heading', { name: 'Notas de conducta' });
   await screen.findByRole('search', { name: 'Filtros de notas de conducta' });
 }
 
-beforeEach(() => { vi.resetAllMocks(); });
+beforeEach(() => {
+  vi.resetAllMocks();
+  vi.mocked(marcarAlumnoVisto).mockResolvedValue({ ok: true, actualizadas: 0 });
+});
+
+describe('ParentPage — novedades vistas', () => {
+  it('marca visto al hijo seleccionado al cargar, sin bloquear la UI', async () => {
+    await mostrar(3);
+    expect(marcarAlumnoVisto).toHaveBeenCalledWith(7);
+  });
+
+  it('al cambiar de hijo marca visto al nuevo, no repite por el anterior', async () => {
+    vi.mocked(getParentSummary).mockImplementation((alumnoId?: number) => Promise.resolve({
+      ...resumen(1),
+      hijos: [...resumen(1).hijos, { id: 8, nombre: 'Bruno', apellido: 'Rojas', especialidad: 'Informática', promedio: 70 }],
+      selectedAlumnoId: alumnoId ?? 7,
+    }));
+    vi.mocked(getRasgosConducta).mockResolvedValue([]);
+    renderPage();
+    await screen.findByText('Rojas, Camila');
+    await waitFor(() => expect(marcarAlumnoVisto).toHaveBeenCalledWith(7));
+
+    fireEvent.click(screen.getByRole('button', { name: /Rojas, Bruno/ }));
+
+    await waitFor(() => expect(marcarAlumnoVisto).toHaveBeenCalledWith(8));
+    expect(marcarAlumnoVisto).toHaveBeenCalledTimes(2);
+  });
+});
 
 describe('ParentPage — filtros', () => {
   it('con pocas materias no muestra el buscador, pero el toggle de etapa vive en la barra de filtros', async () => {
@@ -83,7 +118,7 @@ describe('ParentPage — filtros', () => {
   it('sin notas de conducta no muestra filtros', async () => {
     vi.mocked(getParentSummary).mockResolvedValue(resumen(3));
     vi.mocked(getRasgosConducta).mockResolvedValue([]);
-    render(<ParentPage />);
+    renderPage();
 
     await screen.findByText('Sin notas de conducta');
     await waitFor(() => expect(screen.queryByRole('search', { name: 'Filtros de notas de conducta' })).not.toBeInTheDocument());
@@ -102,7 +137,7 @@ async function mostrarConTareas(tareasPrimera: ParentTask[], tareasSegunda: Pare
     materias: [{ ...materia(1, 'Matemática'), tareas: tareasPrimera }, { ...materia(2, 'Física'), tareas: tareasSegunda }],
   });
   vi.mocked(getRasgosConducta).mockResolvedValue([]);
-  render(<ParentPage />);
+  renderPage();
   await screen.findByRole('heading', { name: 'Matemática', level: 2 });
 }
 

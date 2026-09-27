@@ -2,9 +2,11 @@ package ctn.informatica.sca.service;
 
 import ctn.informatica.sca.dao.FcmTokenDao;
 import ctn.informatica.sca.dao.MateriaDao;
+import ctn.informatica.sca.dao.NotificacionDao;
 import ctn.informatica.sca.dao.PadreDao;
 import ctn.informatica.sca.dao.PlanillaDao;
 import ctn.informatica.sca.model.Materia;
+import ctn.informatica.sca.model.Padre;
 import ctn.informatica.sca.model.Planilla;
 import ctn.informatica.sca.util.FirebaseMessagingClient;
 import java.util.List;
@@ -14,6 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
@@ -28,14 +31,19 @@ public class ParentPushService {
     private static final Logger log = LoggerFactory.getLogger(ParentPushService.class);
 
     private final FirebaseMessagingClient fcm;
+    private final PadreDao padreDao;
+    private final NotificacionDao notificacionDao;
     private final ExecutorService executor = Executors.newFixedThreadPool(2, r -> {
         Thread t = new Thread(r, "parent-push");
         t.setDaemon(true);
         return t;
     });
 
-    public ParentPushService(FirebaseMessagingClient fcm) {
+    @Autowired
+    public ParentPushService(FirebaseMessagingClient fcm, PadreDao padreDao, NotificacionDao notificacionDao) {
         this.fcm = fcm;
+        this.padreDao = padreDao;
+        this.notificacionDao = notificacionDao;
     }
 
     /** A teacher published a new task on {@code planillaId}. */
@@ -65,7 +73,48 @@ public class ParentPushService {
         });
     }
 
-    private void deliver(List<Integer> parentIds, String title, String body, Map<String, String> data) throws Exception {
+    /**
+     * A child gained a pending "novedad" (grade saved, task published, or conduct code
+     * assigned): register one unread {@code NOVEDAD_ALUMNO} row per (padre, alumno) so the
+     * daily reminder ({@code ParentRecordatorioService}) picks it up. Does not push immediately;
+     * deduplicated — a padre already sitting on an unread novedad for that child doesn't get a
+     * second row.
+     */
+    public void notifyNovedadAlumnos(Set<Integer> alumnoIds) {
+        if (alumnoIds == null || alumnoIds.isEmpty()) {
+            return;
+        }
+        submit(() -> registrarNovedadAlumnos(alumnoIds));
+    }
+
+    /** Synchronous core of {@link #notifyNovedadAlumnos}, package-visible so tests can call it without the executor. */
+    void registrarNovedadAlumnos(Set<Integer> alumnoIds) {
+        for (Integer alumnoId : alumnoIds) {
+            List<Padre> padres;
+            try {
+                padres = padreDao.findPadresByAlumnoId(alumnoId);
+            } catch (Exception ex) {
+                log.warn("No se pudieron resolver los padres del alumno {}: {}", alumnoId, ex.getMessage());
+                continue;
+            }
+            for (Padre padre : padres) {
+                try {
+                    if (notificacionDao.existePendienteParaUsuario(padre.getId(), "padre",
+                            NotificacionDao.TIPO_NOVEDAD_ALUMNO, NotificacionDao.ENTIDAD_ALUMNO, alumnoId)) {
+                        continue;
+                    }
+                    notificacionDao.crear(padre.getId(), "padre", NotificacionDao.TIPO_NOVEDAD_ALUMNO,
+                            "Novedades académicas", "Hay novedades para revisar.",
+                            NotificacionDao.ENTIDAD_ALUMNO, (long) alumnoId);
+                } catch (Exception ex) {
+                    log.warn("No se pudo registrar la novedad del alumno {} para el padre {}: {}", alumnoId, padre.getId(), ex.getMessage());
+                }
+            }
+        }
+    }
+
+    /** Package-visible: {@code ParentRecordatorioService} reúsa la resolución de tokens y la poda de inválidos. */
+    void deliver(List<Integer> parentIds, String title, String body, Map<String, String> data) throws Exception {
         if (parentIds.isEmpty()) {
             return;
         }

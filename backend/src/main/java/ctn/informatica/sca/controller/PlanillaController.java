@@ -265,6 +265,7 @@ public class PlanillaController {
                 new GradeDao().saveGradesBatch(planilla.getId(), gradesByRegistro);
                 if (parentPushService != null) {
                     parentPushService.notifyGradesSaved(planilla.getId(), gradesByAlumno.keySet());
+                    parentPushService.notifyNovedadAlumnos(gradesByAlumno.keySet());
                 }
             }
 
