@@ -91,8 +91,9 @@ export function updateClase(planillaId: number, payload: UpdateClaseRequest) {
   return apiRequest<void>(`/api/home/mis-clases/${planillaId}`, { method: 'PUT', body: payload });
 }
 
-export function listarCodigosConducta() {
-  return apiRequest<CodigoConducta[]>('/api/codigos-conducta', { method: 'GET' });
+/** incluirInactivos: para mostrar la descripción de N ya asignadas que después se desactivaron. */
+export function listarCodigosConducta(incluirInactivos = false) {
+  return apiRequest<CodigoConducta[]>(`/api/codigos-conducta${incluirInactivos ? '?incluirInactivos=true' : ''}`, { method: 'GET' });
 }
 
 export function crearCodigoConducta(codigo: string, descripcion: string) {

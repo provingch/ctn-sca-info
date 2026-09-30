@@ -47,7 +47,7 @@ export default function ClassHistoryView() {
     setParams((current) => { const next = new URLSearchParams(current); ['q', 'curso', 'especialidad', 'orden'].forEach((key) => next.delete(key)); return next; }, { replace: true });
   }
   const loadCatalog = useCallback(async () => {
-    try { setCatalog(await listarCodigosConducta()); setCatalogError(''); }
+    try { setCatalog(await listarCodigosConducta(true)); setCatalogError(''); }
     catch (error) { setCatalogError(errorMessage(error, 'No se pudo cargar el catálogo de rasgos. Los códigos registrados se conservan.')); }
   }, []);
   useEffect(() => { void loadCatalog(); }, [loadCatalog]);

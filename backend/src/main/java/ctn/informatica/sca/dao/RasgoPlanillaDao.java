@@ -615,7 +615,7 @@ public class RasgoPlanillaDao extends conexion {
                             if (!perteneceAPlanilla(con, request.asistenciaId(), planillaId)) {
                                 throw new IllegalArgumentException("Una asistencia no pertenece a esta clase.");
                             }
-                            validarCodigos(con, request.codigos());
+                            validarCodigos(con, request.codigos(), request.asistenciaId());
                             int index = 1;
                             if (supportsRespuestaColumns[0]) asistencia.setString(index++, estado);
                             if (supportsRespuestaColumns[1]) asistencia.setString(index++, estado);
@@ -668,7 +668,7 @@ public class RasgoPlanillaDao extends conexion {
     }
 
     private void reemplazarCodigos(Connection con, int asistenciaId, List<String> codigos) throws SQLException {
-        Set<String> validos = validarCodigos(con, codigos);
+        Set<String> validos = validarCodigos(con, codigos, asistenciaId);
         try (PreparedStatement delete = con.prepareStatement("DELETE FROM rasgo_asistencia_codigo WHERE rasgo_asistencia_id = ?")) {
             delete.setInt(1, asistenciaId);
             delete.executeUpdate();
@@ -685,7 +685,7 @@ public class RasgoPlanillaDao extends conexion {
 
     public void reemplazarCodigos(int asistenciaId, List<String> codigos) throws SQLException {
         try (Connection con = getCon()) {
-            Set<String> validos = validarCodigos(con, codigos);
+            Set<String> validos = validarCodigos(con, codigos, asistenciaId);
             con.setAutoCommit(false);
             try (PreparedStatement delete = con.prepareStatement("DELETE FROM rasgo_asistencia_codigo WHERE rasgo_asistencia_id = ?")) {
                 delete.setInt(1, asistenciaId);
@@ -721,8 +721,15 @@ public class RasgoPlanillaDao extends conexion {
     }
 
     private Set<String> validarCodigos(Connection con, List<String> codigos) throws SQLException {
-        Set<String> requested = validarCodigos(codigos);
-        if (requested.isEmpty()) return requested;
+        return validarCodigos(con, codigos, null);
+    }
+
+    /** Las N que la asistencia ya tenía se aceptan aunque se hayan desactivado; solo las nuevas tienen que estar activas. */
+    private Set<String> validarCodigos(Connection con, List<String> codigos, Integer asistenciaId) throws SQLException {
+        Set<String> todos = validarCodigos(codigos);
+        Set<String> requested = new HashSet<>(todos);
+        if (asistenciaId != null) listarCodigos(con, asistenciaId).forEach(requested::remove);
+        if (requested.isEmpty()) return todos;
         String placeholders = String.join(",", java.util.Collections.nCopies(requested.size(), "?"));
         Set<String> validos = new HashSet<>();
         String sql = "SELECT codigo FROM codigo_conducta WHERE activo = TRUE AND codigo IN (" + placeholders + ")";
@@ -737,7 +744,7 @@ public class RasgoPlanillaDao extends conexion {
             requested.removeAll(validos);
             throw new IllegalArgumentException("Código(s) de rasgo no disponible(s): " + requested);
         }
-        return validos;
+        return todos;
     }
 
     private List<String> listarCodigos(Connection con, int asistenciaId) throws SQLException {

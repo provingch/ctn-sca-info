@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -25,9 +26,9 @@ public class CodigoConductaController {
     }
 
     @GetMapping
-    public List<CodigoConducta> listar() {
+    public List<CodigoConducta> listar(@RequestParam(defaultValue = "false") boolean incluirInactivos) {
         try {
-            return dao.listarActivos();
+            return dao.listar(incluirInactivos);
         } catch (Exception ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudieron cargar los códigos de conducta.", ex);
         }

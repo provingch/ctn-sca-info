@@ -14,8 +14,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class CodigoConductaDao extends conexion {
 
-    public List<CodigoConducta> listarActivos() throws SQLException {
-        String sql = "SELECT id, codigo, descripcion, activo FROM codigo_conducta WHERE activo = TRUE ORDER BY codigo";
+    public List<CodigoConducta> listar(boolean incluirInactivos) throws SQLException {
+        String sql = "SELECT id, codigo, descripcion, activo FROM codigo_conducta" + (incluirInactivos ? "" : " WHERE activo = TRUE") + " ORDER BY codigo";
         List<CodigoConducta> result = new ArrayList<>();
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
             while (rs.next()) result.add(fromResultSet(rs));

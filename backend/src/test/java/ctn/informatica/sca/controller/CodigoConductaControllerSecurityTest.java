@@ -30,7 +30,15 @@ class CodigoConductaControllerSecurityTest {
     }
 
     @Test
+    void editar_soloCoordinacionPedagogica() throws Exception {
+        PreAuthorize rule = CodigoConductaController.class
+                .getMethod("editar", int.class, CodigoConductaController.CodigoConductaRequest.class)
+                .getAnnotation(PreAuthorize.class);
+        assertEquals("hasRole('LEVEL_5')", rule.value());
+    }
+
+    @Test
     void listar_quedaAbiertoAUsuariosAutenticados() throws Exception {
-        assertNull(CodigoConductaController.class.getMethod("listar").getAnnotation(PreAuthorize.class));
+        assertNull(CodigoConductaController.class.getMethod("listar", boolean.class).getAnnotation(PreAuthorize.class));
     }
 }
