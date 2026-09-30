@@ -4,6 +4,7 @@ import { createAdminRecord, getMateriaEspecialidades, updateAdminRecord, type Ad
 import { ApiError } from '../../api/client';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import useAccessibleDialog from '../../hooks/useAccessibleDialog';
+import { confirmar } from '../../utils/confirmar';
 
 interface MateriasPanelProps {
   data: AdminCatalog;
@@ -39,9 +40,9 @@ export default function MateriasPanel({ data, reload, status }: MateriasPanelPro
     setIsOpen(true);
   };
 
-  const handleCategoriaChange = (value: string) => {
+  const handleCategoriaChange = async (value: string) => {
     if (value === 'especifico' && form.especialidadIds.length > 1) {
-      const proceed = window.confirm('Al cambiar a "Específica" solo se conservará la primera especialidad. ¿Desea continuar?');
+      const proceed = await confirmar('Al cambiar a "Específica" solo se conservará la primera especialidad. ¿Desea continuar?');
       if (!proceed) return;
       setForm({ ...form, categoria: value, especialidadIds: [form.especialidadIds[0]] });
       return;

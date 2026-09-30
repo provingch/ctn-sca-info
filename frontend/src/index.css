@@ -1248,3 +1248,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .task-form-footer { display: grid; gap: 12px; padding-top: 16px; border-top: 1px solid var(--line); }
 .task-form-guidance { margin: 0; color: var(--muted); font-size: .85rem; }
 .task-form-footer .toolbar { margin: 0; flex-wrap: wrap; }
+.confirm-dialog { width: min(440px, calc(100vw - 32px)); padding: 20px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper-raised); color: var(--ink); }
+.confirm-dialog::backdrop { background: rgb(0 0 0 / .45); }
+.confirm-dialog p { margin: 0 0 16px; }
+.confirm-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }

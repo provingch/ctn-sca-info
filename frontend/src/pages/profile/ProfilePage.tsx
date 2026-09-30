@@ -21,6 +21,7 @@ import { useToast } from '../../context/toast';
 import { normalizeSpecialty } from '../../theme/theme';
 import { useNavigate } from 'react-router-dom';
 import SystemPalette from './SystemPalette';
+import { confirmar } from '../../utils/confirmar';
 
 type ProfileTab = 'profile' | 'security' | 'subjects' | 'app' | 'activity';
 const message = (error: unknown, fallback: string) => error instanceof ApiError ? error.message : fallback;
@@ -534,7 +535,7 @@ function ProfileForm({ data, done, setStatus }: { data: ProfileResponse; done: (
           }
         }}>Conectar con Google</button>}
         {data.googleClassroomConnected && <button className="button danger" type="button" onClick={async () => {
-          const confirmed = window.confirm('¿Desconectar Google Classroom? Se eliminarán los tokens y la asociación de esta cuenta. Las planillas locales no se borrarán.');
+          const confirmed = await confirmar('¿Desconectar Google Classroom? Se eliminarán los tokens y la asociación de esta cuenta. Las planillas locales no se borrarán.');
           if (!confirmed) return;
           try {
             await disconnectGoogle();

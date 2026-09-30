@@ -6,6 +6,7 @@ import useAccessibleDialog from '../../hooks/useAccessibleDialog';
 import './AsignacionesPanel.css';
 import SpecialtyBadge from '../../components/SpecialtyBadge';
 import { normalizeSpecialty } from '../../theme/theme';
+import { confirmar } from '../../utils/confirmar';
 
 interface AsignacionesPanelProps {
   data: AdminCatalog;
@@ -356,7 +357,7 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
                       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                         <button type="button" className="button secondary" onClick={() => openEdit(assignment)}>Editar</button>
                         <button type="button" className="button danger" onClick={async () => {
-                          if (!window.confirm('¿Eliminar esta asignación?')) return;
+                          if (!(await confirmar('¿Eliminar esta asignación?', 'Eliminar'))) return;
                           try {
                             await deleteAssignment(assignment.id);
                             status('Asignación eliminada.');

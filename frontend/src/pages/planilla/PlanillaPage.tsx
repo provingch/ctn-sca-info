@@ -14,6 +14,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/toast';
 import { normalizeGradeInput } from './gradeValidation';
 import { isDateReached } from '../../utils/dateInput';
+import { confirmar } from '../../utils/confirmar';
 
 // Etiquetas de nota en orden descendente (5 -> 1), igual que el JSP legacy
 // (Planilla.jsp: chips grade-chip--five..one). "1" no tiene rango propio en
@@ -294,7 +295,7 @@ export default function PlanillaPage() {
       return;
     }
 
-    const ok = window.confirm(`¿Confirmar el cierre de la Etapa 1 con fecha ${etapa1Date}? No se podrá editar después.`);
+    const ok = await confirmar(`¿Confirmar el cierre de la Etapa 1 con fecha ${etapa1Date}? No se podrá editar después.`);
     if (!ok) return;
 
     setConfirmingEtapa1(true);
@@ -329,7 +330,7 @@ export default function PlanillaPage() {
       return;
     }
 
-    const ok = window.confirm(`¿Confirmar el cierre de la Etapa 2 con fecha ${etapa2Date}? No se podrá editar después.`);
+    const ok = await confirmar(`¿Confirmar el cierre de la Etapa 2 con fecha ${etapa2Date}? No se podrá editar después.`);
     if (!ok) return;
 
     setConfirmingEtapa2(true);

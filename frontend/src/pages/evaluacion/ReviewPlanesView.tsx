@@ -7,6 +7,7 @@ import * as planCurricularApi from '../../api/planCurricular';
 import { formatSqlDateTime } from '../../utils/date';
 import TemasPorMesAccordion from '../../components/TemasPorMesAccordion';
 import PlanesPorEspecialidad from './PlanesPorEspecialidad';
+import { confirmar } from '../../utils/confirmar';
 
 // StatusTone removed; toasts replace local status state
 
@@ -68,7 +69,7 @@ export default function ReviewPlanesView() {
 
   async function handleAprobar() {
     if (!selectedPlanId) return;
-    const confirmed = window.confirm('¿Aprobar este plan curricular? La decisión se notificará al profesor.');
+    const confirmed = await confirmar('¿Aprobar este plan curricular? La decisión se notificará al profesor.', 'Aprobar');
     if (!confirmed) return;
     setProcessing(true);
     try {

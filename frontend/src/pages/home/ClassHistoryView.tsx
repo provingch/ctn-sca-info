@@ -9,6 +9,7 @@ import { useToast } from '../../context/toast';
 import ClassAttendanceRow, { type AttendanceState } from './ClassAttendanceRow';
 import { classDate, editingAllowed, filterClassHistory, studentName } from './classHistoryUtils';
 import './MisClasesView.css';
+import { confirmar } from '../../utils/confirmar';
 
 const PAGE_SIZE = 24;
 const errorMessage = (error: unknown, fallback: string) => error instanceof ApiError ? error.message : fallback;
@@ -68,9 +69,9 @@ export default function ClassHistoryView() {
     catch (error) { if (request === detailRequest.current) setDetailError(errorMessage(error, 'No se pudo cargar el detalle de la clase.')); }
     finally { if (request === detailRequest.current) setDetailLoading(false); }
   };
-  function closeDetail() {
+  async function closeDetail() {
     if (inFlight.current) return;
-    if (editing && !window.confirm('¿Cerrar sin guardar los cambios de esta clase?')) return;
+    if (editing && !(await confirmar('¿Cerrar sin guardar los cambios de esta clase?', 'Cerrar sin guardar'))) return;
     detailRequest.current++; setSelectedId(null); setSelected(null); setEditing(false); setDetailError('');
   }
   const dialogRef = useAccessibleDialog(selectedId !== null, closeDetail);

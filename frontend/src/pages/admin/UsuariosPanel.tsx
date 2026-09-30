@@ -4,6 +4,7 @@ import { ApiError } from '../../api/client';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import useAccessibleDialog from '../../hooks/useAccessibleDialog';
 import './UsuariosPanel.css';
+import { confirmar } from '../../utils/confirmar';
 
 interface UsuariosPanelProps {
   data: AdminCatalog;
@@ -197,7 +198,7 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
   };
 
   const removeUser = async (user: UserRecord) => {
-    if (!window.confirm('¿Eliminar este usuario?')) return;
+    if (!(await confirmar('¿Eliminar este usuario?', 'Eliminar'))) return;
     try {
       await deleteAdminRecord('usuarios', user.id);
       status('Usuario eliminado.');

@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { ApiError } from '../api/client';
 import { crearCodigoConducta, desactivarCodigoConducta, editarCodigoConducta, listarCodigosConducta, type CodigoConducta } from '../api/home';
+import { confirmar } from '../utils/confirmar';
 
 interface CatalogoConductaPanelProps {
   onCodesChange?: (codes: CodigoConducta[]) => void;
@@ -64,7 +65,7 @@ export default function CatalogoConductaPanel({ onCodesChange }: CatalogoConduct
   }
 
   async function disableCodigoConducta(item: CodigoConducta) {
-    if (!window.confirm(`¿Desactivar ${item.codigo}?`)) return;
+    if (!(await confirmar(`¿Desactivar ${item.codigo}?`, 'Desactivar'))) return;
     try {
       await desactivarCodigoConducta(item.id);
       setCatalogStatus('Código de conducta desactivado.');

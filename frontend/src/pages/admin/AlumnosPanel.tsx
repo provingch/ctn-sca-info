@@ -7,6 +7,7 @@ import AnimatedSelect from '../../components/AnimatedSelect';
 import useAccessibleDialog from '../../hooks/useAccessibleDialog';
 import FiltersToolbar, { FilterField } from '../../components/ui/FiltersToolbar';
 import { filtrarAlumnos, filtrarEgresados, hayFiltroEgresados, SIN_FILTRO_EGRESADOS, type FiltroEgresados } from './filtrosListados';
+import { confirmar } from '../../utils/confirmar';
 
 interface AlumnosPanelProps {
   data: AdminCatalog;
@@ -355,7 +356,7 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
                           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                             <button type="button" className="button secondary" onClick={() => openEdit(student)}>Editar</button>
                             <button type="button" className="button danger" onClick={async () => {
-                              if (!window.confirm('¿Eliminar este alumno?')) return;
+                              if (!(await confirmar('¿Eliminar este alumno?', 'Eliminar'))) return;
                               try {
                                 await deleteAdminRecord('alumnos', student.id);
                                 status('Alumno eliminado.');

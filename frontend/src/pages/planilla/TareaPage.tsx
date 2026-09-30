@@ -7,6 +7,7 @@ import AnimatedSelect from '../../components/AnimatedSelect';
 import ClassroomBadge from '../../components/ClassroomBadge';
 import DatePicker from '../../components/DatePicker';
 import { isValidDateValue, localDateValue } from '../../utils/dateInput';
+import { confirmar } from '../../utils/confirmar';
 
 export default function TareaPage() {
   const planillaId = Number(useParams().planillaId);
@@ -65,7 +66,7 @@ export default function TareaPage() {
   }
 
   async function remove() {
-    if (disabled || !tareaId || !window.confirm('¿Eliminar esta tarea y sus datos asociados?')) return;
+    if (disabled || !tareaId || !(await confirmar('¿Eliminar esta tarea y sus datos asociados?', 'Eliminar'))) return;
     setBusy(true);
     try { await deleteTarea(tareaId); navigate('/planilla/' + planillaId); }
     catch (err) { setStatus(err instanceof ApiError ? err.message : 'No se pudo eliminar.'); setBusy(false); }
