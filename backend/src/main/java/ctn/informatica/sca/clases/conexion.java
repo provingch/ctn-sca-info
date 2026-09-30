@@ -29,7 +29,7 @@ public class conexion {
         this.base = config("CTN_DB_NAME", "ctn.db.name", "ctndb");
         /* name of the database */
         this.host = config("CTN_DB_HOST", "ctn.db.host", "localhost:3306");
-        this.usuario = config("CTN_DB_USER", "ctn.db.user", "testadmin");
+        this.usuario = config("CTN_DB_USER", "ctn.db.user", "sca_app");
         this.contra = config("CTN_DB_PASSWORD", "ctn.db.password", "");
     }
 

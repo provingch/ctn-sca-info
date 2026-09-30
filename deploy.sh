@@ -33,7 +33,7 @@ first_run_wizard() {
   def_db_name="${SCA_DB_NAME:-${CTN_DB_NAME:-ctndb}}"
   def_db_host="${SCA_DB_HOST:-${CTN_DB_HOST:-localhost}}"
   def_db_port="${SCA_DB_PORT:-}"
-  def_db_user="${SCA_DB_USER:-${CTN_DB_USER:-testadmin}}"
+  def_db_user="${SCA_DB_USER:-${CTN_DB_USER:-sca_app}}"
 
   read -r -p "SERVICE_NAME [${def_service}]: " inp
   SERVICE_NAME="${inp:-$def_service}"
@@ -171,7 +171,7 @@ DB_TYPE="${SCA_DB_TYPE:-mariadb}"
 DB_NAME="${SCA_DB_NAME:-${CTN_DB_NAME:-ctndb}}"
 DB_HOST="${SCA_DB_HOST:-${CTN_DB_HOST:-localhost}}"
 DB_PORT="${SCA_DB_PORT:-${CTN_DB_PORT:-}}"
-DB_USER="${SCA_DB_USER:-${CTN_DB_USER:-testadmin}}"
+DB_USER="${SCA_DB_USER:-${CTN_DB_USER:-}}"  # vacío = se toma del env file de runtime más abajo
 DB_PASSWORD_INPUT="${SCA_DB_PASSWORD:-${CTN_DB_PASSWORD:-}}"
 LOAD_DEMO_DATA_INPUT="${SCA_LOAD_DEMO_DATA:-}"
 
@@ -467,6 +467,13 @@ read_env_file_value() {
   value="${value#\'}"
   printf '%s' "$value"
 }
+
+# El env file de runtime es lo que usa el backend: si no se pidió otro usuario, se mantiene ese
+if [[ -z "$DB_USER" ]]; then
+  DB_USER="$(read_env_file_value 'CTN_DB_USER')"
+  [[ -z "$DB_USER" ]] && DB_USER="$(read_env_file_value 'SCA_DB_USER')"
+  DB_USER="${DB_USER:-sca_app}"
+fi
 
 get_db_password() {
   if [[ -n "$DB_PASSWORD_INPUT" ]]; then
