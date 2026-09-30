@@ -99,6 +99,10 @@ export function crearCodigoConducta(codigo: string, descripcion: string) {
   return apiRequest<CodigoConducta>('/api/codigos-conducta', { method: 'POST', body: { codigo, descripcion } });
 }
 
+export function editarCodigoConducta(id: number, codigo: string, descripcion: string) {
+  return apiRequest<void>(`/api/codigos-conducta/${id}`, { method: 'PUT', body: { codigo, descripcion } });
+}
+
 export function desactivarCodigoConducta(id: number) {
   return apiRequest<void>(`/api/codigos-conducta/${id}/desactivar`, { method: 'POST' });
 }

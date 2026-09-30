@@ -24,20 +24,24 @@ public class CodigoConductaDao extends conexion {
     }
 
     public CodigoConducta crear(String codigo, String descripcion) throws SQLException {
-        String normalizedCode = codigo == null ? "" : codigo.trim().toUpperCase();
-        String normalizedDescription = descripcion == null ? "" : descripcion.trim();
-        if (!normalizedCode.matches("N[A-Z0-9]{0,9}")) {
-            throw new IllegalArgumentException("El código debe comenzar con N y tener hasta 10 caracteres.");
-        }
-        if (normalizedDescription.isBlank() || normalizedDescription.length() > 255) {
-            throw new IllegalArgumentException("La descripción es requerida y no puede superar 255 caracteres.");
-        }
+        String normalizedCode = normalizarCodigo(codigo);
+        String normalizedDescription = normalizarDescripcion(descripcion);
 
         try (Connection con = getCon()) {
-            try (PreparedStatement existing = con.prepareStatement("SELECT id FROM codigo_conducta WHERE codigo = ?")) {
+            try (PreparedStatement existing = con.prepareStatement("SELECT id, activo FROM codigo_conducta WHERE codigo = ?")) {
                 existing.setString(1, normalizedCode);
                 try (ResultSet rs = existing.executeQuery()) {
-                    if (rs.next()) throw new IllegalArgumentException("El código ya existe.");
+                    if (rs.next()) {
+                        if (rs.getBoolean("activo")) throw new IllegalArgumentException("El código ya existe.");
+                        // Desactivado = "eliminado" en la UI; no se puede borrar porque el historial lo referencia, se reactiva
+                        int id = rs.getInt("id");
+                        try (PreparedStatement ps = con.prepareStatement("UPDATE codigo_conducta SET descripcion = ?, activo = TRUE WHERE id = ?")) {
+                            ps.setString(1, normalizedDescription);
+                            ps.setInt(2, id);
+                            ps.executeUpdate();
+                        }
+                        return new CodigoConducta(id, normalizedCode, normalizedDescription, true);
+                    }
                 }
             }
             String sql = "INSERT INTO codigo_conducta (codigo, descripcion, activo) VALUES (?, ?, TRUE)";
@@ -51,6 +55,43 @@ public class CodigoConductaDao extends conexion {
                 }
             }
         }
+    }
+
+    /** Cambiar el código se propaga al historial por el FK ON UPDATE CASCADE de rasgo_asistencia_codigo. */
+    public boolean editar(int id, String codigo, String descripcion) throws SQLException {
+        String normalizedCode = normalizarCodigo(codigo);
+        String normalizedDescription = normalizarDescripcion(descripcion);
+        try (Connection con = getCon()) {
+            try (PreparedStatement existing = con.prepareStatement("SELECT id FROM codigo_conducta WHERE codigo = ? AND id <> ?")) {
+                existing.setString(1, normalizedCode);
+                existing.setInt(2, id);
+                try (ResultSet rs = existing.executeQuery()) {
+                    if (rs.next()) throw new IllegalArgumentException("El código ya existe.");
+                }
+            }
+            try (PreparedStatement ps = con.prepareStatement("UPDATE codigo_conducta SET codigo = ?, descripcion = ? WHERE id = ? AND activo = TRUE")) {
+                ps.setString(1, normalizedCode);
+                ps.setString(2, normalizedDescription);
+                ps.setInt(3, id);
+                return ps.executeUpdate() == 1;
+            }
+        }
+    }
+
+    private static String normalizarCodigo(String codigo) {
+        String normalized = codigo == null ? "" : codigo.trim().toUpperCase();
+        if (!normalized.matches("N[A-Z0-9]{0,9}")) {
+            throw new IllegalArgumentException("El código debe comenzar con N y tener hasta 10 caracteres.");
+        }
+        return normalized;
+    }
+
+    private static String normalizarDescripcion(String descripcion) {
+        String normalized = descripcion == null ? "" : descripcion.trim();
+        if (normalized.isBlank() || normalized.length() > 255) {
+            throw new IllegalArgumentException("La descripción es requerida y no puede superar 255 caracteres.");
+        }
+        return normalized;
     }
 
     public boolean desactivar(int id) throws SQLException {

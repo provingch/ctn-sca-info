@@ -8,6 +8,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -44,6 +45,25 @@ public class CodigoConductaController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         } catch (Exception ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo crear el código de conducta.", ex);
+        }
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('LEVEL_5')")
+    public void editar(@PathVariable int id, @RequestBody CodigoConductaRequest request) {
+        if (request == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Se requiere código y descripción.");
+        }
+        try {
+            if (!dao.editar(id, request.codigo(), request.descripcion())) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Código de conducta no encontrado o inactivo.");
+            }
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo editar el código de conducta.", ex);
         }
     }
 

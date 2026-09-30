@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { ApiError } from '../api/client';
-import { crearCodigoConducta, desactivarCodigoConducta, listarCodigosConducta, type CodigoConducta } from '../api/home';
+import { crearCodigoConducta, desactivarCodigoConducta, editarCodigoConducta, listarCodigosConducta, type CodigoConducta } from '../api/home';
 
 interface CatalogoConductaPanelProps {
   onCodesChange?: (codes: CodigoConducta[]) => void;
@@ -11,6 +11,7 @@ export default function CatalogoConductaPanel({ onCodesChange }: CatalogoConduct
   const [nuevoCodigo, setNuevoCodigo] = useState('');
   const [nuevaDescripcion, setNuevaDescripcion] = useState('');
   const [catalogStatus, setCatalogStatus] = useState('');
+  const [editandoId, setEditandoId] = useState<number | null>(null);
 
   async function loadCodigosConducta() {
     try {
@@ -39,14 +40,27 @@ export default function CatalogoConductaPanel({ onCodesChange }: CatalogoConduct
       return;
     }
     try {
-      await crearCodigoConducta(codigo, descripcion);
-      setNuevoCodigo('');
-      setNuevaDescripcion('');
+      if (editandoId === null) await crearCodigoConducta(codigo, descripcion);
+      else await editarCodigoConducta(editandoId, codigo, descripcion);
+      resetForm();
       setCatalogStatus('Código de conducta guardado.');
       await loadCodigosConducta();
     } catch (err) {
       setCatalogStatus(err instanceof ApiError ? err.message : 'No se pudo guardar el código de conducta.');
     }
+  }
+
+  function resetForm() {
+    setEditandoId(null);
+    setNuevoCodigo('');
+    setNuevaDescripcion('');
+  }
+
+  function editCodigoConducta(item: CodigoConducta) {
+    setEditandoId(item.id);
+    setNuevoCodigo(item.codigo);
+    setNuevaDescripcion(item.descripcion);
+    setCatalogStatus('');
   }
 
   async function disableCodigoConducta(item: CodigoConducta) {
@@ -65,9 +79,9 @@ export default function CatalogoConductaPanel({ onCodesChange }: CatalogoConduct
     <form className="form-grid" onSubmit={saveCodigoConducta}>
       <label>Código<input value={nuevoCodigo} maxLength={10} placeholder="Ej.: N10" onChange={(event) => setNuevoCodigo(event.target.value.toUpperCase())} required /></label>
       <label>Descripción<input value={nuevaDescripcion} maxLength={255} placeholder="Descripción del rasgo" onChange={(event) => setNuevaDescripcion(event.target.value)} required /></label>
-      <span className="admin-actions"><button className="button" type="submit">Agregar código</button></span>
+      <span className="admin-actions"><button className="button" type="submit">{editandoId === null ? 'Agregar código' : 'Guardar cambios'}</button>{editandoId !== null && <button className="button secondary" type="button" onClick={resetForm}>Cancelar</button>}</span>
     </form>
-    <div className="admin-list">{codigosConducta.map((item) => <div key={item.id}><span><strong>{item.codigo}</strong> {item.descripcion}</span><button className="button danger" type="button" onClick={() => void disableCodigoConducta(item)}>Desactivar</button></div>)}</div>
+    <div className="admin-list">{codigosConducta.map((item) => <div key={item.id}><span><strong>{item.codigo}</strong> {item.descripcion}</span><span className="admin-actions"><button className="button secondary" type="button" onClick={() => editCodigoConducta(item)}>Editar</button><button className="button danger" type="button" onClick={() => void disableCodigoConducta(item)}>Desactivar</button></span></div>)}</div>
     {catalogStatus && <p className="notice" role="status">{catalogStatus}</p>}
   </section>;
 }
