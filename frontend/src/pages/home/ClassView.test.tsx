@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ClassView } from './HomePage';
+import { ClassView, HorarioHoyView } from './HomePage';
 import { ToastProvider } from '../../context/ToastContext';
 import { ApiError } from '../../api/client';
 import { getAsignacionesDisponibles } from '../../api/planCurricular';
@@ -44,7 +44,7 @@ describe('Inicio de clase', () => {
       let resolve!: (items: []) => void;
       vi.mocked(getAsignacionesDisponibles).mockReturnValue(new Promise((done) => { resolve = done; }));
       show();
-      await act(async () => {}); // deja resolver el horario de hoy (vacío) y activar el camino manual
+      await act(async () => {});
       expect(screen.queryByText('No hay asignaciones disponibles para este curso.')).not.toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Guardar inicio de clase' })).toBeDisabled();
       await act(async () => { resolve([]); });
@@ -100,27 +100,43 @@ describe('Inicio de clase', () => {
     fireEvent.pointerDown(document.body);
     expect(screen.queryByRole('listbox', { name: 'Códigos para Pérez, Ana' })).not.toBeInTheDocument();
   });
-  it('muestra el horario de hoy antes que cualquier selector y distingue bloques registrados de los que no', async () => {
+  it('muestra el horario de hoy sin selectores y distingue bloques registrados de los que no', async () => {
     vi.mocked(getMiHorarioHoy).mockResolvedValue([
       bloqueHoy,
       { ...bloqueHoy, asignacionId: 22, horaInicio: '07:35', horaFin: '08:10', materiaNombre: 'Física', registrada: true },
     ]);
-    show();
+    const onElegir = vi.fn();
+    render(<HorarioHoyView onElegir={onElegir} onOtraClase={vi.fn()} />);
     await screen.findByText('Tu horario de hoy');
     expect(screen.queryByLabelText('Asignación de la clase')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Disciplina')).not.toBeInTheDocument();
 
     const disponible = screen.getByRole('button', { name: /Redes II/ });
     expect(disponible).toHaveTextContent('Registrar');
     const registrado = screen.getByText('Física').closest('div');
     expect(registrado).toHaveTextContent('Registrada');
     expect(registrado?.tagName).toBe('DIV');
+    fireEvent.click(disponible);
+    expect(onElegir).toHaveBeenCalledWith(bloqueHoy);
+  });
+  it('ofrece iniciar una clase distinta, haya o no bloques hoy', async () => {
+    const onOtraClase = vi.fn();
+    render(<HorarioHoyView onElegir={vi.fn()} onOtraClase={onOtraClase} />);
+    await screen.findByText('No tenés clases cargadas en tu horario para hoy.');
+    fireEvent.click(screen.getByRole('button', { name: 'Iniciar clase distinta' }));
+    expect(onOtraClase).toHaveBeenCalledTimes(1);
+  });
+  it('avisa si el horario de hoy no carga y deja iniciar una clase distinta igual', async () => {
+    vi.mocked(getMiHorarioHoy).mockRejectedValueOnce(new ApiError(500, 'Error de horario'));
+    const onOtraClase = vi.fn();
+    render(<HorarioHoyView onElegir={vi.fn()} onOtraClase={onOtraClase} />);
+    await screen.findByText('No se pudo cargar tu horario de hoy. Error de horario');
+    fireEvent.click(screen.getByRole('button', { name: 'Iniciar clase distinta' }));
+    expect(onOtraClase).toHaveBeenCalledTimes(1);
   });
   it('precarga materia, curso, horario y horas cátedra desde el bloque elegido, sin selectores para tocar', async () => {
-    vi.mocked(getMiHorarioHoy).mockResolvedValue([bloqueHoy]);
     vi.mocked(createClass).mockResolvedValue(undefined);
-    show();
-    fireEvent.click(await screen.findByRole('button', { name: /Redes II/ }));
+    const onSalirDelBloque = vi.fn();
+    render(<ToastProvider><ClassView data={data} reload={vi.fn().mockResolvedValue(undefined)} bloque={bloqueHoy} onSalirDelBloque={onSalirDelBloque} /></ToastProvider>);
 
     expect(screen.getByText('3° A Informática')).toBeInTheDocument();
     expect(screen.getByText('07:00–07:35')).toBeInTheDocument();
@@ -136,51 +152,13 @@ describe('Inicio de clase', () => {
     expect(vi.mocked(createClass).mock.calls[0][0]).toMatchObject({
       cursoId: 8, asignacionId: 21, horaInicio: '07:00', horasCatedra: 1, instrumentoId: 5, tema: 'Repaso de subredes',
     });
+    await waitFor(() => expect(onSalirDelBloque).toHaveBeenCalledTimes(1));
   });
-  it('vuelve a la lista de bloques al limpiar un formulario abierto desde un bloque', async () => {
-    vi.mocked(getMiHorarioHoy).mockResolvedValue([bloqueHoy]);
-    show();
-    fireEvent.click(await screen.findByRole('button', { name: /Redes II/ }));
-    expect(screen.queryByText('Tu horario de hoy')).not.toBeInTheDocument();
-
+  it('vuelve al horario de hoy al limpiar un formulario abierto desde un bloque', () => {
+    const onSalirDelBloque = vi.fn();
+    render(<ToastProvider><ClassView data={data} reload={vi.fn().mockResolvedValue(undefined)} bloque={bloqueHoy} onSalirDelBloque={onSalirDelBloque} /></ToastProvider>);
     fireEvent.click(screen.getByRole('button', { name: 'Limpiar formulario' }));
-    expect(await screen.findByText('Tu horario de hoy')).toBeInTheDocument();
-  });
-  it('abre el camino manual directamente cuando no hay horario cargado para hoy', async () => {
-    vi.mocked(getMiHorarioHoy).mockResolvedValue([]);
-    show();
-    await waitFor(() => expect(screen.getByLabelText('Disciplina')).toHaveValue('Redes II'));
-    expect(screen.queryByText('Tu horario de hoy')).not.toBeInTheDocument();
-  });
-  it('permite registrar otra clase a mano desde la lista de bloques', async () => {
-    vi.mocked(getMiHorarioHoy).mockResolvedValue([bloqueHoy]);
-    show();
-    await screen.findByText('Tu horario de hoy');
-    fireEvent.click(screen.getByRole('button', { name: 'Registrar otra clase' }));
-    await waitFor(() => expect(screen.getByLabelText('Disciplina')).toHaveValue('Redes II'));
-    expect(screen.getByLabelText('Asignación de la clase')).toBeInTheDocument();
-  });
-  it('avisa si el horario de hoy no carga y deja registrar otra clase igual', async () => {
-    vi.mocked(getMiHorarioHoy).mockRejectedValueOnce(new ApiError(500, 'Error de horario'));
-    show();
-    await screen.findByText('No se pudo cargar tu horario de hoy. Error de horario');
-    fireEvent.click(screen.getByRole('button', { name: 'Registrar otra clase' }));
-    await waitFor(() => expect(screen.getByLabelText('Disciplina')).toHaveValue('Redes II'));
-  });
-  it('avisa al padre del modo (bloques o manual) para que sepa cuándo mostrar su propio selector', async () => {
-    vi.mocked(getMiHorarioHoy).mockResolvedValue([bloqueHoy]);
-    const onModoChange = vi.fn();
-    render(<ToastProvider><ClassView data={data} reload={vi.fn().mockResolvedValue(undefined)} onModoChange={onModoChange} /></ToastProvider>);
-    await screen.findByText('Tu horario de hoy');
-    expect(onModoChange).not.toHaveBeenCalled();
-
-    fireEvent.click(screen.getByRole('button', { name: /Redes II/ }));
-    await waitFor(() => expect(onModoChange).toHaveBeenLastCalledWith('bloques'));
-
-    fireEvent.click(screen.getByRole('button', { name: 'Limpiar formulario' }));
-    await screen.findByText('Tu horario de hoy');
-    fireEvent.click(screen.getByRole('button', { name: 'Registrar otra clase' }));
-    await waitFor(() => expect(onModoChange).toHaveBeenLastCalledWith('manual'));
+    expect(onSalirDelBloque).toHaveBeenCalledTimes(1);
   });
   it('calcula la última hora sin incluir recreos ni cruzar turnos', () => {
     expect(classEndTime('8:45', 1)).toBe('9:20');

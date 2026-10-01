@@ -52,9 +52,10 @@ export default function HomePage() {
   const [selectionLoading, setSelectionLoading] = useState(false);
   const [syncingAll, setSyncingAll] = useState(false);
   const { selectSpecialty, resetSpecialty } = useSpecialty();
-  // Empieza en 'bloques' para no mostrar el selector mientras ClassView todavía
-  // está resolviendo si el profesor tiene horario cargado hoy.
-  const [claseModo, setClaseModo] = useState<'bloques' | 'manual'>('bloques');
+  // "Iniciar clase" arranca en el horario de hoy, sin selectores; el selector de
+  // especialidad/curso/sección es solo para "Iniciar clase distinta" (modo manual).
+  const [claseModo, setClaseModo] = useState<'horario' | 'manual'>('horario');
+  const [bloque, setBloque] = useState<HorarioBloqueHoyDto | null>(null);
 
   const hasEspecialidad = !!especialidadId;
   const hasCursoSeleccionado = !!cursoId;
@@ -220,8 +221,7 @@ export default function HomePage() {
   const sectionOptions = (selectedCourseNivel != null ? seccionesForNivel(selectedCourseNivel) : []).map((s) => ({ value: s, label: String(s) }));
 
   const showSelectionWait = !hasEspecialidad || !hasCursoSeleccionado || !hasSeccionSeleccionada;
-  const showSelector = view === 'planillas'
-    || (view === 'catedra' && subview === 'clase' && (claseModo === 'manual' || showSelectionWait));
+  const showSelector = view === 'planillas' || (isClaseView && claseModo === 'manual');
   const hasActiveFilter = hasEspecialidad || selectedCourseNivel != null || hasSeccionSeleccionada;
   const clearFilter = () => {
     setSelectedNivel(null);
@@ -229,6 +229,25 @@ export default function HomePage() {
     setSearch({ view, etapa: String(data.selEtapa) });
     resetSpecialty();
   };
+
+  const cambiarModoClase = (modo: 'horario' | 'manual') => {
+    setClaseModo(modo);
+    setBloque(null);
+    setSelectedNivel(null);
+    setSelectedSeccion('');
+    if (cursoId) params({ cursoId: '' });
+  };
+  // El bloque trae su propio curso: se carga ese curso para tener su lista de alumnos.
+  const elegirBloque = (elegido: HorarioBloqueHoyDto) => {
+    setBloque(elegido);
+    if (elegido.cursoId !== cursoId) {
+      setSelectionLoading(true);
+      params({ cursoId: String(elegido.cursoId) });
+    }
+  };
+  const cargandoClase = (
+    <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Cargando…</h2><p>Esperá un momento mientras preparamos la clase.</p></section>
+  );
 
   return <>
     <style>{`
@@ -298,6 +317,7 @@ export default function HomePage() {
             params({ cursoId: match ? String(match.id) : '' });
           }} disabled={!hasEspecialidad || selectedCourseNivel == null || visibleCursos.length === 0} placeholder={isPlanillasView ? 'Todas las secciones' : 'Seleccione la sección'} options={[{ value: '', label: isPlanillasView ? 'Todas las secciones' : 'Seleccione la sección' }, ...sectionOptions]} />
         </label>
+        {isClaseView && <button type="button" className="button secondary" onClick={() => cambiarModoClase('horario')}>Volver al horario de hoy</button>}
         {isPlanillasView && hasActiveFilter && <button type="button" className="button secondary planillas-toolbar-clear" onClick={clearFilter}>Limpiar filtro</button>}
       </div>}
       {view === 'catedra' ? (
@@ -310,12 +330,21 @@ export default function HomePage() {
             <RsaView />
           ) : subview === 'quejas' ? (
             <QuejaCursoView />
-          ) : selectionLoading ? (
-            <section className="panel idle-state"><div className="idle-dots" aria-hidden="true"><span className="idle-dot" /><span className="idle-dot" /><span className="idle-dot" /></div><h2>Cargando…</h2><p>Esperá un momento mientras preparamos la clase.</p></section>
-          ) : showSelectionWait ? (
+          ) : claseModo === 'horario' ? (
+            !bloque ? (
+              <HorarioHoyView onElegir={elegirBloque} onOtraClase={() => cambiarModoClase('manual')} />
+            ) : selectionLoading ? cargandoClase : data.selCurso?.id !== bloque.cursoId ? (
+              <div className="panel">
+                <p className="notice error">El curso de este bloque ({bloque.cursoDescripcion}) no figura entre tus cursos.</p>
+                <button type="button" className="button secondary" onClick={() => cambiarModoClase('horario')}>Volver al horario de hoy</button>
+              </div>
+            ) : (
+              <ClassView key={`${bloque.asignacionId}-${bloque.horaInicio}`} data={data} reload={load} bloque={bloque} onSalirDelBloque={() => cambiarModoClase('horario')} />
+            )
+          ) : selectionLoading ? cargandoClase : showSelectionWait ? (
             <p className="catedra-select-hint">Elegí una especialidad, un curso y una sección para continuar.</p>
           ) : (
-            <ClassView key={data.selCurso?.id} data={data} reload={load} onModoChange={setClaseModo} />
+            <ClassView key={data.selCurso?.id} data={data} reload={load} />
           )}
         </div>
       ) : subview === 'riesgo' ? (
@@ -829,7 +858,73 @@ function PlanillaCoverControls({ planillaId, tienePortada, onChanged }: {
   </>;
 }
 
-export function ClassView({ data, reload, onModoChange }: { data: HomeResponse; reload: () => Promise<void>; onModoChange?: (modo: 'bloques' | 'manual') => void }) {
+/** Bloques del horario de hoy: lo primero que ve el profesor en "Iniciar clase", sin selectores. */
+export function HorarioHoyView({ onElegir, onOtraClase }: { onElegir: (bloque: HorarioBloqueHoyDto) => void; onOtraClase: () => void }) {
+  const [bloquesHoy, setBloquesHoy] = useState<HorarioBloqueHoyDto[] | null>(null);
+  const [error, setError] = useState('');
+  const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    setError('');
+    void getMiHorarioHoy().then((list) => {
+      if (active) setBloquesHoy(list);
+    }).catch((err) => {
+      if (!active) return;
+      setBloquesHoy([]);
+      setError(err instanceof ApiError ? err.message : 'No se pudo cargar tu horario de hoy.');
+    });
+    return () => { active = false; };
+  }, [attempt]);
+
+  const otraClase = <button type="button" className="button secondary" onClick={onOtraClase}>Iniciar clase distinta</button>;
+
+  if (error) return (
+    <div className="panel">
+      <div className="notice error" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        <p style={{ margin: 0, flex: 1 }}>No se pudo cargar tu horario de hoy. {error}</p>
+        <button type="button" className="button secondary" onClick={() => setAttempt((n) => n + 1)}>Reintentar</button>
+      </div>
+      {otraClase}
+    </div>
+  );
+  if (bloquesHoy === null) return <div className="panel"><p style={{ margin: 0 }}>Cargando tu horario de hoy…</p></div>;
+  return (
+    <div className="panel">
+      <div className="class-card-head">
+        <div><span className="eyebrow">Inicio de clase</span><h2>Tu horario de hoy</h2><p>{bloquesHoy.length > 0 ? 'Elegí el bloque que vas a dar para registrar la clase.' : 'No tenés clases cargadas en tu horario para hoy.'}</p></div>
+      </div>
+      {bloquesHoy.length > 0 && <ul className="horario-hoy-list">
+        {bloquesHoy.map((bloque) => {
+          const contenido = (
+            <>
+              <span className="horario-hoy-horario">{bloque.horaInicio}–{bloque.horaFin}</span>
+              <span className="horario-hoy-info">
+                <strong>{bloque.materiaNombre}</strong>
+                <small>{bloque.cursoDescripcion}{bloque.salaNombre ? ` · ${bloque.salaNombre}` : ''} · {bloque.horasCatedra} horas cátedra</small>
+              </span>
+              <span className="horario-hoy-estado" aria-hidden="true">{bloque.registrada ? '✓ Registrada' : 'Registrar'}</span>
+            </>
+          );
+          return (
+            <li key={`${bloque.asignacionId}-${bloque.horaInicio}`}>
+              {bloque.registrada ? (
+                <div className="horario-hoy-bloque registrada">{contenido}<span className="visually-hidden">, ya registrada</span></div>
+              ) : (
+                <button type="button" className="horario-hoy-bloque" onClick={() => onElegir(bloque)}>{contenido}</button>
+              )}
+            </li>
+          );
+        })}
+      </ul>}
+      {otraClase}
+    </div>
+  );
+}
+
+/** Formulario de inicio de clase. Con `bloque`, la materia y el horario vienen del horario de hoy. */
+export function ClassView({ data, reload, bloque, onSalirDelBloque }: { data: HomeResponse; reload: () => Promise<void>; bloque?: HorarioBloqueHoyDto | null; onSalirDelBloque?: () => void }) {
+  const { showToast } = useToast();
   const selectedCursoId = data.selCurso?.id;
   const [tema, setTema] = useState('');
   const [asignacionesDisponibles, setAsignacionesDisponibles] = useState<AsignacionOption[]>([]);
@@ -843,8 +938,8 @@ export function ClassView({ data, reload, onModoChange }: { data: HomeResponse; 
   const [instrumentoId, setInstrumentoId] = useState(0);
   const [ausentes, setAusentes] = useState<number[]>([]);
   const [status, setStatus] = useState('');
-  const [horario, setHorario] = useState('');
-  const [cantidadHoras, setCantidadHoras] = useState('');
+  const [horario, setHorario] = useState(bloque?.horaInicio ?? '');
+  const [cantidadHoras, setCantidadHoras] = useState(bloque ? String(bloque.horasCatedra) : '');
   const [modalidad, setModalidad] = useState('Presencial');
   const [observaciones, setObservaciones] = useState('');
   const [codigosPorAlumno, setCodigosPorAlumno] = useState<Record<number, string[]>>({});
@@ -854,16 +949,6 @@ export function ClassView({ data, reload, onModoChange }: { data: HomeResponse; 
   const [requiereJustificacion, setRequiereJustificacion] = useState(false);
   const [justificacionAtraso, setJustificacionAtraso] = useState('');
   const justificacionRef = useRef<HTMLTextAreaElement>(null);
-
-  const [bloquesHoy, setBloquesHoy] = useState<HorarioBloqueHoyDto[] | null>(null);
-  const [bloquesHoyError, setBloquesHoyError] = useState('');
-  const [bloquesHoyAttempt, setBloquesHoyAttempt] = useState(0);
-  const [origenFormulario, setOrigenFormulario] = useState<'bloque' | 'manual' | null>(null);
-  const [bloqueActivo, setBloqueActivo] = useState<HorarioBloqueHoyDto | null>(null);
-
-  useEffect(() => {
-    if (origenFormulario) onModoChange?.(origenFormulario === 'manual' ? 'manual' : 'bloques');
-  }, [origenFormulario, onModoChange]);
 
   useEffect(() => {
     let active = true;
@@ -903,23 +988,6 @@ export function ClassView({ data, reload, onModoChange }: { data: HomeResponse; 
     setDisciplina(assignment?.materiaNombre ?? '');
   }, [asignacionesDisponibles, selectedAsignacionId]);
 
-  // Horario del día: se muestra antes que cualquier selector. Lista vacía o caída
-  // no bloquean al profesor — "Registrar otra clase" siempre abre el camino manual.
-  useEffect(() => {
-    let active = true;
-    setBloquesHoyError('');
-    void getMiHorarioHoy().then((list) => {
-      if (!active) return;
-      setBloquesHoy(list);
-      if (list.length === 0) setOrigenFormulario((current) => current ?? 'manual');
-    }).catch((err) => {
-      if (!active) return;
-      setBloquesHoy([]);
-      setBloquesHoyError(err instanceof ApiError ? err.message : 'No se pudo cargar tu horario de hoy.');
-    });
-    return () => { active = false; };
-  }, [bloquesHoyAttempt]);
-
   function toggleCodigo(alumnoId: number, codigo: string) {
     const codigosActuales = codigosPorAlumno[alumnoId] ?? [];
     const codigosActualizados = codigosActuales.includes(codigo)
@@ -937,7 +1005,7 @@ export function ClassView({ data, reload, onModoChange }: { data: HomeResponse; 
   const asignacionActual = asignacionesDisponibles.find((a) => a.id === selectedAsignacionId)
     ?? (asignacionesDisponibles.length === 1 ? asignacionesDisponibles[0] : undefined);
 
-  const enBloque = origenFormulario === 'bloque' && !!bloqueActivo;
+  const enBloque = !!bloque;
   const puedeIniciarClaseManual = !assignmentsLoading && !assignmentError && !!asignacionActual && !saving;
   const puedeIniciarClase = enBloque ? !saving : puedeIniciarClaseManual;
 
@@ -956,44 +1024,10 @@ export function ClassView({ data, reload, onModoChange }: { data: HomeResponse; 
 
   const horarioFinal = classEndTime(horario, Number(cantidadHoras));
 
-  function elegirBloque(bloque: HorarioBloqueHoyDto) {
-    if (bloque.registrada) return;
-    setBloqueActivo(bloque);
-    setOrigenFormulario('bloque');
-    setSelectedAsignacionId(bloque.asignacionId);
-    setTema('');
-    setHorario(bloque.horaInicio);
-    setCantidadHoras(String(bloque.horasCatedra));
-    setModalidad('Presencial');
-    setInstrumentoId(0);
-    setObservaciones('');
-    setAusentes([]);
-    setCodigosPorAlumno({});
-    setRequiereJustificacion(false);
-    setJustificacionAtraso('');
-    setStatus('');
-  }
-
-  function abrirManual() {
-    setOrigenFormulario('manual');
-    setBloqueActivo(null);
-    setTema('');
-    setHorario('');
-    setCantidadHoras('');
-    setModalidad('Presencial');
-    setInstrumentoId(0);
-    setObservaciones('');
-    setAusentes([]);
-    setCodigosPorAlumno({});
-    setRequiereJustificacion(false);
-    setJustificacionAtraso('');
-    setStatus('');
-  }
-
   async function create(e: FormEvent) {
     e.preventDefault();
     if (submitting.current) return;
-    const cursoIdEnvio = enBloque ? bloqueActivo!.cursoId : data.selCurso?.id;
+    const cursoIdEnvio = enBloque ? bloque!.cursoId : data.selCurso?.id;
     if (!cursoIdEnvio || !puedeIniciarClase) {
       setStatus(mensajeBloqueo || 'No puedes iniciar clases en este momento.');
       return;
@@ -1006,7 +1040,7 @@ export function ClassView({ data, reload, onModoChange }: { data: HomeResponse; 
     }
     submitting.current = true; setSaving(true);
     try {
-      const asignacionUsada = enBloque ? bloqueActivo!.asignacionId : (selectedAsignacionId ?? asignacionActual?.id ?? null);
+      const asignacionUsada = enBloque ? bloque!.asignacionId : (selectedAsignacionId ?? asignacionActual?.id ?? null);
       await createClass({
         cursoId: cursoIdEnvio, asignacionId: asignacionUsada, instrumentoId,
         horaInicio: horario, horasCatedra: cantidadHoras ? Number(cantidadHoras) : null, modalidad, observaciones,
@@ -1014,9 +1048,13 @@ export function ClassView({ data, reload, onModoChange }: { data: HomeResponse; 
         alumnosAusentes: ausentes, codigosPorAlumno,
       });
       if (asignacionUsada) recordMateriaReciente(asignacionUsada);
-      const volviendoDeBloque = enBloque;
+      if (enBloque) {
+        // Volver al horario de hoy, que se recarga y marca el bloque como registrado.
+        showToast('Clase registrada.', { autoDismiss: true });
+        onSalirDelBloque?.();
+        return;
+      }
       clearForm();
-      if (volviendoDeBloque) setBloquesHoyAttempt((n) => n + 1);
       setStatus('Clase registrada.');
       await reload();
     } catch (err) {
@@ -1030,6 +1068,12 @@ export function ClassView({ data, reload, onModoChange }: { data: HomeResponse; 
   }
 
   function clearForm() {
+    if (enBloque) {
+      // Volver a la lista de bloques: un formulario vacío con selectores no es
+      // un estado al que se llegue por este camino.
+      onSalirDelBloque?.();
+      return;
+    }
     setCodigosPorAlumno({});
     setTema('');
     setHorario('');
@@ -1041,13 +1085,6 @@ export function ClassView({ data, reload, onModoChange }: { data: HomeResponse; 
     setRequiereJustificacion(false);
     setJustificacionAtraso('');
     setStatus('');
-    if (enBloque) {
-      // Volver a la lista de bloques: un formulario vacío con selectores no es
-      // un estado al que se llegue por este camino.
-      setOrigenFormulario(null);
-      setBloqueActivo(null);
-      setSelectedAsignacionId(null);
-    }
   }
 
   const camposComunes = (
@@ -1078,7 +1115,7 @@ export function ClassView({ data, reload, onModoChange }: { data: HomeResponse; 
       )}
       <form className="panel class-register-form" onSubmit={create} aria-busy={saving} style={{ display: 'grid', gap: 12, gridColumn: '1 / -1' }}>
       <input type="hidden" name="action" value="create-rasgo-planilla" />
-      <input type="hidden" name="cursoId" value={String((enBloque ? bloqueActivo!.cursoId : data.selCurso?.id) ?? '')} id="formCursoId" />
+      <input type="hidden" name="cursoId" value={String((enBloque ? bloque!.cursoId : data.selCurso?.id) ?? '')} id="formCursoId" />
       <input type="hidden" name="etapa" value={String(data.selEtapa)} />
 
       {enBloque ? (
@@ -1088,10 +1125,10 @@ export function ClassView({ data, reload, onModoChange }: { data: HomeResponse; 
             <button type="button" className="button secondary" id="clearButton" disabled={saving} onClick={clearForm}>Limpiar formulario</button>
           </div>
           <div className="horario-hoy-contexto">
-            <strong>{bloqueActivo!.materiaNombre}</strong>
-            <span>{bloqueActivo!.cursoDescripcion}</span>
-            <span>{bloqueActivo!.horaInicio}–{bloqueActivo!.horaFin}</span>
-            {bloqueActivo!.salaNombre && <span>{bloqueActivo!.salaNombre}</span>}
+            <strong>{bloque!.materiaNombre}</strong>
+            <span>{bloque!.cursoDescripcion}</span>
+            <span>{bloque!.horaInicio}–{bloque!.horaFin}</span>
+            {bloque!.salaNombre && <span>{bloque!.salaNombre}</span>}
           </div>
           <div className="class-grid">
             {camposComunes}
@@ -1168,49 +1205,5 @@ export function ClassView({ data, reload, onModoChange }: { data: HomeResponse; 
     </>
   );
 
-  return (
-    <div className="two-column">
-      {origenFormulario !== null ? cuerpoFormulario : bloquesHoyError ? (
-        <div className="panel" style={{ gridColumn: '1 / -1' }}>
-          <div className="notice error" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-            <p style={{ margin: 0, flex: 1 }}>No se pudo cargar tu horario de hoy. {bloquesHoyError}</p>
-            <button type="button" className="button secondary" onClick={() => setBloquesHoyAttempt((n) => n + 1)}>Reintentar</button>
-          </div>
-          <button type="button" className="button secondary" onClick={abrirManual}>Registrar otra clase</button>
-        </div>
-      ) : bloquesHoy === null ? (
-        <div className="panel" style={{ gridColumn: '1 / -1' }}><p style={{ margin: 0 }}>Cargando tu horario de hoy…</p></div>
-      ) : (
-        <div className="panel" style={{ gridColumn: '1 / -1' }}>
-          <div className="class-card-head">
-            <div><span className="eyebrow">Inicio de clase</span><h2>Tu horario de hoy</h2><p>Elegí el bloque que vas a dar para registrar la clase.</p></div>
-          </div>
-          <ul className="horario-hoy-list">
-            {bloquesHoy.map((bloque) => {
-              const contenido = (
-                <>
-                  <span className="horario-hoy-horario">{bloque.horaInicio}–{bloque.horaFin}</span>
-                  <span className="horario-hoy-info">
-                    <strong>{bloque.materiaNombre}</strong>
-                    <small>{bloque.cursoDescripcion}{bloque.salaNombre ? ` · ${bloque.salaNombre}` : ''} · {bloque.horasCatedra} horas cátedra</small>
-                  </span>
-                  <span className="horario-hoy-estado" aria-hidden="true">{bloque.registrada ? '✓ Registrada' : 'Registrar'}</span>
-                </>
-              );
-              return (
-                <li key={`${bloque.asignacionId}-${bloque.horaInicio}`}>
-                  {bloque.registrada ? (
-                    <div className="horario-hoy-bloque registrada">{contenido}<span className="visually-hidden">, ya registrada</span></div>
-                  ) : (
-                    <button type="button" className="horario-hoy-bloque" onClick={() => elegirBloque(bloque)}>{contenido}</button>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-          <button type="button" className="button secondary" onClick={abrirManual}>Registrar otra clase</button>
-        </div>
-      )}
-    </div>
-  );
+  return <div className="two-column">{cuerpoFormulario}</div>;
 }
