@@ -5,7 +5,7 @@ import { SceneSolutionReveal } from "./scenes/SceneSolutionReveal";
 import { Scene2Problem } from "./scenes/Scene2Problem";
 import { Scene3Features, SCENE3_FEATURES_DURATION } from "./scenes/Scene3Features";
 import { Scene5Outro } from "./scenes/Scene5Outro";
-import { TrailerVideo, TRAILER_TOTAL_DURATION } from "./TrailerVideo";
+import { TrailerVideo, TRAILER_TOTAL_DURATION, trailerDuration } from "./TrailerVideo";
 
 const WIDTH = 1920;
 const HEIGHT = 1080;
@@ -60,6 +60,16 @@ export const RemotionRoot: React.FC = () => {
         id="SCA-Trailer"
         component={TrailerVideo}
         durationInFrames={TRAILER_TOTAL_DURATION}
+        fps={FPS}
+        width={WIDTH}
+        height={HEIGHT}
+      />
+      {/* Copia del trailer con voz también en cada perfil de usuario. */}
+      <Composition
+        id="SCA-Trailer-Voces"
+        component={TrailerVideo}
+        defaultProps={{ voces: true }}
+        durationInFrames={trailerDuration(true)}
         fps={FPS}
         width={WIDTH}
         height={HEIGHT}

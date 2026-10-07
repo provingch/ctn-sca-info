@@ -1,9 +1,11 @@
+import { Audio } from "@remotion/media";
 import {
   AbsoluteFill,
   Easing,
   Interactive,
   Sequence,
   interpolate,
+  staticFile,
   useCurrentFrame,
 } from "remotion";
 import { Background } from "../components/Background";
@@ -22,6 +24,7 @@ import { fontFamily, theme } from "../theme";
 const userViews = [
   {
     role: "Profesores",
+    narration: "audio/narration/05-profesores.wav",
     body: "Suben tareas y calificaciones sincronizadas con Google Classroom, cargan el plan curricular y verifican el tema de cada clase desde el Libro de Cátedra, y llevan el horario por hora cátedra siempre al día.",
     screenStack: [
       { title: "planilla-ejemplo.xlsx", content: <ExcelMock /> },
@@ -32,6 +35,7 @@ const userViews = [
   },
   {
     role: "Evaluación",
+    narration: "audio/narration/06-evaluacion.wav",
     body: "Aprueban o rechazan el plan curricular de cada profesor, hacen seguimiento de cumplimiento y atrasos, reabren una etapa cerrada cuando hace falta corregir una nota, y descargan las planillas completas de cada curso.",
     screenStack: null,
     screen: { title: "SCA · Panel de Evaluación", content: <EvaluacionMock /> },
@@ -39,6 +43,7 @@ const userViews = [
   },
   {
     role: "Coordinación Pedagógica",
+    narration: "audio/narration/07-coordinacion.wav",
     body: "Reciben y gestionan las quejas cargadas sobre cada profesor con todo su ciclo — aceptación, revisión y solución documentada — y administran el catálogo de códigos de conducta que se registra en cada clase.",
     screenStack: null,
     screen: { title: "SCA · Coordinación Pedagógica", content: <CoordinacionMock /> },
@@ -46,6 +51,7 @@ const userViews = [
   },
   {
     role: "Administración",
+    narration: "audio/narration/08-administracion.wav",
     body: "Gestionan especialidades, usuarios, asignaciones, horarios y salas desde un panel central, dan de alta cursos y secciones, y mantienen el control académico de todo el colegio en un solo lugar.",
     screenStack: null,
     screen: { title: "SCA · Panel de Administración", content: <AdministracionMock /> },
@@ -53,6 +59,7 @@ const userViews = [
   },
   {
     role: "Familias",
+    narration: "audio/narration/09-familias.wav",
     body: "Consultan notas, promedios y tareas de sus hijos por etapa, reciben notificaciones push ante cada nueva calificación, y descargan el reporte mensual o la libreta final — todo desde el celular.",
     screenStack: null,
     screen: { title: "SCA · Panel de Familias", content: <FamiliasMock /> },
@@ -62,15 +69,26 @@ const userViews = [
 
 export const SCENE3_FEATURES_DURATION = userViews.reduce((a, f) => a + f.duration, 0);
 
+// Versión con voz (SCA-Trailer-Voces): cada perfil dura lo que su narración + aire,
+// nunca menos que la versión muda. Frames de cada voz: ver scripts/generate-narration-perfiles.sh.
+export const NARRATION_START = 14;
+const NARRATION_TAIL = 26;
+export const PERFIL_VOICE_FRAMES = [208, 210, 198, 170, 188];
+export const perfilDurations = (voces: boolean) =>
+  userViews.map((v, i) =>
+    voces ? Math.max(v.duration, NARRATION_START + PERFIL_VOICE_FRAMES[i] + NARRATION_TAIL) : v.duration,
+  );
+export const scene3Duration = (voces: boolean) => perfilDurations(voces).reduce((a, b) => a + b, 0);
+
 const FADE = 16;
 
 const UserViewSlide: React.FC<{
   view: (typeof userViews)[number];
   index: number;
   isLast: boolean;
-}> = ({ view, index, isLast }) => {
+  slotDuration: number;
+}> = ({ view, index, isLast, slotDuration }) => {
   const localFrame = useCurrentFrame();
-  const slotDuration = view.duration;
 
   const opacity = interpolate(
     localFrame,
@@ -198,13 +216,14 @@ const UserViewSlide: React.FC<{
   );
 };
 
-export const Scene3Features: React.FC = () => {
+export const Scene3Features: React.FC<{ voces?: boolean }> = ({ voces = false }) => {
   const frame = useCurrentFrame();
+  const durations = perfilDurations(voces);
 
   let cursor = 0;
-  const starts = userViews.map((v) => {
+  const starts = durations.map((d) => {
     const start = cursor;
-    cursor += v.duration;
+    cursor += d;
     return start;
   });
 
@@ -238,10 +257,15 @@ export const Scene3Features: React.FC = () => {
         <Sequence
           key={view.role}
           from={starts[i]}
-          durationInFrames={view.duration}
+          durationInFrames={durations[i]}
           layout="none"
         >
-          <UserViewSlide view={view} index={i} isLast={i === userViews.length - 1} />
+          <UserViewSlide view={view} index={i} isLast={i === userViews.length - 1} slotDuration={durations[i]} />
+          {voces && (
+            <Sequence from={NARRATION_START} layout="none">
+              <Audio src={staticFile(view.narration)} />
+            </Sequence>
+          )}
         </Sequence>
       ))}
 
@@ -254,7 +278,7 @@ export const Scene3Features: React.FC = () => {
         }}
       >
         {userViews.map((view, i) => {
-          const active = frame >= starts[i] && frame < starts[i] + view.duration;
+          const active = frame >= starts[i] && frame < starts[i] + durations[i];
           return (
             <div
               key={view.role}
