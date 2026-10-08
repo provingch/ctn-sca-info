@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Manual de Coordinación Pedagógica — SCA</title>
+<link rel="stylesheet" href="manual.css">
+</head>
+<body data-img="img/coordinacion/">
+
+<section class="portada">
+  <img class="logo" src="../frontend/public/favicon.svg" alt="">
+  <p class="colegio">Colegio Técnico Nacional de Asunción</p>
+  <p class="sistema">Sistema de Carpeta Académica (SCA)</p>
+  <h1>Manual de Coordinación Pedagógica</h1>
+  <p class="sub">Cómo gestionar quejas y códigos de conducta, paso a paso y con capturas</p>
+  <p class="nota-portada">Guía de uso — sin conocimientos técnicos necesarios</p>
+</section>
+
+<nav class="indice">
+  <h2>Contenido</h2>
+  <ol>
+    <li>Ingresar al sistema</li>
+    <li>La barra superior</li>
+    <li>Panel de Coordinación</li>
+    <li>Quejas</li>
+    <li>Reportes conductuales</li>
+    <li>Mi perfil</li>
+  </ol>
+  <p class="como-leer">Cómo leer las capturas: los <span class="num">1</span> números naranjas marcan dónde tocar, y la lista junto a cada imagen explica qué es cada uno.</p>
+</nav>
+
+<!-- incluir: comun-ingreso.html -->
+
+<h2>3. Panel de Coordinación</h2>
+<figure data-fig="03-inicio" data-legend="Quejas por profesor: ver y gestionar las quejas cargadas|Reportes conductuales: el catálogo de códigos N de conducta"></figure>
+<p>Tocá la tarjeta que necesites. Dentro de cada apartado tenés pestañas para pasar de uno a otro y <b>← Coordinación</b> para volver.</p>
+
+<h2>4. Quejas</h2>
+<h3>4.1 Contra profesores y sobre cursos</h3>
+<p>Las quejas vienen de dos lados, y arriba elegís cuáles ver:</p>
+<figure data-fig="04-quejas-lista" data-legend="Contra profesores: cargadas por Administración sobre un profesor|Sobre cursos: cargadas por los profesores sobre un grupo|Tocá un profesor para ver todas sus quejas"></figure>
+<p>Cada tarjeta muestra el profesor (o el curso), la última queja y cuántas tiene.</p>
+<figure data-fig="05-quejas-cursos" data-legend=""></figure>
+
+<h3>4.2 Estados de una queja</h3>
+<ol>
+  <li><b>Pendiente</b>: recién cargada, espera tu decisión.</li>
+  <li><b>Aceptada</b> (o <b>Rechazada</b>, si decidís no darle curso).</li>
+  <li><b>Revisada</b>: se investigó y quedó una conclusión por escrito.</li>
+  <li><b>Resuelta</b>: se aplicó una solución y quedó documentada.</li>
+</ol>
+<figure data-fig="06-quejas-profesor" data-legend="Filtrar por estado: Todas, Pendientes, Aceptadas, Revisadas, Resueltas o Rechazadas|Queja pendiente|Queja revisada|Queja rechazada (con su motivo)"></figure>
+<p>Las quejas de cada profesor están agrupadas por especialidad y, dentro de cada una, por estado.</p>
+
+<h3>4.3 Aceptar o rechazar una queja pendiente</h3>
+<figure data-fig="07-queja-pendiente" data-legend="Aceptar: darle curso|Rechazar: no darle curso (pide el motivo)"></figure>
+<p>Si la rechazás, aparece el campo <b>Motivo del rechazo</b>. Es obligatorio: el botón <b>Confirmar rechazo</b> se habilita recién cuando lo completás.</p>
+<figure data-fig="08-queja-rechazar" data-legend="Motivo del rechazo|Confirmar rechazo"></figure>
+
+<h3>4.4 Revisar una queja aceptada</h3>
+<p>Cuando terminás de investigar una queja aceptada, tocá <b>Revisar queja</b> y escribí la <b>Conclusión de la revisión</b>: qué se verificó y a qué se llegó.</p>
+<div class="dos">
+  <figure data-fig="10-queja-aceptada" data-legend="Revisar queja"></figure>
+  <figure data-fig="12-queja-revisar" data-legend="Conclusión de la revisión|Cancelar|Completar revisión"></figure>
+</div>
+<p>Al tocar <b>Completar revisión</b> se registran la fecha y quién la revisó, y la queja pasa a <b>Revisada</b>.</p>
+
+<h3>4.5 Registrar la solución y cerrar el caso</h3>
+<p>En una queja revisada, tocá <b>Registrar solución</b> y completá los tres campos:</p>
+<figure data-fig="09-queja-solucion" data-legend="Qué se revisó: los pasos y verificaciones realizadas|Solución aplicada|Nombre de quien corrigió la situación|Marcar como resuelta"></figure>
+<p>Al tocar <b>Marcar como resuelta</b>, la queja pasa a <b>Resuelta</b> y queda disponible el reporte de solución en PDF:</p>
+<figure data-fig="11-queja-resuelta" data-legend="Descargar reporte de solución (PDF)"></figure>
+<div class="aviso">Una queja Resuelta o Rechazada no se puede reabrir desde esta pantalla. Si hace falta revisar algo de nuevo, coordinalo con Administración para que carguen una queja nueva.</div>
+
+<h2>5. Reportes conductuales</h2>
+<p>Acá administrás el catálogo de códigos que los profesores usan para registrar el comportamiento de los alumnos al tomar asistencia (los códigos <b>N</b>).</p>
+<figure data-fig="13-conducta" data-legend="Código: empieza con N, de 2 a 10 caracteres, solo letras o números (por ejemplo N1, N2B)|Descripción: qué significa el código (hasta 255 caracteres)|Agregar código|Editar un código existente|Desactivar un código"></figure>
+<h3>5.1 Crear un código</h3>
+<ol>
+  <li>Completá el <b>Código</b> y la <b>Descripción</b>.</li>
+  <li>Tocá <b>Agregar código</b>.</li>
+</ol>
+<h3>5.2 Desactivar un código</h3>
+<p>Tocá <b>Desactivar</b> junto al código y confirmá. Deja de estar disponible para clases nuevas, pero los registros ya cargados con ese código no se borran.</p>
+
+<!-- incluir: comun-perfil.html -->
+
+<script src="figuras.js"></script>
+</body>
+</html>

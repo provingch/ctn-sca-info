@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Manual del Profesor — SCA</title>
+<link rel="stylesheet" href="manual.css">
+</head>
+<body data-img="img/profesor/">
+
+<section class="portada">
+  <img class="logo" src="../frontend/public/favicon.svg" alt="">
+  <p class="colegio">Colegio Técnico Nacional de Asunción</p>
+  <p class="sistema">Sistema de Carpeta Académica (SCA)</p>
+  <h1>Manual del Profesor</h1>
+  <p class="sub">Cómo usar tu perfil en el SCA, paso a paso y con capturas de pantalla</p>
+  <p class="nota-portada">Guía de uso — sin conocimientos técnicos necesarios</p>
+</section>
+
+<nav class="indice">
+  <h2>Contenido</h2>
+  <ol>
+    <li>Ingresar al sistema</li>
+    <li>La barra superior</li>
+    <li>Panel de inicio</li>
+    <li>Iniciar clase</li>
+    <li>Plan curricular</li>
+    <li>Clases dadas</li>
+    <li>RSA (rasgos socioacadémicos)</li>
+    <li>Quejas sobre un curso</li>
+    <li>Gestionar planillas</li>
+    <li>Alumnos en riesgo</li>
+    <li>Mi perfil y tu firma</li>
+    <li>Preguntas frecuentes</li>
+  </ol>
+  <p class="como-leer">Cómo leer las capturas: los <span class="num">1</span> números naranjas marcan dónde tocar, y la lista debajo de cada imagen explica qué es cada uno.</p>
+</nav>
+
+<h2>1. Ingresar al sistema</h2>
+<p>Abrí la página del sistema en tu navegador (<b>ctn-sca.ddns.net</b>). Vas a ver una tarjeta con dos campos y un botón.</p>
+<figure data-fig="01-login"></figure>
+<ol>
+  <li>Escribí tu <b>Usuario</b> o tu número de <b>Cédula</b> en el primer campo.</li>
+  <li>Escribí tu <b>Contraseña</b>. Con el ícono del ojo podés verla mientras la escribís.</li>
+  <li>Si querés que el sistema te recuerde en ese dispositivo, marcá <b>Recordarme en este dispositivo</b>.</li>
+  <li>Tocá <b>Ingresar</b>.</li>
+</ol>
+<div class="aviso">Si tu cuenta tiene activada la verificación en dos pasos (2FA), después de la contraseña el sistema te pide un código de 6 dígitos de tu app de autenticación (por ejemplo Google Authenticator). Escribilo y tocá <b>Verificar</b>.</div>
+<p>La primera vez que entrás puede aparecer un aviso sobre cookies en la parte inferior. Aceptalo para que no vuelva a aparecer.</p>
+
+<h2>2. La barra superior</h2>
+<p>En todas las páginas, arriba de todo, vas a encontrar la misma barra:</p>
+<figure data-fig="02-barra-superior" data-legend="Secciones del sistema: Cursos (tu inicio) y Mi perfil|Cambiar entre modo claro y modo oscuro|Notificaciones: el número rojo indica avisos nuevos|Tu nombre: abre el menú con Mi perfil, Manual y Cerrar sesión"></figure>
+<p>La <b>campana de notificaciones</b> te avisa, por ejemplo, que un plan curricular fue aprobado o rechazado, que todavía no subiste un plan, o que un caso tuyo fue resuelto. Tocala para abrir la bandeja: podés ver cada aviso y marcarlos como leídos, de a uno o todos juntos.</p>
+<div class="dos">
+  <figure data-fig="06-notificaciones" data-legend=""></figure>
+  <div>
+    <p>Desde <b>tu nombre</b> se abre un menú con:</p>
+    <ul>
+      <li><b>Mi perfil</b>: tus datos, contraseña y 2FA.</li>
+      <li><b>Manual</b>: abre esta guía.</li>
+      <li><b>Acerca de</b>: información del sistema.</li>
+      <li><b>Cerrar sesión</b>.</li>
+    </ul>
+    <figure data-fig="05-menu-usuario" data-legend="Manual: abre esta guía"></figure>
+  </div>
+</div>
+<div class="tip">El modo claro/oscuro queda guardado para tus próximas visitas. En el celular, estas opciones están agrupadas detrás del botón de menú (☰).</div>
+
+<h2>3. Panel de inicio</h2>
+<p>Al entrar, lo primero que ves es tu panel de inicio. Desde ahí llegás a las dos áreas principales de tu rol.</p>
+<figure data-fig="03-inicio" data-legend="Libro de Cátedra: iniciar clases, plan curricular, clases dadas, RSA y quejas|Gestionar planillas: notas, tareas y sincronización con Google Classroom|Actividad reciente: tus últimas acciones en el sistema"></figure>
+<p>Las etiquetas de cada tarjeta te avisan lo pendiente de un vistazo: en Libro de Cátedra, si tenés <b>planes rechazados</b>, <b>planes sin cargar</b> o si estás <b>al día</b>; en planillas, cuántas tenés activas y si Google Classroom está sin conectar.</p>
+<p>Más abajo está <b>Tus materias</b>: la lista de materias y cursos que tenés asignados.</p>
+<figure data-fig="04-tus-materias" data-legend="Tocá una materia para ir directo a su planilla (o a crearla, si todavía no existe)|Aviso del estado del plan curricular de esa materia"></figure>
+<div class="tip">Si tenés asignaciones en más de una especialidad, arriba aparece un selector de <b>Especialidad</b>. Con una sola, el sistema la elige solo.</div>
+<p>Dentro de <b>Libro de Cátedra</b> hay cinco pestañas, que se explican en las próximas secciones:</p>
+<figure data-fig="07-pestanas-catedra" data-legend="Iniciar clase|Plan curricular (el punto de color avisa si falta cargar o hay un plan rechazado)|Clases dadas|RSA|Quejas"></figure>
+
+<h2>4. Iniciar clase</h2>
+<h3>4.1 Tu horario de hoy</h3>
+<p>Al entrar a <b>Iniciar clase</b>, el sistema muestra directamente <b>Tu horario de hoy</b>, sin que tengas que elegir nada:</p>
+<ul>
+  <li>Si tenés bloques cargados para hoy, aparece cada uno con el horario, la materia, el curso y las horas cátedra. Los que ya registraste aparecen como <b>✓ Registrada</b> y no se pueden volver a tocar.</li>
+  <li>Tocá un bloque sin registrar para abrir el formulario con la materia, el curso, el horario y las horas cátedra ya completos.</li>
+  <li>Si hoy no tenés bloques, vas a ver el mensaje <i>"No tenés clases cargadas en tu horario para hoy."</i></li>
+</ul>
+<figure data-fig="08-horario-hoy" data-legend="Iniciar clase distinta: para una clase que no está en tu horario (extra, recuperación, etc.)"></figure>
+<p>Con <b>Iniciar clase distinta</b> elegís vos la especialidad, el curso y la sección. Para volver al horario, tocá <b>Volver al horario de hoy</b>.</p>
+<figure data-fig="09-clase-elegir-curso" data-legend="Elegí el curso|Elegí la sección|Volver al horario de hoy"></figure>
+
+<h3>4.2 Completar el formulario de la clase</h3>
+<div class="aviso">Para guardar el inicio de clase es obligatorio completar el <b>horario de inicio</b>, las <b>horas cátedra</b>, la <b>modalidad</b> y el <b>tipo de clase</b>. Si falta alguno, el sistema te dice cuál y no te deja guardar.</div>
+<figure data-fig="10-clase-formulario" data-legend="Asignación / materia (la disciplina se completa sola)|Horario de inicio y horas cátedra; el final de la clase se calcula solo|Modalidad: Presencial o Virtual|Tipo de clase (instrumento de evaluación)|Contenido específico desarrollado: el tema de la clase"></figure>
+<ol>
+  <li>Revisá o elegí la <b>Asignación / materia</b>.</li>
+  <li>Elegí el <b>Inicio de clase</b> y escribí las <b>Horas cátedra</b>.</li>
+  <li>Elegí la <b>Modalidad</b> y el <b>Tipo de clase</b>.</li>
+  <li>Si hace falta, agregá <b>Observaciones generales</b>.</li>
+  <li>Escribí el <b>Contenido específico desarrollado</b> (el tema de la clase).</li>
+  <li>Marcá la asistencia, como se ve abajo.</li>
+  <li>Tocá <b>Guardar inicio de clase</b>.</li>
+</ol>
+<figure data-fig="11-clase-asistencia" data-legend="Tocá el nombre del alumno para marcarlo ausente (otra vez lo vuelve a presente)|Zona de rasgos (N): asignale un código de conducta|Guardar inicio de clase"></figure>
+<p>Todos los alumnos arrancan como presentes. El <b>Resumen de asistencia</b> se actualiza a medida que marcás ausentes. Los códigos de conducta los administra Coordinación Pedagógica.</p>
+<div class="tip">El botón <b>Limpiar formulario</b>, arriba a la derecha, borra todo lo cargado para empezar de nuevo sin salir de la pantalla.</div>
+
+<h3>4.3 Cuando el tema llega atrasado</h3>
+<p>Si el tema que cargaste quedó atrasado respecto del plan curricular, el sistema lo detecta al guardar: aparece un aviso y te pide el motivo en el campo <b>Justificación del atraso</b>. Completalo y volvé a tocar <b>Guardar inicio de clase</b>.</p>
+<div class="aviso">Justificar no resuelve el atraso automáticamente: la justificación queda <b>pendiente de revisión del Evaluador</b>, que la aprueba o la rechaza. Si la aprueba, no te cuenta como falta; si la rechaza, sí.</div>
+<p>Si se acumulan varios atrasos rechazados en una misma asignación, el sistema puede bloquear <b>Iniciar clase</b> para esa materia y curso hasta que el evaluador resuelva la situación. Vas a ver un mensaje que lo explica: no es un error de tu formulario.</p>
+
+<h2>5. Plan curricular</h2>
+<h3>5.1 Descargar la plantilla</h3>
+<figure data-fig="12-plan-descargar" data-legend="Curso|Sección|Materia|Etapa|Configurar y descargar"></figure>
+<ol>
+  <li>En la pestaña <b>Plan curricular</b>, buscá <b>Descargar plantilla</b> (si tenés más de una especialidad, aparecen agrupadas).</li>
+  <li>Elegí <b>Curso</b>, <b>Sección</b>, <b>Materia</b> y <b>Etapa</b>.</li>
+  <li>Tocá <b>Configurar y descargar</b>.</li>
+  <li>En la ventana que se abre, tildá los meses que vas a completar e indicá cuántos bloques (celdas de temas) necesitás en cada uno: de 1 a 20, con 4 por defecto.</li>
+  <li>Tocá <b>Descargar plantilla</b>.</li>
+</ol>
+<figure data-fig="13-plan-dialogo" data-legend="Tildá los meses que vas a completar|Cantidad de bloques para ese mes (1 a 20)|Descargar plantilla"></figure>
+<div class="tip">Aunque la asignación ya tenga un plan aprobado, podés volver a descargar la plantilla.</div>
+
+<h3>5.2 Subir el plan</h3>
+<figure data-fig="14-plan-subir" data-legend="Arrastrá el archivo .xlsx o tocá para elegirlo|Subir plan curricular|Entregas realizadas: el estado de cada plan que subiste"></figure>
+<ol>
+  <li>Completá la plantilla descargada.</li>
+  <li>En <b>Subir plan</b>, arrastrá el archivo o tocá el recuadro para elegirlo.</li>
+  <li>Tocá <b>Subir plan curricular</b>. El sistema detecta solo a qué asignación corresponde.</li>
+  <li>Si hay más de una asignación posible, te pide que elijas la correcta antes de confirmar.</li>
+</ol>
+<p>Una vez subido, el plan queda <b>Pendiente</b> hasta que lo revisa el evaluador.</p>
+<figure data-fig="30-plan-entregas" data-legend="Tocá el nombre del archivo para ver el detalle del plan|Aprobado|Pendiente de revisión"></figure>
+
+<h3>5.3 Estado del plan y notificaciones</h3>
+<ul>
+  <li>En <b>Entregas realizadas</b> ves todos tus planes con su estado: <b>Pendiente</b>, <b>Aprobado</b> o <b>Rechazado</b>. Con <b>Actualizar</b> recargás la lista.</li>
+  <li>Tocando el nombre del archivo se abre el detalle del plan con los temas y, si fue rechazado, las observaciones del evaluador.</li>
+  <li>Te llega una notificación cuando el plan se aprueba o se rechaza, y un recordatorio si queda mucho tiempo pendiente sin revisar.</li>
+</ul>
+
+<h3>5.4 Ver los temas y su cumplimiento</h3>
+<p>En el detalle de un plan aprobado, los temas están agrupados por mes (podés abrir o cerrar cada mes). Cada tema puede estar:</p>
+<figure data-fig="31-plan-detalle" data-legend=""></figure>
+<ul>
+  <li><b>Pendiente</b>: todavía no llegó la fecha en que correspondería darlo.</li>
+  <li><b>No cumplido</b>: la etapa ya cerró y el tema no se dio.</li>
+  <li><b>Cubierto</b>: se muestra la fecha en que se dio.</li>
+</ul>
+
+<h3>5.5 Clases dadas antes de tener el plan aprobado</h3>
+<p>Las clases que diste antes de tener el plan aprobado quedan registradas "sin plan". Cuando el plan se aprueba, el sistema las compara con lo planificado. Si alguna no coincide, aparece en el panel <b>Clases previas al plan con incongruencias</b>, con el tema que diste y el que esperaba el plan. Podés (no es obligatorio) escribir una justificación para que la vea el evaluador.</p>
+<figure data-fig="29-plan-incongruencias" data-legend="Justificación: por qué la clase no siguió el plan (opcional)|Actualizar justificación"></figure>
+
+<h2>6. Clases dadas</h2>
+<p>En esta pestaña tenés el historial de todas las clases que registraste. Si todavía no registraste ninguna, vas a ver <i>"Todavía no registraste clases"</i>.</p>
+<figure data-fig="27-clases-dadas" data-legend="Filtrar por curso|Filtrar por especialidad|Orden por fecha|Tocá una clase para ver su detalle"></figure>
+<ul>
+  <li>Buscá por tema, materia o curso, y filtrá por <b>Curso</b>, <b>Especialidad</b> u orden por fecha.</li>
+  <li>Tocá una clase para ver su detalle: tema, fecha y la asistencia completa con los rasgos de cada alumno.</li>
+  <li>Si un alumno figura ausente, tocá <b>Justificar</b> en su fila para marcarlo como "Justificado". Esto justifica la falta del alumno (no un atraso de tema) y se aplica al instante.</li>
+  <li>Podés <b>editar</b> una clase (tema, asistencia y rasgos) durante los <b>7 días</b> posteriores a la fecha en que se dio. Pasado ese plazo, solo queda la vista de detalle.</li>
+</ul>
+<div class="tip">Si cerrás el detalle mientras editás sin guardar, el sistema te pregunta si querés perder los cambios.</div>
+<figure data-fig="28-clase-detalle" data-legend="Justificar la ausencia de un alumno (se aplica al instante)"></figure>
+
+<h2>7. RSA (rasgos socioacadémicos)</h2>
+<p>El RSA es <b>opcional</b> y se configura <b>por planilla</b> (materia, curso y etapa), no para todo tu perfil.</p>
+<figure data-fig="15-rsa" data-legend="Elegí curso, sección, materia y etapa|Activar RSA en esta planilla|Guardar configuración"></figure>
+<ol>
+  <li>En <b>1. Elegí la planilla</b>, seleccioná el curso, la sección, la materia y la etapa.</li>
+  <li>En <b>2. Configurá el RSA</b>, marcá <b>Activar RSA en esta planilla</b> y completá:
+    <ul>
+      <li><b>Puntos de RSA</b>: cuántos puntos extra puede sumar cada alumno.</li>
+      <li><b>Tolerancia sin descuento</b>: cuántas faltas se toleran antes de empezar a descontar.</li>
+      <li><b>Unidad de la tolerancia</b>: cantidad de faltas o porcentaje de clases dadas.</li>
+    </ul>
+  </li>
+  <li>Tocá <b>Guardar configuración</b>. Para sacarlo más adelante, tocá <b>Desactivar RSA</b>.</li>
+</ol>
+<div class="tip">Cada código de conducta que asignás durante la etapa cuenta como una falta de RSA (no es lo mismo que una ausencia). Por cada falta que supere la tolerancia se resta 1 punto, sin bajar de cero. Si tenés dudas, abrí <b>¿Cómo funciona el RSA?</b> en la misma pantalla.</div>
+
+<h2>8. Quejas sobre un curso</h2>
+<p>La pestaña <b>Quejas</b> sirve para registrar situaciones de un <b>grupo</b> que Coordinación Pedagógica tiene que revisar. No es para calificar ni para la conducta de un alumno puntual: eso se hace con los rasgos al iniciar clase.</p>
+<figure data-fig="16-quejas" data-legend=""></figure>
+<ol>
+  <li>En <b>1. Elegí el curso</b>, seleccioná el curso y la sección.</li>
+  <li>En <b>2. Describí la situación</b>, escribí el <b>Motivo</b> con todos los detalles necesarios para su revisión.</li>
+  <li>Tocá <b>Registrar queja</b>.</li>
+</ol>
+<p>En <b>Tus quejas registradas</b> ves el historial de las quejas que hiciste y su estado.</p>
+<figure data-fig="32-quejas-historial" data-legend=""></figure>
+
+<h2>9. Gestionar planillas</h2>
+<h3>9.1 Encontrar o crear una planilla</h3>
+<p>En <b>Gestionar planillas</b> hay una tarjeta por cada planilla que ya existe y, para cada asignación que todavía no tiene planilla en esa etapa, una tarjeta con un <b>+</b>. Podés filtrar por especialidad, curso y sección.</p>
+<figure data-fig="17-planillas" data-legend="Planilla existente: tocala para abrirla|Crear planilla para una asignación que todavía no tiene"></figure>
+<div class="tip">Podés agregarle una portada (una imagen) a cada planilla desde su tarjeta, para reconocerla más rápido.</div>
+
+<h3>9.2 Trabajar dentro de la planilla</h3>
+<figure data-fig="19-planilla-cabecera" data-legend="Etapa: cambiarla te lleva a la planilla de esa etapa, misma materia y curso|Fecha de cierre de la etapa|Confirmar etapa (se habilita al llegar la fecha de cierre)|Sincronizar Classroom|Agregar tarea propia (desaparece si la etapa está cerrada)|Descargar la planilla en Excel"></figure>
+<figure data-fig="20-planilla-tabla" data-legend="Inmovilizar alumnos: fija la columna de nombres al recorrer la tabla|Buscar alumno|Celda de nota: escribí el valor y salí del campo (se guarda solo)|Ordenar por Total, % o Nota"></figure>
+<ul>
+  <li>La tabla muestra a tus alumnos, cada tarea con su puntaje total (TP) y, al final, el <b>Total</b>, el <b>%</b> y la <b>Nota</b> de cada uno. Arriba ves la escala de notas según la exigencia.</li>
+  <li>Para cargar una nota, tocá la celda, escribí el valor y salí del campo: <b>se guarda solo</b>.</li>
+  <li>Las tareas importadas de Google Classroom son de solo lectura y muestran la nota tal cual viene de Classroom.</li>
+</ul>
+
+<h3>9.3 Sincronizar con Google Classroom</h3>
+<p>Si tenés Google Classroom conectado (desde tu perfil), cada planilla se sincroniza sola la primera vez que la abrís. También podés forzarlo con <b>Sincronizar Classroom</b>.</p>
+<ul>
+  <li>Las tareas de Classroom llevan una etiqueta de Classroom; las tuyas aparecen como <b>locales</b>.</li>
+  <li>Si el sistema encuentra un curso de Classroom que podría corresponder a la planilla, te muestra un aviso para confirmarlo o ignorarlo.</li>
+  <li>Si faltan permisos de Google, te lleva a la pantalla para autorizarlos de nuevo.</li>
+  <li>Se respeta la etapa: las tareas con fecha de la Primera Etapa se importan solo ahí, y las de la Segunda, solo en la planilla de esa etapa.</li>
+</ul>
+
+<h3>9.4 Cerrar una etapa</h3>
+<div class="aviso">Aunque llegue la fecha de cierre, la planilla <b>no se cierra sola</b>: tenés que confirmar la etapa.</div>
+<ol>
+  <li>Elegí la fecha de <b>Cierre Etapa</b> (marca 2 de la captura de arriba).</li>
+  <li>El botón <b>Confirmar Etapa</b> se habilita recién cuando llega esa fecha.</li>
+  <li>Tocá <b>Confirmar Etapa</b> y aceptá la confirmación final. Después ya no se pueden editar notas ni tareas de esa etapa.</li>
+</ol>
+<p>Una vez cerrada vas a ver el aviso <i>"Etapa 1 cerrada, no se pueden modificar sus datos"</i> (o Etapa 2). Solo el evaluador o el administrador pueden reabrirla; si lo hacen, te llega una notificación con el motivo.</p>
+
+<h2>10. Alumnos en riesgo</h2>
+<p>En <b>Gestionar planillas</b>, la pestaña <b>Alumnos en riesgo</b> lista a los alumnos que superan alguno de los umbrales: más de 5 tareas no entregadas o más de 5 notas conductuales. Podés filtrar por especialidad, curso y sección.</p>
+<figure data-fig="18-riesgo" data-legend=""></figure>
+
+<h2>11. Mi perfil y tu firma</h2>
+<p>Tocá <b>Mi perfil</b> en la barra superior, o tu nombre → <b>Mi perfil</b>. La pantalla tiene pestañas a la izquierda.</p>
+
+<h3>Perfil</h3>
+<p>Acá están todos tus datos. Editá lo que necesites y, al terminar, tocá <b>Guardar cambios</b> (abajo a la derecha). Si no lo tocás, los cambios no se guardan.</p>
+<figure data-fig="21-perfil" data-legend="Información personal: nombre, apellido y cédula|Contacto: correo, teléfono y celular|Cuenta: tu usuario para iniciar sesión|Foto de perfil: se muestra en la barra superior|Firma del docente (ver más abajo)|Google Classroom: conectar o desconectar tu cuenta de Google|Guardar cambios"></figure>
+
+<h3>Tu firma</h3>
+<p>La firma se carga una sola vez y el sistema la pone sola en las <b>planillas que descargás en Excel</b>, al pie, sobre la línea <b>"Firma del Docente"</b>.</p>
+<figure data-fig="21b-perfil-firma" data-legend="Dibujá tu firma dentro del recuadro con el mouse (o con el dedo en una pantalla táctil)|Subir imagen: si preferís usar una foto o un escaneo de tu firma (JPG o PNG)|Borrar: limpia el recuadro para empezar de nuevo"></figure>
+<ol>
+  <li>En la pestaña <b>Perfil</b>, bajá hasta <b>Firma del docente</b>.</li>
+  <li>Dibujá tu firma en el recuadro, o tocá <b>Subir imagen</b> para usar una foto de tu firma.</li>
+  <li>Si no te gustó, tocá <b>Borrar</b> y volvé a hacerla.</li>
+  <li>Tocá <b>Guardar cambios</b>.</li>
+</ol>
+<div class="tip">En el celular el recuadro es chico: tocá <b>Firmar en pantalla completa</b>, firmá y después <b>Usar firma</b>. Para una foto, usá JPG o PNG (los HEIC del iPhone no se aceptan; exportala como JPG).</div>
+<p>Así queda en la planilla descargada. Si todavía no cargaste firma, en ese lugar aparece tu nombre, como en este ejemplo:</p>
+<figure data-fig="26-firma-excel" data-legend="Lugar de la firma: al pie de la planilla, sobre la línea «Firma del Docente»"></figure>
+
+<h3>Seguridad</h3>
+<figure data-fig="22-perfil-seguridad" data-legend="Pestaña Seguridad"></figure>
+<ul>
+  <li><b>Cambiar contraseña</b>: escribí la actual, la nueva y su confirmación, y tocá <b>Actualizar contraseña</b>.</li>
+  <li><b>Verificación en dos pasos (2FA)</b>: un código extra al iniciar sesión, generado por una app en tu celular.</li>
+</ul>
+<p>Para activar el 2FA:</p>
+<ol>
+  <li>Tocá <b>Configurar 2FA</b>.</li>
+  <li>Escaneá el código QR con tu app de autenticación (Google Authenticator, Authy, etc.) o ingresá el código a mano.</li>
+  <li>Escribí el código de 6 dígitos en <b>Código de la app</b>.</li>
+  <li>Tocá <b>Confirmar activación</b>.</li>
+</ol>
+<div class="aviso">Si activás el 2FA y perdés el acceso a la app, no vas a poder iniciar sesión: contactá a un administrador.</div>
+
+<h3>Materias</h3>
+<p>Las materias, especialidades y cursos que Administración vinculó a tu usuario (solo lectura). Si no ves ninguna, todavía no te asignaron materias: avisá a Administración.</p>
+<p><b>Google Classroom</b> se conecta desde la pestaña Perfil (marca 6): con <b>Conectar con Google</b> autorizás tu cuenta y con <b>Desconectar</b> la quitás (no borra tus planillas).</p>
+<figure data-fig="23-perfil-materias" data-legend="Pestaña Materias"></figure>
+
+<h3>Aplicación</h3>
+<p>Instalá el sistema como aplicación en tu celular o computadora (<b>Instalar aplicación</b>) y activá los avisos del dispositivo (<b>Activar notificaciones</b>), que te llegan aunque no tengas el sistema abierto.</p>
+<figure data-fig="24-perfil-aplicacion" data-legend="Pestaña Aplicación"></figure>
+<div class="tip">Se configura por dispositivo: si usás el celular y la computadora, activalo en cada uno.</div>
+
+<h3>Registros</h3>
+<p>El historial de lo que se hizo con tu cuenta: sincronizaciones con Classroom, descargas de planillas, planes subidos, clases registradas, cambios de contraseña, etc. Cada línea tiene la fecha, la hora y la dirección IP desde donde se hizo. Es solo de consulta: si ves algo que no hiciste vos, cambiá tu contraseña y avisá a un administrador.</p>
+<figure data-fig="25-perfil-registros" data-legend="Pestaña Registros (en esta captura las direcciones IP están tapadas)"></figure>
+
+<h2>12. Preguntas frecuentes</h2>
+<dl class="faq">
+  <dt>Justifiqué el atraso de un tema al iniciar la clase, ¿ya está resuelto?</dt>
+  <dd>No. La justificación queda pendiente de revisión del Evaluador. Si la aprueba, no te cuenta como falta; si la rechaza, sí.</dd>
+  <dt>No me deja iniciar clase en una materia, ¿por qué?</dt>
+  <dd>Puede faltar un dato obligatorio (horario, horas cátedra, modalidad o tipo de clase), o pueden haberse acumulado atrasos rechazados en esa asignación. En el segundo caso, el mensaje en pantalla lo indica.</dd>
+  <dt>Mi clase no está en "Tu horario de hoy".</dt>
+  <dd>Tocá <b>Iniciar clase distinta</b> y elegí especialidad, curso y sección.</dd>
+  <dt>Llegó la fecha de cierre y la planilla sigue abierta, ¿es un error?</dt>
+  <dd>No. La planilla nunca se cierra sola: entrá y tocá <b>Confirmar Etapa</b>.</dd>
+  <dt>Di clases antes de tener el plan aprobado, ¿qué pasa con esas clases?</dt>
+  <dd>Cuando el plan se aprueba, el sistema las compara con lo planificado. Las que no coinciden aparecen como incongruencias en <b>Plan curricular</b>, donde podés justificarlas.</dd>
+  <dt>¿Por qué un tema figura "No cumplido" si todavía pienso darlo?</dt>
+  <dd>"No cumplido" aparece solo cuando la etapa ya cerró sin que se diera el tema. Mientras la etapa siga abierta, figura como "Pendiente".</dd>
+</dl>
+
+<script src="figuras.js"></script>
+</body>
+</html>

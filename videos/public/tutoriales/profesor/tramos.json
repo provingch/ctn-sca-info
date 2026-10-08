@@ -1,0 +1,38 @@
+{
+ "01-inicio": {
+  "archivo": "tutoriales/profesor/01-inicio.webm",
+  "inicio": 2.26,
+  "texto": "Al entrar al sistema llegás a tu panel de inicio. Desde acá accedés al Libro de Cátedra, para iniciar clases y cargar tu plan curricular, y a la gestión de planillas, donde cargás tareas y notas. Las etiquetas te avisan lo que tenés pendiente, y más abajo están todas tus materias.",
+  "durVideo": 15.16
+ },
+ "02-iniciar-clase": {
+  "archivo": "tutoriales/profesor/02-iniciar-clase.webm",
+  "inicio": 2.25,
+  "texto": "Para registrar una clase, entrá a Iniciar clase. Si la clase no está en tu horario de hoy, tocá Iniciar clase distinta y elegí el curso y la sección. Completá el horario, las horas cátedra, la modalidad, el tipo de clase y el tema que desarrollaste. Para la asistencia, tocá el nombre de cada alumno ausente. Al final, tocá Guardar inicio de clase.",
+  "durVideo": 43.04
+ },
+ "03-plan-curricular": {
+  "archivo": "tutoriales/profesor/03-plan-curricular.webm",
+  "inicio": 2.36,
+  "texto": "En la pestaña Plan curricular descargás la plantilla de tu asignación: elegí curso, sección, materia y etapa, y tocá Configurar y descargar para indicar los meses y los bloques. Después la completás y la subís desde Subir plan. En Entregas realizadas ves si cada plan está pendiente, aprobado o rechazado.",
+  "durVideo": 30.24
+ },
+ "05-planilla": {
+  "archivo": "tutoriales/profesor/05-planilla.webm",
+  "inicio": 2.13,
+  "texto": "En Gestionar planillas abrís la planilla de cada materia. Ahí ves a tus alumnos, las tareas con su puntaje y la nota final. Para cargar una nota, escribila en la celda y se guarda sola. Con Sincronizar Classroom traés las tareas de Google Classroom, y con Descargar bajás la planilla en Excel.",
+  "durVideo": 16.08
+ },
+ "06-firma": {
+  "archivo": "tutoriales/profesor/06-firma.webm",
+  "inicio": 1.88,
+  "texto": "Por último, en Mi perfil cargás tu firma: dibujala en el recuadro o subí una imagen, y tocá Guardar cambios. El sistema la agrega sola al pie de las planillas que descargás en Excel.",
+  "durVideo": 13.24
+ },
+ "04-clases-dadas": {
+  "archivo": "tutoriales/profesor/04-clases-dadas.webm",
+  "inicio": 2.31,
+  "texto": "En Clases dadas tenés el historial de todas tus clases. Tocá una para ver el detalle con la asistencia de cada alumno. Si un alumno faltó con motivo, tocá Justificar en su fila. Durante los siete días posteriores a la clase también podés editarla.",
+  "durVideo": 14.6
+ }
+}

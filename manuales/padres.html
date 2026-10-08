@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Manual de Padres y Encargados — SCA</title>
+<link rel="stylesheet" href="manual.css">
+</head>
+<body data-img="img/padres/">
+
+<section class="portada">
+  <img class="logo" src="../frontend/public/favicon.svg" alt="">
+  <p class="colegio">Colegio Técnico Nacional de Asunción</p>
+  <p class="sistema">Sistema de Carpeta Académica (SCA)</p>
+  <h1>Manual de Padres y Encargados</h1>
+  <p class="sub">Cómo seguir las notas, tareas y conducta de tus hijos, paso a paso y con capturas</p>
+  <p class="nota-portada">Guía de uso — sin conocimientos técnicos necesarios</p>
+</section>
+
+<nav class="indice">
+  <h2>Contenido</h2>
+  <ol>
+    <li>Ingresar al sistema</li>
+    <li>La barra superior</li>
+    <li>Notas de mis hijos</li>
+    <li>Materias y tareas</li>
+    <li>Notas de conducta</li>
+    <li>Mi perfil</li>
+  </ol>
+  <p class="como-leer">Cómo leer las capturas: los <span class="num">1</span> números naranjas marcan dónde tocar, y la lista junto a cada imagen explica qué es cada uno.</p>
+</nav>
+
+<!-- incluir: comun-ingreso.html -->
+<div class="tip">Activá las notificaciones del celular (ver <b>Mi perfil → Aplicación</b>): así te llegan los avisos del colegio sobre tu hijo aunque no tengas el sistema abierto.</div>
+
+<h2>3. Notas de mis hijos</h2>
+<p>Al iniciar sesión llegás directamente a <b>Notas de mis hijos</b>.</p>
+<figure data-fig="03-hijo-resumen" data-legend="Tu hijo o hija: si tenés más de uno asociado a la cuenta, elegilo en estas tarjetas|Mes del reporte|Descargar reporte mensual en PDF del mes elegido|Descargar libreta (se habilita cuando el colegio cierra la Segunda Etapa)|Imprimir resumen|Promedio general y resumen de la etapa"></figure>
+<ol>
+  <li>Si tenés más de un hijo, elegí cuál ver en las tarjetas de arriba (cada una muestra su especialidad y su promedio general).</li>
+  <li>Debajo ves el resumen: <b>promedio general</b>, el promedio de la etapa y cuántas tareas están <b>por revisar</b> (sin entregar o sin calificar).</li>
+  <li>Para un reporte en PDF, elegí el mes y tocá <b>Descargar reporte mensual</b>.</li>
+</ol>
+<div class="aviso">Si aparece el mensaje «No hay hijos asociados a este usuario padre», contactá al colegio para que revisen la vinculación de tu cuenta.</div>
+
+<h2>4. Materias y tareas</h2>
+<h3>4.1 Elegir la etapa y la materia</h3>
+<figure data-fig="04-materias" data-legend="Etapa: Primera o Segunda (todo lo de abajo se actualiza)|Materia: tocala para ver sus tareas"></figure>
+<p>Hay una tarjeta por cada materia de la etapa elegida, con su nota, el porcentaje y cuántas tareas tiene pendientes. Si tu hijo tiene muchas materias, aparece un buscador para encontrar una por nombre.</p>
+
+<h3>4.2 Detalle de tareas</h3>
+<figure data-fig="05-tareas" data-legend="Mes: ver un mes puntual o todos los meses|Cada tarea: fecha, estado y los puntos obtenidos sobre el total"></figure>
+<p>Las tareas están agrupadas por mes. Cada una figura como <b>Calificada</b>, <b>Entregada · sin calificar</b>, <b>No entregada</b> o <b>Pendiente</b>.</p>
+<figure data-fig="06-como-se-calcula" data-legend=""></figure>
+<p>El porcentaje de cada materia sale de dividir los puntos logrados entre los puntos posibles de las tareas publicadas. El promedio general combina todas las materias.</p>
+
+<h2>5. Notas de conducta</h2>
+<p>Los registros de conducta que los profesores le cargaron a tu hijo durante las clases.</p>
+<figure data-fig="07-conducta" data-legend="Materia|Desde (fecha)|Hasta (fecha)|Cada nota: fecha, materia, profesor, código, descripción y observación"></figure>
+<p>Si no hay notas de conducta, la sección lo indica directamente.</p>
+
+<!-- incluir: comun-perfil.html -->
+
+<script src="figuras.js"></script>
+</body>
+</html>

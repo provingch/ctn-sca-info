@@ -14,3 +14,4 @@ public/screenshots/*.png
 
 # Full-length source track for the trailer music, not needed once trimmed.
 public/audio/worry-slowed-source.mp3
+public/tutoriales/*/.crudo/

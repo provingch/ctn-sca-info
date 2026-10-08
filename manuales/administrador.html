@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Manual del Administrador — SCA</title>
+<link rel="stylesheet" href="manual.css">
+</head>
+<body data-img="img/administrador/">
+
+<section class="portada">
+  <img class="logo" src="../frontend/public/favicon.svg" alt="">
+  <p class="colegio">Colegio Técnico Nacional de Asunción</p>
+  <p class="sistema">Sistema de Carpeta Académica (SCA)</p>
+  <h1>Manual del Administrador</h1>
+  <p class="sub">Cómo gestionar usuarios, materias, asignaciones, alumnos, horarios, salas y quejas, paso a paso y con capturas</p>
+  <p class="nota-portada">Guía de uso — sin conocimientos técnicos necesarios</p>
+</section>
+
+<nav class="indice">
+  <h2>Contenido</h2>
+  <ol>
+    <li>Ingresar al sistema</li>
+    <li>La barra superior</li>
+    <li>Panel general</li>
+    <li>Usuarios</li>
+    <li>Materias</li>
+    <li>Asignaciones</li>
+    <li>Alumnos</li>
+    <li>Horarios</li>
+    <li>Salas</li>
+    <li>Quejas</li>
+    <li>Clases dadas</li>
+    <li>Estado del sistema</li>
+    <li>Mi perfil</li>
+  </ol>
+  <p class="como-leer">Cómo leer las capturas: los <span class="num">1</span> números naranjas marcan dónde tocar, y la lista junto a cada imagen explica qué es cada uno. En las capturas, las cédulas, correos y teléfonos aparecen tapados a propósito.</p>
+</nav>
+
+<!-- incluir: comun-ingreso.html -->
+
+<h2>3. Panel general</h2>
+<p>Al entrar a Administración ves una tarjeta por cada módulo. Tocá la que necesites; dentro de cada módulo tenés pestañas para pasar a los demás y <b>← Panel general</b> para volver.</p>
+<figure data-fig="03-inicio" data-legend="Materias|Usuarios|Asignaciones|Alumnos|Horarios|Estado del sistema|Salas|Quejas|Clases dadas"></figure>
+<p>No todos los administradores ven las mismas tarjetas:</p>
+<ul>
+  <li><b>Administrador global</b>: ve los 9 módulos y gestiona todo el colegio.</li>
+  <li><b>Administrador de especialidad</b>: su cuenta está asociada a una sola especialidad y solo ve <b>Alumnos</b>, <b>Horarios</b>, <b>Quejas</b> y <b>Clases dadas</b>. Arriba de cada pantalla figura «Especialidad gestionada» con el nombre de su especialidad.</li>
+</ul>
+<div class="tip">Si al entrar a un módulo aparece «reservado al administrador global», es por el alcance de tu cuenta, no un error.</div>
+
+<h2>4. Usuarios <small>(solo administrador global)</small></h2>
+<p>Las cuentas de acceso al sistema: profesores, evaluadores, administradores, padres/encargados y coordinación pedagógica.</p>
+<h3>4.1 Ver y buscar usuarios</h3>
+<figure data-fig="04-usuarios" data-legend="Rol: qué tipo de usuarios ver (entre paréntesis, cuántos hay)|Buscar por nombre, apellido, cédula o usuario|Cantidad por página|Crear registro: nuevo usuario|Editar los datos de un usuario|Más acciones (⋮): por ejemplo, limpiar los tokens de Google|Páginas de la lista"></figure>
+<p>Podés ordenar la tabla por nombre o apellido tocando el encabezado de la columna.</p>
+
+<h3>4.2 Crear un usuario</h3>
+<figure data-fig="05-usuario-crear" data-legend=""></figure>
+<ol>
+  <li>Tocá <b>Crear registro</b>.</li>
+  <li>Completá nombres, apellidos, cédula y nombre de usuario.</li>
+  <li>Elegí el <b>Rol</b>. Si es Administrador, elegí qué especialidad va a administrar (o dejalo vacío para que sea global).</li>
+  <li>Cargá el correo (opcional) y tocá <b>Crear usuario</b>.</li>
+</ol>
+<div class="aviso">Al crear un usuario el sistema le asigna una contraseña por defecto. Este panel no tiene un botón para restablecer la contraseña de un usuario ya creado.</div>
+
+<h3>4.3 Vincular un padre con sus hijos</h3>
+<p>Cuando el rol es <b>Padre</b>, el formulario muestra la sección <b>Alumno/s vinculados</b>.</p>
+<figure data-fig="06-usuario-padre" data-legend=""></figure>
+<ol>
+  <li>Primero guardá el usuario con rol Padre (<b>Crear usuario</b>): mientras no esté guardado no se pueden vincular alumnos.</li>
+  <li>Abrilo con <b>Editar</b>.</li>
+  <li>En el buscador de alumnos, escribí el nombre, apellido o cédula del hijo y tocá <b>Agregar</b>.</li>
+  <li>Repetí si tiene más de un hijo. Para sacar un vínculo, tocá <b>Quitar</b>.</li>
+  <li>Tocá <b>Guardar cambios</b>.</li>
+</ol>
+
+<h3>4.4 Editar, eliminar y otras acciones</h3>
+<ul>
+  <li><b>Editar</b>: cambia los datos básicos (no la contraseña).</li>
+  <li><b>Eliminar</b>: pide confirmación antes de borrar la cuenta.</li>
+  <li><b>Limpiar tokens Google</b> (menú ⋮): desconecta la cuenta de Google Classroom del usuario para que la vuelva a conectar desde cero. No está disponible para padres.</li>
+</ul>
+<div class="tip">Las cuentas de Administrador y de Coordinación Pedagógica no se pueden editar ni eliminar desde este panel.</div>
+
+<h2>5. Materias <small>(solo administrador global)</small></h2>
+<figure data-fig="07-materias" data-legend="Crear materia|Buscar por nombre|Filtrar por tipo (Común o Específica)|Filtrar por especialidad|Editar una materia"></figure>
+<h3>5.1 Crear o editar una materia</h3>
+<figure data-fig="08-materia-crear" data-legend=""></figure>
+<ol>
+  <li>Tocá <b>Crear materia</b> (o <b>Editar</b> sobre una existente) y cargá el <b>Nombre</b>.</li>
+  <li>Elegí el <b>Tipo</b>: <b>Común</b> (se dicta en varias especialidades: marcá al menos una) o <b>Específica</b> (una sola especialidad).</li>
+  <li>Tocá <b>Crear materia</b> o <b>Guardar cambios</b>.</li>
+</ol>
+<div class="aviso">Si pasás una materia de Común a Específica y tenía varias especialidades, solo se conserva la primera. Para <b>eliminar</b> una materia no tiene que tener asignaciones vinculadas.</div>
+
+<h2>6. Asignaciones <small>(solo administrador global)</small></h2>
+<p>Acá vinculás profesor, materia y curso: quién dicta qué y en qué sección.</p>
+<figure data-fig="09-asignaciones" data-legend="Buscar profesor por apellido, nombre o usuario|Filtrar: sin asignaciones, con asignaciones o sobre el promedio|Lista de profesores con su cantidad de asignaciones (tocá Ver detalle)"></figure>
+<h3>6.1 Crear, editar o eliminar asignaciones</h3>
+<figure data-fig="10-asignaciones-profesor" data-legend="Crear asignación para este profesor"></figure>
+<ol>
+  <li>En el detalle de un profesor, tocá <b>Crear asignación</b>.</li>
+  <li>Elegí la <b>Materia</b> y marcá uno o varios <b>cursos y secciones</b> (solo aparecen los habilitados para esa materia).</li>
+  <li>Tocá <b>Crear asignación</b>: si marcaste varios cursos, se crean todas juntas.</li>
+</ol>
+<p>Desde el mismo detalle podés <b>Editar</b> o <b>Eliminar</b> (con confirmación) una asignación puntual.</p>
+
+<h2>7. Alumnos</h2>
+<figure data-fig="11-alumnos" data-legend="Elegí la especialidad"></figure>
+<ol>
+  <li>Elegí la <b>Especialidad</b>, después el <b>Curso</b> y la <b>Sección</b>. (Un administrador de especialidad arranca directamente en el curso.)</li>
+  <li>Se abre la tabla de alumnos de esa sección.</li>
+</ol>
+<figure data-fig="12-alumnos-seccion" data-legend="Buscar por apellido, nombre o cédula|Agregar alumno|Editar: corregir datos, cambiar de curso o vincular padres"></figure>
+<ul>
+  <li><b>Agregar alumno</b>: cargá nombres, apellidos y cédula (opcional); el curso ya viene elegido. Tocá <b>Crear alumno</b>.</li>
+  <li><b>Vincular padres</b>: abrí el alumno con <b>Editar</b>, buscá al padre por nombre, apellido o usuario y tocá <b>Agregar</b> (o <b>Quitar</b> para sacarlo).</li>
+  <li><b>Eliminar</b>: pide confirmación.</li>
+  <li><b>Ver egresados</b>: listado de solo lectura de los alumnos cuyo curso ya egresó, con filtros por nombre, especialidad y año.</li>
+</ul>
+
+<h2>8. Horarios</h2>
+<figure data-fig="13-horarios-cursos" data-legend="Elegí el curso (después, la sección)|PDF de la especialidad: todos sus cursos en un archivo"></figure>
+<p>Elegí la <b>Especialidad</b>, el <b>Curso</b> y la <b>Sección</b> para abrir su horario semanal.</p>
+<figure data-fig="14-horario" data-legend=""></figure>
+<h3>8.1 Cargar un horario desde un Excel</h3>
+<ol>
+  <li>Dentro del horario de un curso, tocá <b>Cargar</b> y elegí el archivo .xlsx.</li>
+  <li>Revisá la vista previa: cada celda indica si está bien o si hay un conflicto.</li>
+  <li>Tocá <b>Confirmar carga</b>, o <b>Cancelar</b>.</li>
+</ol>
+<div class="aviso">Las filas con error o conflicto no se cargan: corregí el archivo y volvé a intentar.</div>
+<h3>8.2 Agregar o quitar un bloque a mano</h3>
+<p>En <b>Edición manual</b>, elegí la combinación Materia – Profesor, el <b>Día</b>, las horas <b>Desde</b> y <b>Hasta</b> y, si querés, la <b>Sala</b>; después tocá <b>Agregar rango</b>. Para sacar un bloque, buscalo en la lista y tocá <b>Quitar</b>. Con <b>Descargar PDF</b> bajás el horario de esa sección.</p>
+
+<h2>9. Salas <small>(solo administrador global)</small></h2>
+<figure data-fig="16-salas" data-legend="Agregar sala|Buscar una sala en todo el catálogo|Elegí un grupo: Comunes o una especialidad"></figure>
+<ol>
+  <li>Tocá <b>＋ Agregar sala</b> (o <b>Editar</b> sobre una existente).</li>
+  <li>Cargá el <b>Nombre</b> (hasta 45 caracteres; por ejemplo S01 para salas de especialidad o PC01 para comunes).</li>
+  <li>Elegí la <b>Especialidad / pabellón</b>, o «Comunes» si es compartida, y tocá <b>Guardar sala</b>.</li>
+</ol>
+<div class="tip">Una sala con bloques de horario asignados no se puede eliminar hasta reasignarlos. La columna «Uso en horarios» cuenta bloques, no es un porcentaje de ocupación.</div>
+
+<h2>10. Quejas</h2>
+<p>Desde acá registrás quejas sobre un profesor en un curso, y consultás el historial.</p>
+<figure data-fig="17-quejas-registrar" data-legend="Curso|Profesor (solo los asignados a ese curso)|Motivo, con el mayor detalle posible|Registrar queja"></figure>
+<p>Más abajo está el historial, con cuántas quejas hay en cada estado (Pendiente, Aceptada, Revisada, Resuelta, Rechazada), agrupadas por especialidad, con filtros por texto, estado y fechas.</p>
+<figure data-fig="18-quejas-historial" data-legend=""></figure>
+<div class="aviso">Desde Administración solo se registran quejas y se consulta el historial. Aceptarlas, rechazarlas, revisarlas y resolverlas es tarea de Coordinación Pedagógica.</div>
+
+<h2>11. Clases dadas</h2>
+<p>Historial de solo lectura de todas las clases que registraron los profesores (o las de tu especialidad): fecha, profesor, curso, materia, tema, cantidad de alumnos, ausentes y justificados.</p>
+<figure data-fig="19-clases" data-legend="Buscar por profesor, materia, tema o curso"></figure>
+
+<h2>12. Estado del sistema <small>(solo administrador global)</small></h2>
+<figure data-fig="15-sistema" data-legend="Actualizar los datos|Base de datos, última sincronización con Classroom y espacio de los registros|Migraciones de base de datos aplicadas, de la más reciente a la más antigua"></figure>
+<p>Es una pantalla de solo consulta, para diagnóstico rápido: no tiene acciones que modifiquen nada.</p>
+
+<!-- incluir: comun-perfil.html -->
+
+<script src="figuras.js"></script>
+</body>
+</html>

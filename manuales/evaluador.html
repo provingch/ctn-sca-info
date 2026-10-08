@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Manual del Evaluador — SCA</title>
+<link rel="stylesheet" href="manual.css">
+</head>
+<body data-img="img/evaluador/">
+
+<section class="portada">
+  <img class="logo" src="../frontend/public/favicon.svg" alt="">
+  <p class="colegio">Colegio Técnico Nacional de Asunción</p>
+  <p class="sistema">Sistema de Carpeta Académica (SCA)</p>
+  <h1>Manual del Evaluador</h1>
+  <p class="sub">Cómo revisar planillas, planes curriculares y el seguimiento de profesores, paso a paso y con capturas</p>
+  <p class="nota-portada">Guía de uso — sin conocimientos técnicos necesarios</p>
+</section>
+
+<nav class="indice">
+  <h2>Contenido</h2>
+  <ol>
+    <li>Ingresar al sistema</li>
+    <li>La barra superior</li>
+    <li>Panel de Evaluación</li>
+    <li>Ver y descargar planillas</li>
+    <li>Revisar planes curriculares</li>
+    <li>Seguimiento de profesores</li>
+    <li>Mi perfil</li>
+  </ol>
+  <p class="como-leer">Cómo leer las capturas: los <span class="num">1</span> números naranjas marcan dónde tocar, y la lista junto a cada imagen explica qué es cada uno.</p>
+</nav>
+
+<!-- incluir: comun-ingreso.html -->
+
+<h2>3. Panel de Evaluación</h2>
+<p>Al entrar llegás al <b>Panel de Evaluación</b>, con tres tarjetas:</p>
+<figure data-fig="03-inicio" data-legend="Ver planillas: consultar las notas de una planilla, descargarlas (una o en lote) o reabrir una etapa cerrada|Revisar plan curricular: aprobar o rechazar los planes que subieron los profesores|Seguimiento de profesores: cumplimiento de los planes e incumplimientos para resolver"></figure>
+<p>Dentro de cada apartado, arriba tenés pestañas para pasar de uno a otro (<b>Ver planillas</b>, <b>Planes curriculares</b>, <b>Seguimiento</b>) y el botón <b>← Panel de Evaluación</b> para volver.</p>
+<div class="tip">Si no sabés por dónde arrancar, <b>Seguimiento de profesores → Incumplimientos</b> es lo que más movimiento tiene: ahí aparecen los casos que esperan una decisión tuya.</div>
+
+<h2>4. Ver y descargar planillas</h2>
+<p>Acá consultás la planilla de un curso tal cual la ve el profesor, pero <b>en modo solo lectura</b>: no podés cambiar ninguna nota.</p>
+<h3>4.1 Elegir el curso</h3>
+<figure data-fig="04-planillas-filtros" data-legend="Especialidad|Curso|Sección|Etapa (Primera o Segunda)|Materia (opcional: por defecto, todas)|Período (año lectivo)|Descargar planillas: baja en un Excel todas las planillas del curso elegido"></figure>
+<ol>
+  <li>Elegí <b>Especialidad</b>, <b>Curso</b> y <b>Sección</b> (son obligatorios), la <b>Etapa</b> y el <b>Período</b>.</li>
+  <li>Si querés una sola materia, elegila en <b>Materia</b>.</li>
+  <li>Abajo aparece la lista de planillas de ese curso.</li>
+</ol>
+<figure data-fig="05-planillas-lista" data-legend="Ver planilla: abre la planilla de esa materia|Descargar planillas: todas las del curso en un solo Excel"></figure>
+<p>En la lista ves, para cada materia, el profesor a cargo y si la etapa está <b>Abierta</b> o <b>Cerrada</b> (con su fecha de cierre).</p>
+
+<h3>4.2 Consultar una planilla</h3>
+<figure data-fig="06-planilla-detalle" data-legend="Descargar esta planilla en Excel|Reabrir Etapa (solo aparece si la etapa está cerrada)"></figure>
+<p>Se ve la planilla completa: las notas de cada alumno por tarea, el total, el porcentaje y la nota final. Arriba figuran el profesor y el estado de la etapa. Como es solo lectura, podés mirar tranquilo sin riesgo de cambiar nada.</p>
+
+<h3>4.3 Reabrir una etapa cerrada</h3>
+<p>Si una etapa ya está cerrada y el profesor necesita corregir algo (una nota mal cargada, una tarea que faltó), vos sos quien puede reabrirla.</p>
+<figure data-fig="07-reabrir-etapa" data-legend="Motivo de la reapertura (obligatorio, hasta 500 caracteres)|Reabrir Etapa: confirma la reapertura"></figure>
+<ol>
+  <li>Con la planilla abierta, tocá <b>Reabrir Etapa 1</b> o <b>Reabrir Etapa 2</b>.</li>
+  <li>Escribí el <b>Motivo de la reapertura</b>.</li>
+  <li>Tocá <b>Reabrir Etapa</b> para confirmar, o <b>Cancelar</b>.</li>
+</ol>
+<p>Al confirmar, el profesor puede volver a editar notas y tareas de esa etapa, el motivo queda en el registro de actividad y el profesor recibe una notificación con ese texto.</p>
+<div class="tip">Escribí un motivo claro y concreto: el profesor lo va a leer en su notificación.</div>
+
+<h2>5. Revisar planes curriculares</h2>
+<p>Acá están los planes que subieron los profesores y esperan tu aprobación.</p>
+<figure data-fig="08-plan-revisar" data-legend="Plan pendiente: tocá uno de la lista para abrirlo (podés agrupar por Especialidad o por Profesor)|Descargar archivo original: el Excel que subió el profesor|Temas por mes: los bloques que cargó, mes por mes|Observaciones: obligatorias para rechazar|Aprobar|Rechazar"></figure>
+<ol>
+  <li>En <b>Planes pendientes de revisión</b>, elegí un plan.</li>
+  <li>Revisá los <b>Temas por mes</b> (tocá cada mes para desplegarlo) o descargá el archivo original.</li>
+  <li>Si está bien, tocá <b>Aprobar</b> y confirmá.</li>
+  <li>Si hay que corregir algo, escribí las <b>Observaciones</b> y tocá <b>Rechazar</b>.</li>
+</ol>
+<p>En los dos casos el profesor recibe una notificación con tu decisión (y tus observaciones, si lo rechazaste).</p>
+<div class="aviso">Mientras un plan está pendiente, el profesor sigue dando clases. Esas clases después se comparan contra el plan (ver «Incongruencias retroactivas»), así que conviene revisar los planes lo antes posible.</div>
+
+<h2>6. Seguimiento de profesores</h2>
+<p>Tiene dos pestañas: <b>Seguimiento de planes</b> e <b>Incumplimientos</b>.</p>
+
+<h3>6.1 Seguimiento de planes</h3>
+<figure data-fig="09-seguimiento-plan" data-legend="Pestaña Seguimiento de planes|Plan aprobado: tocá uno para ver su cumplimiento|Temas y cumplimiento: cada tema con la fecha en que se dio, o Pendiente"></figure>
+<p>Controlás si los profesores están dando los temas de su plan aprobado. Un tema figura con la fecha en que se cubrió, <b>Pendiente</b> si todavía no llegó, o <b>No cumplido</b> si la etapa cerró sin que se diera.</p>
+<div class="tip">Mientras la etapa sigue abierta, un tema todavía puede cubrirse: recién al cerrar la etapa queda definido si se cumplió.</div>
+
+<h3>6.2 Incumplimientos</h3>
+<p>Acá aparecen todos los casos que esperan una decisión tuya, agrupados en tres bloques.</p>
+<figure data-fig="10-incumplimientos" data-legend="Buscar por profesor o materia|Filtrar por tipo de caso|Bloqueos de Iniciar clase (frenan el trabajo del profesor: priorizalos)|Atrasos pendientes de revisión|Incongruencias retroactivas"></figure>
+<p>Tocá un caso para abrir su detalle a la derecha.</p>
+
+<h3>6.3 Atrasos pendientes de revisión</h3>
+<p>Cuando un profesor justifica un atraso al iniciar la clase, esa justificación te llega a vos.</p>
+<figure data-fig="11-caso-atraso" data-legend="Aceptar: el atraso no cuenta como falta|Rechazar: el atraso cuenta como falta"></figure>
+<p>En el detalle ves la fecha de la clase, el tema que se dio, el tema que esperaba el plan y la justificación del profesor. En los dos casos el profesor recibe una notificación.</p>
+<div class="aviso">Si se acumulan varios atrasos rechazados en una misma asignación (por defecto 3), el sistema bloquea «Iniciar clase» para ese profesor hasta que vos lo reactives (ver 6.5).</div>
+
+<h3>6.4 Incongruencias retroactivas</h3>
+<p>Pasa cuando un profesor dio clases antes de que se aprobara su plan: al aprobarse, esas clases se comparan con lo planificado y las que no coinciden generan un caso.</p>
+<figure data-fig="12-caso-incongruencia" data-legend="Aceptar: no cuenta como falta|Rechazar: cuenta como falta"></figure>
+<p>Si el profesor no cargó justificación vas a ver «Sin justificación cargada»: no significa que esté mal, puede que todavía no la haya escrito.</p>
+
+<h3>6.5 Bloqueos de «Iniciar clase»</h3>
+<p>El bloqueo no se levanta solo: queda así hasta que lo resolvés.</p>
+<figure data-fig="13-caso-bloqueo" data-legend="Nota de reactivación: por qué se reactiva y a qué se llegó (obligatoria)|Reactivar Iniciar clase"></figure>
+<ol>
+  <li>Abrí el caso en <b>Bloqueos de Iniciar clase</b>.</li>
+  <li>Escribí la <b>Nota de reactivación</b>.</li>
+  <li>Tocá <b>Reactivar Iniciar clase</b>.</li>
+</ol>
+<p>El profesor recibe una notificación con tu nota y vuelve a poder iniciar clases en esa asignación.</p>
+
+<!-- incluir: comun-perfil.html -->
+
+<script src="figuras.js"></script>
+</body>
+</html>

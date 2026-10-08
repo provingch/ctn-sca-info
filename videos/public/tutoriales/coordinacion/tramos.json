@@ -1,0 +1,26 @@
+{
+ "01-inicio": {
+  "archivo": "tutoriales/coordinacion/01-inicio.webm",
+  "inicio": 1.75,
+  "texto": "Coordinación Pedagógica tiene dos apartados: las quejas, que carga Administración sobre los profesores o los profesores sobre un curso, y los reportes conductuales, el catálogo de códigos que se usan al tomar asistencia.",
+  "durVideo": 8.84
+ },
+ "04-conducta": {
+  "archivo": "tutoriales/coordinacion/04-conducta.webm",
+  "inicio": 2.26,
+  "texto": "En Reportes conductuales creás los códigos: escribí el código, que empieza con N, y su descripción, y tocá Agregar código. Un código que ya no se usa se desactiva; los registros que ya tenía no se borran.",
+  "durVideo": 18.56
+ },
+ "02-quejas": {
+  "archivo": "tutoriales/coordinacion/02-quejas.webm",
+  "inicio": 1.94,
+  "texto": "En Quejas elegí si ver las quejas contra profesores o las quejas sobre cursos, y tocá un profesor para ver todas las suyas, ordenadas por estado. Una queja pendiente se acepta o se rechaza; si la rechazás, tenés que escribir el motivo.",
+  "durVideo": 30.88
+ },
+ "03-resolver": {
+  "archivo": "tutoriales/coordinacion/03-resolver.webm",
+  "inicio": 2.72,
+  "texto": "Una queja revisada se cierra registrando la solución: qué se revisó, qué solución se aplicó y quién corrigió la situación. Al marcarla como resuelta, queda disponible el reporte de solución en PDF.",
+  "durVideo": 27.6
+ }
+}

@@ -1,0 +1,56 @@
+@page { size: A4; margin: 18mm 16mm 18mm; }
+:root { --vino: #7a1f2b; --vino-suave: #f7e9eb; --naranja: #e8590c; --texto: #1d2433; --gris: #5b6474; }
+* { box-sizing: border-box; }
+body { font: 10.5pt/1.55 "Inter", system-ui, sans-serif; color: var(--texto); margin: 0; background: #fff; }
+h2 { font-size: 17pt; color: var(--vino); margin: 26pt 0 8pt; padding-bottom: 4pt; border-bottom: 2px solid var(--vino-suave); break-after: avoid; }
+/* el título de sección nunca queda solo al pie: arrastra lo que sigue */
+h2 + *, h3 + * { break-before: avoid; }
+h3 { font-size: 12.5pt; margin: 16pt 0 6pt; break-after: avoid; }
+p, li { orphans: 3; widows: 3; }
+ol, ul { padding-left: 20pt; }
+li { margin: 2pt 0; }
+b { font-weight: 650; }
+
+.portada { height: 255mm; display: flex; flex-direction: column; justify-content: center; text-align: center; background: linear-gradient(160deg, var(--vino-suave), #fff 70%); border-radius: 14pt; }
+.portada .logo { width: 90pt; margin: 0 auto 18pt; }
+.portada .colegio { font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--vino); margin: 0; }
+.portada .sistema { color: var(--gris); margin: 2pt 0 30pt; }
+.portada h1 { font-size: 34pt; margin: 0; color: var(--texto); }
+.portada .sub { font-size: 13pt; color: var(--gris); margin: 8pt 40pt 0; }
+.portada .nota-portada { margin-top: 60pt; color: var(--gris); font-size: 9.5pt; }
+
+.indice { break-before: page; }
+.indice h2 { break-before: avoid; }
+.indice ol { columns: 2; font-size: 11.5pt; }
+.como-leer { margin-top: 20pt; padding: 10pt 12pt; background: #fff4ec; border-radius: 8pt; }
+.num, .leyenda li::before { display: inline-grid; place-items: center; width: 17pt; height: 17pt; border-radius: 50%; background: var(--naranja); color: #fff; font-weight: 700; font-size: 9pt; }
+
+figure { margin: 10pt 0 14pt; break-inside: avoid; }
+figure img { display: block; max-width: 100%; max-height: 100mm; margin: 0 auto; border: 1px solid #dfe3ea; border-radius: 8pt; box-shadow: 0 2pt 8pt rgba(20, 30, 50, .08); }
+.leyenda { list-style: none; counter-reset: n; padding: 6pt 0 0; margin: 0; font-size: 9.5pt; }
+.leyenda li { counter-increment: n; display: flex; gap: 6pt; align-items: baseline; margin: 3pt 0; break-inside: avoid; }
+.leyenda li::before { content: counter(n); flex: none; }
+/* captura alta: imagen a la izquierda, leyenda a la derecha */
+figure.alta, figure.muy-alta { display: grid; grid-template-columns: 62% 1fr; gap: 14pt; align-items: center; }
+figure.muy-alta { grid-template-columns: 46% 1fr; }
+figure.alta img, figure.muy-alta img { margin: 0; max-height: 120mm; justify-self: center; }
+figure.alta .leyenda, figure.muy-alta .leyenda { padding: 0; }
+figure.alta .leyenda li, figure.muy-alta .leyenda li { margin: 6pt 0; }
+/* tira (barra superior, pestañas): leyenda en dos columnas */
+figure.tira .leyenda { columns: 2; }
+.dos { display: grid; grid-template-columns: 1fr 1fr; gap: 14pt; align-items: start; }
+.dos figure img { max-height: 110mm; }
+.dos figure { display: block; }
+
+.tip, .aviso { padding: 8pt 12pt; border-radius: 8pt; margin: 10pt 0; break-inside: avoid; font-size: 10pt; }
+.tip { background: #eef3fb; border-left: 4px solid #5267f7; }
+.tip::before { content: "Consejo · "; font-weight: 700; color: #3b4fd0; }
+.aviso { background: #fff4e5; border-left: 4px solid var(--naranja); }
+.aviso::before { content: "Importante · "; font-weight: 700; color: #b5440a; }
+
+.faq dt { font-weight: 650; margin-top: 10pt; }
+.faq dd { margin: 2pt 0 0; color: #333b4a; }
+
+/* listas de pasos, bloques de dos columnas y FAQ no se parten entre páginas */
+ol:not(.leyenda), ul, .dos, .faq dt, .faq dd { break-inside: avoid; }
+.faq dt { break-after: avoid; }

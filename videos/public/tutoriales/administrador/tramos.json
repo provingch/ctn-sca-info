@@ -1,0 +1,26 @@
+{
+ "01-inicio": {
+  "archivo": "tutoriales/administrador/01-inicio.webm",
+  "inicio": 2.34,
+  "texto": "El panel de Administraci\u00f3n tiene un m\u00f3dulo para cada tarea: materias, usuarios, asignaciones, alumnos, horarios, el estado del sistema, salas, quejas y clases dadas. Un administrador de especialidad ve solo los m\u00f3dulos de su especialidad.",
+  "durVideo": 17.52
+ },
+ "03-asignaciones": {
+  "archivo": "tutoriales/administrador/03-asignaciones.webm",
+  "inicio": 2.21,
+  "texto": "En Asignaciones ves cu\u00e1ntas materias tiene cada profesor. Entr\u00e1 al detalle de uno para crear una asignaci\u00f3n: eleg\u00eds la materia y marc\u00e1s los cursos y secciones donde la dicta.",
+  "durVideo": 13.84
+ },
+ "04-alumnos-horarios": {
+  "archivo": "tutoriales/administrador/04-alumnos-horarios.webm",
+  "inicio": 3.17,
+  "texto": "En Alumnos naveg\u00e1s por especialidad, curso y secci\u00f3n para ver, agregar o editar alumnos. En Horarios hac\u00e9s lo mismo para ver el horario semanal de cada secci\u00f3n, cargarlo desde un Excel o descargarlo en PDF.",
+  "durVideo": 30
+ },
+ "05-quejas-clases": {
+  "archivo": "tutoriales/administrador/05-quejas-clases.webm",
+  "inicio": 2.58,
+  "texto": "En Quejas registr\u00e1s una queja sobre un profesor: eleg\u00ed el curso, el profesor y escrib\u00ed el motivo. Coordinaci\u00f3n Pedag\u00f3gica se encarga de revisarla. Y en Clases dadas ten\u00e9s el historial de todas las clases registradas por los profesores.",
+  "durVideo": 30.52
+ }
+}
