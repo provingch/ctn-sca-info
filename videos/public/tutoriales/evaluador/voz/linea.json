@@ -1,0 +1,173 @@
+{
+ "huella": "3f232d58f55f38909b1f1ae95a06fc8074013928",
+ "pasos": [
+  {
+   "id": "inicio.1",
+   "texto": "Este es el tutorial del evaluador. Tu panel tiene tres apartados.",
+   "archivo": "tutoriales/evaluador/voz/01.wav",
+   "dur": 5.01,
+   "cobertura": 0.91
+  },
+  {
+   "id": "inicio.2",
+   "texto": "Ver planillas, para consultar y descargar las notas de cada curso.",
+   "archivo": "tutoriales/evaluador/voz/02.wav",
+   "dur": 4.42,
+   "cobertura": 1
+  },
+  {
+   "id": "inicio.3",
+   "texto": "Revisar plan curricular, para aprobar o rechazar los planes que suben los profesores.",
+   "archivo": "tutoriales/evaluador/voz/03.wav",
+   "dur": 5.09,
+   "cobertura": 1
+  },
+  {
+   "id": "inicio.4",
+   "texto": "Y Seguimiento de profesores, donde controlás que se cumplan los planes y resolvés los incumplimientos.",
+   "archivo": "tutoriales/evaluador/voz/04.wav",
+   "dur": 6.83,
+   "cobertura": 0.93
+  },
+  {
+   "id": "planillas.1",
+   "texto": "En Ver planillas elegí la especialidad, el curso y la sección. El botón de descarga queda gris hasta que elegís curso y sección.",
+   "archivo": "tutoriales/evaluador/voz/05.wav",
+   "dur": 11.57,
+   "cobertura": 1
+  },
+  {
+   "id": "planillas.2",
+   "texto": "Aparecen todas las planillas del curso, con el profesor y el estado de la etapa: abierta o cerrada.",
+   "archivo": "tutoriales/evaluador/voz/06.wav",
+   "dur": 8.96,
+   "cobertura": 1
+  },
+  {
+   "id": "planillas.3",
+   "texto": "Con Descargar planillas bajás todas las del curso en un solo Excel.",
+   "archivo": "tutoriales/evaluador/voz/07.wav",
+   "dur": 6.55,
+   "cobertura": 1
+  },
+  {
+   "id": "planillas.4",
+   "texto": "Tocá Ver planilla para abrir una en modo solo lectura: ves las notas por tarea, el total y la nota final, pero no podés cambiar nada.",
+   "archivo": "tutoriales/evaluador/voz/08.wav",
+   "dur": 10.99,
+   "cobertura": 0.85
+  },
+  {
+   "id": "reabrir.1",
+   "texto": "Si una etapa está cerrada y el profesor necesita corregir algo, vos podés reabrirla con el botón Reabrir etapa.",
+   "archivo": "tutoriales/evaluador/voz/09.wav",
+   "dur": 9.53,
+   "cobertura": 1
+  },
+  {
+   "id": "reabrir.2",
+   "texto": "El motivo es obligatorio: sin motivo no se puede confirmar. Escribilo claro, porque el profesor lo recibe en su notificación.",
+   "archivo": "tutoriales/evaluador/voz/10.wav",
+   "dur": 10.37,
+   "cobertura": 1
+  },
+  {
+   "id": "reabrir.3",
+   "texto": "Al confirmar, el profesor vuelve a poder editar las notas y las tareas de esa etapa.",
+   "archivo": "tutoriales/evaluador/voz/11.wav",
+   "dur": 7.12,
+   "cobertura": 1
+  },
+  {
+   "id": "planes.1",
+   "texto": "En Revisar plan curricular están los planes pendientes. Podés agruparlos por especialidad o por profesor.",
+   "archivo": "tutoriales/evaluador/voz/12.wav",
+   "dur": 9.16,
+   "cobertura": 1
+  },
+  {
+   "id": "planes.2",
+   "texto": "Abrí uno para ver los temas que cargó el profesor, mes por mes. También podés descargar el archivo original.",
+   "archivo": "tutoriales/evaluador/voz/13.wav",
+   "dur": 8.67,
+   "cobertura": 0.95
+  },
+  {
+   "id": "planes.3",
+   "texto": "Fijate que Rechazar está deshabilitado: para rechazar un plan es obligatorio escribir las observaciones.",
+   "archivo": "tutoriales/evaluador/voz/14.wav",
+   "dur": 8.45,
+   "cobertura": 0.93
+  },
+  {
+   "id": "planes.4",
+   "texto": "Escribí qué tiene que corregir el profesor y tocá Rechazar. Él recibe una notificación con tus observaciones y puede volver a subirlo.",
+   "archivo": "tutoriales/evaluador/voz/15.wav",
+   "dur": 10.39,
+   "cobertura": 0.91
+  },
+  {
+   "id": "planes.5",
+   "texto": "Si el plan está bien, tocá Aprobar y confirmá. Desde ese momento empieza el seguimiento de sus temas.",
+   "archivo": "tutoriales/evaluador/voz/16.wav",
+   "dur": 8.73,
+   "cobertura": 0.89
+  },
+  {
+   "id": "seguimiento.1",
+   "texto": "En Seguimiento de profesores elegí un plan aprobado para ver cada tema con la fecha en que se dio, o pendiente si todavía no llegó.",
+   "archivo": "tutoriales/evaluador/voz/17.wav",
+   "dur": 10.12,
+   "cobertura": 0.92
+  },
+  {
+   "id": "seguimiento.2",
+   "texto": "Cuando la etapa cierra, los temas que no se dieron quedan como no cumplidos.",
+   "archivo": "tutoriales/evaluador/voz/18.wav",
+   "dur": 6.93,
+   "cobertura": 0.93
+  },
+  {
+   "id": "incumplimientos.1",
+   "texto": "En la pestaña Incumplimientos están todos los casos que esperan tu decisión, en tres grupos.",
+   "archivo": "tutoriales/evaluador/voz/19.wav",
+   "dur": 7.98,
+   "cobertura": 0.8
+  },
+  {
+   "id": "incumplimientos.2",
+   "texto": "Primero, los atrasos: el profesor justificó que un tema llegó tarde. Leé la fecha, el tema esperado y su justificación.",
+   "archivo": "tutoriales/evaluador/voz/20.wav",
+   "dur": 10.81,
+   "cobertura": 1
+  },
+  {
+   "id": "incumplimientos.3",
+   "texto": "Si la aceptás, no cuenta como falta. Si la rechazás, suma una falta, y al llegar a tres en la misma materia se bloquea Iniciar clase.",
+   "archivo": "tutoriales/evaluador/voz/21.wav",
+   "dur": 10.58,
+   "cobertura": 1
+  },
+  {
+   "id": "incumplimientos.4",
+   "texto": "Segundo, las incongruencias: clases dadas antes de aprobar el plan que no coinciden con lo planificado. Se resuelven igual.",
+   "archivo": "tutoriales/evaluador/voz/22.wav",
+   "dur": 10.18,
+   "cobertura": 1
+  },
+  {
+   "id": "incumplimientos.5",
+   "texto": "Y tercero, los bloqueos: no se levantan solos. Frenan el trabajo del profesor, así que conviene resolverlos primero.",
+   "archivo": "tutoriales/evaluador/voz/23.wav",
+   "dur": 9.68,
+   "cobertura": 0.94
+  },
+  {
+   "id": "incumplimientos.6",
+   "texto": "Escribí la nota de reactivación, que es obligatoria, y tocá Reactivar Iniciar clase. El profesor recibe tu nota y puede volver a dar clases.",
+   "archivo": "tutoriales/evaluador/voz/24.wav",
+   "dur": 12.89,
+   "cobertura": 0.92
+  }
+ ]
+}

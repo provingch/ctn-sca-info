@@ -4,6 +4,8 @@ import fs from 'node:fs';
 
 export const BASE = process.env.SCA_BASE ?? 'https://ctn-sca.ddns.net';
 const ALLOWED_WRITES = /\/api\/auth\/(login|refresh)$/;
+// En local (SCA_BASE=http://localhost:...) se permiten las escrituras: la base es descartable.
+export const LOCAL = /^https?:\/\/(localhost|127\.0\.0\.1)/.test(BASE);
 
 export function creds(file) {
   return Object.fromEntries(fs.readFileSync(file, 'utf8').trim().split('\n').map(l => {
@@ -19,7 +21,7 @@ export async function open({ width = 1366, height = 820, dark = false, anon = fa
   const ctx = await browser.newContext({ storageState: !anon && STATE && fs.existsSync(STATE) ? STATE : undefined, viewport: { width, height }, deviceScaleFactor: scale, colorScheme: dark ? 'dark' : 'light', locale: 'es-PY' });
   await ctx.route('**/*', route => {
     const r = route.request();
-    if (r.method() !== 'GET' && r.method() !== 'HEAD' && r.method() !== 'OPTIONS' && !ALLOWED_WRITES.test(new URL(r.url()).pathname)) {
+    if (!LOCAL && r.method() !== 'GET' && r.method() !== 'HEAD' && r.method() !== 'OPTIONS' && !ALLOWED_WRITES.test(new URL(r.url()).pathname)) {
       console.warn('BLOQUEADO', r.method(), r.url());
       return route.abort();
     }
@@ -31,8 +33,10 @@ export async function open({ width = 1366, height = 820, dark = false, anon = fa
 
 export async function login(page, { SCA_USER, SCA_PASS }) {
   await page.goto(BASE + '/');
-  await page.waitForLoadState('networkidle');
-  if (!new URL(page.url()).pathname.startsWith('/login')) return;
+  // esperar a que la app decida: formulario de login (sin sesión) o la barra con el menú del usuario (con sesión)
+  await page.locator('#login-username, header button[aria-haspopup], header [aria-label^="Menú de"]').first().waitFor({ timeout: 20000 }).catch(() => {});
+  if (!new URL(page.url()).pathname.startsWith('/login') && !(await page.locator('#login-username').count())) return;
+  if (!new URL(page.url()).pathname.startsWith('/login')) await page.goto(BASE + '/login');
   await page.goto(BASE + '/login');
   await page.fill('#login-username', SCA_USER);
   await page.fill('#login-password', SCA_PASS);

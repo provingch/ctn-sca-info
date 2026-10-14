@@ -1,0 +1,221 @@
+{
+ "escenas": [
+  {
+   "id": "inicio",
+   "titulo": "Tu panel de inicio",
+   "t": 0.0030000000000001137
+  },
+  {
+   "id": "clase",
+   "titulo": "Registrar una clase",
+   "t": 45.796
+  },
+  {
+   "id": "bloqueo",
+   "titulo": "Clase fuera de horario y bloqueos",
+   "t": 104.818
+  },
+  {
+   "id": "atraso",
+   "titulo": "Tema atrasado",
+   "t": 153.943
+  },
+  {
+   "id": "plan",
+   "titulo": "Plan curricular",
+   "t": 207.114
+  },
+  {
+   "id": "incongruencias",
+   "titulo": "Clases antes del plan",
+   "t": 269.709
+  },
+  {
+   "id": "clases-dadas",
+   "titulo": "Clases dadas",
+   "t": 293.445
+  },
+  {
+   "id": "planilla",
+   "titulo": "Planillas y notas",
+   "t": 334.823
+  },
+  {
+   "id": "etapa-cerrada",
+   "titulo": "Etapa cerrada",
+   "t": 386.615
+  },
+  {
+   "id": "firma",
+   "titulo": "Tu firma",
+   "t": 402.936
+  }
+ ],
+ "pasos": [
+  {
+   "id": "inicio.1",
+   "t": 0.0030000000000001137
+  },
+  {
+   "id": "inicio.2",
+   "t": 9.620000000000001
+  },
+  {
+   "id": "inicio.3",
+   "t": 16.441000000000003
+  },
+  {
+   "id": "inicio.4",
+   "t": 22.942
+  },
+  {
+   "id": "inicio.5",
+   "t": 35.248
+  },
+  {
+   "id": "clase.1",
+   "t": 45.796
+  },
+  {
+   "id": "clase.2",
+   "t": 54.296
+  },
+  {
+   "id": "clase.3",
+   "t": 61.592999999999996
+  },
+  {
+   "id": "clase.4",
+   "t": 69.965
+  },
+  {
+   "id": "clase.5",
+   "t": 79.26899999999999
+  },
+  {
+   "id": "clase.6",
+   "t": 87.361
+  },
+  {
+   "id": "clase.7",
+   "t": 95.432
+  },
+  {
+   "id": "bloqueo.1",
+   "t": 104.818
+  },
+  {
+   "id": "bloqueo.2",
+   "t": 116.172
+  },
+  {
+   "id": "bloqueo.3",
+   "t": 129.595
+  },
+  {
+   "id": "bloqueo.4",
+   "t": 141.264
+  },
+  {
+   "id": "atraso.1",
+   "t": 153.943
+  },
+  {
+   "id": "atraso.2",
+   "t": 184.013
+  },
+  {
+   "id": "atraso.3",
+   "t": 193.037
+  },
+  {
+   "id": "plan.1",
+   "t": 207.114
+  },
+  {
+   "id": "plan.2",
+   "t": 218.95000000000002
+  },
+  {
+   "id": "plan.3",
+   "t": 227.705
+  },
+  {
+   "id": "plan.4",
+   "t": 239.80200000000002
+  },
+  {
+   "id": "plan.5",
+   "t": 251.55200000000002
+  },
+  {
+   "id": "plan.6",
+   "t": 261.27299999999997
+  },
+  {
+   "id": "incongruencias.1",
+   "t": 269.709
+  },
+  {
+   "id": "incongruencias.2",
+   "t": 283.491
+  },
+  {
+   "id": "clases-dadas.1",
+   "t": 293.445
+  },
+  {
+   "id": "clases-dadas.2",
+   "t": 303.43399999999997
+  },
+  {
+   "id": "clases-dadas.3",
+   "t": 308.93899999999996
+  },
+  {
+   "id": "clases-dadas.4",
+   "t": 317.99899999999997
+  },
+  {
+   "id": "clases-dadas.5",
+   "t": 324.91499999999996
+  },
+  {
+   "id": "planilla.1",
+   "t": 334.823
+  },
+  {
+   "id": "planilla.2",
+   "t": 345.46299999999997
+  },
+  {
+   "id": "planilla.3",
+   "t": 358.36699999999996
+  },
+  {
+   "id": "planilla.4",
+   "t": 368.577
+  },
+  {
+   "id": "etapa-cerrada.1",
+   "t": 386.615
+  },
+  {
+   "id": "etapa-cerrada.2",
+   "t": 394.029
+  },
+  {
+   "id": "firma.1",
+   "t": 402.936
+  },
+  {
+   "id": "firma.2",
+   "t": 413.817
+  },
+  {
+   "id": "firma.3",
+   "t": 421.156
+  }
+ ],
+ "duracion": 432.28
+}

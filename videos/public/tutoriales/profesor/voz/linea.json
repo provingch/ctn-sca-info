@@ -1,0 +1,292 @@
+{
+ "huella": "05a0e482d389fc7e5dbe7fe6c16204cab0bc140e",
+ "pasos": [
+  {
+   "id": "inicio.1",
+   "texto": "Este es el tutorial del profesor del Sistema de Carpeta Académica. Al entrar con tu usuario y contraseña llegás a tu panel de inicio.",
+   "archivo": "tutoriales/profesor/voz/01.wav",
+   "dur": 9.24,
+   "cobertura": 1
+  },
+  {
+   "id": "inicio.2",
+   "texto": "Desde el Libro de Cátedra iniciás tus clases y cargás tu plan curricular.",
+   "archivo": "tutoriales/profesor/voz/02.wav",
+   "dur": 6.46,
+   "cobertura": 0.85
+  },
+  {
+   "id": "inicio.3",
+   "texto": "Desde Gestionar planillas cargás las tareas y las notas de tus alumnos.",
+   "archivo": "tutoriales/profesor/voz/03.wav",
+   "dur": 6.14,
+   "cobertura": 1
+  },
+  {
+   "id": "inicio.4",
+   "texto": "Más abajo están todas tus materias, con el estado de su plan curricular. Prestá atención a esas etiquetas: te avisan si un plan está pendiente o falta cargarlo.",
+   "archivo": "tutoriales/profesor/voz/04.wav",
+   "dur": 11.95,
+   "cobertura": 0.86
+  },
+  {
+   "id": "inicio.5",
+   "texto": "Y arriba a la derecha, la campana te muestra las notificaciones nuevas, por ejemplo cuando evaluación aprueba o rechaza tu plan.",
+   "archivo": "tutoriales/profesor/voz/05.wav",
+   "dur": 9.05,
+   "cobertura": 0.95
+  },
+  {
+   "id": "clase.1",
+   "texto": "Para registrar una clase, entrá a Iniciar clase. Arriba aparece tu horario de hoy.",
+   "archivo": "tutoriales/profesor/voz/06.wav",
+   "dur": 8.13,
+   "cobertura": 0.93
+  },
+  {
+   "id": "clase.2",
+   "texto": "Tocá el bloque que vas a dar: la materia, el curso y el horario ya vienen completos.",
+   "archivo": "tutoriales/profesor/voz/07.wav",
+   "dur": 6.94,
+   "cobertura": 1
+  },
+  {
+   "id": "clase.3",
+   "texto": "Si intentás guardar sin completar el tipo de clase y el tema, el sistema te avisa qué falta y no guarda nada.",
+   "archivo": "tutoriales/profesor/voz/08.wav",
+   "dur": 8.01,
+   "cobertura": 0.91
+  },
+  {
+   "id": "clase.4",
+   "texto": "Entonces elegí el tipo de clase y escribí el contenido que desarrollaste.",
+   "archivo": "tutoriales/profesor/voz/09.wav",
+   "dur": 6.24,
+   "cobertura": 1
+  },
+  {
+   "id": "clase.5",
+   "texto": "Para la asistencia, tocá el nombre de cada alumno que faltó. El resumen de abajo se actualiza solo.",
+   "archivo": "tutoriales/profesor/voz/10.wav",
+   "dur": 7.74,
+   "cobertura": 1
+  },
+  {
+   "id": "clase.6",
+   "texto": "Si un alumno tuvo un problema de conducta, tocá su zona de rasgos y elegí el código que corresponde.",
+   "archivo": "tutoriales/profesor/voz/11.wav",
+   "dur": 7.72,
+   "cobertura": 1
+  },
+  {
+   "id": "clase.7",
+   "texto": "Al final, tocá Guardar inicio de clase. El sistema confirma que la clase quedó registrada.",
+   "archivo": "tutoriales/profesor/voz/12.wav",
+   "dur": 7.92,
+   "cobertura": 1
+  },
+  {
+   "id": "bloqueo.1",
+   "texto": "Si la clase no está en tu horario, por ejemplo una recuperación, tocá Iniciar clase distinta y elegí el curso y la sección.",
+   "archivo": "tutoriales/profesor/voz/13.wav",
+   "dur": 11,
+   "cobertura": 1
+  },
+  {
+   "id": "bloqueo.2",
+   "texto": "Completá los datos como siempre: horario, horas cátedra, tipo de clase y tema.",
+   "archivo": "tutoriales/profesor/voz/14.wav",
+   "dur": 7.03,
+   "cobertura": 0.85
+  },
+  {
+   "id": "bloqueo.3",
+   "texto": "Atención con este caso: cuando en una materia se acumulan atrasos rechazados por evaluación, el sistema bloquea el inicio de clases en ella.",
+   "archivo": "tutoriales/profesor/voz/15.wav",
+   "dur": 11.31,
+   "cobertura": 1
+  },
+  {
+   "id": "bloqueo.4",
+   "texto": "No es un error del formulario. Comunicate con evaluación: cuando revisen tu caso y reactiven la materia, vas a poder registrar clases de nuevo.",
+   "archivo": "tutoriales/profesor/voz/16.wav",
+   "dur": 11.31,
+   "cobertura": 1
+  },
+  {
+   "id": "atraso.1",
+   "texto": "Otro caso importante: el tema atrasado. Si el tema que cargás quedó atrás de lo que marca tu plan curricular, el sistema te lo avisa al guardar.",
+   "archivo": "tutoriales/profesor/voz/17.wav",
+   "dur": 11.89,
+   "cobertura": 1
+  },
+  {
+   "id": "atraso.2",
+   "texto": "Escribí el motivo del atraso en Justificación del atraso y volvé a tocar Guardar inicio de clase.",
+   "archivo": "tutoriales/profesor/voz/18.wav",
+   "dur": 8.67,
+   "cobertura": 1
+  },
+  {
+   "id": "atraso.3",
+   "texto": "Ojo: justificar no lo resuelve automáticamente. Tu justificación queda pendiente y evaluación la acepta o la rechaza. Si se rechazan varias, la materia se bloquea.",
+   "archivo": "tutoriales/profesor/voz/19.wav",
+   "dur": 12.63,
+   "cobertura": 1
+  },
+  {
+   "id": "plan.1",
+   "texto": "En la pestaña Plan curricular descargás la plantilla de cada asignación: elegí curso, sección, materia y etapa.",
+   "archivo": "tutoriales/profesor/voz/20.wav",
+   "dur": 10.88,
+   "cobertura": 0.88
+  },
+  {
+   "id": "plan.2",
+   "texto": "Tocá Configurar y descargar, marcá los meses que vas a completar y cuántos bloques necesitás en cada uno.",
+   "archivo": "tutoriales/profesor/voz/21.wav",
+   "dur": 8.4,
+   "cobertura": 0.89
+  },
+  {
+   "id": "plan.3",
+   "texto": "Completá la plantilla y subila desde Subir plan. Si el archivo no es la plantilla o le faltan datos, el sistema te lo indica y no la registra.",
+   "archivo": "tutoriales/profesor/voz/22.wav",
+   "dur": 11.73,
+   "cobertura": 0.93
+  },
+  {
+   "id": "plan.4",
+   "texto": "En Entregas realizadas ves cada plan con su estado: pendiente mientras evaluación lo revisa, aprobado o rechazado con sus observaciones.",
+   "archivo": "tutoriales/profesor/voz/23.wav",
+   "dur": 11.4,
+   "cobertura": 0.95
+  },
+  {
+   "id": "plan.5",
+   "texto": "Tocá un plan aprobado para ver sus temas mes por mes: los cubiertos, con la fecha en que se dieron, y los pendientes.",
+   "archivo": "tutoriales/profesor/voz/24.wav",
+   "dur": 9.37,
+   "cobertura": 1
+  },
+  {
+   "id": "plan.6",
+   "texto": "Si un tema queda sin dar cuando la etapa se cierra, figura como no cumplido.",
+   "archivo": "tutoriales/profesor/voz/25.wav",
+   "dur": 7.09,
+   "cobertura": 1
+  },
+  {
+   "id": "incongruencias.1",
+   "texto": "Si diste clases antes de que aprobaran tu plan, al aprobarse el sistema las compara con lo planificado. Las que no coinciden aparecen en este panel.",
+   "archivo": "tutoriales/profesor/voz/26.wav",
+   "dur": 13.4,
+   "cobertura": 0.92
+  },
+  {
+   "id": "incongruencias.2",
+   "texto": "Podés escribir por qué la clase no siguió el plan y tocar Actualizar justificación. Evaluación la ve al revisar el caso.",
+   "archivo": "tutoriales/profesor/voz/27.wav",
+   "dur": 8.42,
+   "cobertura": 0.95
+  },
+  {
+   "id": "clases-dadas.1",
+   "texto": "En Clases dadas tenés el historial de todas tus clases. Podés buscarlas y filtrarlas por curso.",
+   "archivo": "tutoriales/profesor/voz/28.wav",
+   "dur": 9.63,
+   "cobertura": 0.88
+  },
+  {
+   "id": "clases-dadas.2",
+   "texto": "Tocá una clase para ver la asistencia completa y los rasgos de cada alumno.",
+   "archivo": "tutoriales/profesor/voz/29.wav",
+   "dur": 5.15,
+   "cobertura": 1
+  },
+  {
+   "id": "clases-dadas.3",
+   "texto": "Si un alumno faltó con motivo, tocá Justificar en su fila: la falta pasa a justificada al instante.",
+   "archivo": "tutoriales/profesor/voz/30.wav",
+   "dur": 8.71,
+   "cobertura": 0.94
+  },
+  {
+   "id": "clases-dadas.4",
+   "texto": "Fijate en este aviso: pasados siete días de la clase ya no se puede editar.",
+   "archivo": "tutoriales/profesor/voz/31.wav",
+   "dur": 6.56,
+   "cobertura": 0.93
+  },
+  {
+   "id": "clases-dadas.5",
+   "texto": "Dentro de esos siete días aparece el botón Editar, para corregir el tema, la asistencia o los rasgos.",
+   "archivo": "tutoriales/profesor/voz/32.wav",
+   "dur": 8.52,
+   "cobertura": 1
+  },
+  {
+   "id": "planilla.1",
+   "texto": "En Gestionar planillas hay una tarjeta por cada planilla. Las que tienen un signo más todavía no existen: tocala para crearla.",
+   "archivo": "tutoriales/profesor/voz/33.wav",
+   "dur": 10.28,
+   "cobertura": 0.95
+  },
+  {
+   "id": "planilla.2",
+   "texto": "Con Agregar tarea creás una tarea propia: elegí el instrumento y completá el título, la fecha y el puntaje total.",
+   "archivo": "tutoriales/profesor/voz/34.wav",
+   "dur": 10.33,
+   "cobertura": 0.95
+  },
+  {
+   "id": "planilla.3",
+   "texto": "Al guardar, la tarea aparece como una columna nueva. Para cargar una nota, escribila en la celda: se guarda sola al salir.",
+   "archivo": "tutoriales/profesor/voz/35.wav",
+   "dur": 9.86,
+   "cobertura": 0.95
+  },
+  {
+   "id": "planilla.4",
+   "texto": "Para cerrar la etapa elegís la fecha de cierre. El botón Confirmar etapa recién se habilita cuando llega esa fecha: la planilla nunca se cierra sola.",
+   "archivo": "tutoriales/profesor/voz/36.wav",
+   "dur": 12.54,
+   "cobertura": 1
+  },
+  {
+   "id": "etapa-cerrada.1",
+   "texto": "Así se ve una planilla con la etapa cerrada: el aviso arriba lo indica y las notas ya no se pueden modificar.",
+   "archivo": "tutoriales/profesor/voz/37.wav",
+   "dur": 7.05,
+   "cobertura": 1
+  },
+  {
+   "id": "etapa-cerrada.2",
+   "texto": "Solo evaluación o la administración pueden reabrirla. Si lo hacen, te llega una notificación con el motivo.",
+   "archivo": "tutoriales/profesor/voz/38.wav",
+   "dur": 7.75,
+   "cobertura": 1
+  },
+  {
+   "id": "firma.1",
+   "texto": "Por último, en Mi perfil cargá tu firma. El sistema la pone sola al pie de las planillas que descargás en Excel.",
+   "archivo": "tutoriales/profesor/voz/39.wav",
+   "dur": 10.52,
+   "cobertura": 1
+  },
+  {
+   "id": "firma.2",
+   "texto": "Dibujala en el recuadro, o subí una foto de tu firma, y tocá Guardar cambios.",
+   "archivo": "tutoriales/profesor/voz/40.wav",
+   "dur": 5.69,
+   "cobertura": 1
+  },
+  {
+   "id": "firma.3",
+   "texto": "Si tenés dudas, el manual completo está en tu nombre, arriba a la derecha, en la opción Manual.",
+   "archivo": "tutoriales/profesor/voz/41.wav",
+   "dur": 9.47,
+   "cobertura": 1
+  }
+ ]
+}

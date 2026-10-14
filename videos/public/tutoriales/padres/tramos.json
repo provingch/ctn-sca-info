@@ -1,20 +1,29 @@
 {
  "01-resumen": {
   "archivo": "tutoriales/padres/01-resumen.webm",
-  "inicio": 2.08,
+  "inicio": 0,
   "texto": "Al entrar ves a tu hijo o hija con su promedio general. Si tenés más de un hijo en el colegio, elegí cuál ver en las tarjetas de arriba. Desde el resumen podés descargar el reporte del mes en PDF o imprimirlo.",
-  "durVideo": 13.16
+  "durVideo": 11.08,
+  "textoNarrado": "Al entrar ves a tu hijo o hija con su promedio general. Si tenés más de un hijo en el colegio, elegí cuál ver en las tarjetas de arriba. Desde el resumen podés descargar el reporte del mes en PDF o imprimirlo.",
+  "audio": "tutoriales/padres/01-resumen.wav",
+  "durAudio": 14.97
  },
  "02-materias": {
   "archivo": "tutoriales/padres/02-materias.webm",
-  "inicio": 2.22,
+  "inicio": 0,
   "texto": "Más abajo elegís la etapa y la materia. En el detalle aparecen todas las tareas, agrupadas por mes, con su estado y los puntos que obtuvo sobre el total.",
-  "durVideo": 12.6
+  "durVideo": 10.4,
+  "textoNarrado": "Más abajo elegís la etapa y la materia. En el detalle aparecen todas las tareas, agrupadas por mes, con su estado y los puntos que obtuvo sobre el total.",
+  "audio": "tutoriales/padres/02-materias.wav",
+  "durAudio": 13.21
  },
  "03-conducta": {
   "archivo": "tutoriales/padres/03-conducta.webm",
-  "inicio": 2.34,
+  "inicio": 0,
   "texto": "Al final están las notas de conducta que los profesores registraron durante las clases, con la fecha, la materia, el código y su descripción. Podés filtrarlas por materia y por fechas.",
-  "durVideo": 10.6
+  "durVideo": 8.28,
+  "textoNarrado": "Al final están las notas de conducta que los profesores registraron durante las clases, con la fecha, la materia, el código y su descripción. Podés filtrarlas por materia y por fechas.",
+  "audio": "tutoriales/padres/03-conducta.wav",
+  "durAudio": 13.69
  }
 }

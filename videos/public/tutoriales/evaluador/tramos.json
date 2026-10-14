@@ -1,26 +1,38 @@
 {
  "01-inicio": {
   "archivo": "tutoriales/evaluador/01-inicio.webm",
-  "inicio": 2.01,
+  "inicio": 0,
   "texto": "Como evaluador, tu panel tiene tres apartados: Ver planillas, para consultar y descargar las notas de cada curso; Revisar plan curricular, para aprobar o rechazar los planes de los profesores; y Seguimiento de profesores, donde controlás el cumplimiento y resolvés los incumplimientos.",
-  "durVideo": 13.84
+  "durVideo": 11.84,
+  "textoNarrado": "Como evaluador, tu panel tiene tres apartados: Ver planillas, para consultar y descargar las notas de cada curso; Revisar plan curricular, para aprobar o rechazar los planes de los profesores; y Seguimiento de profesores, donde controlás el cumplimiento y resolvés los incumplimientos.",
+  "audio": "tutoriales/evaluador/01-inicio.wav",
+  "durAudio": 25.78
  },
  "02-planillas": {
   "archivo": "tutoriales/evaluador/02-planillas.webm",
-  "inicio": 2.21,
+  "inicio": 0,
   "texto": "En Ver planillas elegí la especialidad, el curso y la sección. Aparecen todas las planillas del curso, con el profesor y el estado de la etapa. Podés abrir cualquiera en modo solo lectura, descargarla en Excel o, si la etapa está cerrada y el profesor necesita corregir algo, reabrirla escribiendo el motivo.",
-  "durVideo": 41.32
+  "durVideo": 39.12,
+  "textoNarrado": "En Ver planillas elegí la especialidad, el curso y la sección. Aparecen todas las planillas del curso, con el profesor y el estado de la etapa. Podés abrir cualquiera en modo solo lectura, descargarla en Excel o, si la etapa está cerrada y el profesor necesita corregir algo, reabrirla escribiendo el motivo.",
+  "audio": "tutoriales/evaluador/02-planillas.wav",
+  "durAudio": 23.77
  },
  "03-planes": {
   "archivo": "tutoriales/evaluador/03-planes.webm",
-  "inicio": 2.5,
+  "inicio": 0,
   "texto": "En Revisar plan curricular aparecen los planes pendientes. Abrí uno para ver los temas que cargó el profesor, mes por mes, o descargá el archivo original. Si está bien, tocá Aprobar. Si hay algo para corregir, escribí las observaciones y tocá Rechazar. El profesor recibe una notificación con tu decisión.",
-  "durVideo": 22.16
+  "durVideo": 19.68,
+  "textoNarrado": "En Revisar plan curricular aparecen los planes pendientes. Abrí uno para ver los temas que cargó el profesor, mes por mes, o descargá el archivo original. Si está bien, tocá Aprobar. Si hay algo para corregir, escribí las observaciones y tocá Rechazar. El profesor recibe una notificación con tu decisión.",
+  "audio": "tutoriales/evaluador/03-planes.wav",
+  "durAudio": 27.94
  },
  "04-seguimiento": {
   "archivo": "tutoriales/evaluador/04-seguimiento.webm",
-  "inicio": 1.92,
+  "inicio": 0,
   "texto": "En Seguimiento de profesores ves, para cada plan aprobado, qué temas ya se dieron y cuáles están pendientes. En la pestaña Incumplimientos aparecen los casos para resolver: bloqueos de iniciar clase, atrasos justificados e incongruencias. Abrí un caso, leé la justificación del profesor y aceptala o rechazala.",
-  "durVideo": 29.24
+  "durVideo": 27.32,
+  "textoNarrado": "En Seguimiento de profesores ves, para cada plan aprobado, qué temas ya se dieron y cuáles están pendientes. En la pestaña Incumplimientos aparecen los casos para resolver: bloqueos de iniciar clase, atrasos justificados e incongruencias. Abrí un caso, leé la justificación del profesor y aceptala o rechazala.",
+  "audio": "tutoriales/evaluador/04-seguimiento.wav",
+  "durAudio": 28.65
  }
 }

@@ -91,7 +91,7 @@ export const RemotionRoot: React.FC = () => {
             id={`Tutorial-${rol}`}
             component={Tutorial}
             calculateMetadata={calcularTutorial}
-            defaultProps={{ rol, titulo, tramos: [] }}
+            defaultProps={{ rol, titulo, escenas: [], pasos: [], duracion: 0 }}
             durationInFrames={1}
             fps={FPS}
             width={WIDTH}
