@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from '../context/AuthContext';
 import { SpecialtyProvider } from '../context/SpecialtyContext';
@@ -5,25 +6,27 @@ import { ToastProvider } from '../context/ToastContext';
 import { ProtectedRoute } from './ProtectedRoute';
 import RoleLanding from './RoleLanding';
 import LoginPage from '../pages/auth/LoginPage';
-import HomePage from '../pages/home/HomePage';
-import ProfilePage from '../pages/profile/ProfilePage';
-import GoogleCallbackPage from '../pages/google/GoogleCallbackPage';
-import AuthorizeClassroomPage from '../pages/google/AuthorizeClassroomPage';
-import PlanillaPage from '../pages/planilla/PlanillaPage';
-import TareaPage from '../pages/planilla/TareaPage';
-import EvaluacionPage from '../pages/evaluacion/EvaluacionPage';
-import CoordinacionPage from '../pages/coordinacion/CoordinacionPage';
-import LegalPage from '../pages/legal/LegalPage';
-import AboutPage from '../pages/about/AboutPage';
-import AdminPage from '../pages/admin/AdminPage';
-import ParentPage from '../pages/parent/ParentPage';
-import StyleguidePage from '../pages/styleguide/StyleguidePage';
 import OfflinePage from '../pages/OfflinePage';
+
+// Cada rol usa solo sus páginas: se cargan al entrar, no todas en el bundle inicial.
+const HomePage = lazy(() => import('../pages/home/HomePage'));
+const ProfilePage = lazy(() => import('../pages/profile/ProfilePage'));
+const GoogleCallbackPage = lazy(() => import('../pages/google/GoogleCallbackPage'));
+const AuthorizeClassroomPage = lazy(() => import('../pages/google/AuthorizeClassroomPage'));
+const PlanillaPage = lazy(() => import('../pages/planilla/PlanillaPage'));
+const TareaPage = lazy(() => import('../pages/planilla/TareaPage'));
+const EvaluacionPage = lazy(() => import('../pages/evaluacion/EvaluacionPage'));
+const CoordinacionPage = lazy(() => import('../pages/coordinacion/CoordinacionPage'));
+const LegalPage = lazy(() => import('../pages/legal/LegalPage'));
+const AboutPage = lazy(() => import('../pages/about/AboutPage'));
+const AdminPage = lazy(() => import('../pages/admin/AdminPage'));
+const ParentPage = lazy(() => import('../pages/parent/ParentPage'));
+const StyleguidePage = lazy(() => import('../pages/styleguide/StyleguidePage'));
 
 const protect = (element: React.ReactNode, allowedLevels?: number[]) => <ProtectedRoute allowedLevels={allowedLevels}>{element}</ProtectedRoute>;
 
 export default function AppRoutes() {
-  return <BrowserRouter><SpecialtyProvider><ToastProvider><AuthProvider><Routes>
+  return <BrowserRouter><SpecialtyProvider><ToastProvider><AuthProvider><Suspense fallback={null}><Routes>
     <Route path="/login" element={<LoginPage />} />
     <Route path="/privacidad" element={<LegalPage />} />
     <Route path="/terminos" element={<LegalPage />} />
@@ -56,5 +59,5 @@ export default function AppRoutes() {
     <Route path="/styleguide" element={protect(<StyleguidePage />, [3])} />
     <Route path="/offline" element={<OfflinePage />} />
     <Route path="*" element={<RoleLanding />} />
-  </Routes></AuthProvider></ToastProvider></SpecialtyProvider></BrowserRouter>;
+  </Routes></Suspense></AuthProvider></ToastProvider></SpecialtyProvider></BrowserRouter>;
 }
