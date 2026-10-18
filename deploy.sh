@@ -677,6 +677,9 @@ server {
     listen 80;
     server_name ${DOMAIN_NAME};
 
+    # Default de nginx = 1 MB: corta las fotos de /api/anotaciones (hasta 5 MB) con un 413 HTML.
+    client_max_body_size 6m;
+
     location / {
         proxy_pass http://127.0.0.1:${APP_PORT};
         proxy_set_header Host \$host;
