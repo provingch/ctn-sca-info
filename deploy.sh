@@ -506,6 +506,7 @@ write_db_env_file() {
   local persisted_google_client_secret=""
   local persisted_google_redirect_uri=""
   local persisted_gema_api_key=""
+  local persisted_anotaciones_api_key=""
   local persisted_gema_allowed_ips=""
   if [[ -f "$DB_ENV_FILE" ]]; then
     persisted_jwt_secret="$(read_env_file_value 'JWT_SECRET')"
@@ -519,6 +520,7 @@ write_db_env_file() {
     # próximo deploy: write_db_env_file regenera el .env desde cero cada vez.
     persisted_gema_api_key="$(read_env_file_value 'GEMA_API_KEY')"
     persisted_gema_allowed_ips="$(read_env_file_value 'GEMA_ALLOWED_IPS')"
+    persisted_anotaciones_api_key="$(read_env_file_value 'ANOTACIONES_API_KEY')"
     if [[ -z "$password" ]]; then
       password="$(read_env_file_value 'SCA_DB_PASSWORD')"
       [[ -z "$password" ]] && password="$(read_env_file_value 'CTN_DB_PASSWORD')"
@@ -547,6 +549,7 @@ write_db_env_file() {
   local google_redirect_uri="${GOOGLE_REDIRECT_URI:-$persisted_google_redirect_uri}"
   local gema_api_key="${GEMA_API_KEY:-$persisted_gema_api_key}"
   local gema_allowed_ips="${GEMA_ALLOWED_IPS:-$persisted_gema_allowed_ips}"
+  local anotaciones_api_key="${ANOTACIONES_API_KEY:-$persisted_anotaciones_api_key}"
 
   echo "==> Writing runtime config to $DB_ENV_FILE"
   local tmp_env
@@ -576,6 +579,7 @@ write_db_env_file() {
     [[ -n "$vapid_private_key" ]] && printf 'CTN_VAPID_PRIVATE_KEY=%q\n' "$vapid_private_key"
     [[ -n "$gema_api_key" ]] && printf 'GEMA_API_KEY=%q\n' "$gema_api_key"
     [[ -n "$gema_allowed_ips" ]] && printf 'GEMA_ALLOWED_IPS=%q\n' "$gema_allowed_ips"
+    [[ -n "$anotaciones_api_key" ]] && printf 'ANOTACIONES_API_KEY=%q\n' "$anotaciones_api_key"
     if [[ -n "$jwt_secret" ]]; then
       printf 'JWT_SECRET=%q\n' "$jwt_secret"
       printf 'SCA_JWT_SECRET=%q\n' "$jwt_secret"

@@ -14,6 +14,10 @@ server:
 spring:
   application:
     name: sca-backend
+  servlet:
+    multipart:
+      max-file-size: 6MB      # foto de evidencia de la app de anotaciones (tope real 5 MB, lo valida la API)
+      max-request-size: 10MB
 
 jwt:
   secret: ${JWT_SECRET:cambiar-este-secreto-en-produccion-minimo-32-caracteres}
@@ -37,3 +41,6 @@ gema:
     client-id: gema
     api-key: ${GEMA_API_KEY:}          # vacío = integración deshabilitada (todos los /api/integracion/** dan 503)
     allowed-ips: ${GEMA_ALLOWED_IPS:}  # opcional, lista separada por comas; vacío = sin restricción de origen
+
+anotaciones:
+  api-key: ${ANOTACIONES_API_KEY:}  # vacío = API /api/anotaciones deshabilitada (503)
