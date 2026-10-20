@@ -392,7 +392,8 @@ public class ProfileController {
         List<String> errors = new ArrayList<>();
 
         if (request.usuario() == null || request.usuario().trim().isEmpty()) {
-            errors.add("El nombre de usuario no puede estar vacío.");
+            // Corta acá: más abajo se usa request.usuario().trim() y con null daba un 500.
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre de usuario no puede estar vacío.");
         }
 
         try {

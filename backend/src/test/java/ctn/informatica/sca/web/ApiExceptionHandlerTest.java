@@ -49,4 +49,16 @@ class ApiExceptionHandlerTest {
             appender.stop();
         }
     }
+
+    @Test
+    void erroresDelClienteSon4xxNo500() throws Exception {
+        ApiExceptionHandler handler = new ApiExceptionHandler();
+
+        assertEquals(403, handler.handleAccessDenied(
+                new org.springframework.security.authorization.AuthorizationDeniedException("Access Denied")).getStatusCode().value());
+        assertEquals(400, handler.handleBadRequest(
+                new org.springframework.web.bind.MissingServletRequestParameterException("cursoId", "int")).getStatusCode().value());
+        assertEquals(405, handler.handleBadRequest(
+                new org.springframework.web.HttpRequestMethodNotSupportedException("PATCH")).getStatusCode().value());
+    }
 }

@@ -197,17 +197,20 @@ public class PlanillaProcesoWorkbookBuilder {
     private void copyTemplateSheetsToWorkbook(XSSFWorkbook source, XSSFWorkbook target) {
         if (source == null || target == null) return;
         java.util.List<String> names = java.util.Arrays.asList(LEGEND_SHEET, STAGE_1.templateSheetName(), STAGE_2.templateSheetName(), "Planilla");
+        // Un estilo clonado por estilo de la plantilla, compartido entre hojas: clonar uno por celda
+        // tardaba segundos por planilla (re-parsea el XML de fuentes) y llenaba el libro de estilos repetidos.
+        java.util.Map<Integer, org.apache.poi.ss.usermodel.CellStyle> estilos = new java.util.HashMap<>();
         for (String name : names) {
             int idx = source.getSheetIndex(name);
             if (idx >= 0) {
                 XSSFSheet src = source.getSheetAt(idx);
                 try {
                     if (STAGE_1.templateSheetName().equals(name)) {
-                        copySheetNoImages(src, target, name, STAGE_1);
+                        copySheetNoImages(src, target, name, STAGE_1, estilos);
                     } else if (STAGE_2.templateSheetName().equals(name)) {
-                        copySheetNoImages(src, target, name, STAGE_2);
+                        copySheetNoImages(src, target, name, STAGE_2, estilos);
                     } else {
-                        copySheetNoImages(src, target, name, null);
+                        copySheetNoImages(src, target, name, null, estilos);
                     }
                 } catch (Throwable t) {
                     log.warn("Error copiando hoja template '{}' sin imágenes: {}", name, t.getMessage());
@@ -216,7 +219,8 @@ public class PlanillaProcesoWorkbookBuilder {
         }
     }
 
-    private void copySheetNoImages(XSSFSheet src, XSSFWorkbook target, String targetName, StageLayout layout) {
+    private void copySheetNoImages(XSSFSheet src, XSSFWorkbook target, String targetName, StageLayout layout,
+            java.util.Map<Integer, org.apache.poi.ss.usermodel.CellStyle> estilos) {
         if (src == null || target == null) return;
         XSSFSheet dest = target.createSheet(targetName);
         // copy column widths
@@ -276,8 +280,12 @@ public class PlanillaProcesoWorkbookBuilder {
                     try {
                         org.apache.poi.ss.usermodel.CellStyle sc = c.getCellStyle();
                         if (sc != null) {
-                            org.apache.poi.ss.usermodel.CellStyle ns = target.createCellStyle();
-                            try { ns.cloneStyleFrom(sc); nc.setCellStyle(ns); } catch (Throwable ignore) {}
+                            org.apache.poi.ss.usermodel.CellStyle ns = estilos.computeIfAbsent((int) sc.getIndex(), k -> {
+                                org.apache.poi.ss.usermodel.CellStyle nuevo = target.createCellStyle();
+                                nuevo.cloneStyleFrom(sc);
+                                return nuevo;
+                            });
+                            nc.setCellStyle(ns);
                         }
                     } catch (Throwable ignore) {}
                 } catch (Throwable ignore) {}
@@ -1087,8 +1095,10 @@ public class PlanillaProcesoWorkbookBuilder {
             Cell sc = getOrCreateCell(getOrCreateRow(sheet, 3), specStart);
             // Ensure wrapText is enabled for specialty cell so long text wraps
             try {
-                CellStyle s = sc.getCellStyle();
-                if (s != null) s.setWrapText(true);
+                // Clonar antes de modificar: los estilos copiados de la plantilla se comparten entre celdas.
+                CellStyle s = cloneStyle(sheet.getWorkbook(), sc.getCellStyle());
+                s.setWrapText(true);
+                sc.setCellStyle(s);
             } catch (Exception ignore) {}
             int avail = (int) Math.round((newSpecEnd - specStart + 1) * INSTRUMENT_COLUMN_WIDTH_CHARS);
             if (needsWrapForText(sc, avail, specialtyText)) {
@@ -1493,7 +1503,7 @@ public class PlanillaProcesoWorkbookBuilder {
                     // keep whatever style the cell already had
                 }
             }
-            monthCell.getCellStyle().setRotation((short) 0);
+            sinRotacion(sheet.getWorkbook(), monthCell);
             int lastInstrumentCol = firstCol + reservedSlotsForMonth(tareasMes) - 1;
             // merge month header across instrument columns if it spans 2+ cols
             if (lastInstrumentCol > firstCol) {
@@ -1501,7 +1511,7 @@ public class PlanillaProcesoWorkbookBuilder {
             }
             int monthBlockWidthChars = (int) Math.round(reservedSlotsForMonth(tareasMes) * INSTRUMENT_COLUMN_WIDTH_CHARS);
             applyAdaptiveFontSizeToFitWidth(sheet.getWorkbook(), monthCell, monthLabel, monthBlockWidthChars);
-            monthCell.getCellStyle().setRotation((short) 0);
+            sinRotacion(sheet.getWorkbook(), monthCell);
             // set and merge subtotal header vertically (header -> title row)
             Cell subtotalCell = getOrCreateCell(monthHeaderRow, subtotalCol);
             setStringCell(subtotalCell, "Subtotal");
@@ -2331,6 +2341,13 @@ public class PlanillaProcesoWorkbookBuilder {
     }
 
     
+
+    /** Rotación 0 sobre una copia del estilo, para no modificar uno compartido con otras celdas. */
+    private void sinRotacion(Workbook workbook, Cell cell) {
+        CellStyle cloned = cloneStyle(workbook, cell.getCellStyle());
+        cloned.setRotation((short) 0);
+        cell.setCellStyle(cloned);
+    }
 
     private void setCenterAlignment(Workbook workbook, Cell cell) {
         if (cell == null || workbook == null) return;

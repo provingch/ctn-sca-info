@@ -37,7 +37,7 @@ public class PlanCurricularRecordatorioService {
         this.userDao = userDao;
     }
 
-    @Scheduled(cron = "0 0 8 * * *")
+    @Scheduled(cron = "0 0 8 * * *", zone = "America/Asuncion") // sin zona corría 08:00 UTC = 05:00 en Paraguay
     public void scheduledRecordatorio() {
         try {
             int creados = recordarPlanesPendientes(LocalDate.now());

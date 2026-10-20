@@ -731,6 +731,8 @@ public class AdminController {
             if (actingSpecialtyId != null && !canAccessAsignacion(actingSpecialtyId, input.cursoId())) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes mover asignaciones a cursos fuera de tu especialidad");
             }
+            // Guardar sin cambiar materia ni curso no es un conflicto: antes chocaba consigo misma (409).
+            if (existente.getMateriaId() == input.materiaId() && existente.getCursoBaseId() == input.cursoId()) return;
             if (dao.existe(existente.getProfesorId(), input.materiaId(), input.cursoId())) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "La asignación ya existe");
             }
