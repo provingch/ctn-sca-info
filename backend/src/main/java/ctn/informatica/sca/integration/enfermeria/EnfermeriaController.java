@@ -5,8 +5,11 @@ import ctn.informatica.sca.util.PasswordUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -20,8 +23,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * API del sistema de escritorio de enfermería (SHME). Etapa 1: sesión, usuarios, alumnos y ficha
- * médica. Contrato: {@code shmeapi/API_ENFERMERIA_REQUERIMIENTOS.md} — misma convención que
+ * API del sistema de escritorio de enfermería (SHME): sesión, usuarios, alumnos, ficha médica,
+ * consultas (con descuento de stock), insumos, solicitudes y reportes. Contrato: {@code shmeapi/API_ENFERMERIA_REQUERIMIENTOS.md} — misma convención que
  * anotaciones (sin {@code .php}, parámetros por query o formulario, {@code {ok, datos}} / {@code {ok, error}}).
  * Los datos del alumno (CI, nombre, curso) son del colegio y ningún endpoint los modifica.
  */
@@ -139,6 +142,198 @@ public class EnfermeriaController {
         String n = texto(nombre, "nombre", 100);
         if (n == null) throw error(HttpStatus.UNPROCESSABLE_CONTENT, "Falta el parámetro 'nombre'");
         return ok(Map.of("id_alergia", dao.alergiaCrear(n)));
+    }
+
+    // ---------------------------------------------------------------- Consultas
+
+    @RequestMapping("/consultas")
+    public Map<String, Object> consultas(@RequestParam int alumno) throws SQLException {
+        return ok(dao.consultas(alumno));
+    }
+
+    @RequestMapping("/consulta")
+    public Map<String, Object> consulta(@RequestParam int id) throws SQLException {
+        Map<String, Object> consulta = dao.consulta(id);
+        if (consulta == null) throw error(HttpStatus.NOT_FOUND, "La consulta no existe");
+        return ok(consulta);
+    }
+
+    @PostMapping("/consulta_crear")
+    public Map<String, Object> consultaCrear(@AuthenticationPrincipal EnfermeriaDao.Usuario sesion,
+            @RequestParam int alumno, @RequestParam(required = false) String motivo, @RequestParam(required = false) String fecha,
+            @RequestParam(required = false) String tratamiento, @RequestParam(required = false) String horaEntrada,
+            @RequestParam(required = false) String horaSalida, @RequestParam(required = false) String observaciones,
+            @RequestParam(required = false) String insumos) throws SQLException {
+        EnfermeriaDao.DatosConsulta datos = datosConsulta(alumno, motivo, fecha, tratamiento, horaEntrada, horaSalida, observaciones);
+        Map<Integer, Integer> usados = cantidades(insumos);
+        return ok(Map.of("idConsulta", dao.crearConsulta(datos, usados, sesion.id())));
+    }
+
+    @PostMapping("/consulta_editar")
+    public Map<String, Object> consultaEditar(@RequestParam int id,
+            @RequestParam int alumno, @RequestParam(required = false) String motivo, @RequestParam(required = false) String fecha,
+            @RequestParam(required = false) String tratamiento, @RequestParam(required = false) String horaEntrada,
+            @RequestParam(required = false) String horaSalida, @RequestParam(required = false) String observaciones,
+            @RequestParam(required = false) String insumos) throws SQLException {
+        EnfermeriaDao.DatosConsulta datos = datosConsulta(alumno, motivo, fecha, tratamiento, horaEntrada, horaSalida, observaciones);
+        if (!dao.editarConsulta(id, datos, cantidades(insumos))) throw error(HttpStatus.NOT_FOUND, "La consulta no existe");
+        return ok(Map.of("idConsulta", id));
+    }
+
+    @PostMapping("/consulta_eliminar")
+    public Map<String, Object> consultaEliminar(@RequestParam int id) throws SQLException {
+        if (!dao.eliminarConsulta(id)) throw error(HttpStatus.NOT_FOUND, "La consulta no existe");
+        return ok(Map.of("idConsulta", id));
+    }
+
+    @RequestMapping("/motivos")
+    public Map<String, Object> motivos() throws SQLException {
+        return ok(dao.motivos());
+    }
+
+    @RequestMapping("/consultas_reporte")
+    public Map<String, Object> consultasReporte(@RequestParam String desde, @RequestParam String hasta,
+            @RequestParam(required = false) Integer alumno, @RequestParam(required = false) String motivo) throws SQLException {
+        LocalDate d = fecha(desde, "desde");
+        LocalDate h = fecha(hasta, "hasta");
+        if (h.isBefore(d)) throw error(HttpStatus.UNPROCESSABLE_CONTENT, "'hasta' no puede ser anterior a 'desde'");
+        return ok(dao.reporteConsultas(d, h, alumno, motivo == null || motivo.isBlank() ? null : motivo.trim(), anioActual()));
+    }
+
+    // ---------------------------------------------------------------- Insumos y solicitudes
+
+    @RequestMapping("/insumos")
+    public Map<String, Object> insumos(@RequestParam(defaultValue = "0") int todos) throws SQLException {
+        return ok(dao.insumos(todos == 1));
+    }
+
+    @PostMapping("/insumo_crear")
+    public Map<String, Object> insumoCrear(@RequestParam String nombre, @RequestParam("stock_actual") int stockActual,
+            @RequestParam("stock_minimo") int stockMinimo) throws SQLException {
+        String n = nombreInsumo(nombre);
+        noNegativos(stockActual, stockMinimo);
+        return ok(Map.of("id_insumo", dao.crearInsumo(n, stockActual, stockMinimo)));
+    }
+
+    @PostMapping("/insumo_editar")
+    public Map<String, Object> insumoEditar(@RequestParam int id, @RequestParam String nombre,
+            @RequestParam("stock_actual") int stockActual, @RequestParam("stock_minimo") int stockMinimo) throws SQLException {
+        String n = nombreInsumo(nombre);
+        noNegativos(stockActual, stockMinimo);
+        if (!dao.editarInsumo(id, n, stockActual, stockMinimo)) throw error(HttpStatus.NOT_FOUND, "El insumo no existe");
+        return ok(Map.of("id_insumo", id));
+    }
+
+    @PostMapping("/insumo_estado")
+    public Map<String, Object> insumoEstado(@RequestParam int id, @RequestParam int activo) throws SQLException {
+        if (activo != 0 && activo != 1) throw error(HttpStatus.UNPROCESSABLE_CONTENT, "'activo' debe ser 0 o 1");
+        if (!dao.insumoEstado(id, activo == 1)) throw error(HttpStatus.NOT_FOUND, "El insumo no existe");
+        return ok(Map.of("id_insumo", id, "activo", activo == 1));
+    }
+
+    @PostMapping("/insumo_sumar_stock")
+    public Map<String, Object> insumoSumarStock(@RequestParam int id, @RequestParam int cantidad) throws SQLException {
+        if (cantidad < 1) throw error(HttpStatus.UNPROCESSABLE_CONTENT, "'cantidad' debe ser 1 o más");
+        if (!dao.sumarStock(id, cantidad)) throw error(HttpStatus.NOT_FOUND, "El insumo no existe");
+        return ok(Map.of("id_insumo", id));
+    }
+
+    /** {@code items}: una línea por ítem, {@code id:cantidad:observacion} (la observación puede tener ':'). */
+    @PostMapping("/solicitud_crear")
+    public Map<String, Object> solicitudCrear(@AuthenticationPrincipal EnfermeriaDao.Usuario sesion,
+            @RequestParam String items) throws SQLException {
+        List<EnfermeriaDao.ItemSolicitud> lista = new ArrayList<>();
+        for (String linea : items.split("\\R")) {
+            if (linea.isBlank()) continue;
+            String[] p = linea.split(":", 3);
+            int id;
+            int cantidad;
+            try {
+                id = Integer.parseInt(p[0].trim());
+                cantidad = Integer.parseInt(p.length > 1 ? p[1].trim() : "");
+            } catch (NumberFormatException ex) {
+                throw error(HttpStatus.UNPROCESSABLE_CONTENT, "Cada ítem debe ser 'id:cantidad:observacion' (línea: " + linea.trim() + ")");
+            }
+            if (cantidad < 1) throw error(HttpStatus.UNPROCESSABLE_CONTENT, "La cantidad de cada ítem debe ser 1 o más");
+            lista.add(new EnfermeriaDao.ItemSolicitud(id, cantidad, texto(p.length > 2 ? p[2] : null, "observacion", 255)));
+        }
+        if (lista.isEmpty()) throw error(HttpStatus.UNPROCESSABLE_CONTENT, "La solicitud no tiene ítems");
+        return ok(Map.of("id_solicitud", dao.crearSolicitud(lista, LocalDate.now(PARAGUAY), sesion.id())));
+    }
+
+    @PostMapping("/reporte_registrar")
+    public Map<String, Object> reporteRegistrar(@AuthenticationPrincipal EnfermeriaDao.Usuario sesion) throws SQLException {
+        return ok(Map.of("id_reporte", dao.registrarReporte(LocalDate.now(PARAGUAY), sesion.id())));
+    }
+
+    @RequestMapping("/resumen")
+    public Map<String, Object> resumen() throws SQLException {
+        return ok(dao.resumen());
+    }
+
+    private EnfermeriaDao.DatosConsulta datosConsulta(int alumno, String motivo, String fecha, String tratamiento,
+            String horaEntrada, String horaSalida, String observaciones) throws SQLException {
+        String m = texto(motivo, "motivo", 150);
+        if (m == null) throw error(HttpStatus.UNPROCESSABLE_CONTENT, "Falta el parámetro 'motivo'");
+        if (fecha == null || fecha.isBlank()) throw error(HttpStatus.UNPROCESSABLE_CONTENT, "Falta el parámetro 'fecha'");
+        LocalTime entrada = hora(horaEntrada, "horaEntrada");
+        LocalTime salida = hora(horaSalida, "horaSalida");
+        if (entrada != null && salida != null && salida.isBefore(entrada)) {
+            throw error(HttpStatus.UNPROCESSABLE_CONTENT, "'horaSalida' no puede ser anterior a 'horaEntrada'");
+        }
+        EnfermeriaDao.DatosConsulta d = new EnfermeriaDao.DatosConsulta(alumno, m, fecha(fecha, "fecha"),
+                texto(tratamiento, "tratamiento", 65_535), entrada, salida, texto(observaciones, "observaciones", 65_535));
+        if (!dao.existeAlumno(alumno)) throw error(HttpStatus.NOT_FOUND, "El alumno no existe");
+        return d;
+    }
+
+    private static LocalDate fecha(String valor, String campo) {
+        try {
+            return LocalDate.parse(valor.trim());
+        } catch (DateTimeParseException ex) {
+            throw error(HttpStatus.UNPROCESSABLE_CONTENT, "'" + campo + "' debe tener el formato AAAA-MM-DD");
+        }
+    }
+
+    /** "08:30:00" (también acepta "08:30"); vacío = null. */
+    private static LocalTime hora(String valor, String campo) {
+        if (valor == null || valor.isBlank()) return null;
+        try {
+            return LocalTime.parse(valor.trim());
+        } catch (DateTimeParseException ex) {
+            throw error(HttpStatus.UNPROCESSABLE_CONTENT, "'" + campo + "' debe tener el formato HH:MM:SS");
+        }
+    }
+
+    /** "3:2, 5:1" → {3=2, 5=1}; un id repetido suma sus cantidades. Vacío → sin insumos. */
+    private static Map<Integer, Integer> cantidades(String csv) {
+        Map<Integer, Integer> out = new LinkedHashMap<>();
+        if (csv == null || csv.isBlank()) return out;
+        for (String parte : csv.split(",")) {
+            String[] p = parte.split(":");
+            int id;
+            int cantidad;
+            try {
+                if (p.length != 2) throw new NumberFormatException();
+                id = Integer.parseInt(p[0].trim());
+                cantidad = Integer.parseInt(p[1].trim());
+            } catch (NumberFormatException ex) {
+                throw error(HttpStatus.UNPROCESSABLE_CONTENT, "'insumos' debe ser 'id:cantidad' separados por coma");
+            }
+            if (cantidad < 1) throw error(HttpStatus.UNPROCESSABLE_CONTENT, "La cantidad de cada insumo debe ser 1 o más");
+            out.merge(id, cantidad, Integer::sum);
+        }
+        return out;
+    }
+
+    private static String nombreInsumo(String nombre) {
+        String n = texto(nombre, "nombre", 100);
+        if (n == null) throw error(HttpStatus.UNPROCESSABLE_CONTENT, "Falta el parámetro 'nombre'");
+        return n;
+    }
+
+    private static void noNegativos(int stockActual, int stockMinimo) {
+        if (stockActual < 0 || stockMinimo < 0) throw error(HttpStatus.UNPROCESSABLE_CONTENT, "El stock no puede ser negativo");
     }
 
     private static int anioActual() {

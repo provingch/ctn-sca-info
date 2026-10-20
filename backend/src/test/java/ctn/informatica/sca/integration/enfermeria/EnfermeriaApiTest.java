@@ -3,6 +3,7 @@ package ctn.informatica.sca.integration.enfermeria;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -157,5 +158,65 @@ class EnfermeriaApiTest {
                         .param("tutor_nombre", "Rosa"))
                 .andExpect(status().isOk());
         verify(dao).guardarFicha(9, "Asma", List.of(1), "Rosa", null, null, null);
+    }
+
+    @Test
+    void consultaCrearSumaInsumosRepetidosYUsaElUsuarioDeLaSesion() throws Exception {
+        when(dao.usuarioPorId(5)).thenReturn(ENFERMERA);
+        when(dao.existeAlumno(9)).thenReturn(true);
+        when(dao.crearConsulta(any(), any(), anyInt())).thenReturn(40);
+
+        mockMvc.perform(post("/api/enfermeria/consulta_crear").header("X-API-Key", KEY)
+                        .header("Authorization", "Bearer " + tokens.emitir(ENFERMERA))
+                        .param("alumno", "9").param("motivo", "Fiebre").param("fecha", "2026-10-20")
+                        .param("horaEntrada", "08:30").param("insumos", "3:2, 5:1,3:1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.datos.idConsulta").value(40));
+        verify(dao).crearConsulta(new EnfermeriaDao.DatosConsulta(9, "Fiebre", java.time.LocalDate.of(2026, 10, 20), null,
+                java.time.LocalTime.of(8, 30), null, null), Map.of(3, 3, 5, 1), 5);
+    }
+
+    @Test
+    void consultaConDatosMalFormadosDa422YNoTocaLaBase() throws Exception {
+        when(dao.usuarioPorId(5)).thenReturn(ENFERMERA);
+        when(dao.existeAlumno(9)).thenReturn(true);
+        String token = "Bearer " + tokens.emitir(ENFERMERA);
+        String[][] malos = {{"fecha", "20/10/2026"}, {"insumos", "3"}, {"insumos", "3:0"}, {"horaEntrada", "8h"}, {"motivo", " "}};
+        for (String[] malo : malos) {
+            Map<String, String> params = new java.util.HashMap<>(Map.of("alumno", "9", "motivo", "Fiebre", "fecha", "2026-10-20"));
+            params.put(malo[0], malo[1]);
+            var req = post("/api/enfermeria/consulta_crear").header("X-API-Key", KEY).header("Authorization", token);
+            params.forEach(req::param);
+            mockMvc.perform(req)
+                    .andExpect(status().isUnprocessableContent())
+                    .andExpect(jsonPath("$.ok").value(false));
+        }
+        verify(dao, never()).crearConsulta(any(), any(), anyInt());
+    }
+
+    @Test
+    void stockInsuficienteSaleComo409ConMensaje() throws Exception {
+        when(dao.usuarioPorId(5)).thenReturn(ENFERMERA);
+        when(dao.existeAlumno(9)).thenReturn(true);
+        when(dao.crearConsulta(any(), any(), anyInt())).thenThrow(
+                new EnfermeriaDao.Rechazo(org.springframework.http.HttpStatus.CONFLICT, "No hay stock suficiente de Gasa (quedan 1)"));
+        mockMvc.perform(post("/api/enfermeria/consulta_crear").header("X-API-Key", KEY)
+                        .header("Authorization", "Bearer " + tokens.emitir(ENFERMERA))
+                        .param("alumno", "9").param("motivo", "Corte").param("fecha", "2026-10-20").param("insumos", "3:5"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error").value("No hay stock suficiente de Gasa (quedan 1)"));
+    }
+
+    @Test
+    void solicitudAdmiteDosPuntosEnLaObservacion() throws Exception {
+        when(dao.usuarioPorId(5)).thenReturn(ENFERMERA);
+        when(dao.crearSolicitud(any(), any(), anyInt())).thenReturn(3);
+        mockMvc.perform(post("/api/enfermeria/solicitud_crear").header("X-API-Key", KEY)
+                        .header("Authorization", "Bearer " + tokens.emitir(ENFERMERA))
+                        .param("items", "4:10:urgente: para el lunes\n7:2\n"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.datos.id_solicitud").value(3));
+        verify(dao).crearSolicitud(eq(List.of(new EnfermeriaDao.ItemSolicitud(4, 10, "urgente: para el lunes"),
+                new EnfermeriaDao.ItemSolicitud(7, 2, null))), any(), eq(5));
     }
 }
