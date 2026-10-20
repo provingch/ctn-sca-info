@@ -31,6 +31,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         this.entryPoint = entryPoint;
     }
 
+    /**
+     * Como {@code @Component} este filtro también corre como filtro global de servlet: sin esto
+     * rechazaría con 401 el Bearer propio de la API de enfermería, que valida su propia cadena.
+     */
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return request.getRequestURI().startsWith(request.getContextPath() + "/api/enfermeria/");
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {

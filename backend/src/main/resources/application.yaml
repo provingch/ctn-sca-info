@@ -44,3 +44,7 @@ gema:
 
 anotaciones:
   api-key: ${ANOTACIONES_API_KEY:}  # vacío = API /api/anotaciones deshabilitada (503)
+
+enfermeria:
+  api-key: ${ENFERMERIA_API_KEY:}   # vacío = API /api/enfermeria deshabilitada (503)
+  token-horas: 12                  # vigencia del token de login de enfermería
