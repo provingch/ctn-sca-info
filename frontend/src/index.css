@@ -1020,7 +1020,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 /* Alumno trasladado a otro curso: sigue en la planilla con sus notas, en gris y sin edición. */
 .planilla-grade-table .planilla-row--trasladado > :not(.planilla-row-number) { color: var(--muted); }
 .planilla-grade-table .planilla-row--trasladado .grade-chip { opacity: .55; }
-.trasladado-tag { display: block; width: fit-content; margin-top: 3px; padding: 1px 7px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: .66rem; font-weight: 800; white-space: nowrap; }
+.trasladado-tag { display: block; width: fit-content; margin-top: 3px; padding: 1px 7px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: var(--fs-2xs); font-weight: 800; white-space: nowrap; }
 .planilla-grade-table-wrap.freeze-students .planilla-row-number { position: sticky; left: 0; z-index: 4; background: var(--paper); }
 .planilla-grade-table-wrap.freeze-students .planilla-number-heading { position: sticky; left: 0; z-index: 6; background: var(--bg-soft); }
 .planilla-grade-table-wrap.freeze-students .planilla-student-heading,

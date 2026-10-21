@@ -25,3 +25,4 @@
 .data-modal.narrow { width: min(700px, calc(100vw - 32px)); }
 .badge.badge--success { border-color: color-mix(in srgb, var(--success) 45%, var(--line)); background: color-mix(in srgb, var(--success) 12%, var(--paper)); color: var(--success); }
 .badge.badge--warning { border-color: color-mix(in srgb, var(--warning) 45%, var(--line)); background: color-mix(in srgb, var(--warning) 12%, var(--paper)); color: var(--warning); }
+.u-table-md { min-width: 720px; }

@@ -244,7 +244,7 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
               <FilterField label="Año de egreso" narrow><AnimatedSelect ariaLabel="Año de egreso" value={filtroEgresados.promocion} onChange={(promocion) => setFiltroEgresados((actual) => ({ ...actual, promocion }))} options={[{ value: '', label: 'Todos los años' }, ...promocionesDeEgresados.map((anio) => ({ value: String(anio), label: String(anio) }))]} /></FilterField>
             </FiltersToolbar>}
             <div className="table-wrap">
-              <table className="grade-table" style={{ minWidth: 720 }}>
+              <table className="grade-table u-table-md">
                 <caption className="visually-hidden">Alumnos egresados</caption>
                 <thead>
                   <tr>
@@ -339,7 +339,7 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
               <FilterField label="Buscar alumno"><input type="search" placeholder="Apellido, nombre o cédula" value={busquedaAlumnos} onChange={(event) => setBusquedaAlumnos(event.target.value)} /></FilterField>
             </FiltersToolbar>}
             <div className="table-wrap">
-              <table className="grade-table" style={{ minWidth: 760 }}>
+              <table className="grade-table u-table-wide">
                 <caption className="visually-hidden">Alumnos de {currentCurso?.nivel}° {selectedSeccion}</caption>
                 <thead>
                   <tr>
@@ -363,7 +363,7 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
                         <td>{student.ci ?? '—'}</td>
                         <td>{padres.find((parent) => parent.id === student.id) ? 'Ver en editar' : 'Ver en editar'}</td>
                         <td>
-                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          <div className="u-row">
                             <button type="button" className="button secondary" onClick={() => openEdit(student)}>Editar</button>
                             <button type="button" className="button danger" onClick={async () => {
                               try {
@@ -397,7 +397,7 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
             </div>
             <button type="button" className="signature-modal-close" aria-label="Cerrar formulario" data-dialog-initial-focus onClick={() => setIsFormOpen(false)}>×</button>
           </div>
-          <form className="form-grid" onSubmit={submit} style={{ alignContent: 'start' }}>
+          <form className="form-grid u-align-start" onSubmit={submit}>
             <label>
               Nombres
               <input value={form.nombre} onChange={(event) => setForm({ ...form, nombre: event.target.value })} required />
@@ -430,23 +430,22 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
             )}
 
             {!editingId ? (
-              <div style={{ gridColumn: '1 / -1', padding: '8px 0 0' }} className="muted-copy">Guardá el alumno primero para poder vincular padres.</div>
+              <div className="muted-copy u-span-full u-mt-sm">Guardá el alumno primero para poder vincular padres.</div>
             ) : (
               <>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <h3 style={{ marginBottom: 8 }}>Padre/s</h3>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-                    <input
+                <div className="u-span-full">
+                  <h3 className="u-mb">Padre/s</h3>
+                  <div className="u-row u-mb">
+                    <input className="u-grow"
                       value={padresSearch}
                       onChange={(event) => setPadresSearch(event.target.value)}
                       placeholder="Buscar padre por nombre, apellido o usuario"
-                      style={{ flex: 1, minWidth: 220 }}
                     />
                   </div>
                   {padresResults.length > 0 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+                    <div className="u-stack u-mb">
                       {padresResults.map((parent) => (
-                        <div key={parent.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, border: '1px solid #d9dfe8', borderRadius: 8, padding: '6px 8px' }}>
+                        <div className="linked-item" key={parent.id}>
                           <span>{parent.nombre} {parent.apellido} · {parent.usuario} {parent.ci ? `· CI ${parent.ci}` : ''}</span>
                           <button
                             type="button"
@@ -467,9 +466,9 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
                     </div>
                   )}
                   {padres.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div className="u-stack">
                       {padres.map((parent) => (
-                        <div key={parent.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, border: '1px solid #d9dfe8', borderRadius: 8, padding: '6px 8px' }}>
+                        <div className="linked-item" key={parent.id}>
                           <span>{parent.nombre} {parent.apellido} · {parent.usuario} {parent.ci ? `· CI ${parent.ci}` : ''}</span>
                           <button
                             type="button"
@@ -494,9 +493,9 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
               </>
             )}
 
-            <div className="signature-modal-actions" style={{ gridColumn: '1 / -1' }}>
+            <div className="signature-modal-actions u-span-full">
               <button type="button" className="button secondary" onClick={() => setIsFormOpen(false)}>Cancelar</button>
-              <button type="submit" className="button" style={{ gridColumn: 'span 2' }}>{editingId ? 'Guardar cambios' : 'Crear alumno'}</button>
+              <button type="submit" className="button u-span-2">{editingId ? 'Guardar cambios' : 'Crear alumno'}</button>
             </div>
           </form>
         </div>
