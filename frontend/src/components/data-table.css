@@ -47,3 +47,35 @@
 @media (max-width: 640px) {
   .grade-table.data-table th, .grade-table.data-table td { padding: 10px 12px; }
 }
+
+/* Encabezado de un listado: título y conteo a la izquierda, acciones a la derecha. */
+.panel-heading-row { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 20px; margin-bottom: 16px; }
+.panel-heading-row h2 { margin: 0 0 4px; }
+.panel-heading-row p { margin: 0; }
+.data-table .cell-curso { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.table-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; color: var(--muted); font-size: var(--fs-sm); }
+
+/*
+ * En el celular cada fila pasa a ser una tarjeta: la primera celda (nombre) como título y el resto
+ * con su etiqueta (data-label), en lugar de obligar a deslizar la tabla de costado.
+ */
+@media (max-width: 640px) {
+  .table-wrap:has(> .data-table), .table-scroll:has(> .data-table) { border: 0; background: none; box-shadow: none; overflow: visible; }
+  .grade-table.data-table, .grade-table.data-table[class*="u-table"] { min-width: 0; display: block; }
+  .grade-table.data-table thead { display: none; }
+  .grade-table.data-table tbody { display: grid; gap: 10px; }
+  .grade-table.data-table tbody tr {
+    position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding: 14px 16px;
+    border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper);
+  }
+  .grade-table.data-table tbody tr.is-selected { border-color: var(--accent); }
+  .grade-table.data-table tbody tr > * { display: block; padding: 0; border: 0; background: none !important; box-shadow: none !important; text-align: left; }
+  .grade-table.data-table tbody tr:has(> .seleccion-col) { padding-left: 48px; }
+  .grade-table.data-table tbody .seleccion-col { position: absolute; left: 16px; top: 16px; width: auto; padding: 0; }
+  .grade-table.data-table tbody td[data-label] { display: flex; gap: 8px; align-items: baseline; font-size: var(--fs-sm); }
+  .grade-table.data-table tbody td[data-label]::before { content: attr(data-label); flex: 0 0 auto; min-width: 84px; color: var(--muted); font-size: var(--fs-xs); font-weight: 600; }
+  .grade-table.data-table tbody .col-actions { width: auto; margin-top: 6px; }
+  .grade-table.data-table tbody .row-actions { justify-content: flex-start; margin-left: -10px; }
+  .grade-table.data-table tbody td[colspan] { padding: 18px 4px; }
+  .grade-table.data-table tbody tr:has(> td[colspan]) { padding: 0; border-style: dashed; }
+}

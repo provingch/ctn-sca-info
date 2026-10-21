@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import AppShell from '../../components/AppShell';
 import ContentState from '../../components/ui/ContentState';
 import { getAdminCatalog, type AdminCatalog } from '../../api/admin';
@@ -10,17 +10,17 @@ import UsuariosPanel from './UsuariosPanel';
 import AsignacionesPanel from './AsignacionesPanel';
 import AlumnosPanel from './AlumnosPanel';
 import HorariosPanel from './HorariosPanel';
-import SpecialtyIcon from '../../components/SpecialtyIcon';
-import { SpecialtyDecorative } from '../../utils/specialtyIcons';
 import SistemaEstadoPanel from './SistemaEstadoPanel';
 import SalasPanel from './SalasPanel';
 import AdminQuejasPanel from './AdminQuejasPanel';
 import ClasesEspecialidadPanel from './ClasesEspecialidadPanel';
+import { toneDeMensaje } from './adminFormatters';
 import { useToast } from '../../context/toast';
 import LauncherCards from '../../components/LauncherCards';
 import { launcherIcons } from '../../components/launcherIcons';
 import SectionNavigation from '../../components/SectionNavigation';
 import CardsWithActivity from '../../components/CardsWithActivity';
+import BuscadorAlumnos from './BuscadorAlumnos';
 
 const modules = [
   { path: '/admin/materias', key: 'materias', title: 'Materias', detail: 'Catálogo, categorías y especialidades', globalOnly: true },
@@ -38,10 +38,12 @@ export default function AdminPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, identityStatus, refreshUserIdentity } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const fichaParam = Number(searchParams.get('ficha')) || null;
   const selected = modules.find((module) => location.pathname === module.path || location.pathname.startsWith(`${module.path}/`)) ?? null;
   const [data, setData] = useState<AdminCatalog | null>(null);
   const { showToast } = useToast();
-  const setStatus = useCallback((text: string) => { if (text) showToast(text); }, [showToast]);
+  const setStatus = useCallback((text: string) => { if (text) showToast(text, { tone: toneDeMensaje(text) }); }, [showToast]);
 
   const load = useCallback(async () => {
     try {
@@ -70,14 +72,17 @@ export default function AdminPage() {
   const selectedIsRestricted = Boolean(selected && isScopedAdmin && 'globalOnly' in selected && selected.globalOnly);
   const scopeName = user.especialidadNombre ?? data.especialidades.find((item) => item.id === user.especialidadId)?.nombre ?? (user.especialidadId === null ? null : `Especialidad #${user.especialidadId}`);
 
+  const abrirFicha = (alumnoId: number) => navigate(`/admin/alumnos?ficha=${alumnoId}`);
+  const cerrarFicha = () => { if (searchParams.has('ficha')) { searchParams.delete('ficha'); setSearchParams(searchParams, { replace: true }); } };
+  const buscador = <BuscadorAlumnos alumnos={data.alumnos} cursos={data.cursosAlumnos} onElegir={(alumno) => abrirFicha(alumno.id)} />;
+
   return <AppShell title={selected?.title || 'Panel general'} subtitle={scopeName ? `Administración de ${scopeName}` : 'Administración global del sistema'} specialty={scopeName} onBack={selected ? () => navigate('/admin') : undefined} backLabel="Panel general" welcome={!selected}
-    navigation={selected && <SectionNavigation label="Apartados de administración" active={selected.key} sections={visibleModules.map(module => ({ key: module.key, label: module.title, href: module.path }))} />}>
-    <AdminToolbar scopeName={scopeName} />
-    {/* toasts shown globally via ToastProvider */}
+    navigation={selected && <>{buscador}<SectionNavigation label="Apartados de administración" active={selected.key} sections={visibleModules.map(module => ({ key: module.key, label: module.title, href: module.path }))} /></>}>
     {selectedIsRestricted ? (
       <ContentState tone="error" title="Módulo reservado al administrador global" detail="Tu cuenta administra una especialidad y no tiene acceso a esta herramienta del sistema." actions={<Link className="button" to="/admin">Volver al panel</Link>} />
     ) : !selected ? (
       <div className="admin-dashboard-sections">
+        {buscador}
         <section aria-labelledby="admin-management-title">
           <header className="admin-dashboard-heading"><span>Administración</span><h2 id="admin-management-title">Gestión del sistema</h2></header>
           <CardsWithActivity>
@@ -91,28 +96,21 @@ export default function AdminPage() {
       </div>
     ) : (
       <div className="u-relative">
-        {isScopedAdmin && <div className="admin-panel-decorative-left"><SpecialtyDecorative name={scopeName ?? undefined} /></div>}
-        <AdminModule module={selected} data={data} reload={load} status={setStatus} isGlobalAdmin={!isScopedAdmin} />
+        <AdminModule module={selected} data={data} reload={load} status={setStatus} isGlobalAdmin={!isScopedAdmin} fichaInicial={fichaParam} onFichaCerrada={cerrarFicha} />
       </div>
     )}
 
   </AppShell>;
 }
 
-function AdminToolbar({ scopeName }: { scopeName: string | null }) {
-  if (!scopeName) return null;
-  return <div className="toolbar filters admin-toolbar">
-    {scopeName && <span className="admin-scope-badge"><small>Especialidad gestionada</small><strong className="specialty-card-title"><SpecialtyIcon name={scopeName} />{scopeName}</strong></span>}
-  </div>;
-}
-
-function AdminModule({ module, data, reload, status, isGlobalAdmin }: {
+function AdminModule({ module, data, reload, status, isGlobalAdmin, fichaInicial, onFichaCerrada }: {
   module: (typeof modules)[number]; data: AdminCatalog; reload: () => Promise<void>; status: (message: string) => void; isGlobalAdmin: boolean;
+  fichaInicial: number | null; onFichaCerrada: () => void;
 }) {
   if (module.key === 'materias') return <MateriasPanel data={data} reload={reload} status={status} />;
   if (module.key === 'usuarios') return <UsuariosPanel data={data} reload={reload} status={status} isGlobalAdmin={isGlobalAdmin} />;
   if (module.key === 'asignaciones') return <AsignacionesPanel data={data} reload={reload} status={status} />;
-  if (module.key === 'alumnos') return <AlumnosPanel data={data} reload={reload} status={status} />;
+  if (module.key === 'alumnos') return <AlumnosPanel data={data} reload={reload} status={status} fichaInicial={fichaInicial} onFichaCerrada={onFichaCerrada} />;
   if (module.key === 'horarios') return <HorariosPanel status={status} />;
   if (module.key === 'salas') return <SalasPanel data={data} status={status} />;
   if (module.key === 'quejas') return <AdminQuejasPanel data={data} status={status} isGlobalAdmin={isGlobalAdmin} />;

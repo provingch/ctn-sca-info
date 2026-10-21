@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatBytes, formatRelativeDate, groupSchedulesBySpecialty } from './adminFormatters';
+import { formatBytes, formatRelativeDate, groupSchedulesBySpecialty, toneDeMensaje } from './adminFormatters';
 
 describe('admin formatters', () => {
   it('agrupa horarios por especialidad y ordena los grupos', () => {
@@ -22,5 +22,13 @@ describe('admin formatters', () => {
     const now = new Date('2026-08-24T12:00:00');
     expect(formatRelativeDate(null, now)).toBe('Nunca');
     expect(formatRelativeDate('2026-08-24 10:00:00', now)).toBe('hace 2 horas');
+  });
+});
+
+describe('toneDeMensaje', () => {
+  it('marca como error los fallos y como hecho lo demás', () => {
+    expect(toneDeMensaje('No se pudo eliminar el alumno.')).toBe('error');
+    expect(toneDeMensaje('Nombre, apellido y curso son requeridos.')).toBe('error');
+    expect(toneDeMensaje('3 alumnos eliminados.')).toBe('success');
   });
 });

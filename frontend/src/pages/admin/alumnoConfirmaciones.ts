@@ -63,7 +63,9 @@ export function mensajeBorradoLote(resumenes: ResumenAlumno[]): string {
 /** Traslado en lote al mismo curso destino. */
 export function mensajeTrasladoLote(cantidad: number, desde: CourseItem | undefined, hacia: CourseItem | undefined, resumenes: ResumenAlumno[]): string {
   const otraEspecialidad = desde && hacia && desde.especialidad !== hacia.especialidad;
-  const base = `Vas a mover ${plural(cantidad, 'alumno', 'alumnos')} de ${etiquetaCurso(desde)} a ${etiquetaCurso(hacia)}${otraEspecialidad ? ' (otra especialidad)' : ''}.`;
+  // Sin un origen común (alumnos de cursos distintos) se habla de "sus cursos actuales".
+  const origen = desde ? etiquetaCurso(desde) : 'sus cursos actuales';
+  const base = `Vas a mover ${plural(cantidad, 'alumno', 'alumnos')} de ${origen} a ${etiquetaCurso(hacia)}${otraEspecialidad ? ' (otra especialidad)' : ''}.`;
   const conNotas = resumenes.filter((r) => r.planillasConNotasCursoActual > 0).length;
   if (conNotas === 0) return `${base} Ninguno tiene notas cargadas en su curso actual.`;
   return `${base} ${plural(conNotas, 'alumno tiene', 'alumnos tienen')} notas en su curso actual: `

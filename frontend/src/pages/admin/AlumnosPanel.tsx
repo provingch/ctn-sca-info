@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError } from '../../api/client';
 import { buscarPadres, createAdminRecord, deleteAdminRecord, getPadresDeAlumno, getResumenAlumno, linkPadreAlumno, unlinkPadreAlumno, updateAdminRecord, type AdminCatalog, type PadreSummary } from '../../api/admin';
-import { normalizeSpecialty } from '../../theme/theme';
-import SpecialtyIcon from '../../components/SpecialtyIcon';
 import AnimatedSelect from '../../components/AnimatedSelect';
+import SpecialtyBadge from '../../components/SpecialtyBadge';
 import useAccessibleDialog from '../../hooks/useAccessibleDialog';
 import FiltersToolbar, { FilterField } from '../../components/ui/FiltersToolbar';
 import { filtrarAlumnos, filtrarEgresados, hayFiltroEgresados, SIN_FILTRO_EGRESADOS, type FiltroEgresados } from './filtrosListados';
@@ -17,17 +16,26 @@ interface AlumnosPanelProps {
   data: AdminCatalog;
   reload: () => Promise<void>;
   status: (message: string) => void;
+  /** Alumno a abrir en su ficha al entrar (buscador global del admin). */
+  fichaInicial?: number | null;
+  onFichaCerrada?: () => void;
 }
 
-type ViewStep = 'especialidades' | 'cursos' | 'secciones' | 'tabla' | 'egresados';
+type Vista = 'activos' | 'egresados';
+const POR_PAGINA = 50;
 
-export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps) {
-  const [step, setStep] = useState<ViewStep>('especialidades');
+/**
+ * Alumnos activos en una sola tabla con filtros (especialidad, curso, sección y búsqueda), en lugar de
+ * recorrer tarjetas de especialidad, curso y sección. Los egresados quedan en su propio listado de solo lectura.
+ */
+export default function AlumnosPanel({ data, reload, status, fichaInicial = null, onFichaCerrada }: AlumnosPanelProps) {
+  const [vista, setVista] = useState<Vista>('activos');
   const [busquedaAlumnos, setBusquedaAlumnos] = useState('');
   const [filtroEgresados, setFiltroEgresados] = useState<FiltroEgresados>(SIN_FILTRO_EGRESADOS);
-  const [selectedEspecialidadId, setSelectedEspecialidadId] = useState<number | null>(null);
-  const [selectedNivel, setSelectedNivel] = useState<number | null>(null);
-  const [selectedSeccion, setSelectedSeccion] = useState<string | null>(null);
+  const [filtroEspecialidad, setFiltroEspecialidad] = useState('');
+  const [filtroNivel, setFiltroNivel] = useState('');
+  const [filtroSeccion, setFiltroSeccion] = useState('');
+  const [pagina, setPagina] = useState(1);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const formDialogRef = useAccessibleDialog(isFormOpen, () => setIsFormOpen(false));
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -35,37 +43,50 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
   const [padresSearch, setPadresSearch] = useState('');
   const [padresResults, setPadresResults] = useState<PadreSummary[]>([]);
   const [form, setForm] = useState({ nombre: '', apellido: '', ci: '', cursoId: '' });
-  const [fichaId, setFichaId] = useState<number | null>(null);
+  const [fichaId, setFichaId] = useState<number | null>(fichaInicial);
   const [cursoDestino, setCursoDestino] = useState('');
   const [enLote, setEnLote] = useState(false);
 
-  const especialidades = data.especialidades;
+  useEffect(() => { if (fichaInicial !== null) setFichaId(fichaInicial); }, [fichaInicial]);
 
-  const cursosByEspecialidad = useMemo(() => {
-    return new Map(
-      especialidades.map((specialty) => {
-        const cursos = data.cursosAlumnos.filter((course) => course.especialidad === specialty.nombre);
-        return [specialty.id, cursos];
-      }),
-    );
-  }, [data.cursosAlumnos, especialidades]);
+  const cursoPorId = useMemo(() => new Map(data.cursosAlumnos.map((course) => [course.id, course])), [data.cursosAlumnos]);
+  const especialidades = useMemo(() => [...new Set(data.cursosAlumnos.map((course) => course.especialidad))].sort((a, b) => a.localeCompare(b, 'es')), [data.cursosAlumnos]);
+  const niveles = useMemo(() => [...new Set(data.cursosAlumnos.filter((course) => !filtroEspecialidad || course.especialidad === filtroEspecialidad).map((course) => course.nivel))].sort((a, b) => a - b), [data.cursosAlumnos, filtroEspecialidad]);
+  const secciones = useMemo(() => [...new Set(data.cursosAlumnos
+    .filter((course) => (!filtroEspecialidad || course.especialidad === filtroEspecialidad) && (!filtroNivel || String(course.nivel) === filtroNivel))
+    .map((course) => course.seccion))].sort((a, b) => a.localeCompare(b, 'es')), [data.cursosAlumnos, filtroEspecialidad, filtroNivel]);
 
-  const rows = useMemo(() => {
-    if (selectedEspecialidadId === null || selectedNivel === null || selectedSeccion === null) return [];
-    return data.alumnos.filter((student) => {
-      const course = data.cursosAlumnos.find((item) => item.id === student.cursoId);
-      return course && course.especialidad === especialidades.find((e) => e.id === selectedEspecialidadId)?.nombre && course.nivel === selectedNivel && course.seccion === selectedSeccion;
-    });
-  }, [data.alumnos, data.cursosAlumnos, especialidades, selectedNivel, selectedEspecialidadId, selectedSeccion]);
+  const filtrados = useMemo(() => filtrarAlumnos(data.alumnos.filter((student) => {
+    const course = cursoPorId.get(student.cursoId);
+    if (!course) return !filtroEspecialidad && !filtroNivel && !filtroSeccion;
+    return (!filtroEspecialidad || course.especialidad === filtroEspecialidad)
+      && (!filtroNivel || String(course.nivel) === filtroNivel)
+      && (!filtroSeccion || course.seccion === filtroSeccion);
+  }), busquedaAlumnos).sort((a, b) => {
+    const ca = cursoPorId.get(a.cursoId);
+    const cb = cursoPorId.get(b.cursoId);
+    return (ca?.especialidad ?? '').localeCompare(cb?.especialidad ?? '', 'es') || (ca?.nivel ?? 0) - (cb?.nivel ?? 0)
+      || (ca?.seccion ?? '').localeCompare(cb?.seccion ?? '', 'es') || a.apellido.localeCompare(b.apellido, 'es') || a.nombre.localeCompare(b.nombre, 'es');
+  }), [data.alumnos, cursoPorId, filtroEspecialidad, filtroNivel, filtroSeccion, busquedaAlumnos]);
+
+  const paginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA));
+  const paginaActual = Math.min(pagina, paginas);
+  const rowsVisibles = filtrados.slice((paginaActual - 1) * POR_PAGINA, paginaActual * POR_PAGINA);
+  const hayFiltroAlumnos = Boolean(busquedaAlumnos.trim() || filtroEspecialidad || filtroNivel || filtroSeccion);
+  const limpiarFiltros = () => { setBusquedaAlumnos(''); setFiltroEspecialidad(''); setFiltroNivel(''); setFiltroSeccion(''); setPagina(1); };
+
+  // Con especialidad, curso y sección elegidos, "Agregar alumno" ya sabe a qué curso va.
+  const currentCurso = filtroEspecialidad && filtroNivel && filtroSeccion
+    ? data.cursosAlumnos.find((course) => course.especialidad === filtroEspecialidad && String(course.nivel) === filtroNivel && course.seccion === filtroSeccion) ?? null
+    : null;
+
+  const seleccion = useSeleccion(useMemo(() => rowsVisibles.map((student) => student.id), [rowsVisibles]));
+  const fichaAlumno = fichaId === null ? undefined : data.alumnos.find((student) => student.id === fichaId);
 
   const egresados = useMemo(
     () => [...data.egresados].sort((a, b) => (b.promocion ?? 0) - (a.promocion ?? 0) || a.apellido.localeCompare(b.apellido) || a.nombre.localeCompare(b.nombre)),
     [data.egresados],
   );
-
-  const rowsVisibles = useMemo(() => filtrarAlumnos(rows, busquedaAlumnos), [rows, busquedaAlumnos]);
-  const seleccion = useSeleccion(useMemo(() => rowsVisibles.map((student) => student.id), [rowsVisibles]));
-  const fichaAlumno = fichaId === null ? undefined : data.alumnos.find((student) => student.id === fichaId);
   const egresadosVisibles = useMemo(() => filtrarEgresados(egresados, filtroEgresados), [egresados, filtroEgresados]);
   const especialidadesDeEgresados = useMemo(
     () => [...new Set(egresados.map((item) => item.especialidad).filter((nombre): nombre is string => Boolean(nombre)))].sort((a, b) => a.localeCompare(b, 'es')),
@@ -73,16 +94,10 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
   const promocionesDeEgresados = useMemo(
     () => [...new Set(egresados.map((item) => item.promocion).filter((anio): anio is number => anio != null))].sort((a, b) => b - a),
     [egresados]);
-  // Al cambiar de listado (otra sección, egresados, volver) los filtros arrancan limpios.
-  useEffect(() => {
-    setBusquedaAlumnos('');
-    setFiltroEgresados(SIN_FILTRO_EGRESADOS);
-  }, [step, selectedSeccion, selectedNivel, selectedEspecialidadId]);
 
   const openCreate = () => {
     setEditingId(null);
-    const preselectedCourse = currentCurso ? String(currentCurso.id) : '';
-    setForm({ nombre: '', apellido: '', ci: '', cursoId: preselectedCourse });
+    setForm({ nombre: '', apellido: '', ci: '', cursoId: currentCurso ? String(currentCurso.id) : '' });
     setPadres([]);
     setPadresSearch('');
     setPadresResults([]);
@@ -104,7 +119,6 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
   }, [status]);
 
   const openEdit = async (student: AdminCatalog['alumnos'][number]) => {
-    const course = data.cursosAlumnos.find((item) => item.id === student.cursoId);
     setEditingId(student.id);
     setForm({
       nombre: student.nombre,
@@ -112,10 +126,6 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
       ci: String(student.ci ?? ''),
       cursoId: String(student.cursoId),
     });
-    setSelectedEspecialidadId(especialidades.find((specialty) => specialty.nombre === course?.especialidad)?.id ?? null);
-    setSelectedNivel(course?.nivel ?? null);
-    setSelectedSeccion(course?.seccion ?? null);
-    setStep('tabla');
     setPadres([]);
     setPadresSearch('');
     setPadresResults([]);
@@ -141,10 +151,7 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
       const original = editingId ? data.alumnos.find((student) => student.id === editingId) : undefined;
       if (editingId && original && original.cursoId !== payload.cursoId) {
         const resumen = await getResumenAlumno(editingId);
-        const mensaje = mensajeTraslado(`${payload.apellido}, ${payload.nombre}`,
-          data.cursosAlumnos.find((course) => course.id === original.cursoId),
-          data.cursosAlumnos.find((course) => course.id === payload.cursoId),
-          resumen);
+        const mensaje = mensajeTraslado(`${payload.apellido}, ${payload.nombre}`, cursoPorId.get(original.cursoId), cursoPorId.get(payload.cursoId), resumen);
         if (!(await confirmar(mensaje, 'Mover'))) return;
       }
       if (editingId) {
@@ -158,6 +165,18 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
       await reload();
     } catch (error) {
       status(error instanceof ApiError ? error.message : 'No se pudo guardar el alumno.');
+    }
+  };
+
+  const eliminarAlumno = async (student: AdminCatalog['alumnos'][number]) => {
+    try {
+      const resumen = await getResumenAlumno(student.id);
+      if (!(await confirmar(mensajeBorrado(`${student.apellido}, ${student.nombre}`, resumen), 'Eliminar'))) return;
+      await deleteAdminRecord('alumnos', student.id);
+      status('Alumno eliminado.');
+      await reload();
+    } catch (error) {
+      status(error instanceof ApiError ? error.message : 'No se pudo eliminar el alumno.');
     }
   };
 
@@ -184,15 +203,18 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
   };
 
   const moverSeleccion = async () => {
-    const destino = data.cursosAlumnos.find((course) => String(course.id) === cursoDestino);
+    const destino = cursoPorId.get(Number(cursoDestino));
     if (!destino) {
       status('Elegí el curso al que vas a mover a los alumnos.');
       return;
     }
     const elegidos = data.alumnos.filter((student) => seleccion.estaSeleccionado(student.id));
+    // Si todos vienen del mismo curso se nombra; si no, el mensaje habla de "sus cursos actuales".
+    const origenes = new Set(elegidos.map((student) => student.cursoId));
+    const desde = origenes.size === 1 ? cursoPorId.get([...origenes][0]) : undefined;
     setEnLote(true);
     try {
-      if (!(await confirmar(mensajeTrasladoLote(elegidos.length, currentCurso ?? undefined, destino, await resumenesSeleccion()), 'Mover'))) return;
+      if (!(await confirmar(mensajeTrasladoLote(elegidos.length, desde, destino, await resumenesSeleccion()), 'Mover'))) return;
       let fallidos = 0;
       for (const student of elegidos) {
         try {
@@ -210,34 +232,6 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
       setEnLote(false);
     }
   };
-
-  const goToEspecialidades = () => {
-    setStep('especialidades');
-    setSelectedEspecialidadId(null);
-    setSelectedNivel(null);
-    setSelectedSeccion(null);
-  };
-
-  const goToCursos = (specialtyId: number) => {
-    setSelectedEspecialidadId(specialtyId);
-    setSelectedNivel(null);
-    setSelectedSeccion(null);
-    setStep('cursos');
-  };
-
-  const goToSecciones = (nivel: number) => {
-    setSelectedNivel(nivel);
-    setSelectedSeccion(null);
-    setStep('secciones');
-  };
-
-  const goToTabla = (section: string) => {
-    setSelectedSeccion(section);
-    setStep('tabla');
-  };
-
-  const currentEspecialidad = especialidades.find((item) => item.id === selectedEspecialidadId)?.nombre ?? null;
-  const currentCurso = data.cursosAlumnos.find((item) => item.especialidad === currentEspecialidad && item.nivel === selectedNivel && item.seccion === selectedSeccion) ?? null;
 
   useEffect(() => {
     if (!isFormOpen || !editingId) {
@@ -265,33 +259,10 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
 
   return (
     <>
-      {step === 'especialidades' && (
-        <>
-          {egresados.length > 0 && (
-            <div className="toolbar">
-              <button type="button" className="button secondary" onClick={() => setStep('egresados')}>Ver egresados ({egresados.length})</button>
-            </div>
-          )}
-          <div className="card-grid">
-            {especialidades.map((specialty) => {
-              const totals = data.alumnos.filter((student) => data.cursosAlumnos.find((course) => course.id === student.cursoId)?.especialidad === specialty.nombre).length;
-              return (
-                <button type="button" key={specialty.id} className="nav-card" data-specialty={normalizeSpecialty(specialty.nombre)} onClick={() => goToCursos(specialty.id)}>
-                  <span>Especialidad</span>
-                  <h2 className="specialty-card-title"><SpecialtyIcon name={specialty.nombre} />{specialty.nombre}</h2>
-                  <p>{totals} alumnos</p>
-                  <strong>Ver cursos →</strong>
-                </button>
-              );
-            })}
-          </div>
-        </>
-      )}
-
-      {step === 'egresados' && (
+      {vista === 'egresados' && (
         <>
           <div className="toolbar">
-            <button type="button" className="button secondary" onClick={goToEspecialidades}>← Volver</button>
+            <button type="button" className="button secondary" onClick={() => setVista('activos')}>← Alumnos activos</button>
           </div>
           <div className="panel">
             <h2>Egresados</h2>
@@ -320,10 +291,10 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
                   ) : (
                     egresadosVisibles.map((student) => (
                       <tr key={student.id}>
-                        <th scope="row">{student.apellido}, {student.nombre}</th>
-                        <td className="cell-muted">{student.ci ?? '—'}</td>
-                        <td>{student.especialidad ?? '—'}</td>
-                        <td>{student.promocion ?? '—'}</td>
+                        <th scope="row" data-label="Egresado">{student.apellido}, {student.nombre}</th>
+                        <td className="cell-muted" data-label="Cédula">{student.ci ?? '—'}</td>
+                        <td data-label="Especialidad">{student.especialidad ?? '—'}</td>
+                        <td data-label="Año de egreso">{student.promocion ?? '—'}</td>
                       </tr>
                     ))
                   )}
@@ -334,127 +305,86 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
         </>
       )}
 
-      {step === 'cursos' && (
-        <>
-          <div className="toolbar">
-            <button type="button" className="button secondary" onClick={goToEspecialidades}>← Volver a especialidades</button>
-          </div>
-          <div className="card-grid">
-            {Array.from(new Set((cursosByEspecialidad.get(selectedEspecialidadId ?? -1) ?? []).map((course) => course.nivel))).sort((a, b) => b - a).map((nivel) => {
-              const courses = (cursosByEspecialidad.get(selectedEspecialidadId ?? -1) ?? []).filter((course) => course.nivel === nivel);
-              const totals = data.alumnos.filter((student) => courses.some((course) => course.id === student.cursoId)).length;
-              return (
-                <button type="button" key={nivel} className="nav-card" onClick={() => goToSecciones(nivel)}>
-                  <span>Curso</span>
-                  <h2>{nivel}°</h2>
-                  <p>{totals} alumnos</p>
-                  <strong>Ver secciones →</strong>
-                </button>
-              );
-            })}
-          </div>
-        </>
-      )}
-
-      {step === 'secciones' && (
-        <>
-          <div className="toolbar">
-            <button type="button" className="button secondary" onClick={() => setStep('cursos')}>← Volver a cursos</button>
-            <button type="button" className="button secondary" onClick={goToEspecialidades}>Inicio</button>
-          </div>
-          <div className="card-grid">
-            {Array.from(new Set((data.cursosAlumnos.filter((course) => course.especialidad === currentEspecialidad && course.nivel === selectedNivel).map((course) => course.seccion)))).map((section) => {
-              const totals = data.alumnos.filter((student) => {
-                const course = data.cursosAlumnos.find((item) => item.id === student.cursoId);
-                return course && course.especialidad === currentEspecialidad && course.nivel === selectedNivel && course.seccion === section;
-              }).length;
-              return (
-                <button type="button" key={section} className="nav-card" onClick={() => goToTabla(section)}>
-                  <span>Sección</span>
-                  <h2>{section}</h2>
-                  <p>{totals} alumnos</p>
-                  <strong>Ver alumnos →</strong>
-                </button>
-              );
-            })}
-          </div>
-        </>
-      )}
-
-      {step === 'tabla' && (
-        <>
-          <div className="toolbar">
-            <button type="button" className="button secondary" onClick={() => setStep('secciones')}>← Volver a secciones</button>
-            <button type="button" className="button secondary" onClick={goToEspecialidades}>Inicio</button>
-            <button type="button" className="button" onClick={openCreate}>Agregar alumno</button>
-          </div>
-
-          <div className="panel">
-            <h2>{currentEspecialidad} · {currentCurso?.nivel}° · {selectedSeccion}</h2>
-            {rows.length > 0 && <FiltersToolbar ariaLabel="Filtros de alumnos" mostrando={rowsVisibles.length} total={rows.length} unidad="alumnos" activo={Boolean(busquedaAlumnos.trim())} onLimpiar={() => setBusquedaAlumnos('')}>
-              <FilterField label="Buscar alumno"><input type="search" placeholder="Apellido, nombre o cédula" value={busquedaAlumnos} onChange={(event) => setBusquedaAlumnos(event.target.value)} /></FilterField>
-            </FiltersToolbar>}
-            <BarraSeleccion cantidad={seleccion.cantidad} unidad={['alumno', 'alumnos']} onLimpiar={seleccion.limpiar} ocupado={enLote}>
-              <div className="barra-seleccion-select">
-                <AnimatedSelect portal ariaLabel="Curso destino" value={cursoDestino} placeholder="Mover a…" onChange={setCursoDestino}
-                  options={data.cursosAlumnos.filter((course) => course.id !== currentCurso?.id).map((course) => ({ value: course.id, label: `${course.nivel}° ${course.seccion} · ${course.especialidad}` }))} />
-              </div>
-              <button type="button" className="button secondary" onClick={moverSeleccion} disabled={enLote || !cursoDestino}>Mover</button>
-              <button type="button" className="button danger" onClick={eliminarSeleccion} disabled={enLote}>Eliminar</button>
-            </BarraSeleccion>
-            <div className="table-wrap">
-              <table className="grade-table data-table u-table-md">
-                <caption className="visually-hidden">Alumnos de {currentCurso?.nivel}° {selectedSeccion}</caption>
-                <thead>
-                  <tr>
-                    <CasillaTodos todos={seleccion.todos} algunos={seleccion.algunos} onChange={seleccion.toggleTodos} etiqueta="Seleccionar todos los alumnos visibles" />
-                    <th scope="col">Alumno</th>
-                    <th scope="col">Cédula</th>
-                    <th scope="col" className="col-actions"><span className="visually-hidden">Acciones</span></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.length === 0 ? (
-                    <tr><td colSpan={4}>No hay alumnos en esta sección.</td></tr>
-                  ) : rowsVisibles.length === 0 ? (
-                    <tr><td colSpan={4}>Ningún alumno coincide con la búsqueda.</td></tr>
-                  ) : (
-                    rowsVisibles.map((student) => (
+      {vista === 'activos' && (
+        <div className="panel">
+          <header className="panel-heading-row">
+            <div>
+              <h2>Alumnos activos</h2>
+              <p className="muted-copy">{data.alumnos.length} alumnos en {data.cursosAlumnos.length} cursos. Tocá un nombre para ver su ficha.</p>
+            </div>
+            <div className="u-row">
+              {egresados.length > 0 && <button type="button" className="button secondary" onClick={() => setVista('egresados')}>Egresados ({egresados.length})</button>}
+              <button type="button" className="button" onClick={openCreate}>Agregar alumno</button>
+            </div>
+          </header>
+          <FiltersToolbar ariaLabel="Filtros de alumnos" mostrando={filtrados.length} total={data.alumnos.length} unidad="alumnos" activo={hayFiltroAlumnos} onLimpiar={limpiarFiltros}>
+            <FilterField label="Buscar alumno"><input type="search" placeholder="Apellido, nombre o cédula" value={busquedaAlumnos} onChange={(event) => { setBusquedaAlumnos(event.target.value); setPagina(1); }} /></FilterField>
+            {especialidades.length > 1 && <FilterField label="Especialidad" narrow><AnimatedSelect ariaLabel="Filtrar por especialidad" value={filtroEspecialidad} onChange={(value) => { setFiltroEspecialidad(value); setFiltroNivel(''); setFiltroSeccion(''); setPagina(1); }} options={[{ value: '', label: 'Todas' }, ...especialidades.map((nombre) => ({ value: nombre, label: nombre }))]} /></FilterField>}
+            <FilterField label="Curso" narrow><AnimatedSelect ariaLabel="Filtrar por curso" value={filtroNivel} onChange={(value) => { setFiltroNivel(value); setFiltroSeccion(''); setPagina(1); }} options={[{ value: '', label: 'Todos' }, ...niveles.map((nivel) => ({ value: String(nivel), label: `${nivel}°` }))]} /></FilterField>
+            <FilterField label="Sección" narrow><AnimatedSelect ariaLabel="Filtrar por sección" value={filtroSeccion} onChange={(value) => { setFiltroSeccion(value); setPagina(1); }} options={[{ value: '', label: 'Todas' }, ...secciones.map((seccion) => ({ value: seccion, label: seccion }))]} /></FilterField>
+          </FiltersToolbar>
+          <BarraSeleccion cantidad={seleccion.cantidad} unidad={['alumno', 'alumnos']} onLimpiar={seleccion.limpiar} ocupado={enLote}>
+            <div className="barra-seleccion-select">
+              <AnimatedSelect portal ariaLabel="Curso destino" value={cursoDestino} placeholder="Mover a…" onChange={setCursoDestino}
+                options={data.cursosAlumnos.map((course) => ({ value: course.id, label: `${course.nivel}° ${course.seccion} · ${course.especialidad}` }))} />
+            </div>
+            <button type="button" className="button secondary" onClick={moverSeleccion} disabled={enLote || !cursoDestino}>Mover</button>
+            <button type="button" className="button danger" onClick={eliminarSeleccion} disabled={enLote}>Eliminar</button>
+          </BarraSeleccion>
+          <div className="table-wrap">
+            <table className="grade-table data-table u-table-md">
+              <caption className="visually-hidden">Alumnos activos{currentCurso ? ` de ${etiquetaCurso(currentCurso)}` : ''}</caption>
+              <thead>
+                <tr>
+                  <CasillaTodos todos={seleccion.todos} algunos={seleccion.algunos} onChange={seleccion.toggleTodos} etiqueta="Seleccionar todos los alumnos de esta página" />
+                  <th scope="col">Alumno</th>
+                  <th scope="col">Curso</th>
+                  <th scope="col">Cédula</th>
+                  <th scope="col" className="col-actions"><span className="visually-hidden">Acciones</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.alumnos.length === 0 ? (
+                  <tr><td colSpan={5}><strong>Todavía no hay alumnos</strong>Agregá el primero con "Agregar alumno".</td></tr>
+                ) : rowsVisibles.length === 0 ? (
+                  <tr><td colSpan={5}>Ningún alumno coincide con los filtros.</td></tr>
+                ) : (
+                  rowsVisibles.map((student) => {
+                    const course = cursoPorId.get(student.cursoId);
+                    return (
                       <tr key={student.id} className={seleccion.estaSeleccionado(student.id) ? 'is-selected' : undefined}>
                         <CasillaFila checked={seleccion.estaSeleccionado(student.id)} onChange={() => seleccion.toggle(student.id)} etiqueta={`Seleccionar a ${student.apellido}, ${student.nombre}`} />
                         <th scope="row"><button type="button" className="link-button" onClick={() => setFichaId(student.id)}>{student.apellido}, {student.nombre}</button></th>
-                        <td className="cell-muted">{student.ci ?? '—'}</td>
+                        <td data-label="Curso">{course ? <span className="cell-curso"><SpecialtyBadge name={course.especialidad} /><span>{course.nivel}° {course.seccion}</span></span> : '—'}</td>
+                        <td className="cell-muted" data-label="Cédula">{student.ci ?? '—'}</td>
                         <td className="col-actions">
                           <div className="row-actions">
                             <button type="button" className="button secondary" aria-label={`Ver ficha de ${student.apellido}, ${student.nombre}`} onClick={() => setFichaId(student.id)}>Ficha</button>
-                            <button type="button" className="button secondary" aria-label={`Editar a ${student.apellido}, ${student.nombre}`} onClick={() => openEdit(student)}>Editar</button>
-                            <button type="button" className="button danger" aria-label={`Eliminar a ${student.apellido}, ${student.nombre}`} onClick={async () => {
-                              try {
-                                const resumen = await getResumenAlumno(student.id);
-                                if (!(await confirmar(mensajeBorrado(`${student.apellido}, ${student.nombre}`, resumen), 'Eliminar'))) return;
-                                await deleteAdminRecord('alumnos', student.id);
-                                status('Alumno eliminado.');
-                                await reload();
-                              } catch (error) {
-                                status(error instanceof ApiError ? error.message : 'No se pudo eliminar el alumno.');
-                              }
-                            }}>Eliminar</button>
+                            <button type="button" className="button secondary" aria-label={`Editar a ${student.apellido}, ${student.nombre}`} onClick={() => void openEdit(student)}>Editar</button>
+                            <button type="button" className="button danger" aria-label={`Eliminar a ${student.apellido}, ${student.nombre}`} onClick={() => void eliminarAlumno(student)}>Eliminar</button>
                           </div>
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
-        </>
+          {paginas > 1 && <nav className="table-pagination" aria-label="Páginas de alumnos">
+            <span>Mostrando {(paginaActual - 1) * POR_PAGINA + 1}–{Math.min(paginaActual * POR_PAGINA, filtrados.length)} de {filtrados.length}</span>
+            <div className="u-row">
+              <button type="button" className="button secondary" disabled={paginaActual === 1} onClick={() => setPagina(paginaActual - 1)}>Anterior</button>
+              <button type="button" className="button secondary" disabled={paginaActual === paginas} onClick={() => setPagina(paginaActual + 1)}>Siguiente</button>
+            </div>
+          </nav>}
+        </div>
       )}
 
       {fichaAlumno && (
-        <AlumnoFicha alumno={fichaAlumno} curso={data.cursosAlumnos.find((course) => course.id === fichaAlumno.cursoId)}
-          onClose={() => setFichaId(null)}
-          onEditar={() => { setFichaId(null); void openEdit(fichaAlumno); }} />
+        <AlumnoFicha alumno={fichaAlumno} curso={cursoPorId.get(fichaAlumno.cursoId)}
+          onClose={() => { setFichaId(null); onFichaCerrada?.(); }}
+          onEditar={() => { setFichaId(null); onFichaCerrada?.(); void openEdit(fichaAlumno); }} />
       )}
 
       {isFormOpen && (

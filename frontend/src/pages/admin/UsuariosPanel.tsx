@@ -338,10 +338,10 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
                 <tr key={user.id} className={seleccion.estaSeleccionado(user.id) ? 'is-selected' : undefined}>
                   {showActions && <CasillaFila checked={seleccion.estaSeleccionado(user.id)} onChange={() => seleccion.toggle(user.id)} etiqueta={`Seleccionar a ${user.nombre} ${user.apellido}`} />}
                   <td>{user.nombre}</td>
-                  <td>{user.apellido}</td>
-                  <td className="cell-muted">{user.ci ?? '—'}</td>
-                  <td className="cell-muted">{user.usuario}</td>
-                  {showEspecialidad && <td>{specialtyLabel(user)}</td>}
+                  <td data-label="Apellido">{user.apellido}</td>
+                  <td className="cell-muted" data-label="Cédula">{user.ci ?? '—'}</td>
+                  <td className="cell-muted" data-label="Usuario">{user.usuario}</td>
+                  {showEspecialidad && <td data-label="Especialidad">{specialtyLabel(user)}</td>}
                   {showActions && (
                     <td className="col-actions">
                       <div className="usuarios-row-actions row-actions">

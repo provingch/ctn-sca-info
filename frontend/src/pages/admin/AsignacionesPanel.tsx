@@ -322,7 +322,7 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
                 return (
                 <tr key={profesor.id}>
                   <th scope="row">{profesor.apellido}, {profesor.nombre}<small>@{profesor.usuario}</small><div className="assignment-specialties">{[...(specialtiesByProfessor.get(profesor.id) ?? [])].sort(([a], [b]) => a.localeCompare(b, 'es')).map(([name, total]) => <SpecialtyBadge key={name} name={name} count={total} />)}</div></th>
-                  <td><div className="assignment-load"><div><strong>{count}</strong><span>{description}</span></div><div className="assignment-load-track" aria-hidden="true">{[...(specialtiesByProfessor.get(profesor.id) ?? [])].sort(([a], [b]) => a.localeCompare(b, 'es')).map(([name, total]) => <i key={name} data-specialty={normalizeSpecialty(name)} style={{ width: `${total / maxAssignments * 100}%` }} />)}</div></div></td>
+                  <td data-label="Asignaciones"><div className="assignment-load"><div><strong>{count}</strong><span>{description}</span></div><div className="assignment-load-track" aria-hidden="true">{[...(specialtiesByProfessor.get(profesor.id) ?? [])].sort(([a], [b]) => a.localeCompare(b, 'es')).map(([name, total]) => <i key={name} data-specialty={normalizeSpecialty(name)} style={{ width: `${total / maxAssignments * 100}%` }} />)}</div></div></td>
                   <td><button type="button" className="assignment-detail" aria-label={`Ver detalle de ${profesor.apellido}, ${profesor.nombre}`} onClick={() => setSelectedProfesorId(profesor.id)}>Ver detalle <span aria-hidden="true">→</span></button></td>
                 </tr>
               ); })}
@@ -375,9 +375,9 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
                   <tr key={assignment.id} className={seleccion.estaSeleccionado(assignment.id) ? 'is-selected' : undefined}>
                     <CasillaFila checked={seleccion.estaSeleccionado(assignment.id)} onChange={() => seleccion.toggle(assignment.id)} etiqueta={`Seleccionar ${assignment.materia}`} />
                     <th scope="row">{assignment.materia}</th>
-                    <td>{course?.especialidad ? <SpecialtyBadge name={course.especialidad} /> : '—'}</td>
-                    <td>{course?.nivel ?? '—'}°</td>
-                    <td>{course?.seccion ?? '—'}</td>
+                    <td data-label="Especialidad">{course?.especialidad ? <SpecialtyBadge name={course.especialidad} /> : '—'}</td>
+                    <td data-label="Curso">{course?.nivel ?? '—'}°</td>
+                    <td data-label="Sección">{course?.seccion ?? '—'}</td>
                     <td className="col-actions">
                       <div className="row-actions">
                         <button type="button" className="button secondary" aria-label={`Editar ${assignment.materia}`} onClick={() => openEdit(assignment)}>Editar</button>

@@ -1,66 +1,262 @@
 /*
- * Capa de rediseño (oct-2026). Mantiene la identidad de SCA (paleta por especialidad, logo,
- * banner con degradé del color de la especialidad, Inter) y unifica lo que cada pantalla
- * resolvía distinto: superficies, encabezados, botones y etiquetas. Va después de index.css.
+ * Capa visual del sistema (oct-2026, segunda versión). Va después de index.css y se apoya en
+ * `.account-ui.v2` (AppShell) para ganarle a las reglas de account-layout.css sin !important.
+ *
+ * Idea: un espacio de trabajo tranquilo. Fondo neutro, superficies blancas con borde fino y casi
+ * sin sombra, el color de la especialidad solo donde orienta (navegación activa, acción principal,
+ * chip de especialidad). Las secciones con apartados usan una columna lateral en pantallas anchas.
  */
 :root {
-  --radius-card: 16px;
-  --shadow-card: 0 1px 2px rgba(20, 35, 59, .05), 0 6px 18px rgba(20, 35, 59, .05);
-  --shadow-card-hover: 0 2px 4px rgba(20, 35, 59, .06), 0 14px 30px rgba(20, 35, 59, .10);
+  --bg: #f3f5f8;
+  --bg-soft: #f8f9fb;
+  --paper: #ffffff;
+  --paper-raised: #ffffff;
+  --ink: #172033;
+  --muted: #5b6678;
+  --line: #e1e6ed;
+  --line-strong: #cbd3de;
+  --radius-xs: 6px;
+  --radius-sm: 9px;
+  --radius: 12px;
+  --radius-lg: 14px;
+  --radius-card: 14px;
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, .05);
+  --shadow-md: 0 12px 32px rgba(16, 24, 40, .12);
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, .04);
+  --shadow-card-hover: 0 6px 20px rgba(16, 24, 40, .08);
+  --rail-w: 232px;
 }
 :root[data-theme="dark"] {
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 22px rgba(0, 0, 0, .22);
-  --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, .35), 0 16px 34px rgba(0, 0, 0, .32);
+  --bg: #0e121a;
+  --bg-soft: #131924;
+  --paper: #161c27;
+  --paper-raised: #1a2130;
+  --ink: #e9eef6;
+  --muted: #9ca8ba;
+  --line: #263041;
+  --line-strong: #364257;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .3);
+  --shadow-md: 0 16px 40px rgba(0, 0, 0, .45);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, .25);
+  --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, .35);
 }
 
-/* Títulos: un solo ritmo; menos peso en el cuerpo para que destaquen los encabezados. */
-h1, h2, h3 { letter-spacing: -.025em; }
+/* Fondo: liso, con un brillo muy suave del color de la especialidad arriba. */
+body::before {
+  opacity: 1;
+  background: radial-gradient(1100px 380px at 50% -160px, color-mix(in srgb, var(--accent) 9%, transparent), transparent 70%), var(--bg);
+}
+
+h1, h2, h3 { letter-spacing: -.02em; }
 h1 { font-weight: 800; }
 h2, h3 { font-weight: 700; }
 
-/* Banner de página: mismo degradé de la especialidad, título más grande y legible. */
-.page-banner { min-height: 84px; padding: 20px 24px; border: 1px solid color-mix(in srgb, var(--accent) 16%, var(--line)); border-bottom-width: 1px; border-radius: var(--radius-card); box-shadow: var(--shadow-card); }
-.page-banner-text { gap: 6px; }
-.page-banner-text h1 { color: var(--ink); font-size: var(--fs-2xl); letter-spacing: -.03em; }
-.page-banner-text span { color: var(--muted); opacity: 1; font-size: var(--fs-md); }
-.page-banner-back { min-height: 38px; font-size: var(--fs-sm); }
-.page-banner-emblem { width: 56px; height: 56px; border-radius: var(--radius); }
-
-/* Superficies: todas las tarjetas comparten radio, borde, fondo y sombra. */
-.panel, .class-card, .nav-card, .metric, .launcher-card, .planilla-card, .content-state, .data-modal {
-  border-radius: var(--radius-card);
+/* ── Barra superior ───────────────────────────────────────────── */
+.app-header {
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  box-shadow: inset 0 3px 0 var(--accent);
 }
-.panel, .class-card, .nav-card, .metric, .launcher-card, .planilla-card {
-  border-left-color: var(--line);
-  border-right-color: var(--line);
-  border-bottom-color: var(--line);
-  background: var(--paper);
+.navbar-primary { border-color: transparent; background: transparent; gap: 2px; }
+.navbar-primary a { min-height: 36px; padding: 0 14px; border-radius: var(--radius-sm); font-size: var(--fs-sm); font-weight: 600; color: var(--muted); }
+.navbar-primary a:hover { background: var(--bg-soft); color: var(--ink); }
+.navbar-primary a.active { background: var(--accent-soft); color: var(--accent-deep); box-shadow: none; }
+.navbar-user-trigger, .navbar-notif-trigger, .theme-toggle { border-color: var(--line); background: var(--paper); }
+.navbar-user-trigger:hover, .navbar-user-trigger[aria-expanded="true"], .navbar-notif-trigger:hover, .navbar-notif-trigger[aria-expanded="true"] { border-color: var(--line-strong); background: var(--bg-soft); color: var(--ink); }
+
+/* ── Estructura de página ─────────────────────────────────────── */
+.account-ui.v2 .app-main { padding-bottom: 40px; }
+.account-ui.v2 .app-main:has(.app-workspace--rail) { width: min(1340px, calc(100% - 40px)); }
+.app-workspace { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "header" "rail" "content"; }
+.app-workspace-header { grid-area: header; min-width: 0; }
+.app-workspace-rail { grid-area: rail; min-width: 0; }
+.app-workspace-content { grid-area: content; min-width: 0; }
+
+@media (min-width: 1100px) {
+  .app-workspace--rail { grid-template-columns: var(--rail-w) minmax(0, 1fr); grid-template-areas: "rail header" "rail content"; grid-template-rows: auto 1fr; column-gap: 36px; }
+  .app-workspace--rail .app-workspace-rail { position: sticky; top: calc(var(--app-header-h) + 24px); align-self: start; }
+  .app-workspace--rail .account-section-navigation {
+    flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 2px; margin: 0; padding: 10px;
+    border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--paper); box-shadow: var(--shadow-card);
+  }
+  .app-workspace--rail .account-section-navigation::before {
+    content: attr(aria-label); padding: 6px 10px 8px; color: var(--muted);
+    font-size: var(--fs-2xs); font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  }
+  .account-ui.v2 .app-workspace--rail .account-section-navigation .catedra-tab {
+    min-height: 40px; justify-content: flex-start; padding: 8px 12px; border: 0; border-radius: var(--radius-sm);
+    color: var(--ink); font-size: var(--fs-md); font-weight: 500;
+  }
+  .app-workspace--rail .account-section-navigation .catedra-tab:hover { background: var(--bg-soft); }
+  .app-workspace--rail .account-section-navigation .catedra-tab.active { background: var(--accent-soft); color: var(--accent-deep); font-weight: 700; box-shadow: inset 3px 0 0 var(--accent); }
+}
+
+/* Con la columna lateral el contenido es más angosto: la lista de la izquierda necesita aire. */
+@media (min-width: 1100px) {
+  .app-workspace--rail .evaluation-split-layout:not(.equal-columns) { grid-template-columns: minmax(320px, 2fr) minmax(0, 3fr); }
+}
+
+/* Pestañas horizontales (apartados en pantallas angostas y pestañas dentro de una página). */
+.catedra-tablist { gap: 2px 18px; }
+.catedra-tab { color: var(--muted); font-weight: 600; }
+.catedra-tab:hover { color: var(--ink); }
+.catedra-tab.active { color: var(--ink); border-bottom-color: var(--accent); }
+
+/* ── Encabezado de página ─────────────────────────────────────── */
+.account-ui.v2 .page-banner {
+  min-height: 0; align-items: flex-end; margin-bottom: 24px; padding: 4px 0 0;
+  border: 0; border-radius: 0; background: none; box-shadow: none;
+}
+.account-ui.v2 .page-banner-text { gap: 6px; }
+.account-ui.v2 .page-banner-text h1 { color: var(--ink); font-size: clamp(1.5rem, 2.4vw, 1.9rem); line-height: 1.15; letter-spacing: -.03em; }
+.account-ui.v2 .page-banner-text > span { color: var(--muted); opacity: 1; font-size: var(--fs-md); line-height: 1.5; }
+.account-ui.v2 .page-banner-back {
+  justify-self: start; min-height: 28px; padding: 2px 8px 2px 4px; margin-left: -4px; border: 0; border-radius: var(--radius-xs);
+  background: transparent; color: var(--muted); font-size: var(--fs-sm); font-weight: 600;
+}
+.account-ui.v2 .page-banner-back:hover { background: var(--accent-soft); color: var(--accent-deep); }
+.account-ui.v2 .page-banner-identity {
+  display: inline-flex; align-items: center; gap: 8px; max-width: none; padding: 5px 12px 5px 5px;
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line)); border-radius: 999px; background: var(--paper);
+}
+.account-ui.v2 .page-banner-identity > span { color: var(--accent-deep); font-size: var(--fs-sm); font-weight: 700; white-space: nowrap; }
+.account-ui.v2 .page-banner-emblem { width: 30px; height: 30px; border: 0; border-radius: 999px; background: var(--accent-soft); box-shadow: none; backdrop-filter: none; }
+.account-ui.v2 .page-banner-emblem .specialty-icon { width: 18px; height: 18px; }
+
+/* Saludo de los paneles de inicio: tarjeta con un toque del color de la especialidad. */
+.account-ui.v2 .page-banner--welcome {
+  align-items: center; padding: 28px 30px;
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--line)); border-radius: var(--radius-card);
+  background:
+    radial-gradient(600px 220px at 100% 0%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%),
+    linear-gradient(180deg, var(--paper), color-mix(in srgb, var(--accent-soft) 55%, var(--paper)));
   box-shadow: var(--shadow-card);
 }
+.account-ui.v2 .page-banner--welcome h1 { font-size: clamp(1.7rem, 3vw, 2.3rem); }
+
+/* ── Superficies ──────────────────────────────────────────────── */
+.account-ui.v2 :is(.panel, .class-card) {
+  border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--paper); box-shadow: var(--shadow-card);
+}
+.account-ui.v2 :is(.panel, .class-card) > :is(h2, h3) { font-size: var(--fs-lg); }
+.nav-card, .metric, .launcher-card, .planilla-card {
+  border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--paper); box-shadow: var(--shadow-card);
+}
+.launcher-card::before { display: none; }
+.nav-card, .launcher-card, .planilla-card { transition: border-color .16s ease, box-shadow .16s ease; }
+.account-ui.v2 :is(.launcher-card, .nav-card, .planilla-card):hover,
+.account-ui.v2 .planilla-card:focus-within { transform: none; border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); box-shadow: var(--shadow-card-hover); }
+.account-ui.v2 .launcher-card-icon { width: 40px; height: 40px; border-radius: var(--radius); background: var(--accent-soft); color: var(--accent-deep); }
+.account-ui.v2 .launcher-card-arrow { width: 32px; height: 32px; background: transparent; color: var(--muted); font-size: var(--fs-xl); transition: color .16s ease, transform .16s ease; }
+.account-ui.v2 .launcher-card:hover .launcher-card-arrow { color: var(--accent); transform: translateX(3px); }
 .panel { padding: 24px; }
 .class-card { padding: 22px; }
 .panel:hover { border-color: var(--line); }
-.launcher-card:hover, .planilla-card:hover, .planilla-card:focus-within, .nav-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-card-hover); }
 .class-card-head h3 { font-size: var(--fs-xl); }
+.admin-dashboard-heading span { color: var(--muted); }
 
-/* Botones: misma altura y peso en todo el sistema; sombra solo en la acción principal. */
-.button { min-height: 40px; padding: 8px 16px; font-weight: 700; box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 16%, transparent); transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease; }
-.button.secondary { box-shadow: none; }
-.button.secondary:hover { background: var(--accent-soft); }
+.account-ui.v2 .toolbar.filters { border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--paper); box-shadow: none; }
+
+/* ── Botones y campos ─────────────────────────────────────────── */
+.button {
+  min-height: 38px; padding: 8px 15px; border-radius: var(--radius-sm); font-weight: 600; letter-spacing: -.005em;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .08); transition: background-color .14s ease, border-color .14s ease, color .14s ease, box-shadow .14s ease;
+}
+.button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 35%, transparent); outline-offset: 2px; }
+.button.secondary { border-color: var(--line-strong); background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px rgba(16, 24, 40, .04); }
+.button.secondary:hover { border-color: color-mix(in srgb, var(--accent) 40%, var(--line-strong)); background: var(--bg-soft); color: var(--accent-deep); }
+.button.danger:hover { background: color-mix(in srgb, var(--danger) 88%, #000); }
 .button:disabled { cursor: not-allowed; opacity: .5; box-shadow: none; }
 
-/* Etiquetas y chips. */
-.badge { padding: 4px 10px; font-weight: 700; }
-.eyebrow, .panel-header > div > span, .planilla-table-heading span { letter-spacing: .08em; }
+.account-ui.v2 :is(.form-grid, .class-field, .form-field, .toolbar.filters, .filters-toolbar) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]):not([type="range"]):not([type="color"]), select, textarea):not(table *) {
+  border-color: var(--line-strong); border-radius: var(--radius-sm); background: var(--paper);
+}
 
-/* Fondo: se mantiene la trama de puntos del color de la especialidad, más tenue. */
-body::before { opacity: .7; }
+/* ── Etiquetas, estados y avisos ──────────────────────────────── */
+.badge { padding: 3px 9px; font-weight: 600; }
+.eyebrow, .panel-header > div > span, .planilla-table-heading span { letter-spacing: .07em; }
+.account-ui.v2 .content-state { border: 1px dashed var(--line-strong); border-radius: var(--radius-card); background: var(--paper); box-shadow: none; }
+.account-ui.v2 .content-state--error { border-style: solid; border-color: color-mix(in srgb, var(--danger) 35%, var(--line)); }
+.content-state-icon { border-radius: 999px; }
+.content-state-skeleton { width: min(420px, 100%); display: grid; gap: 10px; }
+.content-state-skeleton i { display: block; height: 12px; border-radius: 999px; background: linear-gradient(90deg, var(--bg-soft) 0%, var(--line) 50%, var(--bg-soft) 100%) 0 0 / 200% 100%; animation: skeleton-shimmer 1.3s ease-in-out infinite; }
+.content-state-skeleton i:nth-child(2) { width: 82%; }
+.content-state-skeleton i:nth-child(3) { width: 64%; }
+.content-state--loading .content-state-copy h2 { color: var(--muted); font-size: var(--fs-md); font-weight: 600; }
+@keyframes skeleton-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+
+/* Avisos flotantes (ToastContext): abajo a la derecha, con el color del resultado. */
+.toast-region { position: fixed; right: 20px; bottom: 20px; z-index: 1200; width: min(400px, calc(100vw - 32px)); display: grid; gap: 10px; pointer-events: none; }
+.toast {
+  pointer-events: auto; display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: start; gap: 10px;
+  padding: 12px 10px 12px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper-raised); color: var(--ink);
+  box-shadow: var(--shadow-md); font-size: var(--fs-md); line-height: 1.45;
+  animation: toast-in .2s ease-out; transition: opacity .24s ease, transform .24s ease;
+}
+.toast.exiting { opacity: 0; transform: translateY(8px); pointer-events: none; }
+.toast-icon { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 999px; font-size: var(--fs-sm); font-weight: 800; }
+.toast--success .toast-icon { background: color-mix(in srgb, var(--success) 14%, transparent); color: var(--success); }
+.toast--warning .toast-icon { background: color-mix(in srgb, var(--warning) 16%, transparent); color: var(--warning); }
+.toast--error .toast-icon { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); }
+.toast--error { border-color: color-mix(in srgb, var(--danger) 35%, var(--line)); }
+.toast-message { padding-top: 4px; overflow-wrap: anywhere; }
+.toast-close { width: 28px; height: 28px; display: grid; place-items: center; padding: 0; border: 0; border-radius: var(--radius-xs); background: transparent; color: var(--muted); font-size: var(--fs-lg); line-height: 1; cursor: pointer; }
+.toast-close:hover { background: var(--bg-soft); color: var(--ink); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* ── Pie de página: en el flujo, sin ocupar pantalla fija ─────── */
+.account-ui.v2 .app-footer { position: static; height: auto; border-top: 1px solid var(--line); background: transparent; }
+.account-ui.v2 .app-footer .app-footer-inner { padding: 18px 0; }
+
+/* Marca de agua de la especialidad dentro de los módulos: ya la nombra el encabezado. */
+.admin-panel-decorative-left { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .launcher-card:hover, .planilla-card:hover, .planilla-card:focus-within, .nav-card:hover { transform: none; }
+  .content-state-skeleton i, .toast { animation: none; }
+}
+@media (max-width: 1099px) {
+  .app-workspace--rail .account-section-navigation { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+  .app-workspace--rail .account-section-navigation .catedra-tab { white-space: nowrap; }
 }
 @media (max-width: 640px) {
-  .page-banner { padding: 16px; }
-  .page-banner-text h1 { font-size: var(--fs-xl); }
+  .account-ui.v2 .app-main:has(.app-workspace--rail) { width: calc(100% - 24px); }
+  .account-ui.v2 .page-banner { flex-direction: column; align-items: flex-start; }
+  .account-ui.v2 .page-banner--welcome { padding: 20px; }
   .panel { padding: 18px; }
+  .toast-region { right: 12px; left: 12px; bottom: 12px; width: auto; }
 }
+
+/* ── Buscador de alumnos del admin ───────────────────────────── */
+.buscador-alumnos { position: relative; display: flex; align-items: center; margin-bottom: 14px; }
+.buscador-alumnos input {
+  width: 100%; min-height: 42px; padding: 9px 58px 9px 38px; border: 1px solid var(--line-strong); border-radius: var(--radius);
+  background: var(--paper); color: var(--ink); font: inherit; font-size: var(--fs-md); box-shadow: var(--shadow-card);
+}
+.buscador-alumnos input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent); }
+.buscador-alumnos-icon { position: absolute; left: 12px; width: 18px; height: 18px; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; pointer-events: none; }
+.buscador-alumnos-kbd { position: absolute; right: 10px; padding: 2px 6px; border: 1px solid var(--line); border-radius: var(--radius-xs); background: var(--bg-soft); color: var(--muted); font: 600 var(--fs-2xs)/1.4 inherit; pointer-events: none; }
+.buscador-alumnos input:focus ~ .buscador-alumnos-kbd, .buscador-alumnos input:not(:placeholder-shown) ~ .buscador-alumnos-kbd { display: none; }
+.buscador-alumnos-lista {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 60; min-width: 300px; max-height: 360px; overflow-y: auto;
+  margin: 0; padding: 6px; list-style: none; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper-raised); box-shadow: var(--shadow-md);
+}
+.buscador-alumnos-lista li { display: grid; gap: 1px; padding: 8px 10px; border-radius: var(--radius-sm); cursor: pointer; }
+.buscador-alumnos-lista li span { color: var(--muted); font-size: var(--fs-xs); }
+.buscador-alumnos-lista li.is-active { background: var(--accent-soft); }
+.buscador-alumnos-lista li.is-active strong { color: var(--accent-deep); }
+.buscador-alumnos-lista .buscador-alumnos-vacio { color: var(--muted); cursor: default; }
+.admin-dashboard-sections > .buscador-alumnos { max-width: 560px; margin-bottom: 0; }
+@media (max-width: 640px) { .buscador-alumnos-kbd { display: none; } .buscador-alumnos-lista { min-width: 0; } }
+
+/* Filtros: la búsqueda se estira y los desplegables quedan compactos en una sola fila. */
+.filter-field { font-weight: 600; }
+.filter-field input { min-height: 42px; }
+@media (min-width: 641px) { .filters--fields .filter-field--narrow { flex: 0 1 170px; } }
+.barra-seleccion { top: calc(var(--app-header-h) + 8px); }
+@media (max-width: 640px) { .barra-seleccion-select { flex: 1 1 100%; } }
+
+/* Métricas: el acento va en la etiqueta, no en un borde superior curvo. */
+.metric { border-top: 1px solid var(--line); }
+/* Hijo elegido (padres): marcado con el borde, sin bloque de color pesado. */
+.account-ui.v2 .child-card.selected { border: 1px solid var(--accent); background: var(--paper); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent); }

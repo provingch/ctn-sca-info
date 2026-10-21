@@ -42,4 +42,9 @@ describe('mensajes en lote', () => {
     expect(mensajeTrasladoLote(2, informatica, quimica, [{ ...vacio, planillasConNotasCursoActual: 2 }, vacio]))
       .toBe('Vas a mover 2 alumnos de Informática 2ºA a Química 2ºA (otra especialidad). 1 alumno tiene notas en su curso actual: quedan como historial, en gris y de solo lectura, y no se pasan al curso nuevo.');
   });
+
+  it('sin un curso de origen común habla de sus cursos actuales', () => {
+    expect(mensajeTrasladoLote(2, undefined, quimica, [vacio, vacio]))
+      .toBe('Vas a mover 2 alumnos de sus cursos actuales a Química 2ºA. Ninguno tiene notas cargadas en su curso actual.');
+  });
 });

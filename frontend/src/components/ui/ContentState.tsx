@@ -27,9 +27,10 @@ export default function ContentState({
     aria-live={tone === 'error' ? 'assertive' : 'polite'}
     aria-busy={tone === 'loading' || undefined}
   >
-    <span className="content-state-icon" aria-hidden="true">
-      {tone === 'loading' ? <i /> : tone === 'error' ? '!' : '—'}
-    </span>
+    {/* Mientras carga se ve el contorno del contenido en vez de un spinner. */}
+    {tone === 'loading'
+      ? <span className="content-state-skeleton" aria-hidden="true"><i /><i /><i /></span>
+      : <span className="content-state-icon" aria-hidden="true">{tone === 'error' ? '!' : '—'}</span>}
     <div className="content-state-copy">
       <h2>{title}</h2>
       {detail && <p>{detail}</p>}

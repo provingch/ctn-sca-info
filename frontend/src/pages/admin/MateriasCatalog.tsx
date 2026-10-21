@@ -118,8 +118,8 @@ export default function MateriasCatalog({ data, reload, status, onCreate, onEdit
             {visible.map((subject) => <tr key={subject.id} className={seleccion.estaSeleccionado(subject.id) ? 'is-selected' : undefined}>
               <CasillaFila checked={seleccion.estaSeleccionado(subject.id)} onChange={() => seleccion.toggle(subject.id)} etiqueta={'Seleccionar ' + subject.nombre} />
               <th scope="row">{subject.nombre}</th>
-              <td><span className="subject-type">{categoryName(subject.categoria)}</span></td>
-              <td><div className="subject-specialties">{subject.especialidadIds?.length ? subject.especialidadIds.map((id) => {
+              <td data-label="Tipo"><span className="subject-type">{categoryName(subject.categoria)}</span></td>
+              <td data-label="Especialidades"><div className="subject-specialties">{subject.especialidadIds?.length ? subject.especialidadIds.map((id) => {
                 const name = data.especialidades.find((item) => item.id === id)?.nombre ?? ('Especialidad #' + id);
                 return <span className="subject-specialty-chip" data-specialty={normalizeSpecialty(name)} key={id}><i aria-hidden="true" />{name}</span>;
               }) : <span className="muted-copy">Sin especialidad</span>}</div></td>

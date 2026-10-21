@@ -80,14 +80,14 @@ export default function ClasesEspecialidadPanel({ status }: { status: (message: 
             <tbody>
               {filtered.map((c) => (
                 <tr key={c.id}>
-                  <td>{c.fechaClase ?? '—'}</td>
-                  <td>{c.profesorNombre ?? '—'}</td>
-                  <td>{c.cursoDescripcion || '—'}</td>
-                  <td>{c.materiaNombre ?? '—'}</td>
-                  <td>{c.tema}</td>
-                  <td className="num">{c.totalAlumnos}</td>
-                  <td className="num">{c.totalAusentes}</td>
-                  <td className="num">{c.totalJustificados}</td>
+                  <th scope="row">{c.fechaClase ?? '—'}</th>
+                  <td data-label="Profesor">{c.profesorNombre ?? '—'}</td>
+                  <td data-label="Curso">{c.cursoDescripcion || '—'}</td>
+                  <td data-label="Materia">{c.materiaNombre ?? '—'}</td>
+                  <td data-label="Tema">{c.tema}</td>
+                  <td className="num" data-label="Alumnos">{c.totalAlumnos}</td>
+                  <td className="num" data-label="Ausentes">{c.totalAusentes}</td>
+                  <td className="num" data-label="Justificados">{c.totalJustificados}</td>
                 </tr>
               ))}
             </tbody>

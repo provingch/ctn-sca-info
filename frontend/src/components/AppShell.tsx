@@ -28,13 +28,16 @@ export default function AppShell({ children, title, subtitle, specialty, hero = 
   }, [title]);
 
   return (
-    <div className="app-frame account-ui" data-specialty={normalizeSpecialty(effectiveSpecialty)}>
+    <div className="app-frame account-ui v2" data-specialty={normalizeSpecialty(effectiveSpecialty)}>
       <a className="skip-link" href="#main-content">Saltar al contenido principal</a>
       <AppNavbar />
       <main id="main-content" className="app-main" tabIndex={-1}>
-        {hero && title && (welcome ? <DashboardWelcome title={title} subtitle={subtitle} specialty={effectiveSpecialty} /> : <PageBanner title={title} context={subtitle} specialty={effectiveSpecialty} onBack={onBack} backLabel={backLabel} />)}
-        {navigation}
-        {children}
+        {/* Con apartados, en pantallas anchas la navegación pasa a una columna lateral fija. */}
+        <div className={`app-workspace${navigation ? ' app-workspace--rail' : ''}`}>
+          {hero && title && <div className="app-workspace-header">{welcome ? <DashboardWelcome title={title} subtitle={subtitle} specialty={effectiveSpecialty} /> : <PageBanner title={title} context={subtitle} specialty={effectiveSpecialty} onBack={onBack} backLabel={backLabel} />}</div>}
+          {navigation && <div className="app-workspace-rail">{navigation}</div>}
+          <div className="app-workspace-content">{children}</div>
+        </div>
       </main>
       <AppFooter />
     </div>
