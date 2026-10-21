@@ -20,7 +20,6 @@ import LauncherCards from '../../components/LauncherCards';
 import { launcherIcons } from '../../components/launcherIcons';
 import SectionNavigation from '../../components/SectionNavigation';
 import CardsWithActivity from '../../components/CardsWithActivity';
-import BuscadorAlumnos from './BuscadorAlumnos';
 
 const modules = [
   { path: '/admin/materias', key: 'materias', title: 'Materias', detail: 'Catálogo, categorías y especialidades', globalOnly: true },
@@ -72,17 +71,14 @@ export default function AdminPage() {
   const selectedIsRestricted = Boolean(selected && isScopedAdmin && 'globalOnly' in selected && selected.globalOnly);
   const scopeName = user.especialidadNombre ?? data.especialidades.find((item) => item.id === user.especialidadId)?.nombre ?? (user.especialidadId === null ? null : `Especialidad #${user.especialidadId}`);
 
-  const abrirFicha = (alumnoId: number) => navigate(`/admin/alumnos?ficha=${alumnoId}`);
   const cerrarFicha = () => { if (searchParams.has('ficha')) { searchParams.delete('ficha'); setSearchParams(searchParams, { replace: true }); } };
-  const buscador = <BuscadorAlumnos alumnos={data.alumnos} cursos={data.cursosAlumnos} onElegir={(alumno) => abrirFicha(alumno.id)} />;
 
   return <AppShell title={selected?.title || 'Panel general'} subtitle={scopeName ? `Administración de ${scopeName}` : 'Administración global del sistema'} specialty={scopeName} onBack={selected ? () => navigate('/admin') : undefined} backLabel="Panel general" welcome={!selected}
-    navigation={selected && <>{buscador}<SectionNavigation label="Apartados de administración" active={selected.key} sections={visibleModules.map(module => ({ key: module.key, label: module.title, href: module.path }))} /></>}>
+    navigation={selected && <SectionNavigation label="Apartados de administración" active={selected.key} sections={visibleModules.map(module => ({ key: module.key, label: module.title, href: module.path }))} />}>
     {selectedIsRestricted ? (
       <ContentState tone="error" title="Módulo reservado al administrador global" detail="Tu cuenta administra una especialidad y no tiene acceso a esta herramienta del sistema." actions={<Link className="button" to="/admin">Volver al panel</Link>} />
     ) : !selected ? (
       <div className="admin-dashboard-sections">
-        {buscador}
         <section aria-labelledby="admin-management-title">
           <header className="admin-dashboard-heading"><span>Administración</span><h2 id="admin-management-title">Gestión del sistema</h2></header>
           <CardsWithActivity>

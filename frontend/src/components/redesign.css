@@ -227,28 +227,6 @@ h2, h3 { font-weight: 700; }
   .toast-region { right: 12px; left: 12px; bottom: 12px; width: auto; }
 }
 
-/* ── Buscador de alumnos del admin ───────────────────────────── */
-.buscador-alumnos { position: relative; display: flex; align-items: center; margin-bottom: 14px; }
-.buscador-alumnos input {
-  width: 100%; min-height: 42px; padding: 9px 58px 9px 38px; border: 1px solid var(--line-strong); border-radius: var(--radius);
-  background: var(--paper); color: var(--ink); font: inherit; font-size: var(--fs-md); box-shadow: var(--shadow-card);
-}
-.buscador-alumnos input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent); }
-.buscador-alumnos-icon { position: absolute; left: 12px; width: 18px; height: 18px; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; pointer-events: none; }
-.buscador-alumnos-kbd { position: absolute; right: 10px; padding: 2px 6px; border: 1px solid var(--line); border-radius: var(--radius-xs); background: var(--bg-soft); color: var(--muted); font: 600 var(--fs-2xs)/1.4 inherit; pointer-events: none; }
-.buscador-alumnos input:focus ~ .buscador-alumnos-kbd, .buscador-alumnos input:not(:placeholder-shown) ~ .buscador-alumnos-kbd { display: none; }
-.buscador-alumnos-lista {
-  position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 60; min-width: 300px; max-height: 360px; overflow-y: auto;
-  margin: 0; padding: 6px; list-style: none; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper-raised); box-shadow: var(--shadow-md);
-}
-.buscador-alumnos-lista li { display: grid; gap: 1px; padding: 8px 10px; border-radius: var(--radius-sm); cursor: pointer; }
-.buscador-alumnos-lista li span { color: var(--muted); font-size: var(--fs-xs); }
-.buscador-alumnos-lista li.is-active { background: var(--accent-soft); }
-.buscador-alumnos-lista li.is-active strong { color: var(--accent-deep); }
-.buscador-alumnos-lista .buscador-alumnos-vacio { color: var(--muted); cursor: default; }
-.admin-dashboard-sections > .buscador-alumnos { max-width: 560px; margin-bottom: 0; }
-@media (max-width: 640px) { .buscador-alumnos-kbd { display: none; } .buscador-alumnos-lista { min-width: 0; } }
-
 /* Filtros: la búsqueda se estira y los desplegables quedan compactos en una sola fila. */
 .filter-field { font-weight: 600; }
 .filter-field input { min-height: 42px; }
