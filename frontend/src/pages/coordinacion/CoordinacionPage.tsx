@@ -14,11 +14,16 @@ import ComplaintGroups from '../../components/quejas/ComplaintGroups';
 import LauncherCards from '../../components/LauncherCards';
 import { launcherIcons } from '../../components/launcherIcons';
 import CardsWithActivity from '../../components/CardsWithActivity';
+import AnotacionesRecientes from './AnotacionesRecientes';
 import { nombreCorto } from '../../utils/nombre';
 
 const ESTADO_LABEL: Record<ReturnType<typeof quejaEstado>, string> = {
   pendiente: 'Pendiente', aceptada: 'Aceptada', revisada: 'Revisada', resuelta: 'Resuelta', rechazada: 'Rechazada',
 };
+
+function viewFromParam(value: string | null): 'menu' | 'quejas' | 'conducta' | 'anotaciones' {
+  return value === 'quejas' || value === 'conducta' || value === 'anotaciones' ? value : 'menu';
+}
 
 function QuejaPendienteActions({ queja, onAccepted, onRejected }: {
   queja: QuejaItem;
@@ -75,7 +80,7 @@ function QuejaPendienteActions({ queja, onAccepted, onRejected }: {
 
 export default function CoordinacionPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [view, setView] = useState<'menu' | 'quejas' | 'conducta' | 'detalle'>(() => searchParams.get('view') === 'quejas' ? 'quejas' : searchParams.get('view') === 'conducta' ? 'conducta' : 'menu');
+  const [view, setView] = useState<'menu' | 'quejas' | 'conducta' | 'anotaciones' | 'detalle'>(() => viewFromParam(searchParams.get('view')));
   const [status, setStatus] = useState('');
   const [quejas, setQuejas] = useState<QuejaItem[]>([]);
   const [usuariosPorId, setUsuariosPorId] = useState<Map<number, string>>(new Map());
@@ -87,10 +92,10 @@ export default function CoordinacionPage() {
 
   useEffect(() => {
     const nextView = searchParams.get('view');
-    setView(nextView === 'quejas' || nextView === 'conducta' ? nextView : 'menu');
+    setView(viewFromParam(nextView));
   }, [searchParams]);
 
-  function changeView(nextView: 'menu' | 'quejas' | 'conducta') {
+  function changeView(nextView: 'menu' | 'quejas' | 'conducta' | 'anotaciones') {
     setView(nextView);
     setSearchParams(nextView === 'menu' ? {} : { view: nextView });
   }
@@ -158,6 +163,7 @@ export default function CoordinacionPage() {
   const navigation = <SectionNavigation label="Apartados de coordinación" active={view === 'detalle' ? 'quejas' : view} sections={[
     { key: 'quejas', label: 'Quejas por profesor', onSelect: () => changeView('quejas') },
     { key: 'conducta', label: 'Reportes conductuales', onSelect: () => changeView('conducta') },
+    { key: 'anotaciones', label: 'Anotaciones', onSelect: () => changeView('anotaciones') },
   ]} />;
 
   if (view === 'menu') {
@@ -166,6 +172,7 @@ export default function CoordinacionPage() {
         <LauncherCards options={[
           { key: 'quejas', icon: launcherIcons.quejas, title: 'Quejas por profesor', description: 'Ver y revisar quejas cargadas por la administración.', onSelect: () => changeView('quejas') },
           { key: 'conducta', icon: launcherIcons.conducta, title: 'Reportes conductuales', description: 'Crear y administrar los códigos N usados para registrar el comportamiento de los alumnos.', onSelect: () => changeView('conducta') },
+          { key: 'anotaciones', icon: launcherIcons.alumnos, title: 'Anotaciones', description: 'Ver las anotaciones de uniforme y conducta cargadas desde la app, con su foto.', onSelect: () => changeView('anotaciones') },
         ]} />
       </CardsWithActivity>
     </AppShell>;
@@ -203,6 +210,12 @@ export default function CoordinacionPage() {
           </div>
         </section>
       )}
+    </AppShell>;
+  }
+
+  if (view === 'anotaciones') {
+    return <AppShell title="Anotaciones" onBack={() => changeView('menu')} backLabel="Coordinación" navigation={navigation}>
+      <AnotacionesRecientes />
     </AppShell>;
   }
 

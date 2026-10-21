@@ -7,6 +7,7 @@ import AnimatedSelect from '../../components/AnimatedSelect';
 import DatePicker from '../../components/DatePicker';
 import FiltersToolbar, { FilterField } from '../../components/ui/FiltersToolbar';
 import { agruparTareasPorMes, cursosAnteriores, filtrarConducta, filtrarMaterias, hayFiltroConducta, MATERIAS_PARA_BUSCADOR, materiasDeConducta, mesesConTareas, NOMBRES_MESES, rangoInvalido, SIN_FILTRO_CONDUCTA, type FiltroConducta } from './parentFilters';
+import ParentAnotaciones from './ParentAnotaciones';
 import { getParentSummary, downloadReporteMensual, downloadLibreta, getRasgosConducta, marcarAlumnoVisto, type ParentResponse, type ParentStage, type ParentSubject, type ParentTaskStatus, type RasgoConducta } from '../../api/parent';
 import { ApiError } from '../../api/client';
 import { normalizeSpecialty } from '../../theme/theme';
@@ -253,6 +254,7 @@ export default function ParentPage() {
             </>}
           </section>
         )}
+        {selectedChild && <ParentAnotaciones key={selectedChild.id} alumnoId={selectedChild.id} nombre={selectedChild.nombre} />}
       </div>
       <DashboardActivity />
     </AppShell>
