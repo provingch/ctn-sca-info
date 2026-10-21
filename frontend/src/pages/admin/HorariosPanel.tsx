@@ -86,7 +86,7 @@ export default function HorariosPanel({ status }: { status: (message: string) =>
         <button className="button secondary" type="button" onClick={() => setSearch({})}>← Especialidades</button>
         {selectedLevel && <button className="button secondary" type="button" onClick={() => chooseSpecialty(String(selectedGroup.specialtyId ?? selectedGroup.specialty))}>← Cursos de {selectedGroup.specialty}</button>}
       </nav>
-      <header className="admin-summary-heading" style={{ marginBottom: 20 }}>
+      <header className="admin-summary-heading u-mb">
         <div><h2 className="specialty-card-title"><SpecialtyIcon name={selectedGroup.specialty} />{selectedGroup.specialty}{selectedLevel ? ` · ${selectedLevel}° curso` : ''}</h2><p className="muted-copy">{selectedLevel ? 'Elegí la sección para abrir su horario.' : 'Elegí el curso para ver sus secciones.'}</p></div>
         <button className="button secondary" type="button" disabled={selectedGroup.specialtyId == null || downloadingKey !== null} onClick={() => void downloadSpecialty(selectedGroup.specialtyId, selectedGroup.specialty)}>{downloadingKey ? 'Descargando…' : 'PDF de la especialidad'}</button>
       </header>

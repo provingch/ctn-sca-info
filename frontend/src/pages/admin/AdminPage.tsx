@@ -90,7 +90,7 @@ export default function AdminPage() {
         </section>}
       </div>
     ) : (
-      <div style={{ position: 'relative' }}>
+      <div className="u-relative">
         {isScopedAdmin && <div className="admin-panel-decorative-left"><SpecialtyDecorative name={scopeName ?? undefined} /></div>}
         <AdminModule module={selected} data={data} reload={load} status={setStatus} isGlobalAdmin={!isScopedAdmin} />
       </div>

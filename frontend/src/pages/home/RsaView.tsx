@@ -151,7 +151,7 @@ export default function RsaView() {
           <div className="class-field"><label>Materia</label><AnimatedSelect ariaLabel="Materia" value={materiaId} disabled={!seccion || guardando} describedBy="rsa-materia-help" onChange={(value) => { setMateriaId(value); setEtapa(''); }} options={[{ value: '', label: 'Elegí una materia' }, ...materias.map((item) => ({ value: item.materiaId, label: item.materiaNombre }))]} /><small id="rsa-materia-help">{seccion ? 'Materias de esta sección' : 'Primero elegí una sección'}</small></div>
           <div className="class-field"><label>Etapa</label><AnimatedSelect ariaLabel="Etapa" value={etapa} disabled={!asignacion || guardando} describedBy="rsa-etapa-help" onChange={setEtapa} options={[{ value: '', label: 'Elegí una etapa' }, { value: '1', label: 'Etapa 1' }, { value: '2', label: 'Etapa 2' }]} /><small id="rsa-etapa-help">{asignacion ? 'Período de evaluación' : 'Primero elegí una materia'}</small></div>
         </div>}
-      {asignacion && cursoRealId == null && <div className="notice" style={{ marginTop: 12 }}>Ese curso todavía no existe para la promoción actual, así que no tiene planilla.</div>}
+      {asignacion && cursoRealId == null && <div className="notice u-mt">Ese curso todavía no existe para la promoción actual, así que no tiene planilla.</div>}
     </section>
 
     {asignacion && cursoRealId != null && etapa && <section className="class-card rsa-config" aria-labelledby="rsa-config-title">
@@ -160,12 +160,12 @@ export default function RsaView() {
       {errorPlanilla ? <div className="notice error">{errorPlanilla}</div>
         : cargando || planillaId == null ? <p>Cargando planilla…</p>
         : <>
-          <p role="status" style={{ margin: '0 0 12px' }}>
+          <p className="u-m0 u-mb" role="status">
             {actual
               ? <><strong>RSA activo:</strong> {actual.puntos} {actual.puntos === 1 ? 'punto' : 'puntos'}, tolerancia de {describirTolerancia(actual.toleranciaValor, actual.toleranciaUnidad)}.</>
               : <><strong>RSA desactivado</strong> para esta planilla.</>}
           </p>
-          <label className="checkbox-label" style={{ gap: 8, cursor: 'pointer', marginBottom: 12 }}>
+          <label className="checkbox-label u-mb">
             <input type="checkbox" checked={activar} disabled={guardando} onChange={(event) => setActivar(event.target.checked)} />
             <span>Activar RSA en esta planilla</span>
           </label>
@@ -174,7 +174,7 @@ export default function RsaView() {
             <div className="class-field"><label htmlFor="rsa-tolerancia">Tolerancia sin descuento</label><input id="rsa-tolerancia" aria-describedby="rsa-tolerancia-help" type="number" min={0} step={unidad === 'CANTIDAD' ? 1 : 0.5} inputMode="decimal" value={tolerancia} disabled={!activar || guardando} onChange={(event) => setTolerancia(event.target.value)} /><small id="rsa-tolerancia-help">{unidad === 'CANTIDAD' ? 'Cantidad de faltas permitidas antes de descontar puntos.' : 'Porcentaje de clases dadas convertido a faltas y redondeado al entero más cercano.'}</small></div>
             <div className="class-field"><label>Unidad de la tolerancia</label><AnimatedSelect ariaLabel="Unidad de la tolerancia" value={unidad} disabled={!activar || guardando} onChange={(value) => setUnidad(value as RsaToleranciaUnidad)} options={[{ value: 'CANTIDAD', label: 'Cantidad de faltas' }, { value: 'PORCENTAJE', label: '% de las clases dadas' }]} /></div>
           </div>
-          {errorFormulario && <div className="notice error" style={{ marginTop: 12 }}>{errorFormulario}</div>}
+          {errorFormulario && <div className="notice error u-mt">{errorFormulario}</div>}
           <div className="rsa-actions">
             {actual && <button type="button" className="button secondary" disabled={guardando} onClick={() => void guardar(true)}>Desactivar RSA</button>}
             <button type="button" className="button rsa-save" disabled={!puedeGuardar} onClick={() => void guardar()}>{guardando ? 'Guardando…' : 'Guardar configuración'}</button>

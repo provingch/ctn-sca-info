@@ -75,7 +75,7 @@ export default function CatalogoConductaPanel({ onCodesChange }: CatalogoConduct
     }
   }
 
-  return <section className="panel" style={{ gridColumn: '1 / -1' }}>
+  return <section className="panel u-span-full">
     <div className="class-card-head"><div><span>Administración</span><h3>Catálogo de conducta</h3></div></div>
     <form className="form-grid" onSubmit={saveCodigoConducta}>
       <label>Código<input value={nuevoCodigo} maxLength={10} placeholder="Ej.: N10" onChange={(event) => setNuevoCodigo(event.target.value.toUpperCase())} required /></label>

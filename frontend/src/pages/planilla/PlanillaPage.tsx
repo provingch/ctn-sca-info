@@ -413,9 +413,9 @@ export default function PlanillaPage() {
             <span className="badge">Profesor · {data.curso?.especialidad || 'Planilla'}</span>
             <h1>{data.planilla.materiaNombre}</h1>
             <p>{data.curso ? `${data.curso.nivel}° ${data.curso.seccion}` : 'Curso'} · {data.planilla.etapa}</p>
-            <div className="planilla-stage-closure-summary" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+            <div className="planilla-stage-closure-summary u-row u-mt-sm">
               <span className="badge">Etapa sugerida: {data.planilla.etapaSugerida}</span>
-              {isStageLocked ? <span className="badge" style={{ background: '#e8f5e9', color: '#1b5e20' }}>Etapa {data.planilla.etapaIndex} cerrada</span> : <span className="badge" style={{ background: '#fff3e0', color: '#e65100' }}>Abierta para edición</span>}
+              {isStageLocked ? <span className="badge badge--success">Etapa {data.planilla.etapaIndex} cerrada</span> : <span className="badge badge--warning">Abierta para edición</span>}
             </div>
           </div>
           <div className="planilla-hero-actions">
@@ -488,10 +488,10 @@ export default function PlanillaPage() {
         <div className="notice">
           <div>
             Se encontró un curso de Classroom posiblemente correspondiente:
-            <div style={{marginTop:6}}><strong>{resolvedCourse.courseName ?? resolvedCourse.googleCourseId}</strong> {resolvedCourse.courseSection && <span>· {resolvedCourse.courseSection}</span>}</div>
-            {resolvedCourse.courseAlternateLink && <div style={{marginTop:6}}><a href={resolvedCourse.courseAlternateLink} target="_blank" rel="noopener noreferrer" aria-label="Abrir curso en Classroom en una pestaña nueva">Abrir en Classroom</a></div>}
+            <div className="u-mt-sm"><strong>{resolvedCourse.courseName ?? resolvedCourse.googleCourseId}</strong> {resolvedCourse.courseSection && <span>· {resolvedCourse.courseSection}</span>}</div>
+            {resolvedCourse.courseAlternateLink && <div className="u-mt-sm"><a href={resolvedCourse.courseAlternateLink} target="_blank" rel="noopener noreferrer" aria-label="Abrir curso en Classroom en una pestaña nueva">Abrir en Classroom</a></div>}
           </div>
-          <div style={{marginTop:8}}>
+          <div className="u-mt-sm">
             <button type="button" className="button" onClick={async () => {
               try {
                 setStatus('Guardando asociación…');
@@ -503,7 +503,7 @@ export default function PlanillaPage() {
                 setStatus(e instanceof ApiError ? e.message : 'No se pudo guardar la asociación.');
               }
             }}>Volver a vincular este curso</button>
-            <button type="button" className="button secondary" onClick={() => setResolvedCourse(null)} style={{marginLeft:8}}>Ignorar</button>
+            <button type="button" className="button secondary u-ml" onClick={() => setResolvedCourse(null)}>Ignorar</button>
           </div>
         </div>
       )}

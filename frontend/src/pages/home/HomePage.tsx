@@ -260,8 +260,8 @@ export default function HomePage() {
         gap: 1rem;
         text-align: center;
         padding: 2rem 1.5rem;
-        border: 1px dashed #d0d7e2;
-        background: linear-gradient(135deg, rgba(148, 163, 184, 0.08), rgba(59, 130, 246, 0.04));
+        border: 1px dashed var(--line-strong);
+        background: color-mix(in srgb, var(--accent) 4%, var(--paper));
       }
       .idle-dots {
         display: flex;
@@ -272,7 +272,7 @@ export default function HomePage() {
         width: 0.7rem;
         height: 0.7rem;
         border-radius: 999px;
-        background: #3b82f6;
+        background: var(--accent);
         animation: idlePulse 1.2s ease-in-out infinite;
       }
       .idle-dot:nth-child(2) { animation-delay: 0.15s; }
@@ -845,11 +845,10 @@ function PlanillaCoverControls({ planillaId, tienePortada, onChanged }: {
   return <>
     {busy && <div className="planilla-card-cover-progress">Subiendo…</div>}
     <div className="planilla-card-cover-controls">
-      <input
+      <input className="u-hidden"
         ref={inputRef}
         type="file"
         accept="image/png,image/jpeg,image/webp"
-        style={{ display: 'none' }}
         onChange={(event) => { const file = event.target.files?.[0]; if (file) void handleFile(file); }}
       />
       <button type="button" className="planilla-card-cover-btn" disabled={busy} onClick={() => inputRef.current?.click()}>{tienePortada ? 'Cambiar portada' : 'Agregar portada'}</button>
@@ -881,14 +880,14 @@ export function HorarioHoyView({ onElegir, onOtraClase }: { onElegir: (bloque: H
 
   if (error) return (
     <div className="panel">
-      <div className="notice error" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-        <p style={{ margin: 0, flex: 1 }}>No se pudo cargar tu horario de hoy. {error}</p>
+      <div className="notice error u-row u-gap-lg">
+        <p className="u-m0 u-grow">No se pudo cargar tu horario de hoy. {error}</p>
         <button type="button" className="button secondary" onClick={() => setAttempt((n) => n + 1)}>Reintentar</button>
       </div>
       {otraClase}
     </div>
   );
-  if (bloquesHoy === null) return <div className="panel"><p style={{ margin: 0 }}>Cargando tu horario de hoy…</p></div>;
+  if (bloquesHoy === null) return <div className="panel"><p className="u-m0">Cargando tu horario de hoy…</p></div>;
   return (
     <div className="panel">
       <div className="class-card-head">
@@ -1099,7 +1098,7 @@ export function ClassView({ data, reload, bloque, onSalirDelBloque }: { data: Ho
       </div>
       <div className="class-field class-field--full">
         <label htmlFor="observacionesGenerales">Observaciones generales</label>
-        <textarea id="observacionesGenerales" rows={3} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Cualquier eventualidad general de la clase..." style={{ resize: 'none' }} />
+        <textarea className="u-resize-none" id="observacionesGenerales" rows={3} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Cualquier eventualidad general de la clase..." />
       </div>
     </>
   );
@@ -1107,13 +1106,13 @@ export function ClassView({ data, reload, bloque, onSalirDelBloque }: { data: Ho
   const cuerpoFormulario = (
     <>
       {!puedeIniciarClase && mensajeBloqueo && (
-        <div className="panel" style={{ gridColumn: '1 / -1', marginBottom: 0 }}>
-          <div className="notice error" style={{ marginBottom: 12 }}>
-            <p style={{ margin: 0 }}>{mensajeBloqueo}</p>
+        <div className="panel u-span-full u-mb-0">
+          <div className="notice error u-mb">
+            <p className="u-m0">{mensajeBloqueo}</p>
           </div>
         </div>
       )}
-      <form className="panel class-register-form" onSubmit={create} aria-busy={saving} style={{ display: 'grid', gap: 12, gridColumn: '1 / -1' }}>
+      <form className="panel class-register-form u-stack u-gap-lg u-span-full" onSubmit={create} aria-busy={saving}>
       <input type="hidden" name="action" value="create-rasgo-planilla" />
       <input type="hidden" name="cursoId" value={String((enBloque ? bloque!.cursoId : data.selCurso?.id) ?? '')} id="formCursoId" />
       <input type="hidden" name="etapa" value={String(data.selEtapa)} />
@@ -1177,19 +1176,18 @@ export function ClassView({ data, reload, bloque, onSalirDelBloque }: { data: Ho
 
       {requiereJustificacion && (
         <div className="class-card">
-          <div className="notice" role="status" style={{ marginBottom: 12 }}>
-            <p style={{ margin: 0 }}>El tema está atrasado según el plan curricular. Contá el motivo para poder registrar la clase.</p>
+          <div className="notice u-mb" role="status">
+            <p className="u-m0">El tema está atrasado según el plan curricular. Contá el motivo para poder registrar la clase.</p>
           </div>
           <div className="class-field class-field--full">
             <label htmlFor="justificacionAtraso">Justificación del atraso</label>
-            <textarea
+            <textarea className="u-resize-none"
               ref={justificacionRef}
               id="justificacionAtraso"
               rows={3}
               value={justificacionAtraso}
               onChange={(event) => setJustificacionAtraso(event.target.value)}
               placeholder="Contá brevemente el motivo del atraso."
-              style={{ resize: 'none' }}
             />
           </div>
         </div>
@@ -1197,7 +1195,7 @@ export function ClassView({ data, reload, bloque, onSalirDelBloque }: { data: Ho
 
       {status && <p className="notice" role="status">{status}</p>}
 
-      <div className="class-card" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+      <div className="class-card u-row u-gap-lg">
         <button type="submit" className="button" disabled={!puedeIniciarClase} title={!puedeIniciarClase ? mensajeBloqueo : undefined}>{saving ? "Guardando…" : "Guardar inicio de clase"}</button>
         {!enBloque && assignmentError && <button type="button" className="button secondary" onClick={() => setAssignmentAttempt((n) => n + 1)}>Reintentar asignaciones</button>}
       </div>

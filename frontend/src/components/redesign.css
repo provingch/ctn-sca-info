@@ -1,0 +1,66 @@
+/*
+ * Capa de rediseño (oct-2026). Mantiene la identidad de SCA (paleta por especialidad, logo,
+ * banner con degradé del color de la especialidad, Inter) y unifica lo que cada pantalla
+ * resolvía distinto: superficies, encabezados, botones y etiquetas. Va después de index.css.
+ */
+:root {
+  --radius-card: 16px;
+  --shadow-card: 0 1px 2px rgba(20, 35, 59, .05), 0 6px 18px rgba(20, 35, 59, .05);
+  --shadow-card-hover: 0 2px 4px rgba(20, 35, 59, .06), 0 14px 30px rgba(20, 35, 59, .10);
+}
+:root[data-theme="dark"] {
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 22px rgba(0, 0, 0, .22);
+  --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, .35), 0 16px 34px rgba(0, 0, 0, .32);
+}
+
+/* Títulos: un solo ritmo; menos peso en el cuerpo para que destaquen los encabezados. */
+h1, h2, h3 { letter-spacing: -.025em; }
+h1 { font-weight: 800; }
+h2, h3 { font-weight: 700; }
+
+/* Banner de página: mismo degradé de la especialidad, título más grande y legible. */
+.page-banner { min-height: 84px; padding: 20px 24px; border: 1px solid color-mix(in srgb, var(--accent) 16%, var(--line)); border-bottom-width: 1px; border-radius: var(--radius-card); box-shadow: var(--shadow-card); }
+.page-banner-text { gap: 6px; }
+.page-banner-text h1 { color: var(--ink); font-size: var(--fs-2xl); letter-spacing: -.03em; }
+.page-banner-text span { color: var(--muted); opacity: 1; font-size: var(--fs-md); }
+.page-banner-back { min-height: 38px; font-size: var(--fs-sm); }
+.page-banner-emblem { width: 56px; height: 56px; border-radius: var(--radius); }
+
+/* Superficies: todas las tarjetas comparten radio, borde, fondo y sombra. */
+.panel, .class-card, .nav-card, .metric, .launcher-card, .planilla-card, .content-state, .data-modal {
+  border-radius: var(--radius-card);
+}
+.panel, .class-card, .nav-card, .metric, .launcher-card, .planilla-card {
+  border-left-color: var(--line);
+  border-right-color: var(--line);
+  border-bottom-color: var(--line);
+  background: var(--paper);
+  box-shadow: var(--shadow-card);
+}
+.panel { padding: 24px; }
+.class-card { padding: 22px; }
+.panel:hover { border-color: var(--line); }
+.launcher-card:hover, .planilla-card:hover, .planilla-card:focus-within, .nav-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-card-hover); }
+.class-card-head h3 { font-size: var(--fs-xl); }
+
+/* Botones: misma altura y peso en todo el sistema; sombra solo en la acción principal. */
+.button { min-height: 40px; padding: 8px 16px; font-weight: 700; box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 16%, transparent); transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease; }
+.button.secondary { box-shadow: none; }
+.button.secondary:hover { background: var(--accent-soft); }
+.button:disabled { cursor: not-allowed; opacity: .5; box-shadow: none; }
+
+/* Etiquetas y chips. */
+.badge { padding: 4px 10px; font-weight: 700; }
+.eyebrow, .panel-header > div > span, .planilla-table-heading span { letter-spacing: .08em; }
+
+/* Fondo: se mantiene la trama de puntos del color de la especialidad, más tenue. */
+body::before { opacity: .7; }
+
+@media (prefers-reduced-motion: reduce) {
+  .launcher-card:hover, .planilla-card:hover, .planilla-card:focus-within, .nav-card:hover { transform: none; }
+}
+@media (max-width: 640px) {
+  .page-banner { padding: 16px; }
+  .page-banner-text h1 { font-size: var(--fs-xl); }
+  .panel { padding: 18px; }
+}

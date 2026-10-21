@@ -290,7 +290,7 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
         </div>
 
         <div className="table-wrap">
-          <table className="grade-table usuarios-table" style={{ minWidth: 760 }}>
+          <table className="grade-table usuarios-table u-table-wide">
             <caption className="visually-hidden">Usuarios registrados{query ? `, filtrados por “${query}”` : ''}</caption>
             <thead>
               <tr>
@@ -374,7 +374,7 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
             </div>
             <button type="button" className="signature-modal-close" aria-label="Cerrar formulario" data-dialog-initial-focus onClick={() => setIsOpen(false)}>×</button>
           </div>
-          <form className="form-grid" onSubmit={submit} style={{ alignContent: 'start' }}>
+          <form className="form-grid u-align-start" onSubmit={submit}>
             <label>
               Nombres
               <input value={form.nombre} onChange={(event) => setForm({ ...form, nombre: event.target.value })} required />
@@ -406,24 +406,23 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
             </label>
 
             {form.nivel === '4' && (
-              <div style={{ gridColumn: '1 / -1' }}>
+              <div className="u-span-full">
                 {!editingId ? (
-                  <p className="muted-copy" style={{ margin: '8px 0 0' }}>Guardá el usuario primero para poder vincular alumnos.</p>
+                  <p className="muted-copy u-mt-sm">Guardá el usuario primero para poder vincular alumnos.</p>
                 ) : (
                   <>
-                    <h3 style={{ marginBottom: 8 }}>Alumno/s vinculados</h3>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-                      <input
+                    <h3 className="u-mb">Alumno/s vinculados</h3>
+                    <div className="u-row u-mb">
+                      <input className="u-grow"
                         value={alumnoQuery}
                         onChange={(event) => setAlumnoQuery(event.target.value)}
                         placeholder="Buscar alumno por nombre, apellido o cédula"
-                        style={{ flex: 1, minWidth: 220 }}
                       />
                     </div>
                     {alumnoResults.length > 0 && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+                      <div className="u-stack u-mb">
                         {alumnoResults.map((alumno) => (
-                          <div key={alumno.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, border: '1px solid var(--line)', borderRadius: 8, padding: '6px 8px' }}>
+                          <div className="linked-item" key={alumno.id}>
                             <span>{alumno.nombre} {alumno.apellido} · {cursoAlumnoLabel(alumno.cursoId)} {alumno.ci ? `· CI ${alumno.ci}` : ''}</span>
                             <button
                               type="button"
@@ -444,9 +443,9 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
                       </div>
                     )}
                     {hijos.length > 0 ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <div className="u-stack">
                         {hijos.map((hijo) => (
-                          <div key={hijo.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, border: '1px solid var(--line)', borderRadius: 8, padding: '6px 8px' }}>
+                          <div className="linked-item" key={hijo.id}>
                             <span>{hijo.nombre} {hijo.apellido} · {cursoAlumnoLabel(hijo.cursoId)}</span>
                             <button
                               type="button"
@@ -474,7 +473,7 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
 
             <div className="signature-modal-actions">
               <button type="button" className="button secondary" onClick={() => setIsOpen(false)}>Cancelar</button>
-              <button type="submit" className="button" style={{ gridColumn: 'span 2' }}>{editingId ? 'Guardar cambios' : 'Crear usuario'}</button>
+              <button type="submit" className="button u-span-2">{editingId ? 'Guardar cambios' : 'Crear usuario'}</button>
             </div>
           </form>
         </div>

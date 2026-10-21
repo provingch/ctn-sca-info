@@ -1,0 +1,27 @@
+/* Utilidades compartidas: reemplazan los style={{…}} sueltos para que el espaciado salga de una sola escala. */
+.u-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.u-row.u-gap-lg { gap: 12px; }
+.u-row.u-between { justify-content: space-between; }
+.u-stack { display: grid; gap: 8px; }
+.u-stack.u-gap-lg { gap: 12px; }
+.u-grow { flex: 1; min-width: 0; }
+.u-span-full { grid-column: 1 / -1; }
+.u-span-2 { grid-column: span 2; }
+.u-align-start { align-content: start; }
+.u-m0 { margin: 0; }
+.u-mt { margin-top: 12px; }
+.u-mt-sm { margin-top: 8px; }
+.u-mb { margin-bottom: 12px; }
+.u-mb-0 { margin-bottom: 0; }
+.u-ml { margin-left: 8px; }
+.u-resize-none { resize: none; }
+.u-list-reset { margin: 0; padding: 0; list-style: none; }
+.u-relative { position: relative; }
+.u-hidden { display: none; }
+.u-table-wide { min-width: 760px; }
+.u-table-xwide { min-width: 900px; }
+.u-narrow-form { width: 100%; max-width: 420px; min-width: 0; }
+.linked-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--paper); }
+.data-modal.narrow { width: min(700px, calc(100vw - 32px)); }
+.badge.badge--success { border-color: color-mix(in srgb, var(--success) 45%, var(--line)); background: color-mix(in srgb, var(--success) 12%, var(--paper)); color: var(--success); }
+.badge.badge--warning { border-color: color-mix(in srgb, var(--warning) 45%, var(--line)); background: color-mix(in srgb, var(--warning) 12%, var(--paper)); color: var(--warning); }

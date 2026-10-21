@@ -180,8 +180,8 @@ export default function RasgosAsistenciaEditor({
       <h3>Rasgos conductuales</h3>
 
       {codigosConductaError && (
-        <div className="notice error" style={{ marginBottom: 12, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-          <p style={{ margin: 0, flex: 1 }}>No se pudieron cargar los rasgos conductuales. {codigosConductaError}</p>
+        <div className="notice error u-row u-gap-lg u-mb">
+          <p className="u-m0 u-grow">No se pudieron cargar los rasgos conductuales. {codigosConductaError}</p>
           {onRetryCodigosConducta && <button type="button" className="button secondary" onClick={onRetryCodigosConducta}>Reintentar</button>}
         </div>
       )}

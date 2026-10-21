@@ -320,8 +320,8 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
 
   return (
     <>
-      <div className="toolbar" style={{ justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <div className="toolbar u-between">
+        <div className="u-row">
           <button type="button" className="button secondary" onClick={() => setSelectedProfesorId(null)}>← Volver a profesores</button>
           <button type="button" className="button" onClick={openCreate}>Crear asignación</button>
         </div>
@@ -354,7 +354,7 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
                     <td>{course?.nivel ?? '—'}°</td>
                     <td>{course?.seccion ?? '—'}</td>
                     <td>
-                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <div className="u-row">
                         <button type="button" className="button secondary" onClick={() => openEdit(assignment)}>Editar</button>
                         <button type="button" className="button danger" onClick={async () => {
                           if (!(await confirmar('¿Eliminar esta asignación?', 'Eliminar'))) return;
@@ -385,7 +385,7 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
             </div>
             <button type="button" className="signature-modal-close" aria-label="Cerrar formulario" data-dialog-initial-focus onClick={() => setIsFormOpen(false)}>×</button>
           </div>
-          <form className="form-grid" onSubmit={submit} style={{ alignContent: 'start' }}>
+          <form className="form-grid u-align-start" onSubmit={submit}>
             <label>
               Materia
               <AnimatedSelect ariaLabel="Materia" value={form.materiaId} placeholder="Seleccione…" onChange={(value) => setForm({ materiaId: value, cursoIds: [] })} options={materiaOptions.map((subject) => ({ value: subject.id, label: subject.nombre }))} />
@@ -396,9 +396,9 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
               {visibleCourseOptions.length === 0 ? (
                 <p>No hay cursos disponibles para la materia elegida.</p>
               ) : (
-                <div className="check-list" style={{ display: 'grid' }}>
+                <div className="check-list u-stack">
                   {visibleCourseOptions.map((course) => (
-                    <label key={course.id} style={{ display: 'flex', gap: 8 }}>
+                    <label className="u-row" key={course.id}>
                       <input
                         type="checkbox"
                         checked={form.cursoIds.includes(course.id)}
@@ -418,14 +418,14 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
 
             <div className="signature-modal-actions">
               <button type="button" className="button secondary" onClick={() => setIsFormOpen(false)}>Cancelar</button>
-              <button type="submit" className="button" style={{ gridColumn: 'span 2' }}>{editingId ? 'Guardar cambios' : 'Crear asignación'}</button>
+              <button type="submit" className="button u-span-2">{editingId ? 'Guardar cambios' : 'Crear asignación'}</button>
             </div>
           </form>
         </div>
       )}
 
       {horarioPopup && (
-        <div ref={scheduleDialogRef} className="data-modal" role="dialog" aria-modal="true" aria-labelledby="horario-panel-title" tabIndex={-1} style={{ maxWidth: 700 }}>
+        <div ref={scheduleDialogRef} className="data-modal narrow" role="dialog" aria-modal="true" aria-labelledby="horario-panel-title" tabIndex={-1}>
           <div className="signature-modal-header">
             <div>
               <span>Horario</span>
@@ -434,7 +434,7 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
             <button type="button" className="signature-modal-close" aria-label="Cerrar horario" data-dialog-initial-focus onClick={() => setHorarioPopup(null)}>×</button>
           </div>
 
-          <div className="form-grid" style={{ alignContent: 'start' }}>
+          <div className="form-grid u-align-start">
             <label>
               Día
               <AnimatedSelect ariaLabel="Día de la semana" value={horarioPopup.diaSemana} onChange={(value) => setHorarioPopup({ ...horarioPopup, diaSemana: Number(value) })} options={['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'].map((label, index) => ({ value: index + 1, label }))} />
@@ -458,12 +458,12 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
               onIncrease={() => moveHorarioBoundary('hasta', 1)}
             />
 
-            <label style={{ gridColumn: 'span 2' }}>
+            <label className="u-span-2">
               Sala (opcional)
               <input type="text" value={horarioPopup.sala} onChange={(event) => setHorarioPopup({ ...horarioPopup, sala: event.target.value })} placeholder="Ej.: A-101" />
             </label>
 
-            <div className="signature-modal-actions" style={{ gridColumn: 'span 2' }}>
+            <div className="signature-modal-actions u-span-2">
               <button type="button" className="button secondary" onClick={() => setHorarioPopup(null)}>Cancelar</button>
               <button type="button" className="button" onClick={() => void submitHorario()}>Agregar</button>
             </div>
@@ -474,9 +474,9 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
             {horarioPopup.slots.length === 0 ? (
               <p>No hay slots cargados para esta asignación.</p>
             ) : (
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 8 }}>
+              <ul className="u-list-reset u-stack">
                 {horarioPopup.slots.map((slot) => (
-                  <li key={slot.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', border: '1px solid #ddd', padding: 8, borderRadius: 6 }}>
+                  <li className="linked-item" key={slot.id}>
                     <span>
                       {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][slot.diaSemana - 1]} · {slot.horaCatedraNumero} · {slot.horaInicio}-{slot.horaFin}
                       {slot.salaNombre ? ` · ${slot.salaNombre}` : ''}

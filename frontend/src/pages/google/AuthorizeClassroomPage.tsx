@@ -35,9 +35,9 @@ export default function AuthorizeClassroomPage() {
         <h2>Permisos requeridos</h2>
         <p>Esta acción requiere permiso para acceder a las tareas y calificaciones de Google Classroom. Sin estos permisos no es posible sincronizar las planillas.</p>
         <p><strong>Estado:</strong> {status}</p>
-        <div style={{ marginTop: 16 }}>
+        <div className="u-mt">
           <button className="button primary" type="button" onClick={openAuth} disabled={!url}>Conectar Classroom</button>
-          <button className="button secondary" type="button" onClick={() => navigate('/home')} style={{ marginLeft: 8 }}>Volver</button>
+          <button className="button secondary u-ml" type="button" onClick={() => navigate('/home')}>Volver</button>
         </div>
       </div>
     </AppShell>
