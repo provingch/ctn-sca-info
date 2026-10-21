@@ -387,6 +387,7 @@ class HomeControllerTest {
         AsignacionDao asignacionDao = mock(AsignacionDao.class);
         ProfesorDao profesorDao = mock(ProfesorDao.class);
         when(cursoBaseDao.findEspecialidadId(13)).thenReturn(21);
+        when(cursoBaseDao.findCursoRealId(eq(13), anyInt())).thenReturn(31);
         when(asignacionDao.findByProfesorAndCurso(7, 13)).thenReturn(List.of(new Asignacion(1, 7, 2, 13)));
         HomeController controller = new HomeController(
                 mock(CursoDao.class), cursoBaseDao, asignacionDao, profesorDao,
@@ -397,7 +398,7 @@ class HomeControllerTest {
         when(userDao.findById(9)).thenReturn(new User(9, "admin", "Admin", 3));
         when(profesorDao.findById(9)).thenReturn(new Profesor());
         when(configuracionSistemaDao.getInt("umbral_quejas_coordinacion", 5)).thenReturn(5);
-        when(quejaDao.crear(7, 13, 21, "CONTRA_PROFESOR", "No responde a mensajes", 9)).thenReturn(42);
+        when(quejaDao.crear(7, 31, 21, "CONTRA_PROFESOR", "No responde a mensajes", 9)).thenReturn(42);
         when(quejaDao.contarPorProfesor(7)).thenReturn(5L);
         when(notificacionDao.existePendientePorTipoEntidad(any(Integer.class), eq("QUEJA"), any(String.class))).thenReturn(false);
         when(userDao.findAllByLevel(5)).thenReturn(List.of(new User(11, "coordinador", "Coord A", 5), new User(12, "coordinador", "Coord B", 5)));
@@ -428,6 +429,7 @@ class HomeControllerTest {
         AsignacionDao asignacionDao = mock(AsignacionDao.class);
         ProfesorDao profesorDao = mock(ProfesorDao.class);
         when(cursoBaseDao.findEspecialidadId(13)).thenReturn(21);
+        when(cursoBaseDao.findCursoRealId(eq(13), anyInt())).thenReturn(31);
         when(asignacionDao.findByProfesorAndCurso(7, 13)).thenReturn(List.of(new Asignacion(1, 7, 2, 13)));
         HomeController controller = new HomeController(
                 mock(CursoDao.class), cursoBaseDao, asignacionDao, profesorDao,
@@ -438,7 +440,7 @@ class HomeControllerTest {
         when(userDao.findById(9)).thenReturn(new User(9, "admin", "Admin", 3));
         when(profesorDao.findById(9)).thenReturn(new Profesor());
         when(configuracionSistemaDao.getInt("umbral_quejas_coordinacion", 5)).thenReturn(5);
-        when(quejaDao.crear(7, 13, 21, "CONTRA_PROFESOR", "Reitera incumplimientos", 9)).thenReturn(43);
+        when(quejaDao.crear(7, 31, 21, "CONTRA_PROFESOR", "Reitera incumplimientos", 9)).thenReturn(43);
         when(quejaDao.contarPorProfesor(7)).thenReturn(9L);
         when(notificacionDao.existePendientePorTipoEntidad(any(Integer.class), eq("QUEJA"), any(String.class))).thenReturn(true);
 

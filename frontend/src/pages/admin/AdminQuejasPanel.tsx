@@ -179,7 +179,7 @@ export default function AdminQuejasPanel({ data, status, isGlobalAdmin }: { data
             ? `Reporte de ${nombreCorto(q.profesorNombre, q.profesorApellido) || ('Profesor #' + q.profesorId)} sobre su curso`
             : (nombreCorto(q.profesorNombre, q.profesorApellido) || ('Profesor #' + q.profesorId))}</h4><span className="complaint-reference">Registro #{q.id}</span></div>
           <span className={`complaint-status ${quejaEstado(q)}`}>{estadoLabel[quejaEstado(q)]}</span>
-          <p className="complaint-course">{[q.cursoEspecialidad, q.cursoNivel ? q.cursoNivel + '°' : null, q.cursoSeccion ? 'Sección ' + q.cursoSeccion : null].filter(Boolean).join(' · ') || ('Curso #' + q.cursoId)}</p>
+          <p className="complaint-course">{[q.cursoEspecialidad, q.cursoNivel ? q.cursoNivel + '°' : null, q.cursoSeccion ? 'Sección ' + q.cursoSeccion : null, q.cursoPromocion ? 'Promoción ' + q.cursoPromocion : null].filter(Boolean).join(' · ') || ('Curso #' + q.cursoId)}</p>
           <p className="complaint-reason">{q.motivo}</p>
           <footer>{formatSqlDateTime(q.creadaEn)} · Registrada por {usuariosPorId.get(q.creadaPor) ?? ('Usuario #' + q.creadaPor)}</footer>
           {quejaEstado(q) === 'rechazada' && (

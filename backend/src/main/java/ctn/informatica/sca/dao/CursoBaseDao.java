@@ -103,6 +103,25 @@ public class CursoBaseDao extends conexion {
         return findId(especialidadId, curso.getNivel(), curso.getSeccion());
     }
 
+    /**
+     * Inverso de {@link #findIdForCursoReal(int)}: el `curso` (cohorte) que en el
+     * año dado ocupa el nivel de este `curso_base` (promocion = anio - nivel + 3).
+     * Null si el curso_base no existe o esa cohorte todavía no fue creada.
+     */
+    public Integer findCursoRealId(int cursoBaseId, int anio) throws SQLException {
+        String sql = "SELECT c.id FROM curso_base cb "
+                + "JOIN curso c ON c.especialidad_id = cb.especialidad_id AND c.seccion = cb.seccion "
+                + "AND c.promocion = (? - cb.nivel + 3) "
+                + "WHERE cb.id = ? LIMIT 1";
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, anio);
+            ps.setInt(2, cursoBaseId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : null;
+            }
+        }
+    }
+
     public boolean exists(int especialidadId, int nivel, String seccion) throws SQLException {
         String sql = "SELECT 1 FROM curso_base WHERE especialidad_id = ? AND nivel = ? AND seccion = ? LIMIT 1";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {

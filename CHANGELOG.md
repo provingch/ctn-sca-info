@@ -19,6 +19,7 @@ y este proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.
 ### Cambiado
 
 - `deploy.sh` conserva `ANOTACIONES_API_KEY` y `ENFERMERIA_API_KEY` entre actualizaciones, y el sitio de nginx acepta envíos de hasta 6 MB para las fotos de anotaciones.
+- **Las quejas quedan ligadas a la promoción del curso** (`queja.curso_id` apunta a `curso` en vez de `curso_base`): una queja sobre "3° A" ya no se mezcla con las de otros años, Coordinación las agrupa por promoción y cada una muestra el nivel que tenía el curso al cargarse. La migración `010_queja_curso_cohorte.sql` traduce las quejas existentes según su fecha de carga.
 
 ### Corregido
 

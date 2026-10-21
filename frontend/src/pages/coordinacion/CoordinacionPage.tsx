@@ -131,11 +131,11 @@ export default function CoordinacionPage() {
       });
       return Array.from(map.entries()).map(([profesorId, data]) => ({ key: profesorId, profesorId, ...data })).sort((a, b) => b.count - a.count);
     }
-    // Sobre curso: agrupar por curso_id (el objetivo del reporte), mostrando quién lo cargó en cada item.
+    // Sobre curso: agrupar por curso_id (la cohorte, así 3° A de distintas promociones no se mezclan), mostrando quién lo cargó en cada item.
     const map = new Map<number, { nombreVisible: string; count: number; quejas: QuejaItem[] }>();
     quejasFiltradas.forEach((q) => {
       const cid = q.cursoId;
-      const nombre = [q.cursoEspecialidad, q.cursoNivel ? q.cursoNivel + '°' : null, q.cursoSeccion].filter(Boolean).join(' · ') || `Curso #${cid}`;
+      const nombre = [q.cursoEspecialidad, q.cursoNivel ? q.cursoNivel + '°' : null, q.cursoSeccion, q.cursoPromocion ? 'Promoción ' + q.cursoPromocion : null].filter(Boolean).join(' · ') || `Curso #${cid}`;
       const cur = map.get(cid) ?? { nombreVisible: nombre, count: 0, quejas: [] };
       cur.count += 1;
       cur.quejas.push(q);
@@ -233,7 +233,7 @@ export default function CoordinacionPage() {
                 <div className="activity-row-head">
                   <strong>{q.motivo}</strong>
                   <span className={`complaint-status ${estado}`}>{ESTADO_LABEL[estado]}</span>
-                  <span className="badge">{`${q.cursoEspecialidad ?? ''} ${q.cursoNivel ?? ''}° ${q.cursoSeccion ?? ''}`.trim()}</span>
+                  <span className="badge">{`${q.cursoEspecialidad ?? ''} ${q.cursoNivel ?? ''}° ${q.cursoSeccion ?? ''}${q.cursoPromocion ? ` · Promoción ${q.cursoPromocion}` : ''}`.trim()}</span>
                 </div>
                 <div className="activity-row-meta">
                   <small>Cargada por {nombreCreador(q.creadaPor)} — {formatSqlDateTime(q.creadaEn)}</small>

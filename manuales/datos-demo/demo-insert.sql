@@ -70,21 +70,26 @@ INSERT INTO incumplimiento_revision (asignacion_id, usuario_id, tipo, estado, de
 (71, 81, 'BLOQUEO_ATRASO_TIEMPO_REAL', 'PENDIENTE', 'Se alcanzaron 3 faltas por atrasos justificados — Iniciar clase bloqueado hasta revisión de evaluación.', '2026-10-05 11:00:00');
 
 -- ── Quejas ───────────────────────────────────────────────────────────────────
+-- queja.curso_id es la cohorte (curso) del año de la queja, no el curso_base 5/6 que se elige en el formulario.
+SET @queja_curso_cb5 = (SELECT c.id FROM curso_base cb JOIN curso c ON c.especialidad_id = cb.especialidad_id
+  AND c.seccion = cb.seccion AND c.promocion = 2026 - cb.nivel + 3 WHERE cb.id = 5);
+SET @queja_curso_cb6 = (SELECT c.id FROM curso_base cb JOIN curso c ON c.especialidad_id = cb.especialidad_id
+  AND c.seccion = cb.seccion AND c.promocion = 2026 - cb.nivel + 3 WHERE cb.id = 6);
 INSERT INTO queja (profesor_id, curso_id, especialidad_id, tipo, motivo, creada_por, creada_en) VALUES
-(81, 5, 5, 'CONTRA_PROFESOR', 'Los alumnos informan que las notas de la prueba del 25 de septiembre todavía no fueron devueltas ni cargadas en el sistema.', 6, '2026-10-06 10:20:00');
+(81, @queja_curso_cb5, 5, 'CONTRA_PROFESOR', 'Los alumnos informan que las notas de la prueba del 25 de septiembre todavía no fueron devueltas ni cargadas en el sistema.', 6, '2026-10-06 10:20:00');
 INSERT INTO queja (profesor_id, curso_id, especialidad_id, tipo, motivo, creada_por, creada_en, aceptada_en, aceptada_por) VALUES
-(66, 5, 5, 'CONTRA_PROFESOR', 'Inasistencias reiteradas sin aviso previo en el turno mañana durante la última semana.', 6, '2026-10-02 08:10:00', '2026-10-03 09:00:00', 140);
+(66, @queja_curso_cb5, 5, 'CONTRA_PROFESOR', 'Inasistencias reiteradas sin aviso previo en el turno mañana durante la última semana.', 6, '2026-10-02 08:10:00', '2026-10-03 09:00:00', 140);
 INSERT INTO queja (profesor_id, curso_id, especialidad_id, tipo, motivo, creada_por, creada_en, aceptada_en, aceptada_por, revisada_en, revisada_por, conclusion) VALUES
-(81, 6, 5, 'CONTRA_PROFESOR', 'Los padres reclaman que no se comunicó con anticipación la fecha de la prueba sumativa.', 6, '2026-09-25 11:00:00', '2026-09-26 08:30:00', 140, '2026-09-29 10:00:00', 140,
+(81, @queja_curso_cb6, 5, 'CONTRA_PROFESOR', 'Los padres reclaman que no se comunicó con anticipación la fecha de la prueba sumativa.', 6, '2026-09-25 11:00:00', '2026-09-26 08:30:00', 140, '2026-09-29 10:00:00', 140,
  'Se verificó que la fecha se anunció en clase pero no por escrito. Se acordó con la profesora anunciar las pruebas también en el sistema.');
 INSERT INTO queja (profesor_id, curso_id, especialidad_id, tipo, motivo, creada_por, creada_en, aceptada_en, aceptada_por, revisada_en, revisada_por, conclusion, proceso_revision, solucion_aplicada, corregida_por_nombre, resuelta_en, resolucion_registrada_por) VALUES
-(66, 6, 5, 'CONTRA_PROFESOR', 'Error en la carga de notas del laboratorio: varios alumnos figuran con cero habiendo entregado.', 6, '2026-09-15 09:00:00', '2026-09-15 12:00:00', 140, '2026-09-17 08:00:00', 140,
+(66, @queja_curso_cb6, 5, 'CONTRA_PROFESOR', 'Error en la carga de notas del laboratorio: varios alumnos figuran con cero habiendo entregado.', 6, '2026-09-15 09:00:00', '2026-09-15 12:00:00', 140, '2026-09-17 08:00:00', 140,
  'Se confirmó un error de carga en tres alumnos.', 'Se revisaron las entregas originales junto con el profesor.', 'El profesor corrigió las notas en la planilla.', 'Federico González', '2026-09-18 10:30:00', 140);
 INSERT INTO queja (profesor_id, curso_id, especialidad_id, tipo, motivo, creada_por, creada_en, rechazada_en, rechazada_por, motivo_rechazo) VALUES
-(81, 5, 5, 'CONTRA_PROFESOR', 'Un alumno indica que la profesora no le permitió salir del aula.', 6, '2026-09-20 10:00:00', '2026-09-21 08:00:00', 140,
+(81, @queja_curso_cb5, 5, 'CONTRA_PROFESOR', 'Un alumno indica que la profesora no le permitió salir del aula.', 6, '2026-09-20 10:00:00', '2026-09-21 08:00:00', 140,
  'La situación corresponde al reglamento de convivencia y no constituye una falta de la profesora.');
 INSERT INTO queja (profesor_id, curso_id, especialidad_id, tipo, motivo, creada_por, creada_en) VALUES
-(81, 6, 5, 'CONTRA_CURSO', 'El grupo llega tarde de forma sistemática después del recreo, lo que reduce el tiempo de clase de la segunda hora.', 81, '2026-10-05 09:40:00');
+(81, @queja_curso_cb6, 5, 'CONTRA_CURSO', 'El grupo llega tarde de forma sistemática después del recreo, lo que reduce el tiempo de clase de la segunda hora.', 81, '2026-10-05 09:40:00');
 
 -- ── Tareas con notas en la planilla 3 (vista de padres) ─────────────────────
 INSERT INTO tarea (planilla_id, instrumento_id, fecha, total, titulo, fecha_inicio, fecha_limite) VALUES

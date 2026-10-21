@@ -117,7 +117,7 @@ export default function QuejaCursoView() {
         const estado = quejaEstado(q);
         return <li key={q.id}>
           <article className="complaint-record">
-            <div className="complaint-record-heading"><h4>{[q.cursoEspecialidad, q.cursoNivel ? q.cursoNivel + '°' : null, q.cursoSeccion].filter(Boolean).join(' · ') || ('Curso #' + q.cursoId)}</h4><span className="complaint-reference">Registro #{q.id}</span></div>
+            <div className="complaint-record-heading"><h4>{[q.cursoEspecialidad, q.cursoNivel ? q.cursoNivel + '°' : null, q.cursoSeccion, q.cursoPromocion ? 'Promoción ' + q.cursoPromocion : null].filter(Boolean).join(' · ') || ('Curso #' + q.cursoId)}</h4><span className="complaint-reference">Registro #{q.id}</span></div>
             <span className={`complaint-status ${estado}`}>{ESTADO_LABEL[estado]}</span>
             <p className="complaint-reason">{q.motivo}</p>
             <footer>{formatSqlDateTime(q.creadaEn)}</footer>

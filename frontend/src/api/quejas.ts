@@ -9,6 +9,7 @@ export interface QuejaItem {
   cursoEspecialidad?: string | null;
   cursoSeccion?: string | null;
   cursoNivel?: number | null;
+  cursoPromocion?: number | null;
   especialidadId: number;
   tipo: 'CONTRA_PROFESOR' | 'CONTRA_CURSO';
   motivo: string;
