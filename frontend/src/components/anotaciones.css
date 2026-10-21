@@ -10,3 +10,7 @@
 .anotacion-alumno { font-size: var(--fs-md); }
 .anotacion-alumno span, .anotacion-meta { color: var(--muted); font-size: var(--fs-sm); }
 .parent-anotaciones { margin-top: 16px; }
+/* Ficha del alumno: lista en una columna y la evidencia se abre a pedido. */
+.anotaciones-list--ficha { grid-template-columns: 1fr; }
+.anotacion-item--compacta { padding: 10px 12px; }
+.anotacion-ampliar.button { justify-self: start; min-height: 32px; padding: 4px 12px; margin-top: 4px; font-size: var(--fs-sm); }

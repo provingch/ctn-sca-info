@@ -1,6 +1,7 @@
 package ctn.informatica.sca.controller;
 
 import ctn.informatica.sca.dao.AlumnoDao;
+import ctn.informatica.sca.dao.AnotacionWebDao;
 import ctn.informatica.sca.dao.AsignacionDao;
 import ctn.informatica.sca.dao.CursoBaseDao;
 import ctn.informatica.sca.dao.CursoDao;
@@ -36,7 +37,10 @@ import ctn.informatica.sca.service.ActivityLogService;
 import ctn.informatica.sca.service.PlanillaService;
 import ctn.informatica.sca.util.PushNotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -775,6 +779,45 @@ public class AdminController {
             }
             return new AlumnoDao().resumen(id);
         } catch (ResponseStatusException ex) { throw ex; } catch (Exception ex) { throw failure("No se pudo cargar el resumen del alumno", ex); }
+    }
+
+    /**
+     * Anotaciones del alumno para su ficha. La lista no trae imágenes: la foto de evidencia se
+     * pide aparte, solo cuando el admin abre esa anotación.
+     */
+    @GetMapping("/alumnos/{id}/anotaciones")
+    public List<AnotacionWebController.AnotacionDto> anotacionesAlumno(@PathVariable int id, Authentication auth) {
+        try {
+            requireAlumnoEnAlcance(id, auth);
+            return anotacionWebDao().porAlumno(id).stream().map(AnotacionWebController::dto).toList();
+        } catch (ResponseStatusException ex) { throw ex; } catch (Exception ex) { throw failure("No se pudieron cargar las anotaciones del alumno", ex); }
+    }
+
+    @GetMapping("/alumnos/{id}/anotaciones/{anotacionId}/foto")
+    public ResponseEntity<byte[]> fotoAnotacionAlumno(@PathVariable int id, @PathVariable int anotacionId, Authentication auth) {
+        try {
+            requireAlumnoEnAlcance(id, auth);
+            // Filtrar por alumno: con el id de otra anotación no se llega a fotos de alumnos fuera del alcance.
+            AnotacionWebDao.Foto foto = anotacionWebDao().foto(anotacionId, id);
+            if (foto == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró la foto");
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(foto.tipoMime()))
+                    .cacheControl(CacheControl.noStore())
+                    .body(foto.imagen());
+        } catch (ResponseStatusException ex) { throw ex; } catch (Exception ex) { throw failure("No se pudo cargar la foto", ex); }
+    }
+
+    protected AnotacionWebDao anotacionWebDao() {
+        return new AnotacionWebDao();
+    }
+
+    private void requireAlumnoEnAlcance(int alumnoId, Authentication auth) throws SQLException {
+        Integer actingSpecialtyId = getSpecialtyAdminIdForUser(ApiAuth.requireUserId(auth));
+        Alumno alumno = alumnoDao.findById(alumnoId);
+        if (alumno == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Alumno no encontrado");
+        if (actingSpecialtyId != null && !canAccessAlumno(actingSpecialtyId, alumno.getCursoId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes ver alumnos fuera de tu especialidad");
+        }
     }
 
     @DeleteMapping("/alumnos/{id}") @ResponseStatus(HttpStatus.NO_CONTENT)

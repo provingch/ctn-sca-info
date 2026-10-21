@@ -19,3 +19,6 @@ export const getAnotacionesRecientes = (limite = 100) => api.get<Anotacion[]>(`/
 export const getFotoAnotacionCoordinacion = (anotacionId: number) => apiBlob(`/api/admin/anotaciones/${anotacionId}/foto`);
 export const getAnotacionesHijo = (alumnoId: number) => api.get<Anotacion[]>(`/api/padre/alumnos/${alumnoId}/anotaciones`);
 export const getFotoAnotacionHijo = (alumnoId: number, anotacionId: number) => apiBlob(`/api/padre/alumnos/${alumnoId}/anotaciones/${anotacionId}/foto`);
+/** Ficha del alumno en Admin (alcance por especialidad): la foto se pide recién al abrir la anotación. */
+export const getAnotacionesAlumnoAdmin = (alumnoId: number) => api.get<Anotacion[]>(`/api/admin/alumnos/${alumnoId}/anotaciones`);
+export const getFotoAnotacionAlumnoAdmin = (alumnoId: number, anotacionId: number) => apiBlob(`/api/admin/alumnos/${alumnoId}/anotaciones/${anotacionId}/foto`);

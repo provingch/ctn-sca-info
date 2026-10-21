@@ -7,6 +7,8 @@ import './AsignacionesPanel.css';
 import SpecialtyBadge from '../../components/SpecialtyBadge';
 import { normalizeSpecialty } from '../../theme/theme';
 import { confirmar } from '../../utils/confirmar';
+import useSeleccion from '../../hooks/useSeleccion';
+import { BarraSeleccion, CasillaFila, CasillaTodos } from '../../components/SeleccionTabla';
 
 interface AsignacionesPanelProps {
   data: AdminCatalog;
@@ -270,6 +272,24 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
     });
   };
 
+  const seleccion = useSeleccion(useMemo(() => profesorAsignaciones.map((assignment) => assignment.id), [profesorAsignaciones]));
+  const [enLote, setEnLote] = useState(false);
+
+  const eliminarSeleccion = async () => {
+    const cantidad = seleccion.cantidad;
+    if (!(await confirmar(`¿Eliminar ${cantidad} ${cantidad === 1 ? 'asignación' : 'asignaciones'} de este profesor?`, 'Eliminar'))) return;
+    setEnLote(true);
+    let fallidos = 0;
+    for (const id of seleccion.ids) {
+      try { await deleteAssignment(id); } catch { fallidos += 1; }
+    }
+    const eliminadas = cantidad - fallidos;
+    status(fallidos === 0 ? `${eliminadas} ${eliminadas === 1 ? 'asignación eliminada' : 'asignaciones eliminadas'}.` : `Se eliminaron ${eliminadas}; ${fallidos} no se pudieron eliminar.`);
+    seleccion.limpiar();
+    setEnLote(false);
+    await reload();
+  };
+
   if (!selectedProfesorId) {
     return (
       <section className="assignment-directory" aria-label="Profesores y asignaciones">
@@ -329,11 +349,15 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
 
       <h2>Asignaciones de {selectedProfesor?.apellido}, {selectedProfesor?.nombre}</h2>
 
+      <BarraSeleccion cantidad={seleccion.cantidad} unidad={['asignación', 'asignaciones']} onLimpiar={seleccion.limpiar} ocupado={enLote}>
+        <button type="button" className="button danger" onClick={() => void eliminarSeleccion()} disabled={enLote}>Eliminar</button>
+      </BarraSeleccion>
       <div className="table-wrap">
         <table className="grade-table assignment-detail-table">
           <caption className="visually-hidden">Asignaciones del profesor seleccionado</caption>
           <thead>
             <tr>
+              <CasillaTodos todos={seleccion.todos} algunos={seleccion.algunos} onChange={seleccion.toggleTodos} etiqueta="Seleccionar todas las asignaciones" />
               <th>Materia</th>
               <th>Especialidad</th>
               <th>Curso</th>
@@ -343,12 +367,13 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
           </thead>
           <tbody>
             {profesorAsignaciones.length === 0 ? (
-              <tr><td colSpan={5}>No hay asignaciones para este profesor.</td></tr>
+              <tr><td colSpan={6}>No hay asignaciones para este profesor.</td></tr>
             ) : (
               profesorAsignaciones.map((assignment) => {
                 const course = data.cursos.find((item) => item.id === assignment.cursoId);
                 return (
-                  <tr key={assignment.id}>
+                  <tr key={assignment.id} className={seleccion.estaSeleccionado(assignment.id) ? 'is-selected' : undefined}>
+                    <CasillaFila checked={seleccion.estaSeleccionado(assignment.id)} onChange={() => seleccion.toggle(assignment.id)} etiqueta={`Seleccionar ${assignment.materia}`} />
                     <td>{assignment.materia}</td>
                     <td>{course?.especialidad ? <SpecialtyBadge name={course.especialidad} /> : '—'}</td>
                     <td>{course?.nivel ?? '—'}°</td>

@@ -8,7 +8,10 @@ import useAccessibleDialog from '../../hooks/useAccessibleDialog';
 import FiltersToolbar, { FilterField } from '../../components/ui/FiltersToolbar';
 import { filtrarAlumnos, filtrarEgresados, hayFiltroEgresados, SIN_FILTRO_EGRESADOS, type FiltroEgresados } from './filtrosListados';
 import { confirmar } from '../../utils/confirmar';
-import { mensajeBorrado, mensajeTraslado } from './alumnoConfirmaciones';
+import { etiquetaCurso, mensajeBorrado, mensajeBorradoLote, mensajeTraslado, mensajeTrasladoLote } from './alumnoConfirmaciones';
+import useSeleccion from '../../hooks/useSeleccion';
+import { BarraSeleccion, CasillaFila, CasillaTodos } from '../../components/SeleccionTabla';
+import AlumnoFicha from './AlumnoFicha';
 
 interface AlumnosPanelProps {
   data: AdminCatalog;
@@ -32,6 +35,9 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
   const [padresSearch, setPadresSearch] = useState('');
   const [padresResults, setPadresResults] = useState<PadreSummary[]>([]);
   const [form, setForm] = useState({ nombre: '', apellido: '', ci: '', cursoId: '' });
+  const [fichaId, setFichaId] = useState<number | null>(null);
+  const [cursoDestino, setCursoDestino] = useState('');
+  const [enLote, setEnLote] = useState(false);
 
   const especialidades = data.especialidades;
 
@@ -58,6 +64,8 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
   );
 
   const rowsVisibles = useMemo(() => filtrarAlumnos(rows, busquedaAlumnos), [rows, busquedaAlumnos]);
+  const seleccion = useSeleccion(useMemo(() => rowsVisibles.map((student) => student.id), [rowsVisibles]));
+  const fichaAlumno = fichaId === null ? undefined : data.alumnos.find((student) => student.id === fichaId);
   const egresadosVisibles = useMemo(() => filtrarEgresados(egresados, filtroEgresados), [egresados, filtroEgresados]);
   const especialidadesDeEgresados = useMemo(
     () => [...new Set(egresados.map((item) => item.especialidad).filter((nombre): nombre is string => Boolean(nombre)))].sort((a, b) => a.localeCompare(b, 'es')),
@@ -150,6 +158,56 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
       await reload();
     } catch (error) {
       status(error instanceof ApiError ? error.message : 'No se pudo guardar el alumno.');
+    }
+  };
+
+  /** Pide el resumen de cada alumno elegido para armar una sola confirmación con todo lo que implica. */
+  const resumenesSeleccion = () => Promise.all(seleccion.ids.map((id) => getResumenAlumno(id)));
+
+  const eliminarSeleccion = async () => {
+    setEnLote(true);
+    try {
+      if (!(await confirmar(mensajeBorradoLote(await resumenesSeleccion()), 'Eliminar'))) return;
+      let fallidos = 0;
+      for (const id of seleccion.ids) {
+        try { await deleteAdminRecord('alumnos', id); } catch { fallidos += 1; }
+      }
+      const eliminados = seleccion.cantidad - fallidos;
+      status(fallidos === 0 ? `${eliminados} ${eliminados === 1 ? 'alumno eliminado' : 'alumnos eliminados'}.` : `Se eliminaron ${eliminados}; ${fallidos} no se pudieron eliminar.`);
+      seleccion.limpiar();
+      await reload();
+    } catch (error) {
+      status(error instanceof ApiError ? error.message : 'No se pudieron eliminar los alumnos.');
+    } finally {
+      setEnLote(false);
+    }
+  };
+
+  const moverSeleccion = async () => {
+    const destino = data.cursosAlumnos.find((course) => String(course.id) === cursoDestino);
+    if (!destino) {
+      status('Elegí el curso al que vas a mover a los alumnos.');
+      return;
+    }
+    const elegidos = data.alumnos.filter((student) => seleccion.estaSeleccionado(student.id));
+    setEnLote(true);
+    try {
+      if (!(await confirmar(mensajeTrasladoLote(elegidos.length, currentCurso ?? undefined, destino, await resumenesSeleccion()), 'Mover'))) return;
+      let fallidos = 0;
+      for (const student of elegidos) {
+        try {
+          await updateAdminRecord('alumnos', student.id, { nombre: student.nombre, apellido: student.apellido, ci: student.ci, cursoId: destino.id });
+        } catch { fallidos += 1; }
+      }
+      const movidos = elegidos.length - fallidos;
+      status(fallidos === 0 ? `${movidos} ${movidos === 1 ? 'alumno movido' : 'alumnos movidos'} a ${etiquetaCurso(destino)}.` : `Se movieron ${movidos}; ${fallidos} no se pudieron mover.`);
+      seleccion.limpiar();
+      setCursoDestino('');
+      await reload();
+    } catch (error) {
+      status(error instanceof ApiError ? error.message : 'No se pudieron mover los alumnos.');
+    } finally {
+      setEnLote(false);
     }
   };
 
@@ -338,15 +396,23 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
             {rows.length > 0 && <FiltersToolbar ariaLabel="Filtros de alumnos" mostrando={rowsVisibles.length} total={rows.length} unidad="alumnos" activo={Boolean(busquedaAlumnos.trim())} onLimpiar={() => setBusquedaAlumnos('')}>
               <FilterField label="Buscar alumno"><input type="search" placeholder="Apellido, nombre o cédula" value={busquedaAlumnos} onChange={(event) => setBusquedaAlumnos(event.target.value)} /></FilterField>
             </FiltersToolbar>}
+            <BarraSeleccion cantidad={seleccion.cantidad} unidad={['alumno', 'alumnos']} onLimpiar={seleccion.limpiar} ocupado={enLote}>
+              <div className="barra-seleccion-select">
+                <AnimatedSelect portal ariaLabel="Curso destino" value={cursoDestino} placeholder="Mover a…" onChange={setCursoDestino}
+                  options={data.cursosAlumnos.filter((course) => course.id !== currentCurso?.id).map((course) => ({ value: course.id, label: `${course.nivel}° ${course.seccion} · ${course.especialidad}` }))} />
+              </div>
+              <button type="button" className="button secondary" onClick={moverSeleccion} disabled={enLote || !cursoDestino}>Mover</button>
+              <button type="button" className="button danger" onClick={eliminarSeleccion} disabled={enLote}>Eliminar</button>
+            </BarraSeleccion>
             <div className="table-wrap">
               <table className="grade-table u-table-wide">
                 <caption className="visually-hidden">Alumnos de {currentCurso?.nivel}° {selectedSeccion}</caption>
                 <thead>
                   <tr>
+                    <CasillaTodos todos={seleccion.todos} algunos={seleccion.algunos} onChange={seleccion.toggleTodos} etiqueta="Seleccionar todos los alumnos visibles" />
                     <th>Apellido</th>
                     <th>Nombre</th>
                     <th>Cédula</th>
-                    <th>Padre/s</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
@@ -357,13 +423,14 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
                     <tr><td colSpan={5}>Ningún alumno coincide con la búsqueda.</td></tr>
                   ) : (
                     rowsVisibles.map((student) => (
-                      <tr key={student.id}>
-                        <td>{student.apellido}</td>
+                      <tr key={student.id} className={seleccion.estaSeleccionado(student.id) ? 'is-selected' : undefined}>
+                        <CasillaFila checked={seleccion.estaSeleccionado(student.id)} onChange={() => seleccion.toggle(student.id)} etiqueta={`Seleccionar a ${student.apellido}, ${student.nombre}`} />
+                        <td><button type="button" className="link-button" onClick={() => setFichaId(student.id)}>{student.apellido}</button></td>
                         <td>{student.nombre}</td>
                         <td>{student.ci ?? '—'}</td>
-                        <td>{padres.find((parent) => parent.id === student.id) ? 'Ver en editar' : 'Ver en editar'}</td>
                         <td>
                           <div className="u-row">
+                            <button type="button" className="button secondary" onClick={() => setFichaId(student.id)}>Ficha</button>
                             <button type="button" className="button secondary" onClick={() => openEdit(student)}>Editar</button>
                             <button type="button" className="button danger" onClick={async () => {
                               try {
@@ -386,6 +453,12 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
             </div>
           </div>
         </>
+      )}
+
+      {fichaAlumno && (
+        <AlumnoFicha alumno={fichaAlumno} curso={data.cursosAlumnos.find((course) => course.id === fichaAlumno.cursoId)}
+          onClose={() => setFichaId(null)}
+          onEditar={() => { setFichaId(null); void openEdit(fichaAlumno); }} />
       )}
 
       {isFormOpen && (

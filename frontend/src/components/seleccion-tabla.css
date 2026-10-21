@@ -1,0 +1,35 @@
+/* Selección múltiple en las tablas del admin. */
+.seleccion-col { width: 44px; text-align: center; }
+.seleccion-check { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); cursor: pointer; vertical-align: middle; }
+tr.is-selected > td { background: color-mix(in srgb, var(--accent) 9%, transparent); }
+.barra-seleccion {
+  position: sticky; top: 8px; z-index: 5;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px;
+  margin: 0 0 12px; padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line)); border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent) 8%, var(--paper-raised)); box-shadow: var(--shadow-card);
+}
+.barra-seleccion strong { font-size: var(--fs-md); }
+.barra-seleccion-acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.barra-seleccion-acciones label { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.barra-seleccion-select { min-width: 230px; }
+@media (max-width: 640px) {
+  .barra-seleccion { top: 0; }
+  .barra-seleccion-acciones { width: 100%; }
+  .barra-seleccion-acciones .button { flex: 1 1 auto; }
+}
+
+/* Ficha general del alumno. */
+.ficha-alumno { display: grid; gap: 18px; padding: 22px 24px 24px; }
+@media (max-width: 640px) { .ficha-alumno { padding: 18px; } }
+.ficha-alumno-datos { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 18px; margin: 0; }
+.ficha-alumno-datos div { display: grid; gap: 2px; }
+.ficha-alumno-datos dt { color: var(--muted); font-size: var(--fs-xs); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.ficha-alumno-datos dd { margin: 0; font-weight: 600; }
+.ficha-alumno-cifras { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.ficha-alumno-cifras li { display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--paper-raised); }
+.ficha-alumno-cifras strong { font-size: var(--fs-xl); line-height: 1.1; }
+.ficha-alumno-cifras span { color: var(--muted); font-size: var(--fs-sm); }
+.ficha-alumno section h3 { margin: 0 0 8px; font-size: var(--fs-md); }
+.link-button { padding: 0; border: 0; background: none; color: inherit; font: inherit; font-weight: 600; text-align: left; cursor: pointer; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent); text-underline-offset: 3px; }
+.link-button:hover { color: var(--accent); }

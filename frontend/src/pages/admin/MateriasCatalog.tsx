@@ -5,6 +5,9 @@ import AnimatedSelect from '../../components/AnimatedSelect';
 import useAccessibleDialog from '../../hooks/useAccessibleDialog';
 import { normalizeSpecialty } from '../../theme/theme';
 import './MateriasCatalog.css';
+import { confirmar } from '../../utils/confirmar';
+import useSeleccion from '../../hooks/useSeleccion';
+import { BarraSeleccion, CasillaFila, CasillaTodos } from '../../components/SeleccionTabla';
 
 const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 const categoryName = (value: string) => value === 'especifico' ? 'Específica' : 'Común';
@@ -35,6 +38,7 @@ export default function MateriasCatalog({ data, reload, status, onCreate, onEdit
   const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, pages);
   const visible = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const seleccion = useSeleccion(useMemo(() => visible.map((item) => item.id), [visible]));
   const assignedCount = target ? data.asignaciones.filter((item) => item.materiaId === target.id).length : 0;
 
   function changeSort(key: 'nombre' | 'categoria') {
@@ -61,6 +65,31 @@ export default function MateriasCatalog({ data, reload, status, onCreate, onEdit
     lock.current = false;
   }
 
+  /** Las materias con asignaciones no se pueden borrar: se avisa y se saltean. */
+  async function deleteSelection() {
+    if (lock.current) return;
+    const conAsignaciones = seleccion.ids.filter((id) => data.asignaciones.some((item) => item.materiaId === id));
+    const borrables = seleccion.ids.filter((id) => !conAsignaciones.includes(id));
+    if (borrables.length === 0) {
+      status('Ninguna de las materias elegidas se puede eliminar: todas tienen asignaciones vinculadas.');
+      return;
+    }
+    const aviso = conAsignaciones.length > 0 ? ` ${conAsignaciones.length} de las elegidas tienen asignaciones y se van a dejar como están.` : '';
+    if (!(await confirmar(`¿Eliminar ${borrables.length} ${borrables.length === 1 ? 'materia' : 'materias'}?${aviso} Esto no se puede deshacer.`, 'Eliminar'))) return;
+    lock.current = true;
+    setBusy(true);
+    let fallidas = 0;
+    for (const id of borrables) {
+      try { await deleteAdminRecord('materias', id); } catch { fallidas += 1; }
+    }
+    const eliminadas = borrables.length - fallidas;
+    status(fallidas === 0 ? `${eliminadas} ${eliminadas === 1 ? 'materia eliminada' : 'materias eliminadas'}.` : `Se eliminaron ${eliminadas}; ${fallidas} no se pudieron eliminar (pueden tener planillas vinculadas).`);
+    seleccion.limpiar();
+    try { await reload(); } catch { status('Las materias se eliminaron, pero no se pudo actualizar la lista. Recargá la página.'); }
+    setBusy(false);
+    lock.current = false;
+  }
+
   return <>
     <section className="panel subjects-panel" aria-label="Catálogo de materias">
       <header className="subjects-header">
@@ -74,15 +103,20 @@ export default function MateriasCatalog({ data, reload, status, onCreate, onEdit
         <button type="button" className="button secondary" disabled={!query && !category && !specialty} onClick={() => { setQuery(''); setCategory(''); setSpecialty(''); setPage(1); }}>Limpiar filtros</button>
       </div>
       <p className="subjects-results" role="status">{filtered.length} de {data.materias.length} materias{filtered.length > 0 && ' · Mostrando ' + ((currentPage - 1) * pageSize + 1) + '–' + Math.min(currentPage * pageSize, filtered.length)}</p>
+      <BarraSeleccion cantidad={seleccion.cantidad} unidad={['materia', 'materias']} onLimpiar={seleccion.limpiar} ocupado={busy}>
+        <button type="button" className="button danger" onClick={() => void deleteSelection()} disabled={busy}>Eliminar</button>
+      </BarraSeleccion>
       <div className="table-wrap subjects-table-wrap" tabIndex={0} role="region" aria-label="Tabla de materias, desplazable horizontalmente">
         <table className="grade-table subjects-table">
           <caption className="visually-hidden">Materias registradas, filtradas y ordenadas</caption>
           <thead><tr>
+            <CasillaTodos todos={seleccion.todos} algunos={seleccion.algunos} onChange={seleccion.toggleTodos} etiqueta="Seleccionar todas las materias de esta página" />
             {(['nombre', 'categoria'] as const).map((key) => <th key={key} scope="col" aria-sort={sort.key === key ? sort.direction : 'none'}><button type="button" onClick={() => changeSort(key)} aria-label={'Ordenar por ' + (key === 'nombre' ? 'nombre' : 'tipo')}><span>{key === 'nombre' ? 'Nombre' : 'Tipo'}</span><span aria-hidden="true">{sort.key === key ? sort.direction === 'ascending' ? '↑' : '↓' : '↕'}</span></button></th>)}
             <th scope="col">Especialidades</th><th scope="col">Acciones</th>
           </tr></thead>
           <tbody>
-            {visible.map((subject) => <tr key={subject.id}>
+            {visible.map((subject) => <tr key={subject.id} className={seleccion.estaSeleccionado(subject.id) ? 'is-selected' : undefined}>
+              <CasillaFila checked={seleccion.estaSeleccionado(subject.id)} onChange={() => seleccion.toggle(subject.id)} etiqueta={'Seleccionar ' + subject.nombre} />
               <th scope="row">{subject.nombre}</th>
               <td><span className="subject-type">{categoryName(subject.categoria)}</span></td>
               <td><div className="subject-specialties">{subject.especialidadIds?.length ? subject.especialidadIds.map((id) => {
@@ -94,7 +128,7 @@ export default function MateriasCatalog({ data, reload, status, onCreate, onEdit
                 <button type="button" className="button subject-delete" aria-label={'Eliminar ' + subject.nombre} onClick={() => { setError(''); setTarget(subject); }}>Eliminar</button>
               </div></td>
             </tr>)}
-            {visible.length === 0 && <tr><td colSpan={4} className="subjects-empty"><strong>{data.materias.length ? 'No hay coincidencias' : 'Todavía no hay materias'}</strong><p>{data.materias.length ? 'Probá otro nombre o cambiá los filtros.' : 'Creá la primera materia para comenzar.'}</p></td></tr>}
+            {visible.length === 0 && <tr><td colSpan={5} className="subjects-empty"><strong>{data.materias.length ? 'No hay coincidencias' : 'Todavía no hay materias'}</strong><p>{data.materias.length ? 'Probá otro nombre o cambiá los filtros.' : 'Creá la primera materia para comenzar.'}</p></td></tr>}
           </tbody>
         </table>
       </div>

@@ -22,7 +22,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Anotaciones de la app Android vistas desde la web. Las fotos son evidencia (por ejemplo,
- * el uniforme), así que solo las ven Coordinación Pedagógica (nivel 5) y el padre de ese alumno.
+ * el uniforme), así que el listado general es solo de Coordinación Pedagógica (nivel 5) y cada padre
+ * ve las de su hijo. La ficha del alumno en Admin (AdminController) las muestra dentro del alcance
+ * por especialidad, con la foto recién al abrir la anotación.
  * Los paths quedan bajo /api/admin y /api/padre para heredar los roles de SecurityConfig;
  * /api/anotaciones es de la app y usa otra cadena de seguridad.
  */

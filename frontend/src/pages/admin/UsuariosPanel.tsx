@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { clearUserGoogleTokens, createAdminRecord, deleteAdminRecord, getAlumnosDePadre, linkPadreAlumno, unlinkPadreAlumno, updateAdminRecord, type AdminCatalog, type PadreChildItem } from '../../api/admin';
 import { ApiError } from '../../api/client';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import useAccessibleDialog from '../../hooks/useAccessibleDialog';
 import './UsuariosPanel.css';
 import { confirmar } from '../../utils/confirmar';
+import useSeleccion from '../../hooks/useSeleccion';
+import { BarraSeleccion, CasillaFila, CasillaTodos } from '../../components/SeleccionTabla';
 
 interface UsuariosPanelProps {
   data: AdminCatalog;
@@ -246,7 +248,24 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
 
   const showEspecialidad = nivelFiltro === 3;
   const showActions = (nivelFiltro !== 3 && nivelFiltro !== 5) || isGlobalAdmin;
-  const columnCount = 4 + (showEspecialidad ? 1 : 0) + (showActions ? 1 : 0);
+  const columnCount = 4 + (showEspecialidad ? 1 : 0) + (showActions ? 2 : 0);
+  const seleccion = useSeleccion(useMemo(() => (showActions ? visibleUsers.map((user) => user.id) : []), [showActions, visibleUsers]));
+  const [enLote, setEnLote] = useState(false);
+
+  const removeSeleccion = async () => {
+    const cantidad = seleccion.cantidad;
+    if (!(await confirmar(`¿Eliminar ${cantidad} ${cantidad === 1 ? 'usuario' : 'usuarios'}? Esto no se puede deshacer.`, 'Eliminar'))) return;
+    setEnLote(true);
+    let fallidos = 0;
+    for (const id of seleccion.ids) {
+      try { await deleteAdminRecord('usuarios', id); } catch { fallidos += 1; }
+    }
+    const eliminados = cantidad - fallidos;
+    status(fallidos === 0 ? `${eliminados} ${eliminados === 1 ? 'usuario eliminado' : 'usuarios eliminados'}.` : `Se eliminaron ${eliminados}; ${fallidos} no se pudieron eliminar.`);
+    seleccion.limpiar();
+    setEnLote(false);
+    await reload();
+  };
 
   const changeSort = (key: 'apellido' | 'nombre') => {
     setSort((current) => ({ key, descending: current.key === key ? !current.descending : false }));
@@ -289,11 +308,15 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
           <button type="button" className="button usuarios-create" onClick={openCreate}>Crear registro</button>
         </div>
 
+        <BarraSeleccion cantidad={seleccion.cantidad} unidad={['usuario', 'usuarios']} onLimpiar={seleccion.limpiar} ocupado={enLote}>
+          <button type="button" className="button danger" onClick={() => void removeSeleccion()} disabled={enLote}>Eliminar</button>
+        </BarraSeleccion>
         <div className="table-wrap">
           <table className="grade-table usuarios-table u-table-wide">
             <caption className="visually-hidden">Usuarios registrados{query ? `, filtrados por “${query}”` : ''}</caption>
             <thead>
               <tr>
+                {showActions && <CasillaTodos todos={seleccion.todos} algunos={seleccion.algunos} onChange={seleccion.toggleTodos} etiqueta="Seleccionar todos los usuarios de esta página" />}
                 <th scope="col" aria-sort={sort.key === 'nombre' ? (sort.descending ? 'descending' : 'ascending') : 'none'}>
                   <button type="button" className="usuarios-sort" onClick={() => changeSort('nombre')} aria-label="Ordenar por nombre">
                     Nombre <span aria-hidden="true">{sortIndicator('nombre')}</span>
@@ -312,7 +335,8 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
             </thead>
             <tbody>
               {visibleUsers.map((user) => (
-                <tr key={user.id}>
+                <tr key={user.id} className={seleccion.estaSeleccionado(user.id) ? 'is-selected' : undefined}>
+                  {showActions && <CasillaFila checked={seleccion.estaSeleccionado(user.id)} onChange={() => seleccion.toggle(user.id)} etiqueta={`Seleccionar a ${user.nombre} ${user.apellido}`} />}
                   <td>{user.nombre}</td>
                   <td>{user.apellido}</td>
                   <td>{user.ci ?? '—'}</td>

@@ -31,14 +31,23 @@ function AnotacionFoto({ anotacion, loadFoto }: { anotacion: Anotacion; loadFoto
   </a>;
 }
 
-export default function AnotacionesList({ anotaciones, loadFoto, mostrarAlumno = false }: {
+/** Con fotoAlAmpliar la evidencia no se descarga hasta que se pide con el botón de la anotación. */
+export default function AnotacionesList({ anotaciones, loadFoto, mostrarAlumno = false, fotoAlAmpliar = false }: {
   anotaciones: Anotacion[];
   loadFoto: (anotacion: Anotacion) => Promise<Blob>;
   mostrarAlumno?: boolean;
+  fotoAlAmpliar?: boolean;
 }) {
-  return <ul className="anotaciones-list">
-    {anotaciones.map((anotacion) => <li key={anotacion.id} className="anotacion-item">
-      {anotacion.tieneFoto && <AnotacionFoto anotacion={anotacion} loadFoto={loadFoto} />}
+  const [ampliadas, setAmpliadas] = useState<Set<number>>(() => new Set());
+  const alternar = (id: number) => setAmpliadas((actual) => {
+    const siguiente = new Set(actual);
+    if (!siguiente.delete(id)) siguiente.add(id);
+    return siguiente;
+  });
+
+  return <ul className={`anotaciones-list${fotoAlAmpliar ? ' anotaciones-list--ficha' : ''}`}>
+    {anotaciones.map((anotacion) => <li key={anotacion.id} className={`anotacion-item${fotoAlAmpliar ? ' anotacion-item--compacta' : ''}`}>
+      {anotacion.tieneFoto && (!fotoAlAmpliar || ampliadas.has(anotacion.id)) && <AnotacionFoto anotacion={anotacion} loadFoto={loadFoto} />}
       <div className="anotacion-body">
         {mostrarAlumno && <p className="anotacion-alumno"><strong>{anotacion.alumnoApellido}, {anotacion.alumnoNombre}</strong>{anotacion.curso && <span> · {anotacion.curso}</span>}</p>}
         <h3>{anotacion.tipo}</h3>
@@ -48,6 +57,9 @@ export default function AnotacionesList({ anotaciones, loadFoto, mostrarAlumno =
           {anotacion.materia && ` · ${anotacion.materia}`}
           {anotacion.profesor && ` · ${anotacion.profesor}`}
         </p>
+        {fotoAlAmpliar && anotacion.tieneFoto && <button type="button" className="button secondary anotacion-ampliar" aria-expanded={ampliadas.has(anotacion.id)} onClick={() => alternar(anotacion.id)}>
+          {ampliadas.has(anotacion.id) ? 'Ocultar evidencia' : 'Ver evidencia'}
+        </button>}
       </div>
     </li>)}
   </ul>;
