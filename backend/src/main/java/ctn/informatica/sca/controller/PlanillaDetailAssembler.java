@@ -84,7 +84,7 @@ final class PlanillaDetailAssembler {
             totalPossiblePoints += planilla.getRsaPuntos();
         }
         planilla.computeGradeRanges(totalPossiblePoints);
-        List<StudentRow> rows = new StudentRowDao().loadRowsForPlanilla(planilla, tareaMax, totalPossiblePoints);
+        List<StudentRow> rows = new StudentRowDao().loadRowsForPlanilla(planilla, tareaMax, totalPossiblePoints, true);
 
         List<StudentRowDto> rowsDto = new ArrayList<>();
         for (StudentRow row : rows) {
@@ -100,7 +100,8 @@ final class PlanillaDetailAssembler {
                     row.getTotal(),
                     row.getPorcentaje(),
                     row.getNota(),
-                    row.getRsaPuntos()));
+                    row.getRsaPuntos(),
+                    row.getTrasladadoA()));
         }
 
         Map<String, GradeRangeDto> ranges = new LinkedHashMap<>();

@@ -187,6 +187,17 @@ export const updateSala = (id: number, payload: { nombre: string; especialidadId
 export const deleteSala = (id: number) => adminRequest(() => api.delete<void>(`/api/admin/salas/${id}`));
 export const getSistemaEstado = () => adminRequest(() => api.get<SistemaEstadoResponse>('/api/admin/sistema-estado'));
 export const buscarPadres = (q: string) => adminRequest(() => api.get<PadreSummary[]>(`/api/admin/padres/buscar?q=${encodeURIComponent(q)}`));
+/** Lo que tiene cargado un alumno: se muestra antes de borrarlo o de cambiarlo de curso. */
+export interface ResumenAlumno {
+  notas: number;
+  planillasConNotas: number;
+  planillasConNotasCursoActual: number;
+  asistencias: number;
+  anotaciones: number;
+  fichaEnfermeria: boolean;
+  consultasEnfermeria: number;
+}
+export const getResumenAlumno = (alumnoId: number) => adminRequest(() => api.get<ResumenAlumno>(`/api/admin/alumnos/${alumnoId}/resumen`));
 export const getPadresDeAlumno = (alumnoId: number) => adminRequest(() => api.get<PadreSummary[]>(`/api/admin/alumnos/${alumnoId}/padres`));
 export const getAlumnosDePadre = (padreId: number) => adminRequest(() => api.get<PadreChildItem[]>(`/api/admin/padres/${padreId}/alumnos`));
 export const linkPadreAlumno = (alumnoId: number, padreId: number) => adminRequest(() => api.post<void>(`/api/admin/alumnos/${alumnoId}/padres/${padreId}`, {}));

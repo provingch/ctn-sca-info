@@ -177,20 +177,58 @@ public class AlumnoDao extends conexion {
         }
     }
 
-    public boolean update(int alumnoId, String nombre, String apellido, int cursoId, String ci) throws SQLException {
-        String sql = "UPDATE alumno SET ci = ?, nombre = ?, apellido = ?, curso_id = ? WHERE id = ?";
-        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
-            if (ci == null || ci.isBlank()) {
-                ps.setNull(1, java.sql.Types.VARCHAR);
-            } else {
-                ps.setString(1, ci.trim());
+    /**
+     * Actualiza los datos del alumno. Si cambia de curso (traslado de especialidad o de sección) deja
+     * una fila en {@code alumno_curso_historial}, en la misma transacción, para que las planillas del
+     * curso viejo y la vista de padres sepan a dónde fue y desde cuándo.
+     */
+    public boolean update(int alumnoId, String nombre, String apellido, int cursoId, String ci, Integer usuarioId) throws SQLException {
+        try (Connection con = getCon()) {
+            con.setAutoCommit(false);
+            try {
+                int cursoAnterior;
+                try (PreparedStatement ps = con.prepareStatement("SELECT curso_id FROM alumno WHERE id = ? FOR UPDATE")) {
+                    ps.setInt(1, alumnoId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (!rs.next()) { con.rollback(); return false; }
+                        cursoAnterior = rs.getInt("curso_id");
+                    }
+                }
+                try (PreparedStatement ps = con.prepareStatement("UPDATE alumno SET ci = ?, nombre = ?, apellido = ?, curso_id = ? WHERE id = ?")) {
+                    if (ci == null || ci.isBlank()) {
+                        ps.setNull(1, java.sql.Types.VARCHAR);
+                    } else {
+                        ps.setString(1, ci.trim());
+                    }
+                    ps.setString(2, nombre);
+                    ps.setString(3, apellido);
+                    ps.setInt(4, cursoId);
+                    ps.setInt(5, alumnoId);
+                    ps.executeUpdate();
+                }
+                if (cursoAnterior != cursoId) {
+                    try (PreparedStatement ps = con.prepareStatement(
+                            "INSERT INTO alumno_curso_historial (alumno_id, curso_anterior_id, curso_nuevo_id, usuario_id) VALUES (?, ?, ?, ?)")) {
+                        ps.setInt(1, alumnoId);
+                        ps.setInt(2, cursoAnterior);
+                        ps.setInt(3, cursoId);
+                        if (usuarioId == null) ps.setNull(4, java.sql.Types.INTEGER); else ps.setInt(4, usuarioId);
+                        ps.executeUpdate();
+                    }
+                }
+                con.commit();
+                return true;
+            } catch (SQLException ex) {
+                con.rollback();
+                throw ex;
+            } finally {
+                con.setAutoCommit(true);
             }
-            ps.setString(2, nombre);
-            ps.setString(3, apellido);
-            ps.setInt(4, cursoId);
-            ps.setInt(5, alumnoId);
-            return ps.executeUpdate() > 0;
         }
+    }
+
+    public boolean update(int alumnoId, String nombre, String apellido, int cursoId, String ci) throws SQLException {
+        return update(alumnoId, nombre, apellido, cursoId, ci, null);
     }
 
     public boolean updateGoogleIdentity(int alumnoId, String googleUserId, String googleEmail) throws SQLException {
@@ -217,11 +255,82 @@ public class AlumnoDao extends conexion {
         }
     }
 
-    public boolean delete(int alumnoId) throws SQLException {
-        String sql = "DELETE FROM alumno WHERE id = ?";
-        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+    /**
+     * Lo que tiene cargado un alumno, para las confirmaciones del panel: qué se pierde al borrarlo y
+     * cuántas planillas de su curso actual tienen notas suyas (las que quedan atrás si se lo traslada).
+     */
+    public record ResumenAlumno(int notas, int planillasConNotas, int planillasConNotasCursoActual, int asistencias,
+            int anotaciones, boolean fichaEnfermeria, int consultasEnfermeria) {}
+
+    public ResumenAlumno resumen(int alumnoId) throws SQLException {
+        try (Connection con = getCon()) {
+            return new ResumenAlumno(
+                    contar(con, "SELECT COUNT(*) FROM puntaje p JOIN registro r ON r.id = p.registro_id WHERE r.alumno_id = ?", alumnoId),
+                    contar(con, "SELECT COUNT(DISTINCT r.planilla_id) FROM registro r JOIN puntaje p ON p.registro_id = r.id WHERE r.alumno_id = ?", alumnoId),
+                    contar(con, "SELECT COUNT(DISTINCT r.planilla_id) FROM registro r JOIN puntaje p ON p.registro_id = r.id "
+                            + "JOIN planilla pl ON pl.id = r.planilla_id JOIN alumno a ON a.id = r.alumno_id "
+                            + "WHERE r.alumno_id = ? AND pl.curso_id = a.curso_id", alumnoId),
+                    contar(con, "SELECT COUNT(*) FROM rasgo_asistencia WHERE alumno_id = ?", alumnoId),
+                    contar(con, "SELECT COUNT(*) FROM anotacion WHERE alumno_id = ?", alumnoId),
+                    contar(con, "SELECT COUNT(*) FROM enf_ficha WHERE alumno_id = ?", alumnoId) > 0,
+                    contar(con, "SELECT COUNT(*) FROM enf_consulta WHERE alumno_id = ?", alumnoId));
+        }
+    }
+
+    private static int contar(Connection con, String sql, int alumnoId) throws SQLException {
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, alumnoId);
-            return ps.executeUpdate() == 1;
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        }
+    }
+
+    /**
+     * Tablas con FK a alumno en ON DELETE RESTRICT, en el orden en que se vacían. Sus hijas (puntaje,
+     * anotacion_foto, enf_detalle_consulta) se van en cascada. rasgo_asistencia, alumno_usuario y
+     * alumno_curso_historial ya tienen ON DELETE CASCADE.
+     */
+    private static final List<String> TABLAS_DEL_ALUMNO = List.of(
+            "registro", "anotacion", "enf_consulta", "enf_detalle_alergia", "enf_tutor", "enf_ficha");
+
+    /**
+     * Borra al alumno con todo lo suyo (notas, asistencias, anotaciones, enfermería, vínculos con padres
+     * y novedades pendientes) en una sola transacción: o se borra todo o no se borra nada.
+     */
+    public boolean delete(int alumnoId) throws SQLException {
+        try (Connection con = getCon()) {
+            con.setAutoCommit(false);
+            try {
+                try (PreparedStatement ps = con.prepareStatement("SELECT id FROM alumno WHERE id = ? FOR UPDATE")) {
+                    ps.setInt(1, alumnoId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (!rs.next()) { con.rollback(); return false; }
+                    }
+                }
+                for (String tabla : TABLAS_DEL_ALUMNO) {
+                    try (PreparedStatement ps = con.prepareStatement("DELETE FROM " + tabla + " WHERE alumno_id = ?")) {
+                        ps.setInt(1, alumnoId);
+                        ps.executeUpdate();
+                    }
+                }
+                try (PreparedStatement ps = con.prepareStatement("DELETE FROM notificacion WHERE entidad_tipo = ? AND entidad_id = ?")) {
+                    ps.setString(1, NotificacionDao.ENTIDAD_ALUMNO);
+                    ps.setLong(2, alumnoId);
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = con.prepareStatement("DELETE FROM alumno WHERE id = ?")) {
+                    ps.setInt(1, alumnoId);
+                    if (ps.executeUpdate() != 1) { con.rollback(); return false; }
+                }
+                con.commit();
+                return true;
+            } catch (SQLException ex) {
+                con.rollback();
+                throw ex;
+            } finally {
+                con.setAutoCommit(true);
+            }
         }
     }
 }

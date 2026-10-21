@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ParentSubject, ParentTask, RasgoConducta } from '../../api/parent';
-import { agruparTareasPorMes, etiquetaMes, filtrarConducta, filtrarMaterias, hayFiltroConducta, materiasDeConducta, mesDeTarea, mesesConTareas, ordenarTareas, rangoInvalido, SIN_FECHA, SIN_FILTRO_CONDUCTA } from './parentFilters';
+import { agruparTareasPorMes, cursosAnteriores, etiquetaMes, filtrarConducta, filtrarMaterias, hayFiltroConducta, materiasDeConducta, mesDeTarea, mesesConTareas, ordenarTareas, rangoInvalido, SIN_FECHA, SIN_FILTRO_CONDUCTA } from './parentFilters';
 
 const nota = (materia: string | null, fechaClase: string | null, codigo = 'N1'): RasgoConducta =>
   ({ materia, fechaClase, profesorNombre: 'Prof', codigo, descripcion: null, observacion: null });
@@ -22,6 +22,21 @@ describe('filtrarMaterias', () => {
 
   it('sin búsqueda devuelve todas', () => {
     expect(filtrarMaterias(materias, '')).toHaveLength(3);
+  });
+});
+
+describe('cursosAnteriores', () => {
+  it('agrupa por curso las materias de cursos anteriores y deja afuera las del actual', () => {
+    const materias = [
+      { materia: 'Lengua' },
+      { materia: 'Matemática', cursoAnterior: 'Informática 2ºA', cursoAnteriorHasta: '2026-08-15' },
+      { materia: 'Programación', cursoAnterior: 'Informática 2ºA', cursoAnteriorHasta: '2026-08-15' },
+      { materia: 'Historia', cursoAnterior: 'Química 2ºB', cursoAnteriorHasta: null },
+    ] as ParentSubject[];
+    expect(cursosAnteriores(materias).map(({ curso, hasta, materias: lista }) => [curso, hasta, lista.map((m) => m.materia)])).toEqual([
+      ['Informática 2ºA', '2026-08-15', ['Matemática', 'Programación']],
+      ['Química 2ºB', null, ['Historia']],
+    ]);
   });
 });
 

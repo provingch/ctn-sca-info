@@ -6,7 +6,7 @@ import ContentState from '../../components/ui/ContentState';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import DatePicker from '../../components/DatePicker';
 import FiltersToolbar, { FilterField } from '../../components/ui/FiltersToolbar';
-import { agruparTareasPorMes, filtrarConducta, filtrarMaterias, hayFiltroConducta, MATERIAS_PARA_BUSCADOR, materiasDeConducta, mesesConTareas, NOMBRES_MESES, rangoInvalido, SIN_FILTRO_CONDUCTA, type FiltroConducta } from './parentFilters';
+import { agruparTareasPorMes, cursosAnteriores, filtrarConducta, filtrarMaterias, hayFiltroConducta, MATERIAS_PARA_BUSCADOR, materiasDeConducta, mesesConTareas, NOMBRES_MESES, rangoInvalido, SIN_FILTRO_CONDUCTA, type FiltroConducta } from './parentFilters';
 import { getParentSummary, downloadReporteMensual, downloadLibreta, getRasgosConducta, marcarAlumnoVisto, type ParentResponse, type ParentStage, type ParentSubject, type ParentTaskStatus, type RasgoConducta } from '../../api/parent';
 import { ApiError } from '../../api/client';
 import { normalizeSpecialty } from '../../theme/theme';
@@ -113,10 +113,13 @@ export default function ParentPage() {
 
   const selectedChild = data.hijos.find((child) => child.id === data.selectedAlumnoId);
   const conductaVisible = conducta ? filtrarConducta(conducta, filtroConducta) : [];
-  const subjects = data.materias.filter((subject) => subject.etapa === stage);
+  // Las materias de un curso del que se trasladó al alumno van aparte y no cuentan para los promedios.
+  const materiasActuales = data.materias.filter((subject) => !subject.cursoAnterior);
+  const subjects = materiasActuales.filter((subject) => subject.etapa === stage);
+  const anteriores = cursosAnteriores(data.materias.filter((subject) => subject.etapa === stage));
   const materiasVisibles = filtrarMaterias(subjects, busquedaMateria);
   const mostrarBuscador = subjects.length >= MATERIAS_PARA_BUSCADOR;
-  const selectedSubject = subjects.find((subject) => subject.planillaId === selectedPlanillaId) ?? null;
+  const selectedSubject = data.materias.find((subject) => subject.etapa === stage && subject.planillaId === selectedPlanillaId) ?? null;
   const stagePoints = subjects.reduce((sum, subject) => sum + subject.puntos, 0);
   const stageTotal = subjects.reduce((sum, subject) => sum + subject.total, 0);
   const stageAverage = stageTotal > 0 ? Math.round(stagePoints * 100 / stageTotal) : 0;
@@ -124,7 +127,7 @@ export default function ParentPage() {
   const missingTasks = subjects.flatMap((subject) => subject.tareas).filter((task) => task.estado === 'NO_ENTREGADA').length;
   const latestTaskDate = data.materias.flatMap((subject) => subject.tareas).map((task) => task.fecha).filter(Boolean).sort().at(-1);
   const stageAverages = STAGES.map((item) => {
-    const items = data.materias.filter((subject) => subject.etapa === item.value);
+    const items = materiasActuales.filter((subject) => subject.etapa === item.value);
     const points = items.reduce((sum, subject) => sum + subject.puntos, 0);
     const total = items.reduce((sum, subject) => sum + subject.total, 0);
     return { ...item, average: total > 0 ? Math.round(points * 100 / total) : null };
@@ -187,9 +190,17 @@ export default function ParentPage() {
               {materiasVisibles.map((subject) => <SubjectCard key={subject.planillaId} subject={subject} selected={subject.planillaId === selectedSubject?.planillaId} onSelect={() => setSelectedPlanillaId(subject.planillaId)} />)}
             </div>}
           </section>
-          {selectedSubject && <SubjectDetail key={selectedSubject.planillaId} subject={selectedSubject} />}
           <details className="panel parent-calculation-note"><summary>¿Cómo se calcula el promedio?</summary><p>El porcentaje de cada materia se obtiene dividiendo los puntos logrados entre los puntos posibles de las tareas publicadas. El promedio general combina los puntos de todas las materias disponibles.</p></details>
         </> : <ContentState title={`Sin calificaciones en ${stageLabel(stage).toLowerCase()}`} detail="Todavía no hay materias ni tareas publicadas para este alumno en la etapa seleccionada." />}
+
+        {anteriores.map((grupo) => <section key={grupo.curso} className="parent-subject-section parent-subject-section--anterior" aria-label={`Curso anterior: ${grupo.curso}`}>
+          <div className="parent-section-heading"><div><span>Curso anterior</span><h2>{grupo.curso}</h2></div><p>{grupo.hasta ? `Estuvo en este curso hasta el ${formatDate(grupo.hasta)}. ` : ''}Son las notas que se cargaron mientras estuvo ahí, así que pueden estar incompletas. No cuentan para el promedio actual.</p></div>
+          <div className="parent-subject-grid">
+            {grupo.materias.map((subject) => <SubjectCard key={subject.planillaId} subject={subject} selected={subject.planillaId === selectedSubject?.planillaId} onSelect={() => setSelectedPlanillaId(subject.planillaId)} />)}
+          </div>
+        </section>)}
+
+        {selectedSubject && <SubjectDetail key={selectedSubject.planillaId} subject={selectedSubject} />}
 
         {selectedChild && (
           <section className="panel" aria-labelledby="parent-conducta-title" style={{ marginTop: 16 }}>
@@ -266,7 +277,7 @@ function SubjectDetail({ subject }: { subject: ParentSubject }) {
   const visibles = grupos.reduce((suma, grupo) => suma + grupo.tareas.length, 0);
   return <section className="panel parent-subject-detail" aria-labelledby="parent-subject-detail-title">
     <header className="parent-subject-detail-header">
-      <div><span>Detalle de tareas</span><h2 id="parent-subject-detail-title">{subject.materia}</h2><p>{stageLabel(subject.etapa)} · {subject.porcentaje}% de promedio</p></div>
+      <div><span>Detalle de tareas</span><h2 id="parent-subject-detail-title">{subject.materia}</h2><p>{subject.cursoAnterior ? `${subject.cursoAnterior} (curso anterior) · ` : ''}{stageLabel(subject.etapa)} · {subject.porcentaje}% de promedio</p></div>
       <GradeChip grade={subject.nota} className="parent-detail-grade" />
     </header>
     {subject.tareas.length > 0 ? <>

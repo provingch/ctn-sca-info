@@ -10,6 +10,7 @@ y este proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.
 ### Añadido
 
 - **API para la app Android de anotaciones** (`/api/anotaciones`): los profesores registran anotaciones de conducta, uniforme, etc. desde el celular, con foto de evidencia JPEG opcional (hasta 5 MB) según el tipo. Incluye login por C.I., menús del profesor, alumnos por asignación, catálogo de tipos, historial del alumno y descarga de fotos. Protegida con una clave propia (`ANOTACIONES_API_KEY`) y con respuestas `{ok, datos}` / `{ok, error}` compatibles con la API PHP original.
+- **Traslado de alumnos entre especialidades o secciones**: al editar un alumno ya se le puede cambiar el curso, y la web avisa antes cuántas planillas con notas quedan atrás. El cambio queda en `alumno_curso_historial` (migración `011_alumno_curso_historial.sql`). En las planillas del curso anterior el alumno sigue apareciendo en gris, con la etiqueta "Trasladado a…" y las notas de solo lectura, y los padres ven esas notas aparte, como "Curso anterior", sin que cuenten para el promedio actual.
 - **Catálogo de tipos de anotación** definido por Coordinación Pedagógica, con tipos que exigen foto u observación, orden propio y control de duplicados en el día para los no repetibles.
 - **API para el sistema de enfermería SHME** (`/api/enfermeria`), integrada a la base del colegio:
   - Etapa 1: sesión con usuarios y roles propios (`administrador` / `enfermeria`), búsqueda paginada de alumnos, ficha médica con alergias y datos del tutor, y catálogo de alergias.
@@ -23,6 +24,7 @@ y este proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.
 
 ### Corregido
 
+- **Eliminar alumnos desde el panel de admin** fallaba casi siempre con "No se pudo eliminar el alumno": abrir una planilla crea un registro para cada alumno del curso y esa clave no permitía el borrado. Ahora se borra al alumno con todo lo suyo (notas, asistencias, anotaciones, enfermería, vínculos con padres y novedades) en una sola transacción, y la confirmación detalla antes qué se va a perder.
 - Las planillas toman el año lectivo en cada operación en lugar de fijarlo al arrancar el backend: si el servidor seguía encendido después del 1 de enero, las planillas nuevas se guardaban con el año anterior, se reabría la planilla del año pasado del mismo curso y la libreta final no aparecía como disponible.
 
 ## [3.0.0] - 2026-09-21

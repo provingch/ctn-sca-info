@@ -2,6 +2,8 @@ package ctn.informatica.sca.dao;
 
 import ctn.informatica.sca.clases.conexion;
 import ctn.informatica.sca.model.Alumno;
+import ctn.informatica.sca.model.Curso;
+import ctn.informatica.sca.util.AcademicPeriod;
 import ctn.informatica.sca.util.NombreUtil;
 import ctn.informatica.sca.model.Padre;
 import ctn.informatica.sca.model.ParentSummaryItem;
@@ -308,9 +310,16 @@ public class PadreDao extends conexion {
         return ids;
     }
 
+    /**
+     * Materias de cada hijo con sus puntos. Además de las planillas del curso actual trae las de cursos
+     * anteriores donde el alumno llegó a tener notas (se lo trasladó de especialidad o de sección): esas
+     * vienen marcadas con {@code cursoAnterior} y van al final.
+     */
     public List<ParentSummaryItem> findParentSummary(int padreId) throws SQLException {
         String sql = "SELECT a.id AS alumno_id, a.nombre AS alumno_nombre, a.apellido AS alumno_apellido, "
                 + "c.id AS curso_id, e.nombre AS especialidad_nombre, m.id AS materia_id, m.nombre AS materia_nombre, p.id AS planilla_id, p.etapa, m.categoria, "
+                + "p.curso_id AS planilla_curso_id, p.periodo, pe.nombre AS planilla_especialidad, pc.promocion AS planilla_promocion, pc.seccion AS planilla_seccion, "
+                + "(SELECT MAX(h.fecha) FROM alumno_curso_historial h WHERE h.alumno_id = a.id AND h.curso_anterior_id = p.curso_id) AS curso_anterior_hasta, "
                 + "COALESCE(SUM(CASE WHEN puntaje.puntos IS NULL THEN 0 ELSE puntaje.puntos END), 0) AS puntos, "
                 + "COALESCE((SELECT SUM(t2.total) FROM tarea t2 WHERE t2.planilla_id = p.id), 0) AS total_posible, "
                 + "COUNT(DISTINCT t.id) AS tareas_count "
@@ -318,14 +327,19 @@ public class PadreDao extends conexion {
                 + "JOIN alumno a ON a.id = ap.alumno_id "
                 + "JOIN curso c ON c.id = a.curso_id "
                 + "JOIN especialidad e ON e.id = c.especialidad_id "
-                + "JOIN planilla p ON p.curso_id = c.id "
+                + "JOIN planilla p ON p.curso_id = c.id OR EXISTS ("
+                + "    SELECT 1 FROM registro r0 JOIN puntaje pu0 ON pu0.registro_id = r0.id "
+                + "    WHERE r0.planilla_id = p.id AND r0.alumno_id = a.id) "
+                + "JOIN curso pc ON pc.id = p.curso_id "
+                + "JOIN especialidad pe ON pe.id = pc.especialidad_id "
                 + "JOIN materia m ON m.id = p.materia_id "
                 + "LEFT JOIN registro r ON r.planilla_id = p.id AND r.alumno_id = a.id "
                 + "LEFT JOIN tarea t ON t.planilla_id = p.id "
                 + "LEFT JOIN puntaje ON puntaje.tarea_id = t.id AND puntaje.registro_id = r.id "
                 + "WHERE ap.usuario_id = ? "
-                + "GROUP BY a.id, a.nombre, a.apellido, c.id, e.nombre, m.id, m.nombre, p.id, p.etapa, m.categoria "
-                + "ORDER BY e.nombre, a.apellido, a.nombre, p.etapa, m.nombre";
+                + "GROUP BY a.id, a.nombre, a.apellido, c.id, e.nombre, m.id, m.nombre, p.id, p.etapa, m.categoria, "
+                + "p.curso_id, p.periodo, pe.nombre, pc.promocion, pc.seccion "
+                + "ORDER BY e.nombre, a.apellido, a.nombre, p.curso_id <> c.id, p.etapa, m.nombre";
 
         Map<String, ParentSummaryItem> map = new LinkedHashMap<>();
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -345,6 +359,13 @@ public class PadreDao extends conexion {
                         item.setEspecialidadNombre(rs.getString("especialidad_nombre"));
                         item.setEtapa(rs.getString("etapa"));
                         item.setCategoria(rs.getString("categoria"));
+                        if (rs.getInt("planilla_curso_id") != rs.getInt("curso_id")) {
+                            int periodo = rs.getInt("periodo");
+                            item.setCursoAnterior(Curso.etiqueta(rs.getString("planilla_especialidad"), rs.getInt("planilla_promocion"),
+                                    rs.getString("planilla_seccion"), periodo > 0 ? periodo : AcademicPeriod.current()));
+                            java.sql.Timestamp hasta = rs.getTimestamp("curso_anterior_hasta");
+                            item.setCursoAnteriorHasta(hasta == null ? null : hasta.toLocalDateTime().toLocalDate());
+                        }
                         map.put(key, item);
                     }
                     item.setPuntos(rs.getInt("puntos"));

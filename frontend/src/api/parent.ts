@@ -2,7 +2,13 @@ import { api, apiDownload } from './client';
 export type ParentTaskStatus = 'CALIFICADA' | 'ENTREGADA_PENDIENTE' | 'NO_ENTREGADA' | 'PENDIENTE';
 export type ParentStage = 'primera' | 'segunda';
 export interface ParentTask { id: number; titulo: string; fecha: string; puntos: number | null; total: number; estado: ParentTaskStatus }
-export interface ParentSubject { planillaId: number; materiaId: number; materia: string; etapa: ParentStage; puntos: number; total: number; porcentaje: number; nota: number; tareas: ParentTask[] }
+export interface ParentSubject {
+  planillaId: number; materiaId: number; materia: string; etapa: ParentStage; puntos: number; total: number; porcentaje: number; nota: number; tareas: ParentTask[];
+  /** Sólo en materias de un curso del que se trasladó al alumno (p. ej. "Informática 2ºA"); null en las del curso actual. */
+  cursoAnterior?: string | null;
+  /** Fecha (YYYY-MM-DD) en que dejó ese curso, si quedó registrada. */
+  cursoAnteriorHasta?: string | null;
+}
 export interface ParentResponse {
   hijos: Array<{ id: number; nombre: string; apellido: string; especialidad: string; promedio: number }>;
   selectedAlumnoId: number | null;

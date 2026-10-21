@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiError } from '../../api/client';
-import { buscarPadres, createAdminRecord, deleteAdminRecord, getPadresDeAlumno, linkPadreAlumno, unlinkPadreAlumno, updateAdminRecord, type AdminCatalog, type PadreSummary } from '../../api/admin';
+import { buscarPadres, createAdminRecord, deleteAdminRecord, getPadresDeAlumno, getResumenAlumno, linkPadreAlumno, unlinkPadreAlumno, updateAdminRecord, type AdminCatalog, type PadreSummary } from '../../api/admin';
 import { normalizeSpecialty } from '../../theme/theme';
 import SpecialtyIcon from '../../components/SpecialtyIcon';
 import AnimatedSelect from '../../components/AnimatedSelect';
@@ -8,6 +8,7 @@ import useAccessibleDialog from '../../hooks/useAccessibleDialog';
 import FiltersToolbar, { FilterField } from '../../components/ui/FiltersToolbar';
 import { filtrarAlumnos, filtrarEgresados, hayFiltroEgresados, SIN_FILTRO_EGRESADOS, type FiltroEgresados } from './filtrosListados';
 import { confirmar } from '../../utils/confirmar';
+import { mensajeBorrado, mensajeTraslado } from './alumnoConfirmaciones';
 
 interface AlumnosPanelProps {
   data: AdminCatalog;
@@ -129,6 +130,15 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
     }
 
     try {
+      const original = editingId ? data.alumnos.find((student) => student.id === editingId) : undefined;
+      if (editingId && original && original.cursoId !== payload.cursoId) {
+        const resumen = await getResumenAlumno(editingId);
+        const mensaje = mensajeTraslado(`${payload.apellido}, ${payload.nombre}`,
+          data.cursosAlumnos.find((course) => course.id === original.cursoId),
+          data.cursosAlumnos.find((course) => course.id === payload.cursoId),
+          resumen);
+        if (!(await confirmar(mensaje, 'Mover'))) return;
+      }
       if (editingId) {
         await updateAdminRecord('alumnos', editingId, payload);
         status('Alumno actualizado.');
@@ -356,8 +366,9 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
                           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                             <button type="button" className="button secondary" onClick={() => openEdit(student)}>Editar</button>
                             <button type="button" className="button danger" onClick={async () => {
-                              if (!(await confirmar('¿Eliminar este alumno?', 'Eliminar'))) return;
                               try {
+                                const resumen = await getResumenAlumno(student.id);
+                                if (!(await confirmar(mensajeBorrado(`${student.apellido}, ${student.nombre}`, resumen), 'Eliminar'))) return;
                                 await deleteAdminRecord('alumnos', student.id);
                                 status('Alumno eliminado.');
                                 await reload();
@@ -399,7 +410,8 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
               Cédula
               <input value={form.ci} onChange={(event) => setForm({ ...form, ci: event.target.value })} />
             </label>
-            {currentCurso ? (
+            {/* Al crear desde una sección el curso queda fijo; al editar se puede cambiar (traslado de sección o especialidad). */}
+            {currentCurso && !editingId ? (
               <label>
                 Curso
                 <input value={`${currentCurso.nivel}° ${currentCurso.seccion} · ${currentCurso.especialidad}`} readOnly />

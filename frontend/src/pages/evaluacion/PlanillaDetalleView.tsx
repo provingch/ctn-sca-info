@@ -4,6 +4,7 @@ import * as evaluacionApi from '../../api/evaluacion';
 import type { PlanillaDetail } from '../../api/academics';
 import ContentState from '../../components/ui/ContentState';
 import GradeChip from '../../components/ui/GradeChip';
+import TrasladadoTag from '../../components/ui/TrasladadoTag';
 import ReabrirEtapaDialog from '../../components/ReabrirEtapaDialog';
 import { useToast } from '../../context/toast';
 import EvaluacionFiltrosCampos from './EvaluacionFiltrosCampos';
@@ -216,9 +217,9 @@ function TablaNotas({ detalle }: { detalle: PlanillaDetail }) {
           </tr>
         </thead>
         <tbody>
-          {detalle.rows.map((row, index) => <tr key={row.alumnoId}>
+          {detalle.rows.map((row, index) => <tr key={row.alumnoId} className={row.trasladadoA ? 'planilla-row--trasladado' : undefined}>
             <td className="planilla-row-number">{index + 1}</td>
-            <th className="planilla-student-name" scope="row">{row.alumnoNombre}</th>
+            <th className="planilla-student-name" scope="row">{row.alumnoNombre}{row.trasladadoA && <TrasladadoTag curso={row.trasladadoA} />}</th>
             {detalle.tareas.map((task) => {
               const puntos = row.grades.find((grade) => grade.tareaId === task.id)?.puntos;
               return <td key={task.id} className="planilla-task-grade" aria-label={`${row.alumnoNombre}, ${task.titulo}: ${puntos == null ? 'sin calificación' : `${puntos} puntos`}`}>

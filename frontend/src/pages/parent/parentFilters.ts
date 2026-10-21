@@ -4,6 +4,24 @@ import { coincideBusqueda } from '../../utils/texto';
 /** Con menos materias que esto el grid se ve entero de una: el buscador sólo aparece cuando la lista es larga. */
 export const MATERIAS_PARA_BUSCADOR = 6;
 
+export interface CursoAnterior {
+  curso: string;
+  hasta: string | null;
+  materias: ParentSubject[];
+}
+
+/** Materias de cursos de los que se trasladó al alumno, agrupadas por curso (en el orden en que llegan). */
+export function cursosAnteriores(materias: ParentSubject[]): CursoAnterior[] {
+  const grupos = new Map<string, CursoAnterior>();
+  for (const materia of materias) {
+    if (!materia.cursoAnterior) continue;
+    const grupo = grupos.get(materia.cursoAnterior) ?? { curso: materia.cursoAnterior, hasta: materia.cursoAnteriorHasta ?? null, materias: [] };
+    grupo.materias.push(materia);
+    grupos.set(materia.cursoAnterior, grupo);
+  }
+  return [...grupos.values()];
+}
+
 export function filtrarMaterias(materias: ParentSubject[], busqueda: string): ParentSubject[] {
   return materias.filter((materia) => coincideBusqueda(busqueda, materia.materia));
 }

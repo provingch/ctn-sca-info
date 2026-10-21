@@ -13,6 +13,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -76,6 +77,28 @@ public class RegistroDao extends conexion {
                     int registroId = rs.getInt("id");
                     int alumnoId = rs.getInt("alumno_id");
                     result.put(alumnoId, registroId);
+                }
+            }
+        }
+        return result;
+    }
+
+    /** De {@code alumnoIds}, los que tienen registro en la planilla pero hoy están en otro curso (trasladados). */
+    public Set<Integer> findAlumnoIdsTrasladados(int planillaId, Set<Integer> alumnoIds) throws SQLException {
+        if (alumnoIds == null || alumnoIds.isEmpty()) return Collections.emptySet();
+        String placeholders = alumnoIds.stream().map(x -> "?").collect(Collectors.joining(","));
+        String sql = "SELECT r.alumno_id FROM registro r "
+                + "JOIN alumno a ON a.id = r.alumno_id "
+                + "JOIN planilla p ON p.id = r.planilla_id "
+                + "WHERE r.planilla_id = ? AND a.curso_id <> p.curso_id AND r.alumno_id IN (" + placeholders + ")";
+        Set<Integer> result = new HashSet<>();
+        try (Connection con = getCon(); PreparedStatement stm = con.prepareStatement(sql)) {
+            int idx = 1;
+            stm.setInt(idx++, planillaId);
+            for (Integer a : alumnoIds) stm.setInt(idx++, a);
+            try (ResultSet rs = stm.executeQuery()) {
+                while (rs.next()) {
+                    result.add(rs.getInt("alumno_id"));
                 }
             }
         }
