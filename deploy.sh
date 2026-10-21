@@ -956,9 +956,12 @@ update_system() {
     return 1
   fi
 
-  # Verificar que el jar encontrado sea realmente nuevo (mtime > update_start_ts)
-  local built_mtime
-  built_mtime=$(stat -c %Y "$built_jar" 2>/dev/null || echo 0)
+  # Verificar que el jar encontrado sea realmente nuevo (mtime > update_start_ts).
+  # El repackage de Spring Boot deja el jar con fecha fija (1980) para builds reproducibles;
+  # el .jar.original que deja al lado sí tiene la hora real del build.
+  local built_mtime stamp_file="$built_jar"
+  [[ -f "${built_jar}.original" ]] && stamp_file="${built_jar}.original"
+  built_mtime=$(stat -c %Y "$stamp_file" 2>/dev/null || echo 0)
   if (( built_mtime <= update_start_ts )); then
     log_err "El jar encontrado ($built_jar) es anterior al inicio de este deploy — la compilación no produjo un artefacto nuevo"
     return 1
