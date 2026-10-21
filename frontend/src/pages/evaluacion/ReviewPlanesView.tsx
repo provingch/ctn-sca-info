@@ -8,6 +8,7 @@ import { formatSqlDateTime } from '../../utils/date';
 import TemasPorMesAccordion from '../../components/TemasPorMesAccordion';
 import PlanesPorEspecialidad from './PlanesPorEspecialidad';
 import { confirmar } from '../../utils/confirmar';
+import '../../components/plan-views.css';
 
 // StatusTone removed; toasts replace local status state
 
@@ -117,26 +118,18 @@ export default function ReviewPlanesView() {
         ) : planes.length === 0 ? (
           <ContentState compact title="No hay planes pendientes" detail="Cuando un profesor suba un plan curricular, aparece acá para revisarlo." />
         ) : (
-          <PlanesPorEspecialidad planes={planes}>{(groupPlanes) => <div style={{ display: 'grid', gap: 8 }}>
+          <PlanesPorEspecialidad planes={planes}>{(groupPlanes) => <div className="selectable-list">
             {groupPlanes.map((plan) => (
               <button
                 key={plan.id}
                 type="button"
                 onClick={() => setSelectedPlanId(plan.id)}
-                style={{
-                  padding: 12,
-                  background: selectedPlanId === plan.id ? 'var(--accent-strong)' : 'var(--paper-raised)',
-                  border: selectedPlanId === plan.id ? '2px solid var(--accent)' : '1px solid var(--line)',
-                  borderRadius: 4,
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  color: 'var(--ink)',
-                  transition: 'all 0.2s',
-                }}
+                className={`selectable-item${selectedPlanId === plan.id ? ' is-selected' : ''}`}
+                aria-pressed={selectedPlanId === plan.id}
               >
                 <strong>{plan.materiaNombre}</strong>
-                <div style={{ fontSize: '0.9rem', color: 'var(--muted)', marginTop: 4 }}>{plan.profesorNombreCorto ?? plan.profesorNombre}</div>
-                <div style={{ fontSize: '0.85rem', color: 'var(--muted)', marginTop: 2 }}>{plan.cursoDescripcion}<br />{plan.especialidad && (<><span style={{ color: 'var(--accent-deep)', fontWeight: 750 }}>{plan.especialidad}</span><br /></>)}{formatSqlDateTime(plan.fechaSubida, { dateStyle: 'short' })}</div>
+                <div className="selectable-item-meta">{plan.profesorNombreCorto ?? plan.profesorNombre}</div>
+                <div className="selectable-item-note">{plan.cursoDescripcion}<br />{plan.especialidad && (<><span className="selectable-item-tag">{plan.especialidad}</span><br /></>)}{formatSqlDateTime(plan.fechaSubida, { dateStyle: 'short' })}</div>
               </button>
             ))}
           </div>}</PlanesPorEspecialidad>
@@ -153,18 +146,18 @@ export default function ReviewPlanesView() {
         ) : (
           <>
             <h3>Detalle del plan curricular</h3>
-            <div style={{ marginBottom: 12 }}><PlanOriginalDownload key={selectedPlanId} id={selectedPlanId} /></div>
+            <div className="inline-actions"><PlanOriginalDownload key={selectedPlanId} id={selectedPlanId} /></div>
             {selectedPlan.temas && selectedPlan.temas.length > 0 && (
-              <div style={{ marginBottom: 16, maxHeight: 360, overflow: 'auto' }}>
-                <h4 style={{ marginTop: 0 }}>Temas por mes</h4>
+              <div className="scroll-box">
+                <h4 className="selectable-group-title">Temas por mes</h4>
                 <TemasPorMesAccordion temas={selectedPlan.temas} compact />
               </div>
             )}
 
-            <form className="form-grid" onSubmit={(e) => e.preventDefault()} style={{ display: 'grid', gap: 12 }}>
+            <form className="form-grid" onSubmit={(e) => e.preventDefault()}>
               <div>
-                <label htmlFor="observaciones" style={{ display: 'block', marginBottom: 4 }}>Observaciones</label>
-                <textarea id="observaciones" value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Ingresá observaciones (requerido para rechazar)" rows={4} style={{ width: '100%', resize: 'none' }} />
+                <label htmlFor="observaciones" className="form-label">Observaciones</label>
+                <textarea id="observaciones" value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Ingresá observaciones (requerido para rechazar)" rows={4} className="textarea-fixed" />
               </div>
 
               <div className="decision-actions">

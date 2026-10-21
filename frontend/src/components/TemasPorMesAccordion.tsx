@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { TemaPlanDto } from '../api/planCurricular';
 import CoberturaTemaCelda from './CoberturaTemaCelda';
+import './plan-views.css';
 
 interface Props {
   temas: TemaPlanDto[];
@@ -43,40 +44,22 @@ export default function TemasPorMesAccordion({ temas, initiallyOpen = 'first', c
 
   if (grupos.length === 0) return <p>No hay temas cargados.</p>;
 
-  return <div style={{ display: 'grid', gap: 8 }}>
+  return <div className="temas-mes-list">
     {grupos.map((g) => {
       const open = abiertos.has(g.mes);
       const panelId = `temas-mes-${g.mes}-panel`;
-      return <section key={g.mes} style={{ border: '1px solid var(--line)', borderRadius: 8, overflow: 'hidden', background: 'var(--paper)' }}>
-        <button
-          type="button"
-          aria-expanded={open}
-          aria-controls={panelId}
-          onClick={() => toggle(g.mes)}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '10px 14px',
-            background: 'var(--paper-raised)',
-            border: 'none',
-            cursor: 'pointer',
-            fontWeight: 700,
-            fontSize: '0.95rem',
-            color: 'inherit',
-          }}
-        >
-          <span>{g.mes} <span style={{ color: 'var(--muted)', fontWeight: 400, fontSize: '0.85rem' }}>· {g.items.length} bloque{g.items.length === 1 ? '' : 's'}</span></span>
-          <span aria-hidden style={{ transform: `rotate(${open ? 90 : 0}deg)`, transition: 'transform .15s ease' }}>›</span>
+      return <section key={g.mes} className={`temas-mes${compact ? ' compact' : ''}`}>
+        <button type="button" className="temas-mes-toggle" aria-expanded={open} aria-controls={panelId} onClick={() => toggle(g.mes)}>
+          <span>{g.mes} <small>· {g.items.length} bloque{g.items.length === 1 ? '' : 's'}</small></span>
+          <span aria-hidden className="temas-mes-chevron">›</span>
         </button>
-        {open && <div id={panelId} style={{ padding: compact ? '8px 12px' : '12px 16px' }}>
+        {open && <div id={panelId} className="temas-mes-panel">
           <div className="table-responsive">
-            <table className="table table-striped" style={{ fontSize: compact ? '0.85rem' : undefined }}>
+            <table className="table table-striped">
               <caption className="visually-hidden">Bloques de {g.mes}</caption>
               <thead>
                 <tr>
-                  <th style={{ width: 60 }}>Bloque</th>
+                  <th className="bloque-col">Bloque</th>
                   <th>Tema / Contenido</th>
                   <th>Capacidades</th>
                   <th>Actividades</th>

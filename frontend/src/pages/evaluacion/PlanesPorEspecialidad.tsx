@@ -2,6 +2,7 @@ import { useId, useState, type ReactNode } from 'react';
 import type { PlanPendienteResumen } from '../../api/planCurricular';
 import SpecialtyIcon from '../../components/SpecialtyIcon';
 import { normalizeSpecialty } from '../../theme/theme';
+import '../../components/plan-views.css';
 
 /** Groups the existing list elements without changing their layout or actions. */
 export default function PlanesPorEspecialidad({ planes, children }: {
@@ -20,7 +21,7 @@ export default function PlanesPorEspecialidad({ planes, children }: {
     group.items.push(plan);
     groups.set(key, group);
   }
-  return <><div className="tabs" role="group" aria-label="Agrupar planes por" style={{ marginBottom: 16 }}>
+  return <><div className="tabs planes-tabs" role="group" aria-label="Agrupar planes por">
     <button type="button" className={groupBy === 'especialidad' ? 'active' : ''} aria-pressed={groupBy === 'especialidad'} onClick={() => setGroupBy('especialidad')}>Especialidad</button>
     <button type="button" className={groupBy === 'profesor' ? 'active' : ''} aria-pressed={groupBy === 'profesor'} onClick={() => setGroupBy('profesor')}>Profesor</button>
   </div><div className="complaints-groups">{Array.from(groups).sort((a, b) => a[1].name.localeCompare(b[1].name, 'es')).map(([key, group]) => {
@@ -35,7 +36,7 @@ export default function PlanesPorEspecialidad({ planes, children }: {
         <svg className="complaints-specialty-chevron" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6" /></svg>
       </button></h4>
       <div id={panelId} role="region" aria-labelledby={`${panelId}-heading`} hidden={!expanded}>
-        <div style={{ padding: 12 }}>{children(group.items)}</div>
+        <div className="planes-group-body">{children(group.items)}</div>
       </div>
     </section>;
   })}</div></>;
