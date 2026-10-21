@@ -954,7 +954,13 @@ public class HomeController {
                         ? "No estás asignado al curso seleccionado"
                         : "El profesor no está asignado al curso seleccionado");
             }
-            int id = quejaDao.crear(profesorId, cursoId, especialidadId, tipo, motivo.trim(), current.getId());
+            // El formulario elige el curso_base (lo que se asigna a profesores); la queja se guarda
+            // contra la cohorte que hoy cursa ese nivel, para que no se mezcle con otras promociones.
+            Integer cursoRealId = cursoBaseDao.findCursoRealId(cursoId, LocalDate.now(clock).getYear());
+            if (cursoRealId == null) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "El curso de este año todavía no fue creado");
+            }
+            int id = quejaDao.crear(profesorId, cursoRealId, especialidadId, tipo, motivo.trim(), current.getId());
             if (id <= 0) {
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo registrar la queja");
             }

@@ -27,11 +27,15 @@ public class QuejaDao extends conexion {
     public record Resolucion(String estado, String procesoRevision, String solucionAplicada,
             String corregidaPorNombre, java.sql.Timestamp resueltaEn) {}
 
+    // queja.curso_id apunta a la cohorte (curso). El nivel que se muestra es el que tenía
+    // el curso cuando se cargó la queja, no el de hoy: una queja de 1° sigue diciendo 1°.
+    private static final String NIVEL_AL_CREAR = "(YEAR(q.creada_en) - c.promocion + 3)";
+
     public Documento documento(long id) throws SQLException {
         String sql = "SELECT q.*, e.nombre AS especialidad, CONCAT_WS(' ', u.nombre, u.apellido) AS profesor, "
-                + "CONCAT(cb.nivel, '° ', cb.seccion) AS curso FROM queja q "
+                + "CONCAT(" + NIVEL_AL_CREAR + ", '° ', c.seccion, ' (promoción ', c.promocion, ')') AS curso FROM queja q "
                 + "LEFT JOIN especialidad e ON e.id = q.especialidad_id "
-                + "LEFT JOIN usuario u ON u.id = q.profesor_id LEFT JOIN curso_base cb ON cb.id = q.curso_id WHERE q.id = ?";
+                + "LEFT JOIN usuario u ON u.id = q.profesor_id LEFT JOIN curso c ON c.id = q.curso_id WHERE q.id = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setLong(1, id);
             try (ResultSet rs = ps.executeQuery()) {
@@ -176,12 +180,12 @@ public class QuejaDao extends conexion {
                     + "q.aceptada_en, q.aceptada_por, q.rechazada_en, q.rechazada_por, q.motivo_rechazo, "
                     + "q.revisada_en, q.revisada_por, q.conclusion, q.proceso_revision, q.solucion_aplicada, q.corregida_por_nombre, q.resuelta_en, "
                     + "u.nombre AS profesor_nombre, u.apellido AS profesor_apellido, "
-                    + "cb.seccion AS curso_seccion, cb.nivel AS curso_nivel, "
+                    + "c.seccion AS curso_seccion, " + NIVEL_AL_CREAR + " AS curso_nivel, c.promocion AS curso_promocion, "
                     + "e.nombre AS curso_especialidad "
                     + "FROM queja q "
                     + "LEFT JOIN usuario u ON u.id = q.profesor_id "
-                    + "LEFT JOIN curso_base cb ON cb.id = q.curso_id "
-                    + "LEFT JOIN especialidad e ON e.id = cb.especialidad_id ";
+                    + "LEFT JOIN curso c ON c.id = q.curso_id "
+                    + "LEFT JOIN especialidad e ON e.id = c.especialidad_id ";
 
     public List<Map<String, Object>> listar() throws SQLException {
         String sql = LISTAR_COLUMNAS + "ORDER BY q.creada_en DESC";
@@ -237,7 +241,8 @@ public class QuejaDao extends conexion {
         row.put("profesorApellido", rs.getString("profesor_apellido"));
         row.put("cursoEspecialidad", rs.getString("curso_especialidad"));
         row.put("cursoSeccion", rs.getString("curso_seccion"));
-        row.put("cursoNivel", (Integer) rs.getObject("curso_nivel"));
+        row.put("cursoNivel", rs.getObject("curso_nivel") == null ? null : rs.getInt("curso_nivel"));
+        row.put("cursoPromocion", rs.getObject("curso_promocion") == null ? null : rs.getInt("curso_promocion"));
         return row;
     }
 }
