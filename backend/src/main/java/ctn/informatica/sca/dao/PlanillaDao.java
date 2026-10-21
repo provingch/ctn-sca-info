@@ -28,8 +28,6 @@ import java.util.Set;
 @Repository
 public class PlanillaDao extends conexion {
 
-    private static final int DEFAULT_PERIOD = ctn.informatica.sca.util.AcademicPeriod.current();
-
     private String normalizeEtapa(int etapaIndex) {
         return etapaIndex == 2 ? "segunda" : "primera";
     }
@@ -74,7 +72,7 @@ public class PlanillaDao extends conexion {
             stm.setInt(index++, cursoId);
             stm.setInt(index++, userId);
             stm.setString(index++, normalizeEtapa(etapaIndex));
-            stm.setInt(index++, DEFAULT_PERIOD);
+            stm.setInt(index++, ctn.informatica.sca.util.AcademicPeriod.current());
             for (Integer materiaId : allowedMateriaIds) {
                 stm.setInt(index++, materiaId);
             }
@@ -120,7 +118,7 @@ public class PlanillaDao extends conexion {
             int index = 1;
             stm.setInt(index++, userId);
             stm.setString(index++, normalizeEtapa(etapaIndex));
-            stm.setInt(index++, DEFAULT_PERIOD);
+            stm.setInt(index++, ctn.informatica.sca.util.AcademicPeriod.current());
             for (Integer materiaId : allowedMateriaIds) {
                 stm.setInt(index++, materiaId);
             }
@@ -171,7 +169,7 @@ public class PlanillaDao extends conexion {
             int index = 1;
             stm.setInt(index++, userId);
             stm.setString(index++, normalizeEtapa(etapaIndex));
-            stm.setInt(index++, DEFAULT_PERIOD);
+            stm.setInt(index++, ctn.informatica.sca.util.AcademicPeriod.current());
             for (Integer materiaId : allowedMateriaIds) {
                 stm.setInt(index++, materiaId);
             }
@@ -213,7 +211,7 @@ public class PlanillaDao extends conexion {
             ps.setInt(index++, cursoId);
             ps.setInt(index++, profesorId);
             ps.setString(index++, normalizeEtapa(etapaIndex));
-            ps.setInt(index++, DEFAULT_PERIOD);
+            ps.setInt(index++, ctn.informatica.sca.util.AcademicPeriod.current());
             try (ResultSet rs = ps.executeQuery()) {
                 List<Materia> materias = new ArrayList<>();
                 while (rs.next()) {
@@ -247,7 +245,7 @@ public class PlanillaDao extends conexion {
 
             ps.setInt(1, cursoId);
             ps.setInt(2, materiaId);
-            ps.setInt(3, DEFAULT_PERIOD);
+            ps.setInt(3, ctn.informatica.sca.util.AcademicPeriod.current());
             ps.setString(4, normalizeEtapa(etapa));
             try (ResultSet rs = ps.executeQuery()) {
                 return fromResultSet(rs);
@@ -265,7 +263,7 @@ public class PlanillaDao extends conexion {
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setInt(1, cursoId);
             ps.setInt(2, materiaId);
-            ps.setInt(3, DEFAULT_PERIOD);
+            ps.setInt(3, ctn.informatica.sca.util.AcademicPeriod.current());
             ps.setString(4, normalizeEtapa(etapaIndex));
             ps.setInt(5, profesorId);
             ps.executeUpdate();
