@@ -30,6 +30,7 @@ Sistema de gestión académica del **Colegio Técnico Nacional (CTN)**: administ
 - [Stack tecnológico](#stack-tecnológico)
 - [Estructura del proyecto](#estructura-del-proyecto)
 - [Configuración](#configuración)
+- [APIs para apps externas](#apis-para-apps-externas)
 - [Despliegue](#despliegue)
 - [Otros módulos del repositorio](#otros-módulos-del-repositorio)
 
@@ -143,10 +144,84 @@ Para una instalación nueva, ejecutar `database/db-tables-properties.sql` (esque
 | `CTN_VAPID_PUBLIC_KEY` / `CTN_VAPID_PRIVATE_KEY`                      | Par de claves VAPID para notificaciones Web Push                 | —*(sin ellas, el envío queda deshabilitado)*                        |
 | `SCA_ACTIVITY_LOGS_DIR`                                                 | Directorio donde se guardan los`.txt` de actividad por usuario | `/var/lib/ctn/activity-logs`                                          |
 | `SCA_LOAD_DEMO_DATA`                                                    | Si es`true`, carga datos de demostración al iniciar           | `false`                                                               |
+| `ANOTACIONES_API_KEY`                                                   | Clave fija (`X-API-Key`) de la app Android de anotaciones        | —*(sin ella, `/api/anotaciones/**` responde 503)*                     |
+| `ENFERMERIA_API_KEY`                                                    | Clave fija (`X-API-Key`) del sistema de enfermería SHME          | —*(sin ella, `/api/enfermeria/**` responde 503)*                      |
 
 ### PWA y notificaciones push
 
 La instalación de la PWA funciona sin configuración adicional. Para notificaciones Web Push el servidor necesita el par de claves VAPID (`CTN_VAPID_PUBLIC_KEY` / `CTN_VAPID_PRIVATE_KEY`) configuradas en el backend.
+
+La vigencia del token de sesión de enfermería se ajusta con `enfermeria.token-horas` en `application.yaml` (por defecto 12 horas).
+
+## APIs para apps externas
+
+Además de la API de la web, el backend expone dos APIs para aplicaciones de terceros, cada una con su propia cadena de seguridad, independiente del login de usuarios del colegio:
+
+| API | Cliente | Autenticación |
+| --- | --- | --- |
+| `/api/anotaciones` | App Android de anotaciones (conducta, uniforme, etc.) | `X-API-Key` = `ANOTACIONES_API_KEY`; el profesor se identifica solo con su C.I. |
+| `/api/enfermeria` | Sistema de escritorio de enfermería (SHME) | `X-API-Key` = `ENFERMERIA_API_KEY` **y**, salvo en `/login`, `Authorization: Bearer <token>` |
+
+Convenciones comunes a ambas:
+
+- Los endpoints se llaman como en la API PHP original, sin el `.php` (por ejemplo `/api/anotaciones/login`). Los parámetros van por query string o como formulario (`application/x-www-form-urlencoded` o `multipart/form-data`), no como JSON.
+- Las lecturas aceptan GET o POST; las escrituras son solo POST.
+- Respuesta de éxito: `{"ok": true, "datos": ...}`. Respuesta de error: `{"ok": false, "error": "mensaje"}`, con el código HTTP correspondiente (401 clave o sesión inválida, 403 sin permiso, 404 no existe, 409 conflicto, 413 envío demasiado grande, 422 parámetro faltante o inválido, 429 demasiados intentos, 503 API deshabilitada).
+- Si la variable de la clave no está configurada, toda la API responde 503.
+- Fechas y "hoy" se calculan en hora de Paraguay (UTC−3 fijo), sin depender de la zona del servidor.
+- Las tablas son nuevas (migraciones `007_anotaciones.sql`, `008_tipos_anotacion_coordinacion.sql` y `009_enfermeria.sql`) y no modifican las del colegio. Los datos del alumno (C.I., nombre, curso) se leen del SCA y ninguna de las dos APIs los modifica.
+
+### `/api/anotaciones`
+
+| Endpoint | Método | Parámetros | Devuelve |
+| --- | --- | --- | --- |
+| `login` | GET/POST | `ci` | Datos del profesor (`id`, `nombre`, `apellido`, `ci`, `nivel`); 404 si no existe |
+| `menus` | GET/POST | `profesor` | Especialidades, cursos, materias y asignaciones del profesor |
+| `alumnos` | GET/POST | `profesor`, `materia`, `curso_base` | Alumnos de esa asignación en el año lectivo actual |
+| `tipos_anotacion` | GET/POST | — | Tipos activos en su orden (`id`, `descripcion`, `codigo_conducta`, `requiere_foto`, `requiere_observacion`) |
+| `historial` | GET/POST | `alumno` | Anotaciones del alumno, con el `foto_id` si tiene evidencia |
+| `foto` | GET/POST | `id` (de la foto) o `anotacion_id` | La imagen JPEG (no JSON), cacheable 10 minutos |
+| `guardar_anotacion` | POST | `alumno`, `profesor`, `tipo`, `materia`?, `observacion`?, `foto`? | `id`, `alumno_id`, `tipo_id`, `tiene_foto` |
+
+Reglas de `guardar_anotacion`:
+
+- `observacion` hasta 500 caracteres; obligatoria si el tipo la requiere.
+- `foto` va como archivo multipart, solo JPEG (se valida la firma del archivo, no el `Content-Type`) y hasta 5 MB; obligatoria si el tipo la requiere. El servidor corta el envío completo en 5,5 MB, y el sitio de nginx que genera `deploy.sh` admite hasta 6 MB.
+- Un tipo no repetible no se puede registrar dos veces el mismo día para el mismo alumno (409); si el tipo pide observación, solo cuenta como duplicado si la observación es la misma.
+- El catálogo de tipos se administra directamente en la tabla `tipo_anotacion` (alta, baja con `activo`, orden), sin cambiar la app ni la API.
+
+### `/api/enfermeria`
+
+Son datos de salud de menores, por eso lleva dos capas: la clave fija de la app (distinta de la de anotaciones) y una sesión por usuario. `POST /login` con `usuario` y `contrasena` devuelve `id_usuario`, `usuario`, `rol` y un `token` que se manda en `Authorization: Bearer` en el resto de las llamadas. El token es un JWT firmado con `JWT_SECRET` pero de un tipo propio (no sirve para la web, y los de la web no sirven acá), vence a las 12 horas y deja de valer si el usuario cambia su contraseña. Tras 5 intentos fallidos de login, por usuario o por IP, se bloquea temporalmente (429).
+
+Los usuarios de enfermería (`enf_usuario`) son independientes de los del colegio y tienen rol `administrador` o `enfermeria`. La API no crea el primero: hay que insertarlo a mano en `enf_usuario` con la contraseña hasheada en BCrypt; después ese administrador da de alta al resto.
+
+| Endpoint | Método | Parámetros | Notas |
+| --- | --- | --- | --- |
+| `login` | POST | `usuario`, `contrasena` | Única ruta que no pide token |
+| `usuario_crear` | POST | `usuario`, `contrasena`, `rol` | Solo administrador. Usuario de 3 a 50 caracteres, contraseña de 8 a 72; 409 si ya existe |
+| `usuario_cambiar_contrasena` | POST | `contrasena_actual`, `contrasena_nueva` | Devuelve un `token` nuevo; el anterior queda inválido |
+| `alumnos_buscar` | GET/POST | `q`?, `pagina`? (1), `limite`? (20, máx. 100) | Busca por C.I., nombre o apellido; indica si el alumno tiene ficha y si está activa |
+| `ficha` | GET/POST | `alumno` | Ficha médica, alergias y tutor; 404 si el alumno no existe |
+| `ficha_guardar` | POST | `alumno`, `enfermedadBase`?, `alergias`? (ids separados por coma), `tutor_nombre`?, `tutor_apellido`?, `tutor_correo`?, `tutor_telefono`? | Crea o reemplaza la ficha |
+| `ficha_estado` | POST | `alumno`, `activo` (0/1) | Activa o desactiva la ficha |
+| `alergias` / `alergia_crear` | GET/POST · POST | — · `nombre` | Catálogo de alergias |
+| `consultas` | GET/POST | `alumno` | Consultas del alumno |
+| `consulta` | GET/POST | `id` | Detalle de una consulta |
+| `consulta_crear` | POST | `alumno`, `motivo`, `fecha` (AAAA-MM-DD), `tratamiento`?, `horaEntrada`?, `horaSalida`? (HH:MM[:SS]), `observaciones`?, `insumos`? | Devuelve `idConsulta` |
+| `consulta_editar` | POST | `id` + los mismos de `consulta_crear` | Devuelve el stock de los insumos anteriores y descuenta los nuevos |
+| `consulta_eliminar` | POST | `id` | Devuelve el stock de sus insumos |
+| `motivos` | GET/POST | — | Motivos ya usados, para autocompletar |
+| `consultas_reporte` | GET/POST | `desde`, `hasta`, `alumno`?, `motivo`? | Consultas en un rango de fechas |
+| `insumos` | GET/POST | `todos`? (1 incluye inactivos) | Inventario |
+| `insumo_crear` / `insumo_editar` | POST | (`id`) + `nombre`, `stock_actual`, `stock_minimo` | Crear un nombre inactivo lo reactiva; 409 si ya existe activo |
+| `insumo_estado` | POST | `id`, `activo` (0/1) | Activa o desactiva un insumo |
+| `insumo_sumar_stock` | POST | `id`, `cantidad` | Suma al stock |
+| `solicitud_crear` | POST | `items`: una línea por ítem, `id:cantidad:observacion` | Pedido de reposición; devuelve `id_solicitud` |
+| `reporte_registrar` | POST | — | Registra que se emitió un reporte hoy; devuelve `id_reporte` |
+| `resumen` | GET/POST | — | `fichas_activas` e `insumos_stock_bajo` (stock en o por debajo del mínimo) |
+
+En las consultas, `insumos` es `id:cantidad` separado por coma (por ejemplo `3:2,5:1`). El alta, la edición y la baja actualizan consulta, detalle y stock en una sola transacción: si algún insumo no alcanza, responde 409 con el insumo y lo que queda, y no se guarda nada. El cuerpo de cada envío está limitado a 256 KB.
 
 ## Despliegue
 

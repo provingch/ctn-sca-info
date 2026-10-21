@@ -5,6 +5,21 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato se basa en [Mantener un Registro de Cambios](https://keepachangelog.com/es/1.0.0/),
 y este proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.0.0.html).
 
+## [Sin publicar]
+
+### Añadido
+
+- **API para la app Android de anotaciones** (`/api/anotaciones`): los profesores registran anotaciones de conducta, uniforme, etc. desde el celular, con foto de evidencia JPEG opcional (hasta 5 MB) según el tipo. Incluye login por C.I., menús del profesor, alumnos por asignación, catálogo de tipos, historial del alumno y descarga de fotos. Protegida con una clave propia (`ANOTACIONES_API_KEY`) y con respuestas `{ok, datos}` / `{ok, error}` compatibles con la API PHP original.
+- **Catálogo de tipos de anotación** definido por Coordinación Pedagógica, con tipos que exigen foto u observación, orden propio y control de duplicados en el día para los no repetibles.
+- **API para el sistema de enfermería SHME** (`/api/enfermeria`), integrada a la base del colegio:
+  - Etapa 1: sesión con usuarios y roles propios (`administrador` / `enfermeria`), búsqueda paginada de alumnos, ficha médica con alergias y datos del tutor, y catálogo de alergias.
+  - Etapa 2: consultas con descuento de stock de insumos, inventario de insumos, solicitudes de reposición, registro de reportes, reporte de consultas por rango de fechas y resumen (fichas activas e insumos con stock bajo).
+  - Doble protección por tratarse de datos de salud de menores: clave de la app (`ENFERMERIA_API_KEY`) más token de sesión que vence a las 12 horas y se invalida al cambiar la contraseña, con bloqueo temporal tras intentos fallidos de login.
+
+### Cambiado
+
+- `deploy.sh` conserva `ANOTACIONES_API_KEY` y `ENFERMERIA_API_KEY` entre actualizaciones, y el sitio de nginx acepta envíos de hasta 6 MB para las fotos de anotaciones.
+
 ## [3.0.0] - 2026-09-21
 
 ### Añadido
