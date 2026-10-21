@@ -312,7 +312,7 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
           <button type="button" className="button danger" onClick={() => void removeSeleccion()} disabled={enLote}>Eliminar</button>
         </BarraSeleccion>
         <div className="table-wrap">
-          <table className="grade-table usuarios-table u-table-wide">
+          <table className="grade-table data-table usuarios-table u-table-wide">
             <caption className="visually-hidden">Usuarios registrados{query ? `, filtrados por “${query}”` : ''}</caption>
             <thead>
               <tr>
@@ -330,7 +330,7 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
                 <th scope="col">Cédula</th>
                 <th scope="col">Usuario</th>
                 {showEspecialidad && <th scope="col">Especialidad</th>}
-                {showActions && <th scope="col">Acciones</th>}
+                {showActions && <th scope="col" className="col-actions"><span className="visually-hidden">Acciones</span></th>}
               </tr>
             </thead>
             <tbody>
@@ -339,14 +339,14 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
                   {showActions && <CasillaFila checked={seleccion.estaSeleccionado(user.id)} onChange={() => seleccion.toggle(user.id)} etiqueta={`Seleccionar a ${user.nombre} ${user.apellido}`} />}
                   <td>{user.nombre}</td>
                   <td>{user.apellido}</td>
-                  <td>{user.ci ?? '—'}</td>
-                  <td>{user.usuario}</td>
+                  <td className="cell-muted">{user.ci ?? '—'}</td>
+                  <td className="cell-muted">{user.usuario}</td>
                   {showEspecialidad && <td>{specialtyLabel(user)}</td>}
                   {showActions && (
-                    <td>
-                      <div className="usuarios-row-actions">
-                        <button type="button" className="button secondary" onClick={() => openEdit(user)}>Editar</button>
-                        <button type="button" className="button danger" onClick={() => void removeUser(user)}>Eliminar</button>
+                    <td className="col-actions">
+                      <div className="usuarios-row-actions row-actions">
+                        <button type="button" className="button secondary" aria-label={`Editar a ${user.nombre} ${user.apellido}`} onClick={() => openEdit(user)}>Editar</button>
+                        <button type="button" className="button danger" aria-label={`Eliminar a ${user.nombre} ${user.apellido}`} onClick={() => void removeUser(user)}>Eliminar</button>
                         {user.nivel !== 4 && (
                           <RowActionsMenu label="Limpiar tokens Google" onSelect={() => void clearTokens(user)} />
                         )}

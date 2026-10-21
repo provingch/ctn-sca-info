@@ -302,28 +302,26 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
               <FilterField label="Año de egreso" narrow><AnimatedSelect ariaLabel="Año de egreso" value={filtroEgresados.promocion} onChange={(promocion) => setFiltroEgresados((actual) => ({ ...actual, promocion }))} options={[{ value: '', label: 'Todos los años' }, ...promocionesDeEgresados.map((anio) => ({ value: String(anio), label: String(anio) }))]} /></FilterField>
             </FiltersToolbar>}
             <div className="table-wrap">
-              <table className="grade-table u-table-md">
+              <table className="grade-table data-table u-table-md">
                 <caption className="visually-hidden">Alumnos egresados</caption>
                 <thead>
                   <tr>
-                    <th>Apellido</th>
-                    <th>Nombre</th>
-                    <th>Cédula</th>
-                    <th>Especialidad</th>
-                    <th>Año de egreso</th>
+                    <th scope="col">Egresado</th>
+                    <th scope="col">Cédula</th>
+                    <th scope="col">Especialidad</th>
+                    <th scope="col">Año de egreso</th>
                   </tr>
                 </thead>
                 <tbody>
                   {egresados.length === 0 ? (
-                    <tr><td colSpan={5}>No hay alumnos egresados.</td></tr>
+                    <tr><td colSpan={4}>No hay alumnos egresados.</td></tr>
                   ) : egresadosVisibles.length === 0 ? (
-                    <tr><td colSpan={5}>Ningún egresado coincide con los filtros elegidos.</td></tr>
+                    <tr><td colSpan={4}>Ningún egresado coincide con los filtros elegidos.</td></tr>
                   ) : (
                     egresadosVisibles.map((student) => (
                       <tr key={student.id}>
-                        <td>{student.apellido}</td>
-                        <td>{student.nombre}</td>
-                        <td>{student.ci ?? '—'}</td>
+                        <th scope="row">{student.apellido}, {student.nombre}</th>
+                        <td className="cell-muted">{student.ci ?? '—'}</td>
                         <td>{student.especialidad ?? '—'}</td>
                         <td>{student.promocion ?? '—'}</td>
                       </tr>
@@ -405,34 +403,32 @@ export default function AlumnosPanel({ data, reload, status }: AlumnosPanelProps
               <button type="button" className="button danger" onClick={eliminarSeleccion} disabled={enLote}>Eliminar</button>
             </BarraSeleccion>
             <div className="table-wrap">
-              <table className="grade-table u-table-wide">
+              <table className="grade-table data-table u-table-md">
                 <caption className="visually-hidden">Alumnos de {currentCurso?.nivel}° {selectedSeccion}</caption>
                 <thead>
                   <tr>
                     <CasillaTodos todos={seleccion.todos} algunos={seleccion.algunos} onChange={seleccion.toggleTodos} etiqueta="Seleccionar todos los alumnos visibles" />
-                    <th>Apellido</th>
-                    <th>Nombre</th>
-                    <th>Cédula</th>
-                    <th>Acciones</th>
+                    <th scope="col">Alumno</th>
+                    <th scope="col">Cédula</th>
+                    <th scope="col" className="col-actions"><span className="visually-hidden">Acciones</span></th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.length === 0 ? (
-                    <tr><td colSpan={5}>No hay alumnos en esta sección.</td></tr>
+                    <tr><td colSpan={4}>No hay alumnos en esta sección.</td></tr>
                   ) : rowsVisibles.length === 0 ? (
-                    <tr><td colSpan={5}>Ningún alumno coincide con la búsqueda.</td></tr>
+                    <tr><td colSpan={4}>Ningún alumno coincide con la búsqueda.</td></tr>
                   ) : (
                     rowsVisibles.map((student) => (
                       <tr key={student.id} className={seleccion.estaSeleccionado(student.id) ? 'is-selected' : undefined}>
                         <CasillaFila checked={seleccion.estaSeleccionado(student.id)} onChange={() => seleccion.toggle(student.id)} etiqueta={`Seleccionar a ${student.apellido}, ${student.nombre}`} />
-                        <td><button type="button" className="link-button" onClick={() => setFichaId(student.id)}>{student.apellido}</button></td>
-                        <td>{student.nombre}</td>
-                        <td>{student.ci ?? '—'}</td>
-                        <td>
-                          <div className="u-row">
-                            <button type="button" className="button secondary" onClick={() => setFichaId(student.id)}>Ficha</button>
-                            <button type="button" className="button secondary" onClick={() => openEdit(student)}>Editar</button>
-                            <button type="button" className="button danger" onClick={async () => {
+                        <th scope="row"><button type="button" className="link-button" onClick={() => setFichaId(student.id)}>{student.apellido}, {student.nombre}</button></th>
+                        <td className="cell-muted">{student.ci ?? '—'}</td>
+                        <td className="col-actions">
+                          <div className="row-actions">
+                            <button type="button" className="button secondary" aria-label={`Ver ficha de ${student.apellido}, ${student.nombre}`} onClick={() => setFichaId(student.id)}>Ficha</button>
+                            <button type="button" className="button secondary" aria-label={`Editar a ${student.apellido}, ${student.nombre}`} onClick={() => openEdit(student)}>Editar</button>
+                            <button type="button" className="button danger" aria-label={`Eliminar a ${student.apellido}, ${student.nombre}`} onClick={async () => {
                               try {
                                 const resumen = await getResumenAlumno(student.id);
                                 if (!(await confirmar(mensajeBorrado(`${student.apellido}, ${student.nombre}`, resumen), 'Eliminar'))) return;

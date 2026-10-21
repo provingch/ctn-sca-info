@@ -13,8 +13,6 @@
 .usuarios-sort span { display: inline; }
 .usuarios-sort:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
-.usuarios-row-actions { display: flex; flex-wrap: nowrap; align-items: center; justify-content: center; gap: 8px; }
-.usuarios-row-actions .button { white-space: nowrap; }
 
 .usuarios-row-menu { position: relative; display: inline-flex; }
 .usuarios-row-menu-trigger { min-width: 40px; padding: 8px 10px; line-height: 1; font-weight: 700; }

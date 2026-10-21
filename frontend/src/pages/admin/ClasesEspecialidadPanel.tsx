@@ -64,7 +64,7 @@ export default function ClasesEspecialidadPanel({ status }: { status: (message: 
         <ContentState tone="empty" title="No hay clases para mostrar" detail={query ? 'Ningún resultado coincide con la búsqueda.' : 'Todavía no se registraron clases en esta especialidad.'} />
       ) : (
         <div className="table-scroll u-mt">
-          <table className="grade-table u-table-xwide">
+          <table className="grade-table data-table u-table-xwide">
             <thead>
               <tr>
                 <th>Fecha</th>
@@ -72,9 +72,9 @@ export default function ClasesEspecialidadPanel({ status }: { status: (message: 
                 <th>Curso</th>
                 <th>Materia</th>
                 <th>Tema</th>
-                <th>Alumnos</th>
-                <th>Ausentes</th>
-                <th>Justificados</th>
+                <th className="num">Alumnos</th>
+                <th className="num">Ausentes</th>
+                <th className="num">Justificados</th>
               </tr>
             </thead>
             <tbody>
@@ -85,9 +85,9 @@ export default function ClasesEspecialidadPanel({ status }: { status: (message: 
                   <td>{c.cursoDescripcion || '—'}</td>
                   <td>{c.materiaNombre ?? '—'}</td>
                   <td>{c.tema}</td>
-                  <td>{c.totalAlumnos}</td>
-                  <td>{c.totalAusentes}</td>
-                  <td>{c.totalJustificados}</td>
+                  <td className="num">{c.totalAlumnos}</td>
+                  <td className="num">{c.totalAusentes}</td>
+                  <td className="num">{c.totalJustificados}</td>
                 </tr>
               ))}
             </tbody>

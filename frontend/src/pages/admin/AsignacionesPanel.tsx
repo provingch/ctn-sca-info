@@ -306,7 +306,7 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
         </div>
         <p className="assignment-help" id="assignment-load-help">La barra compara la cantidad con el máximo de la lista. El promedio incluye a todos los profesores; no representa horas ni un límite de carga.</p>
         <div className="table-wrap">
-          <table className="grade-table assignment-table" aria-describedby="assignment-load-help">
+          <table className="grade-table data-table assignment-table" aria-describedby="assignment-load-help">
             <caption className="visually-hidden">Profesores y cantidad de asignaciones</caption>
             <thead>
               <tr>
@@ -353,16 +353,16 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
         <button type="button" className="button danger" onClick={() => void eliminarSeleccion()} disabled={enLote}>Eliminar</button>
       </BarraSeleccion>
       <div className="table-wrap">
-        <table className="grade-table assignment-detail-table">
+        <table className="grade-table data-table assignment-detail-table">
           <caption className="visually-hidden">Asignaciones del profesor seleccionado</caption>
           <thead>
             <tr>
               <CasillaTodos todos={seleccion.todos} algunos={seleccion.algunos} onChange={seleccion.toggleTodos} etiqueta="Seleccionar todas las asignaciones" />
-              <th>Materia</th>
-              <th>Especialidad</th>
-              <th>Curso</th>
-              <th>Sección</th>
-              <th>Acciones</th>
+              <th scope="col">Materia</th>
+              <th scope="col">Especialidad</th>
+              <th scope="col">Curso</th>
+              <th scope="col">Sección</th>
+              <th scope="col" className="col-actions"><span className="visually-hidden">Acciones</span></th>
             </tr>
           </thead>
           <tbody>
@@ -374,13 +374,13 @@ export default function AsignacionesPanel({ data, reload, status }: Asignaciones
                 return (
                   <tr key={assignment.id} className={seleccion.estaSeleccionado(assignment.id) ? 'is-selected' : undefined}>
                     <CasillaFila checked={seleccion.estaSeleccionado(assignment.id)} onChange={() => seleccion.toggle(assignment.id)} etiqueta={`Seleccionar ${assignment.materia}`} />
-                    <td>{assignment.materia}</td>
+                    <th scope="row">{assignment.materia}</th>
                     <td>{course?.especialidad ? <SpecialtyBadge name={course.especialidad} /> : '—'}</td>
                     <td>{course?.nivel ?? '—'}°</td>
                     <td>{course?.seccion ?? '—'}</td>
-                    <td>
-                      <div className="u-row">
-                        <button type="button" className="button secondary" onClick={() => openEdit(assignment)}>Editar</button>
+                    <td className="col-actions">
+                      <div className="row-actions">
+                        <button type="button" className="button secondary" aria-label={`Editar ${assignment.materia}`} onClick={() => openEdit(assignment)}>Editar</button>
                         <button type="button" className="button danger" onClick={async () => {
                           if (!(await confirmar('¿Eliminar esta asignación?', 'Eliminar'))) return;
                           try {

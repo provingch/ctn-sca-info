@@ -11,10 +11,10 @@
 .subjects-table-wrap { margin: 0; }
 /* Base: .grade-table (index.css). Acá sólo lo propio de este catálogo. */
 .grade-table.subjects-table { min-width: 720px; table-layout: fixed; }
-.grade-table.subjects-table th, .grade-table.subjects-table td { text-align: left; padding: 14px; vertical-align: middle; }
-.grade-table.subjects-table th:first-child { position: static; min-width: 0; width: 24%; overflow-wrap: anywhere; }
-.subjects-table th:nth-child(2) { width: 110px; }
-.subjects-table th:last-child { width: 180px; }
+.grade-table.subjects-table tbody th { overflow-wrap: anywhere; }
+.subjects-table thead th:nth-child(2) { width: 28%; }
+.subjects-table thead th:nth-child(3) { width: 120px; }
+.subjects-table thead th:last-child { width: 170px; }
 .subjects-table thead th > button { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 8px; padding: 0; border: 0; color: inherit; background: transparent; font-weight: 700; text-align: left; }
 .subjects-table thead button:focus-visible { outline: 2px solid var(--accent); outline-offset: 5px; }
 .subjects-table tbody th { font-weight: 600; }
@@ -22,10 +22,6 @@
 .subject-specialties { display: flex; flex-wrap: wrap; gap: 6px; }
 .subject-specialty-chip { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 5px 8px; border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--line)); border-radius: var(--radius-xs); background: var(--accent-soft); color: var(--accent-deep); font-size: var(--fs-xs); font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
 .subject-specialty-chip i { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; background: var(--accent); }
-.subject-actions { display: flex; flex-wrap: nowrap; gap: 7px; }
-.subject-actions .button { min-height: 36px; padding: 7px 10px; font-size: var(--fs-xs); box-shadow: none; }
-.subject-actions .subject-delete { background: transparent; color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); }
-.subject-actions .subject-delete:hover { background: color-mix(in srgb, var(--danger) 12%, var(--paper)); }
 .subjects-pagination, .subjects-pagination nav, .subjects-page-size { display: flex; align-items: center; gap: 12px; }
 .subjects-pagination { justify-content: space-between; margin-top: 18px; font-size: var(--fs-sm); color: var(--muted); }
 .subjects-pagination nav { flex-wrap: wrap; }

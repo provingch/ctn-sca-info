@@ -1,0 +1,49 @@
+/*
+ * Tablas de datos del admin (alumnos, usuarios, asignaciones, materias, salas, clases).
+ * Se suma a .grade-table, que sigue siendo la base de las planillas de notas: acá el texto va
+ * a la izquierda, la cabecera es una etiqueta discreta y las acciones de fila son livianas.
+ */
+.table-wrap:has(> .data-table), .table-scroll:has(> .data-table) { border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--paper-raised); box-shadow: var(--shadow-card); overflow-x: auto; }
+.grade-table.data-table { min-width: 640px; border-collapse: separate; border-spacing: 0; font-size: var(--fs-md); }
+.grade-table.data-table th, .grade-table.data-table td { padding: 11px 16px; text-align: left; vertical-align: middle; border-bottom: 1px solid var(--line); }
+.grade-table.data-table th:first-child { position: static; min-width: 0; background: transparent; }
+.grade-table.data-table thead th, .grade-table.data-table thead th:first-child {
+  padding-block: 10px; background: var(--bg-soft); color: var(--muted);
+  font-size: var(--fs-2xs); font-weight: 700; letter-spacing: .07em; text-transform: uppercase; white-space: nowrap;
+}
+.grade-table.data-table thead th button { color: inherit; font-size: inherit; font-weight: inherit; letter-spacing: inherit; text-transform: inherit; }
+.grade-table.data-table tbody th { font-weight: 600; }
+.grade-table.data-table tbody tr:last-child > * { border-bottom: 0; }
+.grade-table.data-table tbody tr { transition: background-color .12s ease; }
+.grade-table.data-table tbody tr:hover > * { background: color-mix(in srgb, var(--accent) 4%, var(--paper-raised)); }
+.grade-table.data-table tbody tr.is-selected > * { background: color-mix(in srgb, var(--accent) 10%, var(--paper-raised)); }
+.grade-table.data-table tbody tr.is-selected > :first-child { box-shadow: inset 3px 0 var(--accent); }
+.grade-table.data-table .seleccion-col { width: 52px; padding-inline: 18px 6px; text-align: left; }
+
+.data-table .col-actions { width: 1%; text-align: right; white-space: nowrap; }
+.data-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.data-table .cell-muted { color: var(--muted); font-variant-numeric: tabular-nums; }
+.data-table .cell-name { display: grid; gap: 1px; }
+.data-table .cell-name small { color: var(--muted); font-size: var(--fs-xs); font-weight: 400; }
+
+/* Acciones de fila: botones fantasma, el color aparece al pasar el mouse. */
+.row-actions { display: inline-flex; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: 2px; }
+.row-actions .button, .row-actions .button.secondary, .row-actions .button.danger {
+  min-height: 32px; padding: 4px 10px; border-color: transparent; border-radius: var(--radius-xs);
+  background: transparent; box-shadow: none; color: var(--accent-deep); font-size: var(--fs-sm); font-weight: 700; white-space: nowrap;
+}
+.row-actions .button:hover { background: var(--accent-soft); }
+.row-actions .button.danger { color: var(--danger); }
+.row-actions .button.danger:hover { background: color-mix(in srgb, var(--danger) 10%, transparent); }
+.row-actions .button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.data-table .link-button { font-weight: 600; text-decoration: none; }
+.data-table .link-button:hover { color: var(--accent-deep); text-decoration: underline; }
+
+/* Filas vacías ("no hay…") centradas y aireadas. */
+.data-table td[colspan] { padding: 32px 18px; color: var(--muted); text-align: center; }
+.data-table td[colspan] strong { display: block; margin-bottom: 4px; color: var(--ink); }
+
+@media (max-width: 640px) {
+  .grade-table.data-table th, .grade-table.data-table td { padding: 10px 12px; }
+}

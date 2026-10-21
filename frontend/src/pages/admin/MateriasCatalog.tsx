@@ -107,12 +107,12 @@ export default function MateriasCatalog({ data, reload, status, onCreate, onEdit
         <button type="button" className="button danger" onClick={() => void deleteSelection()} disabled={busy}>Eliminar</button>
       </BarraSeleccion>
       <div className="table-wrap subjects-table-wrap" tabIndex={0} role="region" aria-label="Tabla de materias, desplazable horizontalmente">
-        <table className="grade-table subjects-table">
+        <table className="grade-table data-table subjects-table">
           <caption className="visually-hidden">Materias registradas, filtradas y ordenadas</caption>
           <thead><tr>
             <CasillaTodos todos={seleccion.todos} algunos={seleccion.algunos} onChange={seleccion.toggleTodos} etiqueta="Seleccionar todas las materias de esta página" />
             {(['nombre', 'categoria'] as const).map((key) => <th key={key} scope="col" aria-sort={sort.key === key ? sort.direction : 'none'}><button type="button" onClick={() => changeSort(key)} aria-label={'Ordenar por ' + (key === 'nombre' ? 'nombre' : 'tipo')}><span>{key === 'nombre' ? 'Nombre' : 'Tipo'}</span><span aria-hidden="true">{sort.key === key ? sort.direction === 'ascending' ? '↑' : '↓' : '↕'}</span></button></th>)}
-            <th scope="col">Especialidades</th><th scope="col">Acciones</th>
+            <th scope="col">Especialidades</th><th scope="col" className="col-actions"><span className="visually-hidden">Acciones</span></th>
           </tr></thead>
           <tbody>
             {visible.map((subject) => <tr key={subject.id} className={seleccion.estaSeleccionado(subject.id) ? 'is-selected' : undefined}>
@@ -123,9 +123,9 @@ export default function MateriasCatalog({ data, reload, status, onCreate, onEdit
                 const name = data.especialidades.find((item) => item.id === id)?.nombre ?? ('Especialidad #' + id);
                 return <span className="subject-specialty-chip" data-specialty={normalizeSpecialty(name)} key={id}><i aria-hidden="true" />{name}</span>;
               }) : <span className="muted-copy">Sin especialidad</span>}</div></td>
-              <td><div className="subject-actions">
+              <td className="col-actions"><div className="subject-actions row-actions">
                 <button type="button" className="button secondary" aria-label={'Editar ' + subject.nombre} onClick={() => onEdit(subject)}>Editar</button>
-                <button type="button" className="button subject-delete" aria-label={'Eliminar ' + subject.nombre} onClick={() => { setError(''); setTarget(subject); }}>Eliminar</button>
+                <button type="button" className="button danger subject-delete" aria-label={'Eliminar ' + subject.nombre} onClick={() => { setError(''); setTarget(subject); }}>Eliminar</button>
               </div></td>
             </tr>)}
             {visible.length === 0 && <tr><td colSpan={5} className="subjects-empty"><strong>{data.materias.length ? 'No hay coincidencias' : 'Todavía no hay materias'}</strong><p>{data.materias.length ? 'Probá otro nombre o cambiá los filtros.' : 'Creá la primera materia para comenzar.'}</p></td></tr>}

@@ -1,6 +1,6 @@
 /* Selección múltiple en las tablas del admin. */
 .seleccion-col { width: 44px; text-align: center; }
-.seleccion-check { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); cursor: pointer; vertical-align: middle; }
+.seleccion-check, .grade-table .seleccion-check { width: 18px; height: 18px; margin: 0; padding: 0; accent-color: var(--accent); cursor: pointer; vertical-align: middle; }
 tr.is-selected > td { background: color-mix(in srgb, var(--accent) 9%, transparent); }
 .barra-seleccion {
   position: sticky; top: 8px; z-index: 5;

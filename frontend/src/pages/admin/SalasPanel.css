@@ -12,12 +12,6 @@
 .rooms-list h3 { margin-top: 0; }
 /* Base: .grade-table (index.css). Acá sólo lo propio de este listado. */
 .grade-table.rooms-table { min-width: 690px; }
-.grade-table.rooms-table th, .grade-table.rooms-table td { padding: 15px; text-align: left; }
-.grade-table.rooms-table thead { font-size: var(--fs-sm); }
-.grade-table.rooms-table tbody th { font-weight: 600; }
-.grade-table.rooms-table tbody tr:last-child > * { border-bottom: 0; }
-.room-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.room-actions .button { font-size: var(--fs-xs); padding: 8px 10px; box-shadow: none; }
 .room-usage { font-size: var(--fs-sm); font-variant-numeric: tabular-nums; color: var(--ink); }
 .room-usage[data-unused="true"] { color: var(--muted); }
 .rooms-empty { padding: 32px !important; text-align: center; color: var(--muted); }
