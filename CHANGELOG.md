@@ -20,6 +20,10 @@ y este proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.
 
 - `deploy.sh` conserva `ANOTACIONES_API_KEY` y `ENFERMERIA_API_KEY` entre actualizaciones, y el sitio de nginx acepta envíos de hasta 6 MB para las fotos de anotaciones.
 
+### Corregido
+
+- Las planillas toman el año lectivo en cada operación en lugar de fijarlo al arrancar el backend: si el servidor seguía encendido después del 1 de enero, las planillas nuevas se guardaban con el año anterior, se reabría la planilla del año pasado del mismo curso y la libreta final no aparecía como disponible.
+
 ## [3.0.0] - 2026-09-21
 
 ### Añadido
