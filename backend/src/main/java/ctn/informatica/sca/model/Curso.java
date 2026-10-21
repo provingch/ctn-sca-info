@@ -66,6 +66,24 @@ public class Curso {
         };
     }
 
+    /** Nombre corto para mostrar en el año actual, por ejemplo "Informática 2ºA". */
+    public String getEtiqueta() {
+        return etiqueta(especialidad, promocion, seccion, getPeriod());
+    }
+
+    /**
+     * Nombre corto del curso tal como se lo llamaba en {@code anio}, por ejemplo "Informática 2ºA". Si en ese
+     * año la promoción ya había egresado (o todavía no entraba) no hay nivel que mostrar y se usa la promoción.
+     */
+    public static String etiqueta(String especialidad, int promocion, String seccion, int anio) {
+        String seccionTexto = seccion == null ? "" : seccion.trim().toUpperCase(Locale.ROOT);
+        int nivel = anio - promocion + 3;
+        if (nivel < 1 || nivel > 3) {
+            return especialidad + " promo " + promocion + (seccionTexto.isEmpty() ? "" : " " + seccionTexto);
+        }
+        return especialidad + " " + nivel + "º" + seccionTexto;
+    }
+
     public boolean matchesCourseKey(ctn.informatica.sca.google.GoogleClassroomUtils.CourseKey courseKey) {
         // Deprecated: CourseKey.sala is derived from the course name (subject),
         // not from the Classroom "room" field. Matching specialty must be

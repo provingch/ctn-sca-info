@@ -592,6 +592,10 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .parent-stage-tabs button.active { background: var(--accent); color: var(--accent-contrast); }
 .parent-stage-tabs button:focus-visible, .parent-subject-card:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 38%, transparent); outline-offset: 2px; }
 .parent-subject-section { display: grid; gap: 15px; }
+/* Materias de un curso del que se trasladó al alumno: aparte y atenuadas, no suman al promedio actual. */
+.parent-subject-section--anterior { margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--line); }
+.parent-subject-section--anterior .parent-subject-card { opacity: .8; }
+.parent-subject-section--anterior .parent-subject-card.selected { opacity: 1; }
 .parent-section-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; }
 .parent-section-heading p { max-width: 360px; text-align: right; }
 .parent-subject-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; }
@@ -1000,6 +1004,10 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .planilla-grade-table th:first-child { min-width: 50px; width: 50px; text-align: center; position: static; left: auto; }
 .planilla-grade-table .planilla-student-heading,
 .planilla-grade-table .planilla-student-name { min-width: 230px; max-width: 280px; text-align: left; }
+/* Alumno trasladado a otro curso: sigue en la planilla con sus notas, en gris y sin edición. */
+.planilla-grade-table .planilla-row--trasladado > :not(.planilla-row-number) { color: var(--muted); }
+.planilla-grade-table .planilla-row--trasladado .grade-chip { opacity: .55; }
+.trasladado-tag { display: block; width: fit-content; margin-top: 3px; padding: 1px 7px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: .66rem; font-weight: 800; white-space: nowrap; }
 .planilla-grade-table-wrap.freeze-students .planilla-row-number { position: sticky; left: 0; z-index: 4; background: var(--paper); }
 .planilla-grade-table-wrap.freeze-students .planilla-number-heading { position: sticky; left: 0; z-index: 6; background: var(--bg-soft); }
 .planilla-grade-table-wrap.freeze-students .planilla-student-heading,

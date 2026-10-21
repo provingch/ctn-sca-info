@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import AppShell from '../../components/AppShell';
 import ClassroomBadge from '../../components/ClassroomBadge';
 import GradeChip from '../../components/ui/GradeChip';
+import TrasladadoTag from '../../components/ui/TrasladadoTag';
 import ContentState from '../../components/ui/ContentState';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import DatePicker from '../../components/DatePicker';
@@ -599,9 +600,9 @@ export default function PlanillaPage() {
             </tr>
           </thead>
           <tbody>
-            {visibleRows.map(({ row, originalIndex, total, percentage }) => <tr key={row.alumnoId}>
+            {visibleRows.map(({ row, originalIndex, total, percentage }) => <tr key={row.alumnoId} className={row.trasladadoA ? 'planilla-row--trasladado' : undefined}>
               <td className="planilla-row-number">{originalIndex + 1}</td>
-              <th className="planilla-student-name" scope="row">{row.alumnoNombre}</th>
+              <th className="planilla-student-name" scope="row">{row.alumnoNombre}{row.trasladadoA && <TrasladadoTag curso={row.trasladadoA} />}</th>
               {data.tareas.map((task) => {
                 const grade = values[`${row.alumnoId}:${task.id}`];
                 const isClassroomTask = Boolean(task.googleCourseworkId?.trim());
@@ -614,7 +615,7 @@ export default function PlanillaPage() {
                       min={0}
                       max={task.total}
                       value={grade ?? ''}
-                      disabled={isStageLocked}
+                      disabled={isStageLocked || Boolean(row.trasladadoA)}
                       onChange={(e) => handleGradeChange(`${row.alumnoId}:${task.id}`, e.target.value, task.total)}
                       onBlur={() => void handleGradeBlur(row.alumnoId, task.id, task.total)}
                       aria-label={`Nota para ${row.alumnoNombre} en ${task.titulo}`}

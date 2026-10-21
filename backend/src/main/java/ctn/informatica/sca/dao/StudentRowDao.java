@@ -7,6 +7,7 @@ package ctn.informatica.sca.dao;
 
 import org.springframework.stereotype.Repository;
 import ctn.informatica.sca.clases.conexion;
+import ctn.informatica.sca.model.Curso;
 import ctn.informatica.sca.model.Planilla;
 import ctn.informatica.sca.model.StudentRow;
 import java.sql.Connection;
@@ -119,7 +120,21 @@ public class StudentRowDao extends conexion {
     public List<StudentRow> loadRowsForPlanilla(Planilla planilla,
             Map<Integer, Integer> tareaMax,
             int totalPossiblePoints) throws SQLException {
+        return loadRowsForPlanilla(planilla, tareaMax, totalPossiblePoints, false);
+    }
+
+    /**
+     * Con {@code incluirTrasladados} también vienen los alumnos que tienen registro en la planilla pero hoy
+     * están en otro curso (se los cambió de especialidad o de sección): quedan al final, marcados con el curso
+     * al que se fueron, para que la planilla siga mostrando sus notas. Las exportaciones y cálculos del curso
+     * no los piden.
+     */
+    public List<StudentRow> loadRowsForPlanilla(Planilla planilla,
+            Map<Integer, Integer> tareaMax,
+            int totalPossiblePoints,
+            boolean incluirTrasladados) throws SQLException {
         List<StudentRow> rows = new ArrayList<>();
+        List<StudentRow> trasladados = new ArrayList<>();
         // RSA: solo se consultan faltas y clases dadas si la planilla lo tiene activado, y una
         // única vez para todos los alumnos (no una consulta por alumno).
         boolean rsaActivo = planilla != null && planilla.getRsaPuntos() != null;
@@ -128,9 +143,11 @@ public class StudentRowDao extends conexion {
         // SQL: get registros (students) and any puntaje (left join)
         // We join registro -> alumno and left join puntaje (to get tarea_id and puntos)
         String sql = "SELECT r.id AS registro_id, a.id AS alumno_id, a.nombre, a.apellido, a.curso_id, "
-                + "p.tarea_id, p.puntos "
+                + "p.tarea_id, p.puntos, e.nombre AS especialidad_actual, c.promocion AS promocion_actual, c.seccion AS seccion_actual "
                 + "FROM registro r "
                 + "JOIN alumno a ON r.alumno_id = a.id "
+                + "JOIN curso c ON c.id = a.curso_id "
+                + "JOIN especialidad e ON e.id = c.especialidad_id "
                 + "LEFT JOIN puntaje p ON p.registro_id = r.id "
                 + "WHERE r.planilla_id = ? "
                 + "ORDER BY a.apellido, a.nombre, r.id";
@@ -143,13 +160,18 @@ public class StudentRowDao extends conexion {
                 while (rs.next()) {
                     int registroId = rs.getInt("registro_id");
                     int alumnoCursoId = rs.getInt("curso_id");
-                    if (!shouldIncludeAlumnoForPlanillaCurso(alumnoCursoId, planilla.getCursoId())) {
+                    boolean trasladado = !shouldIncludeAlumnoForPlanillaCurso(alumnoCursoId, planilla.getCursoId());
+                    if (trasladado && !incluirTrasladados) {
                         continue;
                     }
                     StudentRow row = map.get(registroId);
                     if (row == null) {
                         row = new StudentRow();
                         row.setRegistroId(registroId);
+                        if (trasladado) {
+                            row.setTrasladadoA(Curso.etiqueta(rs.getString("especialidad_actual"),
+                                    rs.getInt("promocion_actual"), rs.getString("seccion_actual"), AcademicPeriod.current()));
+                        }
                         row.setAlumnoId(rs.getInt("alumno_id"));
                         String nombre = rs.getString("nombre");
                         String apellido = rs.getString("apellido");
@@ -196,8 +218,9 @@ public class StudentRowDao extends conexion {
                     }
 
                     r.setNota(nota);
-                    rows.add(r);
+                    (r.getTrasladadoA() == null ? rows : trasladados).add(r);
                 }
+                rows.addAll(trasladados);
             }
         }
         return rows;

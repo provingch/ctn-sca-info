@@ -45,7 +45,8 @@ public class ParentController {
                 int points = 0;
                 int possible = 0;
                 for (ParentSummaryItem item : allSummary) {
-                    if (item.getAlumnoId() != null && item.getAlumnoId() == child.getId()) {
+                    // El promedio es del curso actual: las notas de un curso anterior se muestran aparte.
+                    if (item.getAlumnoId() != null && item.getAlumnoId() == child.getId() && item.getCursoAnterior() == null) {
                         points += item.getPuntos();
                         possible += item.getTotalPosible();
                     }
@@ -61,7 +62,8 @@ public class ParentController {
                     for (ParentTaskGrade task : padreDao.findTaskGradesForAlumnoPlanilla(selected, item.getPlanillaId())) {
                         tasks.add(new TaskDto(task.getTareaId(), task.getTareaTitulo(), task.getFecha(), task.getPuntos(), task.getTotal(), task.getEstado()));
                     }
-                    subjects.add(new SubjectDto(item.getPlanillaId(), item.getMateriaId(), item.getMateriaNombre(), item.getEtapa(), item.getPuntos(), item.getTotalPosible(), item.getPorcentaje(), item.getNota(), tasks));
+                    subjects.add(new SubjectDto(item.getPlanillaId(), item.getMateriaId(), item.getMateriaNombre(), item.getEtapa(), item.getPuntos(), item.getTotalPosible(), item.getPorcentaje(), item.getNota(), tasks,
+                            item.getCursoAnterior(), item.getCursoAnteriorHasta()));
                 }
             }
             boolean libretaDisponible = selected > 0 && padreDao.isLibretaDisponibleParaAlumno(selected);
@@ -153,11 +155,14 @@ public class ParentController {
                         "Ese alumno no está vinculado a tu cuenta."));
     }
 
-    /** Ítems del resumen (mismos que la vista en pantalla) filtrados a un alumno. */
+    /**
+     * Ítems del resumen (mismos que la vista en pantalla) filtrados a un alumno, sólo del curso actual: la
+     * libreta y el reporte mensual no mezclan materias de un curso del que se lo trasladó.
+     */
     private List<ParentSummaryItem> summaryForAlumno(int userId, int alumnoId) throws SQLException {
         List<ParentSummaryItem> out = new ArrayList<>();
         for (ParentSummaryItem item : padreDao.findParentSummary(userId)) {
-            if (item.getAlumnoId() != null && item.getAlumnoId() == alumnoId) {
+            if (item.getAlumnoId() != null && item.getAlumnoId() == alumnoId && item.getCursoAnterior() == null) {
                 out.add(item);
             }
         }
@@ -184,6 +189,8 @@ public class ParentController {
 
     public record ParentResponse(List<ChildDto> hijos, Integer selectedAlumnoId, List<SubjectDto> materias, boolean libretaDisponible) {}
     public record ChildDto(int id, String nombre, String apellido, String especialidad, int promedio) {}
-    public record SubjectDto(int planillaId, int materiaId, String materia, String etapa, int puntos, int total, int porcentaje, int nota, List<TaskDto> tareas) {}
+    /** {@code cursoAnterior} viene sólo en las materias de un curso del que se trasladó al alumno (null en las del actual). */
+    public record SubjectDto(int planillaId, int materiaId, String materia, String etapa, int puntos, int total, int porcentaje, int nota, List<TaskDto> tareas,
+            String cursoAnterior, LocalDate cursoAnteriorHasta) {}
     public record TaskDto(int id, String titulo, LocalDate fecha, Integer puntos, int total, String estado) {}
 }

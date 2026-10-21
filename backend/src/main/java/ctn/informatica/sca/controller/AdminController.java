@@ -762,6 +762,21 @@ public class AdminController {
         } catch (ResponseStatusException ex) { throw ex; } catch (Exception ex) { throw failure("No se pudo limpiar tokens de Google", ex); }
     }
 
+    /** Lo que tiene cargado el alumno: el panel lo muestra antes de borrarlo o de cambiarlo de curso. */
+    @GetMapping("/alumnos/{id}/resumen")
+    public AlumnoDao.ResumenAlumno resumenAlumno(@PathVariable int id, Authentication auth) {
+        ApiAuth.requireUserId(auth);
+        try {
+            Integer actingSpecialtyId = getSpecialtyAdminIdForUser(ApiAuth.requireUserId(auth));
+            Alumno alumno = new AlumnoDao().findById(id);
+            if (alumno == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Alumno no encontrado");
+            if (actingSpecialtyId != null && !canAccessAlumno(actingSpecialtyId, alumno.getCursoId())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes ver alumnos fuera de tu especialidad");
+            }
+            return new AlumnoDao().resumen(id);
+        } catch (ResponseStatusException ex) { throw ex; } catch (Exception ex) { throw failure("No se pudo cargar el resumen del alumno", ex); }
+    }
+
     @DeleteMapping("/alumnos/{id}") @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteAlumno(@PathVariable int id, Authentication auth) {
         ApiAuth.requireUserId(auth);
@@ -803,7 +818,7 @@ public class AdminController {
             if (actingSpecialtyId != null && !canAccessAlumno(actingSpecialtyId, input.cursoId())) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes mover alumnos a cursos fuera de tu especialidad");
             }
-            if (!alumnoDao.update(id, input.nombre().trim(), input.apellido().trim(), input.cursoId(), input.ci())) {
+            if (!alumnoDao.update(id, input.nombre().trim(), input.apellido().trim(), input.cursoId(), input.ci(), ApiAuth.requireUserId(auth))) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Alumno no encontrado");
             }
             try {

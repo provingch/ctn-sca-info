@@ -237,6 +237,16 @@ public class PlanillaController {
                         planilla.getId());
             }
 
+            // Un alumno trasladado a otro curso conserva su registro en esta planilla para que se vean sus
+            // notas, pero ya no se le cargan: quedan como estaban cuando se fue.
+            for (Integer trasladado : new RegistroDao().findAlumnoIdsTrasladados(planilla.getId(), gradesByAlumno.keySet())) {
+                skippedCount += gradesByAlumno.remove(trasladado).size();
+                warnings.add("Alumno " + trasladado + " fue trasladado a otro curso: sus notas en esta planilla son de solo lectura");
+            }
+            if (gradesByAlumno.isEmpty()) {
+                return new SaveGradesResponse("No hay calificaciones válidas para guardar.", 0, skippedCount, warnings, planilla.getId());
+            }
+
             Set<Integer> alumnoIds = gradesByAlumno.keySet();
             RegistroDao registroDao = new RegistroDao();
             Map<Integer, Integer> alumnoToRegistro = registroDao.getRegistroIdsForPlanilla(planilla.getId(), alumnoIds);
@@ -824,7 +834,8 @@ public class PlanillaController {
             int total,
             int porcentaje,
             int nota,
-            int rsaPuntos) {
+            int rsaPuntos,
+            String trasladadoA) {
     }
 
     public record GradeValueDto(int tareaId, Integer puntos) {

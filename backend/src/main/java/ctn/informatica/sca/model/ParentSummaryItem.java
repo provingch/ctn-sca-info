@@ -18,6 +18,10 @@ public class ParentSummaryItem {
     private String etapa;
     private String categoria;
     private int tareasCount;
+    /** Curso del que viene la materia si no es el actual del alumno (se lo trasladó); null si es del curso actual. */
+    private String cursoAnterior;
+    /** Fecha en que se lo cambió de ese curso, si quedó registrada. */
+    private java.time.LocalDate cursoAnteriorHasta;
     private Map<Integer, Integer> tareaPuntajes = new LinkedHashMap<>();
 
     public void recomputeDerivedValues() {
@@ -56,6 +60,10 @@ public class ParentSummaryItem {
     public void setPlanillaId(Integer planillaId) { this.planillaId = planillaId; }
     public String getEspecialidadNombre() { return especialidadNombre; }
     public void setEspecialidadNombre(String especialidadNombre) { this.especialidadNombre = especialidadNombre; }
+    public String getCursoAnterior() { return cursoAnterior; }
+    public void setCursoAnterior(String cursoAnterior) { this.cursoAnterior = cursoAnterior; }
+    public java.time.LocalDate getCursoAnteriorHasta() { return cursoAnteriorHasta; }
+    public void setCursoAnteriorHasta(java.time.LocalDate cursoAnteriorHasta) { this.cursoAnteriorHasta = cursoAnteriorHasta; }
     public String getEtapa() { return etapa; }
     public void setEtapa(String etapa) { this.etapa = etapa; }
     public String getCategoria() { return categoria; }

@@ -21,6 +21,7 @@ public class StudentRow {
     private int porcentaje;              // rounded percentage of totalPossiblePoints
     private int nota;                    // final grade (can be different from porcentaje)
     private int rsaPuntos;               // puntaje RSA con el descuento ya aplicado, 0 si no aplica
+    private String trasladadoA;          // curso actual del alumno si ya no es el de la planilla, null si sigue en él
 
     public StudentRow() {
     }
@@ -121,5 +122,13 @@ public class StudentRow {
 
     public void setRsaPuntos(int rsaPuntos) {
         this.rsaPuntos = rsaPuntos;
+    }
+
+    public String getTrasladadoA() {
+        return trasladadoA;
+    }
+
+    public void setTrasladadoA(String trasladadoA) {
+        this.trasladadoA = trasladadoA;
     }
 }
