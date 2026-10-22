@@ -23,7 +23,8 @@ import { resizeImageToDataUri } from '../../utils/imageResize';
 import RasgosAsistenciaEditor from './RasgosAsistenciaEditor';
 import AlumnosRiesgoView from './AlumnosRiesgoView';
 import { datosFaltantesDeLaClase, mensajeDatosFaltantes } from './claseRequerida';
-import CardsWithActivity from '../../components/CardsWithActivity';
+import DashboardActivity from '../../components/DashboardActivity';
+import { DashboardLayout, DashboardStats, DashboardTasks, type DashboardTask } from '../../components/Dashboard';
 
 const normalizeSpecialtyName = (value: string) => value
   .trim()
@@ -418,12 +419,16 @@ function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChan
   const { user } = useAuth();
   const navigate = useNavigate();
   const [asignaciones, setAsignaciones] = useState<AsignacionCompleta[] | null>(null);
+  const [bloquesHoy, setBloquesHoy] = useState<HorarioBloqueHoyDto[] | null | undefined>(null);
 
   useEffect(() => {
     let active = true;
     void getMisAsignaciones()
       .then((list) => { if (active) setAsignaciones(list); })
       .catch(() => { /* sin datos: no se muestra badge de plan curricular */ });
+    void getMiHorarioHoy()
+      .then((list) => { if (active) setBloquesHoy(list); })
+      .catch(() => { if (active) setBloquesHoy(undefined); });
     return () => { active = false; };
   }, []);
 
@@ -449,33 +454,61 @@ function HomeLauncher({ data, especialidades, especialidadId, onEspecialidadChan
         </label>
       )}
     />
-    <CardsWithActivity>
-      <LauncherCards options={[
-        {
-          key: 'catedra',
-          icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 5.5c2.2-1 5-1 8 .3V19c-3-1.3-5.8-1.3-8-.3V5.5Z" /><path d="M20 5.5c-2.2-1-5-1-8 .3V19c3-1.3 5.8-1.3 8-.3V5.5Z" /></svg>,
-          title: 'Libro de Cátedra',
-          description: 'Plan curricular e inicio de clases.',
-          onSelect: () => onSelect('catedra'),
-          badges: asignaciones && (rechazados > 0
-            ? <span className="launcher-badge tone-danger">{rechazados} plan{rechazados === 1 ? '' : 'es'} rechazado{rechazados === 1 ? '' : 's'}</span>
-            : noCargados > 0
-              ? <span className="launcher-badge tone-warning">{noCargados} plan{noCargados === 1 ? '' : 'es'} sin cargar</span>
-              : <span className="launcher-badge tone-success">Planes al día</span>),
-        },
-        {
-          key: 'planillas',
-          icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="6" y="4" width="12" height="17" rx="2" /><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" /><path d="M9 11h6M9 15h6" /></svg>,
-          title: 'Gestionar planillas',
-          description: 'Tareas, puntajes y sincronización con Classroom.',
-          onSelect: () => onSelect('planillas'),
-          badges: <>
-            {data && data.planillas.length > 0 && <span className="launcher-badge tone-accent">{data.planillas.length} planilla{data.planillas.length === 1 ? '' : 's'} activa{data.planillas.length === 1 ? '' : 's'}</span>}
-            {data && data.googleClassroomConnected === false && <span className="launcher-badge tone-warning">Classroom sin conectar</span>}
-          </>,
-        },
-      ]} />
-    </CardsWithActivity>
+    <DashboardLayout
+      stats={<DashboardStats stats={[
+        { key: 'hoy', label: 'Clases por registrar hoy', value: bloquesHoy === undefined ? undefined : bloquesHoy?.filter((b) => !b.registrada).length ?? null },
+        { key: 'rechazados', label: 'Planes rechazados', value: asignaciones ? rechazados : null, tone: rechazados ? 'danger' : undefined },
+        { key: 'sin-cargar', label: 'Planes sin cargar', value: asignaciones ? noCargados : null, tone: noCargados ? 'warning' : undefined },
+        { key: 'planillas', label: 'Planillas activas', value: data ? data.planillas.length : null },
+      ]} />}
+      tasks={<DashboardTasks title="Hoy" columns={['Hora', 'Clase', 'Sala']} tasks={bloquesHoy === null ? null : [
+        ...(bloquesHoy ?? []).map((bloque): DashboardTask => ({
+          key: `${bloque.asignacionId}-${bloque.horaInicio}`,
+          kind: `${bloque.horaInicio}–${bloque.horaFin}`,
+          tone: bloque.registrada ? 'success' : 'accent',
+          title: bloque.materiaNombre,
+          detail: bloque.registrada ? `${bloque.cursoDescripcion} · registrada` : bloque.cursoDescripcion,
+          when: bloque.salaNombre ?? '',
+          action: bloque.registrada ? undefined : { label: 'Iniciar clase', primary: true, onSelect: () => onSelect('catedra') },
+        })),
+        ...(asignaciones ?? []).filter((a) => a.estadoPlan === 'RECHAZADO' || a.estadoPlan === 'NO_CARGADO').map((a): DashboardTask => ({
+          key: `plan-${a.id}`,
+          kind: a.estadoPlan === 'RECHAZADO' ? 'Plan rechazado' : 'Plan sin cargar',
+          tone: a.estadoPlan === 'RECHAZADO' ? 'danger' : 'warning',
+          title: a.materiaNombre,
+          detail: `${a.cursoOrdinal.replace(/[.°º\s]+$/u, '')}° ${a.seccion} · ${a.especialidadNombre}`,
+          action: { label: a.estadoPlan === 'RECHAZADO' ? 'Corregir' : 'Subir', onSelect: () => onSelect('catedra', { subview: 'plan-curricular' }) },
+        })),
+      ]} emptyText={bloquesHoy === undefined ? 'No se pudo cargar tu horario de hoy.' : 'No tenés clases en tu horario de hoy y tus planes están al día.'} />}
+      side={<>
+          <LauncherCards options={[
+            {
+              key: 'catedra',
+              icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 5.5c2.2-1 5-1 8 .3V19c-3-1.3-5.8-1.3-8-.3V5.5Z" /><path d="M20 5.5c-2.2-1-5-1-8 .3V19c3-1.3 5.8-1.3 8-.3V5.5Z" /></svg>,
+              title: 'Libro de Cátedra',
+              description: 'Plan curricular e inicio de clases.',
+              onSelect: () => onSelect('catedra'),
+              badges: asignaciones && (rechazados > 0
+                ? <span className="launcher-badge tone-danger">{rechazados} plan{rechazados === 1 ? '' : 'es'} rechazado{rechazados === 1 ? '' : 's'}</span>
+                : noCargados > 0
+                  ? <span className="launcher-badge tone-warning">{noCargados} plan{noCargados === 1 ? '' : 'es'} sin cargar</span>
+                  : <span className="launcher-badge tone-success">Planes al día</span>),
+            },
+            {
+              key: 'planillas',
+              icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="6" y="4" width="12" height="17" rx="2" /><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" /><path d="M9 11h6M9 15h6" /></svg>,
+              title: 'Gestionar planillas',
+              description: 'Tareas, puntajes y sincronización con Classroom.',
+              onSelect: () => onSelect('planillas'),
+              badges: <>
+                {data && data.planillas.length > 0 && <span className="launcher-badge tone-accent">{data.planillas.length} planilla{data.planillas.length === 1 ? '' : 's'} activa{data.planillas.length === 1 ? '' : 's'}</span>}
+                {data && data.googleClassroomConnected === false && <span className="launcher-badge tone-warning">Classroom sin conectar</span>}
+              </>,
+            },
+          ]} />
+        <DashboardActivity />
+      </>}
+    />
     {asignaciones && asignaciones.length > 0 && (
       <div className="launcher-materias">
         <h3>Tus materias</h3>

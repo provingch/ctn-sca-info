@@ -19,7 +19,10 @@ import { useToast } from '../../context/toast';
 import LauncherCards from '../../components/LauncherCards';
 import { launcherIcons } from '../../components/launcherIcons';
 import SectionNavigation from '../../components/SectionNavigation';
-import CardsWithActivity from '../../components/CardsWithActivity';
+import DashboardActivity from '../../components/DashboardActivity';
+import { DashboardLayout, DashboardStats, DashboardTasks, type DashboardTask } from '../../components/Dashboard';
+import { shortWhen } from '../../utils/date';
+import { getAdminQuejas, quejaEstado, type QuejaItem } from '../../api/quejas';
 
 const modules = [
   { path: '/admin/materias', key: 'materias', title: 'Materias', detail: 'Catálogo, categorías y especialidades', globalOnly: true },
@@ -78,18 +81,7 @@ export default function AdminPage() {
     {selectedIsRestricted ? (
       <ContentState tone="error" title="Módulo reservado al administrador global" detail="Tu cuenta administra una especialidad y no tiene acceso a esta herramienta del sistema." actions={<Link className="button" to="/admin">Volver al panel</Link>} />
     ) : !selected ? (
-      <div className="admin-dashboard-sections">
-        <section aria-labelledby="admin-management-title">
-          <header className="admin-dashboard-heading"><span>Administración</span><h2 id="admin-management-title">Gestión del sistema</h2></header>
-          <CardsWithActivity>
-            <LauncherCards options={visibleModules.map(module => ({ key: module.key, href: module.path, title: module.title, description: module.detail, icon: module.key === 'clases' ? launcherIcons.clasesDadas : launcherIcons[module.key as keyof typeof launcherIcons] }))} />
-          </CardsWithActivity>
-        </section>
-        {!isScopedAdmin && <section className="admin-reference-section" aria-labelledby="admin-reference-title">
-          <header className="admin-dashboard-heading"><span>Referencia</span><h2 id="admin-reference-title">Herramientas internas</h2></header>
-          <LauncherCards options={[{ key: 'styleguide', href: '/styleguide', title: 'Sistema de diseño', description: 'Componentes, estados y reglas visuales compartidas.', icon: launcherIcons.verPlanillas }]} />
-        </section>}
-      </div>
+      <AdminInicio data={data} modules={visibleModules} isScopedAdmin={isScopedAdmin} />
     ) : (
       <div className="u-relative">
         <AdminModule module={selected} data={data} reload={load} status={setStatus} isGlobalAdmin={!isScopedAdmin} fichaInicial={fichaParam} onFichaCerrada={cerrarFicha} />
@@ -112,4 +104,86 @@ function AdminModule({ module, data, reload, status, isGlobalAdmin, fichaInicial
   if (module.key === 'quejas') return <AdminQuejasPanel data={data} status={status} isGlobalAdmin={isGlobalAdmin} />;
   if (module.key === 'clases') return <ClasesEspecialidadPanel status={status} />;
   return <SistemaEstadoPanel />;
+}
+
+const PROFESOR = 1;
+
+/** Inicio de Administración: cifras, lo que hay que resolver y los accesos a cada módulo. */
+function AdminInicio({ data, modules: visibles, isScopedAdmin }: { data: AdminCatalog; modules: (typeof modules)[number][]; isScopedAdmin: boolean }) {
+  const [quejas, setQuejas] = useState<QuejaItem[] | null | undefined>(null);
+
+  useEffect(() => {
+    let active = true;
+    void getAdminQuejas().then((list) => { if (active) setQuejas(list); }).catch(() => { if (active) setQuejas(undefined); });
+    return () => { active = false; };
+  }, []);
+
+  const pendientes = quejas?.filter((q) => quejaEstado(q) === 'pendiente') ?? [];
+  const profesores = data.usuarios.filter((u) => u.nivel === PROFESOR);
+  const conAsignacion = new Set(data.asignaciones.map((a) => a.profesorId));
+  const sinAsignacion = isScopedAdmin ? [] : profesores.filter((p) => !conAsignacion.has(p.id));
+  const alumnosPorCurso = new Map<number, number>();
+  data.alumnos.forEach((a) => alumnosPorCurso.set(a.cursoId, (alumnosPorCurso.get(a.cursoId) ?? 0) + 1));
+
+  const tasks: DashboardTask[] | null = quejas === null ? null : [
+    ...pendientes.map((q): DashboardTask => ({
+      key: `queja-${q.id}`,
+      kind: 'Queja',
+      tone: 'warning',
+      title: [q.cursoEspecialidad, q.cursoNivel ? `${q.cursoNivel}°` : null, q.cursoSeccion].filter(Boolean).join(' ') || `Curso #${q.cursoId}`,
+      detail: q.motivo,
+      when: shortWhen(q.creadaEn),
+      action: { label: 'Ver', href: '/admin/quejas' },
+    })),
+    ...sinAsignacion.map((p): DashboardTask => ({
+      key: `profesor-${p.id}`,
+      kind: 'Asignación',
+      tone: 'warning',
+      title: `${p.apellido}, ${p.nombre}`,
+      detail: 'Profesor sin materias asignadas',
+      action: { label: 'Asignar', href: '/admin/asignaciones' },
+    })),
+  ];
+
+  // Resumen: por sección para el admin de una especialidad, por especialidad para el global.
+  const filas = isScopedAdmin
+    ? data.cursosAlumnos.map((c) => ({
+      key: String(c.id), nombre: `${c.nivel}° ${c.seccion}`, alumnos: alumnosPorCurso.get(c.id) ?? 0,
+      quejas: quejas ? pendientes.filter((q) => q.cursoNivel === c.nivel && q.cursoSeccion === c.seccion && q.cursoEspecialidad === c.especialidad).length : null,
+    })).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+    : [...data.cursosAlumnos.reduce((map, c) => {
+      const fila = map.get(c.especialidad) ?? { key: c.especialidad, nombre: c.especialidad, alumnos: 0, quejas: quejas ? 0 : null as number | null };
+      fila.alumnos += alumnosPorCurso.get(c.id) ?? 0;
+      map.set(c.especialidad, fila);
+      return map;
+    }, new Map<string, { key: string; nombre: string; alumnos: number; quejas: number | null }>()).values()]
+      .map((fila) => ({ ...fila, quejas: quejas ? pendientes.filter((q) => q.cursoEspecialidad === fila.nombre).length : null }))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+
+  return <DashboardLayout
+    stats={<DashboardStats stats={[
+      { key: 'alumnos', label: 'Alumnos activos', value: data.alumnos.length },
+      isScopedAdmin
+        ? { key: 'secciones', label: 'Secciones', value: data.cursosAlumnos.length }
+        : { key: 'profesores', label: sinAsignacion.length ? `Profesores · ${sinAsignacion.length} sin asignar` : 'Profesores', value: profesores.length, tone: sinAsignacion.length ? 'warning' : undefined },
+      { key: 'quejas', label: 'Quejas pendientes', value: quejas === null ? null : quejas === undefined ? undefined : pendientes.length, tone: pendientes.length ? 'warning' : undefined },
+      { key: 'egresados', label: 'Egresados', value: data.egresados.length },
+    ]} />}
+    tasks={<DashboardTasks title="Para resolver" tasks={tasks} emptyText="No hay quejas pendientes ni profesores sin asignar." />}
+    side={<>
+      <LauncherCards options={[
+        ...visibles.map((module) => ({ key: module.key, href: module.path, title: module.title, description: module.detail, icon: module.key === 'clases' ? launcherIcons.clasesDadas : launcherIcons[module.key as keyof typeof launcherIcons] })),
+        ...(isScopedAdmin ? [] : [{ key: 'styleguide', href: '/styleguide', title: 'Sistema de diseño', description: 'Componentes y reglas visuales.', icon: launcherIcons.verPlanillas }]),
+      ]} />
+      <DashboardActivity />
+    </>}
+  >
+    {filas.length > 0 && <section className="panel dash-summary" aria-label={isScopedAdmin ? 'Secciones' : 'Alumnos por especialidad'}>
+      <header className="dash-tasks-head"><h2>{isScopedAdmin ? 'Secciones' : 'Alumnos por especialidad'}</h2><Link to="/admin/alumnos">Ver alumnos</Link></header>
+      <table className="dash-table">
+        <thead><tr><th scope="col">{isScopedAdmin ? 'Curso' : 'Especialidad'}</th><th scope="col" className="num">Alumnos</th><th scope="col" className="num">Quejas pendientes</th></tr></thead>
+        <tbody>{filas.map((fila) => <tr key={fila.key}><td><strong>{fila.nombre}</strong></td><td className="num">{fila.alumnos}</td><td className="num">{fila.quejas ?? '—'}</td></tr>)}</tbody>
+      </table>
+    </section>}
+  </DashboardLayout>;
 }

@@ -11,7 +11,7 @@
 .selectable-item-note { font-size: var(--fs-sm); }
 .selectable-item-tag { color: var(--accent-deep); font-weight: 700; }
 
-.estado-badge { display: inline-flex; align-items: center; padding: 3px 10px; border: 1px solid color-mix(in srgb, var(--estado-color) 45%, var(--line)); border-radius: 999px; background: color-mix(in srgb, var(--estado-color) 14%, var(--paper)); color: var(--estado-color); font-size: var(--fs-xs); font-weight: 800; letter-spacing: .02em; }
+.estado-badge { display: inline-flex; align-items: center; padding: 3px 10px; border: 1px solid color-mix(in srgb, var(--estado-color) 45%, var(--line)); border-radius: var(--radius-pill, 4px); background: color-mix(in srgb, var(--estado-color) 14%, var(--paper)); color: var(--estado-color); font-size: var(--fs-xs); font-weight: 800; letter-spacing: .02em; }
 .estado-badge--success { --estado-color: var(--success); }
 .estado-badge--warning { --estado-color: var(--warning); }
 .estado-badge--danger { --estado-color: var(--danger); }

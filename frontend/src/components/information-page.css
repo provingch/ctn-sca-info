@@ -15,7 +15,7 @@
 .about-card .about-lead { font-size: var(--fs-lg); margin-bottom: 8px; }
 .about-card section { margin-top: var(--information-section-gap); }
 .about-modules { list-style: none; padding: 0; margin: 24px 0 0; display: flex; flex-wrap: wrap; gap: 8px; }
-.about-modules li { border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; background: var(--accent-soft); color: var(--ink); font-size: var(--fs-sm); line-height: 1.5; }
+.about-modules li { border: 1px solid var(--line); border-radius: var(--radius-pill, 4px); padding: 6px 12px; background: var(--accent-soft); color: var(--ink); font-size: var(--fs-sm); line-height: 1.5; }
 .about-team { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); list-style: none; padding: 0; gap: 16px; margin: 20px 0 0; }
 .about-team > li { display: flex; align-items: center; gap: 16px; padding: 20px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper-raised); min-width: 0; }
 .about-team > li > div:last-child { min-width: 0; overflow-wrap: anywhere; }

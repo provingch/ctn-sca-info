@@ -8,7 +8,11 @@ import { useEvaluacionFiltros } from './useEvaluacionFiltros';
 import { useSearchParams } from 'react-router-dom';
 import LauncherCards from '../../components/LauncherCards';
 import { launcherIcons } from '../../components/launcherIcons';
-import CardsWithActivity from '../../components/CardsWithActivity';
+import DashboardActivity from '../../components/DashboardActivity';
+import { DashboardLayout, DashboardStats, DashboardTasks, type DashboardTask } from '../../components/Dashboard';
+import { shortWhen } from '../../utils/date';
+import { getPendientes, type PlanPendienteResumen } from '../../api/planCurricular';
+import { getIncumplimientos, TIPO_ATRASO, type IncumplimientoPendiente } from '../../api/evaluacion';
 
 type EvaluationView = 'menu' | 'ver-planillas' | 'planes' | 'seguimiento';
 
@@ -40,13 +44,7 @@ export default function EvaluacionPage() {
 
   if (view === 'menu') {
     return <AppShell title="Panel de Evaluación" subtitle="Revisión y seguimiento académico" welcome>
-      <CardsWithActivity>
-        <LauncherCards options={[
-          { key: 'ver-planillas', icon: launcherIcons.verPlanillas, title: 'Ver planillas', description: 'Consultá las notas de una planilla en pantalla, descargalas (una o en lote) o reabrí una etapa cerrada.', onSelect: () => changeView('ver-planillas') },
-          { key: 'planes', icon: launcherIcons.revisarPlanes, title: 'Revisar plan curricular', description: 'Aprobá o rechazá planes de profesores.', onSelect: () => changeView('planes') },
-          { key: 'seguimiento', icon: launcherIcons.seguimiento, title: 'Seguimiento de profesores', description: 'Consultá cumplimiento de planes y resolvé incumplimientos.', onSelect: () => changeView('seguimiento') },
-        ]} />
-      </CardsWithActivity>
+      <EvaluacionInicio onOpen={changeView} />
     </AppShell>;
   }
 
@@ -65,4 +63,66 @@ export default function EvaluacionPage() {
   return <AppShell title="Seguimiento de Profesores" onBack={() => changeView('menu')} backLabel="Panel de Evaluación" navigation={navigation}>
     <SeguimientoPlanesView initialTab={searchParams.get('tab') === 'incumplimientos' ? 'incumplimientos' : 'planes'} />
   </AppShell>;
+}
+
+const esBloqueo = (caso: IncumplimientoPendiente) => caso.tipo.startsWith('BLOQUEO');
+
+/** Inicio de Evaluación: cifras, lo que hay que revisar hoy y los accesos a cada apartado. */
+function EvaluacionInicio({ onOpen }: { onOpen: (view: EvaluationView) => void }) {
+  const [planes, setPlanes] = useState<PlanPendienteResumen[] | null>(null);
+  const [casos, setCasos] = useState<IncumplimientoPendiente[] | null>(null);
+  const [fallas, setFallas] = useState({ planes: false, casos: false });
+
+  useEffect(() => {
+    let active = true;
+    void getPendientes().then((list) => { if (active) setPlanes(list); })
+      .catch(() => { if (active) { setPlanes([]); setFallas((prev) => ({ ...prev, planes: true })); } });
+    void getIncumplimientos().then((list) => { if (active) setCasos(list); })
+      .catch(() => { if (active) { setCasos([]); setFallas((prev) => ({ ...prev, casos: true })); } });
+    return () => { active = false; };
+  }, []);
+
+  const bloqueos = casos?.filter(esBloqueo) ?? null;
+  const atrasos = casos?.filter((caso) => caso.tipo === TIPO_ATRASO) ?? null;
+  const otros = casos?.filter((caso) => !esBloqueo(caso) && caso.tipo !== TIPO_ATRASO) ?? null;
+  const count = (list: unknown[] | null, failed: boolean) => (failed ? undefined : list === null ? null : list.length);
+
+  const tasks: DashboardTask[] | null = planes === null || casos === null ? null : [
+    ...casos.map((caso): DashboardTask => ({
+      key: `caso-${caso.id}`,
+      kind: esBloqueo(caso) ? 'Bloqueo' : caso.tipo === TIPO_ATRASO ? 'Atraso' : 'Incongruencia',
+      tone: esBloqueo(caso) ? 'danger' : 'warning',
+      title: [caso.usuarioApellido, caso.usuarioNombre].filter(Boolean).join(', ') || 'Profesor',
+      detail: [caso.materiaNombre, caso.descripcion].filter(Boolean).join(' · '),
+      when: shortWhen(caso.fechaCreacion),
+      action: { label: esBloqueo(caso) ? 'Resolver' : 'Revisar', primary: esBloqueo(caso), onSelect: () => onOpen('seguimiento') },
+    })),
+    ...planes.map((plan): DashboardTask => ({
+      key: `plan-${plan.id}`,
+      kind: 'Plan',
+      tone: 'accent',
+      title: plan.profesorNombreCorto || plan.profesorNombre,
+      detail: `${plan.materiaNombre} · ${plan.cursoDescripcion}`,
+      when: shortWhen(plan.fechaSubida),
+      action: { label: 'Revisar', onSelect: () => onOpen('planes') },
+    })),
+  ];
+
+  return <DashboardLayout
+    stats={<DashboardStats stats={[
+      { key: 'planes', label: 'Planes por revisar', value: count(planes, fallas.planes) },
+      { key: 'bloqueos', label: 'Bloqueos de Iniciar clase', value: count(bloqueos, fallas.casos), tone: bloqueos?.length ? 'danger' : undefined },
+      { key: 'atrasos', label: 'Atrasos por revisar', value: count(atrasos, fallas.casos), tone: atrasos?.length ? 'warning' : undefined },
+      { key: 'otros', label: 'Incongruencias por revisar', value: count(otros, fallas.casos) },
+    ]} />}
+    tasks={<DashboardTasks title="Para revisar hoy" tasks={tasks} emptyText="No hay planes ni casos pendientes. Todo al día." columns={['Qué', 'Profesor', 'Desde']} link={{ label: 'Ver seguimiento', onSelect: () => onOpen('seguimiento') }} />}
+    side={<>
+      <LauncherCards options={[
+        { key: 'ver-planillas', icon: launcherIcons.verPlanillas, title: 'Ver planillas', description: 'Notas, descargas y etapas.', onSelect: () => onOpen('ver-planillas') },
+        { key: 'planes', icon: launcherIcons.revisarPlanes, title: 'Planes curriculares', description: 'Aprobar o rechazar.', onSelect: () => onOpen('planes') },
+        { key: 'seguimiento', icon: launcherIcons.seguimiento, title: 'Seguimiento', description: 'Cumplimiento e incumplimientos.', onSelect: () => onOpen('seguimiento') },
+      ]} />
+      <DashboardActivity />
+    </>}
+  />;
 }

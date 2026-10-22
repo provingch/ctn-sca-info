@@ -13,7 +13,7 @@
 .class-history-card p { overflow-wrap: anywhere; }
 .class-history-more { display: flex; justify-content: center; margin-top: 24px; }
 .class-attendance-summary { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
-.class-attendance-badge { display: inline-flex; align-items: center; padding: 5px 9px; border: 1px solid currentColor; border-radius: 999px; font-size: var(--fs-xs); font-weight: 600; line-height: 1.4; white-space: nowrap; }
+.class-attendance-badge { display: inline-flex; align-items: center; padding: 5px 9px; border: 1px solid currentColor; border-radius: var(--radius-pill, 4px); font-size: var(--fs-xs); font-weight: 600; line-height: 1.4; white-space: nowrap; }
 .class-attendance-badge.present { color: var(--success); background: color-mix(in srgb, var(--success) 10%, var(--paper)); }
 .class-attendance-badge.absent { color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, var(--paper)); }
 .class-attendance-badge.warning { color: var(--warning); background: color-mix(in srgb, var(--warning) 10%, var(--paper)); }
