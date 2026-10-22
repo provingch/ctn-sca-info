@@ -32,3 +32,9 @@
 # --- Firebase Messaging ---
 -keep class com.google.firebase.** { *; }
 -dontwarn com.google.firebase.**
+
+# Las pantallas por rol (ui/**) también pueden tener clases @Serializable.
+-keepclasseswithmembers class py.edu.ctn.sca.padres.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+-keep,includedescriptorclasses class py.edu.ctn.sca.padres.**$$serializer { *; }

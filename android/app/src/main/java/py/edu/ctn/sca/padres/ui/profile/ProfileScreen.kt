@@ -82,7 +82,7 @@ import py.edu.ctn.sca.padres.ui.components.Panel
 import py.edu.ctn.sca.padres.ui.graphViewModel
 import py.edu.ctn.sca.padres.ui.theme.scaColors
 
-private enum class ProfileTab(val title: String, val detail: String) {
+enum class ProfileTab(val title: String, val detail: String) {
     PROFILE("Perfil", "Datos personales"),
     SECURITY("Seguridad", "Contraseña y 2FA"),
     APP("Aplicación", "Estado y avisos"),
@@ -91,7 +91,7 @@ private enum class ProfileTab(val title: String, val detail: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(graph: Graph, onBack: () -> Unit) {
+fun ProfileScreen(graph: Graph, onBack: () -> Unit, initialTab: ProfileTab = ProfileTab.PROFILE) {
     val vm: ProfileViewModel = graphViewModel {
         ProfileViewModel(it.profileRepository, it.pushRepository)
     }
@@ -134,7 +134,7 @@ fun ProfileScreen(graph: Graph, onBack: () -> Unit) {
                     Spacer(Modifier.height(12.dp))
                     Button(onClick = vm::load) { Text("Reintentar") }
                 }
-                else -> ProfileTabs(ui, vm)
+                else -> ProfileTabs(ui, vm, initialTab)
             }
         }
     }
@@ -142,14 +142,14 @@ fun ProfileScreen(graph: Graph, onBack: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ProfileTabs(ui: ProfileUiState, vm: ProfileViewModel) {
+private fun ProfileTabs(ui: ProfileUiState, vm: ProfileViewModel, initialTab: ProfileTab) {
     val tabs = buildList {
         add(ProfileTab.PROFILE)
         if (ui.showSecurityPanel) add(ProfileTab.SECURITY)
         add(ProfileTab.APP)
         if (ui.showActivityPanel) add(ProfileTab.ACTIVITY)
     }
-    var selected by remember(tabs.size) { mutableStateOf(ProfileTab.PROFILE) }
+    var selected by remember(tabs.size) { mutableStateOf(initialTab) }
     val selectedIndex = tabs.indexOf(selected).coerceAtLeast(0)
 
     Column(Modifier.fillMaxSize()) {
@@ -371,7 +371,7 @@ private fun ProfileTabContent(ui: ProfileUiState, vm: ProfileViewModel) {
             Text(
                 "Cambios guardados.",
                 style = MaterialTheme.typography.bodySmall,
-                color = scaColors.success,
+                color = scaColors.success.fg,
                 fontWeight = FontWeight.Bold,
             )
         }
@@ -410,7 +410,7 @@ private fun PreviewPanel(ui: ProfileUiState) {
                         Text(
                             ui.roleLabel,
                             style = MaterialTheme.typography.labelSmall,
-                            color = scaColors.accentDeep,
+                            color = scaColors.onAccentSoft,
                             fontWeight = FontWeight.Bold,
                         )
                     }
@@ -477,7 +477,7 @@ private fun SecurityTabContent(ui: ProfileUiState, vm: ProfileViewModel) {
                 Text(
                     "Contraseña actualizada.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = scaColors.success,
+                    color = scaColors.success.fg,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 8.dp),
                 )
@@ -557,7 +557,7 @@ private fun SecurityTabContent(ui: ProfileUiState, vm: ProfileViewModel) {
                 Text(
                     it,
                     style = MaterialTheme.typography.bodySmall,
-                    color = scaColors.success,
+                    color = scaColors.success.fg,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = 8.dp),
                 )
@@ -709,7 +709,7 @@ private fun StatusRow(active: Boolean, activeLabel: String, inactiveLabel: Strin
             modifier = Modifier
                 .size(10.dp)
                 .clip(CircleShape)
-                .background(if (active) scaColors.success else MaterialTheme.colorScheme.outline),
+                .background(if (active) scaColors.success.fg else MaterialTheme.colorScheme.outline),
         )
         Spacer(Modifier.size(8.dp))
         Text(

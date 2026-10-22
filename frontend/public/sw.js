@@ -22,7 +22,8 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
+  // /app/ sirve el APK de Android: no se cachea (pesa varios MB y cambia con cada versión).
+  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/') || url.pathname.startsWith('/app/')) return;
 
   if (request.mode === 'navigate' || request.destination === 'document') {
     event.respondWith(networkFirst(request, '/offline.html'));

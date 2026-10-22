@@ -80,9 +80,13 @@ class Network(
         .authenticator(TokenAuthenticator(session, authApi, onSessionExpired))
         .build()
 
-    private val authedRetrofit: Retrofit = bareRetrofit.newBuilder()
+    @PublishedApi
+    internal val authedRetrofit: Retrofit = bareRetrofit.newBuilder()
         .client(authed)
         .build()
+
+    /** Crea cualquier interfaz Retrofit sobre el cliente autenticado (Bearer + refresh). */
+    inline fun <reified T> create(): T = authedRetrofit.create(T::class.java)
 
     val parentApi: ParentApi = authedRetrofit.create(ParentApi::class.java)
     val profileApi: ProfileApi = authedRetrofit.create(ProfileApi::class.java)

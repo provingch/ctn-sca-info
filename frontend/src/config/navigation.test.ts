@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getRoleNavigation } from './navigation';
+import { APP_ANDROID_URL, getRoleNavigation } from './navigation';
 
 describe('getRoleNavigation', () => {
   it.each([
@@ -12,6 +12,11 @@ describe('getRoleNavigation', () => {
     expect(navigation.roleLabel).toBe(role);
     expect(navigation.primaryItems[0].to).toBe(firstPath);
     expect(navigation.primaryItems).toContainEqual(expect.objectContaining({ to: '/profile' }));
+  });
+
+  it.each([[1, true], [2, true], [3, false], [4, true], [5, true]])('nivel %i: app Android = %s', (level, expected) => {
+    expect(Boolean(getRoleNavigation(level as number).appAndroid)).toBe(expected);
+    expect(APP_ANDROID_URL).toBe('/app/sca.apk');
   });
 
   it('usa una navegación segura para niveles desconocidos', () => {

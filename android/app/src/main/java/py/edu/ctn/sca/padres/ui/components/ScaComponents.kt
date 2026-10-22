@@ -38,7 +38,7 @@ fun Eyebrow(text: String, modifier: Modifier = Modifier) {
         text = text.uppercase(),
         modifier = modifier,
         style = MaterialTheme.typography.labelSmall,
-        color = scaColors.accentDeep,
+        color = scaColors.onAccentSoft,
         fontWeight = FontWeight.Black,
         letterSpacing = 1.2.sp,
     )
@@ -97,13 +97,13 @@ fun GradeChip(nota: Int, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(999.dp))
-            .background(scaColors.grade(nota))
+            .background(scaColors.grade(nota).bg)
             .padding(horizontal = 11.dp, vertical = 5.dp),
     ) {
         Text(
             text = nota.toString(),
             style = MaterialTheme.typography.labelLarge,
-            color = Color.White,
+            color = scaColors.grade(nota).fg,
             fontWeight = FontWeight.Bold,
         )
     }

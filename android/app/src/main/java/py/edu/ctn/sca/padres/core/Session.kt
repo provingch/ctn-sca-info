@@ -19,6 +19,9 @@ class Session {
     var level: Int? = null
         private set
 
+    /** Rol actual, derivado de [level]. */
+    val role: Role? get() = Role.fromLevel(level)
+
     private val _state = MutableStateFlow(AuthState.UNKNOWN)
     val state: StateFlow<AuthState> = _state.asStateFlow()
 

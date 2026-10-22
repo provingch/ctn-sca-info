@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from 're
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { getNotificaciones, getNotificacionesContador, marcarNotificacionLeida, marcarTodasNotificacionesLeidas, type NotificacionItem } from '../api/notificaciones';
 import { useAuth } from '../context/AuthContext';
-import { getRoleNavigation, type NavigationItem } from '../config/navigation';
+import { APP_ANDROID_URL, getRoleNavigation, type NavigationItem } from '../config/navigation';
 import ScaLogo from './ScaLogo';
 import ThemeToggle from './ThemeToggle';
 import AvatarEspecialidad from './AvatarEspecialidad';
@@ -215,6 +215,7 @@ export default function AppNavbar() {
           <div className={`navbar-user-dropdown${userMenuOpen ? ' open' : ''}`} role="menu" aria-hidden={!userMenuOpen}>
             <NavLink to="/profile" role="menuitem">Mi perfil</NavLink>
             <a href={config.manualPath} target="_blank" rel="noopener noreferrer" role="menuitem" aria-label="Abrir manual en una pestaña nueva">Manual</a>
+            {config.appAndroid && <a href={APP_ANDROID_URL} download role="menuitem">Descargar app Android</a>}
             <NavLink to="/acerca-de" role="menuitem">Acerca de</NavLink>
             <span className="navbar-menu-divider" />
             <button className="navbar-logout" type="button" role="menuitem" onClick={() => void signOut()}>Cerrar sesión</button>
@@ -237,6 +238,7 @@ export default function AppNavbar() {
         <div className="navbar-mobile-account">
           <span>Cuenta</span>
           <a href={config.manualPath} target="_blank" rel="noopener noreferrer" aria-label="Abrir manual en una pestaña nueva">Manual</a>
+          {config.appAndroid && <a href={APP_ANDROID_URL} download>Descargar app Android</a>}
           <NavLink to="/acerca-de">Acerca de</NavLink>
           <ThemeToggle />
           <button className="navbar-logout" type="button" onClick={() => void signOut()}>Cerrar sesión</button>

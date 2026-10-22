@@ -44,6 +44,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/", "/index.html", "/assets/**", "/favicon.svg", "/icons.svg",
                     "/icons/pwa/**", "/manifest.webmanifest", "/sw.js", "/offline.html").permitAll()
                 .requestMatchers(HttpMethod.GET, "/pdfs/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/app/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/plantillas/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/login", "/home", "/inicio", "/profile", "/perfil",
                     "/evaluacion", "/admin", "/admin/**", "/padre", "/coordinacion", "/styleguide", "/privacidad", "/terminos",

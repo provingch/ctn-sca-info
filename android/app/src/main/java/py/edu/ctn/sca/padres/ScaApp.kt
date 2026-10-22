@@ -43,7 +43,7 @@ class Graph(context: Context) {
     val tokenStore = TokenStore(context)
     private val cookieJar = PersistentCookieJar(tokenStore)
 
-    private val network = Network(
+    val network = Network(
         session = session,
         cookieJar = cookieJar,
         onSessionExpired = { session.onLoggedOut() },
@@ -54,6 +54,13 @@ class Graph(context: Context) {
     val profileRepository = ProfileRepository(network.profileApi, network.json)
     val reportRepository = ReportRepository(appContext, network.parentApi, network.json)
     val pushRepository = PushRepository(network.pushApi, tokenStore)
+
+    @PublishedApi
+    internal val apis = java.util.concurrent.ConcurrentHashMap<Class<*>, Any>()
+
+    /** Servicio Retrofit autenticado, cacheado por clase. Los módulos por rol arman sus repos con esto. */
+    inline fun <reified T : Any> api(): T =
+        apis.getOrPut(T::class.java) { network.create<T>() } as T
 }
 
 val Context.graph: Graph

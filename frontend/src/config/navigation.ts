@@ -1,3 +1,5 @@
+export const APP_ANDROID_URL = '/app/sca.apk';
+
 export interface NavigationItem {
   label: string;
   to: string;
@@ -8,6 +10,7 @@ export interface NavigationItem {
 export interface RoleNavigationConfig {
   roleLabel: string;
   manualPath: string;
+  appAndroid?: boolean;
   primaryItems: NavigationItem[];
 }
 
@@ -17,11 +20,13 @@ export const navigationByRole: Record<number, RoleNavigationConfig> = {
   1: {
     roleLabel: 'Profesor',
     manualPath: '/pdfs/manual-profesor.pdf',
+    appAndroid: true,
     primaryItems: [{ label: 'Cursos', to: '/home', activePrefixes: ['/inicio', '/planilla'] }, profileItem],
   },
   2: {
     roleLabel: 'Evaluador',
     manualPath: '/pdfs/manual-evaluador.pdf',
+    appAndroid: true,
     primaryItems: [{ label: 'Evaluación', to: '/evaluacion' }, profileItem],
   },
   3: {
@@ -32,11 +37,13 @@ export const navigationByRole: Record<number, RoleNavigationConfig> = {
   4: {
     roleLabel: 'Padre / Encargado',
     manualPath: '/pdfs/manual-padres.pdf',
+    appAndroid: true,
     primaryItems: [{ label: 'Mis hijos', to: '/padre' }, profileItem],
   },
   5: {
     roleLabel: 'Coordinación Pedagógica',
     manualPath: '/pdfs/manual-coordinacion.pdf',
+    appAndroid: true,
     primaryItems: [{ label: 'Coordinación', to: '/coordinacion' }, profileItem],
   },
 };

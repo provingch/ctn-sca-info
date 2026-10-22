@@ -1,6 +1,5 @@
 package py.edu.ctn.sca.padres.ui.auth
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -24,13 +24,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -44,9 +41,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -57,87 +51,48 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import py.edu.ctn.sca.padres.Graph
-import py.edu.ctn.sca.padres.R
-import py.edu.ctn.sca.padres.ui.components.AccentTopCard
+import py.edu.ctn.sca.padres.ui.common.AccentTopLine
+import py.edu.ctn.sca.padres.ui.common.PrimaryButton
+import py.edu.ctn.sca.padres.ui.common.ScaCard
 import py.edu.ctn.sca.padres.ui.graphViewModel
 import py.edu.ctn.sca.padres.ui.theme.scaColors
 
-/**
- * Login, mirroring the web `.auth-page`: a gradient ground, the brand mark and
- * tagline stacked above a paper card whose top edge carries a 5px accent strip.
- */
+/** Login (diseño m-38): acento azul, una sola pantalla para todos los roles. */
 @Composable
 fun LoginFlow(graph: Graph) {
     val vm: AuthViewModel = graphViewModel { AuthViewModel(it.authRepository, it.pushRepository) }
     val ui by vm.ui.collectAsStateWithLifecycle()
 
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(Brush.linearGradient(scaColors.authGradient)),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .imePadding()
-                .padding(horizontal = 20.dp, vertical = 28.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            // Ancho acotado para que en tablets/foldables la tarjeta no se estire a lo ancho.
-            Column(
-                modifier = Modifier
-                    .widthIn(max = 460.dp)
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                BrandHeader()
-                Spacer(Modifier.height(24.dp))
-                AccentTopCard {
-                    when (ui.stage) {
-                        AuthUiState.Stage.CREDENTIALS -> CredentialsForm(ui, vm)
-                        AuthUiState.Stage.TWO_FACTOR -> TwoFactorForm(ui, vm)
-                    }
+    Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        Column(Modifier.background(MaterialTheme.colorScheme.surface).statusBarsPadding()) {
+            AccentTopLine()
+            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.School, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(26.dp))
+                Spacer(Modifier.width(12.dp))
+                Column {
+                    Text("SCA", style = MaterialTheme.typography.titleLarge)
+                    Text("Colegio Técnico Nacional", style = MaterialTheme.typography.bodySmall, color = scaColors.muted)
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun BrandHeader() {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Image(
-            painter = painterResource(R.drawable.sca_logo),
-            contentDescription = "Sistema de Carpetas Académicas",
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.size(width = 115.dp, height = 72.dp),
-        )
-        Spacer(Modifier.height(18.dp))
-        Text(
-            "Sistema de Carpetas Académicas".uppercase(),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = FontWeight.Black,
-            letterSpacing = 1.6.sp,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            "La gestión académica, clara y conectada.",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onBackground,
-            fontWeight = FontWeight.Black,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(10.dp))
-        Text(
-            "Colegio Técnico Nacional · Asunción",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
+        HorizontalDivider(color = scaColors.line)
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .imePadding()
+                .padding(horizontal = 20.dp, vertical = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            // Ancho acotado para que en tablets/foldables el formulario no se estire.
+            Column(Modifier.widthIn(max = 460.dp).fillMaxWidth()) {
+                when (ui.stage) {
+                    AuthUiState.Stage.CREDENTIALS -> CredentialsForm(ui, vm)
+                    AuthUiState.Stage.TWO_FACTOR -> TwoFactorForm(ui, vm)
+                }
+            }
+        }
     }
 }
 
@@ -154,36 +109,44 @@ private fun FieldLabel(text: String) {
 
 @Composable
 private fun fieldColors() = OutlinedTextFieldDefaults.colors(
-    unfocusedContainerColor = scaColors.bgSoft,
-    focusedContainerColor = scaColors.bgSoft,
-    disabledContainerColor = scaColors.bgSoft,
+    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+    focusedContainerColor = MaterialTheme.colorScheme.surface,
+    disabledContainerColor = MaterialTheme.colorScheme.surface,
+    unfocusedBorderColor = scaColors.line,
 )
 
 @Composable
 private fun CredentialsForm(ui: AuthUiState, vm: AuthViewModel) {
     var passwordVisible by remember { mutableStateOf(false) }
 
+    Icon(Icons.Filled.School, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(48.dp))
+    Spacer(Modifier.height(24.dp))
     Text(
-        "Iniciar sesión",
-        style = MaterialTheme.typography.headlineSmall,
+        "Ingresá con tu usuario del SCA",
+        fontSize = 28.sp,
+        lineHeight = 34.sp,
         fontWeight = FontWeight.Bold,
-        textAlign = TextAlign.Center,
-        modifier = Modifier.fillMaxWidth(),
     )
-    Spacer(Modifier.height(20.dp))
+    Spacer(Modifier.height(10.dp))
+    Text(
+        "Una sola app para profesores, familias, evaluación y coordinación. Ves lo que corresponde a tu rol.",
+        style = MaterialTheme.typography.bodyLarge,
+        color = scaColors.muted,
+    )
+    Spacer(Modifier.height(24.dp))
 
-    FieldLabel("Usuario o Cédula")
+    FieldLabel("Usuario o cédula")
     OutlinedTextField(
         value = ui.username,
         onValueChange = vm::onUsername,
         singleLine = true,
         enabled = !ui.loading,
-        shape = RoundedCornerShape(9.dp),
+        shape = RoundedCornerShape(6.dp),
         colors = fieldColors(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
         modifier = Modifier.fillMaxWidth(),
     )
-    Spacer(Modifier.height(14.dp))
+    Spacer(Modifier.height(16.dp))
 
     FieldLabel("Contraseña")
     OutlinedTextField(
@@ -191,21 +154,18 @@ private fun CredentialsForm(ui: AuthUiState, vm: AuthViewModel) {
         onValueChange = vm::onPassword,
         singleLine = true,
         enabled = !ui.loading,
-        shape = RoundedCornerShape(9.dp),
+        shape = RoundedCornerShape(6.dp),
         colors = fieldColors(),
         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
         trailingIcon = {
-            IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                Icon(
-                    imageVector = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                    contentDescription = if (passwordVisible) "Ocultar contraseña" else "Mostrar contraseña",
-                )
+            TextButton(onClick = { passwordVisible = !passwordVisible }) {
+                Text(if (passwordVisible) "Ocultar" else "Mostrar", color = scaColors.muted, fontWeight = FontWeight.Medium)
             }
         },
         modifier = Modifier.fillMaxWidth(),
     )
-    Spacer(Modifier.height(12.dp))
+    Spacer(Modifier.height(8.dp))
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -218,8 +178,8 @@ private fun CredentialsForm(ui: AuthUiState, vm: AuthViewModel) {
             ),
     ) {
         Checkbox(checked = ui.rememberMe, onCheckedChange = null)
-        Spacer(Modifier.width(6.dp))
-        Text("Recordarme en este dispositivo", style = MaterialTheme.typography.bodyMedium)
+        Spacer(Modifier.width(10.dp))
+        Text("Recordarme en este celular", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
     }
 
     ui.error?.let { msg ->
@@ -231,14 +191,26 @@ private fun CredentialsForm(ui: AuthUiState, vm: AuthViewModel) {
         )
     }
 
-    Spacer(Modifier.height(20.dp))
-    SubmitButton(
-        text = "Ingresar",
-        loadingText = "Ingresando…",
-        loading = ui.loading,
-        enabled = !ui.loading && ui.username.isNotBlank() && ui.password.isNotBlank() && !ui.isLocked,
+    Spacer(Modifier.height(16.dp))
+    PrimaryButton(
+        text = if (ui.loading) "Ingresando…" else "Ingresar",
         onClick = vm::submitCredentials,
+        enabled = !ui.loading && ui.username.isNotBlank() && ui.password.isNotBlank() && !ui.isLocked,
+        loading = ui.loading,
+        modifier = Modifier.fillMaxWidth(),
     )
+    Spacer(Modifier.height(16.dp))
+    Text(
+        "¿Olvidaste la contraseña? Pedila en Administración.",
+        style = MaterialTheme.typography.bodySmall,
+        color = scaColors.muted,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Spacer(Modifier.height(16.dp))
+    ScaCard(contentPadding = 14.dp) {
+        Text("Las cuentas de Administración se usan desde la computadora, en la web del SCA.", style = MaterialTheme.typography.bodyMedium)
+    }
 }
 
 @Composable
@@ -306,33 +278,18 @@ private fun SubmitButton(
     loading: Boolean,
     enabled: Boolean,
     onClick: () -> Unit,
-) {
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        shape = RoundedCornerShape(9.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(50.dp),
-    ) {
-        if (loading) {
-            CircularProgressIndicator(
-                modifier = Modifier.height(20.dp),
-                strokeWidth = 2.dp,
-                color = MaterialTheme.colorScheme.onPrimary,
-            )
-            Spacer(Modifier.width(10.dp))
-            Text(loadingText, fontWeight = FontWeight.Bold)
-        } else {
-            Text(text, fontWeight = FontWeight.Bold)
-        }
-    }
-}
+) = PrimaryButton(
+    text = if (loading) loadingText else text,
+    onClick = onClick,
+    enabled = enabled,
+    loading = loading,
+    modifier = Modifier.fillMaxWidth(),
+)
 
 /** Web `.auth-feedback`: tinted notice with a coloured left rule. */
 @Composable
 private fun AuthFeedback(title: String, message: String, locked: Boolean) {
-    val tone = if (locked) scaColors.warning else MaterialTheme.colorScheme.error
+    val tone = if (locked) scaColors.warning.fg else MaterialTheme.colorScheme.error
     Row(
         Modifier
             .fillMaxWidth()

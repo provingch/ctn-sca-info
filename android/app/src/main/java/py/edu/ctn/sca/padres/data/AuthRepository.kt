@@ -2,6 +2,7 @@ package py.edu.ctn.sca.padres.data
 
 import kotlinx.serialization.json.Json
 import py.edu.ctn.sca.padres.core.PersistentCookieJar
+import py.edu.ctn.sca.padres.core.Role
 import py.edu.ctn.sca.padres.core.Session
 import retrofit2.Response
 
@@ -11,10 +12,8 @@ sealed interface LoginStep {
     data class Failed(val message: String, val locked: Boolean = false, val retryAfterSeconds: Long? = null) : LoginStep
 }
 
-/** Solo las cuentas Padre (nivel 4) pueden usar esta app. */
-private const val PARENT_LEVEL = 4
-private const val NOT_PARENT_MESSAGE =
-    "Esta app es solo para cuentas de padres. Iniciá sesión desde la web con tu usuario."
+/** Niveles 1, 2, 4 y 5 usan la app; el 3 (Administración) se usa solo desde la web. */
+private const val ADMIN_MESSAGE = "Las cuentas de Administración se usan desde la computadora, en la web del SCA."
 
 class AuthRepository(
     private val authApi: AuthApi,
@@ -40,11 +39,11 @@ class AuthRepository(
     suspend fun restore(): Boolean {
         val resp = runCatching { authApi.refresh() }.getOrNull()
         val body = resp?.body()
-        return if (resp != null && resp.isSuccessful && body != null && body.level == PARENT_LEVEL) {
+        return if (resp != null && resp.isSuccessful && body != null && Role.isSupported(body.level)) {
             session.onAuthenticated(body.accessToken, body.level)
             true
         } else {
-            session.onLoggedOut()
+            if (body?.level == Role.ADMIN.level) logout() else session.onLoggedOut()
             false
         }
     }
@@ -73,12 +72,11 @@ class AuthRepository(
             body.requiere2fa && !body.tempToken.isNullOrBlank() ->
                 LoginStep.NeedsTwoFactor(body.tempToken)
             !body.accessToken.isNullOrBlank() -> {
-                // La app es solo para padres: si el login server-side es de otro rol,
-                // se cierra la sesión recién creada (cookie + refresh token) sin llegar
-                // a marcar la sesión como autenticada, así la UI nunca muestra el dashboard.
-                if (body.level != PARENT_LEVEL) {
+                // Administración no tiene app: se cierra la sesión recién creada (cookie +
+                // refresh token) sin marcarla como autenticada.
+                if (!Role.isSupported(body.level)) {
                     logout()
-                    LoginStep.Failed(NOT_PARENT_MESSAGE)
+                    LoginStep.Failed(ADMIN_MESSAGE)
                 } else {
                     session.onAuthenticated(body.accessToken, body.level)
                     LoginStep.Authenticated

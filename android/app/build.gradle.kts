@@ -91,6 +91,9 @@ android {
 }
 
 dependencies {
+    // Firebase arrastra androidx.fragment viejo; las Activity Result APIs (permiso de
+    // notificaciones en MainActivity) requieren >= 1.3.0 y lint de release lo exige.
+    implementation("androidx.fragment:fragment-ktx:1.8.5")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)

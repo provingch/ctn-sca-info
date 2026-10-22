@@ -15,6 +15,7 @@ import ConnectionState from '../../components/ui/ConnectionState';
 import ContentState from '../../components/ui/ContentState';
 import SectionHeading from '../../components/ui/SectionHeading';
 import { useAuth } from '../../context/AuthContext';
+import { APP_ANDROID_URL, getRoleNavigation } from '../../config/navigation';
 import { getPushSubscriptionStatus, removePushSubscription, savePushSubscription, sendPushTest, toPushPayload, urlBase64ToUint8Array } from '../../api/push';
 import { getPwaInstallSnapshot, promptPwaInstall, registerPwaServiceWorker, subscribePwaInstall } from '../../pwa/pwa';
 import useAccessibleDialog from '../../hooks/useAccessibleDialog';
@@ -645,6 +646,7 @@ function Security({ data, done, onPasswordChanged }: { data: ProfileResponse; do
 }
 
 function AppStatus({ data }: { data: ProfileResponse }) {
+  const { user } = useAuth();
   const install = useSyncExternalStore(subscribePwaInstall, getPwaInstallSnapshot, getPwaInstallSnapshot);
   const pushSupported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
   const [pushPermission, setPushPermission] = useState<NotificationPermission>(() => pushSupported ? Notification.permission : 'denied');
@@ -781,6 +783,18 @@ function AppStatus({ data }: { data: ProfileResponse }) {
       {pushPermission === 'denied' && <p className="muted-copy">Los avisos están bloqueados. Habilitalos desde la configuración del sitio en tu navegador.</p>}
       {feedback && <p className="pwa-feedback" role="status">{feedback}</p>}
     </section>
+    {getRoleNavigation(user?.level).appAndroid && <section className="panel pwa-setting-card">
+      <SectionHeading number="03" title="App Android" detail="Instalá la app del SCA en tu celular Android." />
+      <div className="pwa-actions">
+        <a className="button" href={APP_ANDROID_URL} download>Descargar app (APK)</a>
+      </div>
+      <ol className="muted-copy">
+        <li>Abrí este enlace desde el celular.</li>
+        <li>Si Chrome avisa, tocá «Descargar de todas formas».</li>
+        <li>Abrí el archivo y permití instalar apps de este origen.</li>
+        <li>Tocá Instalar. Para actualizar, repetí los pasos: se instala encima sin perder la sesión.</li>
+      </ol>
+    </section>}
   </div>;
 }
 function Activity({ entries }: { entries: string[] }) { return <section className="panel"><SectionHeading number="01" title="Actividad reciente" detail="Movimientos registrados para esta cuenta." />{entries.length === 0 ? <ContentState compact title="Aún no hay movimientos" detail="La actividad de tu cuenta aparecerá aquí." /> : <div className="profile-history-list" aria-label="Registro de actividad">{entries.map((entry, index) => <p className="history-row" key={`${entry}-${index}`}>{entry}</p>)}</div>}</section>; }
