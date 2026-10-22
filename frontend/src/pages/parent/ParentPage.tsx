@@ -280,7 +280,7 @@ function SubjectDetail({ subject }: { subject: ParentSubject }) {
   return <section className="panel parent-subject-detail" aria-labelledby="parent-subject-detail-title">
     <header className="parent-subject-detail-header">
       <div><span>Detalle de tareas</span><h2 id="parent-subject-detail-title">{subject.materia}</h2><p>{subject.cursoAnterior ? `${subject.cursoAnterior} (curso anterior) · ` : ''}{stageLabel(subject.etapa)} · {subject.porcentaje}% de promedio</p></div>
-      <GradeChip grade={subject.nota} className="parent-detail-grade" />
+      <GradeChip grade={subject.nota} label={`Nota ${subject.nota}`} className="parent-detail-grade" />
     </header>
     {subject.tareas.length > 0 ? <>
       {meses.length > 1 && <div className="parent-task-filters">

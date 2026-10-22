@@ -630,7 +630,7 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .parent-subject-card.selected .parent-subject-arrow { transform: rotate(90deg); }
 .parent-subject-detail { margin: 0; padding: 0; overflow: hidden; }
 .parent-subject-detail-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px 22px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--paper-raised) 90%, var(--accent-soft)); }
-.parent-detail-grade { min-width: 46px; min-height: 46px; display: grid; place-items: center; flex: 0 0 46px; border-radius: var(--radius); font-size: var(--fs-lg); }
+.parent-detail-grade { flex: 0 0 auto; align-self: flex-start; white-space: nowrap; border-radius: var(--radius-pill, 4px); }
 .parent-task-list { display: grid; }
 .parent-task-filters { padding: 16px 20px 0; }
 .parent-task-month { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0; padding: 10px 20px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--bg-soft); color: var(--accent-deep); font-size: var(--fs-xs); font-weight: 900; letter-spacing: .09em; text-transform: uppercase; }
