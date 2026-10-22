@@ -7,6 +7,8 @@ y este proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.
 
 ## [Sin publicar]
 
+## [4.0.0] - 2026-10-22
+
 ### Añadido
 
 - **App Android 4.0.0 multi-rol**: ya no es solo "SCA Padres", ahora una sola app "SCA" sirve a Profesor, Evaluador, Padre/Encargado y Coordinación Pedagógica (Administración se usa desde la web). Incluye el rediseño "SCA pantallas reales" (acento bordó y azul, tipografía Inter, barra inferior por rol), Avisos y Perfil comunes, y pantallas propias por rol: Hoy, registro de clase, clases y corrección de tareas para el profesor; hijos, notas y conducta con foto para los padres; planes y seguimiento para el evaluador; quejas y anotaciones para Coordinación. El `applicationId` no cambia, así que se actualiza encima de la app anterior.

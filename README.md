@@ -7,7 +7,7 @@
 <h1 align="center">Sistema de Carpetas Académicas (SCA)</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/versi%C3%B3n-3.0.0-0057B7" alt="Versión 3.0.0" />
+  <img src="https://img.shields.io/badge/versi%C3%B3n-4.0.0-0057B7" alt="Versión 4.0.0" />
   <img src="https://img.shields.io/badge/licencia-GPL--3.0-0057B7" alt="Licencia GPL-3.0" />
   <img src="https://img.shields.io/badge/backend-Java%2017%20%C2%B7%20Spring%20Boot%204-C8102E" alt="Backend Java 17 + Spring Boot 4" />
   <img src="https://img.shields.io/badge/frontend-React%2019%20%C2%B7%20TypeScript-0057B7" alt="Frontend React 19 + TypeScript" />
@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/PWA-instalable-C8102E" alt="PWA instalable" />
 </p>
 
-Sistema de gestión académica del **Colegio Técnico Nacional (CTN)**: administra especialidades, cursos, materias, horarios, planillas de evaluación y notas, plan curricular con aprobación y verificación de tema por clase, control académico (incumplimientos, quejas, catálogo de conducta y RSA), integración con **Google Classroom**, portal para padres/encargados, app nativa para **Android** (profesores, evaluación, coordinación y familias), notificaciones push y soporte de **PWA** (instalable en el celular).
+Sistema de gestión académica del **Colegio Técnico Nacional (CTN)**: administra especialidades, cursos, materias, horarios, planillas de evaluación y notas, plan curricular con aprobación y verificación de tema por clase, control académico (incumplimientos, quejas, catálogo de conducta, anotaciones con foto y RSA), integración con **Google Classroom**, portal para padres/encargados, app nativa para **Android** (profesores, evaluación, coordinación y familias), manuales en PDF por rol, notificaciones push y soporte de **PWA** (instalable en el celular).
 
 - Inicio del desarrollo: 18/06/2026
 - Licencia: GPL-3.0 (ver [`LICENSE`](./LICENSE))
@@ -39,11 +39,11 @@ Sistema de gestión académica del **Colegio Técnico Nacional (CTN)**: administ
 
 | Rol                                 | Nivel | Qué puede hacer                                                                                                                                                                                                                                                                                                                                                                |
 | ----------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Profesor**                  | 1     | Gestiona su perfil, sus materias y asignaciones, carga y aprueba su horario, sube su plan curricular, inicia clases (bloqueado sin plan aprobado para la etapa vigente) y gestiona sus planillas de evaluación y notas; si desarrolla un tema fuera de fecha debe justificar el atraso; conecta su cuenta de Google Classroom para importar tareas y calificaciones.           |
-| **Evaluador**                 | 2     | Descarga planillas para revisión, aprueba o rechaza (con observaciones) los planes curriculares, hace seguimiento de los planes ya aprobados con la fecha de cumplimiento de cada tema, revisa los casos dudosos de verificación de tema, y resuelve los incumplimientos acumulados de un profesor (autorizar la continuidad o aplicar una suspensión con fechas concretas). |
-| **Administrador**             | 3     | Gestiona el sistema desde un panel de 8 bloques. Puede ser**global** (acceso a todo) o **por especialidad** (alcance limitado a Horarios, Alumnos y Quejas de su propia especialidad). Es el único rol inmutable (no editable/eliminable desde la UI).                                                                                                             |
-| **Padre / Encargado**         | 4     | Consulta el resumen académico y las notas de su hijo/a vinculado.                                                                                                                                                                                                                                                                                                              |
-| **Coordinación Pedagógica** | 5     | Gestiona el ciclo completo de las quejas cargadas contra cada profesor (aceptar, rechazar o resolver con una conclusión documentada), agrupadas por especialidad, y administra el catálogo de códigos de conducta que se registra en cada clase.                                                                                                                             |
+| **Profesor**                  | 1     | Gestiona su perfil, sus materias y asignaciones, carga y aprueba su horario, sube su plan curricular, inicia clases (bloqueado sin plan aprobado para la etapa vigente) y gestiona sus planillas de evaluación y notas; si desarrolla un tema fuera de fecha debe justificar el atraso; conecta su cuenta de Google Classroom para importar tareas y calificaciones. Desde la app Android ve sus clases del día, registra la clase con asistencia y códigos de conducta, y corrige tareas. |
+| **Evaluador**                 | 2     | Descarga planillas para revisión, aprueba o rechaza (con observaciones) los planes curriculares, hace seguimiento de los planes ya aprobados con la fecha de cumplimiento de cada tema, revisa los casos dudosos de verificación de tema, y resuelve los incumplimientos acumulados de un profesor (autorizar la continuidad o aplicar una suspensión con fechas concretas). Desde la app Android revisa planes pendientes y hace el seguimiento de bloqueos y atrasos. |
+| **Administrador**             | 3     | Gestiona el sistema desde un panel de 8 bloques. Puede ser**global** (acceso a todo) o **por especialidad** (alcance limitado a Horarios, Alumnos y Quejas de su propia especialidad). Es el único rol inmutable (no editable/eliminable desde la UI). Trabaja solo desde la web: no tiene acceso a la app Android. |
+| **Padre / Encargado**         | 4     | Consulta el resumen académico, las notas, la conducta y las anotaciones (con foto) de su hijo/a vinculado, y descarga el reporte mensual y la libreta, en la web o en la app Android. |
+| **Coordinación Pedagógica** | 5     | Gestiona el ciclo completo de las quejas cargadas contra cada profesor (aceptar, rechazar o resolver con una conclusión documentada), agrupadas por especialidad y promoción; administra el catálogo de códigos de conducta y ve las anotaciones recientes con su foto, en la web o en la app Android. |
 
 ## Funcionalidades principales
 
@@ -58,11 +58,15 @@ Sistema de gestión académica del **Colegio Técnico Nacional (CTN)**: administ
 - **Planillas y evaluación**: registro de tareas/instrumentos por curso, período y sección, carga de notas por alumno, distinción visual y de permisos entre tareas locales y tareas importadas de Classroom; reapertura de una etapa ya cerrada (evaluación y administración) con motivo obligatorio; vista de evaluación "Ver planillas" en modo solo lectura con descarga autenticada.
 - **Exportación**: planillas individuales o masivas por especialidad/curso/sección/período a Excel (Apache POI), con encabezado dinámico adaptado al ancho real de la tabla; horarios a PDF (Apache PDFBox) por curso o por especialidad completa.
 - **Integración con Google Classroom**: login/vinculación OAuth2, detección de cursos por nivel+sección, sincronización de tareas y notas por etapa, vinculación de alumnos por correo/nombre.
-- **Portal de padres**: resumen académico, notas y notas de conducta del alumno vinculado con visibilidad controlada por rol, filtro por mes y buscador de materias, reporte PDF mensual y libreta final — disponible tanto en la web como en la **app nativa de Android**.
-- **Panel de Administración** (8 bloques): Materias, Usuarios, Asignaciones, Horarios, Estado del sistema y Salas son de uso exclusivo del administrador global; Alumnos (navegación especialidad → curso → sección) y Quejas están disponibles también para el administrador por especialidad, con alcance limitado a la suya propia.
+- **Anotaciones con foto**: los profesores registran anotaciones (conducta, uniforme, etc.) desde la app de anotaciones, con foto de evidencia opcional según el tipo; Coordinación las ve en la web y en la app, y cada familia ve solo las de su hijo/a.
+- **Portal de padres**: resumen académico, notas y notas de conducta del alumno vinculado con visibilidad controlada por rol, filtro por mes y buscador de materias, anotaciones con foto, notas del curso anterior por separado si el alumno fue trasladado, reporte PDF mensual y libreta final — disponible tanto en la web como en la **app nativa de Android**.
+- **Panel de Administración** (8 bloques): Materias, Usuarios, Asignaciones, Horarios, Estado del sistema y Salas son de uso exclusivo del administrador global; Alumnos (navegación especialidad → curso → sección) y Quejas están disponibles también para el administrador por especialidad, con alcance limitado a la suya propia. Las tablas permiten selección múltiple; cada alumno tiene una ficha general, se puede trasladar de especialidad o sección (con historial y aviso de las planillas que quedan atrás) y se puede borrar con todo lo suyo en una sola operación.
+- **App Android multi-rol** (4.0.0): Profesor, Evaluador, Padre/Encargado y Coordinación Pedagógica en una sola app, con el mismo backend. Se descarga desde la web (menú de usuario y Mi perfil → App). Ver [App Android](#app-android).
+- **Manuales por rol**: un PDF por rol (profesor, evaluador, administrador, padres y Coordinación), enlazado desde el menú de usuario como "Manual". Se generan con capturas reales desde [`manuales/`](./manuales).
 - **Notificaciones push** (Web Push/VAPID en la web, Firebase Cloud Messaging en Android): prueba de envío desde el perfil, y notificaciones automáticas sobre el flujo de plan curricular, incumplimientos y quejas.
 - **PWA instalable**: manifest, service worker, iconos, funcionamiento offline básico.
 - **Acerca de**: página pública con los créditos del proyecto y el año actualizado automáticamente, accesible desde el menú de perfil.
+- **APIs para apps externas**: app de anotaciones (`/api/anotaciones`) y sistema de enfermería SHME (`/api/enfermeria`), cada una con su propia clave. Ver [APIs para apps externas](#apis-para-apps-externas).
 
 ## Identidad visual por especialidad
 
@@ -94,16 +98,16 @@ Los SVG fuente viven en `scripts/logos-source/` (logos institucional y SCA) y `f
 
 ## Stack tecnológico
 
-| Componente            | Backend                                                                                  | Frontend                     |
-| --------------------- | ---------------------------------------------------------------------------------------- | ---------------------------- |
-| Lenguaje / plataforma | Java 17, Spring Boot 4                                                                   | TypeScript, React 19         |
-| Build                 | Maven (`mvnw`)                                                                         | Vite                         |
-| Base de datos         | MySQL (`mysql-connector-j`)                                                            | — (consumida vía API REST) |
-| Seguridad             | Spring Security, JWT (`jjwt`), `jbcrypt`, `bouncycastle` + TOTP (2FA)              | —                           |
-| Reportes              | Apache POI (`poi-ooxml`, planillas en Excel), Apache PDFBox (horarios en PDF)          | —                           |
-| Notificaciones        | `web-push` (VAPID)                                                                     | Service Worker (`sw.js`)   |
-| Integraciones Google  | `google-api-client`, `google-api-services-classroom`, `google-api-services-oauth2` | —                           |
-| Testing               | JUnit 5 (Jupiter)                                                                        | —                           |
+| Componente            | Backend                                                                                  | Frontend                     | App Android |
+| --------------------- | ---------------------------------------------------------------------------------------- | ---------------------------- | ----------- |
+| Lenguaje / plataforma | Java 17, Spring Boot 4                                                                   | TypeScript, React 19         | Kotlin, Jetpack Compose (Material 3), minSdk 26 |
+| Build                 | Maven (`mvnw`)                                                                         | Vite                         | Gradle (JDK 17–21), R8 en release |
+| Base de datos         | MySQL (`mysql-connector-j`)                                                            | — (consumida vía API REST) | — (consumida vía API REST con Retrofit + OkHttp) |
+| Seguridad             | Spring Security, JWT (`jjwt`), `jbcrypt`, `bouncycastle` + TOTP (2FA)              | —                           | Refresh token en `EncryptedSharedPreferences` |
+| Reportes              | Apache POI (`poi-ooxml`, planillas en Excel), Apache PDFBox (horarios en PDF)          | —                           | — |
+| Notificaciones        | `web-push` (VAPID), Firebase Cloud Messaging (cuenta de servicio)                                               | Service Worker (`sw.js`)   | Firebase Cloud Messaging |
+| Integraciones Google  | `google-api-client`, `google-api-services-classroom`, `google-api-services-oauth2` | —                           | — |
+| Testing               | JUnit 5 (Jupiter)                                                                        | Vitest + Testing Library, `oxlint` | JUnit (tests unitarios de la lógica) |
 
 ## Estructura del proyecto
 
@@ -116,25 +120,35 @@ ctn-sca-info/
 │       ├── dao/                     # Acceso a datos (JDBC)
 │       ├── dto/ · model/            # DTOs y modelos
 │       ├── security/ · config/      # JWT, autenticación, configuración
+│       ├── integration/             # APIs para apps externas (anotaciones, enfermería)
 │       └── util/                    # Utilidades (AcademicPeriod, PasswordUtil, TotpUtils, PushNotificationService, generación de Excel/PDF, ...)
-├── frontend/                        # React + Vite + TypeScript
+│   └── src/main/resources/db/migrations/  # Migraciones numeradas para llevar al día una base existente
+├── frontend/                        # React + Vite + TypeScript (el build se copia a backend/src/main/resources/static)
+│   ├── public/
+│   │   ├── pdfs/                    # Manuales por rol (los genera manuales/)
+│   │   └── app/sca.apk              # APK release de la app Android que se descarga desde la web
 │   └── src/
 │       ├── pages/                   # Home (Libro de Cátedra, Planillas), Admin, Evaluación, Coordinación, Perfil, Parent
 │       ├── api/                     # Cliente HTTP y llamadas por dominio
+│       ├── config/navigation.ts     # Menú por rol, manual y enlace de descarga de la app
 │       └── components/              # Componentes compartidos
-├── database/
-│   ├── db-tables-properties.sql     # Esquema completo (DDL) de la BD ctndb — instalación limpia
-│   ├── ctn-official-seed.sql        # Seed oficial con datos reales del colegio
-│   └── minimal-work-seed.sql        # Seed mínimo de datos de ejemplo
+├── android/                         # App nativa SCA multi-rol (ver android/README.md)
+├── manuales/                        # Generador de los manuales PDF (HTML + capturas automáticas)
+├── videos/                          # Video institucional (Remotion)
+├── scripts/                         # Logos fuente y conversión a PNG
+├── docs/                            # Notas técnicas
+├── deploy.sh                        # Consola de despliegue y mantenimiento
 ├── CHANGELOG.md
 └── LICENSE                          # GPL-3.0
 ```
+
+La carpeta `database/` (esquema `db-tables-properties.sql` y seed oficial `ctn-official-seed.sql`, con datos reales del colegio) **no está en el repositorio**: `deploy.sh` la busca en `$REPO_DIR/database/` del servidor.
 
 ## Configuración
 
 ### Base de datos
 
-Para una instalación nueva, ejecutar `database/db-tables-properties.sql` (esquema completo y actualizado). Las migraciones en `database/migrations/` solo se aplican sobre una base **ya existente en producción** para llevarla al día; no son necesarias en una instalación limpia.
+Para una instalación nueva, ejecutar `database/db-tables-properties.sql` (esquema completo y actualizado; ver la nota de [Estructura del proyecto](#estructura-del-proyecto)). Las migraciones en `backend/src/main/resources/db/migrations/` solo se aplican sobre una base **ya existente en producción** para llevarla al día; no son necesarias en una instalación limpia.
 
 ### Variables de entorno (backend)
 
@@ -231,7 +245,9 @@ App nativa **SCA** (4.0.0) para Profesor, Evaluador, Padre/Encargado y Coordinac
 ## Despliegue
 
 - Backend: servicio systemd `sca-backend.service` (jar en `/opt/ctn-sca-info/backend/sca-backend.jar`).
-- Frontend: build estático (`npm run build`) servido junto al backend o vía proxy.
+- Frontend: `npm run build` deja el build en `backend/src/main/resources/static`, que se empaqueta dentro del jar; nginx hace de proxy con HTTPS (Let's Encrypt).
+- App Android: el APK release que esté en `frontend/public/app/sca.apk` se publica con el deploy en `/app/sca.apk`. Para sacar una versión nueva, ver [`android/README.md`](./android/README.md).
+- Manuales: `node manuales/build.mjs <rol>` regenera `frontend/public/pdfs/manual-<rol>.pdf`; se publican con el deploy.
 
 En Linux, `./deploy.sh` abre la consola interactiva del CTN cuando se ejecuta desde una terminal. Desde el menú se puede actualizar el sistema, reconstruir la base con `db-tables-properties.sql` + `ctn-official-seed.sql`, editar el override de systemd y abrir el monitor de salud. La carga por defecto reemplaza la base seleccionada, exige escribir `RESET` y crea un respaldo previo cuando `mariadb-dump` o `mysqldump` está disponible.
 
@@ -251,5 +267,6 @@ Los valores `REPO_DIR`, `PROJECT_DIR`, `SERVICE_NAME`, `APP_URL`, `SCA_DB_NAME`,
 | Módulo | Contenido |
 | --- | --- |
 | [`android/`](./android) | App nativa SCA (Kotlin + Jetpack Compose) multi-rol: profesor, evaluador, padre y Coordinación. Consume el mismo backend. Ver [`android/README.md`](./android/README.md). |
+| [`manuales/`](./manuales) | Fuente de los manuales por rol: un HTML por manual (con partes comunes como ingreso y perfil), capturas automáticas con datos de demostración (`capturas-<rol>.mjs`, `datos-demo/`) y `build.mjs`, que arma el PDF en `frontend/public/pdfs/`. |
 | [`videos/`](./videos) | Video institucional del proyecto (`sca-trailer.mp4`), generado con [Remotion](https://www.remotion.dev/) a partir de las capturas y logos de esta misma carpeta. Ver [`videos/README.md`](./videos/README.md). |
 | [`docs/`](./docs) | Notas técnicas puntuales, por ejemplo [`docs/text-encoding.md`](./docs/text-encoding.md) sobre la reparación de textos con codificación UTF-8 dañada. |
