@@ -47,7 +47,7 @@ export default function ClasesEspecialidadPanel({ status }: { status: (message: 
           <h2>Clases dadas</h2>
           <p>Historial de clases registradas por los profesores. Vista de solo lectura.</p>
         </div>
-        <div className="form-grid" style={{ width: '100%', maxWidth: 420, minWidth: 0 }}>
+        <div className="form-grid u-narrow-form">
           <label htmlFor="clases-profesor-search">Buscar clases
             <input
               id="clases-profesor-search"
@@ -63,8 +63,8 @@ export default function ClasesEspecialidadPanel({ status }: { status: (message: 
       {filtered.length === 0 ? (
         <ContentState tone="empty" title="No hay clases para mostrar" detail={query ? 'Ningún resultado coincide con la búsqueda.' : 'Todavía no se registraron clases en esta especialidad.'} />
       ) : (
-        <div className="table-scroll" style={{ marginTop: 12 }}>
-          <table className="grade-table" style={{ minWidth: 900 }}>
+        <div className="table-scroll u-mt">
+          <table className="grade-table data-table u-table-xwide">
             <thead>
               <tr>
                 <th>Fecha</th>
@@ -72,22 +72,22 @@ export default function ClasesEspecialidadPanel({ status }: { status: (message: 
                 <th>Curso</th>
                 <th>Materia</th>
                 <th>Tema</th>
-                <th>Alumnos</th>
-                <th>Ausentes</th>
-                <th>Justificados</th>
+                <th className="num">Alumnos</th>
+                <th className="num">Ausentes</th>
+                <th className="num">Justificados</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((c) => (
                 <tr key={c.id}>
-                  <td>{c.fechaClase ?? '—'}</td>
-                  <td>{c.profesorNombre ?? '—'}</td>
-                  <td>{c.cursoDescripcion || '—'}</td>
-                  <td>{c.materiaNombre ?? '—'}</td>
-                  <td>{c.tema}</td>
-                  <td>{c.totalAlumnos}</td>
-                  <td>{c.totalAusentes}</td>
-                  <td>{c.totalJustificados}</td>
+                  <th scope="row">{c.fechaClase ?? '—'}</th>
+                  <td data-label="Profesor">{c.profesorNombre ?? '—'}</td>
+                  <td data-label="Curso">{c.cursoDescripcion || '—'}</td>
+                  <td data-label="Materia">{c.materiaNombre ?? '—'}</td>
+                  <td data-label="Tema">{c.tema}</td>
+                  <td className="num" data-label="Alumnos">{c.totalAlumnos}</td>
+                  <td className="num" data-label="Ausentes">{c.totalAusentes}</td>
+                  <td className="num" data-label="Justificados">{c.totalJustificados}</td>
                 </tr>
               ))}
             </tbody>

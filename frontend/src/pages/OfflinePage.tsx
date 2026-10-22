@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import '../components/plan-views.css';
 
 export default function OfflinePage() {
   const navigate = useNavigate();
@@ -25,19 +26,15 @@ export default function OfflinePage() {
   }, [tryRestore]);
 
   return (
-    <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 24, background: '#f3f6fb' }}>
-      <div style={{ maxWidth: 560, background: '#fff', borderRadius: 16, padding: 32, textAlign: 'center', boxShadow: '0 16px 40px rgba(20,35,59,0.12)' }}>
+    <main className="offline-page">
+      <div className="offline-card">
         <h1>Sin conexión temporal</h1>
         <p>La app está intentando volver a cargar, pero por ahora no hay acceso a Internet. Reintentá más tarde o volvé al inicio cuando la conexión esté disponible.</p>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 12 }}>
-          <button onClick={() => { void tryRestore(); }} style={{ padding: '10px 16px', borderRadius: 999, background: '#2b6cb0', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer' }}>
-            Reintentar ahora
-          </button>
-          <a href="/home" style={{ display: 'inline-block', padding: '10px 16px', borderRadius: 999, background: '#7a1f2b', color: '#fff', textDecoration: 'none', fontWeight: 600 }}>
-            Ir al inicio
-          </a>
+        <div className="inline-actions">
+          <button type="button" className="button" onClick={() => { void tryRestore(); }}>Reintentar ahora</button>
+          <a className="button secondary" href="/home">Ir al inicio</a>
         </div>
-        <div style={{ marginTop: 12, color: '#666', fontSize: '0.95rem' }}>{status}</div>
+        <div className="offline-status" role="status">{status}</div>
       </div>
     </main>
   );

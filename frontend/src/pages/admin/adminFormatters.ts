@@ -30,3 +30,8 @@ export function formatRelativeDate(value: string | null, now = new Date()) {
   const [unit, divisor] = ranges.find(([, range]) => Math.abs(seconds) >= range) ?? ranges.at(-1)!;
   return new Intl.RelativeTimeFormat('es', { numeric: 'auto' }).format(Math.round(seconds / divisor), unit);
 }
+
+/** Los paneles avisan con texto suelto: los fallos y pedidos de datos van en rojo, lo demás como hecho. */
+export function toneDeMensaje(text: string): 'error' | 'success' {
+  return /no se pud|no pud|no puedes|no tenés|no tiene permiso|error|requerid|elegí|ninguna de/i.test(text) ? 'error' : 'success';
+}

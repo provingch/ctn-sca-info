@@ -82,7 +82,7 @@ export default function MateriasPanel({ data, reload, status }: MateriasPanelPro
             </div>
             <button type="button" className="signature-modal-close" aria-label="Cerrar formulario" data-dialog-initial-focus onClick={() => setIsOpen(false)}>×</button>
           </div>
-          <form className="form-grid" onSubmit={submit} style={{ alignContent: 'start' }}>
+          <form className="form-grid u-align-start" onSubmit={submit}>
             <label>
               Nombre
               <input value={form.nombre} onChange={(event) => setForm({ ...form, nombre: event.target.value })} required />
@@ -122,7 +122,7 @@ export default function MateriasPanel({ data, reload, status }: MateriasPanelPro
 
             <div className="signature-modal-actions">
               <button type="button" className="button secondary" onClick={() => setIsOpen(false)}>Cancelar</button>
-              <button type="submit" className="button" style={{ gridColumn: 'span 2' }}>{editingId ? 'Guardar cambios' : 'Crear materia'}</button>
+              <button type="submit" className="button u-span-2">{editingId ? 'Guardar cambios' : 'Crear materia'}</button>
             </div>
           </form>
         </div>

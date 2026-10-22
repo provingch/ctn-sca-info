@@ -58,7 +58,7 @@ describe('Directorio de profesores', () => {
     fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'docente1' } });
     fireEvent.click(screen.getByRole('button', { name: 'Ver detalle de Ácosta, Ana' }));
     expect(screen.getByRole('button', { name: 'Eliminar' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Editar Matemática' }));
     expect(within(screen.getByRole('dialog')).getByRole('heading', { name: 'Editar asignación' })).toBeInTheDocument();
   });
   it('ajusta la página tras recargar datos y maneja un catálogo vacío', () => {

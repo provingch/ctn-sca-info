@@ -6,19 +6,26 @@ import { ApiError } from '../../api/client';
 import { acceptQueja, getAdminQuejas, quejaEstado, rejectQueja, type QuejaAceptacion, type QuejaItem, type QuejaRechazo, type QuejaResolucion, type QuejaRevision } from '../../api/quejas';
 import { getAdminCatalog } from '../../api/admin';
 import { useSearchParams } from 'react-router-dom';
-import { formatSqlDateTime } from '../../utils/date';
+import { formatSqlDateTime, shortWhen } from '../../utils/date';
 import CatalogoConductaPanel from '../../components/CatalogoConductaPanel';
 import ComplaintReview from '../../components/quejas/ComplaintReview';
 import ComplaintDocuments from '../../components/quejas/ComplaintDocuments';
 import ComplaintGroups from '../../components/quejas/ComplaintGroups';
 import LauncherCards from '../../components/LauncherCards';
 import { launcherIcons } from '../../components/launcherIcons';
-import CardsWithActivity from '../../components/CardsWithActivity';
+import DashboardActivity from '../../components/DashboardActivity';
+import { DashboardLayout, DashboardStats, DashboardTasks, type DashboardTask } from '../../components/Dashboard';
+import { getAnotacionesRecientes, type Anotacion } from '../../api/anotaciones';
+import AnotacionesRecientes from './AnotacionesRecientes';
 import { nombreCorto } from '../../utils/nombre';
 
 const ESTADO_LABEL: Record<ReturnType<typeof quejaEstado>, string> = {
   pendiente: 'Pendiente', aceptada: 'Aceptada', revisada: 'Revisada', resuelta: 'Resuelta', rechazada: 'Rechazada',
 };
+
+function viewFromParam(value: string | null): 'menu' | 'quejas' | 'conducta' | 'anotaciones' {
+  return value === 'quejas' || value === 'conducta' || value === 'anotaciones' ? value : 'menu';
+}
 
 function QuejaPendienteActions({ queja, onAccepted, onRejected }: {
   queja: QuejaItem;
@@ -75,7 +82,7 @@ function QuejaPendienteActions({ queja, onAccepted, onRejected }: {
 
 export default function CoordinacionPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [view, setView] = useState<'menu' | 'quejas' | 'conducta' | 'detalle'>(() => searchParams.get('view') === 'quejas' ? 'quejas' : searchParams.get('view') === 'conducta' ? 'conducta' : 'menu');
+  const [view, setView] = useState<'menu' | 'quejas' | 'conducta' | 'anotaciones' | 'detalle'>(() => viewFromParam(searchParams.get('view')));
   const [status, setStatus] = useState('');
   const [quejas, setQuejas] = useState<QuejaItem[]>([]);
   const [usuariosPorId, setUsuariosPorId] = useState<Map<number, string>>(new Map());
@@ -87,17 +94,29 @@ export default function CoordinacionPage() {
 
   useEffect(() => {
     const nextView = searchParams.get('view');
-    setView(nextView === 'quejas' || nextView === 'conducta' ? nextView : 'menu');
+    setView(viewFromParam(nextView));
   }, [searchParams]);
 
-  function changeView(nextView: 'menu' | 'quejas' | 'conducta') {
+  function changeView(nextView: 'menu' | 'quejas' | 'conducta' | 'anotaciones') {
     setView(nextView);
     setSearchParams(nextView === 'menu' ? {} : { view: nextView });
   }
 
+  const [anotaciones, setAnotaciones] = useState<Anotacion[] | null>(null);
+  const [quejasCargadas, setQuejasCargadas] = useState(false);
+  const [busqueda, setBusqueda] = useState('');
+  const [soloPendientes, setSoloPendientes] = useState(false);
+
   useEffect(() => {
-    if (view !== 'quejas') return;
-    getAdminQuejas().then(setQuejas).catch((error: unknown) => setStatus(error instanceof Error ? error.message : 'No se pudieron cargar las quejas.'));
+    if (view !== 'menu') return;
+    let active = true;
+    void getAnotacionesRecientes(200).then((list) => { if (active) setAnotaciones(list); }).catch(() => { if (active) setAnotaciones([]); });
+    return () => { active = false; };
+  }, [view]);
+
+  useEffect(() => {
+    if (view !== 'quejas' && view !== 'menu') return;
+    getAdminQuejas().then((list) => { setQuejas(list); setQuejasCargadas(true); }).catch((error: unknown) => setStatus(error instanceof Error ? error.message : 'No se pudieron cargar las quejas.'));
     getAdminCatalog().then((catalog) => {
       const map = new Map<number, string>();
       catalog.usuarios.forEach((u) => map.set(u.id, `${u.nombre} ${u.apellido}`.trim()));
@@ -114,10 +133,12 @@ export default function CoordinacionPage() {
     setQuejas((current) => current.map((item) => item.id === id ? { ...item, ...changes } : item));
   }
 
-  const quejasFiltradas = useMemo(
-    () => quejas.filter((q) => (direccion === 'contra_profesor' ? q.tipo !== 'CONTRA_CURSO' : q.tipo === 'CONTRA_CURSO')),
-    [quejas, direccion],
-  );
+  const quejasFiltradas = useMemo(() => {
+    const texto = busqueda.trim().toLocaleLowerCase('es');
+    return quejas.filter((q) => (direccion === 'contra_profesor' ? q.tipo !== 'CONTRA_CURSO' : q.tipo === 'CONTRA_CURSO'))
+      .filter((q) => !soloPendientes || quejaEstado(q) === 'pendiente')
+      .filter((q) => !texto || [q.profesorNombre, q.profesorApellido, q.cursoEspecialidad, q.cursoSeccion, q.motivo].filter(Boolean).join(' ').toLocaleLowerCase('es').includes(texto));
+  }, [quejas, direccion, busqueda, soloPendientes]);
 
   const agrupadas = useMemo(() => {
     if (direccion === 'contra_profesor') {
@@ -144,8 +165,11 @@ export default function CoordinacionPage() {
     return Array.from(map.entries()).map(([cursoId, data]) => ({ key: cursoId, cursoId, ...data })).sort((a, b) => b.count - a.count);
   }, [quejasFiltradas, direccion]);
 
-  function openDetalle(key: number) {
-    if (direccion === 'contra_profesor') setSelectedProfesorId(key);
+  function openDetalle(key: number, dir: typeof direccion = direccion) {
+    setDireccion(dir);
+    setBusqueda('');
+    setSoloPendientes(false);
+    if (dir === 'contra_profesor') setSelectedProfesorId(key);
     else setSelectedCursoId(key);
     setView('detalle');
   }
@@ -158,16 +182,74 @@ export default function CoordinacionPage() {
   const navigation = <SectionNavigation label="Apartados de coordinación" active={view === 'detalle' ? 'quejas' : view} sections={[
     { key: 'quejas', label: 'Quejas por profesor', onSelect: () => changeView('quejas') },
     { key: 'conducta', label: 'Reportes conductuales', onSelect: () => changeView('conducta') },
+    { key: 'anotaciones', label: 'Anotaciones', onSelect: () => changeView('anotaciones') },
   ]} />;
 
   if (view === 'menu') {
+    const pendientes = quejas.filter((q) => quejaEstado(q) === 'pendiente');
+    const porProfesor = new Map<number, number>();
+    quejas.filter((q) => q.tipo !== 'CONTRA_CURSO').forEach((q) => porProfesor.set(q.profesorId, (porProfesor.get(q.profesorId) ?? 0) + 1));
+    const haceUnaSemana = Date.now() - 7 * 86_400_000;
+    const anotacionesSemana = anotaciones?.filter((a) => a.fechaHora && new Date(a.fechaHora.replace(' ', 'T')).getTime() >= haceUnaSemana) ?? null;
+    const tasks: DashboardTask[] | null = !quejasCargadas && !status ? null : [
+      ...pendientes.map((q): DashboardTask => ({
+        key: `queja-${q.id}`,
+        kind: 'Queja',
+        tone: 'warning',
+        title: q.tipo === 'CONTRA_CURSO' ? 'Sobre el curso' : nombreCorto(q.profesorNombre, q.profesorApellido) || `Profesor #${q.profesorId}`,
+        detail: `${[q.cursoEspecialidad, q.cursoNivel ? `${q.cursoNivel}°` : null, q.cursoSeccion].filter(Boolean).join(' ')} · ${q.motivo}`,
+        when: shortWhen(q.creadaEn),
+        action: { label: 'Revisar', onSelect: () => openDetalle(q.tipo === 'CONTRA_CURSO' ? q.cursoId : q.profesorId, q.tipo === 'CONTRA_CURSO' ? 'sobre_curso' : 'contra_profesor') },
+      })),
+      ...(anotacionesSemana ?? []).slice(0, 5).map((a): DashboardTask => ({
+        key: `anotacion-${a.id}`,
+        kind: 'Anotación',
+        tone: 'accent',
+        title: `${a.alumnoApellido}, ${a.alumnoNombre}`,
+        detail: [a.curso, a.tipo, a.observacion].filter(Boolean).join(' · '),
+        when: shortWhen(a.fechaHora),
+        action: { label: 'Ver', onSelect: () => changeView('anotaciones') },
+      })),
+    ];
+    const porEspecialidad = new Map<string, { aceptadas: number; pendientes: number; rechazadas: number; total: number }>();
+    quejas.forEach((q) => {
+      const nombre = q.cursoEspecialidad?.trim() || 'Sin especialidad';
+      const fila = porEspecialidad.get(nombre) ?? { aceptadas: 0, pendientes: 0, rechazadas: 0, total: 0 };
+      const estado = quejaEstado(q);
+      if (estado === 'pendiente') fila.pendientes += 1;
+      else if (estado === 'rechazada') fila.rechazadas += 1;
+      else fila.aceptadas += 1;
+      fila.total += 1;
+      porEspecialidad.set(nombre, fila);
+    });
     return <AppShell title="Coordinación Pedagógica" subtitle="Quejas y acompañamiento socioacadémico" welcome>
-      <CardsWithActivity>
-        <LauncherCards options={[
-          { key: 'quejas', icon: launcherIcons.quejas, title: 'Quejas por profesor', description: 'Ver y revisar quejas cargadas por la administración.', onSelect: () => changeView('quejas') },
-          { key: 'conducta', icon: launcherIcons.conducta, title: 'Reportes conductuales', description: 'Crear y administrar los códigos N usados para registrar el comportamiento de los alumnos.', onSelect: () => changeView('conducta') },
-        ]} />
-      </CardsWithActivity>
+      <DashboardLayout
+        stats={<DashboardStats stats={[
+          { key: 'pendientes', label: 'Quejas pendientes', value: quejasCargadas ? pendientes.length : status ? undefined : null, tone: pendientes.length ? 'warning' : undefined },
+          { key: 'reiteradas', label: `Profesores con más de ${UMBRAL} quejas`, value: quejasCargadas ? [...porProfesor.values()].filter((n) => n > UMBRAL).length : status ? undefined : null, tone: [...porProfesor.values()].some((n) => n > UMBRAL) ? 'danger' : undefined },
+          { key: 'anotaciones', label: 'Anotaciones en los últimos 7 días', value: anotacionesSemana === null ? null : anotacionesSemana.length },
+          { key: 'total', label: 'Quejas registradas', value: quejasCargadas ? quejas.length : status ? undefined : null },
+        ]} />}
+        tasks={<DashboardTasks title="Para revisar hoy" tasks={tasks} emptyText="No hay quejas pendientes ni anotaciones nuevas esta semana." link={{ label: 'Ver todas las quejas', onSelect: () => changeView('quejas') }} />}
+        side={<>
+          <LauncherCards options={[
+            { key: 'quejas', icon: launcherIcons.quejas, title: 'Quejas por profesor', description: 'Revisar, aceptar o rechazar.', onSelect: () => changeView('quejas') },
+            { key: 'conducta', icon: launcherIcons.conducta, title: 'Reportes conductuales', description: 'Catálogo de códigos N.', onSelect: () => changeView('conducta') },
+            { key: 'anotaciones', icon: launcherIcons.alumnos, title: 'Anotaciones', description: 'Uniforme y conducta, con foto.', onSelect: () => changeView('anotaciones') },
+          ]} />
+          <DashboardActivity />
+        </>}
+      >
+        {porEspecialidad.size > 0 && <section className="panel dash-summary" aria-label="Quejas por especialidad">
+          <header className="dash-tasks-head"><h2>Quejas por especialidad</h2></header>
+          <table className="dash-table">
+            <thead><tr><th scope="col">Especialidad</th><th scope="col" className="num">Aceptadas</th><th scope="col" className="num">Pendientes</th><th scope="col" className="num">Rechazadas</th><th scope="col" className="num">Total</th></tr></thead>
+            <tbody>{[...porEspecialidad.entries()].sort((a, b) => b[1].total - a[1].total).map(([nombre, fila]) => <tr key={nombre}>
+              <td><strong>{nombre}</strong></td><td className="num">{fila.aceptadas}</td><td className="num">{fila.pendientes}</td><td className="num">{fila.rechazadas}</td><td className="num"><strong>{fila.total}</strong></td>
+            </tr>)}</tbody>
+          </table>
+        </section>}
+      </DashboardLayout>
     </AppShell>;
   }
 
@@ -177,9 +259,14 @@ export default function CoordinacionPage() {
       <div className="complaint-state-filters" role="group" aria-label="Dirección de las quejas">
         <button type="button" className={`button ${direccion === 'contra_profesor' ? '' : 'secondary'}`} aria-pressed={direccion === 'contra_profesor'} onClick={() => setDireccion('contra_profesor')}>Contra profesores</button>
         <button type="button" className={`button ${direccion === 'sobre_curso' ? '' : 'secondary'}`} aria-pressed={direccion === 'sobre_curso'} onClick={() => setDireccion('sobre_curso')}>Sobre cursos</button>
+        <label className="complaint-search">
+          <span className="visually-hidden">Buscar quejas</span>
+          <input type="search" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder={direccion === 'contra_profesor' ? 'Buscar profesor, curso o motivo' : 'Buscar curso o motivo'} />
+        </label>
+        <label className="complaint-only-pending"><input type="checkbox" checked={soloPendientes} onChange={(e) => setSoloPendientes(e.target.checked)} /> Solo pendientes</label>
       </div>
       {agrupadas.length === 0 ? (
-        <ContentState title="No hay quejas" detail="No se registraron quejas en este alcance." tone="empty" />
+        <ContentState title="No hay quejas" detail={busqueda || soloPendientes ? 'Ninguna queja coincide con la búsqueda o el filtro.' : 'No se registraron quejas en este alcance.'} tone="empty" />
       ) : (
         <section>
           <div className="card-grid">
@@ -203,6 +290,12 @@ export default function CoordinacionPage() {
           </div>
         </section>
       )}
+    </AppShell>;
+  }
+
+  if (view === 'anotaciones') {
+    return <AppShell title="Anotaciones" onBack={() => changeView('menu')} backLabel="Coordinación" navigation={navigation}>
+      <AnotacionesRecientes />
     </AppShell>;
   }
 

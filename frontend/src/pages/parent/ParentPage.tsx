@@ -7,6 +7,7 @@ import AnimatedSelect from '../../components/AnimatedSelect';
 import DatePicker from '../../components/DatePicker';
 import FiltersToolbar, { FilterField } from '../../components/ui/FiltersToolbar';
 import { agruparTareasPorMes, cursosAnteriores, filtrarConducta, filtrarMaterias, hayFiltroConducta, MATERIAS_PARA_BUSCADOR, materiasDeConducta, mesesConTareas, NOMBRES_MESES, rangoInvalido, SIN_FILTRO_CONDUCTA, type FiltroConducta } from './parentFilters';
+import ParentAnotaciones from './ParentAnotaciones';
 import { getParentSummary, downloadReporteMensual, downloadLibreta, getRasgosConducta, marcarAlumnoVisto, type ParentResponse, type ParentStage, type ParentSubject, type ParentTaskStatus, type RasgoConducta } from '../../api/parent';
 import { ApiError } from '../../api/client';
 import { normalizeSpecialty } from '../../theme/theme';
@@ -203,7 +204,7 @@ export default function ParentPage() {
         {selectedSubject && <SubjectDetail key={selectedSubject.planillaId} subject={selectedSubject} />}
 
         {selectedChild && (
-          <section className="panel" aria-labelledby="parent-conducta-title" style={{ marginTop: 16 }}>
+          <section className="panel u-mt" aria-labelledby="parent-conducta-title">
             <header className="panel-header">
               <div>
                 <span>Conducta</span>
@@ -225,7 +226,7 @@ export default function ParentPage() {
                 {rangoInvalido(filtroConducta) && <p className="filters-error" role="alert">La fecha “Desde” es posterior a “Hasta”: no hay notas en ese rango.</p>}
               </FiltersToolbar>
               {conductaVisible.length === 0 ? <ContentState compact title="Sin resultados" detail="Ninguna nota de conducta coincide con los filtros elegidos." actions={<button type="button" className="button secondary" onClick={() => setFiltroConducta(SIN_FILTRO_CONDUCTA)}>Limpiar filtros</button>} /> : <div className="table-scroll">
-                <table className="grade-table" style={{ minWidth: 720 }}>
+                <table className="grade-table u-table-md">
                   <thead>
                     <tr>
                       <th>Fecha</th>
@@ -253,6 +254,7 @@ export default function ParentPage() {
             </>}
           </section>
         )}
+        {selectedChild && <ParentAnotaciones key={selectedChild.id} alumnoId={selectedChild.id} nombre={selectedChild.nombre} />}
       </div>
       <DashboardActivity />
     </AppShell>

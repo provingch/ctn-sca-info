@@ -6,5 +6,5 @@ export default function DashboardWelcome({ title, subtitle, specialty }: { title
   const { user } = useAuth();
   const firstName = user?.displayName?.trim().split(/\s+/)[0];
   const date = new Intl.DateTimeFormat('es-PY', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
-  return <PageBanner title={firstName ? `Hola, ${firstName}` : 'Hola'} context={[title, subtitle, date].filter(Boolean).join(' · ')} specialty={specialty} />;
+  return <PageBanner title={firstName ? `Hola, ${firstName}` : 'Hola'} context={[title, subtitle, date].filter(Boolean).join(' · ')} specialty={specialty} welcome />;
 }

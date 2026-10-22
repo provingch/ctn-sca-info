@@ -1,6 +1,6 @@
 .complaint-state-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
 .complaint-state-filters .button { min-height: 42px; }
-.complaint-group-count { color: var(--muted); font-size: .85rem; margin: 14px 0; }
+.complaint-group-count { color: var(--muted); font-size: var(--fs-sm); margin: 14px 0; }
 .complaint-specialty-brand { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; padding-left: 10px; border-left: 3px solid var(--accent); color: var(--accent-deep); }
 .complaint-specialty-brand > span:last-child { overflow-wrap: anywhere; }
 .complaint-specialty-body { padding: 16px; }

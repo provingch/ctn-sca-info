@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { clearUserGoogleTokens, createAdminRecord, deleteAdminRecord, getAlumnosDePadre, linkPadreAlumno, unlinkPadreAlumno, updateAdminRecord, type AdminCatalog, type PadreChildItem } from '../../api/admin';
 import { ApiError } from '../../api/client';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import useAccessibleDialog from '../../hooks/useAccessibleDialog';
 import './UsuariosPanel.css';
 import { confirmar } from '../../utils/confirmar';
+import useSeleccion from '../../hooks/useSeleccion';
+import { BarraSeleccion, CasillaFila, CasillaTodos } from '../../components/SeleccionTabla';
 
 interface UsuariosPanelProps {
   data: AdminCatalog;
@@ -246,7 +248,24 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
 
   const showEspecialidad = nivelFiltro === 3;
   const showActions = (nivelFiltro !== 3 && nivelFiltro !== 5) || isGlobalAdmin;
-  const columnCount = 4 + (showEspecialidad ? 1 : 0) + (showActions ? 1 : 0);
+  const columnCount = 4 + (showEspecialidad ? 1 : 0) + (showActions ? 2 : 0);
+  const seleccion = useSeleccion(useMemo(() => (showActions ? visibleUsers.map((user) => user.id) : []), [showActions, visibleUsers]));
+  const [enLote, setEnLote] = useState(false);
+
+  const removeSeleccion = async () => {
+    const cantidad = seleccion.cantidad;
+    if (!(await confirmar(`¿Eliminar ${cantidad} ${cantidad === 1 ? 'usuario' : 'usuarios'}? Esto no se puede deshacer.`, 'Eliminar'))) return;
+    setEnLote(true);
+    let fallidos = 0;
+    for (const id of seleccion.ids) {
+      try { await deleteAdminRecord('usuarios', id); } catch { fallidos += 1; }
+    }
+    const eliminados = cantidad - fallidos;
+    status(fallidos === 0 ? `${eliminados} ${eliminados === 1 ? 'usuario eliminado' : 'usuarios eliminados'}.` : `Se eliminaron ${eliminados}; ${fallidos} no se pudieron eliminar.`);
+    seleccion.limpiar();
+    setEnLote(false);
+    await reload();
+  };
 
   const changeSort = (key: 'apellido' | 'nombre') => {
     setSort((current) => ({ key, descending: current.key === key ? !current.descending : false }));
@@ -289,11 +308,15 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
           <button type="button" className="button usuarios-create" onClick={openCreate}>Crear registro</button>
         </div>
 
+        <BarraSeleccion cantidad={seleccion.cantidad} unidad={['usuario', 'usuarios']} onLimpiar={seleccion.limpiar} ocupado={enLote}>
+          <button type="button" className="button danger" onClick={() => void removeSeleccion()} disabled={enLote}>Eliminar</button>
+        </BarraSeleccion>
         <div className="table-wrap">
-          <table className="grade-table usuarios-table" style={{ minWidth: 760 }}>
+          <table className="grade-table data-table usuarios-table u-table-wide">
             <caption className="visually-hidden">Usuarios registrados{query ? `, filtrados por “${query}”` : ''}</caption>
             <thead>
               <tr>
+                {showActions && <CasillaTodos todos={seleccion.todos} algunos={seleccion.algunos} onChange={seleccion.toggleTodos} etiqueta="Seleccionar todos los usuarios de esta página" />}
                 <th scope="col" aria-sort={sort.key === 'nombre' ? (sort.descending ? 'descending' : 'ascending') : 'none'}>
                   <button type="button" className="usuarios-sort" onClick={() => changeSort('nombre')} aria-label="Ordenar por nombre">
                     Nombre <span aria-hidden="true">{sortIndicator('nombre')}</span>
@@ -307,22 +330,23 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
                 <th scope="col">Cédula</th>
                 <th scope="col">Usuario</th>
                 {showEspecialidad && <th scope="col">Especialidad</th>}
-                {showActions && <th scope="col">Acciones</th>}
+                {showActions && <th scope="col" className="col-actions"><span className="visually-hidden">Acciones</span></th>}
               </tr>
             </thead>
             <tbody>
               {visibleUsers.map((user) => (
-                <tr key={user.id}>
+                <tr key={user.id} className={seleccion.estaSeleccionado(user.id) ? 'is-selected' : undefined}>
+                  {showActions && <CasillaFila checked={seleccion.estaSeleccionado(user.id)} onChange={() => seleccion.toggle(user.id)} etiqueta={`Seleccionar a ${user.nombre} ${user.apellido}`} />}
                   <td>{user.nombre}</td>
-                  <td>{user.apellido}</td>
-                  <td>{user.ci ?? '—'}</td>
-                  <td>{user.usuario}</td>
-                  {showEspecialidad && <td>{specialtyLabel(user)}</td>}
+                  <td data-label="Apellido">{user.apellido}</td>
+                  <td className="cell-muted" data-label="Cédula">{user.ci ?? '—'}</td>
+                  <td className="cell-muted" data-label="Usuario">{user.usuario}</td>
+                  {showEspecialidad && <td data-label="Especialidad">{specialtyLabel(user)}</td>}
                   {showActions && (
-                    <td>
-                      <div className="usuarios-row-actions">
-                        <button type="button" className="button secondary" onClick={() => openEdit(user)}>Editar</button>
-                        <button type="button" className="button danger" onClick={() => void removeUser(user)}>Eliminar</button>
+                    <td className="col-actions">
+                      <div className="usuarios-row-actions row-actions">
+                        <button type="button" className="button secondary" aria-label={`Editar a ${user.nombre} ${user.apellido}`} onClick={() => openEdit(user)}>Editar</button>
+                        <button type="button" className="button danger" aria-label={`Eliminar a ${user.nombre} ${user.apellido}`} onClick={() => void removeUser(user)}>Eliminar</button>
                         {user.nivel !== 4 && (
                           <RowActionsMenu label="Limpiar tokens Google" onSelect={() => void clearTokens(user)} />
                         )}
@@ -374,7 +398,7 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
             </div>
             <button type="button" className="signature-modal-close" aria-label="Cerrar formulario" data-dialog-initial-focus onClick={() => setIsOpen(false)}>×</button>
           </div>
-          <form className="form-grid" onSubmit={submit} style={{ alignContent: 'start' }}>
+          <form className="form-grid u-align-start" onSubmit={submit}>
             <label>
               Nombres
               <input value={form.nombre} onChange={(event) => setForm({ ...form, nombre: event.target.value })} required />
@@ -406,24 +430,23 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
             </label>
 
             {form.nivel === '4' && (
-              <div style={{ gridColumn: '1 / -1' }}>
+              <div className="u-span-full">
                 {!editingId ? (
-                  <p className="muted-copy" style={{ margin: '8px 0 0' }}>Guardá el usuario primero para poder vincular alumnos.</p>
+                  <p className="muted-copy u-mt-sm">Guardá el usuario primero para poder vincular alumnos.</p>
                 ) : (
                   <>
-                    <h3 style={{ marginBottom: 8 }}>Alumno/s vinculados</h3>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-                      <input
+                    <h3 className="u-mb">Alumno/s vinculados</h3>
+                    <div className="u-row u-mb">
+                      <input className="u-grow"
                         value={alumnoQuery}
                         onChange={(event) => setAlumnoQuery(event.target.value)}
                         placeholder="Buscar alumno por nombre, apellido o cédula"
-                        style={{ flex: 1, minWidth: 220 }}
                       />
                     </div>
                     {alumnoResults.length > 0 && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+                      <div className="u-stack u-mb">
                         {alumnoResults.map((alumno) => (
-                          <div key={alumno.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, border: '1px solid var(--line)', borderRadius: 8, padding: '6px 8px' }}>
+                          <div className="linked-item" key={alumno.id}>
                             <span>{alumno.nombre} {alumno.apellido} · {cursoAlumnoLabel(alumno.cursoId)} {alumno.ci ? `· CI ${alumno.ci}` : ''}</span>
                             <button
                               type="button"
@@ -444,9 +467,9 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
                       </div>
                     )}
                     {hijos.length > 0 ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <div className="u-stack">
                         {hijos.map((hijo) => (
-                          <div key={hijo.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, border: '1px solid var(--line)', borderRadius: 8, padding: '6px 8px' }}>
+                          <div className="linked-item" key={hijo.id}>
                             <span>{hijo.nombre} {hijo.apellido} · {cursoAlumnoLabel(hijo.cursoId)}</span>
                             <button
                               type="button"
@@ -474,7 +497,7 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
 
             <div className="signature-modal-actions">
               <button type="button" className="button secondary" onClick={() => setIsOpen(false)}>Cancelar</button>
-              <button type="submit" className="button" style={{ gridColumn: 'span 2' }}>{editingId ? 'Guardar cambios' : 'Crear usuario'}</button>
+              <button type="submit" className="button u-span-2">{editingId ? 'Guardar cambios' : 'Crear usuario'}</button>
             </div>
           </form>
         </div>

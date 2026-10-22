@@ -1,3 +1,4 @@
+import { splitActivityLine } from '../home/activityLine';
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type FormEvent, type RefObject } from 'react';
 import QRCode from 'qrcode';
 import { changePassword, confirmTotp, disableTotp, disconnectGoogle, getProfile, prepareTotp, saveProfile, type ProfileResponse, getGoogleAuthorizeUrl } from '../../api/profile';
@@ -67,46 +68,68 @@ export default function ProfilePage() {
   // `completion` removed — progress UI was eliminated from the profile header
   const finish = async (text: string) => { if (text) showToast(text, { tone: 'success' }); await Promise.all([load(), refreshUserIdentity()]); };
 
-  return <AppShell subtitle={`Cuenta de ${owner.usuario || 'usuario'} · ${data.profileRoleLabel}`}>
-    <div className="profile-page" ref={profilePageRef}>
-      <div className="profile-workspace">
-        <aside className="profile-menu" aria-label="Secciones del perfil">
-          <Tab active={tab === 'profile'} onClick={() => setTab('profile')} title="Perfil" detail="Datos personales" />
-          {data.showSecurityPanel && <Tab active={tab === 'security'} onClick={() => setTab('security')} title="Seguridad" detail="Contraseña y 2FA" />}
-          {data.showMateriasPanel && <Tab active={tab === 'subjects'} onClick={() => setTab('subjects')} title="Materias" detail="Asignaciones" />}
-          <Tab active={tab === 'app'} onClick={() => setTab('app')} title="Aplicación" detail="Estado y avisos" />
-          {(data.showActivityPanel || isGlobalAdmin) && <Tab active={tab === 'activity'} onClick={() => setTab('activity')} title="Registros" detail={isGlobalAdmin ? 'Actividad y apariencia' : 'Actividad'} />}
-        </aside>
-        <div className="profile-content" ref={profileContentRef}>
-          {/* toasts shown globally via ToastProvider */}
-          {tab === 'profile' && <ProfileForm data={data} done={finish} setStatus={setStatus} />}
-          {tab === 'security' && <Security data={data} done={finish} onPasswordChanged={finishPasswordChange} />}
-          {tab === 'subjects' && <Subjects data={data} />}
-          {tab === 'app' && <AppStatus data={data} />}
-          {tab === 'activity' && <div className="profile-section-stack">{isGlobalAdmin && <SystemPalette especialidades={data.especialidades} />}{data.showActivityPanel && <Activity entries={data.activityLog} />}</div>}
-        </div>
-        <aside className="profile-preview" aria-label="Vista previa del perfil">
-          <span className="profile-preview-kicker">Vista previa</span>
-          <div className="avatar">
+  const especialidad = data.especialidades.find((s) => s.id === owner.especialidadId)?.nombre ?? null;
+  const cursos = new Set(data.misAsignaciones.map((a) => a.cursoDescripcion));
+  const ultimoRegistro = data.activityLog.length ? splitActivityLine(data.activityLog[data.activityLog.length - 1])?.date.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}:\d{2})/) ?? null : null;
+  const cifras = [
+    ...(data.showMateriasPanel ? [
+      { key: 'materias', value: String(data.misAsignaciones.length), label: data.misAsignaciones.length === 1 ? 'Materia asignada' : 'Materias asignadas' },
+      { key: 'cursos', value: String(cursos.size), label: cursos.size === 1 ? 'Curso' : 'Cursos' },
+    ] : [{ key: 'especialidad', value: especialidad ?? 'Todas', label: 'Especialidad' }]),
+    ...(data.showGoogleClassroomPanel ? [{ key: 'classroom', value: data.googleClassroomConnected ? 'Conectado' : 'Sin conectar', label: 'Google Classroom' }] : []),
+    ...(data.showSecurityPanel ? [{ key: '2fa', value: data.totpEnabled ? 'Activada' : 'Desactivada', label: 'Verificación en dos pasos' }] : []),
+    ...(ultimoRegistro ? [{ key: 'ultimo', value: `${ultimoRegistro[3]}/${ultimoRegistro[2]} ${ultimoRegistro[4]}`, label: 'Último registro' }] : []),
+  ].slice(0, 4);
+  const tabs: { key: ProfileTab; label: string; show: boolean }[] = [
+    { key: 'profile', label: 'Datos', show: true },
+    { key: 'security', label: 'Seguridad', show: data.showSecurityPanel },
+    { key: 'subjects', label: 'Materias', show: data.showMateriasPanel },
+    { key: 'app', label: 'Aplicación', show: true },
+    { key: 'activity', label: isGlobalAdmin ? 'Registros y apariencia' : 'Registros', show: data.showActivityPanel || isGlobalAdmin },
+  ];
+
+  return <AppShell hero={false} title="Mi perfil">
+    <div className="profile-page profile-page--v3" ref={profilePageRef}>
+      {/* Tarjeta de identidad: quién sos, tu rol y las cifras de tu cuenta. */}
+      <section className="panel profile-hero" aria-label="Tu cuenta">
+        <div className="profile-hero-main">
+          <div className="avatar profile-hero-avatar">
             {owner.fotoPerfil
               ? <img src={owner.fotoPerfil} alt="Foto de perfil" />
-              : <AvatarEspecialidad name={data.especialidades.find((s) => s.id === owner.especialidadId)?.nombre ?? null} className="avatar-specialty-icon" />}
+              : <AvatarEspecialidad name={especialidad} className="avatar-specialty-icon" />}
           </div>
-          <div className="profile-identity-copy">
-            <span className="badge">{data.profileRoleLabel}</span>
-            <h2>{owner.fullName?.trim() || owner.usuario || 'Usuario SCA'}</h2>
-            <strong>@{owner.usuario || 'sin-usuario'}</strong>
+          <div className="profile-hero-copy">
+            <span className="eyebrow">Mi perfil</span>
+            <h1>{owner.fullName?.trim() || owner.usuario || 'Usuario SCA'}</h1>
+            <div className="profile-hero-meta">
+              <span className="badge">{data.profileRoleLabel}</span>
+              <span>@{owner.usuario || 'sin-usuario'}{owner.ci ? ` · CI ${owner.ci}` : ''}{owner.correo ? ` · ${owner.correo}` : ''}</span>
+            </div>
             <p>{data.profileAccessDescription}</p>
           </div>
-        </aside>
+        </div>
+        {cifras.length > 0 && <dl className="profile-hero-stats">
+          {cifras.map((cifra) => <div key={cifra.key}><dt>{cifra.label}</dt><dd>{cifra.value}</dd></div>)}
+        </dl>}
+      </section>
+      <nav className="catedra-tablist profile-tabs" aria-label="Secciones del perfil">
+        {tabs.filter((t) => t.show).map((t) => <Tab key={t.key} active={tab === t.key} onClick={() => setTab(t.key)} title={t.label} />)}
+      </nav>
+      <div className="profile-content" ref={profileContentRef}>
+        {/* toasts shown globally via ToastProvider */}
+        {tab === 'profile' && <ProfileForm data={data} done={finish} setStatus={setStatus} />}
+        {tab === 'security' && <Security data={data} done={finish} onPasswordChanged={finishPasswordChange} />}
+        {tab === 'subjects' && <Subjects data={data} />}
+        {tab === 'app' && <AppStatus data={data} />}
+        {tab === 'activity' && <div className="profile-section-stack">{isGlobalAdmin && <SystemPalette especialidades={data.especialidades} />}{data.showActivityPanel && <Activity entries={data.activityLog} />}</div>}
       </div>
       <ScrollToTopButton contentRef={profileContentRef} />
     </div>
   </AppShell>;
 }
 
-function Tab({ active, onClick, title, detail }: { active: boolean; onClick: () => void; title: string; detail: string }) {
-  return <button type="button" className={active ? 'active' : ''} onClick={onClick}><strong>{title}</strong><small>{detail}</small></button>;
+function Tab({ active, onClick, title }: { active: boolean; onClick: () => void; title: string }) {
+  return <button type="button" className={`catedra-tab${active ? ' active' : ''}`} aria-current={active ? 'page' : undefined} onClick={onClick}>{title}</button>;
 }
 
 function ScrollToTopButton({ contentRef }: { contentRef: RefObject<HTMLDivElement | null> }) {

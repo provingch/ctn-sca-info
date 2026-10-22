@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ResumenAlumno } from '../../api/admin';
-import { mensajeBorrado, mensajeTraslado } from './alumnoConfirmaciones';
+import { mensajeBorrado, mensajeBorradoLote, mensajeTraslado, mensajeTrasladoLote } from './alumnoConfirmaciones';
 
 const vacio: ResumenAlumno = { notas: 0, planillasConNotas: 0, planillasConNotasCursoActual: 0, asistencias: 0, anotaciones: 0, fichaEnfermeria: false, consultasEnfermeria: 0 };
 const informatica = { id: 1, especialidad: 'Informática', nivel: 2, seccion: 'A' };
@@ -28,5 +28,23 @@ describe('mensajeTraslado', () => {
   it('un cambio de sección sin notas no menciona otra especialidad', () => {
     expect(mensajeTraslado('Pérez, Juan', informatica, { ...informatica, id: 3, seccion: 'B' }, vacio)).toBe(
       'Vas a mover a Pérez, Juan de Informática 2ºA a Informática 2ºB. No tiene notas cargadas en su curso actual.');
+  });
+});
+
+describe('mensajes en lote', () => {
+  it('suma lo que se pierde entre todos los alumnos', () => {
+    const texto = mensajeBorradoLote([{ ...vacio, notas: 3, fichaEnfermeria: true }, { ...vacio, notas: 2, anotaciones: 1 }, vacio]);
+    expect(texto).toBe('¿Eliminar 3 alumnos? Entre todos, también se van a borrar 5 notas, 1 anotación y 1 ficha de enfermería. Esto no se puede deshacer.');
+    expect(mensajeBorradoLote([vacio, vacio])).toBe('¿Eliminar 2 alumnos? Ninguno tiene notas ni otros datos cargados.');
+  });
+
+  it('avisa cuántos de los que se mueven tienen notas en su curso', () => {
+    expect(mensajeTrasladoLote(2, informatica, quimica, [{ ...vacio, planillasConNotasCursoActual: 2 }, vacio]))
+      .toBe('Vas a mover 2 alumnos de Informática 2ºA a Química 2ºA (otra especialidad). 1 alumno tiene notas en su curso actual: quedan como historial, en gris y de solo lectura, y no se pasan al curso nuevo.');
+  });
+
+  it('sin un curso de origen común habla de sus cursos actuales', () => {
+    expect(mensajeTrasladoLote(2, undefined, quimica, [vacio, vacio]))
+      .toBe('Vas a mover 2 alumnos de sus cursos actuales a Química 2ºA. Ninguno tiene notas cargadas en su curso actual.');
   });
 });

@@ -101,19 +101,14 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={contextValue}>
       {children}
-      <div aria-live="polite" style={{ position: 'fixed', inset: '12px 0 auto 0', display: 'flex', justifyContent: 'center', pointerEvents: 'none', zIndex: 1200 }}>
-        <div style={{ width: 'min(900px, calc(100% - 24px))', display: 'grid', gap: 8 }}>
-          {toasts.map((t) => (
-            <div key={t.id} style={{ pointerEvents: 'auto' }}>
-              <div className={`notice ${t.tone === 'error' ? 'error' : t.tone === 'success' ? 'success' : ''} ${t.exiting ? 'exiting' : ''}`} role={t.tone === 'error' ? 'alert' : 'status'}>
-                <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ flex: 1 }}>{t.message}</div>
-                  <button type="button" aria-label="Cerrar" onClick={() => dismissToast(t.id)} className="button secondary" style={{ marginLeft: 12 }}>×</button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+      <div className="toast-region" aria-live="polite">
+        {toasts.map((t) => (
+          <div key={t.id} className={`toast toast--${t.tone}${t.exiting ? ' exiting' : ''}`} role={t.tone === 'error' ? 'alert' : 'status'}>
+            <span className="toast-icon" aria-hidden="true">{t.tone === 'error' ? '!' : t.tone === 'success' ? '✓' : 'i'}</span>
+            <div className="toast-message">{t.message}</div>
+            <button type="button" aria-label="Cerrar" onClick={() => dismissToast(t.id)} className="toast-close">×</button>
+          </div>
+        ))}
       </div>
     </ToastContext.Provider>
   );

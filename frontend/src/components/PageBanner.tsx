@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import SpecialtyIcon from './SpecialtyIcon';
 
-export default function PageBanner({ title, context, specialty, selector, onBack, backLabel = 'Inicio' }: {
+export default function PageBanner({ title, context, specialty, selector, onBack, backLabel = 'Inicio', welcome = false }: {
   title: ReactNode;
   context?: ReactNode;
   specialty?: string | null;
@@ -9,12 +9,14 @@ export default function PageBanner({ title, context, specialty, selector, onBack
   onBack?: () => void;
   /** A dónde vuelve `onBack` (se muestra como "← {backLabel}"). */
   backLabel?: string;
+  /** Saludo de los paneles de inicio: se destaca más que el encabezado de una sección. */
+  welcome?: boolean;
 }) {
   return (
-    <div className="page-banner">
+    <div className={`page-banner${welcome ? ' page-banner--welcome' : ''}`}>
       <div className="page-banner-text">
+        {onBack && <button type="button" className="page-banner-back" aria-label={backLabel === 'Inicio' ? 'Volver al inicio' : `Volver a ${backLabel}`} onClick={onBack}><span aria-hidden="true">←</span> {backLabel}</button>}
         <div className="page-banner-title-row">
-          {onBack && <button type="button" className="page-banner-back" aria-label={backLabel === 'Inicio' ? 'Volver al inicio' : `Volver a ${backLabel}`} onClick={onBack}>← {backLabel}</button>}
           <h1>{title}</h1>
         </div>
         {context && <span>{context}</span>}

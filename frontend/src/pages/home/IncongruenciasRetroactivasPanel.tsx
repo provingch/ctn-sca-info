@@ -3,6 +3,7 @@ import { ApiError } from '../../api/client';
 import * as evaluacionApi from '../../api/evaluacion';
 import { useToast } from '../../context/toast';
 import { formatFechaClase } from '../../utils/fechaClase';
+import '../../components/plan-views.css';
 
 const MAX_JUSTIFICACION = 2000;
 
@@ -53,24 +54,24 @@ export default function IncongruenciasRetroactivasPanel() {
     }
   }
 
-  if (error) return <section className="class-card" style={{ gridColumn: '1 / -1' }}><div className="notice error">{error} <button type="button" className="button secondary" onClick={() => void load()}>Reintentar</button></div></section>;
+  if (error) return <section className="class-card span-full"><div className="notice error">{error} <button type="button" className="button secondary" onClick={() => void load()}>Reintentar</button></div></section>;
   if (!items || items.length === 0) return null;
 
-  return <section className="class-card" style={{ gridColumn: '1 / -1' }} aria-labelledby="incongruencias-title">
+  return <section className="class-card span-full" aria-labelledby="incongruencias-title">
     <div className="class-card-head"><h3 id="incongruencias-title">Clases previas al plan con incongruencias ({items.length})</h3></div>
-    <p style={{ margin: 0, color: 'var(--muted)' }}>Estas clases se dieron antes de que tu plan estuviera aprobado y no coinciden con lo planificado. Agregá una justificación si corresponde: evaluación la ve al revisar cada caso.</p>
-    <div style={{ display: 'grid', gap: 12, marginTop: 12 }}>
+    <p className="plan-hint">Estas clases se dieron antes de que tu plan estuviera aprobado y no coinciden con lo planificado. Agregá una justificación si corresponde: evaluación la ve al revisar cada caso.</p>
+    <div className="incongruencia-list">
       {items.map((item) => {
         const cambiada = (textos[item.id] ?? '').trim() !== (item.justificacionProfesor ?? '').trim();
-        return <article key={item.id} style={{ padding: 12, border: '1px solid var(--line)', borderRadius: 8, background: 'var(--paper)', display: 'grid', gap: 8 }}>
+        return <article key={item.id} className="incongruencia-item">
           <strong>{item.materiaNombre ?? 'Clase'} · {formatFechaClase(item.fechaClase)}</strong>
-          <div style={{ fontSize: '0.9rem' }}><span style={{ color: 'var(--muted)' }}>Tema dado:</span> {item.temaIngresado ?? '—'}</div>
-          <div style={{ fontSize: '0.9rem' }}><span style={{ color: 'var(--muted)' }}>Tema esperado según el plan:</span> {item.temaEsperado ?? '—'}</div>
+          <p><span>Tema dado:</span> {item.temaIngresado ?? '—'}</p>
+          <p><span>Tema esperado según el plan:</span> {item.temaEsperado ?? '—'}</p>
           <div className="class-field">
             <label htmlFor={`justificacion-${item.id}`}>Justificación</label>
             <textarea id={`justificacion-${item.id}`} rows={3} maxLength={MAX_JUSTIFICACION} value={textos[item.id] ?? ''} disabled={guardando === item.id}
               onChange={(event) => setTextos((current) => ({ ...current, [item.id]: event.target.value }))}
-              placeholder="Explicá por qué la clase no siguió el plan" style={{ resize: 'none' }} />
+              placeholder="Explicá por qué la clase no siguió el plan" className="textarea-fixed" />
           </div>
           <div><button type="button" className="button" disabled={guardando === item.id || !cambiada || !(textos[item.id] ?? '').trim()} onClick={() => void guardar(item)}>{guardando === item.id ? 'Guardando…' : item.justificacionProfesor ? 'Actualizar justificación' : 'Guardar justificación'}</button></div>
         </article>;
