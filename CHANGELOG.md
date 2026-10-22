@@ -9,6 +9,8 @@ y este proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.
 
 ### Añadido
 
+- **App Android 4.0.0 multi-rol**: ya no es solo "SCA Padres", ahora una sola app "SCA" sirve a Profesor, Evaluador, Padre/Encargado y Coordinación Pedagógica (Administración se usa desde la web). Incluye el rediseño "SCA pantallas reales" (acento bordó y azul, tipografía Inter, barra inferior por rol), Avisos y Perfil comunes, y pantallas propias por rol: Hoy, registro de clase, clases y corrección de tareas para el profesor; hijos, notas y conducta con foto para los padres; planes y seguimiento para el evaluador; quejas y anotaciones para Coordinación. El `applicationId` no cambia, así que se actualiza encima de la app anterior.
+- **Descarga de la app desde la web**: el APK se publica en `/app/sca.apk` y aparece "Descargar app Android" en el menú de usuario y en Mi perfil → App para profesores, evaluadores, padres y Coordinación.
 - **API para la app Android de anotaciones** (`/api/anotaciones`): los profesores registran anotaciones de conducta, uniforme, etc. desde el celular, con foto de evidencia JPEG opcional (hasta 5 MB) según el tipo. Incluye login por C.I., menús del profesor, alumnos por asignación, catálogo de tipos, historial del alumno y descarga de fotos. Protegida con una clave propia (`ANOTACIONES_API_KEY`) y con respuestas `{ok, datos}` / `{ok, error}` compatibles con la API PHP original.
 - **Traslado de alumnos entre especialidades o secciones**: al editar un alumno ya se le puede cambiar el curso, y la web avisa antes cuántas planillas con notas quedan atrás. El cambio queda en `alumno_curso_historial` (migración `011_alumno_curso_historial.sql`). En las planillas del curso anterior el alumno sigue apareciendo en gris, con la etiqueta "Trasladado a…" y las notas de solo lectura, y los padres ven esas notas aparte, como "Curso anterior", sin que cuenten para el promedio actual.
 - **Catálogo de tipos de anotación** definido por Coordinación Pedagógica, con tipos que exigen foto u observación, orden propio y control de duplicados en el día para los no repetibles.
@@ -19,6 +21,7 @@ y este proyecto se adhiere a [Versionado Semántico](https://semver.org/spec/v2.
 
 ### Cambiado
 
+- **Manuales con formato nuevo** (`manuales/manual.css`, `build.mjs`) y **manual de Padres actualizado** con capturas de la interfaz rediseñada. Los demás manuales conservan el contenido anterior.
 - `deploy.sh` conserva `ANOTACIONES_API_KEY` y `ENFERMERIA_API_KEY` entre actualizaciones, y el sitio de nginx acepta envíos de hasta 6 MB para las fotos de anotaciones.
 - **Las quejas quedan ligadas a la promoción del curso** (`queja.curso_id` apunta a `curso` en vez de `curso_base`): una queja sobre "3° A" ya no se mezcla con las de otros años, Coordinación las agrupa por promoción y cada una muestra el nivel que tenía el curso al cargarse. La migración `010_queja_curso_cohorte.sql` traduce las quejas existentes según su fecha de carga.
 

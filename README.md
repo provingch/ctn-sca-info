@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/PWA-instalable-C8102E" alt="PWA instalable" />
 </p>
 
-Sistema de gestión académica del **Colegio Técnico Nacional (CTN)**: administra especialidades, cursos, materias, horarios, planillas de evaluación y notas, plan curricular con aprobación y verificación de tema por clase, control académico (incumplimientos, quejas, catálogo de conducta y RSA), integración con **Google Classroom**, portal para padres/encargados con app nativa para **Android**, notificaciones push y soporte de **PWA** (instalable en el celular).
+Sistema de gestión académica del **Colegio Técnico Nacional (CTN)**: administra especialidades, cursos, materias, horarios, planillas de evaluación y notas, plan curricular con aprobación y verificación de tema por clase, control académico (incumplimientos, quejas, catálogo de conducta y RSA), integración con **Google Classroom**, portal para padres/encargados, app nativa para **Android** (profesores, evaluación, coordinación y familias), notificaciones push y soporte de **PWA** (instalable en el celular).
 
 - Inicio del desarrollo: 18/06/2026
 - Licencia: GPL-3.0 (ver [`LICENSE`](./LICENSE))
@@ -31,6 +31,7 @@ Sistema de gestión académica del **Colegio Técnico Nacional (CTN)**: administ
 - [Estructura del proyecto](#estructura-del-proyecto)
 - [Configuración](#configuración)
 - [APIs para apps externas](#apis-para-apps-externas)
+- [App Android](#app-android)
 - [Despliegue](#despliegue)
 - [Otros módulos del repositorio](#otros-módulos-del-repositorio)
 
@@ -223,6 +224,10 @@ Los usuarios de enfermería (`enf_usuario`) son independientes de los del colegi
 
 En las consultas, `insumos` es `id:cantidad` separado por coma (por ejemplo `3:2,5:1`). El alta, la edición y la baja actualizan consulta, detalle y stock en una sola transacción: si algún insumo no alcanza, responde 409 con el insumo y lo que queda, y no se guarda nada. El cuerpo de cada envío está limitado a 256 KB.
 
+## App Android
+
+App nativa **SCA** (4.0.0) para Profesor, Evaluador, Padre/Encargado y Coordinación Pedagógica (Administración se usa desde la web). Descarga directa: <https://ctn-sca.ddns.net/app/sca.apk>; también está en el menú de usuario y en Mi perfil → App. Compilación, firma de release y cómo publicar una versión nueva: [`android/README.md`](./android/README.md).
+
 ## Despliegue
 
 - Backend: servicio systemd `sca-backend.service` (jar en `/opt/ctn-sca-info/backend/sca-backend.jar`).
@@ -245,6 +250,6 @@ Los valores `REPO_DIR`, `PROJECT_DIR`, `SERVICE_NAME`, `APP_URL`, `SCA_DB_NAME`,
 
 | Módulo | Contenido |
 | --- | --- |
-| [`android/`](./android) | App nativa (Kotlin + Jetpack Compose) para padres: login con 2FA, resumen académico, tareas y notificaciones push (FCM). Consume el mismo backend. Ver [`android/README.md`](./android/README.md). |
+| [`android/`](./android) | App nativa SCA (Kotlin + Jetpack Compose) multi-rol: profesor, evaluador, padre y Coordinación. Consume el mismo backend. Ver [`android/README.md`](./android/README.md). |
 | [`videos/`](./videos) | Video institucional del proyecto (`sca-trailer.mp4`), generado con [Remotion](https://www.remotion.dev/) a partir de las capturas y logos de esta misma carpeta. Ver [`videos/README.md`](./videos/README.md). |
 | [`docs/`](./docs) | Notas técnicas puntuales, por ejemplo [`docs/text-encoding.md`](./docs/text-encoding.md) sobre la reparación de textos con codificación UTF-8 dañada. |
