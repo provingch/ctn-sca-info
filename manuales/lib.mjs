@@ -17,7 +17,7 @@ export function creds(file) {
 const STATE = process.env.SCA_STATE;
 
 export async function open({ width = 1366, height = 820, dark = false, anon = false, scale = 2 } = {}) {
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
   const ctx = await browser.newContext({ storageState: !anon && STATE && fs.existsSync(STATE) ? STATE : undefined, viewport: { width, height }, deviceScaleFactor: scale, colorScheme: dark ? 'dark' : 'light', locale: 'es-PY' });
   await ctx.route('**/*', route => {
     const r = route.request();
@@ -112,12 +112,12 @@ export async function annotate(page, marks) {
       const x = b.x - b.pad, y = b.y - b.pad, w = b.width + 2 * b.pad, h = b.height + 2 * b.pad;
       const r = document.createElement('div');
       r.className = 'mx-ann';
-      Object.assign(r.style, { position: 'absolute', left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px', border: `3px solid ${C}`, borderRadius: '10px', boxShadow: '0 0 0 4px rgba(232,89,12,.18)', zIndex: 99999, pointerEvents: 'none' });
+      Object.assign(r.style, { position: 'absolute', left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px', border: `3px solid ${C}`, borderRadius: '6px', boxShadow: '0 0 0 4px rgba(232,89,12,.18)', zIndex: 99999, pointerEvents: 'none' });
       document.body.append(r);
       if (b.n != null) {
         const d = document.createElement('div');
         d.className = 'mx-ann'; d.textContent = b.n;
-        Object.assign(d.style, { position: 'absolute', left: (x + w - 16) + 'px', top: (y - 14) + 'px', width: '28px', height: '28px', borderRadius: '50%', background: C, color: '#fff', font: '700 15px/28px system-ui', textAlign: 'center', zIndex: 100000, boxShadow: '0 2px 6px rgba(0,0,0,.3)' });
+        Object.assign(d.style, { position: 'absolute', left: (x + w - 16) + 'px', top: (y - 14 < 2 ? y + h - 14 : y - 14) + 'px', width: '28px', height: '28px', borderRadius: '50%', background: C, color: '#fff', font: '700 15px/28px system-ui', textAlign: 'center', zIndex: 100000, boxShadow: '0 2px 6px rgba(0,0,0,.3)' });
         document.body.append(d);
       }
       if (b.label && b.drawLabel) {
@@ -140,7 +140,8 @@ export const clear = page => page.evaluate(() => document.querySelectorAll('.mx-
 // Caja que cubre el elemento `region` (si hay) y todas las marcas dibujadas.
 export async function annotatedBox(page, region) {
   const rects = await page.evaluate(() => [...document.querySelectorAll('.mx-ann')].map(e => { const r = e.getBoundingClientRect(); return { x: r.x + scrollX, y: r.y + scrollY, width: r.width, height: r.height }; }));
-  if (region) { const b = await region.boundingBox(); const [sx, sy] = await page.evaluate(() => [scrollX, scrollY]); rects.push({ ...b, x: b.x + sx, y: b.y + sy }); }
+  // `region` puede ser una lista de elementos: la caja los cubre a todos
+  for (const r of [region ?? []].flat()) { const b = await r.boundingBox(); const [sx, sy] = await page.evaluate(() => [scrollX, scrollY]); rects.push({ ...b, x: b.x + sx, y: b.y + sy }); }
   if (!rects.length) return null;
   const x = Math.min(...rects.map(r => r.x)), y = Math.min(...rects.map(r => r.y));
   return { x, y, width: Math.max(...rects.map(r => r.x + r.width)) - x, height: Math.max(...rects.map(r => r.y + r.height)) - y };

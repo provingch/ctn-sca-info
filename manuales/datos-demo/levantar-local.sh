@@ -14,7 +14,7 @@ mkdir -p "$L"
 
 if ! m -e 'select 1' >/dev/null 2>&1; then
   [ -d "$L/data/mysql" ] || mariadb-install-db --no-defaults --auth-root-authentication-method=normal --datadir="$L/data" > "$L/install.log" 2>&1
-  nohup mariadbd --no-defaults --datadir="$L/data" --socket="$SOCK" --port=3307 --bind-address=127.0.0.1 \
+  nohup mariadbd --no-defaults $([ "$(id -u)" = 0 ] && echo --user=root) --datadir="$L/data" --socket="$SOCK" --port=3307 --bind-address=127.0.0.1 \
     --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci > "$L/mariadbd.log" 2>&1 &
   for _ in $(seq 30); do m -e 'select 1' >/dev/null 2>&1 && break; sleep 1; done
 fi
@@ -26,9 +26,10 @@ python3 -I "$RAIZ/manuales/datos-demo/local-setup.py" | m ctndb
 m --default-character-set=utf8mb4 ctndb < "$RAIZ/manuales/datos-demo/demo-insert.sql" > /dev/null
 # Thiago (291) no entregó la prueba de julio: para mostrar el caso "No entregada" en la vista de padres
 m ctndb -e "DELETE pu FROM puntaje pu JOIN registro r ON r.id = pu.registro_id JOIN tarea t ON t.id = pu.tarea_id WHERE r.alumno_id = 291 AND t.titulo = 'Prueba sumativa: variables y tipos de datos'"
-# el schema ya trae todas las migraciones del jar: marcarlas como aplicadas para que el backend no las repita
+# si el schema ya trae todas las migraciones del jar (llega hasta alumno_curso_historial), marcarlas como aplicadas
+# para que el backend no las repita; si es un schema más viejo, que el backend aplique las que falten al arrancar
 JAR=$(ls "$RAIZ"/backend/target/sca-*.jar | head -1)
-{ echo "INSERT IGNORE INTO schema_migrations (version) VALUES"
+[ -n "$(m ctndb -N -e "SHOW TABLES LIKE 'alumno_curso_historial'")" ] && { echo "INSERT IGNORE INTO schema_migrations (version) VALUES"
   unzip -l "$JAR" | grep -o 'db/migrations/[^ ]*\.sql' | sed 's|db/migrations/||' | sort -u | sed "s/.*/('&')/" | paste -sd,
   echo ";"; } | m ctndb
 m -e "CREATE USER IF NOT EXISTS 'sca_local'@'127.0.0.1' IDENTIFIED BY 'local'; GRANT ALL ON ctndb.* TO 'sca_local'@'127.0.0.1';"
@@ -44,6 +45,9 @@ if ! curl -s -o /dev/null http://localhost:8080/; then
   SERVER_PORT=8080 nohup java -jar "$JAR" > "$L/backend.log" 2>&1 &
   for _ in $(seq 60); do grep -q 'Started ' "$L/backend.log" 2>/dev/null && break; sleep 1; done
 fi
+
+# anotaciones de ejemplo (sus tablas las crean las migraciones, así que va con el backend ya arrancado)
+python3 -I "$RAIZ/manuales/datos-demo/demo-anotaciones.py" | m ctndb
 
 if ! curl -s -o /dev/null http://localhost:5173/; then
   echo "==> Frontend (build de producción) en :5173"

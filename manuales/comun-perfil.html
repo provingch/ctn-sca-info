@@ -1,19 +1,21 @@
-<h2>Mi perfil</h2>
-<p>Tocá <b>Mi perfil</b> en la barra superior, o tu nombre → <b>Mi perfil</b>. La pantalla tiene pestañas a la izquierda.</p>
+<section class="capitulo" id="perfil">
+  <header><span class="n"></span><h2>Mi perfil</h2><p>Tus datos, tu contraseña y la verificación en dos pasos.</p></header>
+  <p>Entrá desde <span class="ui">Mi perfil</span> en la barra superior, o desde tu nombre → <b>Mi perfil</b>.</p>
+  <figure data-fig="perfil" data-url="/profile" data-legend="Tu cuenta: nombre, rol, usuario y un resumen (verificación en dos pasos, último ingreso)|Pestañas: Datos, Seguridad, Aplicación y Registros|Guardar cambios: sin este botón, lo que edites no se guarda"></figure>
+  <div class="estados">
+    <span class="etq neutro">Datos</span><span>Nombre, apellido, cédula, correo, teléfono, usuario y foto de perfil.</span>
+    <span class="etq neutro">Seguridad</span><span>Cambiar la contraseña y activar la verificación en dos pasos.</span>
+    <span class="etq neutro">Aplicación</span><span>Instalar el sistema como aplicación y activar los avisos en este dispositivo.</span>
+    <span class="etq neutro">Registros</span><span>Lo que se hizo con tu cuenta, con fecha, hora y dirección IP.</span>
+  </div>
 
-<h3>Perfil</h3>
-<p>Tus datos personales (nombre, apellido, cédula), de contacto (correo, teléfono y celular), tu usuario y tu foto de perfil. Editá lo que necesites y tocá <b>Guardar cambios</b>, abajo a la derecha; si no lo tocás, los cambios no se guardan.</p>
-
-<h3>Seguridad</h3>
-<figure data-fig="../profesor/22-perfil-seguridad" data-legend="Pestaña Seguridad: contraseña y verificación en dos pasos"></figure>
-<ul>
-  <li><b>Cambiar contraseña</b>: escribí la actual, la nueva y su confirmación, y tocá <b>Actualizar contraseña</b>.</li>
-  <li><b>Verificación en dos pasos (2FA)</b>: tocá <b>Configurar 2FA</b>, escaneá el código QR con tu app de autenticación (Google Authenticator, Authy, etc.), escribí el código de 6 dígitos en <b>Código de la app</b> y tocá <b>Confirmar activación</b>.</li>
-</ul>
-<div class="aviso">Si activás el 2FA y perdés el acceso a la app, no vas a poder iniciar sesión: contactá a un administrador.</div>
-
-<h3>Aplicación</h3>
-<p>Instalá el sistema como aplicación en tu celular o computadora (<b>Instalar aplicación</b>) y activá los avisos del dispositivo (<b>Activar notificaciones</b>), que te llegan aunque no tengas el sistema abierto. Se configura por dispositivo.</p>
-
-<h3>Registros</h3>
-<p>El historial de lo que se hizo con tu cuenta, con fecha, hora y dirección IP. Si ves algo que no hiciste vos, cambiá tu contraseña y avisá a un administrador.</p>
+  <h3>Cambiar la contraseña y activar la verificación en dos pasos</h3>
+  <figure data-fig="perfil-seguridad" data-url="/profile" data-legend="Pestaña Seguridad|Actualizar contraseña: escribí la actual, la nueva y repetila|Configurar 2FA: activa el código de 6 dígitos al entrar"></figure>
+  <ol class="pasos">
+    <li>Tocá <span class="ui">Configurar 2FA</span>. Aparece un código QR.</li>
+    <li>Escanealo con tu app de autenticación (Google Authenticator, Authy, etc.).</li>
+    <li>Escribí el código de 6 dígitos que muestra la app y tocá <span class="ui">Confirmar activación</span>.</li>
+  </ol>
+  <div class="importante"><b>Guardá bien el acceso a la app</b>Si activás la verificación en dos pasos y perdés el celular, no vas a poder entrar: pedile al colegio que la desactive. Al cambiar la contraseña se cierran todas tus sesiones abiertas.</div>
+  <div class="consejo"><b>¿Algo raro en Registros?</b>Si ves un ingreso que no hiciste vos, cambiá tu contraseña enseguida y avisá al colegio.</div>
+</section>
