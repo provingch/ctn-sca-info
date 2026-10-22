@@ -10,16 +10,16 @@ const out = new URL(`../frontend/public/pdfs/manual-${rol}.pdf`, import.meta.url
 const html = fs.readFileSync(src, 'utf8').replace(/<!-- incluir: ([\w.-]+) -->/g, (_, f) => fs.readFileSync(new URL(`./${f}`, import.meta.url), 'utf8'));
 const tmp = new URL(`./.${rol}.build.html`, import.meta.url);
 fs.writeFileSync(tmp, html);
-const browser = await chromium.launch();
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
 const page = await browser.newPage();
 await page.goto(tmp.href);
+await page.addStyleTag({ content: `@page { @bottom-left { content: ${JSON.stringify('SCA · ' + (await page.title()).split(' — ')[0])}; } } @page portada { @bottom-left { content: none; } }` });
 await page.waitForFunction(() => [...document.querySelectorAll('figure[data-fig]')].every(f => f.dataset.listo));
 const broken = await page.evaluate(() => [...document.images].filter(i => !i.naturalWidth).map(i => i.src));
 if (broken.length) throw new Error('Imágenes faltantes: ' + broken.join(', '));
 await page.pdf({
   path: out, format: 'A4', printBackground: true, preferCSSPageSize: true,
-  displayHeaderFooter: true, headerTemplate: '<span></span>',
-  footerTemplate: `<div style="font:8pt Inter,sans-serif;color:#8a93a3;width:100%;padding:0 16mm;display:flex;justify-content:space-between"><span>SCA · ${(await page.title()).split(' — ')[0]}</span><span><span class="pageNumber"></span> / <span class="totalPages"></span></span></div>`,
+  // el pie (manual y número de página) lo pone manual.css con @page, así la portada queda sin pie
 });
 await browser.close();
 fs.rmSync(tmp);

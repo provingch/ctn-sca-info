@@ -8,57 +8,86 @@
 <body data-img="img/padres/">
 
 <section class="portada">
-  <img class="logo" src="../frontend/public/favicon.svg" alt="">
-  <p class="colegio">Colegio Técnico Nacional de Asunción</p>
-  <p class="sistema">Sistema de Carpeta Académica (SCA)</p>
-  <h1>Manual de Padres y Encargados</h1>
-  <p class="sub">Cómo seguir las notas, tareas y conducta de tus hijos, paso a paso y con capturas</p>
-  <p class="nota-portada">Guía de uso — sin conocimientos técnicos necesarios</p>
+  <div class="marca"><img src="../frontend/public/favicon.svg" alt=""><p><b>Colegio Técnico Nacional</b>Sistema de Carpeta Académica · Asunción</p></div>
+  <p class="rol">Manual de uso</p>
+  <h1>Padres y encargados</h1>
+  <p class="sub">Cómo seguir las notas, las tareas, la conducta y las anotaciones de tus hijos desde la computadora o el celular.</p>
+  <div class="datos"><span>Edición 2026</span><span>Interfaz nueva</span><span>ctn-sca.ddns.net</span></div>
+  <div class="vista"><img src="img/padres/00-portada.jpg" alt=""></div>
 </section>
 
 <nav class="indice">
   <h2>Contenido</h2>
   <ol>
-    <li>Ingresar al sistema</li>
-    <li>La barra superior</li>
-    <li>Notas de mis hijos</li>
-    <li>Materias y tareas</li>
-    <li>Notas de conducta</li>
-    <li>Mi perfil</li>
+    <li><a href="#ingresar">Ingresar al sistema</a><span>Usuario, contraseña y la barra superior</span></li>
+    <li><a href="#resumen">El resumen de tu hijo</a><span>Promedios, reportes y libreta</span></li>
+    <li><a href="#materias">Materias y tareas</a><span>Notas por etapa y estado de cada tarea</span></li>
+    <li><a href="#conducta">Conducta y anotaciones</a><span>Notas de conducta y anotaciones con foto</span></li>
+    <li><a href="#perfil">Mi perfil</a><span>Datos, contraseña y verificación en dos pasos</span></li>
+    <li><a href="#preguntas">Preguntas frecuentes</a><span>Las dudas más comunes</span></li>
   </ol>
-  <p class="como-leer">Cómo leer las capturas: los <span class="num">1</span> números naranjas marcan dónde tocar, y la lista junto a cada imagen explica qué es cada uno.</p>
+  <div class="como-leer">
+    <h3>Cómo leer este manual</h3>
+    <ul>
+      <li><span class="muestra"><span class="num">1</span></span>Los números naranjas marcan una parte de la pantalla. La lista junto a cada imagen explica qué es.</li>
+      <li><span class="muestra"><span class="ui">Ingresar</span></span>Así se escriben los botones y opciones, tal como aparecen en la pantalla.</li>
+      <li><span class="muestra"><span class="etq ok">Consejo</span></span>Recuadros azules: atajos y recomendaciones.</li>
+      <li><span class="muestra"><span class="etq aviso">Importante</span></span>Recuadros naranjas: cosas a tener en cuenta antes de seguir.</li>
+    </ul>
+  </div>
 </nav>
 
 <!-- incluir: comun-ingreso.html -->
-<div class="tip">Activá las notificaciones del celular (ver <b>Mi perfil → Aplicación</b>): así te llegan los avisos del colegio sobre tu hijo aunque no tengas el sistema abierto.</div>
 
-<h2>3. Notas de mis hijos</h2>
-<p>Al iniciar sesión llegás directamente a <b>Notas de mis hijos</b>.</p>
-<figure data-fig="03-hijo-resumen" data-legend="Tu hijo o hija: si tenés más de uno asociado a la cuenta, elegilo en estas tarjetas|Mes del reporte|Descargar reporte mensual en PDF del mes elegido|Descargar libreta (se habilita cuando el colegio cierra la Segunda Etapa)|Imprimir resumen|Promedio general y resumen de la etapa"></figure>
-<ol>
-  <li>Si tenés más de un hijo, elegí cuál ver en las tarjetas de arriba (cada una muestra su especialidad y su promedio general).</li>
-  <li>Debajo ves el resumen: <b>promedio general</b>, el promedio de la etapa y cuántas tareas están <b>por revisar</b> (sin entregar o sin calificar).</li>
-  <li>Para un reporte en PDF, elegí el mes y tocá <b>Descargar reporte mensual</b>.</li>
-</ol>
-<div class="aviso">Si aparece el mensaje «No hay hijos asociados a este usuario padre», contactá al colegio para que revisen la vinculación de tu cuenta.</div>
+<section class="capitulo" id="resumen">
+  <header><span class="n"></span><h2>El resumen de tu hijo</h2><p>Al entrar llegás directamente a <b>Mis hijos</b>: arriba, la tarjeta de cada hijo y el resumen de sus notas.</p></header>
+  <figure data-fig="03-hijo-resumen" data-url="/padre" data-legend="Tu hijo o hija: si tenés más de uno vinculado, tocá su tarjeta para verlo|Mes del reporte: elegí el mes que querés descargar|Descargar reporte mensual: un PDF con las notas de ese mes|Descargar libreta: se habilita cuando el colegio cierra la Segunda Etapa|Imprimir resumen: imprime esta página|Cifras: promedio general, promedio de la etapa elegida y tareas por revisar|Promedio de cada etapa, lado a lado"></figure>
+  <p><b>Por revisar</b> cuenta las tareas que todavía no tienen nota: las que tu hijo no entregó y las que entregó pero el profesor aún no calificó. Debajo te dice cuántas están sin entregar.</p>
+  <div class="importante"><b>¿Dice «No hay hijos asociados a este usuario»?</b>Tu cuenta todavía no está vinculada a tu hijo. Avisá al colegio para que la vinculen.</div>
+</section>
 
-<h2>4. Materias y tareas</h2>
-<h3>4.1 Elegir la etapa y la materia</h3>
-<figure data-fig="04-materias" data-legend="Etapa: Primera o Segunda (todo lo de abajo se actualiza)|Materia: tocala para ver sus tareas"></figure>
-<p>Hay una tarjeta por cada materia de la etapa elegida, con su nota, el porcentaje y cuántas tareas tiene pendientes. Si tu hijo tiene muchas materias, aparece un buscador para encontrar una por nombre.</p>
+<section class="capitulo" id="materias">
+  <header><span class="n"></span><h2>Materias y tareas</h2><p>Las notas de cada materia, etapa por etapa, y el detalle de cada tarea.</p></header>
+  <h3>Elegir la etapa y la materia</h3>
+  <figure data-fig="04-materias" data-url="/padre" data-legend="Etapa: Primera o Segunda; todo lo de abajo se actualiza|Materia: tocala para ver sus tareas|Nota de la materia (de 1 a 5), con el porcentaje y los puntos debajo"></figure>
+  <p>Hay una tarjeta por materia, con la nota, el porcentaje, los puntos logrados y cuántas tareas faltan revisar. Si tu hijo tiene muchas materias, aparece un buscador para encontrarlas por nombre.</p>
+  <div class="consejo"><b>Si tu hijo cambió de curso este año</b>Debajo aparece <b>Curso anterior</b> con las notas que se cargaron mientras estuvo ahí. No cuentan para el promedio actual.</div>
 
-<h3>4.2 Detalle de tareas</h3>
-<figure data-fig="05-tareas" data-legend="Mes: ver un mes puntual o todos los meses|Cada tarea: fecha, estado y los puntos obtenidos sobre el total"></figure>
-<p>Las tareas están agrupadas por mes. Cada una figura como <b>Calificada</b>, <b>Entregada · sin calificar</b>, <b>No entregada</b> o <b>Pendiente</b>.</p>
-<figure data-fig="06-como-se-calcula" data-legend=""></figure>
-<p>El porcentaje de cada materia sale de dividir los puntos logrados entre los puntos posibles de las tareas publicadas. El promedio general combina todas las materias.</p>
+  <h3>Detalle de tareas</h3>
+  <figure data-fig="05-tareas" data-url="/padre" data-legend="Mes: ver un mes puntual o todos|Tarea calificada: puntos obtenidos sobre el total y el porcentaje|Tarea con otro estado (por ejemplo, no entregada)"></figure>
+  <p>Las tareas están agrupadas por mes. Cada una puede estar en uno de estos estados:</p>
+  <div class="estados">
+    <span class="etq ok">8 / 10 · Calificada</span><span>El profesor ya la corrigió: ves los puntos y el porcentaje.</span>
+    <span class="etq neutro">Entregada · sin calificar</span><span>Tu hijo la entregó y falta que el profesor la corrija.</span>
+    <span class="etq mal">No entregada</span><span>Venció y no se entregó. Las marca con una línea roja a la izquierda.</span>
+    <span class="etq aviso">Pendiente</span><span>Todavía está en plazo.</span>
+  </div>
+  <figure data-fig="06-como-se-calcula" data-pie="Tocá «¿Cómo se calcula el promedio?» para ver la explicación en la misma página"></figure>
+</section>
 
-<h2>5. Notas de conducta</h2>
-<p>Los registros de conducta que los profesores le cargaron a tu hijo durante las clases.</p>
-<figure data-fig="07-conducta" data-legend="Materia|Desde (fecha)|Hasta (fecha)|Cada nota: fecha, materia, profesor, código, descripción y observación"></figure>
-<p>Si no hay notas de conducta, la sección lo indica directamente.</p>
+<section class="capitulo" id="conducta">
+  <header><span class="n"></span><h2>Conducta y anotaciones</h2><p>Más abajo en la misma página están los registros de conducta de las clases y las anotaciones de la jornada.</p></header>
+  <h3>Notas de conducta</h3>
+  <figure data-fig="07-conducta" data-url="/padre" data-legend="Materia: ver todas o una sola|Desde: fecha de inicio|Hasta: fecha de fin|Cada nota: fecha, materia, profesor, código, descripción y observación"></figure>
+  <p>Son los códigos que el profesor carga al tomar asistencia (por ejemplo <b>N1</b>, «Sale del aula sin autorización»). Si no hay ninguna, la sección lo dice.</p>
+
+  <h3>Anotaciones de profesores</h3>
+  <figure data-fig="08-anotaciones" data-url="/padre" data-legend="Foto de evidencia: tocala para verla en grande; solo algunas anotaciones la tienen|Motivo de la anotación, con la observación del profesor debajo|Fecha y hora, materia y profesor que la cargó"></figure>
+  <p>Son registros de uniforme y comportamiento que los profesores cargan durante la jornada desde su celular, por ejemplo <b>Uniforme incompleto</b> o <b>Está fuera de clase en horario establecido</b>. Las más recientes aparecen primero.</p>
+</section>
 
 <!-- incluir: comun-perfil.html -->
+
+<section class="capitulo" id="preguntas">
+  <header><span class="n"></span><h2>Preguntas frecuentes</h2></header>
+  <dl class="faq">
+    <div><dt>No veo las notas de una materia.</dt><dd>Las notas aparecen cuando el profesor las publica en su planilla. Si una materia no figura, todavía no tiene tareas publicadas en esa etapa.</dd></div>
+    <div><dt>El botón «Descargar libreta» está gris.</dt><dd>La libreta se habilita cuando el colegio cierra la Segunda Etapa. Mientras tanto podés descargar el reporte mensual.</dd></div>
+    <div><dt>Tengo más de un hijo en el colegio.</dt><dd>Si están vinculados a tu cuenta, ves una tarjeta por cada uno arriba de todo. Si falta alguno, pedile al colegio que lo vincule.</dd></div>
+    <div><dt>Una tarea dice «No entregada» pero mi hijo la entregó.</dt><dd>Hablá con el profesor de la materia: es quien carga y corrige las tareas.</dd></div>
+    <div><dt>Olvidé mi contraseña.</dt><dd>Comunicate con el colegio para que te la restablezcan.</dd></div>
+  </dl>
+</section>
 
 <script src="figuras.js"></script>
 </body>

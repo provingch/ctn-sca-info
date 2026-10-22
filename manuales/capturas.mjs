@@ -12,7 +12,7 @@ export async function run(rol, makeShots) {
   fs.mkdirSync(OUT, { recursive: true });
   const only = process.argv.slice(3);
 
-  const { browser, page } = await open({ width: 1280, height: 800, scale: 1.25 });
+  const { browser, page } = await open({ width: 1280, height: 800, scale: 2 });
   const role = (r, name, exact = true) => page.getByRole(r, { name, exact }).filter({ visible: true }).first();
   const btn = name => role('button', name);
   async function settle() {
@@ -34,7 +34,7 @@ export async function run(rol, makeShots) {
   // Difumina datos sensibles, dibuja las marcas y recorta a `region` + marcas, con margen.
   async function shot(name, marks = [], region, margin = 20) {
     await page.evaluate(() => document.activeElement?.blur());
-    await (region ?? marks[0]?.target)?.scrollIntoViewIfNeeded();
+    await ([region].flat()[0] ?? marks[0]?.target)?.scrollIntoViewIfNeeded();
     await blurPII(page);
     await annotate(page, marks); // `label` es solo referencia: la leyenda vive en el HTML del manual
     const b = await annotatedBox(page, region);
@@ -50,7 +50,7 @@ export async function run(rol, makeShots) {
 
   // El login se captura antes de entrar, en un contexto sin sesión.
   if (!only.length || only.includes('login')) {
-    const anon = await open({ width: 1280, height: 800, anon: true, scale: 1.25 });
+    const anon = await open({ width: 1280, height: 800, anon: true, scale: 2 });
     const p = anon.page;
     await p.goto(BASE + '/login');
     await p.waitForLoadState('networkidle');
