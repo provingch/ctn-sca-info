@@ -28,6 +28,7 @@ public record ProfileResponse(
         String pendingTotpSecret,
         String totpProvisioningUri,
         String pushPublicKey,
-        boolean pushEnabled
+        boolean pushEnabled,
+        boolean debeCambiarContrasenia
 ) {
 }

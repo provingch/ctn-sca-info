@@ -40,6 +40,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return request.getRequestURI().startsWith(request.getContextPath() + "/api/enfermeria/");
     }
 
+    public static final String CONTRASENIA_TEMPORAL = "Tenés que cambiar tu contraseña temporal antes de seguir.";
+
+    /** Con contraseña temporal solo se puede leer el perfil (la web ahí ve el aviso) y cambiarla; /api/auth/ no usa Bearer. */
+    private static boolean permitidoConContraseniaTemporal(HttpServletRequest request) {
+        String path = request.getRequestURI().substring(request.getContextPath().length());
+        return ("GET".equals(request.getMethod()) && "/api/profile".equals(path))
+                || ("POST".equals(request.getMethod()) && "/api/profile/change-password".equals(path))
+                || path.startsWith("/api/auth/");
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
@@ -68,6 +78,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (state == null || level == null || sessionVersion == null
                     || state.level() != level || state.version() != sessionVersion) {
                 entryPoint.writeUnauthorized(response, "La sesión ya no es válida.");
+                return;
+            }
+            if (state.debeCambiarContrasenia() && !permitidoConContraseniaTemporal(request)) {
+                entryPoint.writeForbidden(response, CONTRASENIA_TEMPORAL);
                 return;
             }
         } catch (Exception e) {

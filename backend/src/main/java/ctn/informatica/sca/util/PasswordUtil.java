@@ -2,8 +2,13 @@ package ctn.informatica.sca.util;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
+import java.security.SecureRandom;
+
 public final class PasswordUtil {
     private static final BCryptPasswordEncoder ENCODER = new BCryptPasswordEncoder(12);
+    private static final SecureRandom RANDOM = new SecureRandom();
+    // sin 0/O, 1/l/I: se dicta o se copia a mano
+    private static final String ALFABETO_TEMPORAL = "abcdefghjkmnpqrstuvwxyz23456789";
 
     private PasswordUtil() {
     }
@@ -26,6 +31,13 @@ public final class PasswordUtil {
             return false;
         }
         return isBcryptHash(stored) && ENCODER.matches(plainText, stored);
+    }
+
+    /** Contraseña temporal de 10 caracteres para un restablecimiento hecho por un administrador. */
+    public static String temporal() {
+        StringBuilder sb = new StringBuilder(10);
+        for (int i = 0; i < 10; i++) sb.append(ALFABETO_TEMPORAL.charAt(RANDOM.nextInt(ALFABETO_TEMPORAL.length())));
+        return sb.toString();
     }
 
     /**

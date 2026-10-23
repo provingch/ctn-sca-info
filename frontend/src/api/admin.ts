@@ -204,7 +204,9 @@ export const linkPadreAlumno = (alumnoId: number, padreId: number) => adminReque
 export const unlinkPadreAlumno = (alumnoId: number, padreId: number) => adminRequest(() => api.delete<void>(`/api/admin/alumnos/${alumnoId}/padres/${padreId}`));
 export const wipePlanillaSyncImports = (planillaId: number) => adminRequest(() => api.post<{ message: string; deletedGrades: number; deletedTasks: number; clearedGoogleCourseIds: number }>(`/api/admin/planillas/${planillaId}/sync/wipe`));
 export const wipeAllClassroomSync = () => adminRequest(() => api.post<{ message: string; deletedGrades: number; deletedTasks: number; clearedGoogleCourseIds: number }>(`/api/admin/sync/wipe-all`));
-export const clearUserGoogleTokens = (userId: number) => adminRequest(() => api.post<{ message: string }>(`/api/admin/usuarios/${userId}/google/clear`));
+export const clearUserGoogleTokens = (userId: number) => adminRequest(() => api.delete<{ message: string }>(`/api/admin/usuarios/${userId}/google/clear`));
+/** Genera una contraseña temporal (se muestra una sola vez); el usuario la tiene que cambiar al entrar. */
+export const restablecerContrasenia = (userId: number) => adminRequest(() => api.post<{ contraseniaTemporal: string }>(`/api/admin/usuarios/${userId}/contrasenia/restablecer`, {}));
 export const reformatearEtapa1 = (planillaId: number) => adminRequest(() => api.post<{ planillaId: number; etapasReclasificadas: number; fechaCierreEtapa1: string | null; etapa1Confirmada: boolean }>(`/api/admin/planillas/${planillaId}/etapa1/reformatear`, {}));
 
 /** Reabre una etapa ya confirmada (solo admin global) con un motivo obligatorio: el profesor vuelve a poder editar notas y tareas de esa etapa. */

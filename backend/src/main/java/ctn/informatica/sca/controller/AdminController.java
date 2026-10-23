@@ -16,6 +16,7 @@ import ctn.informatica.sca.dao.SalaDao;
 import ctn.informatica.sca.dao.GradeDao;
 import ctn.informatica.sca.dao.PlanillaDao;
 import ctn.informatica.sca.dao.UserDao;
+import ctn.informatica.sca.dao.RefreshTokenDao;
 import ctn.informatica.sca.model.Alumno;
 import ctn.informatica.sca.model.Asignacion;
 import ctn.informatica.sca.model.Curso;
@@ -34,6 +35,8 @@ import org.slf4j.LoggerFactory;
 import ctn.informatica.sca.service.PlanillaReaperturaService;
 import ctn.informatica.sca.service.PlanillaReaperturaService.ReaperturaRequest;
 import ctn.informatica.sca.service.ActivityLogService;
+import ctn.informatica.sca.service.RefreshTokenService;
+import ctn.informatica.sca.util.PasswordUtil;
 import ctn.informatica.sca.service.PlanillaService;
 import ctn.informatica.sca.util.PushNotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -764,6 +767,30 @@ public class AdminController {
             if (!updated) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado o no se pudo limpiar tokens");
             return new GoogleClearResponse("Tokens de Google eliminados para el usuario " + id);
         } catch (ResponseStatusException ex) { throw ex; } catch (Exception ex) { throw failure("No se pudo limpiar tokens de Google", ex); }
+    }
+
+    public record ContraseniaTemporalResponse(String contraseniaTemporal) {}
+
+    /**
+     * «Olvidé mi contraseña»: genera una contraseña temporal que el admin le pasa al usuario. Cierra sus
+     * sesiones y, hasta que elija una nueva, el usuario solo puede cambiarla (JwtAuthenticationFilter).
+     */
+    @PostMapping("/usuarios/{id}/contrasenia/restablecer")
+    public ContraseniaTemporalResponse restablecerContrasenia(@PathVariable int id, Authentication auth) {
+        int actingUserId = ApiAuth.requireUserId(auth);
+        requireGlobalAdmin(auth);
+        try {
+            String temporal = PasswordUtil.temporal();
+            if (!new UserDao().restablecerContrasenia(id, temporal)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado");
+            new RefreshTokenService(new RefreshTokenDao()).revokeAllForUser(id);
+            // la contraseña ya cambió: si el registro falla, igual hay que devolverle la temporal al admin
+            try {
+                activityLogService.registrar(actingUserId, "Restableció la contraseña del usuario " + id);
+            } catch (Exception ex) {
+                log.warn("No se pudo registrar el restablecimiento de contraseña del usuario {}", id, ex);
+            }
+            return new ContraseniaTemporalResponse(temporal);
+        } catch (ResponseStatusException ex) { throw ex; } catch (Exception ex) { throw failure("No se pudo restablecer la contraseña", ex); }
     }
 
     /** Lo que tiene cargado el alumno: el panel lo muestra antes de borrarlo o de cambiarlo de curso. */

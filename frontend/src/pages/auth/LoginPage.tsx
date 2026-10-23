@@ -169,6 +169,7 @@ export default function LoginPage() {
         <button type="submit" disabled={submitting || remainingLockSeconds > 0}>
           {submitting ? 'Ingresando…' : 'Ingresar'}
         </button>
+        <p>¿Olvidaste tu contraseña? Pedile a Administración que te la restablezca: te van a dar una temporal para entrar.</p>
       </form>
     </div>
   );

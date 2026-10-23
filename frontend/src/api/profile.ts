@@ -47,6 +47,8 @@ export interface ProfileResponse {
   totpProvisioningUri: string | null;
   pushPublicKey: string;
   pushEnabled: boolean;
+  /** Contraseña temporal puesta por un administrador: hay que cambiarla antes de seguir. */
+  debeCambiarContrasenia: boolean;
 }
 
 export interface ChangePasswordRequest {

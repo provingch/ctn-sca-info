@@ -14,6 +14,8 @@ export interface AuthUser {
   fotoPerfil?: string;
   especialidadId?: number | null;
   especialidadNombre?: string | null;
+  /** undefined hasta que llega el perfil; true = contraseña temporal pendiente de cambio. */
+  debeCambiarContrasenia?: boolean;
 }
 
 type IdentityStatus = 'idle' | 'loading' | 'ready' | 'error';
@@ -76,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const initials = `${owner.nombre?.trim()[0] || owner.usuario?.trim()[0] || 'S'}${owner.apellido?.trim()[0] || ''}`.toUpperCase();
       const specialty = resolveIdentitySpecialty(activeLevel, owner, profile.especialidades);
       setUser((current) => current?.level === activeLevel
-        ? { ...current, displayName, username: owner.usuario?.trim() || undefined, initials, fotoPerfil: owner.fotoPerfil ?? undefined, especialidadId: specialty.id, especialidadNombre: specialty.name }
+        ? { ...current, displayName, username: owner.usuario?.trim() || undefined, initials, fotoPerfil: owner.fotoPerfil ?? undefined, especialidadId: specialty.id, especialidadNombre: specialty.name, debeCambiarContrasenia: profile.debeCambiarContrasenia }
         : current);
       setIdentityStatus('ready');
     } catch {

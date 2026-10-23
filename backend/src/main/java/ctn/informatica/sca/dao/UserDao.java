@@ -220,17 +220,17 @@ public class UserDao {
     }
 
     public SessionState findSessionState(int id) throws SQLException {
-        String sql = "SELECT nivel, session_version FROM usuario WHERE id = ?";
+        String sql = "SELECT nivel, session_version, debe_cambiar_contrasenia FROM usuario WHERE id = ?";
         try (Connection con = new conexion().getCon(); PreparedStatement stm = con.prepareStatement(sql)) {
             stm.setInt(1, id);
             try (ResultSet rs = stm.executeQuery()) {
-                return rs.next() ? new SessionState(rs.getInt("nivel"), rs.getInt("session_version")) : null;
+                return rs.next() ? new SessionState(rs.getInt("nivel"), rs.getInt("session_version"), rs.getBoolean("debe_cambiar_contrasenia")) : null;
             }
         }
     }
 
     public boolean updatePasswordAndIncrementSessionVersion(int id, int level, String plainPassword) throws SQLException {
-        String sql = "UPDATE usuario SET contrasenia = ?, session_version = session_version + 1 WHERE id = ? AND nivel = ?";
+        String sql = "UPDATE usuario SET contrasenia = ?, session_version = session_version + 1, debe_cambiar_contrasenia = 0 WHERE id = ? AND nivel = ?";
         try (Connection con = new conexion().getCon(); PreparedStatement stm = con.prepareStatement(sql)) {
             stm.setString(1, PasswordUtil.hash(plainPassword));
             stm.setInt(2, id);
@@ -239,5 +239,20 @@ public class UserDao {
         }
     }
 
-    public record SessionState(int level, int version) {}
+    /**
+     * Contraseña temporal puesta por un administrador: cierra las sesiones abiertas (session_version) y
+     * obliga al usuario a elegir una nueva antes de seguir usando el sistema.
+     */
+    public boolean restablecerContrasenia(int id, String plainPassword) throws SQLException {
+        String sql = "UPDATE usuario SET contrasenia = ?, session_version = session_version + 1, debe_cambiar_contrasenia = 1 WHERE id = ?";
+        try (Connection con = new conexion().getCon(); PreparedStatement stm = con.prepareStatement(sql)) {
+            stm.setString(1, PasswordUtil.hash(plainPassword));
+            stm.setInt(2, id);
+            return stm.executeUpdate() == 1;
+        }
+    }
+
+    public record SessionState(int level, int version, boolean debeCambiarContrasenia) {
+        public SessionState(int level, int version) { this(level, version, false); }
+    }
 }

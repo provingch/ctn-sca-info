@@ -61,6 +61,32 @@ class JwtAuthenticationFilterTest {
         verify(chain, never()).doFilter(request, response);
     }
 
+    // Contraseña temporal puesta por un admin: solo se puede leer el perfil y cambiarla.
+    @Test
+    void temporaryPasswordOnlyAllowsChangingIt() throws Exception {
+        JwtService jwtService = new JwtService(SECRET, 60, 5);
+        UserDao userDao = mock(UserDao.class);
+        JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService, userDao, new JwtAuthenticationEntryPoint());
+        String token = jwtService.generateAccessToken(7L, 1, 3);
+        when(userDao.findSessionState(7)).thenReturn(new UserDao.SessionState(1, 3, true));
+
+        MockHttpServletRequest blocked = requestWith(token);
+        blocked.setMethod("GET");
+        blocked.setRequestURI("/api/planillas");
+        MockHttpServletResponse blockedResponse = new MockHttpServletResponse();
+        FilterChain chain = mock(FilterChain.class);
+        filter.doFilterInternal(blocked, blockedResponse, chain);
+        assertEquals(403, blockedResponse.getStatus());
+        verify(chain, never()).doFilter(blocked, blockedResponse);
+
+        MockHttpServletRequest change = requestWith(token);
+        change.setMethod("POST");
+        change.setRequestURI("/api/profile/change-password");
+        MockHttpServletResponse changeResponse = new MockHttpServletResponse();
+        filter.doFilterInternal(change, changeResponse, chain);
+        verify(chain).doFilter(change, changeResponse);
+    }
+
     @Test
     void respondsUnauthorizedForMalformedOrExpiredToken() throws Exception {
         JwtService jwtService = new JwtService(SECRET, 60, 5);

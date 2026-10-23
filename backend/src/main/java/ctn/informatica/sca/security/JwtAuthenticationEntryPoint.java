@@ -36,6 +36,15 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         response.getWriter().write(body);
     }
 
+    /** 403 de JwtAuthenticationFilter: sesión válida, pero con contraseña temporal pendiente de cambio. */
+    public void writeForbidden(HttpServletResponse response, String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
+        String body = "{\"status\":403,\"error\":\"Forbidden\",\"message\":\"" + escape(message) + "\"}";
+        response.getWriter().write(body);
+    }
+
     private static String escape(String value) {
         return value
                 .replace("\\", "\\\\")

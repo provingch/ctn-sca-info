@@ -210,8 +210,18 @@ public class ProfileController {
                 pendingTotpSecret == null || pendingTotpSecret.isBlank() ? null
                         : TotpUtils.getOtpAuthUrl("SCA", user.getUsername(), pendingTotpSecret),
                 PushNotificationService.resolveVapidPublicKey(),
-                isPushEnabled(user)
+                isPushEnabled(user),
+                debeCambiarContrasenia(user.getId())
         );
+    }
+
+    private boolean debeCambiarContrasenia(int userId) {
+        try {
+            UserDao.SessionState state = userDao.findSessionState(userId);
+            return state != null && state.debeCambiarContrasenia();
+        } catch (SQLException ex) {
+            return false; // el filtro igual bloquea lo demás: acá solo decide si la web muestra el aviso
+        }
     }
 
     @PostMapping("/select-ui-specialty")
@@ -370,10 +380,15 @@ public class ProfileController {
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al actualizar la contraseña.");
             }
             refreshTokenService.revokeAllForUser(user.getId());
+            // la contraseña ya cambió: un fallo del registro no puede devolver «Error al actualizar»
             if (activityLogService != null) {
-                activityLogService.registrar(user.getId(), "Cambió su contraseña");
+                try {
+                    activityLogService.registrar(user.getId(), "Cambió su contraseña");
+                } catch (IOException ex) {
+                    log.warn("No se pudo registrar el cambio de contraseña del usuario {}", user.getId(), ex);
+                }
             }
-        } catch (SQLException | IOException ex) {
+        } catch (SQLException ex) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al actualizar la contraseña.", ex);
         }
     }

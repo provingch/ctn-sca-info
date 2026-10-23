@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { clearUserGoogleTokens, createAdminRecord, deleteAdminRecord, getAlumnosDePadre, linkPadreAlumno, unlinkPadreAlumno, updateAdminRecord, type AdminCatalog, type PadreChildItem } from '../../api/admin';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { clearUserGoogleTokens, restablecerContrasenia, createAdminRecord, deleteAdminRecord, getAlumnosDePadre, linkPadreAlumno, unlinkPadreAlumno, updateAdminRecord, type AdminCatalog, type PadreChildItem } from '../../api/admin';
 import { ApiError } from '../../api/client';
 import AnimatedSelect from '../../components/AnimatedSelect';
 import useAccessibleDialog from '../../hooks/useAccessibleDialog';
@@ -39,23 +39,29 @@ const EMPTY_FORM = { nombre: '', apellido: '', ci: '', usuario: '', nivel: '1', 
 
 const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
-function RowActionsMenu({ label, onSelect }: { label: string; onSelect: () => void }) {
-  const [open, setOpen] = useState(false);
+function RowActionsMenu({ items }: { items: { label: string; onSelect: () => void }[] }) {
+  // posición fija calculada desde el botón: la tabla tiene overflow y recortaba el menú
+  const [open, setOpen] = useState<CSSProperties | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
     const handlePointer = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) setOpen(false);
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) setOpen(null);
     };
     const handleKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false);
+      if (event.key === 'Escape') setOpen(null);
     };
+    const close = () => setOpen(null);
     document.addEventListener('mousedown', handlePointer);
     document.addEventListener('keydown', handleKey);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
     return () => {
       document.removeEventListener('mousedown', handlePointer);
       document.removeEventListener('keydown', handleKey);
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
     };
   }, [open]);
 
@@ -65,22 +71,30 @@ function RowActionsMenu({ label, onSelect }: { label: string; onSelect: () => vo
         type="button"
         className="button secondary usuarios-row-menu-trigger"
         aria-haspopup="menu"
-        aria-expanded={open}
+        aria-expanded={open !== null}
         aria-label="Más acciones"
-        onClick={() => setOpen((value) => !value)}
+        onClick={(event) => {
+          if (open) { setOpen(null); return; }
+          const r = event.currentTarget.getBoundingClientRect();
+          const abajo = window.innerHeight - r.bottom > items.length * 46 + 24;
+          setOpen({ right: window.innerWidth - r.right, ...(abajo ? { top: r.bottom + 6 } : { bottom: window.innerHeight - r.top + 6 }) });
+        }}
       >
         <span aria-hidden="true">⋮</span>
       </button>
       {open && (
-        <div className="usuarios-row-menu-list" role="menu">
-          <button
-            type="button"
-            role="menuitem"
-            className="usuarios-row-menu-item"
-            onClick={() => { setOpen(false); onSelect(); }}
-          >
-            {label}
-          </button>
+        <div className="usuarios-row-menu-list" role="menu" style={open}>
+          {items.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              role="menuitem"
+              className="usuarios-row-menu-item"
+              onClick={() => { setOpen(null); item.onSelect(); }}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
       )}
     </div>
@@ -90,6 +104,8 @@ function RowActionsMenu({ label, onSelect }: { label: string; onSelect: () => vo
 export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: UsuariosPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const formDialogRef = useAccessibleDialog(isOpen, () => setIsOpen(false));
+  const [temporal, setTemporal] = useState<{ nombre: string; usuario: string; clave: string } | null>(null);
+  const temporalDialogRef = useAccessibleDialog(temporal !== null, () => setTemporal(null));
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
 
@@ -196,6 +212,16 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
       await reload();
     } catch (error) {
       status(error instanceof ApiError ? error.message : 'No se pudo limpiar tokens de Google.');
+    }
+  };
+
+  const resetPassword = async (user: UserRecord) => {
+    if (!(await confirmar(`¿Restablecer la contraseña de ${user.nombre} ${user.apellido}? Se va a generar una contraseña temporal y se cerrarán sus sesiones abiertas.`, 'Restablecer'))) return;
+    try {
+      const { contraseniaTemporal } = await restablecerContrasenia(user.id);
+      setTemporal({ nombre: `${user.nombre} ${user.apellido}`, usuario: user.usuario, clave: contraseniaTemporal });
+    } catch (error) {
+      status(error instanceof ApiError ? error.message : 'No se pudo restablecer la contraseña.');
     }
   };
 
@@ -347,9 +373,10 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
                       <div className="usuarios-row-actions row-actions">
                         <button type="button" className="button secondary" aria-label={`Editar a ${user.nombre} ${user.apellido}`} onClick={() => openEdit(user)}>Editar</button>
                         <button type="button" className="button danger" aria-label={`Eliminar a ${user.nombre} ${user.apellido}`} onClick={() => void removeUser(user)}>Eliminar</button>
-                        {user.nivel !== 4 && (
-                          <RowActionsMenu label="Limpiar tokens Google" onSelect={() => void clearTokens(user)} />
-                        )}
+                        <RowActionsMenu items={[
+                          { label: 'Restablecer contraseña', onSelect: () => void resetPassword(user) },
+                          ...(user.nivel !== 4 ? [{ label: 'Limpiar tokens Google', onSelect: () => void clearTokens(user) }] : []),
+                        ]} />
                       </div>
                     </td>
                   )}
@@ -500,6 +527,28 @@ export default function UsuariosPanel({ data, reload, status, isGlobalAdmin }: U
               <button type="submit" className="button u-span-2">{editingId ? 'Guardar cambios' : 'Crear usuario'}</button>
             </div>
           </form>
+        </div>
+      )}
+
+      {temporal && (
+        <div ref={temporalDialogRef} className="data-modal" role="dialog" aria-modal="true" aria-labelledby="contrasenia-temporal-title" tabIndex={-1}>
+          <div className="signature-modal-header">
+            <div>
+              <span>Usuarios</span>
+              <h2 id="contrasenia-temporal-title">Contraseña temporal</h2>
+            </div>
+            <button type="button" className="signature-modal-close" aria-label="Cerrar" onClick={() => setTemporal(null)}>×</button>
+          </div>
+          <div className="form-grid u-align-start">
+            <p className="u-span-2">Pasale estos datos a <b>{temporal.nombre}</b>. Al entrar, el sistema le va a pedir que elija una contraseña nueva.</p>
+            <p>Usuario<br /><strong>{temporal.usuario}</strong></p>
+            <p>Contraseña temporal<br /><strong className="contrasenia-temporal">{temporal.clave}</strong></p>
+            <p className="muted-copy u-span-2">Esta contraseña no se vuelve a mostrar. Si se pierde, restablecela de nuevo.</p>
+            <div className="signature-modal-actions">
+              <button type="button" className="button secondary" onClick={() => void navigator.clipboard?.writeText(temporal.clave).then(() => status('Contraseña copiada.'))}>Copiar</button>
+              <button type="button" className="button u-span-2" data-dialog-initial-focus onClick={() => setTemporal(null)}>Listo</button>
+            </div>
+          </div>
         </div>
       )}
     </>
