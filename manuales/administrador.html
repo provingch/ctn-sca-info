@@ -51,7 +51,7 @@
 <h2>4. Usuarios <small>(solo administrador global)</small></h2>
 <p>Las cuentas de acceso al sistema: profesores, evaluadores, administradores, padres/encargados y coordinación pedagógica.</p>
 <h3>4.1 Ver y buscar usuarios</h3>
-<figure data-fig="04-usuarios" data-legend="Rol: qué tipo de usuarios ver (entre paréntesis, cuántos hay)|Buscar por nombre, apellido, cédula o usuario|Cantidad por página|Crear registro: nuevo usuario|Editar los datos de un usuario|Más acciones (⋮): por ejemplo, limpiar los tokens de Google|Páginas de la lista"></figure>
+<figure data-fig="04-usuarios" data-legend="Rol: qué tipo de usuarios ver (entre paréntesis, cuántos hay)|Buscar por nombre, apellido, cédula o usuario|Cantidad por página|Crear registro: nuevo usuario|Editar los datos de un usuario|Más acciones (⋮): restablecer la contraseña o limpiar los tokens de Google|Páginas de la lista"></figure>
 <p>Podés ordenar la tabla por nombre o apellido tocando el encabezado de la columna.</p>
 
 <h3>4.2 Crear un usuario</h3>
@@ -62,7 +62,7 @@
   <li>Elegí el <b>Rol</b>. Si es Administrador, elegí qué especialidad va a administrar (o dejalo vacío para que sea global).</li>
   <li>Cargá el correo (opcional) y tocá <b>Crear usuario</b>.</li>
 </ol>
-<div class="aviso">Al crear un usuario el sistema le asigna una contraseña por defecto. Este panel no tiene un botón para restablecer la contraseña de un usuario ya creado.</div>
+<div class="aviso">Al crear un usuario el sistema le asigna una contraseña por defecto. Si alguien se olvida la suya, restablecela desde el menú ⋮ (ver 4.5).</div>
 
 <h3>4.3 Vincular un padre con sus hijos</h3>
 <p>Cuando el rol es <b>Padre</b>, el formulario muestra la sección <b>Alumno/s vinculados</b>.</p>
@@ -79,9 +79,20 @@
 <ul>
   <li><b>Editar</b>: cambia los datos básicos (no la contraseña).</li>
   <li><b>Eliminar</b>: pide confirmación antes de borrar la cuenta.</li>
+  <li><b>Restablecer contraseña</b> (menú ⋮): para quien se olvidó la suya. Ver 4.5.</li>
   <li><b>Limpiar tokens Google</b> (menú ⋮): desconecta la cuenta de Google Classroom del usuario para que la vuelva a conectar desde cero. No está disponible para padres.</li>
 </ul>
 <div class="tip">Las cuentas de Administrador y de Coordinación Pedagógica no se pueden editar ni eliminar desde este panel.</div>
+
+<h3>4.5 Restablecer una contraseña olvidada</h3>
+<p>Cuando alguien no puede entrar porque se olvidó la contraseña:</p>
+<ol>
+  <li>Buscá al usuario y tocá el menú <b>⋮</b> de su fila → <b>Restablecer contraseña</b>, y confirmá.</li>
+  <li>El sistema genera una <b>contraseña temporal</b> y la muestra una sola vez. Copiala (<b>Copiar</b>) y pasásela a la persona junto con su usuario.</li>
+  <li>La persona entra con esa contraseña y el sistema le pide elegir una nueva antes de dejarla usar cualquier otra pantalla.</li>
+</ol>
+<figure data-fig="06b-contrasenia-temporal" data-legend=""></figure>
+<div class="aviso">Al restablecerla se cierran todas las sesiones abiertas de esa persona y su contraseña anterior deja de funcionar. Si la temporal se pierde, restablecela de nuevo: se genera otra.</div>
 
 <h2>5. Materias <small>(solo administrador global)</small></h2>
 <figure data-fig="07-materias" data-legend="Crear materia|Buscar por nombre|Filtrar por tipo (Común o Específica)|Filtrar por especialidad|Editar una materia"></figure>

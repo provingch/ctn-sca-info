@@ -55,6 +55,9 @@ export async function blurPII(page) {
     // ¿El rectángulo se ve, o lo recorta algún contenedor con scroll/overflow?
     const visible = (el, b) => {
       if (!b.width || !b.height) return false;
+      // tapado por otra capa (por ejemplo, una tabla detrás de un modal): no se ve, no hace falta difuminarlo
+      const arriba = document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2);
+      if (arriba && !el.contains(arriba) && !arriba.contains(el)) return false;
       for (let p = el; p && p !== document.body; p = p.parentElement) {
         if (getComputedStyle(p).overflow === 'visible') continue;
         const c = p.getBoundingClientRect();

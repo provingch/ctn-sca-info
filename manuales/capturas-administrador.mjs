@@ -1,6 +1,7 @@
 // Capturas del manual del administrador (cuenta global: ve todos los módulos).
 // Uso: node capturas-administrador.mjs <credenciales.env> [nombre ...]
 import { run } from './capturas.mjs';
+import { LOCAL } from './lib.mjs';
 
 await run('administrador', ({ page, role, btn, settle, go, pick, shot }) => {
   const main = page.locator('main');
@@ -35,6 +36,19 @@ await run('administrador', ({ page, role, btn, settle, go, pick, shot }) => {
       await page.waitForTimeout(800);
       await shot('06-usuario-padre', [], dialogo());
       await cerrar();
+      // restablecer una contraseña es una escritura: solo contra el stack local
+      if (LOCAL) {
+        await pick('Filtrar por rol', 'Profesores');
+        await role('searchbox', 'Buscar').fill('Acosta');
+        await settle();
+        await btn('Más acciones').click();
+        await page.getByRole('menuitem', { name: 'Restablecer contraseña' }).click();
+        await page.locator('dialog.confirm-dialog').getByRole('button', { name: 'Restablecer' }).click();
+        const temporal = page.getByRole('dialog', { name: 'Contraseña temporal' });
+        await temporal.waitFor();
+        await shot('06b-contrasenia-temporal', [], temporal);
+        await temporal.getByRole('button', { name: 'Listo' }).click();
+      }
     },
     async materias() {
       await go('/admin/materias');
