@@ -136,6 +136,8 @@ await run('profesor', ({ page, role, btn, settle, go, pick, shot, OUT }) => ({
   async planilla() {
     await go('/planilla/3');
     const main = page.locator('main');
+    // la etapa 1 es la que tiene tareas y notas cargadas en los datos de ejemplo
+    await pick('Etapa', 'Primera etapa');
     // el aviso aparece solo porque la captura bloquea la sincronización real
     await main.getByText('No se pudo sincronizar Classroom').locator('xpath=ancestor::*[@role="alert" or @role="status" or contains(@class,"alert") or contains(@class,"banner")][1]').evaluate(e => e.remove()).catch(() => {});
     await shot('19-planilla-cabecera', [
@@ -176,7 +178,7 @@ await run('profesor', ({ page, role, btn, settle, go, pick, shot, OUT }) => ({
       { target: seccion('Firma del docente'), n: 5, label: 'Firma' },
       { target: seccion('Google Classroom'), n: 6, label: 'Classroom' },
       { target: btn('Guardar cambios'), n: 7, label: 'Guardar' },
-    ], page.getByRole('button', { name: /^Perfil/ }).first()); // recorte = pestañas + marcas, sin el vacío de abajo
+    ], page.getByRole('navigation', { name: 'Secciones del perfil' })); // recorte = pestañas + marcas, sin el vacío de abajo
     await shot('21b-perfil-firma', [
       { target: canvas, n: 1, label: 'Dibujá tu firma' },
       { target: page.getByText('Subir imagen', { exact: true }).locator('xpath=ancestor-or-self::label[1]'), n: 2, label: 'Subir imagen' },

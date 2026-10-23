@@ -39,12 +39,12 @@
 <!-- incluir: comun-ingreso.html -->
 
 <h2>3. Panel general</h2>
-<p>Al entrar a Administración ves una tarjeta por cada módulo. Tocá la que necesites; dentro de cada módulo tenés pestañas para pasar a los demás y <b>← Panel general</b> para volver.</p>
+<p>Al entrar a Administración ves un resumen con cifras (alumnos activos, secciones, quejas pendientes, egresados), la lista <b>Para resolver</b> (por ejemplo, profesores sin materias asignadas, con un botón para ir directo) y, a la derecha, una tarjeta por cada módulo. Tocá la que necesites; dentro de cada módulo tenés pestañas para pasar a los demás y <b>← Panel general</b> para volver.</p>
 <figure data-fig="03-inicio" data-legend="Materias|Usuarios|Asignaciones|Alumnos|Horarios|Estado del sistema|Salas|Quejas|Clases dadas"></figure>
 <p>No todos los administradores ven las mismas tarjetas:</p>
 <ul>
   <li><b>Administrador global</b>: ve los 9 módulos y gestiona todo el colegio.</li>
-  <li><b>Administrador de especialidad</b>: su cuenta está asociada a una sola especialidad y solo ve <b>Alumnos</b>, <b>Horarios</b>, <b>Quejas</b> y <b>Clases dadas</b>. Arriba de cada pantalla figura «Especialidad gestionada» con el nombre de su especialidad.</li>
+  <li><b>Administrador de especialidad</b>: su cuenta está asociada a una sola especialidad y solo ve <b>Alumnos</b>, <b>Horarios</b>, <b>Quejas</b> y <b>Clases dadas</b>. Arriba de cada pantalla figura el nombre de su especialidad.</li>
 </ul>
 <div class="tip">Si al entrar a un módulo aparece «reservado al administrador global», es por el alcance de tu cuenta, no un error.</div>
 
@@ -107,14 +107,16 @@
 <p>Desde el mismo detalle podés <b>Editar</b> o <b>Eliminar</b> (con confirmación) una asignación puntual.</p>
 
 <h2>7. Alumnos</h2>
-<figure data-fig="11-alumnos" data-legend="Elegí la especialidad"></figure>
+<p>Todos los alumnos activos están en una sola lista. Arriba se filtra:</p>
+<figure data-fig="11-alumnos" data-legend="Buscar por apellido, nombre o cédula|Especialidad|Curso|Sección"></figure>
 <ol>
-  <li>Elegí la <b>Especialidad</b>, después el <b>Curso</b> y la <b>Sección</b>. (Un administrador de especialidad arranca directamente en el curso.)</li>
-  <li>Se abre la tabla de alumnos de esa sección.</li>
+  <li>Elegí la <b>Especialidad</b>, el <b>Curso</b> y la <b>Sección</b> (o escribí en el buscador). Al lado se ve cuántos alumnos coinciden; <b>Limpiar filtros</b> vuelve a la lista completa. (Un administrador de especialidad solo ve los de su especialidad.)</li>
+  <li>La tabla muestra los alumnos que coinciden, de a 50 por página.</li>
 </ol>
-<figure data-fig="12-alumnos-seccion" data-legend="Buscar por apellido, nombre o cédula|Agregar alumno|Editar: corregir datos, cambiar de curso o vincular padres"></figure>
+<figure data-fig="12-alumnos-seccion" data-legend="Agregar alumno|Ficha: datos del alumno, curso y padres vinculados|Editar: corregir datos, cambiar de curso o vincular padres"></figure>
 <ul>
-  <li><b>Agregar alumno</b>: cargá nombres, apellidos y cédula (opcional); el curso ya viene elegido. Tocá <b>Crear alumno</b>.</li>
+  <li><b>Agregar alumno</b>: cargá nombres, apellidos y cédula (opcional). Si ya filtraste especialidad, curso y sección, el curso viene elegido. Tocá <b>Crear alumno</b>.</li>
+  <li><b>Ficha</b> (o tocar el nombre): abre los datos del alumno sin editarlos.</li>
   <li><b>Vincular padres</b>: abrí el alumno con <b>Editar</b>, buscá al padre por nombre, apellido o usuario y tocá <b>Agregar</b> (o <b>Quitar</b> para sacarlo).</li>
   <li><b>Eliminar</b>: pide confirmación.</li>
   <li><b>Ver egresados</b>: listado de solo lectura de los alumnos cuyo curso ya egresó, con filtros por nombre, especialidad y año.</li>

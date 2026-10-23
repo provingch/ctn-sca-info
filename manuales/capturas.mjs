@@ -46,7 +46,8 @@ export async function run(rol, makeShots) {
     console.log('✓', name);
   }
   const h = { page, role, btn, settle, go, pick, shot, OUT };
-  const shots = makeShots(h);
+  // las secciones comunes (comun-ingreso.html, comun-perfil.html) usan estas capturas; un rol puede redefinirlas
+  const shots = { barra: () => barraComun(h), perfil: () => perfilComun(h), ...makeShots(h) };
 
   // El login se captura antes de entrar, en un contexto sin sesión.
   if (!only.length || only.includes('login')) {
@@ -74,4 +75,35 @@ export async function run(rol, makeShots) {
   await page.context().storageState({ path: process.env.SCA_STATE });
   await browser.close();
   process.exit(failed ? 1 : 0);
+}
+
+async function perfilComun({ page, btn, settle, go, shot }) {
+  await go('/profile');
+  const tabs = page.getByRole('navigation', { name: 'Secciones del perfil' });
+  await shot('perfil', [
+    { target: page.getByRole('region', { name: 'Tu cuenta' }), n: 1 },
+    { target: tabs, n: 2 },
+    { target: btn('Guardar cambios'), n: 3 },
+  ], page.getByRole('region', { name: 'Tu cuenta' }), 10);
+  await tabs.getByRole('button', { name: 'Seguridad' }).click();
+  await settle();
+  await shot('perfil-seguridad', [
+    { target: tabs.getByRole('button', { name: 'Seguridad' }), n: 1, pad: 4 },
+    { target: page.getByRole('button', { name: 'Actualizar contraseña' }), n: 2 },
+    { target: page.getByRole('button', { name: 'Configurar 2FA' }), n: 3 },
+  ], tabs, 10);
+}
+
+async function barraComun({ page, go, shot }) {
+  await go('/');
+  await shot('02-barra-superior', [
+    { target: page.getByRole('navigation', { name: 'Navegación principal' }), n: 1 },
+    { target: page.locator('.theme-toggle').first(), n: 2 },
+    { target: page.getByRole('button', { name: /^Notificaciones/ }), n: 3 },
+    { target: page.getByRole('button', { name: /^Menú de / }), n: 4 },
+  ], page.locator('header').first(), 6);
+  await page.getByRole('button', { name: /^Menú de / }).click();
+  await page.waitForTimeout(300);
+  await shot('02b-menu-usuario', [], page.getByRole('menu'), 12);
+  await page.keyboard.press('Escape');
 }

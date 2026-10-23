@@ -10,9 +10,9 @@ await run('evaluador', ({ page, role, btn, settle, go, pick, shot }) => {
       await go('/evaluacion');
       await shot('03-inicio', [
         { target: btn('Ver planillas'), n: 1 },
-        { target: btn('Revisar plan curricular'), n: 2 },
-        { target: btn('Seguimiento de profesores'), n: 3 },
-      ], page.getByRole('heading', { name: /^Hola/ }));
+        { target: btn('Planes curriculares'), n: 2 },
+        { target: btn('Seguimiento'), n: 3 },
+      ], [page.getByRole('heading', { name: /^Hola/ }), page.getByRole('region', { name: 'Para revisar hoy' }), main.getByRole('complementary')]);
     },
     async planillas() {
       await abrir('Ver planillas');
@@ -49,7 +49,7 @@ await run('evaluador', ({ page, role, btn, settle, go, pick, shot }) => {
       ], dlg);
     },
     async planes() {
-      await abrir('Revisar plan curricular');
+      await abrir('Planes curriculares');
       await item('Algorítmica Graciela').click();
       await settle();
       await shot('08-plan-revisar', [
@@ -62,7 +62,7 @@ await run('evaluador', ({ page, role, btn, settle, go, pick, shot }) => {
       ], main.getByRole('heading', { name: /Planes pendientes/ }));
     },
     async seguimiento() {
-      await abrir('Seguimiento de profesores');
+      await abrir('Seguimiento');
       await item('Algorítmica Graciela').click();
       await settle();
       await shot('09-seguimiento-plan', [

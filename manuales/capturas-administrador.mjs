@@ -11,7 +11,7 @@ await run('administrador', ({ page, role, btn, settle, go, pick, shot }) => {
     async inicio() {
       await go('/admin');
       const modulos = ['Materias', 'Usuarios', 'Asignaciones', 'Alumnos', 'Horarios', 'Estado del sistema', 'Salas', 'Quejas', 'Clases dadas'];
-      await shot('03-inicio', modulos.map((m, i) => ({ target: role('link', m), n: i + 1 })), page.getByRole('region', { name: 'Gestión del sistema' }));
+      await shot('03-inicio', modulos.map((m, i) => ({ target: role('link', m), n: i + 1 })), main.getByRole('complementary'));
     },
     async usuarios() {
       await go('/admin/usuarios');
@@ -20,7 +20,7 @@ await run('administrador', ({ page, role, btn, settle, go, pick, shot }) => {
         { target: role('searchbox', 'Buscar'), n: 2 },
         { target: btn('Usuarios por página'), n: 3 },
         { target: btn('Crear registro'), n: 4 },
-        { target: btn('Editar'), n: 5 },
+        { target: main.getByRole('button', { name: /^Editar a / }).first(), n: 5 },
         { target: btn('Más acciones'), n: 6 },
         { target: page.getByRole('navigation', { name: 'Paginación de usuarios' }), n: 7 },
       ], main.getByRole('table', { name: 'Usuarios registrados' }));
@@ -31,7 +31,7 @@ await run('administrador', ({ page, role, btn, settle, go, pick, shot }) => {
       await pick('Filtrar por rol', 'Padres');
       await role('searchbox', 'Buscar').fill('Estigarribia');
       await settle();
-      await btn('Editar').click();
+      await main.getByRole('button', { name: /^Editar a / }).first().click();
       await page.waitForTimeout(800);
       await shot('06-usuario-padre', [], dialogo());
       await cerrar();
@@ -67,18 +67,21 @@ await run('administrador', ({ page, role, btn, settle, go, pick, shot }) => {
     },
     async alumnos() {
       await go('/admin/alumnos');
-      await shot('11-alumnos', [{ target: tarjeta('Informática'), n: 1 }], main);
-      await tarjeta('Informática').click();
-      await settle();
-      await main.getByRole('button', { name: /^Curso 3°/ }).click();
-      await settle();
-      await main.getByRole('link', { name: /^Sección A/ }).or(main.getByRole('button', { name: /^Sección A/ })).first().click();
-      await settle();
+      const filtros = page.getByRole('search', { name: 'Filtros de alumnos' });
+      await shot('11-alumnos', [
+        { target: role('searchbox', 'Buscar alumno'), n: 1 },
+        { target: btn('Filtrar por especialidad'), n: 2 },
+        { target: btn('Filtrar por curso'), n: 3 },
+        { target: btn('Filtrar por sección'), n: 4 },
+      ], filtros);
+      await pick('Filtrar por especialidad', 'Informática');
+      await pick('Filtrar por curso', '3°');
+      await pick('Filtrar por sección', 'A');
       await shot('12-alumnos-seccion', [
-        { target: main.getByRole('searchbox').first(), n: 1 },
-        { target: main.getByRole('button', { name: /Agregar alumno/ }).first(), n: 2 },
-        { target: btn('Editar'), n: 3 },
-      ]); // recorte = marcas: con 28 filas la tabla entera queda ilegible
+        { target: btn('Agregar alumno'), n: 1 },
+        { target: main.getByRole('button', { name: /^Ver ficha de / }).first(), n: 2 },
+        { target: main.getByRole('button', { name: /^Editar a / }).first(), n: 3 },
+      ], [filtros, main.getByRole('row').nth(4)]); // filtros + primeras filas: con 28 filas la tabla entera queda ilegible
     },
     async horarios() {
       await go('/admin/horarios');

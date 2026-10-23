@@ -32,6 +32,10 @@ JAR=$(ls "$RAIZ"/backend/target/sca-*.jar | head -1)
 [ -n "$(m ctndb -N -e "SHOW TABLES LIKE 'alumno_curso_historial'")" ] && { echo "INSERT IGNORE INTO schema_migrations (version) VALUES"
   unzip -l "$JAR" | grep -o 'db/migrations/[^ ]*\.sql' | sed 's|db/migrations/||' | sort -u | sed "s/.*/('&')/" | paste -sd,
   echo ";"; } | m ctndb
+# las V0xx (formato viejo) ya vienen en el schema aunque no queden registradas: marcarlas siempre
+{ echo "INSERT IGNORE INTO schema_migrations (version) VALUES"
+  unzip -l "$JAR" | grep -o 'db/migrations/V[^ ]*\.sql' | sed 's|db/migrations/||' | sort -u | sed "s/.*/('&')/" | paste -sd,
+  echo ";"; } | m ctndb
 m -e "CREATE USER IF NOT EXISTS 'sca_local'@'127.0.0.1' IDENTIFIED BY 'local'; GRANT ALL ON ctndb.* TO 'sca_local'@'127.0.0.1';"
 [ "${1:-}" = "--solo-base" ] && { echo "Base lista."; exit 0; }
 

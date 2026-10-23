@@ -82,21 +82,5 @@ await run('padres', ({ page, btn, settle, go, shot, OUT }) => {
         { target: r.locator('h3').first().locator('xpath=following-sibling::*[last()]'), n: 3, pad: 3 },
       ], r);
     },
-    async perfil() {
-      await go('/profile');
-      const tabs = page.getByRole('navigation', { name: 'Secciones del perfil' });
-      await shot('perfil', [
-        { target: page.getByRole('region', { name: 'Tu cuenta' }), n: 1 },
-        { target: tabs, n: 2 },
-        { target: btn('Guardar cambios'), n: 3 },
-      ], page.getByRole('region', { name: 'Tu cuenta' }), 10);
-      await tabs.getByRole('button', { name: 'Seguridad' }).click();
-      await settle();
-      await shot('perfil-seguridad', [
-        { target: tabs.getByRole('button', { name: 'Seguridad' }), n: 1, pad: 4 },
-        { target: page.getByRole('button', { name: 'Actualizar contraseña' }), n: 2 },
-        { target: page.getByRole('button', { name: 'Configurar 2FA' }), n: 3 },
-      ], tabs, 10);
-    },
   };
 });

@@ -13,7 +13,8 @@ await run('coordinacion', ({ page, role, btn, settle, go, shot }) => {
       await shot('03-inicio', [
         { target: btn('Quejas por profesor'), n: 1 },
         { target: btn('Reportes conductuales'), n: 2 },
-      ], page.getByRole('heading', { name: /^Hola/ }));
+        { target: btn('Anotaciones'), n: 3 },
+      ], [page.getByRole('heading', { name: /^Hola/ }), page.getByRole('region', { name: 'Para revisar hoy' }), main.getByRole('complementary')]);
     },
     async lista() {
       await quejas();
@@ -87,6 +88,15 @@ await run('coordinacion', ({ page, role, btn, settle, go, shot }) => {
         { target: btn('Editar'), n: 4 },
         { target: btn('Desactivar'), n: 5 },
       ], page.getByRole('heading', { name: 'Catálogo de conducta' }).locator('xpath=..'));
+    },
+    async anotaciones() {
+      await go('/coordinacion?view=anotaciones');
+      const lista = page.getByRole('region', { name: 'Anotaciones recientes' });
+      await shot('14-anotaciones', [
+        { target: role('searchbox', 'Buscar'), n: 1 },
+        { target: btn('Actualizar'), n: 2 },
+        { target: lista.getByRole('link', { name: /^Ver foto de evidencia/ }).first(), n: 3 },
+      ], lista);
     },
   };
 });
