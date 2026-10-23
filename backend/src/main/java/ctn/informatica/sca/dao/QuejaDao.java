@@ -29,7 +29,8 @@ public class QuejaDao extends conexion {
 
     // queja.curso_id apunta a la cohorte (curso). El nivel que se muestra es el que tenía
     // el curso cuando se cargó la queja, no el de hoy: una queja de 1° sigue diciendo 1°.
-    private static final String NIVEL_AL_CREAR = "(YEAR(q.creada_en) - c.promocion + 3)";
+    // promocion es UNSIGNED: sin el CAST, en 1° (promocion = año + 2) la resta da negativa y MariaDB la rechaza.
+    private static final String NIVEL_AL_CREAR = "(YEAR(q.creada_en) - CAST(c.promocion AS SIGNED) + 3)";
 
     public Documento documento(long id) throws SQLException {
         String sql = "SELECT q.*, e.nombre AS especialidad, CONCAT_WS(' ', u.nombre, u.apellido) AS profesor, "
