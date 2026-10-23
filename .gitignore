@@ -45,3 +45,4 @@ nginx/*.local
 # Grafos
 /graphify-out/
 .credenciales/
+/backend/src/main/resources/static/app/
