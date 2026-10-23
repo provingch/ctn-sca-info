@@ -118,6 +118,15 @@ public class EnfermeriaDao extends conexion {
                     rs -> fila("nombre", rs.getString("nombre"), "apellido", rs.getString("apellido"),
                             "correo", rs.getString("correo"), "telefono", rs.getString("telefono")), alumnoId);
             out.put("tutor", tutor.isEmpty() ? fila("nombre", null, "apellido", null, "correo", null, "telefono", null) : tutor.get(0));
+            // Padres ya cargados en el colegio (usuario nivel 4 vinculado por alumno_usuario). Solo lectura y
+            // solo estas columnas: nunca contrasenia, totp_secret, google_*, firma, foto ni session_version.
+            out.put("tutores_colegio", lista(con,
+                    "SELECT u.id, u.nombre, u.apellido, u.celular, u.telefono, u.correo, au.parentesco "
+                            + "FROM alumno_usuario au JOIN usuario u ON u.id = au.usuario_id "
+                            + "WHERE au.alumno_id = ? AND u.nivel = 4 ORDER BY au.parentesco, u.apellido, u.nombre",
+                    rs -> fila("id", rs.getInt("id"), "nombre", rs.getString("nombre"), "apellido", rs.getString("apellido"),
+                            "celular", rs.getString("celular"), "telefono", rs.getString("telefono"),
+                            "correo", rs.getString("correo"), "parentesco", rs.getString("parentesco")), alumnoId));
             return out;
         }
     }
