@@ -167,6 +167,9 @@ HEALTHCHECK_RETRIES="${HEALTHCHECK_RETRIES:-10}"
 HEALTHCHECK_DELAY_SECONDS="${HEALTHCHECK_DELAY_SECONDS:-2}"
 
 DB_ENV_FILE="${DB_ENV_FILE:-/etc/ctn-sca-info-backend.env}"
+# El env file solo se genera en la primera instalación. Si ya existe se deja tal cual (así no se pisan
+# FIREBASE_CREDENTIALS ni nada que se haya agregado a mano). REGENERATE_ENV=1 fuerza regenerarlo.
+REGENERATE_ENV="${REGENERATE_ENV:-0}"
 DB_TYPE="${SCA_DB_TYPE:-mariadb}"
 DB_NAME="${SCA_DB_NAME:-${CTN_DB_NAME:-ctndb}}"
 DB_HOST="${SCA_DB_HOST:-${CTN_DB_HOST:-localhost}}"
@@ -589,14 +592,36 @@ write_db_env_file() {
       printf 'SCA_JWT_SECRET=%q\n' "$jwt_secret"
     fi
   } > "$tmp_env"
+
+  # Claves que este script no genera (FIREBASE_CREDENTIALS, etc.) y que alguien agregó a mano: al
+  # regenerar con REGENERATE_ENV=1 se conservan en vez de perderse.
+  if sudo test -f "$DB_ENV_FILE"; then
+    local extra_line extra_key
+    while IFS= read -r extra_line; do
+      [[ "$extra_line" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]] || continue
+      extra_key="${extra_line%%=*}"
+      grep -q "^${extra_key}=" "$tmp_env" && continue
+      printf '%s\n' "$extra_line" >> "$tmp_env"
+    done < <(sudo cat "$DB_ENV_FILE")
+  fi
+
   sudo install -o root -g root -m 600 "$tmp_env" "$DB_ENV_FILE"
   rm -f "$tmp_env"
 }
 
 configure_service_env() {
-  local password
-  password="$(get_db_password)"
-  write_db_env_file "$password"
+  if sudo test -f "$DB_ENV_FILE" && [[ "$REGENERATE_ENV" != "1" ]]; then
+    echo "==> Conservando $DB_ENV_FILE existente (REGENERATE_ENV=1 para regenerarlo; los cambios de DB, puerto o contraseña pasados ahora no se aplican)"
+    local env_port
+    env_port="$(read_env_file_value 'SERVER_PORT')"
+    if [[ -n "$env_port" && "$env_port" != "$APP_PORT" ]]; then
+      echo "AVISO: APP_PORT=$APP_PORT pero $DB_ENV_FILE tiene SERVER_PORT=$env_port; nginx y el servicio podrían no coincidir." >&2
+    fi
+  else
+    local password
+    password="$(get_db_password)"
+    write_db_env_file "$password"
+  fi
 
   echo "==> Configuring environment for service $SERVICE_NAME"
   sudo mkdir -p "$SYSTEMD_DROPIN_DIR"
