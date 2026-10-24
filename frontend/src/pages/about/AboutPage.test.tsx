@@ -40,6 +40,14 @@ describe('AboutPage', () => {
     expect(screen.getByText('Fusión de dos proyectos en uno')).toBeInTheDocument();
   });
 
+  it('muestra la versión vigente del CHANGELOG y los hitos de cada versión', () => {
+    renderPage();
+    expect(screen.getByText('Versión documentada').closest('div')).toHaveTextContent('4.0.0');
+    expect(screen.getByText('22 de octubre de 2026')).toHaveAttribute('datetime', '2026-10-22');
+    expect(screen.getByText('Versión 4.0: una sola app Android para todos los roles')).toBeInTheDocument();
+    expect(screen.getByText('App Android')).toBeInTheDocument();
+  });
+
   it('calcula el año del copyright con la fecha actual en vez de dejarlo fijo', () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2031-03-01T12:00:00Z'));

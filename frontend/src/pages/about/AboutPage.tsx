@@ -6,20 +6,24 @@ const team = [
   { user: '@schmidtsamuel626', name: 'Samuel Schmidt', github: 'schmidtsamuel626' },
   { user: '@Macrosss', name: 'Marcos Molinas', github: 'tukp5678' },
 ];
-const modules = ['Planillas', 'Tareas', 'Planificación', 'Comunicación', 'Evaluación', 'Coordinación', 'Administración', 'Familias'];
+const modules = ['Planillas', 'Tareas', 'Planificación', 'Comunicación', 'Evaluación', 'Coordinación', 'Administración', 'Familias', 'App Android'];
 const milestones = [
   { date: '2026-06-18', label: '18 de junio de 2026', title: 'Inicio del desarrollo' },
   { date: '2026-06-29', label: '29 de junio de 2026', title: 'Propuesta aceptada' },
   { date: '2026-07-28', label: '28 de julio de 2026', title: 'Fusión de dos proyectos en uno' },
+  { date: '2026-08-24', label: '24 de agosto de 2026', title: 'Versión 1.0: primera versión estable en Spring Boot y React' },
+  { date: '2026-09-01', label: '1 de septiembre de 2026', title: 'Versión 2.0: control académico, quejas y Coordinación Pedagógica' },
+  { date: '2026-09-21', label: '21 de septiembre de 2026', title: 'Versión 3.0: app Android para padres y nueva identidad visual' },
+  { date: '2026-10-22', label: '22 de octubre de 2026', title: 'Versión 4.0: una sola app Android para todos los roles' },
 ];
 // Version taken from the latest release in the repository's CHANGELOG.md.
-const documentedVersion = '2.0.0';
+const documentedVersion = '4.0.0';
 const repository = 'https://github.com/provingch/ctn-sca-info';
 
 /** Public credits, with the regular account navigation for signed-in users. */
 export default function AboutPage() {
   return <InformationLayout title="Acerca de SCA" lead="Una plataforma para gestionar la vida académica del CTN." showBackLink introduction={<>
-      <p>El Sistema de Carpeta Académica conecta a docentes, equipos de gestión y familias.</p>
+      <p>El Sistema de Carpeta Académica conecta a docentes, equipos de gestión y familias, desde la web y desde la app Android.</p>
       <ul className="about-modules" aria-label="Módulos del sistema">{modules.map((module) => <li key={module}>{module}</li>)}</ul>
     </>}>
     <section aria-labelledby="about-team-title">
