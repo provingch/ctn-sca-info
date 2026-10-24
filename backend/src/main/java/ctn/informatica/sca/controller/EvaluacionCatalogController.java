@@ -17,6 +17,7 @@ import ctn.informatica.sca.model.Especialidad;
 import ctn.informatica.sca.model.Instrumento;
 import ctn.informatica.sca.model.Profesor;
 import ctn.informatica.sca.model.RasgoPlanilla;
+import ctn.informatica.sca.service.UsuarioPushService;
 import ctn.informatica.sca.util.ScaUiContext;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +51,8 @@ public class EvaluacionCatalogController {
     private final IncumplimientoRevisionDao incumplimientoRevisionDao;
     private final NotificacionDao notificacionDao;
     private final UserDao userDao;
+    /** Opcional: sin Firebase o en tests unitarios queda nulo y solo se crea el aviso en la lista. */
+    private UsuarioPushService usuarioPushService;
     private final ProfesorDao profesorDao;
     private final ConfiguracionSistemaDao configuracionSistemaDao;
 
@@ -413,10 +416,18 @@ public class EvaluacionCatalogController {
         }
     }
 
+    @Autowired(required = false)
+    public void setUsuarioPushService(UsuarioPushService usuarioPushService) {
+        this.usuarioPushService = usuarioPushService;
+    }
+
     private void notificarSinFallar(int usuarioId, String userType, String tipo, String titulo, String cuerpo,
             String entidadTipo, int entidadId) {
         try {
             notificacionDao.crear(usuarioId, userType, tipo, titulo, cuerpo, entidadTipo, (long) entidadId);
+            if (usuarioPushService != null) {
+                usuarioPushService.notificar(usuarioId, userType, tipo, titulo, cuerpo, entidadTipo, entidadId);
+            }
         } catch (Exception ex) {
             log.warn("No se pudo crear la notificación {} para el usuario {}: {}", tipo, usuarioId, ex.getMessage());
         }

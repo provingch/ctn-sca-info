@@ -9,6 +9,7 @@ import ctn.informatica.sca.dao.RasgoPlanillaDao;
 import ctn.informatica.sca.dao.UserDao;
 import ctn.informatica.sca.dto.PlanCurricularDto;
 import ctn.informatica.sca.service.PlanCurricularParser;
+import ctn.informatica.sca.service.UsuarioPushService;
 import ctn.informatica.sca.service.PlanCurricularRetroactivoService;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,6 +70,9 @@ public class PlanCurricularController {
 
     @Autowired
     private NotificacionDao notificacionDao;
+
+    @Autowired(required = false)
+    private UsuarioPushService usuarioPushService;
 
     @Autowired
     private PlanCurricularRetroactivoService retroactivoService;
@@ -465,8 +469,11 @@ public class PlanCurricularController {
     /** Deja el aviso en la bandeja in-app del profesor (el push se pierde si no tenía el navegador abierto). */
     private void crearNotificacionPlan(int profesorId, String tipo, String titulo, String cuerpo, int planId) {
         try {
-            notificacionDao.crear(profesorId, NotificacionDao.resolveUserType(userDao, profesorId), tipo, titulo, cuerpo,
-                    "PLAN_CURRICULAR", (long) planId);
+            String userType = NotificacionDao.resolveUserType(userDao, profesorId);
+            notificacionDao.crear(profesorId, userType, tipo, titulo, cuerpo, "PLAN_CURRICULAR", (long) planId);
+            if (usuarioPushService != null) {
+                usuarioPushService.notificar(profesorId, userType, tipo, titulo, cuerpo, "PLAN_CURRICULAR", planId);
+            }
         } catch (Exception ex) {
             log.warn("No se pudo crear la notificación {} para el profesor {}: {}", tipo, profesorId, ex.getMessage());
         }
