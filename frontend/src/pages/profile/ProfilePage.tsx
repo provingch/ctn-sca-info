@@ -22,14 +22,13 @@ import useAccessibleDialog from '../../hooks/useAccessibleDialog';
 import { useToast } from '../../context/toast';
 import { normalizeSpecialty } from '../../theme/theme';
 import { useNavigate } from 'react-router-dom';
-import SystemPalette from './SystemPalette';
 import { confirmar } from '../../utils/confirmar';
 
 type ProfileTab = 'profile' | 'security' | 'subjects' | 'app' | 'activity';
 const message = (error: unknown, fallback: string) => error instanceof ApiError ? error.message : fallback;
 
 export default function ProfilePage() {
-  const { user, refreshUserIdentity, logout } = useAuth();
+  const { refreshUserIdentity, logout } = useAuth();
   const navigate = useNavigate();
   const [data, setData] = useState<ProfileResponse | null>(null);
   const { showToast } = useToast();
@@ -65,7 +64,6 @@ export default function ProfilePage() {
   if (!data) return <AppShell><ContentState tone={'loading'} title={'Cargando perfil…'} detail={'Estamos preparando los datos de tu cuenta.'} /></AppShell>;
 
   const owner = data.profileOwner;
-  const isGlobalAdmin = user?.level === 3 && user.especialidadId === null;
   // `completion` removed — progress UI was eliminated from the profile header
   const finish = async (text: string) => { if (text) showToast(text, { tone: 'success' }); await Promise.all([load(), refreshUserIdentity()]); };
 
@@ -86,7 +84,7 @@ export default function ProfilePage() {
     { key: 'security', label: 'Seguridad', show: data.showSecurityPanel },
     { key: 'subjects', label: 'Materias', show: data.showMateriasPanel },
     { key: 'app', label: 'Aplicación', show: true },
-    { key: 'activity', label: isGlobalAdmin ? 'Registros y apariencia' : 'Registros', show: data.showActivityPanel || isGlobalAdmin },
+    { key: 'activity', label: 'Registros', show: data.showActivityPanel },
   ];
 
   return <AppShell hero={false} title="Mi perfil">
@@ -122,7 +120,7 @@ export default function ProfilePage() {
         {tab === 'security' && <Security data={data} done={finish} onPasswordChanged={finishPasswordChange} />}
         {tab === 'subjects' && <Subjects data={data} />}
         {tab === 'app' && <AppStatus data={data} />}
-        {tab === 'activity' && <div className="profile-section-stack">{isGlobalAdmin && <SystemPalette especialidades={data.especialidades} />}{data.showActivityPanel && <Activity entries={data.activityLog} />}</div>}
+        {tab === 'activity' && <div className="profile-section-stack">{data.showActivityPanel && <Activity entries={data.activityLog} />}</div>}
       </div>
       <ScrollToTopButton contentRef={profileContentRef} />
     </div>

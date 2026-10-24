@@ -71,7 +71,7 @@ class EvaluacionCatalogControllerTest {
         teacher.setId(14);
         teacher.setNombre("Ana");
         teacher.setApellido("Pérez");
-        teacher.setNivel(3);
+        teacher.setNivel(1);
         teacher.setEspecialidadId(null);
         when(profesorDao.findById(14)).thenReturn(teacher);
         when(asignacionDao.findByProfesor(14)).thenReturn(List.of(
@@ -110,13 +110,52 @@ class EvaluacionCatalogControllerTest {
         asignaciones.get(1).setEspecialidadId(2);
         asignaciones.get(1).setEspecialidad("Construcciones Civiles");
         when(asignacionDao.findByProfesor(14)).thenReturn(asignaciones);
-        var teacherAuth = new UsernamePasswordAuthenticationToken(14L, null, List.of(new SimpleGrantedAuthority("ROLE_LEVEL_3")));
+        var teacherAuth = new UsernamePasswordAuthenticationToken(14L, null, List.of(new SimpleGrantedAuthority("ROLE_LEVEL_1")));
 
         List<EvaluacionCatalogController.EspecialidadDto> especialidades = controller.listEspecialidades(teacherAuth);
         List<EvaluacionCatalogController.CursoEvaluacionDto> cursosResult = controller.listCursos(null, teacherAuth);
 
         assertEquals(List.of("Informática", "Construcciones Civiles"), especialidades.stream().map(EvaluacionCatalogController.EspecialidadDto::nombre).toList());
         assertEquals(List.of(1, 2), cursosResult.stream().map(EvaluacionCatalogController.CursoEvaluacionDto::id).toList());
+    }
+
+    @Test
+    void profesorSinAsignacionesNoVeEspecialidadesNiCursos() throws Exception {
+        when(cursoDao.findAll()).thenReturn(new ArrayList<>(List.of(
+                new Curso(1, "Informática", 2027, "A"),
+                new Curso(2, "Construcciones Civiles", 2027, "C"))));
+        when(especialidadDao.findAll()).thenReturn(List.of(
+                new Especialidad(1, "Informática"),
+                new Especialidad(2, "Construcciones Civiles")));
+        when(asignacionDao.findByProfesor(14)).thenReturn(List.of());
+        var teacherAuth = new UsernamePasswordAuthenticationToken(14L, null, List.of(new SimpleGrantedAuthority("ROLE_LEVEL_1")));
+
+        assertEquals(List.of(), controller.listEspecialidades(teacherAuth));
+        assertEquals(List.of(), controller.listCursos(null, teacherAuth));
+    }
+
+    @Test
+    void profesorConUnaEspecialidadSoloVeEsaEspecialidad() throws Exception {
+        when(especialidadDao.findAll()).thenReturn(List.of(
+                new Especialidad(1, "Informática"),
+                new Especialidad(2, "Construcciones Civiles")));
+        Asignacion asignacion = new Asignacion(11, 14, 1, 1);
+        asignacion.setEspecialidadId(2);
+        when(asignacionDao.findByProfesor(14)).thenReturn(List.of(asignacion));
+        var teacherAuth = new UsernamePasswordAuthenticationToken(14L, null, List.of(new SimpleGrantedAuthority("ROLE_LEVEL_1")));
+
+        assertEquals(List.of("Construcciones Civiles"),
+                controller.listEspecialidades(teacherAuth).stream().map(EvaluacionCatalogController.EspecialidadDto::nombre).toList());
+    }
+
+    @Test
+    void evaluacionMantieneCatalogoInstitucionalCompleto() throws Exception {
+        when(especialidadDao.findAll()).thenReturn(List.of(
+                new Especialidad(1, "Informática"),
+                new Especialidad(2, "Construcciones Civiles")));
+        var evalAuth = new UsernamePasswordAuthenticationToken(50L, null, List.of(new SimpleGrantedAuthority("ROLE_LEVEL_2")));
+
+        assertEquals(2, controller.listEspecialidades(evalAuth).size());
     }
 
     @Test

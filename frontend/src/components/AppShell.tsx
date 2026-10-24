@@ -14,14 +14,16 @@ export default function AppShell({ children, title, subtitle, specialty, hero = 
   welcome?: boolean;
   navigation?: ReactNode;
 }) {
-  const { name: selectedSpecialty, selectSpecialty } = useSpecialty();
-  const effectiveSpecialty = selectedSpecialty || specialty || null;
+  const { name: selectedSpecialty, selectSpecialty, resetSpecialty } = useSpecialty();
+  const effectiveSpecialty = specialty || selectedSpecialty || null;
 
+  // Un apartado de una especialidad concreta pinta su color mientras está abierto;
+  // al salir, el color vuelve al base del usuario.
   useEffect(() => {
-    if (specialty && specialty !== selectedSpecialty) {
-      selectSpecialty(specialty);
-    }
-  }, [specialty, selectedSpecialty, selectSpecialty]);
+    if (!specialty) return undefined;
+    selectSpecialty(specialty);
+    return () => resetSpecialty();
+  }, [specialty, selectSpecialty, resetSpecialty]);
 
   useEffect(() => {
     document.title = title ? `${title} | SCA CTN` : 'SCA CTN';

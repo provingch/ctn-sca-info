@@ -53,6 +53,7 @@ export default function HomePage() {
   const [selectionLoading, setSelectionLoading] = useState(false);
   const [syncingAll, setSyncingAll] = useState(false);
   const { selectSpecialty, resetSpecialty } = useSpecialty();
+  useEffect(() => resetSpecialty, [resetSpecialty]);
   // "Iniciar clase" arranca en el horario de hoy, sin selectores; el selector de
   // especialidad/curso/sección es solo para "Iniciar clase distinta" (modo manual).
   const [claseModo, setClaseModo] = useState<'horario' | 'manual'>('horario');

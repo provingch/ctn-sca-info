@@ -41,7 +41,6 @@ import ctn.informatica.sca.dto.ProfileMateriaDto;
 import ctn.informatica.sca.dto.ProfileOwnerDto;
 import ctn.informatica.sca.dto.ProfileResponse;
 import ctn.informatica.sca.dto.SaveProfileRequest;
-import ctn.informatica.sca.dto.SelectUiSpecialtyRequest;
 import ctn.informatica.sca.google.GoogleClassroomService;
 import ctn.informatica.sca.model.Asignacion;
 import ctn.informatica.sca.model.Especialidad;
@@ -54,7 +53,6 @@ import ctn.informatica.sca.service.RefreshTokenService;
 import ctn.informatica.sca.dao.RefreshTokenDao;
 import ctn.informatica.sca.util.PasswordUtil;
 import ctn.informatica.sca.util.PushNotificationService;
-import ctn.informatica.sca.util.ScaUiContext;
 import ctn.informatica.sca.util.TotpUtils;
 
 @RestController
@@ -221,27 +219,6 @@ public class ProfileController {
             return state != null && state.debeCambiarContrasenia();
         } catch (SQLException ex) {
             return false; // el filtro igual bloquea lo demás: acá solo decide si la web muestra el aviso
-        }
-    }
-
-    @PostMapping("/select-ui-specialty")
-    @PreAuthorize("hasAnyRole('LEVEL_1','LEVEL_2','LEVEL_3','LEVEL_4','LEVEL_5')")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void selectUiSpecialty(
-            @RequestBody SelectUiSpecialtyRequest request,
-            Authentication authentication) {
-        requireUser(authentication);
-        if (request == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El request es requerido.");
-        }
-
-        if ("general".equals(ScaUiContext.normalizeSpecialty(request.specialtyToken()))) {
-            return;
-        }
-
-        Especialidad selected = resolveUiEspecialidad(request.specialtyId(), request.specialtyName(), request.specialtyToken());
-        if (selected == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La especialidad seleccionada no es válida.");
         }
     }
 
@@ -775,43 +752,6 @@ public class ProfileController {
                 && !"apellido".equals(normalized)
                 && !"ci".equals(normalized)
                 && !"nivel".equals(normalized);
-    }
-
-    private Especialidad resolveUiEspecialidad(String specialtyId, String specialtyName, String specialtyToken) {
-        if (specialtyId != null && !specialtyId.trim().isEmpty()) {
-            try {
-                int id = Integer.parseInt(specialtyId);
-                Especialidad especialidad = especialidadDao.findById(id);
-                if (especialidad != null) {
-                    return especialidad;
-                }
-            } catch (Exception ignored) {
-                // fallback to other lookup methods
-            }
-        }
-        if (specialtyName != null && !specialtyName.trim().isEmpty()) {
-            try {
-                for (Especialidad especialidad : especialidadDao.findAll()) {
-                    if (especialidad.getNombre() != null && especialidad.getNombre().equalsIgnoreCase(specialtyName.trim())) {
-                        return especialidad;
-                    }
-                }
-            } catch (Exception ignored) {
-                // fallback
-            }
-        }
-        if (specialtyToken != null && !specialtyToken.trim().isEmpty()) {
-            try {
-                for (Especialidad especialidad : especialidadDao.findAll()) {
-                    if (especialidad.getNombre() != null && ScaUiContext.normalizeSpecialty(especialidad.getNombre()).equals(specialtyToken.trim())) {
-                        return especialidad;
-                    }
-                }
-            } catch (Exception ignored) {
-                // fallback
-            }
-        }
-        return null;
     }
 
     private boolean saveTotpSecretForUser(User user, String totpSecret) throws SQLException {

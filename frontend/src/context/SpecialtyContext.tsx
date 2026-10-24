@@ -1,55 +1,50 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { normalizeSpecialty } from '../theme/theme';
 
-const STORAGE_KEY = 'sca-session-specialty';
-
 interface SpecialtySelection {
   id: number | null;
   name: string | null;
 }
 
 interface SpecialtyContextValue extends SpecialtySelection {
+  /** Color de un apartado puntual (planilla, clase, panel de una especialidad). */
   selectSpecialty: (name: string, id?: number | null) => void;
+  /** Sale del apartado: vuelve al color base del usuario. */
   resetSpecialty: () => void;
+  /**
+   * Color base del usuario para las pantallas generales: su única especialidad, o
+   * null (institucional) si tiene varias o ninguna. Lo fija la identidad del usuario.
+   */
+  setBaseSpecialty: (name: string | null, id?: number | null) => void;
 }
 
-const DEFAULT_SELECTION: SpecialtySelection = { id: null, name: null };
+const NO_SELECTION: SpecialtySelection = { id: null, name: null };
 const SpecialtyContext = createContext<SpecialtyContextValue | undefined>(undefined);
 
-function readSelection(): SpecialtySelection {
-  try {
-    const stored = sessionStorage.getItem(STORAGE_KEY);
-    if (!stored) return DEFAULT_SELECTION;
-    const parsed = JSON.parse(stored) as Partial<SpecialtySelection>;
-    // Discard legacy palette labels imported with broken encoding. The next
-    // selection uses the repaired catalog; this cache never defines account scope.
-    if (typeof parsed.name === 'string' && /[\u00c2\u00c3][\u0080-\u00bf\u0192]/.test(parsed.name)) return DEFAULT_SELECTION;
-    return typeof parsed.name === 'string'
-      ? { id: typeof parsed.id === 'number' ? parsed.id : null, name: parsed.name }
-      : DEFAULT_SELECTION;
-  } catch {
-    return DEFAULT_SELECTION;
-  }
-}
-
 export function SpecialtyProvider({ children }: { children: ReactNode }) {
-  const [selection, setSelection] = useState<SpecialtySelection>(readSelection);
-  const selectSpecialty = useCallback((name: string, id: number | null = null) => {
-    setSelection((current) => current.name === name && current.id === id ? current : { id, name });
-  }, []);
-  const resetSpecialty = useCallback(() => setSelection(DEFAULT_SELECTION), []);
+  const [base, setBase] = useState<SpecialtySelection>(NO_SELECTION);
+  const [override, setOverride] = useState<SpecialtySelection | null>(null);
+  const selection = override ?? base;
 
+  const selectSpecialty = useCallback((name: string, id: number | null = null) => {
+    setOverride((current) => current?.name === name && current.id === id ? current : { id, name });
+  }, []);
+  const resetSpecialty = useCallback(() => setOverride(null), []);
+  const setBaseSpecialty = useCallback((name: string | null, id: number | null = null) => {
+    setBase((current) => current.name === name && current.id === (name ? id : null) ? current : { id: name ? id : null, name });
+  }, []);
+
+  // La paleta nunca se persiste: cada pantalla general arranca en el color base del usuario.
   useEffect(() => {
     document.documentElement.dataset.specialty = normalizeSpecialty(selection.name);
-    if (selection.name) sessionStorage.setItem(STORAGE_KEY, JSON.stringify(selection));
-    else sessionStorage.removeItem(STORAGE_KEY);
   }, [selection]);
 
   const value = useMemo<SpecialtyContextValue>(() => ({
     ...selection,
     selectSpecialty,
     resetSpecialty,
-  }), [selection, selectSpecialty, resetSpecialty]);
+    setBaseSpecialty,
+  }), [selection, selectSpecialty, resetSpecialty, setBaseSpecialty]);
 
   return <SpecialtyContext.Provider value={value}>{children}</SpecialtyContext.Provider>;
 }

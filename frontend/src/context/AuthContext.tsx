@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import * as authApi from '../api/auth';
 import { getProfile } from '../api/profile';
+import { getEspecialidades } from '../api/academics';
 import { setAccessToken, setOnAuthExpired } from '../api/client';
 import { useSpecialty } from './SpecialtyContext';
 import { resolveIdentitySpecialty } from './authIdentity';
@@ -34,7 +35,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { resetSpecialty } = useSpecialty();
+  const { resetSpecialty, setBaseSpecialty } = useSpecialty();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const [identityStatus, setIdentityStatus] = useState<IdentityStatus>('idle');
@@ -77,6 +78,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const displayName = nombreCorto(owner.nombre, owner.apellido) || owner.usuario?.trim() || 'Usuario SCA';
       const initials = `${owner.nombre?.trim()[0] || owner.usuario?.trim()[0] || 'S'}${owner.apellido?.trim()[0] || ''}`.toUpperCase();
       const specialty = resolveIdentitySpecialty(activeLevel, owner, profile.especialidades);
+      // Color base de las pantallas generales: la única especialidad del usuario, o el
+      // institucional si tiene varias. Un docente solo recibe las que sus asignaciones cubren.
+      let baseSpecialty = { id: specialty.id, name: specialty.name };
+      if (activeLevel === 1) {
+        try {
+          const assigned = await getEspecialidades();
+          baseSpecialty = assigned.length === 1 ? { id: assigned[0].id, name: assigned[0].nombre } : { id: null, name: null };
+        } catch {
+          baseSpecialty = { id: null, name: null };
+        }
+      }
+      setBaseSpecialty(baseSpecialty.name, baseSpecialty.id);
       setUser((current) => current?.level === activeLevel
         ? { ...current, displayName, username: owner.usuario?.trim() || undefined, initials, fotoPerfil: owner.fotoPerfil ?? undefined, especialidadId: specialty.id, especialidadNombre: specialty.name, debeCambiarContrasenia: profile.debeCambiarContrasenia }
         : current);
@@ -84,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       setIdentityStatus('error');
     }
-  }, [user?.level]);
+  }, [user?.level, setBaseSpecialty]);
 
   useEffect(() => {
     void refreshUserIdentity();
@@ -111,6 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const res = await authApi.login({ username, password, rememberMe });
         if (!res.requiere2fa && res.accessToken && res.level !== null) {
           resetSpecialty();
+          setBaseSpecialty(null);
           setAccessToken(res.accessToken);
           setUser({ level: res.level });
           // El refresh inicial puede seguir pendiente cuando el usuario envía el
@@ -125,6 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const res = await authApi.verify2fa({ tempToken, code, rememberMe });
         if (res.accessToken && res.level !== null) {
           resetSpecialty();
+          setBaseSpecialty(null);
           setAccessToken(res.accessToken);
           setUser({ level: res.level });
           setIsBootstrapping(false);
@@ -139,11 +154,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(null);
           setIdentityStatus('idle');
           resetSpecialty();
+          setBaseSpecialty(null);
         }
       },
       refreshUserIdentity,
     }),
-    [user, isBootstrapping, identityStatus, resetSpecialty, refreshUserIdentity],
+    [user, isBootstrapping, identityStatus, resetSpecialty, setBaseSpecialty, refreshUserIdentity],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

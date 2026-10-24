@@ -15,7 +15,6 @@ import ctn.informatica.sca.model.Asignacion;
 import ctn.informatica.sca.model.Curso;
 import ctn.informatica.sca.model.Especialidad;
 import ctn.informatica.sca.model.Instrumento;
-import ctn.informatica.sca.model.Profesor;
 import ctn.informatica.sca.model.RasgoPlanilla;
 import ctn.informatica.sca.service.UsuarioPushService;
 import ctn.informatica.sca.util.ScaUiContext;
@@ -233,35 +232,19 @@ public class EvaluacionCatalogController {
         }
     }
 
+    /**
+     * Los docentes (nivel 1) solo ven lo que sus asignaciones cubren. Un docente sin
+     * asignaciones recibe listas vacías: nunca cae al catálogo institucional completo,
+     * porque de ahí salían las especialidades (y paletas) que no le corresponden.
+     * Evaluación y el resto de los perfiles mantienen la vista institucional.
+     */
     private boolean shouldUseTeacherAssignmentsScope(Authentication authentication) {
         if (authentication == null) {
             return false;
         }
-
         try {
-            int userLevel = ApiAuth.requireUserLevel(authentication);
-            if (userLevel != 3) {
-                return false;
-            }
+            return ApiAuth.requireUserLevel(authentication) == 1;
         } catch (ResponseStatusException ex) {
-            return false;
-        }
-
-        int userId = ApiAuth.requireUserId(authentication);
-
-        try {
-            Profesor profesor = profesorDao.findById(userId);
-            if (profesor == null) return false;
-
-            // If the professor is an administrator for a specialty (perfil especialidad != null),
-            // keep the institutional view (no scoping).
-            if (profesor.getEspecialidadId() != null) return false;
-
-            // Otherwise, use the professor's real assignments to determine scope: if the
-            // professor has at least one assignment, limit lists to those assignments.
-            return !asignacionDao.findByProfesor(userId).isEmpty();
-        } catch (Exception ex) {
-            log.warn("No se pudo resolver el alcance por asignaciones del profesor {}: {}", userId, ex.getMessage());
             return false;
         }
     }

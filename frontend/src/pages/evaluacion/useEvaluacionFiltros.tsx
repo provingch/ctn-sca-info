@@ -11,6 +11,8 @@ import { normalizeSpecialty } from '../../theme/theme';
  */
 export function useEvaluacionFiltros() {
   const specialty = useSpecialty();
+  const { resetSpecialty } = specialty;
+  useEffect(() => resetSpecialty, [resetSpecialty]);
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [cursos, setCursos] = useState<CursoEvaluacion[]>([]);
   const [especialidadId, setEspecialidadId] = useState(specialty.id ?? 0);
