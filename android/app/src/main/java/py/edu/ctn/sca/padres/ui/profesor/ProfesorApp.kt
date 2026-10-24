@@ -27,6 +27,14 @@ import py.edu.ctn.sca.padres.ui.common.RoleTab
 import py.edu.ctn.sca.padres.ui.common.rememberCommonTabs
 import py.edu.ctn.sca.padres.ui.graphViewModel
 import java.time.LocalDate
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import py.edu.ctn.sca.padres.ui.common.PrimaryButton
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 
 private val TAB_ROUTES = listOf("hoy", "clases", "planillas", "avisos", "perfil")
 
@@ -96,11 +104,26 @@ fun ProfesorApp(graph: Graph) {
                 val ui by vm.ui.collectAsState()
                 LaunchedEffect(Unit) { vm.load() }
                 val d = ui.detalle
+                var nueva by remember { mutableStateOf(false) }
                 RoleScaffold(
                     title = d?.planilla?.materiaNombre?.ifBlank { null } ?: "Tareas",
                     subtitle = d?.let { listOfNotNull(it.curso?.let { c -> "${c.nivel}° ${c.seccion}" }, "Etapa ${it.planilla.etapaIndex}").joinToString(" · ") },
                     onBack = { nav.popBackStack() },
+                    bottomAction = {
+                        PrimaryButton(
+                            "Nueva tarea",
+                            { vm.limpiarErrorCrear(); vm.cargarInstrumentos(); nueva = true },
+                            Modifier.fillMaxWidth().padding(16.dp),
+                        )
+                    },
                 ) { TareasContent(ui, vm::load) { tid -> nav.navigate("correccion/$pid/$tid") } }
+                if (nueva) {
+                    NuevaTareaDialog(
+                        instrumentos = ui.instrumentos, instrumentosListos = ui.instrumentosListos, creando = ui.creando, error = ui.crearError,
+                        onCrear = { i, f, t, ti -> vm.crear(i, f, t, ti) { nueva = false } },
+                        onCerrar = { nueva = false },
+                    )
+                }
             }
             composable(
                 "correccion/{planillaId}/{tareaId}",

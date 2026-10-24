@@ -16,6 +16,7 @@ import py.edu.ctn.sca.padres.core.Session
 import py.edu.ctn.sca.padres.ui.AppRoot
 import py.edu.ctn.sca.padres.ui.theme.ScaPadresTheme
 import kotlinx.coroutines.launch
+import py.edu.ctn.sca.padres.ui.theme.rememberDarkTheme
 
 class MainActivity : ComponentActivity() {
 
@@ -33,7 +34,7 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            ScaPadresTheme {
+            ScaPadresTheme(darkTheme = rememberDarkTheme(appGraph.themePrefs)) {
                 val authState by appGraph.session.state.collectAsStateWithLifecycle()
                 AppRoot(
                     modifier = Modifier.fillMaxSize(),

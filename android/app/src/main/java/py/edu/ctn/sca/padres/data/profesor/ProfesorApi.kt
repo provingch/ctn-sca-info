@@ -40,6 +40,12 @@ interface ProfesorApi {
     @GET("api/home/mis-clases/{id}")
     suspend fun miClase(@Path("id") id: Int): ClaseDetalleDto
 
+    @GET("api/instrumentos")
+    suspend fun instrumentos(): List<InstrumentoDto>
+
+    @POST("api/planillas/{id}/tareas")
+    suspend fun crearTarea(@Path("id") planillaId: Int, @Body body: CrearTareaRequest): Response<Unit>
+
     @GET("api/planillas/{id}/tareas")
     suspend fun tareas(@Path("id") planillaId: Int): List<TareaDto>
 

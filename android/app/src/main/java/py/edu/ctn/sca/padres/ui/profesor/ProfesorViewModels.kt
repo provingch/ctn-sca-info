@@ -26,6 +26,7 @@ import py.edu.ctn.sca.padres.data.profesor.PlanillaDetalleDto
 import py.edu.ctn.sca.padres.data.profesor.PlanillaResumenDto
 import py.edu.ctn.sca.padres.data.profesor.ProfesorRepository
 import py.edu.ctn.sca.padres.data.profesor.TareaDto
+import py.edu.ctn.sca.padres.data.profesor.CrearTareaRequest
 
 const val MSG_ATRASO = "Se requiere justificar el atraso para este tema."
 
@@ -227,6 +228,10 @@ data class TareasUi(
     val error: String? = null,
     val tareas: List<TareaDto>? = null,
     val detalle: PlanillaDetalleDto? = null,
+    val instrumentos: List<InstrumentoDto> = emptyList(),
+    val instrumentosListos: Boolean = false,
+    val creando: Boolean = false,
+    val crearError: String? = null,
 )
 
 class TareasViewModel(private val repo: ProfesorRepository, private val planillaId: Int) : ViewModel() {
@@ -245,6 +250,31 @@ class TareasViewModel(private val repo: ProfesorRepository, private val planilla
                     tareas = tareas.getOrNull() ?: it.tareas, detalle = d.getOrNull() ?: it.detalle,
                 )
             }
+        }
+    }
+
+    fun cargarInstrumentos() {
+        if (_ui.value.instrumentosListos) return
+        viewModelScope.launch {
+            repo.instrumentos()
+                .onSuccess { l -> _ui.update { it.copy(instrumentos = l, instrumentosListos = true) } }
+                .onFailure { e -> _ui.update { it.copy(crearError = e.message) } }
+        }
+    }
+
+    fun limpiarErrorCrear() = _ui.update { it.copy(crearError = null) }
+
+    /** Crea una tarea local (sin Classroom) y recarga la lista; [onOk] cierra el diálogo. */
+    fun crear(instrumentoId: Int, fecha: String, total: Int, titulo: String, onOk: () -> Unit) {
+        _ui.update { it.copy(creando = true, crearError = null) }
+        viewModelScope.launch {
+            repo.crearTarea(planillaId, CrearTareaRequest(instrumentoId, fecha, total, titulo.trim()))
+                .onSuccess {
+                    _ui.update { it.copy(creando = false) }
+                    load()
+                    onOk()
+                }
+                .onFailure { e -> _ui.update { it.copy(creando = false, crearError = e.message) } }
         }
     }
 }
@@ -312,6 +342,7 @@ class CorreccionViewModel(
 
     /** Autoguardado con debounce; vaciar el campo no envía nada (el backend lo tomaría como 0, igual que el web). */
     fun setNota(alumnoId: Int, texto: String) {
+        if (_ui.value.tarea?.googleCourseworkId != null) return // las notas de Classroom solo se editan allá
         val total = _ui.value.tarea?.total ?: return
         val puntos = parsePuntaje(texto, total)
         _ui.update { it.copy(notas = it.notas + (alumnoId to puntos), focusAlumnoId = null) }

@@ -129,6 +129,10 @@ data class ClaseDetalleDto(
     val asistencias: List<AsistenciaDto> = emptyList(),
 )
 
+/** Cuerpo de POST /api/planillas/{id}/tareas (tarea local, sin Classroom). */
+@Serializable
+data class CrearTareaRequest(val instrumentoId: Int, val fecha: String, val total: Int, val titulo: String)
+
 @Serializable
 data class TareaDto(
     val id: Int = 0,

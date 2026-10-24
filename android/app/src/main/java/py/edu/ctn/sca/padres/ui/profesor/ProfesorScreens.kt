@@ -44,6 +44,12 @@ import py.edu.ctn.sca.padres.ui.common.SectionLabel
 import py.edu.ctn.sca.padres.ui.common.Tag
 import py.edu.ctn.sca.padres.ui.theme.scaColors
 import java.time.LocalTime
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.ui.text.input.KeyboardType
+import py.edu.ctn.sca.padres.data.profesor.InstrumentoDto
 
 // ---------------------------------------------------------------- Hoy
 
@@ -251,4 +257,54 @@ fun TareasContent(ui: TareasUi, onRetry: () -> Unit, onTarea: (Int) -> Unit) {
             }
         }
     }
+}
+
+/** Alta de una tarea local de la planilla (las de Classroom se importan, no se crean acá). */
+@Composable
+fun NuevaTareaDialog(
+    instrumentos: List<InstrumentoDto>,
+    instrumentosListos: Boolean,
+    creando: Boolean,
+    error: String?,
+    onCrear: (instrumentoId: Int, fecha: String, total: Int, titulo: String) -> Unit,
+    onCerrar: () -> Unit,
+) {
+    var titulo by remember { mutableStateOf("") }
+    var fecha by remember { mutableStateOf(java.time.LocalDate.now().toString()) }
+    var total by remember { mutableStateOf("10") }
+    var instrumentoId by remember { mutableStateOf<Int?>(null) }
+    val fechaOk = runCatching { java.time.LocalDate.parse(fecha) }.isSuccess
+    val totalNum = total.toIntOrNull()
+    val valido = titulo.isNotBlank() && fechaOk && totalNum != null && totalNum > 0 && instrumentoId != null
+    AlertDialog(
+        onDismissRequest = { if (!creando) onCerrar() },
+        title = { Text("Nueva tarea") },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(titulo, { titulo = it.take(150) }, label = { Text("Título") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(fecha, { fecha = it }, label = { Text("Fecha (AAAA-MM-DD)") }, singleLine = true, isError = !fechaOk, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    total, { total = it.filter(Char::isDigit).take(3) }, label = { Text("Puntaje total") }, singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(),
+                )
+                Text("Instrumento", style = MaterialTheme.typography.labelMedium)
+                if (!instrumentosListos && error == null) Text("Cargando…", style = MaterialTheme.typography.bodySmall, color = scaColors.muted)
+                if (instrumentosListos && instrumentos.isEmpty()) Text("No hay instrumentos disponibles.", style = MaterialTheme.typography.bodySmall, color = scaColors.muted)
+                instrumentos.forEach { i ->
+                    Row(Modifier.fillMaxWidth().clickable { instrumentoId = i.id }.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(selected = instrumentoId == i.id, onClick = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(i.nombre)
+                    }
+                }
+                error?.let { Text(it, color = scaColors.danger.fg, style = MaterialTheme.typography.bodySmall) }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onCrear(instrumentoId!!, fecha, totalNum!!, titulo) }, enabled = valido && !creando) {
+                Text(if (creando) "Creando…" else "Crear")
+            }
+        },
+        dismissButton = { TextButton(onClick = onCerrar, enabled = !creando) { Text("Cancelar") } },
+    )
 }

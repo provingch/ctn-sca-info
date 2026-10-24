@@ -26,6 +26,7 @@ import py.edu.ctn.sca.padres.ui.evaluador.EvaluadorApp
 import py.edu.ctn.sca.padres.ui.padre.PadreApp
 import py.edu.ctn.sca.padres.ui.profesor.ProfesorApp
 import py.edu.ctn.sca.padres.ui.theme.ScaTheme
+import py.edu.ctn.sca.padres.ui.theme.rememberDarkTheme
 
 @Composable
 fun AppRoot(
@@ -52,7 +53,7 @@ fun AppRoot(
             Session.AuthState.AUTHENTICATED -> {
                 val role = graph.session.role ?: Role.PADRE
                 SessionViewModelScope {
-                    ScaTheme(role) {
+                    ScaTheme(role, darkTheme = rememberDarkTheme(graph.themePrefs)) {
                         when (role) {
                             Role.PROFESOR -> ProfesorApp(graph)
                             Role.EVALUADOR -> EvaluadorApp(graph)

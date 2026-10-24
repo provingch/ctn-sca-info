@@ -43,6 +43,14 @@ import py.edu.ctn.sca.padres.data.PushRepository
 import py.edu.ctn.sca.padres.ui.graphViewModel
 import py.edu.ctn.sca.padres.ui.profile.ProfileTab
 import py.edu.ctn.sca.padres.ui.theme.scaColors
+import androidx.compose.foundation.clickable
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import py.edu.ctn.sca.padres.core.ThemeMode
 
 data class PerfilUiState(
     val loading: Boolean = true,
@@ -96,6 +104,8 @@ fun PerfilScreen(graph: Graph, role: Role, onOpen: (ProfileTab) -> Unit, modifie
     val vm: PerfilViewModel = graphViewModel { PerfilViewModel(it.profileRepository, it.authRepository, it.pushRepository) }
     val ui by vm.ui.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) { vm.load() }
+    val themeMode by graph.themePrefs.mode.collectAsStateWithLifecycle()
+    var showTema by remember { mutableStateOf(false) }
 
     when {
         ui.loading -> LoadingState(modifier)
@@ -143,11 +153,32 @@ fun PerfilScreen(graph: Graph, role: Role, onOpen: (ProfileTab) -> Unit, modifie
             ListCard(listOf(0, 1, 2)) { i ->
                 when (i) {
                     0 -> ListRow("Notificaciones", subtitle = "Avisos en este celular", onClick = { onOpen(ProfileTab.APP) })
-                    1 -> ListRow("Tema", subtitle = "Igual que el celular")
+                    1 -> ListRow("Tema", subtitle = themeMode.label, onClick = { showTema = true })
                     else -> ListRow("Versión", subtitle = BuildConfig.VERSION_NAME)
                 }
             }
             DangerTextButton("Cerrar sesión", vm::logout, Modifier.fillMaxWidth())
+            if (showTema) {
+                AlertDialog(
+                    onDismissRequest = { showTema = false },
+                    title = { Text("Tema") },
+                    text = {
+                        Column {
+                            ThemeMode.entries.forEach { m ->
+                                Row(
+                                    Modifier.fillMaxWidth().clickable { graph.themePrefs.set(m); showTema = false }.padding(vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    RadioButton(selected = m == themeMode, onClick = null)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(m.label)
+                                }
+                            }
+                        }
+                    },
+                    confirmButton = { TextButton(onClick = { showTema = false }) { Text("Cerrar") } },
+                )
+            }
         }
     }
 }

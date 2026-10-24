@@ -13,6 +13,7 @@ import py.edu.ctn.sca.padres.data.ParentRepository
 import py.edu.ctn.sca.padres.data.ProfileRepository
 import py.edu.ctn.sca.padres.data.PushRepository
 import py.edu.ctn.sca.padres.data.ReportRepository
+import py.edu.ctn.sca.padres.core.ThemePrefs
 
 class ScaApp : Application() {
 
@@ -41,6 +42,7 @@ class Graph(context: Context) {
     private val appContext = context.applicationContext
     val session = Session()
     val tokenStore = TokenStore(context)
+    val themePrefs = ThemePrefs(appContext)
     private val cookieJar = PersistentCookieJar(tokenStore)
 
     val network = Network(

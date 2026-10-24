@@ -26,6 +26,10 @@ import androidx.core.view.WindowCompat
 import py.edu.ctn.sca.padres.R
 import py.edu.ctn.sca.padres.core.Role
 import py.edu.ctn.sca.padres.core.RoleAccent
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import py.edu.ctn.sca.padres.core.ThemeMode
+import py.edu.ctn.sca.padres.core.ThemePrefs
 
 /** Par fondo/texto de un estado (Tag, chips de nota, avisos). */
 @Immutable
@@ -196,3 +200,14 @@ fun ScaTheme(role: Role, darkTheme: Boolean = isSystemInDarkTheme(), content: @C
 @Composable
 fun ScaPadresTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) =
     ScaTheme(RoleAccent.AZUL, darkTheme, content)
+
+/** Oscuro según la preferencia del usuario (claro / oscuro / igual que el celular). */
+@Composable
+fun rememberDarkTheme(prefs: ThemePrefs): Boolean {
+    val mode by prefs.mode.collectAsStateWithLifecycle()
+    return when (mode) {
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+    }
+}

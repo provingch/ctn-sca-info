@@ -107,7 +107,7 @@ private fun Lista(ui: CorreccionUi, vm: CorreccionViewModel) {
         }
         items(rows, key = { it.alumnoId }) { r ->
             Box(Modifier.background(MaterialTheme.colorScheme.surface)) {
-                FilaNota(r, ui.notas[r.alumnoId], t.total, ui.focusAlumnoId == r.alumnoId) { vm.setNota(r.alumnoId, it) }
+                FilaNota(r, ui.notas[r.alumnoId], t.total, ui.focusAlumnoId == r.alumnoId, t.googleCourseworkId == null) { vm.setNota(r.alumnoId, it) }
             }
             HorizontalDivider(color = scaColors.line)
         }
@@ -115,7 +115,8 @@ private fun Lista(ui: CorreccionUi, vm: CorreccionViewModel) {
             Column(Modifier.padding(top = 12.dp)) {
                 ui.saveError?.let { Text(it, color = scaColors.danger.fg, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 6.dp)) }
                 Text(
-                    "Escala: 1–4 rojo · 5–6 naranja · 7–8 verde claro · 9–10 verde. Los cambios se guardan solos.",
+                    "Escala: 1–4 rojo · 5–6 naranja · 7–8 verde claro · 9–10 verde. " +
+                        if (t.googleCourseworkId != null) "Las notas de esta tarea vienen de Google Classroom: solo se pueden editar allá." else "Los cambios se guardan solos.",
                     style = MaterialTheme.typography.bodySmall, color = scaColors.muted,
                 )
             }
@@ -124,7 +125,7 @@ private fun Lista(ui: CorreccionUi, vm: CorreccionViewModel) {
 }
 
 @Composable
-private fun FilaNota(r: StudentRowDto, puntos: Int?, total: Int, enfocar: Boolean, onChange: (String) -> Unit) {
+private fun FilaNota(r: StudentRowDto, puntos: Int?, total: Int, enfocar: Boolean, editable: Boolean, onChange: (String) -> Unit) {
     val tone = puntos?.let { scaColors.score10(sobreDiez(it, total)) }
     val fr = remember { FocusRequester() }
     LaunchedEffect(enfocar) { if (enfocar) runCatching { fr.requestFocus() } }
@@ -138,7 +139,7 @@ private fun FilaNota(r: StudentRowDto, puntos: Int?, total: Int, enfocar: Boolea
             border = BorderStroke(1.dp, tone?.fg ?: MaterialTheme.colorScheme.primary),
         ) {
             BasicTextField(
-                value = puntos?.toString() ?: "", onValueChange = onChange, singleLine = true,
+                value = puntos?.toString() ?: "", onValueChange = onChange, singleLine = true, readOnly = !editable,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 textStyle = TextStyle(
                     color = tone?.fg ?: MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold,

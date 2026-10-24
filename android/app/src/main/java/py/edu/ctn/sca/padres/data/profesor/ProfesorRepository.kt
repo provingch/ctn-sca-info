@@ -48,6 +48,9 @@ class ProfesorRepository(private val api: ProfesorApi, private val json: Json) {
     suspend fun crearClase(req: CrearClaseRequest) = callUnit("No se pudo registrar la clase.") { api.crearClase(req) }
     suspend fun misClases() = call("No se pudieron cargar tus clases.") { api.misClases() }
     suspend fun miClase(id: Int) = call("No se pudo cargar la clase.") { api.miClase(id) }
+    suspend fun instrumentos() = call("No se pudieron cargar los instrumentos.") { api.instrumentos() }
+    suspend fun crearTarea(planillaId: Int, req: CrearTareaRequest) =
+        callUnit("No se pudo crear la tarea.") { api.crearTarea(planillaId, req) }
     suspend fun tareas(planillaId: Int) = call("No se pudieron cargar las tareas.") { api.tareas(planillaId) }
     suspend fun planilla(planillaId: Int) = call("No se pudo cargar la planilla.") { api.planilla(planillaId) }
 
