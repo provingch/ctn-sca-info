@@ -301,4 +301,79 @@ public class PlanillaControllerTest {
         ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> controller.getPortada(10, auth));
         assertEquals(403, ex.getStatusCode().value());
     }
+
+    private static ctn.informatica.sca.model.Tarea tarea(int id, int total, String courseworkId) {
+        var t = new ctn.informatica.sca.model.Tarea();
+        t.setId(id);
+        t.setTotal(total);
+        t.setGoogleCourseworkId(courseworkId);
+        return t;
+    }
+
+    private static Authentication authDe(int userId) {
+        Authentication auth = mock(Authentication.class);
+        when(auth.getPrincipal()).thenReturn(userId);
+        return auth;
+    }
+
+    @Test
+    public void saveGrades_tareaDeClassroom_noSeGuardaYAvisa() throws Exception {
+        var planillaDao = mock(ctn.informatica.sca.dao.PlanillaDao.class);
+        var profesorDao = mock(ctn.informatica.sca.dao.ProfesorDao.class);
+        PlanillaController controller = new PlanillaController(planillaDao, profesorDao, mock(ClassroomSyncOrchestrator.class));
+        Planilla p = new Planilla();
+        p.setId(10);
+        p.setProfesorId(5);
+        when(planillaDao.findById(10)).thenReturn(p);
+        var tareas = new java.util.ArrayList<>(java.util.List.of(tarea(1, 10, "cw-1")));
+
+        try (var tareaDao = mockConstruction(ctn.informatica.sca.dao.TareaDao.class, (m, c) -> when(m.consultarTarea(10)).thenReturn(tareas));
+                var builder = mockStatic(ctn.informatica.sca.util.PlanillaProcesoWorkbookBuilder.class);
+                var gradeDao = mockConstruction(ctn.informatica.sca.dao.GradeDao.class)) {
+            builder.when(() -> ctn.informatica.sca.util.PlanillaProcesoWorkbookBuilder.filterTasksByEtapa(any(), any())).thenReturn(tareas);
+
+            var request = new PlanillaController.SaveGradesRequest(java.util.List.of(
+                    new PlanillaController.AlumnoGradesInput(100, java.util.List.of(new PlanillaController.GradeItemInput(1, 9)))));
+            var response = controller.saveGrades(10, request, authDe(5));
+
+            assertEquals(0, response.savedCount());
+            assertEquals(1, response.skippedCount());
+            assertTrue(response.warnings().stream().anyMatch(w -> w.contains("Google Classroom")));
+            for (var created : gradeDao.constructed()) {
+                verify(created, never()).saveGradesBatch(anyInt(), any());
+            }
+        }
+    }
+
+    @Test
+    public void saveGrades_lote_mixto_guardaSoloLasTareasLocales() throws Exception {
+        var planillaDao = mock(ctn.informatica.sca.dao.PlanillaDao.class);
+        var profesorDao = mock(ctn.informatica.sca.dao.ProfesorDao.class);
+        PlanillaController controller = new PlanillaController(planillaDao, profesorDao, mock(ClassroomSyncOrchestrator.class));
+        Planilla p = new Planilla();
+        p.setId(10);
+        p.setProfesorId(5);
+        when(planillaDao.findById(10)).thenReturn(p);
+        var tareas = new java.util.ArrayList<>(java.util.List.of(tarea(1, 10, "cw-1"), tarea(2, 10, null)));
+
+        try (var tareaDao = mockConstruction(ctn.informatica.sca.dao.TareaDao.class, (m, c) -> when(m.consultarTarea(10)).thenReturn(tareas));
+                var builder = mockStatic(ctn.informatica.sca.util.PlanillaProcesoWorkbookBuilder.class);
+                var registroDao = mockConstruction(ctn.informatica.sca.dao.RegistroDao.class, (m, c) -> {
+                    when(m.findAlumnoIdsTrasladados(anyInt(), any())).thenReturn(java.util.Set.of());
+                    when(m.getRegistroIdsForPlanilla(anyInt(), any())).thenReturn(java.util.Map.of(100, 900));
+                });
+                var gradeDao = mockConstruction(ctn.informatica.sca.dao.GradeDao.class)) {
+            builder.when(() -> ctn.informatica.sca.util.PlanillaProcesoWorkbookBuilder.filterTasksByEtapa(any(), any())).thenReturn(tareas);
+
+            var request = new PlanillaController.SaveGradesRequest(java.util.List.of(
+                    new PlanillaController.AlumnoGradesInput(100, java.util.List.of(
+                            new PlanillaController.GradeItemInput(1, 9),
+                            new PlanillaController.GradeItemInput(2, 7)))));
+            var response = controller.saveGrades(10, request, authDe(5));
+
+            assertEquals(1, response.savedCount());
+            assertEquals(1, response.skippedCount());
+            verify(gradeDao.constructed().get(0)).saveGradesBatch(10, java.util.Map.of(900, java.util.Map.of(2, 7)));
+        }
+    }
 }

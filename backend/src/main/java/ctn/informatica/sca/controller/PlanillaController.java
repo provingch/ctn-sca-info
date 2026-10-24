@@ -28,6 +28,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -174,9 +175,14 @@ public class PlanillaController {
             Planilla planilla = requireOwnedPlanillaById(planillaId, userId);
             List<Tarea> tareas = PlanillaProcesoWorkbookBuilder.filterTasksByEtapa(new TareaDao().consultarTarea(planilla.getId()), planilla);
             Map<Integer, Integer> tareaMax = new HashMap<>();
+            Set<Integer> tareasClassroom = new HashSet<>();
             for (Tarea tarea : tareas) {
                 tareaMax.put(tarea.getId(), tarea.getTotal());
+                if (esTareaDeClassroom(tarea)) {
+                    tareasClassroom.add(tarea.getId());
+                }
             }
+            Set<Integer> classroomAvisadas = new HashSet<>();
 
             Map<Integer, Map<Integer, Integer>> gradesByAlumno = new HashMap<>();
             List<String> warnings = new ArrayList<>();
@@ -206,6 +212,15 @@ public class PlanillaController {
                     if (max == null) {
                         skippedCount++;
                         warnings.add("Tarea " + item.tareaId() + " no pertenece a la planilla/etapa: omitida");
+                        continue;
+                    }
+
+                    // Classroom es la fuente de verdad de sus tareas: la nota solo entra por la sincronización.
+                    if (tareasClassroom.contains(item.tareaId())) {
+                        skippedCount++;
+                        if (classroomAvisadas.add(item.tareaId())) {
+                            warnings.add("La tarea " + item.tareaId() + " viene de Google Classroom: su nota se gestiona desde Classroom y no se puede editar acá");
+                        }
                         continue;
                     }
 
@@ -663,6 +678,10 @@ public class PlanillaController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes acceso a esta planilla");
         }
         return planilla;
+    }
+
+    private static boolean esTareaDeClassroom(Tarea tarea) {
+        return tarea.getGoogleCourseworkId() != null && !tarea.getGoogleCourseworkId().isBlank();
     }
 
     // Visible for testing: build the sanitized base filename used on export
