@@ -4,6 +4,7 @@ import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
@@ -184,11 +185,18 @@ fun ScaTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+            val controller = WindowCompat.getInsetsController(window, view)
+            controller.isAppearanceLightStatusBars = !darkTheme
+            controller.isAppearanceLightNavigationBars = !darkTheme
         }
     }
     CompositionLocalProvider(LocalScaColors provides extras(accent, darkTheme, colors.primary)) {
-        MaterialTheme(colorScheme = colors, typography = AppTypography, shapes = AppShapes, content = content)
+        MaterialTheme(colorScheme = colors, typography = AppTypography, shapes = AppShapes) {
+            // Compose usa negro como color de contenido por defecto, y ninguna pantalla de la app
+            // está dentro de un Surface/Scaffold raíz que lo cambie. Sin esto, todo Text/Icon sin
+            // color explícito queda negro sobre el fondo oscuro.
+            CompositionLocalProvider(LocalContentColor provides colors.onBackground, content = content)
+        }
     }
 }
 
