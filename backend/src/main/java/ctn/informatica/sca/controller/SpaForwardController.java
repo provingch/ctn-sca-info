@@ -19,7 +19,7 @@ public class SpaForwardController {
     @GetMapping({
             "/", "/login", "/home", "/inicio", "/profile", "/perfil",
             "/evaluacion", "/coordinacion", "/admin", "/admin/{section}", "/padre", "/styleguide",
-            "/privacidad", "/terminos", "/planilla/{planillaId}",
+            "/privacidad", "/terminos", "/acerca-de", "/planilla/{planillaId}",
             "/planilla/{planillaId}/tarea", "/planilla/{planillaId}/tarea/{tareaId}",
             "/admin/horarios/{cursoId}", "/offline",
             "/google/callback", "/google/authorize"

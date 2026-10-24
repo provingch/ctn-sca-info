@@ -47,7 +47,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/app/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/plantillas/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/login", "/home", "/inicio", "/profile", "/perfil",
-                    "/evaluacion", "/admin", "/admin/**", "/padre", "/coordinacion", "/styleguide", "/privacidad", "/terminos",
+                    "/evaluacion", "/admin", "/admin/**", "/padre", "/coordinacion", "/styleguide", "/privacidad", "/terminos", "/acerca-de",
                     "/admin/salas", "/admin/horarios/**",
                     "/planilla/**", "/google/callback", "/offline").permitAll()
                 .requestMatchers("/api/planillas/**", "/api/tareas/**").hasRole("LEVEL_1")
