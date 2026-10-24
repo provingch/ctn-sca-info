@@ -493,7 +493,7 @@ public class EnfermeriaDao extends conexion {
 
     private static Map<String, Object> consulta(ResultSet rs) throws SQLException {
         // DATE y TIME como texto: "2026-10-20" y "08:30:00", el formato que espera la app.
-        return fila("idConsulta", rs.getInt("idConsulta"), "alumno_id", rs.getInt("alumno_id"), "motivo", rs.getString("motivo"),
+        return fila("idConsulta", rs.getInt("idConsulta"), "alumno_id", rs.getInt("alumno_id"), "idAlumno", rs.getInt("alumno_id"), "motivo", rs.getString("motivo"),
                 "fecha", rs.getString("fecha"), "tratamiento", rs.getString("tratamiento"),
                 "horaEntrada", rs.getString("horaEntrada"), "horaSalida", rs.getString("horaSalida"),
                 "observaciones", rs.getString("observaciones"), "idUsuario", rs.getObject("idUsuario", Integer.class),
