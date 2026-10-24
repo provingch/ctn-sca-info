@@ -34,8 +34,8 @@ android {
         applicationId = "py.edu.ctn.sca.padres"
         minSdk = 26
         targetSdk = 35
-        versionCode = 40001 // mayor*10000 + menor*100 + parche
-        versionName = "4.0.1"
+        versionCode = 40100 // mayor*10000 + menor*100 + parche
+        versionName = "4.1.0"
 
         buildConfigField("String", "SCA_BASE_URL", "\"$scaBaseUrl\"")
     }
