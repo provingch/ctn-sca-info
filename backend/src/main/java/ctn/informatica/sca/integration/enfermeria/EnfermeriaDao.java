@@ -72,16 +72,17 @@ public class EnfermeriaDao extends conexion {
         }
     }
 
+    // La CI también se compara sin puntos ni guiones, así "1.234.567" encuentra "1234567" y al revés.
+    private static final String WHERE_BUSCAR = "WHERE al.ci LIKE ? OR REPLACE(REPLACE(al.ci, '.', ''), '-', '') LIKE ? "
+            + "OR al.nombre LIKE ? OR al.apellido LIKE ? OR CONCAT(al.nombre, ' ', al.apellido) LIKE ? ";
+
     /** Busca por CI, nombre, apellido o "nombre apellido"; {@code q} vacío lista todos. Solo lectura. */
     public List<Map<String, Object>> buscarAlumnos(String q, int pagina, int limite, int anioActual) throws SQLException {
-        String patron = "%" + q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
-        String sql = SELECT_ALUMNO
-                + "WHERE al.ci LIKE ? OR al.nombre LIKE ? OR al.apellido LIKE ? OR CONCAT(al.nombre, ' ', al.apellido) LIKE ? "
-                + "ORDER BY al.apellido, al.nombre, al.id LIMIT ? OFFSET ?";
+        String sql = SELECT_ALUMNO + WHERE_BUSCAR + "ORDER BY al.apellido, al.nombre, al.id LIMIT ? OFFSET ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
-            for (int i = 1; i <= 4; i++) ps.setString(i, patron);
-            ps.setInt(5, limite);
-            ps.setInt(6, (pagina - 1) * limite);
+            parametrosBusqueda(ps, q);
+            ps.setInt(6, limite);
+            ps.setInt(7, (pagina - 1) * limite);
             List<Map<String, Object>> out = new ArrayList<>();
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -93,6 +94,30 @@ public class EnfermeriaDao extends conexion {
             }
             return out;
         }
+    }
+
+    /** Total de coincidencias de {@link #buscarAlumnos}, sin paginar. */
+    public int contarAlumnos(String q) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM alumno al JOIN curso c ON c.id = al.curso_id "
+                + "JOIN especialidad e ON e.id = c.especialidad_id " + WHERE_BUSCAR;
+        try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
+            parametrosBusqueda(ps, q);
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getInt(1);
+            }
+        }
+    }
+
+    private static void parametrosBusqueda(PreparedStatement ps, String q) throws SQLException {
+        String patron = patronLike(q);
+        ps.setString(1, patron);
+        ps.setString(2, patronLike(q.replace(".", "").replace("-", "")));
+        for (int i = 3; i <= 5; i++) ps.setString(i, patron);
+    }
+
+    private static String patronLike(String texto) {
+        return "%" + texto.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
     }
 
     /** Datos del alumno + ficha (vacía si todavía no tiene); null si el alumno no existe. */

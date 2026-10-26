@@ -216,7 +216,7 @@ Los usuarios de enfermería (`enf_usuario`) son independientes de los del colegi
 | `login` | POST | `usuario`, `contrasena` | Única ruta que no pide token |
 | `usuario_crear` | POST | `usuario`, `contrasena`, `rol` | Solo administrador. Usuario de 3 a 50 caracteres, contraseña de 8 a 72; 409 si ya existe |
 | `usuario_cambiar_contrasena` | POST | `contrasena_actual`, `contrasena_nueva` | Devuelve un `token` nuevo; el anterior queda inválido |
-| `alumnos_buscar` | GET/POST | `q`?, `pagina`? (1), `limite`? (20, máx. 100) | Busca por C.I., nombre o apellido; cada alumno trae `curso` ("3° A"), `seccion` y `especialidad`, e indica si tiene ficha y si está activa |
+| `alumnos_buscar` | GET/POST | `q`?, `pagina`? (1), `limite`? (20, máx. 100) | Busca por C.I. (con o sin puntos y guiones), nombre o apellido; cada alumno trae `curso` ("3° A"), `seccion` y `especialidad`, e indica si tiene ficha y si está activa. Además de `datos` (la página) devuelve `total` (coincidencias sin paginar) |
 | `ficha` | GET/POST | `alumno` | Datos del alumno (incluye `curso`, `seccion` y `especialidad`), ficha médica, alergias y tutor; 404 si el alumno no existe |
 | `ficha_guardar` | POST | `alumno`, `enfermedadBase`?, `alergias`? (ids separados por coma), `tutor_nombre`?, `tutor_apellido`?, `tutor_correo`?, `tutor_telefono`? | Crea o reemplaza la ficha |
 | `ficha_estado` | POST | `alumno`, `activo` (0/1) | Activa o desactiva la ficha |

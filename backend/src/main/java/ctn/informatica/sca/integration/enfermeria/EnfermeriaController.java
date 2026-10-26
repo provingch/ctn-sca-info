@@ -96,7 +96,10 @@ public class EnfermeriaController {
         if (pagina < 1 || limite < 1 || limite > 100) {
             throw error(HttpStatus.UNPROCESSABLE_CONTENT, "'pagina' debe ser 1 o más y 'limite' entre 1 y 100");
         }
-        return ok(dao.buscarAlumnos(q.trim(), pagina, limite, anioActual()));
+        String texto = q.trim();
+        // "total" va aparte para no cambiar la forma de "datos" (sigue siendo la lista de la página).
+        return Map.of("ok", true, "datos", dao.buscarAlumnos(texto, pagina, limite, anioActual()),
+                "total", dao.contarAlumnos(texto));
     }
 
     @RequestMapping("/ficha")
