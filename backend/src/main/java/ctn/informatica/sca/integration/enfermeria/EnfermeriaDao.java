@@ -539,7 +539,7 @@ public class EnfermeriaDao extends conexion {
         int anio = anioActual - rs.getInt("promocion") + 3;
         return fila("id", rs.getInt("id"), "ci", rs.getString("ci"), "nombre", rs.getString("nombre"),
                 "apellido", rs.getString("apellido"), "curso", anio + "° " + rs.getString("seccion"),
-                "especialidad", rs.getString("especialidad"));
+                "seccion", rs.getString("seccion"), "especialidad", rs.getString("especialidad"));
     }
 
     private static int actualizar(Connection con, String sql, Object... params) throws SQLException {
