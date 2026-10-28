@@ -208,6 +208,70 @@ class EnfermeriaApiTest {
     }
 
     @Test
+    void personalBuscarDevuelvePaginaYTotal() throws Exception {
+        when(dao.usuarioPorId(5)).thenReturn(ENFERMERA);
+        when(dao.buscarPersonal("1.234", 2, 10)).thenReturn(List.of(Map.of("id", 30, "ci", "1234567", "rol", "Profesor")));
+        when(dao.contarPersonal("1.234")).thenReturn(11);
+        mockMvc.perform(get("/api/enfermeria/personal_buscar").header("X-API-Key", KEY)
+                        .header("Authorization", "Bearer " + tokens.emitir(ENFERMERA))
+                        .param("q", " 1.234 ").param("pagina", "2").param("limite", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.datos[0].rol").value("Profesor"))
+                .andExpect(jsonPath("$.total").value(11));
+        mockMvc.perform(get("/api/enfermeria/personal_buscar").header("X-API-Key", KEY)
+                        .header("Authorization", "Bearer " + tokens.emitir(ENFERMERA)).param("limite", "101"))
+                .andExpect(status().isUnprocessableContent());
+    }
+
+    @Test
+    void personalInexistenteOFamiliaDa404() throws Exception {
+        when(dao.usuarioPorId(5)).thenReturn(ENFERMERA);
+        when(dao.personal(77)).thenReturn(null);
+        mockMvc.perform(get("/api/enfermeria/personal").header("X-API-Key", KEY)
+                        .header("Authorization", "Bearer " + tokens.emitir(ENFERMERA)).param("id", "77"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("El funcionario no existe"));
+    }
+
+    @Test
+    void personalConsultaCrearVaASuTablaYNoTocaLasDeAlumnos() throws Exception {
+        when(dao.usuarioPorId(5)).thenReturn(ENFERMERA);
+        when(dao.existePersonal(30)).thenReturn(true);
+        when(dao.crearConsultaPersonal(any(), any(), anyInt())).thenReturn(8);
+
+        mockMvc.perform(post("/api/enfermeria/personal_consulta_crear").header("X-API-Key", KEY)
+                        .header("Authorization", "Bearer " + tokens.emitir(ENFERMERA))
+                        .param("personal", "30").param("motivo", "Cefalea").param("fecha", "2026-10-28")
+                        .param("horaEntrada", "10:15").param("horaSalida", "10:40")
+                        .param("tratamiento", "Reposo").param("insumos", "3:1,3:1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.datos.idConsulta").value(8));
+        verify(dao).crearConsultaPersonal(new EnfermeriaDao.DatosConsultaPersonal(30, "Cefalea", java.time.LocalDate.of(2026, 10, 28),
+                "Reposo", java.time.LocalTime.of(10, 15), java.time.LocalTime.of(10, 40), null), Map.of(3, 2), 5);
+        verify(dao, never()).existeAlumno(anyInt());
+        verify(dao, never()).crearConsulta(any(), any(), anyInt());
+    }
+
+    @Test
+    void personalConsultaDeNoFuncionarioDa404YNoDescuentaStock() throws Exception {
+        when(dao.usuarioPorId(5)).thenReturn(ENFERMERA);
+        when(dao.existePersonal(44)).thenReturn(false);
+        mockMvc.perform(post("/api/enfermeria/personal_consulta_crear").header("X-API-Key", KEY)
+                        .header("Authorization", "Bearer " + tokens.emitir(ENFERMERA))
+                        .param("personal", "44").param("motivo", "Cefalea").param("fecha", "2026-10-28").param("insumos", "3:1"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("El funcionario no existe"));
+        verify(dao, never()).crearConsultaPersonal(any(), any(), anyInt());
+    }
+
+    @Test
+    void personalSinSesionDa401() throws Exception {
+        mockMvc.perform(get("/api/enfermeria/personal_consultas").header("X-API-Key", KEY).param("personal", "30"))
+                .andExpect(status().isUnauthorized());
+        verify(dao, never()).consultasPersonal(anyInt());
+    }
+
+    @Test
     void solicitudAdmiteDosPuntosEnLaObservacion() throws Exception {
         when(dao.usuarioPorId(5)).thenReturn(ENFERMERA);
         when(dao.crearSolicitud(any(), any(), anyInt())).thenReturn(3);

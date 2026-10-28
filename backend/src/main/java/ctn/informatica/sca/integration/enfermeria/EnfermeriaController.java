@@ -24,9 +24,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 /**
  * API del sistema de escritorio de enfermería (SHME): sesión, usuarios, alumnos, ficha médica,
- * consultas (con descuento de stock), insumos, solicitudes y reportes. Contrato: {@code shmeapi/API_ENFERMERIA_REQUERIMIENTOS.md} — misma convención que
+ * consultas (con descuento de stock), consultas de funcionarios, insumos, solicitudes y reportes. Contrato: {@code shmeapi/API_ENFERMERIA_REQUERIMIENTOS.md} — misma convención que
  * anotaciones (sin {@code .php}, parámetros por query o formulario, {@code {ok, datos}} / {@code {ok, error}}).
- * Los datos del alumno (CI, nombre, curso) son del colegio y ningún endpoint los modifica.
+ * Los datos del alumno (CI, nombre, curso) y del funcionario ({@code usuario}) son del colegio y ningún endpoint los modifica.
  */
 @RestController
 @RequestMapping("/api/enfermeria")
@@ -203,6 +203,76 @@ public class EnfermeriaController {
         return ok(dao.reporteConsultas(d, h, alumno, motivo == null || motivo.isBlank() ? null : motivo.trim(), anioActual()));
     }
 
+    // ---------------------------------------------------------------- Personal (funcionarios: usuario nivel 1, 2, 3 y 5)
+
+    @RequestMapping("/personal_buscar")
+    public Map<String, Object> personalBuscar(@RequestParam(defaultValue = "") String q,
+            @RequestParam(defaultValue = "1") int pagina, @RequestParam(defaultValue = "20") int limite) throws SQLException {
+        if (pagina < 1 || limite < 1 || limite > 100) {
+            throw error(HttpStatus.UNPROCESSABLE_CONTENT, "'pagina' debe ser 1 o más y 'limite' entre 1 y 100");
+        }
+        String texto = q.trim();
+        return Map.of("ok", true, "datos", dao.buscarPersonal(texto, pagina, limite), "total", dao.contarPersonal(texto));
+    }
+
+    @RequestMapping("/personal")
+    public Map<String, Object> personal(@RequestParam int id) throws SQLException {
+        Map<String, Object> personal = dao.personal(id);
+        if (personal == null) throw error(HttpStatus.NOT_FOUND, "El funcionario no existe");
+        return ok(personal);
+    }
+
+    @RequestMapping("/personal_consultas")
+    public Map<String, Object> personalConsultas(@RequestParam int personal) throws SQLException {
+        return ok(dao.consultasPersonal(personal));
+    }
+
+    @RequestMapping("/personal_consulta")
+    public Map<String, Object> personalConsulta(@RequestParam int id) throws SQLException {
+        Map<String, Object> consulta = dao.consultaPersonal(id);
+        if (consulta == null) throw error(HttpStatus.NOT_FOUND, "La consulta no existe");
+        return ok(consulta);
+    }
+
+    @PostMapping("/personal_consulta_crear")
+    public Map<String, Object> personalConsultaCrear(@AuthenticationPrincipal EnfermeriaDao.Usuario sesion,
+            @RequestParam int personal, @RequestParam(required = false) String motivo, @RequestParam(required = false) String fecha,
+            @RequestParam(required = false) String tratamiento, @RequestParam(required = false) String horaEntrada,
+            @RequestParam(required = false) String horaSalida, @RequestParam(required = false) String observaciones,
+            @RequestParam(required = false) String insumos) throws SQLException {
+        EnfermeriaDao.DatosConsultaPersonal datos = datosConsultaPersonal(personal, motivo, fecha, tratamiento, horaEntrada,
+                horaSalida, observaciones);
+        Map<Integer, Integer> usados = cantidades(insumos);
+        return ok(Map.of("idConsulta", dao.crearConsultaPersonal(datos, usados, sesion.id())));
+    }
+
+    @PostMapping("/personal_consulta_editar")
+    public Map<String, Object> personalConsultaEditar(@RequestParam int id,
+            @RequestParam int personal, @RequestParam(required = false) String motivo, @RequestParam(required = false) String fecha,
+            @RequestParam(required = false) String tratamiento, @RequestParam(required = false) String horaEntrada,
+            @RequestParam(required = false) String horaSalida, @RequestParam(required = false) String observaciones,
+            @RequestParam(required = false) String insumos) throws SQLException {
+        EnfermeriaDao.DatosConsultaPersonal datos = datosConsultaPersonal(personal, motivo, fecha, tratamiento, horaEntrada,
+                horaSalida, observaciones);
+        if (!dao.editarConsultaPersonal(id, datos, cantidades(insumos))) throw error(HttpStatus.NOT_FOUND, "La consulta no existe");
+        return ok(Map.of("idConsulta", id));
+    }
+
+    @PostMapping("/personal_consulta_eliminar")
+    public Map<String, Object> personalConsultaEliminar(@RequestParam int id) throws SQLException {
+        if (!dao.eliminarConsultaPersonal(id)) throw error(HttpStatus.NOT_FOUND, "La consulta no existe");
+        return ok(Map.of("idConsulta", id));
+    }
+
+    @RequestMapping("/personal_consultas_reporte")
+    public Map<String, Object> personalConsultasReporte(@RequestParam String desde, @RequestParam String hasta,
+            @RequestParam(required = false) Integer personal, @RequestParam(required = false) String motivo) throws SQLException {
+        LocalDate d = fecha(desde, "desde");
+        LocalDate h = fecha(hasta, "hasta");
+        if (h.isBefore(d)) throw error(HttpStatus.UNPROCESSABLE_CONTENT, "'hasta' no puede ser anterior a 'desde'");
+        return ok(dao.reporteConsultasPersonal(d, h, personal, motivo == null || motivo.isBlank() ? null : motivo.trim()));
+    }
+
     // ---------------------------------------------------------------- Insumos y solicitudes
 
     @RequestMapping("/insumos")
@@ -276,6 +346,22 @@ public class EnfermeriaController {
 
     private EnfermeriaDao.DatosConsulta datosConsulta(int alumno, String motivo, String fecha, String tratamiento,
             String horaEntrada, String horaSalida, String observaciones) throws SQLException {
+        EnfermeriaDao.DatosConsulta d = camposConsulta(alumno, motivo, fecha, tratamiento, horaEntrada, horaSalida, observaciones);
+        if (!dao.existeAlumno(alumno)) throw error(HttpStatus.NOT_FOUND, "El alumno no existe");
+        return d;
+    }
+
+    private EnfermeriaDao.DatosConsultaPersonal datosConsultaPersonal(int personal, String motivo, String fecha, String tratamiento,
+            String horaEntrada, String horaSalida, String observaciones) throws SQLException {
+        EnfermeriaDao.DatosConsulta d = camposConsulta(personal, motivo, fecha, tratamiento, horaEntrada, horaSalida, observaciones);
+        if (!dao.existePersonal(personal)) throw error(HttpStatus.NOT_FOUND, "El funcionario no existe");
+        return new EnfermeriaDao.DatosConsultaPersonal(personal, d.motivo(), d.fecha(), d.tratamiento(), d.horaEntrada(),
+                d.horaSalida(), d.observaciones());
+    }
+
+    /** Valida los campos comunes a toda consulta; {@code id} va tal cual (alumno o funcionario). */
+    private static EnfermeriaDao.DatosConsulta camposConsulta(int id, String motivo, String fecha, String tratamiento,
+            String horaEntrada, String horaSalida, String observaciones) {
         String m = texto(motivo, "motivo", 150);
         if (m == null) throw error(HttpStatus.UNPROCESSABLE_CONTENT, "Falta el parámetro 'motivo'");
         if (fecha == null || fecha.isBlank()) throw error(HttpStatus.UNPROCESSABLE_CONTENT, "Falta el parámetro 'fecha'");
@@ -284,10 +370,8 @@ public class EnfermeriaController {
         if (entrada != null && salida != null && salida.isBefore(entrada)) {
             throw error(HttpStatus.UNPROCESSABLE_CONTENT, "'horaSalida' no puede ser anterior a 'horaEntrada'");
         }
-        EnfermeriaDao.DatosConsulta d = new EnfermeriaDao.DatosConsulta(alumno, m, fecha(fecha, "fecha"),
+        return new EnfermeriaDao.DatosConsulta(id, m, fecha(fecha, "fecha"),
                 texto(tratamiento, "tratamiento", 65_535), entrada, salida, texto(observaciones, "observaciones", 65_535));
-        if (!dao.existeAlumno(alumno)) throw error(HttpStatus.NOT_FOUND, "El alumno no existe");
-        return d;
     }
 
     private static LocalDate fecha(String valor, String campo) {
