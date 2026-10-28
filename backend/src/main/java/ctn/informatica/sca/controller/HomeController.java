@@ -23,10 +23,12 @@ import ctn.informatica.sca.dto.AssignFaltaCodigoRequest;
 import ctn.informatica.sca.dto.AlumnoDto;
 import ctn.informatica.sca.dto.AlumnoRiesgoDto;
 import ctn.informatica.sca.dto.AlumnosRiesgoResponse;
+import ctn.informatica.sca.dto.CargaHorariaDto;
 import ctn.informatica.sca.dto.CursoDto;
 import ctn.informatica.sca.dto.ClaseDadaDto;
 import ctn.informatica.sca.dto.CreateRasgoPlanillaRequest;
 import ctn.informatica.sca.dto.HomeGoogleClassroomCourseDto;
+import ctn.informatica.sca.dto.HoraCatedraDto;
 import ctn.informatica.sca.dto.HorarioBloqueHoyDto;
 import ctn.informatica.sca.dto.HomeMateriaDto;
 import ctn.informatica.sca.dto.HomeResponse;
@@ -493,6 +495,25 @@ public class HomeController {
                 alumnosInvalidos.stream().map(this::toAlumnoDto).collect(Collectors.toList()),
                 instrumentos.stream().map(this::toInstrumentoDto).collect(Collectors.toList())
         );
+    }
+
+    /** Horario semanal completo del profesor autenticado, con el catálogo de horas para dibujar la grilla. */
+    @GetMapping("/mi-horario")
+    @PreAuthorize("hasRole('LEVEL_1')")
+    public CargaHorariaDto miHorario(Authentication authentication) throws SQLException {
+        int usuarioId = ApiAuth.requireUserId(authentication);
+        Profesor profesor = profesorDao.findById(usuarioId);
+        String nombre = profesor == null ? null
+                : ctn.informatica.sca.util.NombreUtil.completo(profesor.getNombre(), profesor.getApellido());
+        List<HoraCatedraDto> catalogo = horaCatedraDao.findAll().stream()
+                .map(hora -> new HoraCatedraDto(
+                        hora.getId(),
+                        hora.getNumero(),
+                        hora.getEtiqueta(),
+                        hora.getHoraInicio() == null ? null : hora.getHoraInicio().toString(),
+                        hora.getHoraFin() == null ? null : hora.getHoraFin().toString()))
+                .toList();
+        return new CargaHorariaDto(usuarioId, nombre, catalogo, horarioSlotDao.findCargaByProfesor(usuarioId, null));
     }
 
     /**

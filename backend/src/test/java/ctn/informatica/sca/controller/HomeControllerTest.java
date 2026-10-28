@@ -33,6 +33,8 @@ import ctn.informatica.sca.dao.ProfesorDao;
 import ctn.informatica.sca.dao.QuejaDao;
 import ctn.informatica.sca.dao.RasgoPlanillaDao;
 import ctn.informatica.sca.dao.UserDao;
+import ctn.informatica.sca.dto.CargaHorariaDto;
+import ctn.informatica.sca.dto.CargaHorariaSlotDto;
 import ctn.informatica.sca.dto.CreateRasgoPlanillaRequest;
 import ctn.informatica.sca.dto.HorarioBloqueHoyDto;
 import ctn.informatica.sca.dto.SubmitRasgoAsistenciaRequest;
@@ -554,6 +556,32 @@ class HomeControllerTest {
                 horarioSlotDao, mock(HoraCatedraDao.class), UN_LUNES);
 
         assertEquals(List.of(), controller.miHorarioHoy(authentication(7)));
+    }
+
+    @Test
+    void miHorarioDevuelveLosSlotsDelProfesorYElCatalogoDeHoras() throws Exception {
+        HorarioSlotDao horarioSlotDao = mock(HorarioSlotDao.class);
+        HoraCatedraDao horaCatedraDao = mock(HoraCatedraDao.class);
+        ProfesorDao profesorDao = mock(ProfesorDao.class);
+        CargaHorariaSlotDto slot = new CargaHorariaSlotDto(1, 1, 4, 4, "08:45", "09:20", "Redes", false,
+                2, "Informática", 3, "A", null);
+        when(horarioSlotDao.findCargaByProfesor(7, null)).thenReturn(List.of(slot));
+        when(horaCatedraDao.findAll()).thenReturn(List.of(new HoraCatedra(4, 4, "M", LocalTime.of(8, 45), LocalTime.of(9, 20))));
+        when(profesorDao.findById(7)).thenReturn(null);
+
+        HomeController controller = new HomeController(
+                mock(CursoDao.class), mock(CursoBaseDao.class), mock(AsignacionDao.class), profesorDao,
+                mock(PlanillaDao.class), mock(MateriaDao.class), mock(AlumnoDao.class), mock(RasgoPlanillaDao.class),
+                mock(InstrumentoDao.class), mock(UserDao.class), mock(PlanCurricularDao.class),
+                mock(TemaVerificacionService.class), mock(ActivityLogService.class), mock(ConfiguracionSistemaDao.class),
+                mock(IncumplimientoRevisionDao.class), mock(NotificacionDao.class), mock(QuejaDao.class),
+                horarioSlotDao, horaCatedraDao, UN_LUNES);
+
+        CargaHorariaDto dto = controller.miHorario(authentication(7));
+
+        assertEquals(List.of(slot), dto.slots());
+        assertEquals(1, dto.catalogo().size());
+        assertEquals("08:45", dto.catalogo().get(0).horaInicio());
     }
 
     private HorarioSlot slotDeHoy(int id, int asignacionId, int usuarioId, String materia, String cursoDescripcion,

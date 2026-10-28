@@ -140,6 +140,82 @@ public class HorarioSlotDao extends conexion {
         return out;
     }
 
+    /** Horario semanal del profesor con materia común/específica; con especialidadId solo los cursos de esa especialidad. */
+    public List<ctn.informatica.sca.dto.CargaHorariaSlotDto> findCargaByProfesor(int usuarioId, Integer especialidadId) throws SQLException {
+        String sql = "SELECT hs.id, hs.dia_semana, hs.hora_catedra_id, hc.numero, "
+                + "TIME_FORMAT(hc.hora_inicio, '%H:%i') AS hora_inicio, TIME_FORMAT(hc.hora_fin, '%H:%i') AS hora_fin, "
+                + "m.nombre AS materia_nombre, m.categoria, e.id AS especialidad_id, e.nombre AS especialidad_nombre, "
+                + "cb.nivel, cb.seccion, s.nombre AS sala_nombre "
+                + "FROM horario_slot hs "
+                + "LEFT JOIN sala s ON s.id = hs.sala_id "
+                + "JOIN asignacion a ON a.id = hs.asignacion_id "
+                + "JOIN materia m ON m.id = a.materia_id "
+                + "JOIN curso_base cb ON cb.id = hs.curso_base_id "
+                + "JOIN especialidad e ON e.id = cb.especialidad_id "
+                + "JOIN hora_catedra hc ON hc.id = hs.hora_catedra_id "
+                + "WHERE hs.usuario_id = ? "
+                + (especialidadId == null ? "" : "AND cb.especialidad_id = ? ")
+                + "ORDER BY hs.dia_semana, hc.numero";
+        List<ctn.informatica.sca.dto.CargaHorariaSlotDto> out = new ArrayList<>();
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, usuarioId);
+            if (especialidadId != null) ps.setInt(2, especialidadId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    out.add(new ctn.informatica.sca.dto.CargaHorariaSlotDto(
+                            rs.getInt("id"),
+                            rs.getInt("dia_semana"),
+                            rs.getInt("hora_catedra_id"),
+                            rs.getObject("numero") == null ? null : rs.getInt("numero"),
+                            rs.getString("hora_inicio"),
+                            rs.getString("hora_fin"),
+                            rs.getString("materia_nombre"),
+                            "comun".equalsIgnoreCase(rs.getString("categoria")),
+                            rs.getInt("especialidad_id"),
+                            rs.getString("especialidad_nombre"),
+                            rs.getObject("nivel") == null ? null : rs.getInt("nivel"),
+                            rs.getString("seccion"),
+                            rs.getString("sala_nombre")));
+                }
+            }
+        }
+        return out;
+    }
+
+    /** Horas cátedra por profesor (total, comunes y específicas) y minutos reloj; opcionalmente acotado a una especialidad. */
+    public List<ctn.informatica.sca.dto.CargaHorariaProfesorDto> resumenCargaProfesores(Integer especialidadId) throws SQLException {
+        String sql = "SELECT u.id, u.nombre, u.apellido, COUNT(*) AS horas, "
+                + "SUM(CASE WHEN m.categoria = 'comun' THEN 1 ELSE 0 END) AS horas_comun, "
+                + "SUM(TIME_TO_SEC(TIMEDIFF(hc.hora_fin, hc.hora_inicio))) DIV 60 AS minutos "
+                + "FROM horario_slot hs "
+                + "JOIN usuario u ON u.id = hs.usuario_id "
+                + "JOIN asignacion a ON a.id = hs.asignacion_id "
+                + "JOIN materia m ON m.id = a.materia_id "
+                + "JOIN curso_base cb ON cb.id = hs.curso_base_id "
+                + "JOIN hora_catedra hc ON hc.id = hs.hora_catedra_id "
+                + (especialidadId == null ? "" : "WHERE cb.especialidad_id = ? ")
+                + "GROUP BY u.id, u.nombre, u.apellido "
+                + "ORDER BY u.apellido, u.nombre";
+        List<ctn.informatica.sca.dto.CargaHorariaProfesorDto> out = new ArrayList<>();
+        try (Connection c = getCon(); PreparedStatement ps = c.prepareStatement(sql)) {
+            if (especialidadId != null) ps.setInt(1, especialidadId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    int horas = rs.getInt("horas");
+                    int horasComun = rs.getInt("horas_comun");
+                    out.add(new ctn.informatica.sca.dto.CargaHorariaProfesorDto(
+                            rs.getInt("id"),
+                            buildFullName(rs.getString("apellido"), rs.getString("nombre")),
+                            horas,
+                            horasComun,
+                            horas - horasComun,
+                            rs.getInt("minutos")));
+                }
+            }
+        }
+        return out;
+    }
+
     public List<HorarioSlot> findByProfesorYDia(int usuarioId, int diaSemana) throws SQLException {
         String sql = "SELECT hs.id, hs.asignacion_id, hs.usuario_id, hs.curso_base_id AS curso_id, hs.dia_semana, hs.hora_catedra_id, hs.sala_id, s.nombre AS sala_nombre, "
                 + "m.nombre AS materia_nombre, e.nombre AS especialidad, cb.nivel, cb.seccion, "

@@ -10,6 +10,7 @@ import UsuariosPanel from './UsuariosPanel';
 import AsignacionesPanel from './AsignacionesPanel';
 import AlumnosPanel from './AlumnosPanel';
 import HorariosPanel from './HorariosPanel';
+import CargaHorariaPanel from './CargaHorariaPanel';
 import SistemaEstadoPanel from './SistemaEstadoPanel';
 import SalasPanel from './SalasPanel';
 import AdminQuejasPanel from './AdminQuejasPanel';
@@ -30,6 +31,7 @@ const modules = [
   { path: '/admin/asignaciones', key: 'asignaciones', title: 'Asignaciones', detail: 'Profesor, materia y curso', globalOnly: true },
   { path: '/admin/alumnos', key: 'alumnos', title: 'Alumnos', detail: 'Carga de estudiantes y gestión por sección' },
   { path: '/admin/horarios', key: 'horarios', title: 'Horarios', detail: 'Vista y descarga de horarios por especialidad' },
+  { path: '/admin/carga-horaria', key: 'carga-horaria', title: 'Carga horaria', detail: 'Horas y horario semanal de cada profesor' },
   { path: '/admin/sistema', key: 'sistema', title: 'Estado del sistema', detail: 'Salud de base de datos, migraciones y sincronización', globalOnly: true },
   { path: '/admin/salas', key: 'salas', title: 'Salas', detail: 'Catálogo de salas comunes y de pabellón', globalOnly: true },
   { path: '/admin/quejas', key: 'quejas', title: 'Quejas', detail: 'Registrar y gestionar quejas por especialidad' },
@@ -100,6 +102,7 @@ function AdminModule({ module, data, reload, status, isGlobalAdmin, fichaInicial
   if (module.key === 'asignaciones') return <AsignacionesPanel data={data} reload={reload} status={status} />;
   if (module.key === 'alumnos') return <AlumnosPanel data={data} reload={reload} status={status} fichaInicial={fichaInicial} onFichaCerrada={onFichaCerrada} />;
   if (module.key === 'horarios') return <HorariosPanel status={status} />;
+  if (module.key === 'carga-horaria') return <CargaHorariaPanel status={status} />;
   if (module.key === 'salas') return <SalasPanel data={data} status={status} />;
   if (module.key === 'quejas') return <AdminQuejasPanel data={data} status={status} isGlobalAdmin={isGlobalAdmin} />;
   if (module.key === 'clases') return <ClasesEspecialidadPanel status={status} />;

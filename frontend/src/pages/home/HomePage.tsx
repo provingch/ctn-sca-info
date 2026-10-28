@@ -16,6 +16,7 @@ import { useSpecialty } from '../../context/SpecialtyContext';
 import PlanCurricularView from './PlanCurricularView';
 import MisClasesView from './MisClasesView';
 import RsaView from './RsaView';
+import MiHorarioView from './MiHorarioView';
 import QuejaCursoView from './QuejaCursoView';
 import { useAuth } from '../../context/AuthContext';
 import { classEndTime, HORARIOS_CATEDRA } from './classFormUtils';
@@ -332,6 +333,8 @@ export default function HomePage() {
             <RsaView />
           ) : subview === 'quejas' ? (
             <QuejaCursoView />
+          ) : subview === 'mi-horario' ? (
+            <MiHorarioView />
           ) : claseModo === 'horario' ? (
             !bloque ? (
               <HorarioHoyView onElegir={elegirBloque} onOtraClase={() => cambiarModoClase('manual')} />
@@ -560,6 +563,7 @@ const CATEDRA_TABS = [
   { key: 'mis-clases', label: 'Clases dadas' },
   { key: 'rsa', label: 'RSA' },
   { key: 'quejas', label: 'Quejas' },
+  { key: 'mi-horario', label: 'Mi horario' },
 ] as const;
 
 function CatedraTabs({ subview, params }: { subview: string; params: (next: Record<string, string>) => void }) {

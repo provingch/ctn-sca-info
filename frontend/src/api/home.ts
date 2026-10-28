@@ -8,6 +8,7 @@
  * requieran, para no mantener un tipo gigante desactualizado a mano.
  */
 import { apiRequest } from './client';
+import type { CargaHorariaItem } from './admin';
 
 export interface CodigoConducta {
   id: number;
@@ -124,6 +125,10 @@ export interface HorarioBloqueHoyDto {
   horaFin: string;
   horasCatedra: number;
   registrada: boolean;
+}
+
+export function getMiHorario(): Promise<CargaHorariaItem> {
+  return apiRequest<CargaHorariaItem>('/api/home/mi-horario', { method: 'GET' });
 }
 
 export function getMiHorarioHoy(): Promise<HorarioBloqueHoyDto[]> {

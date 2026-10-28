@@ -9,6 +9,7 @@ export const launcherIcons = {
   usuarios: icon(<><circle cx="9" cy="8" r="3" /><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 5" /></>),
   asignaciones: icon(<><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /><path d="M10 6h7v5m-3-3 3 3 3-3M6 10v7h5m-3-3 3 3-3 3" /></>),
   alumnos: icon(<><path d="m2 8 10-5 10 5-10 5-10-5Zm4 3v6c4 3 8 3 12 0v-6M22 8v8" /></>),
+  'carga-horaria': icon(<><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>),
   horarios: icon(<><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M7 3v4m10-4v4M3 11h18M7 15h3m4 0h3M7 18h3" /></>),
   sistema: icon(<><rect x="3" y="4" width="18" height="15" rx="2" /><path d="M7 22h10M12 19v3M5 12h4l2-5 3 9 2-4h3" /></>),
   salas: icon(<><path d="M4 21h16M6 21V3h12v18M9 7h6M9 11h6M9 21v-6h6v6" /></>),

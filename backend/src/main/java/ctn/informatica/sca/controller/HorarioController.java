@@ -6,6 +6,9 @@ import ctn.informatica.sca.dao.EspecialidadDao;
 import ctn.informatica.sca.dao.HoraCatedraDao;
 import ctn.informatica.sca.dao.HorarioSlotDao;
 import ctn.informatica.sca.dao.SalaDao;
+import ctn.informatica.sca.dto.CargaHorariaDto;
+import ctn.informatica.sca.dto.CargaHorariaProfesorDto;
+import ctn.informatica.sca.dto.CargaHorariaSlotDto;
 import ctn.informatica.sca.dto.CreateHorarioSlotRequest;
 import ctn.informatica.sca.dto.HoraCatedraDto;
 import ctn.informatica.sca.dto.HorarioSlotDto;
@@ -56,6 +59,39 @@ public class HorarioController {
                     .toList();
         } catch (Exception ex) {
             throw failure("No se pudo cargar el catálogo de horas cátedra", ex);
+        }
+    }
+
+    @GetMapping("/carga")
+    public List<CargaHorariaProfesorDto> cargaProfesores(Authentication auth) {
+        ApiAuth.requireUserId(auth);
+        try {
+            return new HorarioSlotDao().resumenCargaProfesores(resolveCurrentSpecialtyAdminId(auth));
+        } catch (Exception ex) {
+            throw failure("No se pudo cargar la carga horaria de los profesores", ex);
+        }
+    }
+
+    @GetMapping("/carga/{usuarioId}")
+    public CargaHorariaDto cargaProfesor(@PathVariable int usuarioId, Authentication auth) {
+        ApiAuth.requireUserId(auth);
+        try {
+            var profesor = new ctn.informatica.sca.dao.ProfesorDao().findById(usuarioId);
+            if (profesor == null) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Profesor no encontrado");
+            }
+            List<CargaHorariaSlotDto> slots = new HorarioSlotDao()
+                    .findCargaByProfesor(usuarioId, resolveCurrentSpecialtyAdminId(auth));
+            List<HoraCatedraDto> catalogo = new HoraCatedraDao().findAll().stream()
+                    .map(this::toHoraCatedraDto)
+                    .toList();
+            return new CargaHorariaDto(usuarioId,
+                    ctn.informatica.sca.util.NombreUtil.completo(profesor.getNombre(), profesor.getApellido()),
+                    catalogo, slots);
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw failure("No se pudo cargar el horario del profesor", ex);
         }
     }
 

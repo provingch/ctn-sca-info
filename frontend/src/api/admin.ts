@@ -83,6 +83,38 @@ export interface HoraCatedraItem {
   horaFin: string;
 }
 
+export interface CargaHorariaSlotItem {
+  id: number;
+  diaSemana: number;
+  horaCatedraId: number;
+  horaCatedraNumero: number | null;
+  horaInicio: string;
+  horaFin: string;
+  materiaNombre: string;
+  comun: boolean;
+  especialidadId: number | null;
+  especialidadNombre: string | null;
+  cursoNivel: number | null;
+  cursoSeccion: string | null;
+  salaNombre: string | null;
+}
+
+export interface CargaHorariaProfesorItem {
+  usuarioId: number;
+  profesorNombre: string;
+  horas: number;
+  horasComun: number;
+  horasEspecificas: number;
+  minutos: number;
+}
+
+export interface CargaHorariaItem {
+  usuarioId: number;
+  profesorNombre: string | null;
+  catalogo: HoraCatedraItem[];
+  slots: CargaHorariaSlotItem[];
+}
+
 export interface HorarioSlotItem {
   id: number;
   asignacionId: number;
@@ -176,6 +208,8 @@ export const createHorarioSlot = (asignacionId: number, payload: { diaSemana: nu
 export const deleteHorarioSlot = (id: number) => adminRequest(() => api.delete<void>(`/api/admin/horario/slots/${id}`));
 export const downloadHorarioCursoPdf = (cursoId: number) => adminRequest(() => apiDownload(`/api/admin/horario/export/pdf?cursoId=${cursoId}`, `horario-curso-${cursoId}.pdf`));
 export const downloadHorarioEspecialidadPdf = (especialidadId: number) => adminRequest(() => apiDownload(`/api/admin/horario/export/especialidad?especialidadId=${especialidadId}`, `horario-especialidad-${especialidadId}.pdf`));
+export const getCargaHoraria = () => adminRequest(() => api.get<CargaHorariaProfesorItem[]>('/api/admin/horario/carga'));
+export const getCargaHorariaProfesor = (usuarioId: number) => adminRequest(() => api.get<CargaHorariaItem>(`/api/admin/horario/carga/${usuarioId}`));
 export const getHorarioResumen = () => adminRequest(() => api.get<HorarioResumenCursoItem[]>('/api/admin/horario/resumen'));
 export const previewHorarioImport = (cursoId: number, file: File) => { const form = new FormData(); form.append('file', file); return adminRequest(() => api.post<HorarioImportRowItem[]>(`/api/admin/horario/import/preview?cursoId=${cursoId}`, form)); };
 export const confirmHorarioImport = (cursoId: number, file: File) => { const form = new FormData(); form.append('file', file); return adminRequest(() => api.post<HorarioImportResponse>(`/api/admin/horario/import/confirm?cursoId=${cursoId}`, form)); };

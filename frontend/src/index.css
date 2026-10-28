@@ -939,6 +939,20 @@ h1, h2, h3 { color: var(--ink); font-family: Inter, Aptos Display, system-ui, sa
 .schedule-course-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(310px, .9fr); gap: 16px; align-items: start; }
 .schedule-course-panel, .schedule-course-sidebar { display: grid; gap: 14px; }
 .schedule-course-preview-wrap { overflow: auto; }
+.schedule-course-grid td.carga-cell { padding: 0; }
+.carga-slot { height: 100%; min-height: 56px; padding: 8px 10px; }
+.carga-slot small { display: block; margin-top: 4px; font-size: var(--fs-xs); }
+.carga-slot-comun { background: color-mix(in srgb, var(--muted) 18%, var(--paper)); border-left: 4px solid var(--muted); }
+.carga-slot-especifica { background: var(--accent-strong); border-left: 4px solid var(--accent); }
+.carga-horaria { display: grid; gap: 14px; }
+.carga-summary { display: flex; flex-wrap: wrap; gap: 12px; }
+.carga-summary > div { display: grid; gap: 2px; padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--paper-raised); }
+.carga-summary span { font-size: var(--fs-xs); color: var(--muted); font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+.carga-summary strong { font-size: 1.25rem; }
+.carga-chips, .carga-legend { display: flex; flex-wrap: wrap; gap: 10px; list-style: none; margin: 0; padding: 0; font-size: var(--fs-sm); }
+.carga-chips li, .carga-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.carga-swatch { width: 12px; height: 12px; border-radius: 2px; background: var(--accent); flex: none; }
+.carga-swatch-comun { background: var(--muted); }
 .schedule-course-grid { min-width: 900px; }
 .schedule-course-grid th, .schedule-course-grid td { border: 1px solid var(--line); }
 .schedule-course-grid td { min-width: 140px; vertical-align: top; }
