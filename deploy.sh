@@ -699,6 +699,31 @@ configure_nginx() {
     fi
   fi
 
+  local core_sync_allowed_ip="${CORE_SYNC_ALLOWED_IP:-$(read_env_file_value 'CORE_SYNC_ALLOWED_IP')}"
+  local core_sync_location
+  if [[ -n "$core_sync_allowed_ip" ]]; then
+    if [[ ! "$core_sync_allowed_ip" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}(/[0-9]{1,2})?$ ]]; then
+      log_err "CORE_SYNC_ALLOWED_IP debe ser una IPv4 o rango CIDR IPv4; configurá una dirección de la red privada."
+      return 1
+    fi
+    core_sync_location="location = /api/internal/core/snapshot {
+        allow ${core_sync_allowed_ip};
+        deny all;
+        proxy_pass http://127.0.0.1:${APP_PORT};
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_read_timeout 60;
+    }"
+  else
+    core_sync_location="location = /api/internal/core/snapshot {
+        deny all;
+        return 403;
+    }"
+    log_warn "CORE_SYNC_ALLOWED_IP no está configurado; el endpoint de exportación del Core queda bloqueado en nginx."
+  fi
+
   local server_block tmpfile existing
   tmpfile="$(mktemp)"
   cat > "$tmpfile" <<NGINXCONF
@@ -708,6 +733,8 @@ server {
 
     # Default de nginx = 1 MB: corta las fotos de /api/anotaciones (hasta 5 MB) con un 413 HTML.
     client_max_body_size 6m;
+
+    ${core_sync_location}
 
     location / {
         proxy_pass http://127.0.0.1:${APP_PORT};

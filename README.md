@@ -161,6 +161,15 @@ Para una instalación nueva, ejecutar `database/db-tables-properties.sql` (esque
 | `SCA_LOAD_DEMO_DATA`                                                    | Si es`true`, carga datos de demostración al iniciar           | `false`                                                               |
 | `ANOTACIONES_API_KEY`                                                   | Clave fija (`X-API-Key`) de la app Android de anotaciones        | —*(sin ella, `/api/anotaciones/**` responde 503)*                     |
 | `ENFERMERIA_API_KEY`                                                    | Clave fija (`X-API-Key`) del sistema de enfermería SHME          | —*(sin ella, `/api/enfermeria/**` responde 503)*                      |
+| `CORE_SYNC_API_KEY`                                                     | Clave compartida con ctnapi para exportar una instantánea del Core escolar | —*(sin ella, la exportación responde 503)*                    |
+| `CORE_SYNC_ALLOWED_IP`                                                  | IP/CIDR privada de ctnapi permitida en nginx para la exportación | —*(sin ella, nginx bloquea el endpoint)*                             |
+
+`GET /api/internal/core/snapshot` exporta únicamente datos escolares compartidos (sin contraseñas, tokens ni
+identificadores OAuth) para la sincronización unidireccional SCA → ctnapi. Es un endpoint interno: usar una clave
+aleatoria de al menos 32 caracteres, configurar `CORE_SYNC_ALLOWED_IP` con la IP privada de ctnapi y limitar también
+el acceso al puerto de la aplicación mediante firewall. Las apps UCTN y SHME siguen usando las APIs actuales de SCA.
+Guardar ambas variables en `/etc/ctn-sca-info-backend.env` (o en el `DB_ENV_FILE` configurado), reiniciar el servicio
+de SCA y volver a generar/probar nginx para que tome la regla de IP.
 
 ### PWA y notificaciones push
 

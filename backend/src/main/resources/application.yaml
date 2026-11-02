@@ -31,6 +31,8 @@ google:
   redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:8081/api/google/oauth/callback}
 
 sca:
+  core-sync:
+    api-key: ${CORE_SYNC_API_KEY:} # vacío = exportación privada del Core deshabilitada (503)
   demo-data:
     enabled: ${SCA_LOAD_DEMO_DATA:false}
   activity-logs:
