@@ -181,7 +181,7 @@ public class AdminController {
             egresadosDb = egresadosDb.stream().filter(a -> canAccessAlumno(actingSpecialtyId, a.getCursoId())).toList();
         }
         List<StudentItem> alumnos = activosDb.stream()
-                .map(a -> new StudentItem(a.getId(), a.getNombre(), a.getApellido(), a.getCursoId(), a.getCi()))
+                .map(a -> new StudentItem(a.getId(), a.getNombre(), a.getApellido(), a.getCursoId(), a.getCi(), a.getEmail(), a.getTelefono()))
                 .toList();
         List<EgresadoItem> egresados = egresadosDb.stream()
                 .map(a -> new EgresadoItem(a.getId(), a.getNombre(), a.getApellido(), a.getCi(), a.getEspecialidadNombre(), a.getPromocion()))
