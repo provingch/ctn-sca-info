@@ -174,8 +174,8 @@ public class AlumnoDao extends conexion {
             ps.setString(2, nombre);
             ps.setString(3, apellido);
             ps.setInt(4, cursoId);
-            ps.setString(5, email != null ? email : "");
-            ps.setString(6, telefono != null ? telefono : "");
+            ps.setString(5, blankToNull(email));
+            ps.setString(6, blankToNull(telefono));
             int affected = ps.executeUpdate();
             if (affected == 0) {
                 return 0;
@@ -193,6 +193,9 @@ public class AlumnoDao extends conexion {
      * Actualiza los datos del alumno. Si cambia de curso (traslado de especialidad o de sección) deja
      * una fila en {@code alumno_curso_historial}, en la misma transacción, para que las planillas del
      * curso viejo y la vista de padres sepan a dónde fue y desde cuándo.
+     *
+     * <p>{@code email}/{@code telefono} en {@code null} conservan el valor actual (el frontend todavía
+     * no los manda, y editar o trasladar un alumno no debe borrarlos); en blanco los limpian.
      */
     public boolean update(int alumnoId, String nombre, String apellido, int cursoId, String ci, String email, String telefono, Integer usuarioId) throws SQLException {
         try (Connection con = getCon()) {
@@ -206,7 +209,8 @@ public class AlumnoDao extends conexion {
                         cursoAnterior = rs.getInt("curso_id");
                     }
                 }
-                try (PreparedStatement ps = con.prepareStatement("UPDATE alumno SET ci = ?, nombre = ?, apellido = ?, curso_id = ?, email = ?, telefono = ? WHERE id = ?")) {
+                try (PreparedStatement ps = con.prepareStatement("UPDATE alumno SET ci = ?, nombre = ?, apellido = ?, curso_id = ?, "
+                        + "email = CASE WHEN ? THEN email ELSE ? END, telefono = CASE WHEN ? THEN telefono ELSE ? END WHERE id = ?")) {
                     if (ci == null || ci.isBlank()) {
                         ps.setNull(1, java.sql.Types.VARCHAR);
                     } else {
@@ -215,9 +219,11 @@ public class AlumnoDao extends conexion {
                     ps.setString(2, nombre);
                     ps.setString(3, apellido);
                     ps.setInt(4, cursoId);
-                    ps.setString(5, email != null ? email : "");
-                    ps.setString(6, telefono != null ? telefono : "");
-                    ps.setInt(7, alumnoId);
+                    ps.setBoolean(5, email == null);
+                    ps.setString(6, blankToNull(email));
+                    ps.setBoolean(7, telefono == null);
+                    ps.setString(8, blankToNull(telefono));
+                    ps.setInt(9, alumnoId);
                     ps.executeUpdate();
                 }
                 if (cursoAnterior != cursoId) {
@@ -241,8 +247,16 @@ public class AlumnoDao extends conexion {
         }
     }
 
+    public boolean update(int alumnoId, String nombre, String apellido, int cursoId, String ci, Integer usuarioId) throws SQLException {
+        return update(alumnoId, nombre, apellido, cursoId, ci, null, null, usuarioId);
+    }
+
     public boolean update(int alumnoId, String nombre, String apellido, int cursoId, String ci) throws SQLException {
-        return update(alumnoId, nombre, apellido, cursoId, ci, null, null);
+        return update(alumnoId, nombre, apellido, cursoId, ci, null, null, null);
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     public boolean updateGoogleIdentity(int alumnoId, String googleUserId, String googleEmail) throws SQLException {
