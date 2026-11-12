@@ -55,6 +55,8 @@ export default function AlumnoFicha({ alumno, curso, onClose, onEditar }: {
     <div className="ficha-alumno">
       <dl className="ficha-alumno-datos">
         <div><dt>Cédula</dt><dd>{alumno.ci ?? '—'}</dd></div>
+        <div><dt>Correo</dt><dd>{alumno.email ? <a href={`mailto:${alumno.email}`}>{alumno.email}</a> : '—'}</dd></div>
+        <div><dt>Teléfono</dt><dd>{alumno.telefono ? <a href={`tel:${alumno.telefono}`}>{alumno.telefono}</a> : '—'}</dd></div>
         <div><dt>Especialidad</dt><dd>{curso?.especialidad ?? '—'}</dd></div>
         <div><dt>Curso</dt><dd>{curso ? `${curso.nivel}° ${curso.seccion}` : '—'}</dd></div>
       </dl>

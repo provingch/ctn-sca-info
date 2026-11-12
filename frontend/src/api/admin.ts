@@ -52,6 +52,8 @@ export interface StudentItem {
   apellido: string;
   cursoId: number;
   ci: string | null;
+  email: string | null;
+  telefono: string | null;
 }
 
 export interface CourseItem {

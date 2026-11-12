@@ -42,7 +42,7 @@ export default function AlumnosPanel({ data, reload, status, fichaInicial = null
   const [padres, setPadres] = useState<PadreSummary[]>([]);
   const [padresSearch, setPadresSearch] = useState('');
   const [padresResults, setPadresResults] = useState<PadreSummary[]>([]);
-  const [form, setForm] = useState({ nombre: '', apellido: '', ci: '', cursoId: '' });
+  const [form, setForm] = useState({ nombre: '', apellido: '', ci: '', email: '', telefono: '', cursoId: '' });
   const [fichaId, setFichaId] = useState<number | null>(fichaInicial);
   const [cursoDestino, setCursoDestino] = useState('');
   const [enLote, setEnLote] = useState(false);
@@ -97,7 +97,7 @@ export default function AlumnosPanel({ data, reload, status, fichaInicial = null
 
   const openCreate = () => {
     setEditingId(null);
-    setForm({ nombre: '', apellido: '', ci: '', cursoId: currentCurso ? String(currentCurso.id) : '' });
+    setForm({ nombre: '', apellido: '', ci: '', email: '', telefono: '', cursoId: currentCurso ? String(currentCurso.id) : '' });
     setPadres([]);
     setPadresSearch('');
     setPadresResults([]);
@@ -124,6 +124,8 @@ export default function AlumnosPanel({ data, reload, status, fichaInicial = null
       nombre: student.nombre,
       apellido: student.apellido,
       ci: String(student.ci ?? ''),
+      email: student.email ?? '',
+      telefono: student.telefono ?? '',
       cursoId: String(student.cursoId),
     });
     setPadres([]);
@@ -139,6 +141,9 @@ export default function AlumnosPanel({ data, reload, status, fichaInicial = null
       nombre: form.nombre.trim(),
       apellido: form.apellido.trim(),
       ci: form.ci.trim() || null,
+      // Vacío ('') limpia el dato; el backend lo guarda como NULL.
+      email: form.email.trim(),
+      telefono: form.telefono.trim(),
       cursoId: Number(form.cursoId || currentCurso?.id || 0),
     };
 
@@ -318,7 +323,7 @@ export default function AlumnosPanel({ data, reload, status, fichaInicial = null
             </div>
           </header>
           <FiltersToolbar ariaLabel="Filtros de alumnos" mostrando={filtrados.length} total={data.alumnos.length} unidad="alumnos" activo={hayFiltroAlumnos} onLimpiar={limpiarFiltros}>
-            <FilterField label="Buscar alumno"><input type="search" placeholder="Apellido, nombre o cédula" value={busquedaAlumnos} onChange={(event) => { setBusquedaAlumnos(event.target.value); setPagina(1); }} /></FilterField>
+            <FilterField label="Buscar alumno"><input type="search" placeholder="Apellido, nombre, cédula, correo o teléfono" value={busquedaAlumnos} onChange={(event) => { setBusquedaAlumnos(event.target.value); setPagina(1); }} /></FilterField>
             {especialidades.length > 1 && <FilterField label="Especialidad" narrow><AnimatedSelect ariaLabel="Filtrar por especialidad" value={filtroEspecialidad} onChange={(value) => { setFiltroEspecialidad(value); setFiltroNivel(''); setFiltroSeccion(''); setPagina(1); }} options={[{ value: '', label: 'Todas' }, ...especialidades.map((nombre) => ({ value: nombre, label: nombre }))]} /></FilterField>}
             <FilterField label="Curso" narrow><AnimatedSelect ariaLabel="Filtrar por curso" value={filtroNivel} onChange={(value) => { setFiltroNivel(value); setFiltroSeccion(''); setPagina(1); }} options={[{ value: '', label: 'Todos' }, ...niveles.map((nivel) => ({ value: String(nivel), label: `${nivel}°` }))]} /></FilterField>
             <FilterField label="Sección" narrow><AnimatedSelect ariaLabel="Filtrar por sección" value={filtroSeccion} onChange={(value) => { setFiltroSeccion(value); setPagina(1); }} options={[{ value: '', label: 'Todas' }, ...secciones.map((seccion) => ({ value: seccion, label: seccion }))]} /></FilterField>
@@ -340,14 +345,15 @@ export default function AlumnosPanel({ data, reload, status, fichaInicial = null
                   <th scope="col">Alumno</th>
                   <th scope="col">Curso</th>
                   <th scope="col">Cédula</th>
+                  <th scope="col">Contacto</th>
                   <th scope="col" className="col-actions"><span className="visually-hidden">Acciones</span></th>
                 </tr>
               </thead>
               <tbody>
                 {data.alumnos.length === 0 ? (
-                  <tr><td colSpan={5}><strong>Todavía no hay alumnos</strong>Agregá el primero con "Agregar alumno".</td></tr>
+                  <tr><td colSpan={6}><strong>Todavía no hay alumnos</strong>Agregá el primero con "Agregar alumno".</td></tr>
                 ) : rowsVisibles.length === 0 ? (
-                  <tr><td colSpan={5}>Ningún alumno coincide con los filtros.</td></tr>
+                  <tr><td colSpan={6}>Ningún alumno coincide con los filtros.</td></tr>
                 ) : (
                   rowsVisibles.map((student) => {
                     const course = cursoPorId.get(student.cursoId);
@@ -357,6 +363,14 @@ export default function AlumnosPanel({ data, reload, status, fichaInicial = null
                         <th scope="row"><button type="button" className="link-button" onClick={() => setFichaId(student.id)}>{student.apellido}, {student.nombre}</button></th>
                         <td data-label="Curso">{course ? <span className="cell-curso"><SpecialtyBadge name={course.especialidad} /><span>{course.nivel}° {course.seccion}</span></span> : '—'}</td>
                         <td className="cell-muted" data-label="Cédula">{student.ci ?? '—'}</td>
+                        <td className="cell-muted" data-label="Contacto">
+                          {student.email || student.telefono ? (
+                            <span className="u-stack">
+                              {student.email && <span>{student.email}</span>}
+                              {student.telefono && <span>{student.telefono}</span>}
+                            </span>
+                          ) : '—'}
+                        </td>
                         <td className="col-actions">
                           <div className="row-actions">
                             <button type="button" className="button secondary" aria-label={`Ver ficha de ${student.apellido}, ${student.nombre}`} onClick={() => setFichaId(student.id)}>Ficha</button>
@@ -408,6 +422,14 @@ export default function AlumnosPanel({ data, reload, status, fichaInicial = null
             <label>
               Cédula
               <input value={form.ci} onChange={(event) => setForm({ ...form, ci: event.target.value })} />
+            </label>
+            <label>
+              Correo
+              <input type="email" maxLength={150} autoComplete="off" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
+            </label>
+            <label>
+              Teléfono
+              <input type="tel" maxLength={30} autoComplete="off" value={form.telefono} onChange={(event) => setForm({ ...form, telefono: event.target.value })} />
             </label>
             {/* Al crear desde una sección el curso queda fijo; al editar se puede cambiar (traslado de sección o especialidad). */}
             {currentCurso && !editingId ? (

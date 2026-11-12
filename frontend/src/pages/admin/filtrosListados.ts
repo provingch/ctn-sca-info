@@ -42,7 +42,7 @@ export function filtrarQuejas(quejas: QuejaItem[], filtro: FiltroQuejas, textoDe
 }
 
 export function filtrarAlumnos(alumnos: StudentItem[], busqueda: string): StudentItem[] {
-  return alumnos.filter((alumno) => coincideBusqueda(busqueda, alumno.apellido, alumno.nombre, alumno.ci));
+  return alumnos.filter((alumno) => coincideBusqueda(busqueda, alumno.apellido, alumno.nombre, alumno.ci, alumno.email, alumno.telefono));
 }
 
 export interface FiltroEgresados {
