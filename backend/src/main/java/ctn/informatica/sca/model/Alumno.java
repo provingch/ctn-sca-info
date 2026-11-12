@@ -8,6 +8,8 @@ public class Alumno {
     private int cursoId;
     private String googleUserId;
     private String googleEmail;
+    private String email;
+    private String telefono;
     private String especialidadNombre;
     private Integer promocion;
 
@@ -66,6 +68,22 @@ public class Alumno {
 
     public void setGoogleEmail(String googleEmail) {
         this.googleEmail = googleEmail;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getTelefono() {
+        return telefono;
+    }
+
+    public void setTelefono(String telefono) {
+        this.telefono = telefono;
     }
 
     public String getEspecialidadNombre() { return especialidadNombre; }

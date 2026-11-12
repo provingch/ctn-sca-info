@@ -46,9 +46,10 @@ public class CoreSnapshotDao extends conexion {
                                         rs.getString("apellido"), nullableInt(rs, "ci"), rs.getString("telefono"),
                                         rs.getString("celular"), rs.getString("correo"), rs.getInt("nivel"),
                                         nullableInt(rs, "especialidad_id"))),
-                        query(con, "SELECT id, ci, nombre, apellido, curso_id FROM alumno ORDER BY id",
+                        query(con, "SELECT id, ci, nombre, apellido, curso_id, email, telefono FROM alumno ORDER BY id",
                                 rs -> new CoreSnapshot.Alumno(rs.getInt("id"), rs.getString("ci"),
-                                        rs.getString("nombre"), rs.getString("apellido"), rs.getInt("curso_id"))),
+                                        rs.getString("nombre"), rs.getString("apellido"), rs.getInt("curso_id"),
+                                        rs.getString("email"), rs.getString("telefono"))),
                         query(con, "SELECT alumno_id, usuario_id, parentesco FROM alumno_usuario "
                                         + "ORDER BY alumno_id, usuario_id",
                                 rs -> new CoreSnapshot.VinculoFamiliar(rs.getInt("alumno_id"),

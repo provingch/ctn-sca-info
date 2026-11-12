@@ -26,7 +26,7 @@ public record CoreSnapshot(
     public record Perfil(
             int id, String nombre, String apellido, Integer ci, String telefono, String celular, String correo,
             int nivel, Integer especialidadId) {}
-    public record Alumno(int id, String ci, String nombre, String apellido, int cursoId) {}
+    public record Alumno(int id, String ci, String nombre, String apellido, int cursoId, String email, String telefono) {}
     public record VinculoFamiliar(int alumnoId, int perfilId, String parentesco) {}
     public record HistorialCurso(
             int id, int alumnoId, int cursoAnteriorId, int cursoNuevoId, LocalDateTime fecha, Integer perfilId) {}

@@ -23,7 +23,7 @@ public class AlumnoDao extends conexion {
      * egresado no aparece acá — se lo consulta con {@link #findAllEgresados()}.
      */
     public List<Alumno> findAllActivos() throws SQLException {
-        String sql = "SELECT a.id, a.ci, a.nombre, a.apellido, a.curso_id "
+        String sql = "SELECT a.id, a.ci, a.nombre, a.apellido, a.curso_id, a.email, a.telefono "
                 + "FROM alumno a JOIN curso c ON c.id = a.curso_id "
                 + "WHERE c.promocion >= ? "
                 + "ORDER BY a.apellido, a.nombre";
@@ -38,6 +38,8 @@ public class AlumnoDao extends conexion {
                     alumno.setNombre(rs.getString("nombre"));
                     alumno.setApellido(rs.getString("apellido"));
                     alumno.setCursoId(rs.getInt("curso_id"));
+                    alumno.setEmail(rs.getString("email"));
+                    alumno.setTelefono(rs.getString("telefono"));
                     alumnos.add(alumno);
                 }
             }
@@ -52,7 +54,7 @@ public class AlumnoDao extends conexion {
      * podría resolverlas. Solo lectura: registro histórico.
      */
     public List<Alumno> findAllEgresados() throws SQLException {
-        String sql = "SELECT a.id, a.ci, a.nombre, a.apellido, a.curso_id, "
+        String sql = "SELECT a.id, a.ci, a.nombre, a.apellido, a.curso_id, a.email, a.telefono, "
                 + "e.nombre AS especialidad_nombre, c.promocion "
                 + "FROM alumno a JOIN curso c ON c.id = a.curso_id "
                 + "JOIN especialidad e ON e.id = c.especialidad_id "
@@ -69,6 +71,8 @@ public class AlumnoDao extends conexion {
                     alumno.setNombre(rs.getString("nombre"));
                     alumno.setApellido(rs.getString("apellido"));
                     alumno.setCursoId(rs.getInt("curso_id"));
+                    alumno.setEmail(rs.getString("email"));
+                    alumno.setTelefono(rs.getString("telefono"));
                     alumno.setEspecialidadNombre(rs.getString("especialidad_nombre"));
                     alumno.setPromocion(rs.getObject("promocion") == null ? null : rs.getInt("promocion"));
                     alumnos.add(alumno);
@@ -79,7 +83,7 @@ public class AlumnoDao extends conexion {
     }
 
     public Alumno findById(int id) throws SQLException {
-        String sql = "SELECT id, ci, nombre, apellido, curso_id FROM alumno WHERE id = ?";
+        String sql = "SELECT id, ci, nombre, apellido, curso_id, email, telefono FROM alumno WHERE id = ?";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
@@ -90,6 +94,8 @@ public class AlumnoDao extends conexion {
                     alumno.setNombre(rs.getString("nombre"));
                     alumno.setApellido(rs.getString("apellido"));
                     alumno.setCursoId(rs.getInt("curso_id"));
+                    alumno.setEmail(rs.getString("email"));
+                    alumno.setTelefono(rs.getString("telefono"));
                     return alumno;
                 }
             }
@@ -98,7 +104,7 @@ public class AlumnoDao extends conexion {
     }
 
     public List<Alumno> findByCursoId(int cursoId) throws SQLException {
-        String sql = "SELECT id, nombre, apellido, curso_id, google_email FROM alumno WHERE curso_id = ? ORDER BY apellido, nombre";
+        String sql = "SELECT id, nombre, apellido, curso_id, google_email, email, telefono FROM alumno WHERE curso_id = ? ORDER BY apellido, nombre";
         List<Alumno> alumnos = new ArrayList<>();
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, cursoId);
@@ -110,6 +116,8 @@ public class AlumnoDao extends conexion {
                     alumno.setApellido(rs.getString("apellido"));
                     alumno.setCursoId(rs.getInt("curso_id"));
                     alumno.setGoogleEmail(rs.getString("google_email"));
+                    alumno.setEmail(rs.getString("email"));
+                    alumno.setTelefono(rs.getString("telefono"));
                     alumnos.add(alumno);
                 }
             }
@@ -118,7 +126,7 @@ public class AlumnoDao extends conexion {
     }
 
     public List<Alumno> findByEspecialidadId(int especialidadId) throws SQLException {
-        String sql = "SELECT a.id, a.nombre, a.apellido, a.curso_id, a.google_user_id, a.google_email "
+        String sql = "SELECT a.id, a.nombre, a.apellido, a.curso_id, a.google_user_id, a.google_email, a.email, a.telefono "
                 + "FROM alumno a INNER JOIN curso c ON c.id = a.curso_id "
                 + "WHERE c.especialidad_id = ? ORDER BY a.apellido, a.nombre";
         List<Alumno> alumnos = new ArrayList<>();
@@ -133,6 +141,8 @@ public class AlumnoDao extends conexion {
                     alumno.setCursoId(rs.getInt("curso_id"));
                     alumno.setGoogleUserId(rs.getString("google_user_id"));
                     alumno.setGoogleEmail(rs.getString("google_email"));
+                    alumno.setEmail(rs.getString("email"));
+                    alumno.setTelefono(rs.getString("telefono"));
                     alumnos.add(alumno);
                 }
             }
@@ -153,8 +163,8 @@ public class AlumnoDao extends conexion {
         return 0;
     }
 
-    public int create(String nombre, String apellido, int cursoId, String ci) throws SQLException {
-        String sql = "INSERT INTO alumno (ci, nombre, apellido, curso_id) VALUES (?, ?, ?, ?)";
+    public int create(String nombre, String apellido, int cursoId, String ci, String email, String telefono) throws SQLException {
+        String sql = "INSERT INTO alumno (ci, nombre, apellido, curso_id, email, telefono) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection con = getCon(); PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             if (ci == null || ci.isBlank()) {
                 ps.setNull(1, java.sql.Types.VARCHAR);
@@ -164,6 +174,8 @@ public class AlumnoDao extends conexion {
             ps.setString(2, nombre);
             ps.setString(3, apellido);
             ps.setInt(4, cursoId);
+            ps.setString(5, email != null ? email : "");
+            ps.setString(6, telefono != null ? telefono : "");
             int affected = ps.executeUpdate();
             if (affected == 0) {
                 return 0;
@@ -182,7 +194,7 @@ public class AlumnoDao extends conexion {
      * una fila en {@code alumno_curso_historial}, en la misma transacción, para que las planillas del
      * curso viejo y la vista de padres sepan a dónde fue y desde cuándo.
      */
-    public boolean update(int alumnoId, String nombre, String apellido, int cursoId, String ci, Integer usuarioId) throws SQLException {
+    public boolean update(int alumnoId, String nombre, String apellido, int cursoId, String ci, String email, String telefono, Integer usuarioId) throws SQLException {
         try (Connection con = getCon()) {
             con.setAutoCommit(false);
             try {
@@ -194,7 +206,7 @@ public class AlumnoDao extends conexion {
                         cursoAnterior = rs.getInt("curso_id");
                     }
                 }
-                try (PreparedStatement ps = con.prepareStatement("UPDATE alumno SET ci = ?, nombre = ?, apellido = ?, curso_id = ? WHERE id = ?")) {
+                try (PreparedStatement ps = con.prepareStatement("UPDATE alumno SET ci = ?, nombre = ?, apellido = ?, curso_id = ?, email = ?, telefono = ? WHERE id = ?")) {
                     if (ci == null || ci.isBlank()) {
                         ps.setNull(1, java.sql.Types.VARCHAR);
                     } else {
@@ -203,7 +215,9 @@ public class AlumnoDao extends conexion {
                     ps.setString(2, nombre);
                     ps.setString(3, apellido);
                     ps.setInt(4, cursoId);
-                    ps.setInt(5, alumnoId);
+                    ps.setString(5, email != null ? email : "");
+                    ps.setString(6, telefono != null ? telefono : "");
+                    ps.setInt(7, alumnoId);
                     ps.executeUpdate();
                 }
                 if (cursoAnterior != cursoId) {
@@ -228,7 +242,7 @@ public class AlumnoDao extends conexion {
     }
 
     public boolean update(int alumnoId, String nombre, String apellido, int cursoId, String ci) throws SQLException {
-        return update(alumnoId, nombre, apellido, cursoId, ci, null);
+        return update(alumnoId, nombre, apellido, cursoId, ci, null, null);
     }
 
     public boolean updateGoogleIdentity(int alumnoId, String googleUserId, String googleEmail) throws SQLException {
