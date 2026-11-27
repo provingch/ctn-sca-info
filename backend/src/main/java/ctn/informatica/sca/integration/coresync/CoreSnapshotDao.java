@@ -23,7 +23,7 @@ public class CoreSnapshotDao extends conexion {
             con.setAutoCommit(false);
             try {
                 CoreSnapshot snapshot = new CoreSnapshot(
-                        1,
+                        2,
                         LocalDateTime.now(),
                         query(con, "SELECT id, nombre FROM especialidad ORDER BY id",
                                 rs -> new CoreSnapshot.Especialidad(rs.getInt("id"), rs.getString("nombre"))),
@@ -65,7 +65,19 @@ public class CoreSnapshotDao extends conexion {
                         query(con, "SELECT id, codigo, descripcion, activo, created_at FROM codigo_conducta ORDER BY id",
                                 rs -> new CoreSnapshot.CodigoConducta(rs.getInt("id"), rs.getString("codigo"),
                                         rs.getString("descripcion"), rs.getBoolean("activo"),
-                                        localDateTime(rs, "created_at"))));
+                                        localDateTime(rs, "created_at"))),
+                        query(con, "SELECT id, numero, etiqueta, TIME_FORMAT(hora_inicio, '%H:%i') AS hora_inicio, "
+                                        + "TIME_FORMAT(hora_fin, '%H:%i') AS hora_fin FROM hora_catedra ORDER BY id",
+                                rs -> new CoreSnapshot.HoraCatedra(rs.getInt("id"), rs.getInt("numero"),
+                                        rs.getString("etiqueta"), rs.getString("hora_inicio"), rs.getString("hora_fin"))),
+                        query(con, "SELECT id, nombre, especialidad_id FROM sala ORDER BY id",
+                                rs -> new CoreSnapshot.Sala(rs.getInt("id"), rs.getString("nombre"),
+                                        nullableInt(rs, "especialidad_id"))),
+                        query(con, "SELECT id, asignacion_id, usuario_id, curso_base_id, dia_semana, hora_catedra_id, "
+                                        + "sala_id FROM horario_slot ORDER BY id",
+                                rs -> new CoreSnapshot.HorarioSlot(rs.getInt("id"), rs.getInt("asignacion_id"),
+                                        rs.getInt("usuario_id"), rs.getInt("curso_base_id"), rs.getInt("dia_semana"),
+                                        rs.getInt("hora_catedra_id"), nullableInt(rs, "sala_id"))));
                 con.commit();
                 return snapshot;
             } catch (SQLException | RuntimeException ex) {

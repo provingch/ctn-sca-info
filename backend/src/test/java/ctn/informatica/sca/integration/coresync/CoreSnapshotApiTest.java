@@ -48,17 +48,18 @@ class CoreSnapshotApiTest {
     @Test
     void exportaSoloElPerfilInstitucionalSinCredenciales() throws Exception {
         CoreSnapshot snapshot = new CoreSnapshot(
-                1, LocalDateTime.parse("2026-11-02T13:00:00"),
+                2, LocalDateTime.parse("2026-11-02T13:00:00"),
                 List.of(new CoreSnapshot.Especialidad(1, "Informática")),
                 List.of(), List.of(), List.of(), List.of(),
                 List.of(new CoreSnapshot.Perfil(7, "Ana", "Docente", 1234567, null, null,
                         "ana@ctn.edu.py", 1, 1)),
-                List.of(), List.of(), List.of(), List.of(), List.of());
+                List.of(), List.of(), List.of(), List.of(), List.of(),
+                List.of(), List.of(), List.of());
         when(dao.exportar()).thenReturn(snapshot);
 
         mockMvc.perform(get("/api/internal/core/snapshot").header("X-Core-Sync-Key", "clave-sync-test"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.version").value(1))
+                .andExpect(jsonPath("$.version").value(2))
                 .andExpect(jsonPath("$.perfiles[0].id").value(7))
                 .andExpect(jsonPath("$.perfiles[0].contrasenia").doesNotExist())
                 .andExpect(jsonPath("$.perfiles[0].googleRefreshToken").doesNotExist());
