@@ -16,7 +16,16 @@ public record CoreSnapshot(
         List<VinculoFamiliar> vinculosFamiliares,
         List<HistorialCurso> historialCursos,
         List<Asignacion> asignaciones,
-        List<CodigoConducta> codigosConducta) {
+        List<CodigoConducta> codigosConducta,
+        List<HoraCatedra> horasCatedra,
+        List<Sala> salas,
+        List<HorarioSlot> horarios) {
+
+    public CoreSnapshot {
+        horasCatedra = horasCatedra == null ? List.of() : horasCatedra;
+        salas = salas == null ? List.of() : salas;
+        horarios = horarios == null ? List.of() : horarios;
+    }
 
     public record Especialidad(int id, String nombre) {}
     public record Curso(int id, int especialidadId, int promocion, String seccion) {}
@@ -32,4 +41,8 @@ public record CoreSnapshot(
             int id, int alumnoId, int cursoAnteriorId, int cursoNuevoId, LocalDateTime fecha, Integer perfilId) {}
     public record Asignacion(int id, int profesorId, int materiaId, int cursoBaseId) {}
     public record CodigoConducta(int id, String codigo, String descripcion, boolean activo, LocalDateTime createdAt) {}
+    public record HoraCatedra(int id, int numero, String etiqueta, String horaInicio, String horaFin) {}
+    public record Sala(int id, String nombre, Integer especialidadId) {}
+    public record HorarioSlot(
+            int id, int asignacionId, int usuarioId, int cursoBaseId, int diaSemana, int horaCatedraId, Integer salaId) {}
 }
